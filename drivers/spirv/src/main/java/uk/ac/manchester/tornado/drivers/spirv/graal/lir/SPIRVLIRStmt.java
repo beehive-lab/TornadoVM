@@ -398,6 +398,9 @@ public class SPIRVLIRStmt {
             this(lhs, previousValue, firstSuccessorBlockName, previousBlockName, phiMap, phiTrace, false, false, null);
         }
 
+        /**
+         * Pending: Do a new iteration over this class to not checking for repeated IDs.
+         */
         public OpPhiStmt(AllocatableValue lhs, Value previousValue, String firstSuccessorBlockName, String previousBlockName, Map<AllocatableValue, SPIRVId> phiMap,
                 Map<AllocatableValue, AllocatableValue> phiTrace, boolean forwardedId, boolean checkDuplicate, List<SPIRVNodeLIRBuilder.PhiHolder> phiHolder) {
             super(TYPE);
