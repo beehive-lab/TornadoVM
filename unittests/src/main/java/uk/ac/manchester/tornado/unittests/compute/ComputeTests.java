@@ -35,7 +35,6 @@ import uk.ac.manchester.tornado.api.collections.types.Byte3;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -557,7 +556,6 @@ public class ComputeTests extends TornadoTestBase {
 
     @Test
     public void testRenderTrack() {
-        assertNotBackend(TornadoVMBackendType.SPIRV);
         int n = 2048;
         int m = 2048;
 
