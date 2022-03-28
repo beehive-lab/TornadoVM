@@ -166,11 +166,6 @@ public final class Short3 implements PrimitiveStorage<ShortBuffer> {
         return NUM_ELEMENTS;
     }
 
-    @Override
-    public Object getStorage() {
-        return storage;
-    }
-
     /*
      * vector = op( vector, vector )
      */

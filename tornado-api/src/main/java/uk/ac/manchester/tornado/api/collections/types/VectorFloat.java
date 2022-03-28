@@ -45,10 +45,14 @@ import java.nio.FloatBuffer;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.type.annotations.TornadoCollection;
+import uk.ac.manchester.tornado.api.type.annotations.TornadoFieldVector;
 
+@TornadoCollection
 public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
 
     private final int numElements;
+    @TornadoFieldVector
     private final float[] storage;
     private static final int ELEMENT_SIZE = 1;
 
@@ -244,10 +248,5 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
     @Override
     public int size() {
         return numElements;
-    }
-
-    @Override
-    public Object getStorage() {
-        return storage;
     }
 }

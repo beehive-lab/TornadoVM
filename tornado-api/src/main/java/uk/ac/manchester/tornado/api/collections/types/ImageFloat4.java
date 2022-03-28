@@ -41,14 +41,19 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import uk.ac.manchester.tornado.api.type.annotations.TornadoCollection;
+import uk.ac.manchester.tornado.api.type.annotations.TornadoFieldVector;
+
 import java.nio.FloatBuffer;
 import java.util.Arrays;
 
+@TornadoCollection
 public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
 
     /**
      * backing array
      */
+    @TornadoFieldVector
     protected final float[] storage;
 
     /**
@@ -225,11 +230,6 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
     @Override
     public int size() {
         return numElements;
-    }
-
-    @Override
-    public Object getStorage() {
-        return storage;
     }
 
     public FloatingPointError calculateULP(ImageFloat4 ref) {

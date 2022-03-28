@@ -41,13 +41,18 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import uk.ac.manchester.tornado.api.type.annotations.TornadoCollection;
+import uk.ac.manchester.tornado.api.type.annotations.TornadoFieldVector;
+
 import java.nio.FloatBuffer;
 
+@TornadoCollection
 public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
 
     /**
      * backing array
      */
+    @TornadoFieldVector
     protected final float[] storage;
 
     /**
@@ -199,11 +204,6 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
     @Override
     public int size() {
         return storage.length;
-    }
-
-    @Override
-    public Object getStorage() {
-        return storage;
     }
 
     public int getLength() {

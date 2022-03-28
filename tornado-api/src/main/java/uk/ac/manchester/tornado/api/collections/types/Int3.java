@@ -175,11 +175,6 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
         return NUM_ELEMENTS;
     }
 
-    @Override
-    public Object getStorage() {
-        return storage;
-    }
-
     /*
      * vector = op( vector, vector )
      */

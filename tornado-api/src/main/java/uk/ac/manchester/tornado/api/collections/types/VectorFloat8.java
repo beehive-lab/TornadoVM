@@ -41,6 +41,9 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import uk.ac.manchester.tornado.api.type.annotations.TornadoCollection;
+import uk.ac.manchester.tornado.api.type.annotations.TornadoFieldVector;
+
 import static java.lang.String.format;
 import static java.nio.FloatBuffer.wrap;
 import static uk.ac.manchester.tornado.api.collections.types.Float8.add;
@@ -48,11 +51,13 @@ import static uk.ac.manchester.tornado.api.collections.types.Float8.loadFromArra
 
 import java.nio.FloatBuffer;
 
+@TornadoCollection
 public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
 
     /**
      * backing array
      */
+    @TornadoFieldVector
     protected final float[] storage;
 
     /**
@@ -201,11 +206,6 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
     @Override
     public int size() {
         return storage.length;
-    }
-
-    @Override
-    public Object getStorage() {
-        return storage;
     }
 
     public int getLength() {

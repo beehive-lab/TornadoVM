@@ -26,7 +26,6 @@
 package uk.ac.manchester.tornado.runtime;
 
 import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.COLLECTION_TYPES_PACKAGE;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_VM_FLUSH;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
@@ -57,6 +56,9 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.api.type.annotations.Payload;
+import uk.ac.manchester.tornado.api.type.annotations.TornadoCollection;
+import uk.ac.manchester.tornado.api.type.annotations.TornadoFieldVector;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
@@ -72,6 +74,7 @@ import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
 /**
  * TornadoVM: it includes a bytecode interpreter (Tornado bytecodes), a memory
@@ -248,7 +251,7 @@ public class TornadoVM extends TornadoLogger {
         for (int i = 0; i < objects.length; i++) {
             objects[i] = this.objects.get(args[i]);
             if (isTornadoType(objects[i])) {
-                objects[i] = ((PrimitiveStorage) objects[i]).getStorage();
+                objects[i] = TornadoUtils.getAnnotatedField(objects[i], TornadoFieldVector.class);
             }
             objectStates[i] = resolveObjectState(args[i], contextIndex);
         }
@@ -265,7 +268,7 @@ public class TornadoVM extends TornadoLogger {
         }
 
         if (isTornadoType(object)) {
-            object = ((PrimitiveStorage) object).getStorage();
+            object = TornadoUtils.getAnnotatedField(object, TornadoFieldVector.class);
         }
 
         if (TornadoOptions.PRINT_BYTECODES && !isObjectAtomic(object)) {
@@ -278,10 +281,8 @@ public class TornadoVM extends TornadoLogger {
     }
 
     private boolean isTornadoType(Object object) {
-        return object != null && !object.getClass().isArray()
-                && !object.getClass().isPrimitive()
-                && !object.getClass().isAnnotationPresent(Vector.class)
-                && COLLECTION_TYPES_PACKAGE.equals(object.getClass().getPackage().getName());
+        return object != null && (object.getClass().isAnnotationPresent(TornadoCollection.class) ||
+                (!object.getClass().isAnnotationPresent(Vector.class) && TornadoUtils.hasAnnotatedField(object, Payload.class)));
     }
 
     private boolean isObjectAtomic(Object object) {
@@ -301,7 +302,7 @@ public class TornadoVM extends TornadoLogger {
         }
 
         if (isTornadoType(object)) {
-            object = ((PrimitiveStorage) object).getStorage();
+            object = TornadoUtils.getAnnotatedField(object, TornadoFieldVector.class);
         }
 
         final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
@@ -342,7 +343,7 @@ public class TornadoVM extends TornadoLogger {
         }
 
         if (isTornadoType(object)) {
-            object = ((PrimitiveStorage) object).getStorage();
+            object = TornadoUtils.getAnnotatedField(object, TornadoFieldVector.class);
         }
 
         if (TornadoOptions.PRINT_BYTECODES && !isObjectAtomic(object)) {
@@ -383,7 +384,7 @@ public class TornadoVM extends TornadoLogger {
         }
 
         if (isTornadoType(object)) {
-            object = ((PrimitiveStorage) object).getStorage();
+            object = TornadoUtils.getAnnotatedField(object, TornadoFieldVector.class);
         }
 
         if (TornadoOptions.PRINT_BYTECODES) {
@@ -424,7 +425,7 @@ public class TornadoVM extends TornadoLogger {
         }
 
         if (isTornadoType(object)) {
-            object = ((PrimitiveStorage) object).getStorage();
+            object = TornadoUtils.getAnnotatedField(object, TornadoFieldVector.class);
         }
 
         if (TornadoOptions.PRINT_BYTECODES) {

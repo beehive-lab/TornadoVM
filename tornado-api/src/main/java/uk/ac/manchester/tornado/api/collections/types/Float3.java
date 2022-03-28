@@ -202,11 +202,6 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
         return NUM_ELEMENTS;
     }
 
-    @Override
-    public Object getStorage() {
-        return storage;
-    }
-
     /**
      * * Operations on Float3 vectors
      */

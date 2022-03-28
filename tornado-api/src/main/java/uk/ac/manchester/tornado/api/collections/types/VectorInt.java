@@ -45,10 +45,14 @@ import java.nio.IntBuffer;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.type.annotations.TornadoCollection;
+import uk.ac.manchester.tornado.api.type.annotations.TornadoFieldVector;
 
+@TornadoCollection
 public class VectorInt implements PrimitiveStorage<IntBuffer> {
 
     private final int numElements;
+    @TornadoFieldVector
     private final int[] storage;
     private static final int ELEMENT_SIZE = 1;
 
@@ -253,10 +257,5 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
     @Override
     public int size() {
         return numElements;
-    }
-
-    @Override
-    public Object getStorage() {
-        return storage;
     }
 }

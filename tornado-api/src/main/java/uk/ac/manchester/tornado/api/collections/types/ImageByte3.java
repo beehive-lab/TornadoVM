@@ -41,14 +41,19 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import uk.ac.manchester.tornado.api.type.annotations.TornadoCollection;
+import uk.ac.manchester.tornado.api.type.annotations.TornadoFieldVector;
+
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+@TornadoCollection
 public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
 
     /**
      * backing array
      */
+    @TornadoFieldVector
     final protected byte[] storage;
 
     /**
@@ -174,11 +179,6 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
     @Override
     public int size() {
         return numElements;
-    }
-
-    @Override
-    public Object getStorage() {
-        return storage;
     }
 
 }

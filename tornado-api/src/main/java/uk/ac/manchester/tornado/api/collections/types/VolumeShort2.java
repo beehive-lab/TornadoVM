@@ -41,13 +41,18 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import uk.ac.manchester.tornado.api.type.annotations.TornadoCollection;
+import uk.ac.manchester.tornado.api.type.annotations.TornadoFieldVector;
+
 import java.nio.ShortBuffer;
 
+@TornadoCollection
 public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
 
     /**
      * backing array
      */
+    @TornadoFieldVector
     protected final short[] storage;
 
     /**
@@ -171,11 +176,6 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
     @Override
     public int size() {
         return numElements;
-    }
-
-    @Override
-    public Object getStorage() {
-        return storage;
     }
 
 }

@@ -167,11 +167,6 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
         return NUM_ELEMENTS;
     }
 
-    @Override
-    public Object getStorage() {
-        return storage;
-    }
-
     /**
      * * Operations on Int2 vectors
      */

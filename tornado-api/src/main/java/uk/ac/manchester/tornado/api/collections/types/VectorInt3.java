@@ -38,17 +38,22 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import uk.ac.manchester.tornado.api.type.annotations.TornadoCollection;
+import uk.ac.manchester.tornado.api.type.annotations.TornadoFieldVector;
+
 import static java.lang.String.format;
 import static uk.ac.manchester.tornado.api.collections.types.Int3.add;
 import static uk.ac.manchester.tornado.api.collections.types.Int3.loadFromArray;
 
 import java.nio.DoubleBuffer;
 
+@TornadoCollection
 public class VectorInt3 implements PrimitiveStorage<DoubleBuffer> {
 
     /**
      * backing array
      */
+    @TornadoFieldVector
     protected final int[] storage;
 
     /**
@@ -201,11 +206,6 @@ public class VectorInt3 implements PrimitiveStorage<DoubleBuffer> {
     @Override
     public int size() {
         return storage.length;
-    }
-
-    @Override
-    public Object getStorage() {
-        return storage;
     }
 
     public int getLength() {

@@ -1,7 +1,6 @@
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
 import jdk.vm.ci.meta.ResolvedJavaField;
-import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.AccessFieldNode;
@@ -9,12 +8,11 @@ import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.NewInstanceNode;
 import org.graalvm.compiler.phases.BasePhase;
-
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.COLLECTION_TYPES_PACKAGE;
+import uk.ac.manchester.tornado.api.type.annotations.Payload;
+import uk.ac.manchester.tornado.api.type.annotations.TornadoCollection;
+import uk.ac.manchester.tornado.api.type.annotations.TornadoFieldVector;
 
 public class TornadoVectorReplacement extends BasePhase<TornadoHighTierContext> {
-
-    private static final String storageFieldName = "storage";
 
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
@@ -22,8 +20,8 @@ public class TornadoVectorReplacement extends BasePhase<TornadoHighTierContext> 
             if (node instanceof LoadFieldNode) {
                 AccessFieldNode accessFieldNode = (AccessFieldNode) node;
                 ResolvedJavaField field = accessFieldNode.field();
-                String packageName = getPackageName(field.getDeclaringClass());
-                return COLLECTION_TYPES_PACKAGE.equals(packageName) && storageFieldName.equals(field.getName());
+                return (field.getDeclaringClass().isAnnotationPresent(TornadoCollection.class) && field.isAnnotationPresent(TornadoFieldVector.class))
+                        || field.isAnnotationPresent(Payload.class);
             }
             return false;
         }).forEach(node -> {
@@ -37,10 +35,5 @@ public class TornadoVectorReplacement extends BasePhase<TornadoHighTierContext> 
                 graph.removeFixed(accessFieldNode);
             }
         });
-    }
-
-    private String getPackageName(ResolvedJavaType javaType) {
-        String javaName = javaType.toJavaName();
-        return javaName.substring(0, javaName.lastIndexOf("."));
     }
 }

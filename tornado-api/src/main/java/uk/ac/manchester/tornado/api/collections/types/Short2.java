@@ -157,11 +157,6 @@ public final class Short2 implements PrimitiveStorage<ShortBuffer> {
         return NUM_ELEMENTS;
     }
 
-    @Override
-    public Object getStorage() {
-        return storage;
-    }
-
     /*
      * vector = op( vector, vector )
      */
