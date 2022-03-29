@@ -24,6 +24,7 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
+import java.util.List;
 import java.util.Map;
 
 import org.graalvm.compiler.lir.ConstantValue;
@@ -54,6 +55,7 @@ import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResultBuilder;
+import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.MemoryAccess;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.SPIRVAddressCast;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -369,9 +371,9 @@ public class SPIRVLIRStmt {
     }
 
     @Opcode("PhiValueOptimization")
-    public static class OpPhiValueOptimization extends AbstractInstruction {
+    public static class OpPhiStmt extends AbstractInstruction {
 
-        public static final LIRInstructionClass<OpPhiValueOptimization> TYPE = LIRInstructionClass.create(OpPhiValueOptimization.class);
+        public static final LIRInstructionClass<OpPhiStmt> TYPE = LIRInstructionClass.create(OpPhiStmt.class);
 
         final Map<AllocatableValue, SPIRVId> phiMap;
         final Map<AllocatableValue, AllocatableValue> phiTrace;
@@ -380,14 +382,26 @@ public class SPIRVLIRStmt {
         protected AllocatableValue lhs;
         @Use
         protected Value rhs;
-        @Use
-        protected Value fordwaredId;
 
+        protected boolean forwardedId;
+
+        @Use
+        protected boolean checkDuplicate;
+
+        protected List<SPIRVNodeLIRBuilder.PhiHolder> phiHolders;
         String blockFirstSuccessor;
         String previousBlockName;
 
-        public OpPhiValueOptimization(AllocatableValue lhs, Value previousValue, String firstSuccessorBlockName, String previousBlockName, Map<AllocatableValue, SPIRVId> phiMap,
-                Map<AllocatableValue, AllocatableValue> phiTrace, Value forwardedId) {
+        public OpPhiStmt(AllocatableValue lhs, Value previousValue, String firstSuccessorBlockName, String previousBlockName, Map<AllocatableValue, SPIRVId> phiMap,
+                Map<AllocatableValue, AllocatableValue> phiTrace) {
+            this(lhs, previousValue, firstSuccessorBlockName, previousBlockName, phiMap, phiTrace, false, false, null);
+        }
+
+        /**
+         * Pending: Do a new iteration over this class to not checking for repeated IDs.
+         */
+        public OpPhiStmt(AllocatableValue lhs, Value previousValue, String firstSuccessorBlockName, String previousBlockName, Map<AllocatableValue, SPIRVId> phiMap,
+                Map<AllocatableValue, AllocatableValue> phiTrace, boolean forwardedId, boolean checkDuplicate, List<SPIRVNodeLIRBuilder.PhiHolder> phiHolder) {
             super(TYPE);
             this.lhs = lhs;
             this.rhs = previousValue;
@@ -395,7 +409,9 @@ public class SPIRVLIRStmt {
             this.previousBlockName = previousBlockName;
             this.phiMap = phiMap;
             this.phiTrace = phiTrace;
-            this.fordwaredId = forwardedId;
+            this.forwardedId = forwardedId;
+            this.checkDuplicate = checkDuplicate;
+            this.phiHolders = phiHolder;
         }
 
         protected SPIRVId getIfOfBranch(String blockName, SPIRVAssembler asm) {
@@ -406,12 +422,103 @@ public class SPIRVLIRStmt {
             return branch;
         }
 
+        private SPIRVId getPreviousId(SPIRVAssembler asm) {
+            if (rhs instanceof ConstantValue) {
+                ConstantValue constantValue = (ConstantValue) rhs;
+                return asm.lookUpConstant(constantValue.getConstant().toValueString(), (SPIRVKind) rhs.getPlatformKind());
+            } else {
+                return asm.lookUpLIRInstructions(rhs);
+            }
+        }
+
+        private SPIRVId getPreviousId(SPIRVAssembler asm, Value var) {
+            if (var instanceof ConstantValue) {
+                ConstantValue constantValue = (ConstantValue) var;
+                return asm.lookUpConstant(constantValue.getConstant().toValueString(), (SPIRVKind) var.getPlatformKind());
+            } else {
+                return asm.lookUpLIRInstructions(var);
+            }
+        }
+
+        private SPIRVId getNewId(SPIRVAssembler asm) {
+            if (forwardedId) {
+                Value forwardValue = phiHolders.get(0).getValue();
+                if (forwardValue instanceof ConstantValue) {
+                    ConstantValue constantValue = (ConstantValue) forwardValue;
+                    return asm.lookUpConstant(constantValue.getConstant().toValueString(), (SPIRVKind) forwardValue.getPlatformKind());
+                } else {
+                    return asm.lookUpLIRInstructions(forwardValue);
+                }
+            } else {
+                return asm.module.getNextId();
+            }
+        }
+
+        private SPIRVId checkIdDoesNotCycle(SPIRVAssembler asm, SPIRVId previousID, SPIRVId newID) {
+            if (!checkDuplicate) {
+                return previousID;
+            }
+            if (previousID.equals(newID)) {
+                Value valuePhiPos01 = phiHolders.get(1).value;
+                if (valuePhiPos01 instanceof ConstantValue) {
+                    ConstantValue constantValue = (ConstantValue) valuePhiPos01;
+                    return asm.lookUpConstant(constantValue.getConstant().toValueString(), (SPIRVKind) valuePhiPos01.getPlatformKind());
+                } else {
+                    return asm.lookUpLIRInstructions(valuePhiPos01);
+                }
+            }
+            return previousID;
+        }
+
+        private SPIRVId assignIdToPhiResult(SPIRVAssembler asm) {
+            if (asm.isPhiAcrossBlocksPresent(lhs)) {
+                return asm.getPhiIdAcrossBlock(lhs);
+            }
+            return asm.module.getNextId();
+        }
+
+        /**
+         * Usually we have two operands. However, when merging results from switch
+         * statements we might have multiple Phi Values to be merged. In this case, all
+         * branches (IDs) have been already generated, so they are expected to be found
+         * in the ASM lookup tables.
+         *
+         * @param asm
+         *            {@link SPIRVAssembler} Assembler
+         * @param previousID
+         *            {@link SPIRVId} Previous ID in SPIRVId format
+         * @param previousBranch
+         *            {@link SPIRVId} of the previous branch
+         * @param newID
+         *            {@link SPIRVId} of the new ID
+         * @param currentBranch
+         *            {@link SPIRVId} basic block of the new ID
+         * @return {@link SPIRVMultipleOperands<SPIRVPairIdRefIdRef>}
+         */
+        private SPIRVMultipleOperands<SPIRVPairIdRefIdRef> composeOperands(SPIRVAssembler asm, SPIRVId previousID, SPIRVId previousBranch, SPIRVId newID, SPIRVId currentBranch) {
+            SPIRVMultipleOperands<SPIRVPairIdRefIdRef> operands;
+            if (phiHolders != null && phiHolders.size() > 2) {
+                SPIRVPairIdRefIdRef[] operandList = new SPIRVPairIdRefIdRef[phiHolders.size()];
+                for (int i = 0; i < phiHolders.size(); i++) {
+                    SPIRVId v1 = getPreviousId(asm, phiHolders.get(i).getValue());
+                    SPIRVId b1 = asm.getLabel(phiHolders.get(i).getBlock().toString());
+                    operandList[i] = new SPIRVPairIdRefIdRef(v1, b1);
+                }
+                operands = new SPIRVMultipleOperands(operandList);
+
+            } else {
+                operands = new SPIRVMultipleOperands<>(new SPIRVPairIdRefIdRef(previousID, previousBranch), new SPIRVPairIdRefIdRef(newID, currentBranch));
+            }
+            return operands;
+        }
+
         @Override
         protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
 
             // This call will register the lhs id in case is not in the lookupTable yet.
             asm.emitValue(crb, lhs);
 
+            // Update Phi Tables
             asm.setPhiMap(phiMap);
             asm.setPhiTrace(phiTrace);
 
@@ -426,35 +533,25 @@ public class SPIRVLIRStmt {
             SPIRVId currentBranch = getIfOfBranch(blockFirstSuccessor, asm);
             SPIRVId previousBranch = asm.getLabel(previousBlockName);
 
-            SPIRVId previousID;
-            if (rhs instanceof ConstantValue) {
-                ConstantValue constantValue = (ConstantValue) rhs;
-                previousID = asm.lookUpConstant(constantValue.getConstant().toValueString(), (SPIRVKind) rhs.getPlatformKind());
-            } else {
-                previousID = asm.lookUpLIRInstructions(rhs);
-            }
+            SPIRVId previousID = getPreviousId(asm);
+            SPIRVId newID = getNewId(asm);
+            previousID = checkIdDoesNotCycle(asm, previousID, newID);
 
-            SPIRVId newID;
-            if (fordwaredId != null) {
-                if (fordwaredId instanceof ConstantValue) {
-                    ConstantValue constantValue = (ConstantValue) fordwaredId;
-                    newID = asm.lookUpConstant(constantValue.getConstant().toValueString(), (SPIRVKind) fordwaredId.getPlatformKind());
-                } else {
-                    newID = asm.lookUpLIRInstructions(fordwaredId);
-                }
-            } else {
-                newID = asm.module.getNextId();
-            }
+            SPIRVMultipleOperands<SPIRVPairIdRefIdRef> operands = composeOperands(asm, previousID, previousBranch, newID, currentBranch);
 
-            SPIRVMultipleOperands<SPIRVPairIdRefIdRef> operands = new SPIRVMultipleOperands<>(new SPIRVPairIdRefIdRef(previousID, previousBranch), new SPIRVPairIdRefIdRef(newID, currentBranch));
-            AllocatableValue trace = asm.getPhiTraceValue((Variable) lhs);
-            asm.updatePhiMap(trace, newID);
-
-            SPIRVId phiResultId = asm.module.getNextId();
+            SPIRVId phiResultId = assignIdToPhiResult(asm);
             SPIRVId typePrimitive = asm.primitives.getTypePrimitive((SPIRVKind) lhs.getPlatformKind());
             asm.currentBlockScope().add(new SPIRVOpPhi(typePrimitive, phiResultId, operands));
 
             asm.registerLIRInstructionValue(lhs, phiResultId);
+
+            if (!forwardedId) {
+                AllocatableValue trace = asm.getPhiTraceValue((Variable) lhs);
+                asm.updatePhiMap(trace, newID);
+
+                // Table to register forward-IDs (AllocatableValue -> SPIRVId)
+                asm.registerPhiNameInstruction(trace, newID);
+            }
 
             // Register the PHI-instruction in the PhiTable that has all forwarded Phi
             // Value. This table is maintained for passing PhiValues across basic blocks in
@@ -471,8 +568,8 @@ public class SPIRVLIRStmt {
             // the phi1 across outer basic blocks. Otherwise, we get %operation ID, which is
             // not correct.
             // -------------
-            asm.registerPhiNameInstruction(lhs, phiResultId);
 
+            asm.registerPhiNameInstruction(lhs, phiResultId);
         }
 
     }

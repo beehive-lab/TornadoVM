@@ -64,7 +64,7 @@ public class GroupIdNode extends FloatingNode implements LIRLowerable, MemoryKil
 
         Value valueDimension = generator.operand(dimension);
         LIRKind lirKind = tool.getLIRKind(stamp);
-        tool.append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVUnary.ThreadBuiltinCallForSPIRV(SPIRVThreadBuiltIn.GROUP_ID, lirKind, valueDimension)));
+        tool.append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVUnary.ThreadBuiltinCallForSPIRV(SPIRVThreadBuiltIn.GROUP_ID, result, lirKind, valueDimension)));
 
         generator.setResult(this, result);
     }

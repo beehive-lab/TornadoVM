@@ -61,7 +61,7 @@ public class GlobalThreadIdNode extends FloatingNode implements LIRLowerable, Ma
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
         Value valueDimension = generator.operand(dimensionIndex);
         LIRKind lirKind = tool.getLIRKind(stamp);
-        tool.append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVUnary.ThreadBuiltinCallForSPIRV(SPIRVThreadBuiltIn.GLOBAL_THREAD_ID, lirKind, valueDimension)));
+        tool.append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVUnary.ThreadBuiltinCallForSPIRV(SPIRVThreadBuiltIn.GLOBAL_THREAD_ID, result, lirKind, valueDimension)));
         generator.setResult(this, result);
 
     }
