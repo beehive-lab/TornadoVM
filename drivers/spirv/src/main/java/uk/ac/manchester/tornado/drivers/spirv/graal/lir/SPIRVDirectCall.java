@@ -87,10 +87,20 @@ public class SPIRVDirectCall extends SPIRVLIROp {
         SPIRVId functionResult = asm.module.getNextId();
         SPIRVMultipleOperands<SPIRVId> operands = new SPIRVMultipleOperands<>(idsForParameters);
 
-        // At this point we need to register the new function
+        // At this point we need to obtain the ID of the function to call.
+        // If the ID already exists (because it was previously called),
+        // then we obtain the function SPIRV-ID from a Symbol Table.
+        // Otherwise, we create a new ID and register the function in the
+        // symbol table.
         SPIRVId functionToCall = asm.getMethodRegistrationId(methodName);
         if (functionToCall == null) {
             functionToCall = asm.registerNewMethod(methodName);
+
+            // Only if the function has not been registered before,
+            // we add it in the queue for processing this function
+            // at a later stage of the compilation process. Otherwise,
+            // we get a duplicated ID error in SPIR-V.
+            crb.addNonInlinedMethod(targetNode.targetMethod());
         }
 
         asm.currentBlockScope().add(new SPIRVOpFunctionCall( //
@@ -101,6 +111,5 @@ public class SPIRVDirectCall extends SPIRVLIROp {
 
         asm.registerLIRInstructionValue(this, functionResult);
 
-        crb.addNonInlinedMethod(targetNode.targetMethod());
     }
 }
