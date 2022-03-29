@@ -30,7 +30,6 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -202,8 +201,6 @@ public class TestNewArrays extends TornadoTestBase {
 
     @Test
     public void testInitNewArrayInsideParallel() {
-        assertNotBackendOptimization(TornadoVMBackendType.SPIRV);
-
         final int N = 256;
         float[] data = new float[N];
         float[] dataSeq = new float[N];

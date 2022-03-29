@@ -383,8 +383,7 @@ public class SPIRVLIRStmt {
         @Use
         protected Value rhs;
 
-        // @Use
-        protected boolean fordwaredId;
+        protected boolean forwardedId;
 
         @Use
         protected boolean checkDuplicate;
@@ -410,7 +409,7 @@ public class SPIRVLIRStmt {
             this.previousBlockName = previousBlockName;
             this.phiMap = phiMap;
             this.phiTrace = phiTrace;
-            this.fordwaredId = forwardedId;
+            this.forwardedId = forwardedId;
             this.checkDuplicate = checkDuplicate;
             this.phiHolders = phiHolder;
         }
@@ -442,7 +441,7 @@ public class SPIRVLIRStmt {
         }
 
         private SPIRVId getNewId(SPIRVAssembler asm) {
-            if (fordwaredId) {
+            if (forwardedId) {
                 Value forwardValue = phiHolders.get(0).getValue();
                 if (forwardValue instanceof ConstantValue) {
                     ConstantValue constantValue = (ConstantValue) forwardValue;
@@ -480,7 +479,7 @@ public class SPIRVLIRStmt {
 
         /**
          * Usually we have two operands. However, when merging results from switch
-         * statements we might have muliple Phi Values to be merge. In this case, all
+         * statements we might have multiple Phi Values to be merged. In this case, all
          * branches (IDs) have been already generated, so they are expected to be found
          * in the ASM lookup tables.
          *
@@ -546,7 +545,7 @@ public class SPIRVLIRStmt {
 
             asm.registerLIRInstructionValue(lhs, phiResultId);
 
-            if (!fordwaredId) {
+            if (!forwardedId) {
                 AllocatableValue trace = asm.getPhiTraceValue((Variable) lhs);
                 asm.updatePhiMap(trace, newID);
 

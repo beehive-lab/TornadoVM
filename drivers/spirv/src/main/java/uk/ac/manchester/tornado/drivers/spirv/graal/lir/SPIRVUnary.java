@@ -94,12 +94,13 @@ public class SPIRVUnary {
             SPIRVId operationId;
             if (!asm.isPhiMapEmpty() && asm.isResultInPhiMap(result)) {
                 operationId = asm.getPhiId(result);
-                AllocatableValue v = result;
+                AllocatableValue allocatableValue = result;
                 while (operationId == null) {
-                    // Nested IF, We Keep Looking into the trace
-                    AllocatableValue v2 = asm.getPhiTraceValue((Variable) v);
-                    operationId = asm.getPhiId((Variable) v2);
-                    v = v2;
+                    // We loop-up the operation ID. In the case it's in the Phi Table, we look at
+                    // the trace to obtain the root Phi Variable.
+                    AllocatableValue tempValue = asm.getPhiTraceValue((Variable) allocatableValue);
+                    operationId = asm.getPhiId((Variable) tempValue);
+                    allocatableValue = tempValue;
                 }
             } else {
                 operationId = asm.module.getNextId();
