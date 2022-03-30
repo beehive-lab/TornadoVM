@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-
 #
 # This file is part of Tornado: A heterogeneous programming framework: 
 # https://github.com/beehive-lab/tornadovm
 #
-# Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+# Copyright (c) 2022, APT Group, Department of Computer Science,
 # The University of Manchester. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -22,64 +21,36 @@
 # 2 along with this work; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Authors: James Clarkson
-#
 
-PACKAGE="uk.ac.manchester.tornado.benchmarks"
-BENCHMARKS="sadd saxpy sgemm dgemm spmv addvector dotvector rotatevector rotateimage convolvearray convolveimage montecarlo"
-MAIN_CLASS="Benchmark"
+day=`date "+%d_%m_%Y"`
+echo $day
 
-TORNADO_CMD="tornado"
+directory="benchmarks_results"
 
-if [ -z "${TORNADO_ROOT}" ]; 
+mkdir -p $directory
+
+backend=`tornado --version | grep backends`
+
+# Run with Profiler and Optimizations Disabled
+echo "tornado-benchmarks.py --profiler > ${directory}/SPIRV_BENCHMARKS_PROFILER_NOOPT_${day}.log"
+tornado-benchmarks.py --profiler > ${directory}/SPIRV_BENCHMARKS_PROFILER_NOOPT_${day}.log
+
+
+if [[ $backend == "backends=spirv" ]]
 then
-	echo "Please set env variable TORNADO_ROOT"
-	echo "       e.g., export TORNADO_ROOT=`pwd`"
-	exit 0
+	# Run with Profiler and Optimizations Enabled
+	echo "tornado-benchmarks.py --profiler --spirvOptimizer > ${directory}/SPIRV_BENCHMARKS_PROFILER_${day}.log"
+	tornado-benchmarks.py --profiler --spirvOptimizer > ${directory}/SPIRV_BENCHMARKS_PROFILER_${day}.log
 fi
 
+## Run end-to-end and Optimizations Disabled
+echo "tornado-benchmarks.py > ${directory}/SPIRV_BENCHMARKS_END2END_NOOPT_${day}.log"
+tornado-benchmarks.py > ${directory}/SPIRV_BENCHMARKS_END2END_NOOPT_${day}.log
 
-if [ -z "${TORNADO_VM_FLAGS}" ]; then
-	TORNADO_VM_FLAGS="-Xms8G -server -Dtornado.kernels.coarsener=False -Dtornado.profiles.print=True -Dtornado.profiling.enable=True -Dtornado.opencl.schedule=True"
+if [[ $backend == "backends=spirv" ]]
+then
+	## Run end-to-end and Optimizations enabled
+	echo "tornado-benchmarks.py  --spirvOptimizer > ${directory}/SPIRV_BENCHMARKS_END2END_${day}.log"
+	tornado-benchmarks.py  --spirvOptimizer > ${directory}/SPIRV_BENCHMARKS_END2END_${day}.log
 fi
-
-TORNADO_FLAGS="${TORNADO_FLAGS} ${TORNADO_VM_FLAGS}"
-
-DATE=$(date '+%Y-%m-%d-%H:%M')
-
-RESULTS_ROOT="${TORNADO_ROOT}/var/results"
-BENCHMARKS_ROOT="${RESULTS_ROOT}/${DATE}"
-
-if [ -z "${DEVICES}" ]; then
-	echo "Please set env variable DEVICES."
-	echo "	e.g. DEVICES=0:0,0:1"
-	exit
-fi
-
-if [ ! -d ${BENCHMARKS_ROOT} ]; then
-  mkdir -p ${BENCHMARKS_ROOT}
-fi
-
-LOGFILE="${BENCHMARKS_ROOT}/bm"
-
-ITERATIONS=10
-
-if [ ! -z "${TORNADO_FLAGS}" ];then
-  echo ${TORNADO_FLAGS} > "${BENCHMARKS_ROOT}/tornado.flags"
-fi
-
-if [ -e ${TORNADO_ROOT}/.git ]; then
-	echo $(git rev-parse HEAD) > "${BENCHMARKS_ROOT}/git.sha"
-fi
-
-${TORNADO_CMD} -Xms8G -Ddevices=${DEVICES} -Dstartsize=2 -Dendsize=16777216 uk.ac.manchester.tornado.benchmarks.DataMovement > "${BENCHMARKS_ROOT}/data-movement.csv"
-
-for bm in ${BENCHMARKS}; do
-	for (( i=0; i<${ITERATIONS}; i++ )); do
-		echo "running ${i} ${bm} ..."
-		OUTFILE="${LOGFILE}-${bm}-${i}.log"
-		${TORNADO_CMD} ${TORNADO_FLAGS} -Ddevices=${DEVICES} uk.ac.manchester.tornado.benchmarks.BenchmarkRunner ${bm} >> "${OUTFILE}"
-		${TORNADO_ROOT}/assembly/src/bin/convert2csv.sh ${OUTFILE}
-	done
-done
 
