@@ -22,7 +22,7 @@
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-day=`date "+%d_%m_%Y"`
+day=`date "+%d_%m_%Y-%T"`
 echo $day
 
 directory="benchmarks_results"
