@@ -49,9 +49,9 @@ public class SPIRVVectorElementSelect extends SPIRVLIROp {
 
     private final LIRKind vectorKind;
 
-    public SPIRVVectorElementSelect(LIRKind lirKind, LIRKind vectorKindKind, Variable vector, int laneId) {
+    public SPIRVVectorElementSelect(LIRKind lirKind, LIRKind vectorKind, Variable vector, int laneId) {
         super(lirKind);
-        this.vectorKind = vectorKindKind;
+        this.vectorKind = vectorKind;
         this.vector = vector;
         this.laneId = laneId;
     }
