@@ -55,14 +55,11 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLVectorElementSelect;
 public abstract class VectorElementOpNode extends FloatingNode implements LIRLowerable, Comparable<VectorElementOpNode> {
 
     public static final NodeClass<VectorElementOpNode> TYPE = NodeClass.create(VectorElementOpNode.class);
-
+    protected final OCLKind oclKind;
     @Input(InputType.Extension)
     ValueNode vector;
-
     @Input
     ValueNode lane;
-
-    protected final OCLKind oclKind;
 
     protected VectorElementOpNode(NodeClass<? extends VectorElementOpNode> c, OCLKind kind, ValueNode vector, ValueNode lane) {
         super(c, StampFactory.forKind(kind.asJavaKind()));
@@ -94,7 +91,7 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
         return updateStamp(StampFactory.forKind(oclKind.asJavaKind()));
     }
 
-    final public int laneId() {
+    public final int laneId() {
         guarantee(lane instanceof ConstantNode, "Invalid lane: %s", lane);
         return (lane instanceof ConstantNode) ? lane.asJavaConstant().asInt() : -1;
     }

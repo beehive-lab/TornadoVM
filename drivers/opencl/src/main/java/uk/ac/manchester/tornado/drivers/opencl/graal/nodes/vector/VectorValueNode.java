@@ -63,14 +63,11 @@ import uk.ac.manchester.tornado.runtime.graal.phases.MarkVectorValueNode;
 public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkVectorValueNode {
 
     public static final NodeClass<VectorValueNode> TYPE = NodeClass.create(VectorValueNode.class);
-
-    @OptionalInput(InputType.Association)
-    private ValueNode origin;
-
+    private final OCLKind kind;
     @Input
     NodeInputList<ValueNode> values;
-
-    private final OCLKind kind;
+    @OptionalInput(InputType.Association)
+    private ValueNode origin;
 
     public VectorValueNode(OCLKind kind) {
         super(TYPE, OCLStampFactory.getStampFor(kind));
@@ -248,17 +245,17 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
         return false;
     }
 
-    public void setOrigin(ValueNode value) {
-        this.updateUsages(origin, value);
-        origin = value;
-    }
-
     public void clearOrigin() {
         this.replaceFirstInput(origin, null);
     }
 
     public ValueNode getOrigin() {
         return origin;
+    }
+
+    public void setOrigin(ValueNode value) {
+        this.updateUsages(origin, value);
+        origin = value;
     }
 
     public VectorValueNode duplicate() {

@@ -113,7 +113,14 @@ public class VectorElementOpNode extends FloatingNode implements LIRLowerable, C
 
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitVectorElementOp SELECT: targetVector=%s, laneId=%d", targetVector, laneId());
         assert targetVector instanceof Variable;
-        final SPIRVVectorElementSelect element = new SPIRVVectorElementSelect(LIRKind.value(targetVector.getPlatformKind()), (Variable) targetVector, laneId());
+
+        LIRKind lirKind = gen.getLIRGeneratorTool().getLIRKind(stamp);
+
+        // The LIR Kind corresponds to the type of the vector elements.
+        // The SPIRVVectorElementSelect is a selection of an item within a vector type
+        // (Vector -> Scalar) transformation. Therefore, the main LIR type to be
+        // propagated is lirKind
+        final SPIRVVectorElementSelect element = new SPIRVVectorElementSelect(lirKind, LIRKind.value(targetVector.getPlatformKind()), (Variable) targetVector, laneId());
         gen.setResult(this, element);
     }
 }

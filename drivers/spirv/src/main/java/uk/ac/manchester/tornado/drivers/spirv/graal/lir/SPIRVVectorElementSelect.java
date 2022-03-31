@@ -47,8 +47,11 @@ public class SPIRVVectorElementSelect extends SPIRVLIROp {
     private final Variable vector;
     private final int laneId;
 
-    public SPIRVVectorElementSelect(LIRKind lirKind, Variable vector, int laneId) {
+    private final LIRKind vectorKind;
+
+    public SPIRVVectorElementSelect(LIRKind lirKind, LIRKind vectorKind, Variable vector, int laneId) {
         super(lirKind);
+        this.vectorKind = vectorKind;
         this.vector = vector;
         this.laneId = laneId;
     }
@@ -89,10 +92,9 @@ public class SPIRVVectorElementSelect extends SPIRVLIROp {
 
     @Override
     public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-        SPIRVId vectorId = getId(vector, asm, getSPIRVPlatformKind());
+        SPIRVId vectorId = getId(vector, asm, (SPIRVKind) vectorKind.getPlatformKind());
 
-        SPIRVKind vectorElementKind = getSPIRVPlatformKind().getElementKind();
-        SPIRVId idElementKind = asm.primitives.getTypePrimitive(vectorElementKind);
+        SPIRVId idElementKind = asm.primitives.getTypePrimitive(getSPIRVPlatformKind());
         Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit CompositeExtract: " + vector + " lane: " + laneId);
         SPIRVId resultSelect1 = asm.module.getNextId();
         asm.currentBlockScope().add(new SPIRVOpCompositeExtract(idElementKind, resultSelect1, vectorId, new SPIRVMultipleOperands<>(new SPIRVLiteralInteger(getLaneId()))));
