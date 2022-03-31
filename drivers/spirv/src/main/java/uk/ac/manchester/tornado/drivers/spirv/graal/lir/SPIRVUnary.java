@@ -1053,19 +1053,15 @@ public class SPIRVUnary {
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-
             Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit " + nameDebugInstruction + getValue() + " with type: " + getSPIRVPlatformKind());
-
-            SPIRVId valueID = getId(getValue(), asm, getSPIRVPlatformKind());
+            SPIRVId valueID =  loadSPIRVId(crb, asm, getValue());
             SPIRVId type = asm.primitives.getTypePrimitive(getSPIRVPlatformKind());
             SPIRVId result = obtainPhiValueIdIfNeeded(asm);
-
             if (isInteger) {
                 asm.currentBlockScope().add(new SPIRVOpSNegate(type, result, valueID));
-            } else if (getSPIRVPlatformKind().isFloatingPoint()) {
+            } else if (getSPIRVPlatformKind().isFloatingPoint() || isVectorElementFloat()) {
                 asm.currentBlockScope().add(new SPIRVOpFNegate(type, result, valueID));
             }
-
             asm.registerLIRInstructionValue(this, result);
         }
     }

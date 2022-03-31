@@ -56,14 +56,11 @@ import uk.ac.manchester.tornado.runtime.graal.phases.MarkVectorValueNode;
 public class SPIRVVectorValueNode extends FloatingNode implements LIRLowerable, MarkVectorValueNode {
 
     public static final NodeClass<SPIRVVectorValueNode> TYPE = NodeClass.create(SPIRVVectorValueNode.class);
-
-    @OptionalInput(InputType.Association)
-    private ValueNode origin;
-
-    private SPIRVKind spirvKind;
-
     @Input
     NodeInputList<ValueNode> values;
+    @OptionalInput(InputType.Association)
+    private ValueNode origin;
+    private SPIRVKind spirvKind;
 
     public SPIRVVectorValueNode(SPIRVKind spirvVectorKind) {
         super(TYPE, SPIRVStampFactory.getStampFor(spirvVectorKind));
