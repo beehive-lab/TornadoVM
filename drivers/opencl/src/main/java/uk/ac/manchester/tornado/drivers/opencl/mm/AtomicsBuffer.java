@@ -52,6 +52,16 @@ public class AtomicsBuffer implements ObjectBuffer {
     }
 
     @Override
+    public void setBuffer(ObjectBufferWrapper bufferWrapper) {
+        throw new TornadoRuntimeException("Not implemented");
+    }
+
+    @Override
+    public long getBufferOffset() {
+        return 0;
+    }
+
+    @Override
     public void read(Object reference) {
         throw new TornadoRuntimeException("Not implemented");
     }

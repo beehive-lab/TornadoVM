@@ -41,18 +41,18 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import uk.ac.manchester.tornado.api.type.annotations.TornadoCollection;
-import uk.ac.manchester.tornado.api.type.annotations.TornadoFieldVector;
+
+
 
 import java.nio.IntBuffer;
 import java.util.Arrays;
 
-@TornadoCollection
+
 public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
     /**
      * backing array
      */
-    @TornadoFieldVector
+    
     final protected int[] storage;
 
     /**

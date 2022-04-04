@@ -365,7 +365,7 @@ public class TornadoExecutionContext {
                 final LocalObjectState localState = objectState.get(i);
                 Event event = localState.sync(object, meta().getLogicDevice());
 
-                if (TornadoOptions.isProfilerEnabled()) {
+                if (TornadoOptions.isProfilerEnabled() && event != null) {
                     long value = profiler.getTimer(ProfilerType.COPY_OUT_TIME_SYNC);
                     value += event.getElapsedTime();
                     profiler.setTimer(ProfilerType.COPY_OUT_TIME_SYNC, value);

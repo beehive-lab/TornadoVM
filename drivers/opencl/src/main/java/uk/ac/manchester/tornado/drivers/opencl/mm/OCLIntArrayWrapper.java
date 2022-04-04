@@ -31,8 +31,12 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 
 public class OCLIntArrayWrapper extends OCLArrayWrapper<int[]> {
 
-    public OCLIntArrayWrapper(OCLDeviceContext device, long size) {
-        super(device, JavaKind.Int, size);
+    public OCLIntArrayWrapper(OCLDeviceContext device, long batchSize) {
+        super(device, JavaKind.Int, batchSize);
+    }
+
+    protected OCLIntArrayWrapper(int[] array, final OCLDeviceContext device, long batchSize) {
+        super(array, device, JavaKind.Int, batchSize);
     }
 
     @Override

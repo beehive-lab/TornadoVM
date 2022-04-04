@@ -62,7 +62,7 @@ public class TornadoUtils {
         return false;
     }
 
-    public static Object getAnnotatedField(Object wrapper, Class<? extends Annotation> annotation) {
+    public static Object getAnnotatedObjectFromField(Object wrapper, Class<? extends Annotation> annotation) {
         Field storageField = null;
         for (Field field : wrapper.getClass().getDeclaredFields()) {
             if (field.isAnnotationPresent(annotation)) {
@@ -73,6 +73,15 @@ public class TornadoUtils {
         storageField.setAccessible(true);
         try {
             return storageField.get(wrapper);
+        } catch (IllegalAccessException e) {
+            throw new TornadoRuntimeException(e);
+        }
+    }
+
+    public static Object getObjectFromField(Field field, Object obj) {
+        try {
+            field.setAccessible(true);
+            return field.get(obj);
         } catch (IllegalAccessException e) {
             throw new TornadoRuntimeException(e);
         }

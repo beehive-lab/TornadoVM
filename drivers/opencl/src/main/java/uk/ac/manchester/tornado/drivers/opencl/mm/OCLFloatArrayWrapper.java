@@ -34,6 +34,10 @@ public class OCLFloatArrayWrapper extends OCLArrayWrapper<float[]> {
         super(deviceContext, JavaKind.Float, batchSize);
     }
 
+    protected OCLFloatArrayWrapper(final float[] array, final OCLDeviceContext device, long batchSize) {
+        super(array, device, JavaKind.Float, batchSize);
+    }
+
     @Override
     protected int readArrayData(long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
         return deviceContext.readBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);

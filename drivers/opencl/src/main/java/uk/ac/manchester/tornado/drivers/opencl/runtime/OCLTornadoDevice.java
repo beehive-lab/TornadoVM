@@ -508,7 +508,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 result = new OCLVectorWrapper(deviceContext, object, batchSize);
             } else {
-                result = new OCLObjectWrapper(deviceContext, object, batchSize);
+                result = new OCLObjectWrapper(deviceContext, object);
             }
         }
 
@@ -537,13 +537,14 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public int allocate(Object object, long batchSize, TornadoDeviceObjectState state) {
         final ObjectBuffer buffer;
-        if (state.hasBuffer()) {
+        if (state.hasBuffer() && state.isPinnedBuffer()) {
             buffer = state.getBuffer();
         } else {
+            TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasBuffer(), "A device memory leak might be occurring.");
             buffer = createDeviceBuffer(object.getClass(), object, (OCLDeviceContext) getDeviceContext(), batchSize);
             state.setBuffer(buffer);
+            buffer.allocate(object, batchSize);
         }
-        buffer.allocate(object, batchSize);
 
         if (buffer.getClass() == AtomicsBuffer.class) {
             state.setAtomicRegion();
@@ -558,16 +559,20 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public int deallocate(Object object, TornadoDeviceObjectState state) {
+        if (state.isPinnedBuffer()) {
+            return -1;
+        }
+
         state.getBuffer().deallocate();
+        state.setContents(false);
         state.setBuffer(null);
         return -1;
     }
 
     @Override
     public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState state, int[] events, long batchSize, long offset) {
-//        allocate(object, batchSize, state);
-
-        if (BENCHMARKING_MODE) {
+        if (!state.hasContents() || BENCHMARKING_MODE) {
+            state.setContents(true);
             return state.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
         }
         return null;
@@ -575,7 +580,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public List<Integer> streamIn(Object object, long batchSize, long offset, TornadoDeviceObjectState state, int[] events) {
-//        allocate(object, batchSize, state);
+        state.setContents(true);
         return state.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
     }
 

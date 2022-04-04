@@ -346,6 +346,30 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
+    public TaskSchedule pinObjectInMemory(Object object) {
+        taskScheduleImpl.pinObjectInMemory(object);
+        return this;
+    }
+
+    @Override
+    public TaskSchedule pinObjectsInMemory(Object... objects) {
+        taskScheduleImpl.pinObjectsInMemory(objects);
+        return this;
+    }
+
+    @Override
+    public TaskSchedule releasePinnedObjects(Object... objects) {
+        taskScheduleImpl.releasePinnedObjects(objects);
+        return this;
+    }
+
+    @Override
+    public TaskSchedule releasePinnedObject(Object object) {
+        taskScheduleImpl.releasePinnedObject(object);
+        return this;
+    }
+
+    @Override
     public void syncObjects() {
         taskScheduleImpl.syncObjects();
     }

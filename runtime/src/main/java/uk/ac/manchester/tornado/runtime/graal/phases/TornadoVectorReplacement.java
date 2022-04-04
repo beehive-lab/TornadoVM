@@ -8,20 +8,19 @@ import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.NewInstanceNode;
 import org.graalvm.compiler.phases.BasePhase;
-import uk.ac.manchester.tornado.api.type.annotations.Payload;
-import uk.ac.manchester.tornado.api.type.annotations.TornadoCollection;
-import uk.ac.manchester.tornado.api.type.annotations.TornadoFieldVector;
 
 public class TornadoVectorReplacement extends BasePhase<TornadoHighTierContext> {
 
+    // TODO remove this class
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
         graph.getNodes().filter(node -> {
             if (node instanceof LoadFieldNode) {
                 AccessFieldNode accessFieldNode = (AccessFieldNode) node;
                 ResolvedJavaField field = accessFieldNode.field();
-                return (field.getDeclaringClass().isAnnotationPresent(TornadoCollection.class) && field.isAnnotationPresent(TornadoFieldVector.class))
-                        || field.isAnnotationPresent(Payload.class);
+//                return (field.getDeclaringClass().isAnnotationPresent(TornadoCollection.class) && field.isAnnotationPresent(TornadoFieldVector.class))
+//                        || field.isAnnotationPresent(Payload.class);
+                return true;
             }
             return false;
         }).forEach(node -> {

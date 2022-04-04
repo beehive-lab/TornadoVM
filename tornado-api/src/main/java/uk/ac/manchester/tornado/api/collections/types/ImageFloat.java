@@ -45,16 +45,16 @@ import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
-import uk.ac.manchester.tornado.api.type.annotations.TornadoCollection;
-import uk.ac.manchester.tornado.api.type.annotations.TornadoFieldVector;
 
-@TornadoCollection
+
+
+
 public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
 
     /**
      * backing array
      */
-    @TornadoFieldVector
+    
     protected final float[] storage;
 
     /**

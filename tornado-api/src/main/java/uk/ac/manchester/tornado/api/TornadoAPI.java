@@ -645,6 +645,14 @@ public interface TornadoAPI {
 
     void clearProfiles();
 
+    TornadoAPI pinObjectInMemory(Object object);
+
+    TornadoAPI pinObjectsInMemory(Object... objects);
+
+    TornadoAPI releasePinnedObject(Object object);
+
+    TornadoAPI releasePinnedObjects(Object... objects);
+
     void syncObjects();
 
     void syncObject(Object object);

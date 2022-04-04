@@ -28,6 +28,7 @@ public class OCLVectorWrapper implements ObjectBuffer {
     private final int arrayLengthOffset;
 
     private long bufferId;
+    private long bufferOffset;
     private long bufferSize;
 
     protected final OCLDeviceContext deviceContext;
@@ -41,8 +42,10 @@ public class OCLVectorWrapper implements ObjectBuffer {
         this.deviceContext = device;
         this.batchSize = batchSize;
         this.bufferId = INIT_VALUE;
-        this.bufferSize = INIT_VALUE;
-        this.kind = getJavaKind(TornadoUtils.getAnnotatedField(object, Payload.class).getClass());
+        this.bufferOffset = 0;
+        Object payload = TornadoUtils.getAnnotatedObjectFromField(object, Payload.class);
+        this.kind = getJavaKind(payload.getClass());
+        this.bufferSize = sizeOf(payload);
         this.arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
         this.arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
     }
@@ -54,7 +57,7 @@ public class OCLVectorWrapper implements ObjectBuffer {
     @Override
     public void allocate(Object value, long batchSize) {
         TornadoInternalError.guarantee(value instanceof PrimitiveStorage, "Expecting a PrimitiveStorage type");
-        final Object hostArray = TornadoUtils.getAnnotatedField(value, Payload.class);
+        final Object hostArray = TornadoUtils.getAnnotatedObjectFromField(value, Payload.class);
         if (batchSize <= 0) {
             bufferSize = sizeOf(hostArray);
         } else {
@@ -98,11 +101,11 @@ public class OCLVectorWrapper implements ObjectBuffer {
     @Override
     public int enqueueRead(final Object value, long hostOffset, final int[] events, boolean useDeps) {
         TornadoInternalError.guarantee(value instanceof PrimitiveStorage, "Expecting a PrimitiveStorage type");
-        final Object actualValue = TornadoUtils.getAnnotatedField(value, Payload.class);
+        final Object actualValue = TornadoUtils.getAnnotatedObjectFromField(value, Payload.class);
         if (actualValue == null) {
             throw new TornadoRuntimeException("[ERROR] output data is NULL");
         }
-        final int returnEvent = enqueueReadArrayData(toBuffer(), 0, bufferSize, actualValue, hostOffset, (useDeps) ? events : null);
+        final int returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset, bufferSize, actualValue, hostOffset, (useDeps) ? events : null);
         return useDeps ? returnEvent : -1;
     }
 
@@ -143,13 +146,13 @@ public class OCLVectorWrapper implements ObjectBuffer {
     @Override
     public List<Integer> enqueueWrite(final Object value, long batchSize, long hostOffset, final int[] events, boolean useDeps) {
         TornadoInternalError.guarantee(value instanceof PrimitiveStorage, "Expecting a PrimitiveStorage type");
-        final Object array = TornadoUtils.getAnnotatedField(value, Payload.class);
+        final Object array = TornadoUtils.getAnnotatedObjectFromField(value, Payload.class);
         ArrayList<Integer> listEvents = new ArrayList<>();
 
         if (array == null) {
             throw new TornadoRuntimeException("ERROR] Data to be copied is NULL");
         }
-        final int returnEvent = enqueueWriteArrayData(toBuffer(), 0, bufferSize, array, hostOffset, (useDeps) ? events : null);
+        final int returnEvent = enqueueWriteArrayData(toBuffer(), bufferOffset, bufferSize, array, hostOffset, (useDeps) ? events : null);
         listEvents.add(returnEvent);
         return useDeps ? listEvents : null;
     }
@@ -182,12 +185,12 @@ public class OCLVectorWrapper implements ObjectBuffer {
     @Override
     public int read(final Object value, long hostOffset, int[] events, boolean useDeps) {
         TornadoInternalError.guarantee(value instanceof PrimitiveStorage, "Expecting a PrimitiveStorage type");
-        final Object array = TornadoUtils.getAnnotatedField(value, Payload.class);
+        final Object array = TornadoUtils.getAnnotatedObjectFromField(value, Payload.class);
         if (array == null) {
             throw new TornadoRuntimeException("[ERROR] output data is NULL");
         }
 
-        return readArrayData(toBuffer(), 0, bufferSize, array, hostOffset, (useDeps) ? events : null);
+        return readArrayData(toBuffer(), bufferOffset, bufferSize, array, hostOffset, (useDeps) ? events : null);
     }
 
     private int readArrayData(long bufferId, long offset, long bytes, Object value, long hostOffset, int[] waitEvents) {
@@ -219,6 +222,19 @@ public class OCLVectorWrapper implements ObjectBuffer {
     }
 
     @Override
+    public void setBuffer(ObjectBufferWrapper bufferWrapper) {
+        this.bufferId = bufferWrapper.buffer;
+        this.bufferOffset = bufferWrapper.bufferOffset;
+
+        bufferWrapper.bufferOffset += size();
+    }
+
+    @Override
+    public long getBufferOffset() {
+        return bufferOffset;
+    }
+
+    @Override
     public String toString() {
         return String.format("buffer<%s> %s", kind.getJavaName(), humanReadableByteCount(bufferSize, true));
     }
@@ -226,12 +242,12 @@ public class OCLVectorWrapper implements ObjectBuffer {
     @Override
     public void write(final Object value) {
         TornadoInternalError.guarantee(value instanceof PrimitiveStorage, "Expecting a PrimitiveStorage type");
-        final Object array = TornadoUtils.getAnnotatedField(value, Payload.class);
+        final Object array = TornadoUtils.getAnnotatedObjectFromField(value, Payload.class);
         if (array == null) {
             throw new TornadoRuntimeException("[ERROR] data is NULL");
         }
         // TODO: Writing with offset != 0
-        writeArrayData(toBuffer(), 0, bufferSize, array, 0, null);
+        writeArrayData(toBuffer(), bufferOffset, bufferSize, array, 0, null);
     }
 
     private void writeArrayData(long bufferId, long offset, long bytes, Object value, long hostOffset, int[] waitEvents) {

@@ -49,13 +49,6 @@ public class GlobalObjectState implements TornadoGlobalObjectState {
         return deviceStates.get(device);
     }
 
-    public void invalidate() {
-        for (TornadoAcceleratorDevice device : deviceStates.keySet()) {
-            final DeviceObjectState deviceState = deviceStates.get(device);
-//            deviceState.invalidate();
-        }
-    }
-
     public void clear() {
         deviceStates.clear();
     }

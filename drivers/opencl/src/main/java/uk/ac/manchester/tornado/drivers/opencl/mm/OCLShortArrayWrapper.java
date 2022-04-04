@@ -34,6 +34,10 @@ public class OCLShortArrayWrapper extends OCLArrayWrapper<short[]> {
         super(deviceContext, JavaKind.Short, batchSize);
     }
 
+    protected OCLShortArrayWrapper(final short[] array, final OCLDeviceContext device, long batchSize) {
+        super(array, device, JavaKind.Short, batchSize);
+    }
+
     @Override
     protected int readArrayData(long bufferId, long offset, long bytes, short[] value, long hostOffset, int[] waitEvents) {
         return deviceContext.readBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);

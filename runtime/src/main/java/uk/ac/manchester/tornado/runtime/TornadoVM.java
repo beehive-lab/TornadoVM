@@ -43,7 +43,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
-import uk.ac.manchester.tornado.api.collections.types.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
@@ -56,10 +55,6 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
-import uk.ac.manchester.tornado.api.type.annotations.Payload;
-import uk.ac.manchester.tornado.api.type.annotations.TornadoCollection;
-import uk.ac.manchester.tornado.api.type.annotations.TornadoFieldVector;
-import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -210,12 +205,6 @@ public class TornadoVM extends TornadoLogger {
         return stacks[index];
     }
 
-    public void invalidateObjects() {
-        for (GlobalObjectState globalState : globalStates) {
-            globalState.invalidate();
-        }
-    }
-
     public void warmup() {
         execute(true);
         finishedWarmup = true;
@@ -250,9 +239,6 @@ public class TornadoVM extends TornadoLogger {
         DeviceObjectState[] objectStates = new DeviceObjectState[args.length];
         for (int i = 0; i < objects.length; i++) {
             objects[i] = this.objects.get(args[i]);
-            if (isTornadoType(objects[i])) {
-                objects[i] = TornadoUtils.getAnnotatedField(objects[i], TornadoFieldVector.class);
-            }
             objectStates[i] = resolveObjectState(args[i], contextIndex);
         }
 
@@ -267,10 +253,6 @@ public class TornadoVM extends TornadoLogger {
             return 0;
         }
 
-        if (isTornadoType(object)) {
-            object = TornadoUtils.getAnnotatedField(object, TornadoFieldVector.class);
-        }
-
         if (TornadoOptions.PRINT_BYTECODES && !isObjectAtomic(object)) {
             String verbose = String.format("vm: DEALLOCATE [0x%x] %s on %s", object.hashCode(), object, device);
             tornadoVMBytecodeList.append(verbose).append("\n");
@@ -278,11 +260,6 @@ public class TornadoVM extends TornadoLogger {
 
         final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
         return device.deallocate(object, objectState);
-    }
-
-    private boolean isTornadoType(Object object) {
-        return object != null && (object.getClass().isAnnotationPresent(TornadoCollection.class) ||
-                (!object.getClass().isAnnotationPresent(Vector.class) && TornadoUtils.hasAnnotatedField(object, Payload.class)));
     }
 
     private boolean isObjectAtomic(Object object) {
@@ -301,10 +278,6 @@ public class TornadoVM extends TornadoLogger {
             return 0;
         }
 
-        if (isTornadoType(object)) {
-            object = TornadoUtils.getAnnotatedField(object, TornadoFieldVector.class);
-        }
-
         final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
 
         if (TornadoOptions.PRINT_BYTECODES & !isObjectAtomic(object)) {
@@ -312,7 +285,15 @@ public class TornadoVM extends TornadoLogger {
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
 
-        List<Integer> allEvents = device.streamIn(object, sizeBatch, offset, objectState, waitList);
+        List<Integer> allEvents;
+        if (sizeBatch > 0) {
+            // We need to stream-in when using batches, because the
+            // whole data is not copied yet.
+            allEvents = device.streamIn(object, sizeBatch, offset, objectState, waitList);
+        } else {
+            allEvents = device.ensurePresent(object, objectState, waitList, sizeBatch, offset);
+        }
+
         resetEventIndexes(eventList);
 
         if (TornadoOptions.isProfilerEnabled() && allEvents != null) {
@@ -340,10 +321,6 @@ public class TornadoVM extends TornadoLogger {
 
         if (isObjectKernelContext(object)) {
             return 0;
-        }
-
-        if (isTornadoType(object)) {
-            object = TornadoUtils.getAnnotatedField(object, TornadoFieldVector.class);
         }
 
         if (TornadoOptions.PRINT_BYTECODES && !isObjectAtomic(object)) {
@@ -383,10 +360,6 @@ public class TornadoVM extends TornadoLogger {
             return 0;
         }
 
-        if (isTornadoType(object)) {
-            object = TornadoUtils.getAnnotatedField(object, TornadoFieldVector.class);
-        }
-
         if (TornadoOptions.PRINT_BYTECODES) {
             String verbose = String.format("vm: STREAM_OUT [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
             tornadoVMBytecodeList.append(verbose).append("\n");
@@ -422,10 +395,6 @@ public class TornadoVM extends TornadoLogger {
 
         if (isObjectKernelContext(object)) {
             return;
-        }
-
-        if (isTornadoType(object)) {
-            object = TornadoUtils.getAnnotatedField(object, TornadoFieldVector.class);
         }
 
         if (TornadoOptions.PRINT_BYTECODES) {

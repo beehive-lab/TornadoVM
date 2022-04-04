@@ -92,7 +92,13 @@ public interface AbstractTaskGraph extends ProfileInterface {
 
     void warmup();
 
-    void invalidateObjects();
+    void pinObjectInMemory(Object object);
+
+    void pinObjectsInMemory(Object[] objects);
+
+    void releasePinnedObject(Object object);
+
+    void releasePinnedObjects(Object[] objects);
 
     void syncObject(Object object);
 

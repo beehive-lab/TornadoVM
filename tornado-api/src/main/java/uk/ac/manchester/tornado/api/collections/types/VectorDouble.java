@@ -45,14 +45,14 @@ import java.nio.DoubleBuffer;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
-import uk.ac.manchester.tornado.api.type.annotations.TornadoCollection;
-import uk.ac.manchester.tornado.api.type.annotations.TornadoFieldVector;
 
-@TornadoCollection
+
+
+
 public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
 
     private final int numElements;
-    @TornadoFieldVector
+    
     private final double[] storage;
     private static final int ELEMENT_SIZE = 1;
 

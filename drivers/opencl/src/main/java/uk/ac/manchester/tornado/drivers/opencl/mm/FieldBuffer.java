@@ -42,24 +42,11 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 public class FieldBuffer {
 
     private final Field field;
-
     private final ObjectBuffer objectBuffer;
 
     public FieldBuffer(final Field field, final ObjectBuffer objectBuffer) {
         this.objectBuffer = objectBuffer;
         this.field = field;
-    }
-
-    public boolean isFinal() {
-        return Modifier.isFinal(field.getModifiers());
-    }
-
-    public void allocate(final Object ref, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
-        objectBuffer.allocate(getFieldValue(ref), batchSize);
-    }
-
-    public void deallocate() throws TornadoOutOfMemoryException, TornadoMemoryException {
-        objectBuffer.deallocate();
     }
 
     public int enqueueRead(final Object ref, final int[] events, boolean useDeps) {
@@ -99,17 +86,6 @@ public class FieldBuffer {
         return objectBuffer.read(getFieldValue(ref), 0, events, useDeps);
     }
 
-    public long toBuffer() {
-        return objectBuffer.toBuffer();
-    }
-
-//    public boolean needsWrite() {
-//        return !onDevice() || !RuntimeUtilities.isPrimitive(field.getType());
-//    }
-    public boolean needsWrite() {
-        return true;
-    }
-
     public void write(final Object ref) {
         if (DEBUG) {
             trace("fieldBuffer: write - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
@@ -123,6 +99,14 @@ public class FieldBuffer {
 
     public long size() {
         return objectBuffer.size();
+    }
+
+    void setBuffer(ObjectBuffer.ObjectBufferWrapper bufferWrapper) {
+        objectBuffer.setBuffer(bufferWrapper);
+    }
+
+    long getBufferOffset() {
+        return objectBuffer.getBufferOffset();
     }
 
 }

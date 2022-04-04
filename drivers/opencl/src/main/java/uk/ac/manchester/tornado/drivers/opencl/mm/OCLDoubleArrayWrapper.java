@@ -34,6 +34,10 @@ public class OCLDoubleArrayWrapper extends OCLArrayWrapper<double[]> {
         super(deviceContext, JavaKind.Double, batchSize);
     }
 
+    protected OCLDoubleArrayWrapper(final double[] array, final OCLDeviceContext device, long batchSize) {
+        super(array, device, JavaKind.Double, batchSize);
+    }
+
     @Override
     protected int readArrayData(long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents) {
         return deviceContext.readBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);

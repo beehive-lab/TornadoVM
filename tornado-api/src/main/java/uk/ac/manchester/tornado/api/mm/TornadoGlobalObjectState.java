@@ -47,8 +47,6 @@ public interface TornadoGlobalObjectState {
 
     TornadoDeviceObjectState getDeviceState(TornadoDevice device);
 
-    void invalidate();
-
     void clear();
 
 }

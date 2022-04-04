@@ -30,6 +30,7 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRunt
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
+import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 
 public class LocalObjectState {
 
@@ -74,8 +75,12 @@ public class LocalObjectState {
     }
 
     public Event sync(Object object, TornadoDevice device) {
-        int eventId = device.streamOutBlocking(object, 0, global.getDeviceState(device), null);
-        return device.resolveEvent(eventId);
+        DeviceObjectState objectState = global.getDeviceState(device);
+        if (objectState.isPinnedBuffer()) {
+            int eventId = device.streamOutBlocking(object, 0, objectState, null);
+            return device.resolveEvent(eventId);
+        }
+        return null;
     }
 
     @Override

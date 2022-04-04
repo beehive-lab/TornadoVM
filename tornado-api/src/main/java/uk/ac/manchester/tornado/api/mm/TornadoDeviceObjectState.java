@@ -52,4 +52,10 @@ public interface TornadoDeviceObjectState {
     boolean isAtomicRegionPresent();
 
     void setAtomicRegion();
+
+    boolean isPinnedBuffer();
+
+    boolean hasContents();
+
+    void setContents(boolean value);
 }

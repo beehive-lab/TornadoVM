@@ -41,17 +41,17 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import uk.ac.manchester.tornado.api.type.annotations.TornadoCollection;
-import uk.ac.manchester.tornado.api.type.annotations.TornadoFieldVector;
+
+
 
 import java.nio.FloatBuffer;
 
-@TornadoCollection
+
 public class Matrix3DFloat4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
-    @TornadoFieldVector
+    
     protected final float[] storage;
 
     /**

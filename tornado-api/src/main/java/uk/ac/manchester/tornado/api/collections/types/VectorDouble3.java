@@ -38,8 +38,8 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import uk.ac.manchester.tornado.api.type.annotations.TornadoCollection;
-import uk.ac.manchester.tornado.api.type.annotations.TornadoFieldVector;
+
+
 
 import static java.lang.String.format;
 import static uk.ac.manchester.tornado.api.collections.types.Double3.add;
@@ -47,13 +47,13 @@ import static uk.ac.manchester.tornado.api.collections.types.Double3.loadFromArr
 
 import java.nio.DoubleBuffer;
 
-@TornadoCollection
+
 public class VectorDouble3 implements PrimitiveStorage<DoubleBuffer> {
 
     /**
      * backing array
      */
-    @TornadoFieldVector
+    
     protected final double[] storage;
 
     /**

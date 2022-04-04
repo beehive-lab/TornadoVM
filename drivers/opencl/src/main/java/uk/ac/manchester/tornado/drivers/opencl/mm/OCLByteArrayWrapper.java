@@ -35,6 +35,10 @@ public class OCLByteArrayWrapper extends OCLArrayWrapper<byte[]> {
         super(device, JavaKind.Byte, batchSize);
     }
 
+    protected OCLByteArrayWrapper(final byte[] array, final OCLDeviceContext device, long batchSize) {
+        super(array, device, JavaKind.Byte, batchSize);
+    }
+
     @Override
     protected int readArrayData(long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents) {
         return deviceContext.readBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);

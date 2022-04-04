@@ -48,7 +48,21 @@ import java.util.List;
 
 public interface ObjectBuffer {
 
+    class ObjectBufferWrapper {
+        public final long buffer;
+        public long bufferOffset;
+
+        public ObjectBufferWrapper(long buffer, long bufferOffset) {
+            this.buffer = buffer;
+            this.bufferOffset = bufferOffset;
+        }
+    }
+
     long toBuffer();
+
+    void setBuffer(ObjectBufferWrapper bufferWrapper);
+
+    long getBufferOffset();
 
     void read(Object reference);
 

@@ -53,6 +53,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     private final int arrayLengthOffset;
 
     private long bufferId;
+    private long bufferOffset;
     private long bufferSize;
 
     protected final OCLDeviceContext deviceContext;
@@ -66,9 +67,15 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         this.batchSize = batchSize;
         this.bufferId = INIT_VALUE;
         this.bufferSize = INIT_VALUE;
+        this.bufferOffset = 0;
 
         arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
         arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
+    }
+
+    protected OCLArrayWrapper(final T array, final OCLDeviceContext device, final JavaKind kind, long batchSize) {
+        this(device, kind, batchSize);
+        bufferSize = sizeOf(array);
     }
 
     public long getBatchSize() {
@@ -162,7 +169,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         }
         final int returnEvent;
         // FIXME: <REFACTOR>
-        returnEvent = enqueueReadArrayData(toBuffer(), arrayHeaderSize, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+        returnEvent = enqueueReadArrayData(toBuffer(), arrayHeaderSize + bufferOffset, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         return useDeps ? returnEvent : -1;
     }
 
@@ -200,7 +207,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         } else {
             headerEvent = buildArrayHeaderBatch(batchSize).enqueueWrite((useDeps) ? events : null);
         }
-        returnEvent = enqueueWriteArrayData(toBuffer(), arrayHeaderSize, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+        returnEvent = enqueueWriteArrayData(toBuffer(), arrayHeaderSize + bufferOffset, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
 
         listEvents.add(headerEvent);
         listEvents.add(returnEvent);
@@ -226,7 +233,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     abstract protected int enqueueWriteArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
     private OCLByteBuffer getArrayHeader() {
-        final OCLByteBuffer header = new OCLByteBuffer(deviceContext, bufferId, 0, arrayHeaderSize);
+        final OCLByteBuffer header = new OCLByteBuffer(deviceContext, bufferId, bufferOffset, arrayHeaderSize);
         header.buffer.clear();
         return header;
     }
@@ -270,19 +277,19 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
         if (VALIDATE_ARRAY_HEADERS) {
             if (validateArrayHeader(array)) {
-                return readArrayData(toBuffer(), arrayHeaderSize, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+                return readArrayData(toBuffer(), arrayHeaderSize + bufferOffset, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
             } else {
                 shouldNotReachHere("Array header is invalid");
             }
         } else {
-            return readArrayData(toBuffer(), arrayHeaderSize, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+            return readArrayData(toBuffer(), arrayHeaderSize + bufferOffset, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         }
         return -1;
     }
 
     abstract protected int readArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
-    private long sizeOf(final T array) {
+    public long sizeOf(final T array) {
         return arrayHeaderSize + ((long) Array.getLength(array) * (long) kind.getByteCount());
     }
 
@@ -293,6 +300,19 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     @Override
     public long toBuffer() {
         return bufferId;
+    }
+
+    @Override
+    public void setBuffer(ObjectBufferWrapper bufferWrapper) {
+        this.bufferId = bufferWrapper.buffer;
+        this.bufferOffset = bufferWrapper.bufferOffset;
+
+        bufferWrapper.bufferOffset += size();
+    }
+
+    @Override
+    public long getBufferOffset() {
+        return bufferOffset;
     }
 
     @Override
@@ -324,7 +344,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         }
         buildArrayHeader(Array.getLength(array)).write();
         // TODO: Writing with offset != 0
-        writeArrayData(toBuffer(), arrayHeaderSize, bufferSize - arrayHeaderSize, array, 0, null);
+        writeArrayData(toBuffer(), arrayHeaderSize + bufferOffset, bufferSize - arrayHeaderSize, array, 0, null);
     }
 
     abstract protected void writeArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);

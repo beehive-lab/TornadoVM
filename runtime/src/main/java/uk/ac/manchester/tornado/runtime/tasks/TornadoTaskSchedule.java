@@ -831,9 +831,39 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @Override
-    public void invalidateObjects() {
-        if (vm != null) {
-            vm.invalidateObjects();
+    public void pinObjectInMemory(Object object) {
+        final LocalObjectState localState = executionContext.getObjectState(object);
+        final GlobalObjectState globalState = localState.getGlobalState();
+        final TornadoAcceleratorDevice device = meta().getLogicDevice();
+        final DeviceObjectState deviceState = globalState.getDeviceState(device);
+        deviceState.setPinnedBuffer(true);
+    }
+
+    @Override
+    public void pinObjectsInMemory(Object[] objects) {
+        for (Object obj : objects) {
+            pinObjectInMemory(obj);
+        }
+    }
+
+    @Override
+    public void releasePinnedObject(Object object) {
+        if (vm == null) {
+            return;
+        }
+
+        final LocalObjectState localState = executionContext.getObjectState(object);
+        final GlobalObjectState globalState = localState.getGlobalState();
+        final TornadoAcceleratorDevice device = meta().getLogicDevice();
+        final DeviceObjectState deviceState = globalState.getDeviceState(device);
+        deviceState.setPinnedBuffer(false);
+        device.deallocate(object, deviceState);
+    }
+
+    @Override
+    public void releasePinnedObjects(Object[] objects) {
+        for (Object obj : objects) {
+            releasePinnedObject(obj);
         }
     }
 
@@ -857,7 +887,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         final GlobalObjectState globalState = localState.getGlobalState();
         final TornadoAcceleratorDevice device = meta().getLogicDevice();
         final DeviceObjectState deviceState = globalState.getDeviceState(device);
-        return device.resolveEvent(device.streamOutBlocking(object, 0, deviceState, null));
+        if (deviceState.isPinnedBuffer()) {
+            return device.resolveEvent(device.streamOutBlocking(object, 0, deviceState, null));
+        }
+        return null;
     }
 
     @Override
@@ -888,7 +921,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
 
         for (Event e : events) {
-            e.waitOn();
+            if (e != null) {
+                e.waitOn();
+            }
         }
 
         if (TornadoOptions.isProfilerEnabled()) {
@@ -898,9 +933,13 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
              */
             timeProfiler.clean();
             for (int i = 0; i < events.length; i++) {
+                Event event = events[i];
+                if (event == null) {
+                    continue;
+                }
                 long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME_SYNC);
-                events[i].waitForEvents();
-                value += events[i].getElapsedTime();
+                event.waitForEvents();
+                value += event.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME_SYNC, value);
                 LocalObjectState localState = executionContext.getObjectState(objects[i]);
                 DeviceObjectState deviceObjectState = localState.getGlobalState().getDeviceState(meta().getLogicDevice());
