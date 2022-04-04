@@ -67,6 +67,7 @@ public class OCLCodeCache {
 
     private static final String FALSE = "False";
     private static final String TRUE = "True";
+    private static final int SPIRV_MAGIC_NUMBER = 119734787;
     public static String fpgaBinLocation;
     private final String OPENCL_SOURCE_SUFFIX = ".cl";
     private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", FALSE));
@@ -501,10 +502,23 @@ public class OCLCodeCache {
         return null;
     }
 
+    private boolean isInputSourceSPIRVBinary(byte[] source) {
+        // Check the header of this binary for the SPIRV-header number
+        int value = (source[0] & 255) + ((source[1] & 255) << 8) + ((source[2] & 255) << 16) + ((source[3] & 255) << 24);
+        return value == SPIRV_MAGIC_NUMBER;
+    }
+
     public OCLInstalledCode installSource(TaskMetaData meta, String id, String entryPoint, byte[] source) {
 
         info("Installing code for %s into code cache", entryPoint);
-        final OCLProgram program = deviceContext.createProgramWithSource(source, new long[] { source.length });
+
+        boolean isSPIRVBinary = isInputSourceSPIRVBinary(source);
+        final OCLProgram program;
+        if (isSPIRVBinary) {
+            program = deviceContext.createProgramWithIL(source, new long[] { source.length });
+        } else {
+            program = deviceContext.createProgramWithSource(source, new long[] { source.length });
+        }
 
         if (OPENCL_DUMP_SOURCE) {
             final Path outDir = resolveSourceDirectory();
@@ -563,7 +577,7 @@ public class OCLCodeCache {
             kernelAvailable = true;
         }
 
-        final OCLInstalledCode code = new OCLInstalledCode(entryPoint, source, (OCLDeviceContext) deviceContext, program, kernel);
+        final OCLInstalledCode code = new OCLInstalledCode(entryPoint, source, (OCLDeviceContext) deviceContext, program, kernel, isSPIRVBinary);
 
         if (status == CL_BUILD_SUCCESS) {
             debug("\tOpenCL Kernel id = 0x%x", kernel.getOclKernelID());
@@ -593,13 +607,19 @@ public class OCLCodeCache {
             entryPoint = entryPoint.split("-")[1];
         }
 
-        OCLProgram program = null;
+        OCLProgram program;
+        boolean isSPIRVBinary = false;
         OCLBuildStatus status = CL_BUILD_SUCCESS;
         if (shouldReuseProgramObject(entryPoint)) {
             program = cache.get(LOOKUP_BUFFER_KERNEL_NAME).getProgram();
         } else {
             long beforeLoad = (Tornado.TIME_IN_NANOSECONDS) ? System.nanoTime() : System.currentTimeMillis();
-            program = deviceContext.createProgramWithBinary(binary, new long[] { binary.length });
+            isSPIRVBinary = isInputSourceSPIRVBinary(binary);
+            if (isSPIRVBinary) {
+                program = deviceContext.createProgramWithIL(binary, new long[] { binary.length });
+            } else {
+                program = deviceContext.createProgramWithBinary(binary, new long[] { binary.length });
+            }
             long afterLoad = (Tornado.TIME_IN_NANOSECONDS) ? System.nanoTime() : System.currentTimeMillis();
 
             if (PRINT_LOAD_TIME) {
@@ -622,7 +642,7 @@ public class OCLCodeCache {
         }
 
         final OCLKernel kernel = (status == CL_BUILD_SUCCESS) ? program.getKernel(entryPoint) : null;
-        final OCLInstalledCode code = new OCLInstalledCode(entryPoint, binary, (OCLDeviceContext) deviceContext, program, kernel);
+        final OCLInstalledCode code = new OCLInstalledCode(entryPoint, binary, (OCLDeviceContext) deviceContext, program, kernel, isSPIRVBinary);
 
         if (status == CL_BUILD_SUCCESS) {
             debug("\tOpenCL Kernel id = 0x%x", kernel.getOclKernelID());
@@ -638,7 +658,7 @@ public class OCLCodeCache {
                     String childKernelName = pair.entryPoint;
                     if (!childKernelName.equals(entryPoint)) {
                         final OCLKernel kernel2 = program.getKernel(childKernelName);
-                        final OCLInstalledCode code2 = new OCLInstalledCode(entryPoint, binary, (OCLDeviceContext) deviceContext, program, kernel2);
+                        final OCLInstalledCode code2 = new OCLInstalledCode(entryPoint, binary, (OCLDeviceContext) deviceContext, program, kernel2, isSPIRVBinary);
                         cache.put(taskScheduleName + "." + pair.taskName + "-" + childKernelName, code2);
                     }
                 }

@@ -1,19 +1,19 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.unittests.reductions;
@@ -41,8 +41,165 @@ public class TestReductionsIntegers extends TornadoTestBase {
     private static final int LARGE_SIZE = 262144;
     private static final int SIZE = 4096;
 
+    /**
+     * First approach: use annotations in the user code to identify the reduction
+     * variables. This is a similar approach to OpenMP and OpenACC.
+     *
+     * @param input
+     * @param result
+     */
+    private static void reductionAnnotation(int[] input, @Reduce int[] result) {
+        result[0] = 0;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] += input[i];
+        }
+    }
+
+    private static void reductionAnnotationConstant(int[] input, @Reduce int[] result) {
+        result[0] = 0;
+        for (@Parallel int i = 0; i < SMALL_SIZE; i++) {
+            result[0] += input[i];
+        }
+    }
+
+    private static void reductionAnnotation2(int[] input, @Reduce int[] result) {
+        result[0] = 0;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] += input[i];
+        }
+    }
+
+    private static void reductionAnnotationLarge(int[] input, @Reduce int[] result) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] += input[i];
+        }
+    }
+
+    private static void multReductionAnnotation(int[] input, @Reduce int[] result) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] *= input[i];
+        }
+    }
+
+    private static void maxReductionAnnotation(int[] input, @Reduce int[] result, int neutral) {
+        result[0] = neutral;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] = TornadoMath.max(result[0], input[i]);
+        }
+    }
+
+    private static void minReductionAnnotation(int[] input, @Reduce int[] result) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] = TornadoMath.min(result[0], input[i]);
+        }
+    }
+
+    private static void reductionSequentialSmall(int[] input, int[] result) {
+        int acc = 0; // neutral element for the addition
+        for (int i = 0; i < input.length; i++) {
+            acc += input[i];
+        }
+        result[0] = acc;
+    }
+
+    private static void reduction01(int[] a, @Reduce int[] result) {
+        result[0] = 0;
+        for (@Parallel int i = 0; i < a.length; i++) {
+            result[0] += a[i];
+        }
+    }
+
+    private static void mapReduce01(int[] a, int[] b, int[] c, @Reduce int[] result) {
+
+        // map
+        for (@Parallel int i = 0; i < a.length; i++) {
+            c[i] = a[i] + b[i];
+        }
+
+        // barrier needed
+
+        // reduction
+        result[0] = 0;
+        for (@Parallel int i = 0; i < c.length; i++) {
+            result[0] += c[i];
+        }
+    }
+
+    private static void map01(int[] a, int[] b, int[] c) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            c[i] = a[i] + b[i];
+        }
+    }
+
+    private static void reduce01(int[] c, @Reduce int[] result) {
+        // reduction
+        result[0] = 0;
+        for (@Parallel int i = 0; i < c.length; i++) {
+            result[0] += c[i];
+        }
+    }
+
+    private static void map02(int[] a, int[] b) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            b[i] = a[i] * a[i];
+        }
+    }
+
+    private static void reduce02(int[] b, @Reduce int[] result) {
+        // reduction
+        result[0] = 0;
+        for (@Parallel int i = 0; i < b.length; i++) {
+            result[0] += b[i];
+        }
+    }
+
+    /**
+     * We reuse one of the input values
+     *
+     * @param a
+     * @param b
+     * @param result
+     */
+    private static void mapReduce2(int[] a, int[] b, @Reduce int[] result) {
+        // map
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = a[i] * b[i];
+        }
+
+        for (@Parallel int i = 0; i < a.length; i++) {
+            result[0] += a[i];
+        }
+    }
+
+    private static void reductionAddInts2(int[] input, @Reduce int[] result) {
+        int error = 2;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] += (error + input[i]);
+        }
+    }
+
+    private static void reductionAddInts3(int[] inputA, int[] inputB, @Reduce int[] result) {
+        for (@Parallel int i = 0; i < inputA.length; i++) {
+            result[0] += (inputA[i] + inputB[i]);
+        }
+    }
+
+    private static void maxReductionAnnotation2(int[] input, @Reduce int[] result, int neutral) {
+        result[0] = neutral;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] = TornadoMath.max(result[0], input[i] * 100);
+        }
+    }
+
+    private static void minReductionAnnotation2(int[] input, @Reduce int[] result, int neutral) {
+        result[0] = neutral;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] = TornadoMath.min(result[0], input[i] * 50);
+        }
+    }
+
     @Test
-    public void testReductionAnnotationCPUSimple() {
+    public void testReductionSimple() {
 
         int[] input = new int[SMALL_SIZE];
         int[] result = new int[] { 0 };
@@ -93,40 +250,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
         assertEquals(sequential[0], result[0]);
     }
 
-    /**
-     * First approach: use annotations in the user code to identify the reduction
-     * variables. This is a similar approach to OpenMP and OpenACC.
-     * 
-     * @param input
-     * @param result
-     */
-    private static void reductionAnnotation(int[] input, @Reduce int[] result) {
-        result[0] = 0;
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] += input[i];
-        }
-    }
-
-    private static void reductionAnnotationConstant(int[] input, @Reduce int[] result) {
-        result[0] = 0;
-        for (@Parallel int i = 0; i < SMALL_SIZE; i++) {
-            result[0] += input[i];
-        }
-    }
-
-    private static void reductionAnnotation2(int[] input, @Reduce int[] result) {
-        result[0] = 0;
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] += input[i];
-        }
-    }
-
-    private static void reductionAnnotationLarge(int[] input, @Reduce int[] result) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] += input[i];
-        }
-    }
-
     @Test
     public void testReductionAnnotation() {
         int[] input = new int[SIZE];
@@ -171,12 +294,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
         assertEquals(sequential[0], result[0]);
     }
 
-    private static void multReductionAnnotation(int[] input, @Reduce int[] result) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] *= input[i];
-        }
-    }
-
     @Test
     public void testMultiplicationReduction() {
         int[] input = new int[64];
@@ -201,13 +318,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         // Check result
         assertEquals(sequential[0], result[0]);
-    }
-
-    private static void maxReductionAnnotation(int[] input, @Reduce int[] result, int neutral) {
-        result[0] = neutral;
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] = TornadoMath.max(result[0], input[i]);
-        }
     }
 
     @Test
@@ -238,12 +348,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
         assertEquals(sequential[0], result[0]);
     }
 
-    private static void minReductionAnnotation(int[] input, @Reduce int[] result) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] = TornadoMath.min(result[0], input[i]);
-        }
-    }
-
     @Test
     public void testMinReduction() {
         int[] input = new int[SIZE];
@@ -265,14 +369,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
         minReductionAnnotation(input, sequential);
 
         assertEquals(sequential[0], result[0]);
-    }
-
-    private static void reductionSequentialSmall(int[] input, int[] result) {
-        int acc = 0; // neutral element for the addition
-        for (int i = 0; i < input.length; i++) {
-            acc += input[i];
-        }
-        result[0] = acc;
     }
 
     @Test
@@ -299,13 +395,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.001f);
     }
 
-    private static void reduction01(int[] a, @Reduce int[] result) {
-        result[0] = 0;
-        for (@Parallel int i = 0; i < a.length; i++) {
-            result[0] += a[i];
-        }
-    }
-
     @Test
     public void testReduction01() {
         int[] input = new int[SMALL_SIZE];
@@ -330,36 +419,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
         assertEquals(sequential[0], result[0]);
     }
 
-    private static void mapReduce01(int[] a, int[] b, int[] c, @Reduce int[] result) {
-
-        // map
-        for (@Parallel int i = 0; i < a.length; i++) {
-            c[i] = a[i] + b[i];
-        }
-
-        // barrier needed
-
-        // reduction
-        result[0] = 0;
-        for (@Parallel int i = 0; i < c.length; i++) {
-            result[0] += c[i];
-        }
-    }
-
-    private static void map01(int[] a, int[] b, int[] c) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            c[i] = a[i] + b[i];
-        }
-    }
-
-    private static void reduce01(int[] c, @Reduce int[] result) {
-        // reduction
-        result[0] = 0;
-        for (@Parallel int i = 0; i < c.length; i++) {
-            result[0] += c[i];
-        }
-    }
-
     @Test
     public void testMapReduce() {
         int[] a = new int[BIG_SIZE];
@@ -378,27 +437,13 @@ public class TestReductionsIntegers extends TornadoTestBase {
             .task("t0", TestReductionsIntegers::map01, a, b, c)
             .task("t1", TestReductionsIntegers::reduce01, c, result)
             .streamOut(result)
-            .execute();        
+            .execute();
         //@formatter:on
 
         int[] sequential = new int[BIG_SIZE];
         mapReduce01(a, b, c, sequential);
 
         assertEquals(sequential[0], result[0]);
-    }
-
-    private static void map02(int[] a, int[] b) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            b[i] = a[i] * a[i];
-        }
-    }
-
-    private static void reduce02(int[] b, @Reduce int[] result) {
-        // reduction
-        result[0] = 0;
-        for (@Parallel int i = 0; i < b.length; i++) {
-            result[0] += b[i];
-        }
     }
 
     @Test
@@ -419,7 +464,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
             .task("t0", TestReductionsIntegers::map02, a, b)
             .task("t1", TestReductionsIntegers::reduce02, b, result)
             .streamOut(result)
-            .execute();        
+            .execute();
         //@formatter:on
 
         int[] sequential = new int[BIG_SIZE];
@@ -461,24 +506,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
         assertEquals(sequential[0], result[0]);
     }
 
-    /**
-     * We reuse one of the input values
-     * 
-     * @param a
-     * @param b
-     * @param result
-     */
-    private static void mapReduce2(int[] a, int[] b, @Reduce int[] result) {
-        // map
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = a[i] * b[i];
-        }
-
-        for (@Parallel int i = 0; i < a.length; i++) {
-            result[0] += a[i];
-        }
-    }
-
     @Ignore
     public void testMapReduce2() {
         int[] a = new int[BIG_SIZE];
@@ -502,19 +529,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
         mapReduce2(a, b, sequential);
 
         assertEquals(sequential[0], result[0]);
-    }
-
-    private static void reductionAddInts2(int[] input, @Reduce int[] result) {
-        int error = 2;
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] += (error + input[i]);
-        }
-    }
-
-    private static void reductionAddInts3(int[] inputA, int[] inputB, @Reduce int[] result) {
-        for (@Parallel int i = 0; i < inputA.length; i++) {
-            result[0] += (inputA[i] + inputB[i]);
-        }
     }
 
     @Test
@@ -568,13 +582,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
         assertEquals(sequential[0], result[0]);
     }
 
-    private static void maxReductionAnnotation2(int[] input, @Reduce int[] result, int neutral) {
-        result[0] = neutral;
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] = TornadoMath.max(result[0], input[i] * 100);
-        }
-    }
-
     @Test
     public void testMaxReduction2() {
         int[] input = new int[SIZE];
@@ -598,13 +605,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
         maxReductionAnnotation2(input, sequential, neutral);
 
         assertEquals(sequential[0], result[0]);
-    }
-
-    private static void minReductionAnnotation2(int[] input, @Reduce int[] result, int neutral) {
-        result[0] = neutral;
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] = TornadoMath.min(result[0], input[i] * 50);
-        }
     }
 
     @Test

@@ -27,8 +27,8 @@ package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 public class LevelZeroByteBuffer {
 
     private long ptrBuffer;
-    private int size;
-    private int alignment;
+    private long size;
+    private long alignment;
 
     public LevelZeroByteBuffer() {
         this.ptrBuffer = -1;
@@ -44,11 +44,11 @@ public class LevelZeroByteBuffer {
         return this.ptrBuffer;
     }
 
-    public int getSize() {
+    public long getSize() {
         return this.size;
     }
 
-    public int getAlignment() {
+    public long getAlignment() {
         return this.alignment;
     }
 
@@ -78,14 +78,14 @@ public class LevelZeroByteBuffer {
 
     /**
      * Copies the input array into the LevelZeroBuffer
-     * 
+     *
      * @param array
      */
     public void copy(byte[] array) {
         copy_native(this.ptrBuffer, array);
     }
 
-    private native byte[] getByteBuffer_native(long ptrBuffer, int size);
+    private native byte[] getByteBuffer_native(long ptrBuffer, long size);
 
     public byte[] getByteBuffer() {
         return getByteBuffer_native(this.ptrBuffer, this.size);

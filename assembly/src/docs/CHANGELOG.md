@@ -2,6 +2,39 @@
 
 This file summarizes the new features and major changes for each *TornadoVM* version.
 
+## TornadoVM 0.13
+
+21/03/2022
+
+- Integration with JDK 17 and Graal 21.3.0 
+    - JDK 11 is the default version and the support for the JDK 8 has been deprecated
+- Support for extended intrinsics regarding math operations
+- Native functions are enabled by default
+- Support for 2D arrays for PTX and SPIR-V backends:
+    - https://github.com/beehive-lab/TornadoVM/commit/2ef32ca97941410672720f9dfa15f0151ae2a1a1  
+- Integer Test Move operation supported:
+    - https://github.com/beehive-lab/TornadoVM/pull/177 
+- Improvements in the SPIR-V Backend:
+    - Experimental SPIR-V optimizer. Binary size reduction of up to 3x
+        - https://github.com/beehive-lab/TornadoVM/commit/394ca94dcdc3cb58d15a17046e1d22c6389b55b7
+    - Fix malloc functions for Level-Zero 
+    - Support for pre-built SPIR-V binary modules using the TornadoVM runtime for OpenCL
+    - Performance increase due to cached buffers on GPUs by default
+    - Disassembler option for SPIR-V binary modules. Use `--printKernel`
+- Improved Installation:
+    - Full automatic installer script integrated
+- Documentation about the installation for Windows 11 
+- Refactoring and several bug fixes
+    - https://github.com/beehive-lab/TornadoVM/commit/57694186b42ec28b16066fb549ab8fcf9bff9753
+    - Vector types fixed: 
+        - https://github.com/beehive-lab/TornadoVM/pull/181/files 
+        - https://github.com/beehive-lab/TornadoVM/commit/004d61d6d26945b45ebff66641b60f90f00486be  
+    - Fix AtomicInteger get for OpenCL:
+        - https://github.com/beehive-lab/TornadoVM/pull/177 
+- Dependencies for Math3 and Lang3 updated
+
+
+
 ## TornadoVM 0.12
 
 17/11/2021

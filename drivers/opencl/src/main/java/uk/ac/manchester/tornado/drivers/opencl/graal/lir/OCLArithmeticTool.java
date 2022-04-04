@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2018, 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -36,6 +36,7 @@ import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
 
 import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
@@ -62,6 +63,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.VectorLoadSt
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.VectorStoreStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
+import uk.ac.manchester.tornado.drivers.opencl.graal.meta.OCLMemorySpace;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorUtil;
 
 public class OCLArithmeticTool extends ArithmeticLIRGenerator {
@@ -332,7 +334,7 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         if (oclKind.isVector()) {
             OCLBinaryIntrinsic intrinsic = VectorUtil.resolveLoadIntrinsic(oclKind);
             OCLAddressCast cast = new OCLAddressCast(base, LIRKind.value(oclKind.getElementKind()));
-            emitVectorLoad(result, intrinsic, new ConstantValue(LIRKind.value(OCLKind.INT), PrimitiveConstant.INT_0), cast, (MemoryAccess) address);
+            emitVectorLoad(result, intrinsic, getOffsetValue(oclKind, (MemoryAccess) address), cast, (MemoryAccess) address);
         } else {
             OCLAddressCast cast = new OCLAddressCast(base, lirKind);
             emitLoad(result, cast, (MemoryAccess) address);
@@ -364,7 +366,7 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         if (oclKind.isVector()) {
             OCLTernaryIntrinsic intrinsic = VectorUtil.resolveStoreIntrinsic(oclKind);
             OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind.getElementKind()));
-            getGen().append(new VectorStoreStmt(intrinsic, new ConstantValue(LIRKind.value(OCLKind.INT), PrimitiveConstant.INT_0), cast, memAccess, input));
+            getGen().append(new VectorStoreStmt(intrinsic, getOffsetValue(oclKind, memAccess), cast, memAccess, input));
         } else {
 
             /**
@@ -472,6 +474,38 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     public Value emitMathCopySign(Value magnitude, Value sign) {
         unimplemented();
         return null;
+    }
+
+    /**
+     * It calculates and returns the offset for vstore/vload operations as a Value
+     * object.
+     *
+     * @param oclKind
+     *            the kind for getting the size of the element type in a vector
+     * @param memoryAccess
+     *            the object that holds the index of an element in a vector
+     * @return
+     */
+    private Value getPrivateOffsetValue(OCLKind oclKind, MemoryAccess memoryAccess) {
+        Value privateOffsetValue = null;
+        if (memoryAccess == null) {
+            return null;
+        }
+        if (memoryAccess.getIndex() instanceof ConstantValue) {
+            ConstantValue constantValue = (ConstantValue) memoryAccess.getIndex();
+            int parsedIntegerIndex = Integer.parseInt(constantValue.getConstant().toValueString());
+            int index = parsedIntegerIndex / oclKind.getVectorLength();
+            privateOffsetValue = new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(index));
+        }
+        return privateOffsetValue;
+    }
+
+    private Value getOffsetValue(OCLKind oclKind, MemoryAccess memoryAccess) {
+        if (memoryAccess.getBase().getMemorySpace() == OCLMemorySpace.GLOBAL.getBase().getMemorySpace()) {
+            return new ConstantValue(LIRKind.value(OCLKind.INT), PrimitiveConstant.INT_0);
+        } else {
+            return getPrivateOffsetValue(oclKind, memoryAccess);
+        }
     }
 
     public Value emitFMAInstruction(Value op1, Value op2, Value op3) {

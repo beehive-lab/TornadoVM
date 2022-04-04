@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -71,6 +71,15 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         }
     }
 
+    private static String getString(String property) {
+        if (System.getProperty(property) == null) {
+            return null;
+        } else {
+            return System.getProperty(property);
+        }
+
+    }
+
     @Override
     public TornadoAcceleratorDevice getDefaultDevice() {
         return getDefaultBackend().getDeviceContext().asMapping();
@@ -78,7 +87,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
 
     @Override
     public void setDefaultDevice(int index) {
-        swapDefaultDevice(0, index);
+        swapDefaultDevice(index);
     }
 
     @Override
@@ -108,7 +117,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         return backend;
     }
 
-    private OCLBackend swapDefaultDevice(final int platform, final int device) {
+    private OCLBackend swapDefaultDevice(final int device) {
         OCLBackend tmp = flatBackends[0];
         flatBackends[0] = flatBackends[device];
         flatBackends[device] = tmp;
@@ -120,19 +129,11 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         return backend;
     }
 
-    private OCLBackend createOCLBackend(final OptionValues options, final HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig vmConfig, final OCLExecutionEnvironment context, final int deviceIndex) {
+    private OCLBackend createOCLJITCompiler(final OptionValues options, final HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig vmConfig, final OCLExecutionEnvironment context,
+            final int deviceIndex) {
         final OCLTargetDevice device = context.devices().get(deviceIndex);
         info("Creating backend for %s", device.getDeviceName());
-        return OCLHotSpotBackendFactory.createBackend(options, jvmciRuntime, vmConfig, context, device);
-    }
-
-    private static String getString(String property) {
-        if (System.getProperty(property) == null) {
-            return null;
-        } else {
-            return System.getProperty(property);
-        }
-
+        return OCLHotSpotBackendFactory.createJITCompiler(options, jvmciRuntime, vmConfig, context, device);
     }
 
     private void installDevices(int platformIndex, TornadoPlatform platform, final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
@@ -146,7 +147,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
             final OCLTargetDevice device = context.devices().get(deviceIndex);
             info("OpenCL[%d]: device=%s", platformIndex, device.getDeviceName());
-            backends[platformIndex][deviceIndex] = createOCLBackend(options, vmRuntime, vmConfig, context, deviceIndex);
+            backends[platformIndex][deviceIndex] = createOCLJITCompiler(options, vmRuntime, vmConfig, context, deviceIndex);
         }
     }
 

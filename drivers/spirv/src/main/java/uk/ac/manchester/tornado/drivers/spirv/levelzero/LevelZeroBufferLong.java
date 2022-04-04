@@ -27,8 +27,8 @@ package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 public class LevelZeroBufferLong {
 
     private long ptrBuffer;
-    private int size;
-    private int alignment;
+    private long size;
+    private long alignment;
 
     public LevelZeroBufferLong() {
         this.ptrBuffer = -1;
@@ -44,11 +44,11 @@ public class LevelZeroBufferLong {
         return this.ptrBuffer;
     }
 
-    public int getSize() {
+    public long getSize() {
         return this.size;
     }
 
-    public int getAlignment() {
+    public long getAlignment() {
         return this.alignment;
     }
 
@@ -79,7 +79,7 @@ public class LevelZeroBufferLong {
         copy_native(this.ptrBuffer, array);
     }
 
-    private native long[] getLongBuffer_native(long ptrBuffer, int size);
+    private native long[] getLongBuffer_native(long ptrBuffer, long size);
 
     public long[] getLongBuffer() {
         return getLongBuffer_native(this.ptrBuffer, this.size);

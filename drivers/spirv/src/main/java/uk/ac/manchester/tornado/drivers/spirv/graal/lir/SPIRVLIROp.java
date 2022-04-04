@@ -74,24 +74,24 @@ public abstract class SPIRVLIROp extends Value {
             return asm.lookUpConstant(((ConstantValue) inputValue).getConstant().toValueString(), kind);
         } else {
             SPIRVId param = asm.lookUpLIRInstructions(inputValue);
-            if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
-                // We need to perform a load first
-                Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit LOAD Variable: " + inputValue);
-                SPIRVId load = asm.module.getNextId();
-                SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
-                asm.currentBlockScope().add(new SPIRVOpLoad(//
-                        type, //
-                        load, //
-                        param, //
-                        new SPIRVOptionalOperand<>( //
-                                SPIRVMemoryAccess.Aligned( //
-                                        new SPIRVLiteralInteger(spirvKind.getByteCount())))//
-                ));
-
-                return load;
-            } else {
+            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                // Do not generate a load if Load/Store optimization is enabled.
                 return param;
             }
+
+            // We need to perform a load first
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit LOAD Variable: " + inputValue);
+            SPIRVId load = asm.module.getNextId();
+            SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
+            asm.currentBlockScope().add(new SPIRVOpLoad(//
+                    type, //
+                    load, //
+                    param, //
+                    new SPIRVOptionalOperand<>( //
+                            SPIRVMemoryAccess.Aligned( //
+                                    new SPIRVLiteralInteger(spirvKind.getByteCount())))//
+            ));
+            return load;
         }
     }
 

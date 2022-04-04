@@ -37,6 +37,7 @@ import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 @NodeInfo
 public class GetArrayNode extends FloatingNode implements LIRLowerable {
@@ -69,7 +70,11 @@ public class GetArrayNode extends FloatingNode implements LIRLowerable {
     public void generate(NodeLIRBuilderTool generator) {
         LIRGeneratorTool tool = generator.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
-        tool.append(new SPIRVLIRStmt.AssignStmtWithLoad(result, generator.operand(arrayNode)));
+        if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+            tool.append(new SPIRVLIRStmt.PassValuePhi(result, generator.operand(arrayNode)));
+        } else {
+            tool.append(new SPIRVLIRStmt.AssignStmtWithLoad(result, generator.operand(arrayNode)));
+        }
         generator.setResult(this, result);
     }
 }

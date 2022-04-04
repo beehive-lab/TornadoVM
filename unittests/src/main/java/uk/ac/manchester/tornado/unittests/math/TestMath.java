@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,7 +32,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * How to run:
- * 
+ *
  * <code>
  *     tornado-test.py -V --fast uk.ac.manchester.tornado.unittests.math.TestMath
  * </code>
@@ -54,6 +54,12 @@ public class TestMath extends TornadoTestBase {
     public static void testTan(double[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = Math.tan(a[i]);
+        }
+    }
+
+    public static void testAtan2(double[] a, double[] b) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = Math.atan2(a[i], b[i]);
         }
     }
 
@@ -114,6 +120,12 @@ public class TestMath extends TornadoTestBase {
     public static void testAcos(double[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = (Math.acos(a[i]));
+        }
+    }
+
+    public static void testAsin(double[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = (Math.asin(a[i]));
         }
     }
 
@@ -203,8 +215,6 @@ public class TestMath extends TornadoTestBase {
 
     @Test
     public void testMathTan() {
-        assertNotBackend(TornadoVMBackendType.PTX);
-
         final int size = 128;
         double[] data = new double[size];
         double[] seq = new double[size];
@@ -225,8 +235,6 @@ public class TestMath extends TornadoTestBase {
 
     @Test
     public void testMathTanh() {
-        assertNotBackend(TornadoVMBackendType.PTX);
-
         final int size = 128;
         double[] data = new double[size];
         double[] seq = new double[size];
@@ -526,6 +534,73 @@ public class TestMath extends TornadoTestBase {
         testFMA2(a, seq);
 
         assertArrayEquals(b, seq, 0.01f);
+    }
+
+    @Test
+    public void testMathATan2() {
+        assertNotBackend(TornadoVMBackendType.PTX);
+
+        final int size = 128;
+        double[] a = new double[size];
+        double[] b = new double[size];
+        double[] seqA = new double[size];
+        double[] seqB = new double[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            a[i] = Math.random();
+            b[i] = Math.random();
+            seqA[i] = a[i];
+            seqB[i] = b[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestMath::testAtan2, a, b).streamOut(a).execute();
+
+        testAtan2(seqA, seqB);
+
+        assertArrayEquals(a, seqA, 0.01);
+    }
+
+    @Test
+    public void testMathAcos() {
+        assertNotBackend(TornadoVMBackendType.PTX);
+
+        final int size = 128;
+        double[] a = new double[size];
+        double[] seqA = new double[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            a[i] = Math.random();
+            seqA[i] = a[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestMath::testAcos, a).streamOut(a).execute();
+
+        testAcos(seqA);
+
+        assertArrayEquals(a, seqA, 0.01);
+    }
+
+    @Test
+    public void testMathASin() {
+        assertNotBackend(TornadoVMBackendType.PTX);
+
+        final int size = 128;
+        double[] a = new double[size];
+        double[] seqA = new double[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            a[i] = Math.random();
+            seqA[i] = a[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestMath::testAsin, a).streamOut(a).execute();
+
+        testAsin(seqA);
+
+        assertArrayEquals(a, seqA, 0.01);
     }
 
 }

@@ -25,6 +25,8 @@ package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.STACK_BASE_OFFSET;
 
+import java.util.HashMap;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodes.NodeView;
@@ -37,8 +39,7 @@ import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVTargetDescription;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
-
-import java.util.HashMap;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 /**
  * This class specifies how to load a parameter to the kernel from the TornadoVM
@@ -46,9 +47,8 @@ import java.util.HashMap;
  */
 public class SPIRVGenTool {
 
-    protected SPIRVLIRGenerator generator;
-
     private final HashMap<ParameterNode, Variable> parameterToVariable = new HashMap<>();
+    protected SPIRVLIRGenerator generator;
 
     public SPIRVGenTool(SPIRVLIRGenerator gen) {
         this.generator = gen;
@@ -62,19 +62,28 @@ public class SPIRVGenTool {
         SPIRVTargetDescription target = (SPIRVTargetDescription) generator.target();
 
         Variable result = (spirvKind.isVector()) ? generator.newVariable(LIRKind.value(target.getSPIRVKind(JavaKind.Object))) : generator.newVariable(lirKind);
-        emitParameterLoad(result, index);
+
+        if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+            emitParameterLoadWithNoStore(result, index);
+        } else {
+            emitParameterLoad(result, index);
+        }
         parameterToVariable.put(paramNode, result);
 
         if (spirvKind.isVector()) {
-            Variable vectorToLoad = generator.newVariable(lirKind);
-            SPIRVArchitecture.SPIRVMemoryBase base = SPIRVArchitecture.globalSpace;
-            SPIRVUnary.MemoryAccess address = new SPIRVUnary.MemoryAccess(base, result);
-            SPIRVUnary.SPIRVAddressCast cast = new SPIRVUnary.SPIRVAddressCast(address, base, lirKind);
-            generator.append(new SPIRVLIRStmt.LoadVectorStmt(vectorToLoad, cast, address));
-            result = vectorToLoad;
+            result = emitLoadParameterForVectorType(result, lirKind);
         }
 
         return result;
+    }
+
+    private Variable emitLoadParameterForVectorType(Variable result, LIRKind lirKind) {
+        Variable vectorToLoad = generator.newVariable(lirKind);
+        SPIRVArchitecture.SPIRVMemoryBase base = SPIRVArchitecture.globalSpace;
+        SPIRVUnary.MemoryAccess address = new SPIRVUnary.MemoryAccess(base, result);
+        SPIRVUnary.SPIRVAddressCast cast = new SPIRVUnary.SPIRVAddressCast(address, base, lirKind);
+        generator.append(new SPIRVLIRStmt.LoadVectorStmt(vectorToLoad, cast, address));
+        return vectorToLoad;
     }
 
     private void emitParameterLoad(AllocatableValue resultValue, int index) {
@@ -91,6 +100,21 @@ public class SPIRVGenTool {
                         index), //
                 SPIRVKind.OP_TYPE_INT_64.getSizeInBytes(), //
                 index); //
+
+        generator.append(assignStmt);
+    }
+
+    private void emitParameterLoadWithNoStore(AllocatableValue resultValue, int index) {
+        SPIRVKind spirvKind = (SPIRVKind) resultValue.getPlatformKind();
+        LIRKind lirKind = LIRKind.value(spirvKind);
+
+        SPIRVLIRStmt.ASSIGNParameterWithNoStore assignStmt = new SPIRVLIRStmt.ASSIGNParameterWithNoStore( //
+                resultValue, //
+                new SPIRVUnary.LoadFromStackFrameExpr( //
+                        lirKind, //
+                        SPIRVKind.OP_TYPE_INT_64, //
+                        (STACK_BASE_OFFSET + index), //
+                        index));
 
         generator.append(assignStmt);
     }

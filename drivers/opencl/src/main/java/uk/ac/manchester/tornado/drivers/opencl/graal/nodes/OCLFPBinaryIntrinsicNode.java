@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -67,29 +67,29 @@ public class OCLFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
 
     // @formatter:off
     public enum Operation {
-        ATAN2, 
-        ATAN2PI, 
-        COPYSIGN, 
-        FDIM, 
-        FMA, 
-        FMAX, 
-        FMIN, 
-        FMOD, 
-        FRACT, 
-        FREXP, 
-        HYPOT, 
-        LDEXP, 
-        MAD, 
-        MAXMAG, 
-        MINMAG, 
-        MODF, 
-        NEXTAFTER, 
-        POW, 
-        POWN, 
-        POWR, 
-        REMAINDER, 
-        REMQUO, 
-        ROOTN, 
+        ATAN2,
+        ATAN2PI,
+        COPYSIGN,
+        FDIM,
+        FMA,
+        FMAX,
+        FMIN,
+        FMOD,
+        FRACT,
+        FREXP,
+        HYPOT,
+        LDEXP,
+        MAD,
+        MAXMAG,
+        MINMAG,
+        MODF,
+        NEXTAFTER,
+        POW,
+        POWN,
+        POWR,
+        REMAINDER,
+        REMQUO,
+        ROOTN,
         SINCOS
     }
     // @formatter:on
@@ -143,6 +143,9 @@ public class OCLFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
         Value y = builder.operand(getY());
         Value result;
         switch (operation()) {
+            case ATAN2:
+                result = gen.genFloatATan2(x, y);
+                break;
             case FMIN:
                 result = gen.genFloatMin(x, y);
                 break;
@@ -163,6 +166,8 @@ public class OCLFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
 
     private static double doCompute(double x, double y, Operation op) {
         switch (op) {
+            case ATAN2:
+                return Math.atan2(x, y);
             case FMIN:
                 return Math.min(x, y);
             case FMAX:
@@ -176,6 +181,8 @@ public class OCLFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
 
     private static float doCompute(float x, float y, Operation op) {
         switch (op) {
+            case ATAN2:
+                return (float) Math.atan2(x, y);
             case FMIN:
                 return Math.min(x, y);
             case FMAX:

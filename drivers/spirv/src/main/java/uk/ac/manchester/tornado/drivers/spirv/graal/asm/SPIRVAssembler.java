@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009-2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -36,11 +36,13 @@ import java.util.Stack;
 import org.graalvm.compiler.asm.AbstractAddress;
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.asm.Label;
+import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.cfg.Block;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVInstScope;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVModule;
@@ -102,29 +104,28 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIROp;
 public final class SPIRVAssembler extends Assembler {
 
     /**
+     * Control and handling for the SPIR-V builtin functions
+     */
+    public final Map<SPIRVThreadBuiltIn, SPIRVId> builtinTable;
+    private final Map<ConstantKeyPair, SPIRVId> constants;
+    private final Map<Value, SPIRVId> lirTable;
+    private final Map<String, SPIRVId> lirTableName;
+    private final Map<String, SPIRVId> SPIRVSymbolTable;
+    /**
      * Control for the SPIR-V module (beehive-spirv-toolkit)
      */
     public SPIRVModule module;
-
     /**
      * Control and Handling of SPIR-V primitives for the module being generated
      */
     public SPIRVPrimitiveTypes primitives;
-
-    /**
-     * Control and handling for the SPIR-V builtin functions
-     */
-    public final Map<SPIRVThreadBuiltIn, SPIRVId> builtinTable;
-
     private SPIRVInstScope functionScope;
     private SPIRVId mainFunctionID;
     private SPIRVId functionSignature;
     private SPIRVInstScope blockZeroScope;
     private SPIRVId returnLabel;
     private boolean returnWithValue;
-
     private Stack<SPIRVInstScope> currentBlockScopeStack;
-
     /**
      * Table that stores the Block ID with its Label Reference ID
      */
@@ -134,21 +135,17 @@ public final class SPIRVAssembler extends Assembler {
     private Map<SPIRVKind, HashMap<SPIRVId, SPIRVId>> arrayDeclarationTable;
     private Map<SPIRVId, SPIRVId> functionPtrToArray;
     private Map<SPIRVId, SPIRVId> functionPtrToArrayLocal;
-
     private SPIRVId frameId;
-
-    private final Map<ConstantKeyPair, SPIRVId> constants;
-    private final Map<Value, SPIRVId> lirTable;
-    private final Map<String, SPIRVId> lirTableName;
-
     private SPIRVId ptrCrossWorkULong;
     private SPIRVId openclImport;
-    private final Map<String, SPIRVId> SPIRVSymbolTable;
-
     private ByteBuffer spirvByteBuffer;
     private int methodIndex;
 
     private Map<SPIRVId, Map<Integer, LinkedList<SPIRVOpFunctionTable>>> opFunctionTable;
+    private Map<AllocatableValue, SPIRVId> phiMap;
+    private Map<AllocatableValue, SPIRVId> phiNamesAcrossBlocks;
+    private Map<AllocatableValue, AllocatableValue> phiTrace;
+    private Map<AllocatableValue, SPIRVId> pendingIDs;
 
     public SPIRVAssembler(TargetDescription target) {
         super(target);
@@ -165,38 +162,40 @@ public final class SPIRVAssembler extends Assembler {
         functionPtrToArrayLocal = new HashMap<>();
         SPIRVSymbolTable = new HashMap<>();
         opFunctionTable = new HashMap<>();
+        phiNamesAcrossBlocks = new HashMap<>();
+        pendingIDs = new HashMap<>();
     }
 
     public SPIRVInstScope getFunctionScope() {
         return functionScope;
     }
 
-    public void setReturnLabel(SPIRVId returnLabel) {
-        this.returnLabel = returnLabel;
-    }
-
     public SPIRVId getReturnLabel() {
         return returnLabel;
     }
 
-    public void setBlockZeroScope(SPIRVInstScope blockScope) {
-        this.blockZeroScope = blockScope;
+    public void setReturnLabel(SPIRVId returnLabel) {
+        this.returnLabel = returnLabel;
     }
 
     public SPIRVInstScope getBlockZeroScope() {
         return blockZeroScope;
     }
 
+    public void setBlockZeroScope(SPIRVInstScope blockScope) {
+        this.blockZeroScope = blockScope;
+    }
+
     public Map<String, SPIRVInstScope> getBlockTable() {
         return blockTable;
     }
 
-    public void setStackFrameId(SPIRVId frameId) {
-        this.frameId = frameId;
-    }
-
     public SPIRVId getStackFrameId() {
         return this.frameId;
+    }
+
+    public void setStackFrameId(SPIRVId frameId) {
+        this.frameId = frameId;
     }
 
     public void setReturnWithValue(boolean returnWithValue) {
@@ -223,79 +222,16 @@ public final class SPIRVAssembler extends Assembler {
         SPIRVSymbolTable.put(name, id);
     }
 
-    public static class ConstantKeyPair {
-        private String name;
-        private SPIRVKind kind;
-
-        public ConstantKeyPair(String name, SPIRVKind kind) {
-            this.name = name;
-            this.kind = kind;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public SPIRVKind getKind() {
-            return kind;
-        }
-
-        @Override
-        public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + ((name == null) ? 0 : name.hashCode());
-            result = prime * result + ((kind == null) ? 0 : kind.hashCode());
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof ConstantKeyPair) {
-                ConstantKeyPair ckp = (ConstantKeyPair) obj;
-                return (this.name.equals(ckp.name) && this.kind.equals(ckp.kind));
-            }
-            return false;
-        }
-    }
-
-    private static class SPIRVOpFunctionTable {
-
-        private SPIRVId returnId;
-        SPIRVId[] params;
-        private SPIRVId functionID;
-
-        public SPIRVOpFunctionTable(SPIRVId returnId, SPIRVId functionID, SPIRVId... params) {
-            this.returnId = returnId;
-            this.functionID = functionID;
-            this.params = params;
-        }
-
-        public boolean areParamsEqual(SPIRVId... params) {
-            if (params == null) {
-                return false;
-            }
-
-            if (params.length != this.params.length) {
-                return false;
-            }
-
-            for (int i = 0; i < this.params.length; i++) {
-                SPIRVId param = this.params[i];
-                if (!param.equals(params[i++])) {
-                    return false;
-                }
-            }
-            return true;
-        }
-    }
-
-    public void setSPIRVByteBuffer(ByteBuffer spirvByteBuffer) {
-        this.spirvByteBuffer = spirvByteBuffer;
+    public void setPhiMap(Map<AllocatableValue, SPIRVId> phiMap) {
+        this.phiMap = phiMap;
     }
 
     public ByteBuffer getSPIRVByteBuffer() {
         return this.spirvByteBuffer;
+    }
+
+    public void setSPIRVByteBuffer(ByteBuffer spirvByteBuffer) {
+        this.spirvByteBuffer = spirvByteBuffer;
     }
 
     public void insertOpenCLImportId(SPIRVId oclImport) {
@@ -378,9 +314,9 @@ public final class SPIRVAssembler extends Assembler {
      * This method composes a unique name for all labels used. This is important
      * since all methods within the same compilation unit will be in the same file,
      * and SPIR-V requires different names.
-     * 
+     *
      * If we want to return the same names per module, just return the labelName.
-     * 
+     *
      * @param labelName
      *            String
      * @return a new label name.
@@ -447,20 +383,20 @@ public final class SPIRVAssembler extends Assembler {
      * signature. This means that, if two functions have the same return type and
      * the same type of parameters and the parameter types are the same. we should
      * return the same ID previously registered for the first function declaration.
-     * 
+     *
      * This method checks whether we have a function type with the same return ID
      * and same parameters already registered. To do so, we manage a table
      * {@link SPIRVAssembler#opFunctionTable}, that stores the information as
      * follows:
-     * 
+     *
      * <code>
-     *     Map<%returnType, Map<NumParameters, LinkedList<SPIRVOpFunctionTable>>> 
+     *     Map<%returnType, Map<NumParameters, LinkedList<SPIRVOpFunctionTable>>>
      * </code>
-     * 
+     *
      * If we have the same number of parameters with the same return type, when we
      * do a sequential search over the linked-list to check the type of each
      * parameter (stored in the {@link SPIRVOpFunctionTable) class).
-     * 
+     *
      * @param returnType
      *            ID with the return value.
      * @param operands
@@ -507,40 +443,39 @@ public final class SPIRVAssembler extends Assembler {
         return functionSignature;
     }
 
-    public void emitEntryPointMainKernel(StructuredGraph graph, String kernelName, boolean isParallel, boolean fp64Capability) {
+    public void emitEntryPointMainKernel(StructuredGraph graph, String kernelName, boolean fp64Capability) {
         mainFunctionID = module.getNextId();
 
         SPIRVMultipleOperands operands;
-        if (isParallel) {
-            List<SPIRVId> builtInList = new ArrayList<>();
-            if (graph.getNodes().filter(SPIRVThreadBuiltIn.GLOBAL_THREAD_ID.getNodeClass()).isNotEmpty()) {
-                builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.GLOBAL_THREAD_ID));
-            }
+        List<SPIRVId> builtInList = new ArrayList<>();
+        if (graph.getNodes().filter(SPIRVThreadBuiltIn.GLOBAL_THREAD_ID.getNodeClass()).isNotEmpty()) {
+            builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.GLOBAL_THREAD_ID));
+        }
 
-            if (graph.getNodes().filter(SPIRVThreadBuiltIn.LOCAL_THREAD_ID.getNodeClass()).isNotEmpty() //
-                    || graph.getNodes().filter(SPIRVThreadBuiltIn.LOCAL_THREAD_ID.getOptionalNodeClass()).isNotEmpty()) {
-                builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.LOCAL_THREAD_ID));
-            }
+        if (graph.getNodes().filter(SPIRVThreadBuiltIn.LOCAL_THREAD_ID.getNodeClass()).isNotEmpty() //
+                || graph.getNodes().filter(SPIRVThreadBuiltIn.LOCAL_THREAD_ID.getOptionalNodeClass()).isNotEmpty()) {
+            builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.LOCAL_THREAD_ID));
+        }
 
-            if (graph.getNodes().filter(SPIRVThreadBuiltIn.WORKGROUP_SIZE.getNodeClass()).isNotEmpty() //
-                    || graph.getNodes().filter(SPIRVThreadBuiltIn.WORKGROUP_SIZE.getOptionalNodeClass()).isNotEmpty()) {
-                builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.WORKGROUP_SIZE));
-            }
+        if (graph.getNodes().filter(SPIRVThreadBuiltIn.WORKGROUP_SIZE.getNodeClass()).isNotEmpty() //
+                || graph.getNodes().filter(SPIRVThreadBuiltIn.WORKGROUP_SIZE.getOptionalNodeClass()).isNotEmpty()) {
+            builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.WORKGROUP_SIZE));
+        }
 
-            if (graph.getNodes().filter(SPIRVThreadBuiltIn.GLOBAL_SIZE.getNodeClass()).isNotEmpty()) {
-                builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.GLOBAL_SIZE));
-            }
+        if (graph.getNodes().filter(SPIRVThreadBuiltIn.GLOBAL_SIZE.getNodeClass()).isNotEmpty()) {
+            builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.GLOBAL_SIZE));
+        }
 
-            if (graph.getNodes().filter(SPIRVThreadBuiltIn.GROUP_ID.getNodeClass()).isNotEmpty()) {
-                builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.GROUP_ID));
-            }
+        if (graph.getNodes().filter(SPIRVThreadBuiltIn.GROUP_ID.getNodeClass()).isNotEmpty()) {
+            builtInList.add(builtinTable.get(SPIRVThreadBuiltIn.GROUP_ID));
+        }
 
+        if (builtInList.size() == 0) {
+            operands = new SPIRVMultipleOperands();
+        } else {
             SPIRVId[] array = new SPIRVId[builtInList.size()];
             builtInList.toArray(array);
             operands = new SPIRVMultipleOperands(array);
-
-        } else {
-            operands = new SPIRVMultipleOperands();
         }
 
         module.add(new SPIRVOpEntryPoint(SPIRVExecutionModel.Kernel(), mainFunctionID, new SPIRVLiteralString(kernelName), operands));
@@ -548,7 +483,6 @@ public final class SPIRVAssembler extends Assembler {
         if (fp64Capability) {
             module.add(new SPIRVOpExecutionMode(mainFunctionID, SPIRVExecutionMode.ContractionOff()));
         }
-
     }
 
     public SPIRVId getFunctionSignature() {
@@ -642,6 +576,278 @@ public final class SPIRVAssembler extends Assembler {
 
     public Map<ConstantKeyPair, SPIRVId> getConstants() {
         return this.constants;
+    }
+
+    public void emit(String str) {
+        emitSubString(str);
+    }
+
+    public void emitSubString(String str) {
+        for (byte b : str.getBytes()) {
+            emitByte(b);
+        }
+    }
+
+    @Override
+    public void align(int modulus) {
+
+    }
+
+    @Override
+    public void jmp(Label l) {
+
+    }
+
+    @Override
+    protected void patchJumpTarget(int branch, int jumpTarget) {
+
+    }
+
+    @Override
+    public AbstractAddress makeAddress(int transferSize, Register base, int displacement) {
+        return null;
+    }
+
+    @Override
+    public AbstractAddress getPlaceholder(int instructionStartPosition) {
+        return null;
+    }
+
+    @Override
+    public void ensureUniquePC() {
+
+    }
+
+    public void emitValue(SPIRVCompilationResultBuilder crb, Value value) {
+        if (crb.getAssembler().lookUpLIRInstructions(value) == null) {
+            SPIRVId id = crb.getAssembler().lookUpLIRInstructionsName(value.toString());
+            crb.getAssembler().registerLIRInstructionValue(value, id);
+        }
+    }
+
+    public void emitValueOrOp(SPIRVCompilationResultBuilder crb, Value value) {
+        if (value instanceof SPIRVLIROp) {
+            ((SPIRVLIROp) value).emit(crb, this);
+        } else {
+            emitValue(crb, value);
+        }
+    }
+
+    public SPIRVId[] loadHeapPointerAndFrameIndex() {
+
+        SPIRVId loadHeap = module.getNextId();
+        SPIRVId frameIndexId = module.getNextId();
+
+        SPIRVId heapId = SPIRVSymbolTable.get("heapBaseAddrId");
+        SPIRVId frameId = SPIRVSymbolTable.get("frameBaseAddrId");
+
+        SPIRVId ptrToUChar = primitives.getPtrToCrossWorkGroupPrimitive(SPIRVKind.OP_TYPE_INT_8);
+
+        int alignment = 8;
+        currentBlockScope().add(new SPIRVOpLoad( //
+                ptrToUChar, //
+                loadHeap, //
+                heapId, //
+                new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
+        ));
+
+        SPIRVId ulong = primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
+        currentBlockScope().add(new SPIRVOpLoad( //
+                ulong, //
+                frameIndexId, //
+                frameId, //
+                new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8))) //
+        ));
+
+        return new SPIRVId[] { loadHeap, frameIndexId };
+    }
+
+    public SPIRVId getMethodRegistrationId(String methodName) {
+        return SPIRVSymbolTable.get(methodName);
+    }
+
+    public SPIRVId registerNewMethod(String methodName) {
+        SPIRVId functionToCall = module.getNextId();
+        module.add(new SPIRVOpName(functionToCall, new SPIRVLiteralString(methodName)));
+        module.add(new SPIRVOpDecorate(functionToCall, SPIRVDecoration.LinkageAttributes(new SPIRVLiteralString(methodName), SPIRVLinkageType.Export())));
+        SPIRVSymbolTable.put(methodName, functionToCall);
+        return functionToCall;
+    }
+
+    public SPIRVId getLabel(String blockName) {
+        blockName = composeUniqueLabelName(blockName);
+        return labelTable.get(blockName);
+    }
+
+    public int getMethodIndex() {
+        return methodIndex;
+    }
+
+    public void setMethodIndex(int methodIndex) {
+        this.methodIndex = methodIndex;
+    }
+
+    public boolean isResultInPhiMap(Variable result) {
+        return this.phiMap.containsKey(result);
+    }
+
+    public boolean isPhiMapEmpty() {
+        return (this.phiMap == null);
+    }
+
+    public SPIRVId getPhiId(Variable result) {
+        return this.phiMap.get(result);
+    }
+
+    // This is just for debugging
+    public void printContentPhiTables() {
+        System.out.println("PhiTable: " + phiMap);
+        System.out.println("PhiTrace: " + phiTrace);
+        System.out.println("phiNamesAcrossBlocks: " + phiNamesAcrossBlocks);
+    }
+
+    public void updatePendingIDs(AllocatableValue trace, SPIRVId newID) {
+        this.pendingIDs.put(trace, newID);
+    }
+
+    public SPIRVId getPendingId(AllocatableValue trace) {
+        return this.pendingIDs.get(trace);
+    }
+
+    public boolean isPendingIDAvailable(AllocatableValue trace) {
+        return this.pendingIDs.containsKey(trace);
+    }
+
+    public AllocatableValue getPhiTraceValue(Variable result) {
+        return this.phiTrace.get(result);
+    }
+
+    public void updatePhiMap(AllocatableValue key, SPIRVId newID) {
+        this.phiMap.put(key, newID);
+    }
+
+    public void setPhiTrace(Map<AllocatableValue, AllocatableValue> phiTrace) {
+        this.phiTrace = phiTrace;
+    }
+
+    public void setPhiValueId(AllocatableValue phiTraceValue, SPIRVId operationId) {
+        this.phiMap.put(phiTraceValue, operationId);
+    }
+
+    public boolean isPhiTraceNull() {
+        return this.phiTrace == null;
+    }
+
+    public void clearPhiTables() {
+        if (phiTrace != null) {
+            phiTrace.clear();
+            phiTrace = null;
+        }
+        if (phiMap != null) {
+            phiMap.clear();
+            phiMap = null;
+        }
+        if (pendingIDs != null) {
+            pendingIDs.clear();
+            pendingIDs = null;
+        }
+    }
+
+    public void registerPhiNameInstruction(AllocatableValue lhs, SPIRVId phiResultId) {
+        phiNamesAcrossBlocks.put(lhs, phiResultId);
+    }
+
+    public boolean isPhiAcrossBlocksPresent(AllocatableValue lhs) {
+        return phiNamesAcrossBlocks.containsKey(lhs);
+    }
+
+    public SPIRVId getPhiIdAcrossBlock(AllocatableValue lhs) {
+        return phiNamesAcrossBlocks.get(lhs);
+    }
+
+    public void clearForwardPhiTable() {
+        phiNamesAcrossBlocks.clear();
+        phiNamesAcrossBlocks = new HashMap<>();
+    }
+
+    public SPIRVId emitDecorateOpenCLBuiltin(SPIRVModule module, SPIRVThreadBuiltIn builtIn) {
+        SPIRVId idSPIRVBuiltin = module.getNextId();
+        module.add(new SPIRVOpName(idSPIRVBuiltin, new SPIRVLiteralString(builtIn.getName())));
+        module.add(new SPIRVOpDecorate(idSPIRVBuiltin, SPIRVDecoration.BuiltIn(builtIn.getBuiltIn())));
+        module.add(new SPIRVOpDecorate(idSPIRVBuiltin, SPIRVDecoration.Constant()));
+        module.add(new SPIRVOpDecorate(idSPIRVBuiltin, SPIRVDecoration.LinkageAttributes(new SPIRVLiteralString(builtIn.getName()), SPIRVLinkageType.Import())));
+        return idSPIRVBuiltin;
+    }
+
+    public Iterable<? extends Map.Entry<SPIRVThreadBuiltIn, SPIRVId>> getBuiltinTableEntrySet() {
+        return builtinTable.entrySet();
+    }
+
+    public static class ConstantKeyPair {
+        private String name;
+        private SPIRVKind kind;
+
+        public ConstantKeyPair(String name, SPIRVKind kind) {
+            this.name = name;
+            this.kind = kind;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public SPIRVKind getKind() {
+            return kind;
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((name == null) ? 0 : name.hashCode());
+            result = prime * result + ((kind == null) ? 0 : kind.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof ConstantKeyPair) {
+                ConstantKeyPair ckp = (ConstantKeyPair) obj;
+                return (this.name.equals(ckp.name) && this.kind.equals(ckp.kind));
+            }
+            return false;
+        }
+    }
+
+    private static class SPIRVOpFunctionTable {
+
+        SPIRVId[] params;
+        private SPIRVId returnId;
+        private SPIRVId functionID;
+
+        public SPIRVOpFunctionTable(SPIRVId returnId, SPIRVId functionID, SPIRVId... params) {
+            this.returnId = returnId;
+            this.functionID = functionID;
+            this.params = params;
+        }
+
+        public boolean areParamsEqual(SPIRVId... params) {
+            if (params == null) {
+                return false;
+            }
+
+            if (params.length != this.params.length) {
+                return false;
+            }
+
+            for (int i = 0; i < this.params.length; i++) {
+                SPIRVId param = this.params[i];
+                if (!param.equals(params[i++])) {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 
     /**
@@ -1002,115 +1208,6 @@ public final class SPIRVAssembler extends Assembler {
         public SPIRVInstruction generateInstruction(SPIRVId idResultType, SPIRVId idResult, SPIRVId operand1, SPIRVId operand2) {
             return new SPIRVOpSRem(idResultType, idResult, operand1, operand2);
         }
-    }
-
-    public void emit(String str) {
-        emitSubString(str);
-    }
-
-    public void emitSubString(String str) {
-        for (byte b : str.getBytes()) {
-            emitByte(b);
-        }
-    }
-
-    @Override
-    public void align(int modulus) {
-
-    }
-
-    @Override
-    public void jmp(Label l) {
-
-    }
-
-    @Override
-    protected void patchJumpTarget(int branch, int jumpTarget) {
-
-    }
-
-    @Override
-    public AbstractAddress makeAddress(int transferSize, Register base, int displacement) {
-        return null;
-    }
-
-    @Override
-    public AbstractAddress getPlaceholder(int instructionStartPosition) {
-        return null;
-    }
-
-    @Override
-    public void ensureUniquePC() {
-
-    }
-
-    public void emitValue(SPIRVCompilationResultBuilder crb, Value value) {
-        if (crb.getAssembler().lookUpLIRInstructions(value) == null) {
-            SPIRVId id = crb.getAssembler().lookUpLIRInstructionsName(value.toString());
-            crb.getAssembler().registerLIRInstructionValue(value, id);
-        }
-    }
-
-    public void emitValueOrOp(SPIRVCompilationResultBuilder crb, Value value) {
-        if (value instanceof SPIRVLIROp) {
-            ((SPIRVLIROp) value).emit(crb, this);
-        } else {
-            emitValue(crb, value);
-        }
-    }
-
-    public SPIRVId[] loadHeapPointerAndFrameIndex() {
-
-        SPIRVId loadHeap = module.getNextId();
-        SPIRVId frameIndexId = module.getNextId();
-
-        SPIRVId heapId = SPIRVSymbolTable.get("heapBaseAddrId");
-        SPIRVId frameId = SPIRVSymbolTable.get("frameBaseAddrId");
-
-        SPIRVId ptrToUChar = primitives.getPtrToCrossWorkGroupPrimitive(SPIRVKind.OP_TYPE_INT_8);
-
-        int alignment = 8;
-        currentBlockScope().add(new SPIRVOpLoad( //
-                ptrToUChar, //
-                loadHeap, //
-                heapId, //
-                new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
-        ));
-
-        SPIRVId ulong = primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
-        currentBlockScope().add(new SPIRVOpLoad( //
-                ulong, //
-                frameIndexId, //
-                frameId, //
-                new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8))) //
-        ));
-
-        return new SPIRVId[] { loadHeap, frameIndexId };
-    }
-
-    public SPIRVId getMethodRegistrationId(String methodName) {
-        return SPIRVSymbolTable.get(methodName);
-    }
-
-    public SPIRVId registerNewMethod(String methodName) {
-        SPIRVId functionToCall = module.getNextId();
-        module.add(new SPIRVOpName(functionToCall, new SPIRVLiteralString(methodName)));
-        module.add(new SPIRVOpDecorate(functionToCall, SPIRVDecoration.LinkageAttributes(new SPIRVLiteralString(methodName), SPIRVLinkageType.Export())));
-        SPIRVSymbolTable.put(methodName, functionToCall);
-        return functionToCall;
-    }
-
-    public SPIRVId getLabel(String blockName) {
-        blockName = composeUniqueLabelName(blockName);
-        return labelTable.get(blockName);
-    }
-
-    public void setMethodIndex(int methodIndex) {
-        this.methodIndex = methodIndex;
-    }
-
-    public int getMethodIndex() {
-        return methodIndex;
     }
 
 }

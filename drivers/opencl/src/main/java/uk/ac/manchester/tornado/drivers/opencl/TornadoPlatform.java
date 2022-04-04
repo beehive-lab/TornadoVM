@@ -24,6 +24,7 @@
 package uk.ac.manchester.tornado.drivers.opencl;
 
 public interface TornadoPlatform {
+
     void cleanup();
 
     OCLExecutionEnvironment createContext();
@@ -31,4 +32,6 @@ public interface TornadoPlatform {
     String getName();
 
     String getVendor();
+
+    String getVersion();
 }

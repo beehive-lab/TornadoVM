@@ -76,8 +76,8 @@ public class VectorAddNode extends BinaryNode implements LIRLowerable, VectorOp 
         return this;
     }
 
-    private SPIRVLIROp genBinaryExpr(SPIRVAssembler.SPIRVBinaryOp op, LIRKind lirKind, Value x, Value y) {
-        return new SPIRVBinary.Expr(op, lirKind, x, y);
+    private SPIRVLIROp genBinaryExpr(Variable result, SPIRVAssembler.SPIRVBinaryOp op, LIRKind lirKind, Value x, Value y) {
+        return new SPIRVBinary.Expr(result, op, lirKind, x, y);
     }
 
     @Override
@@ -97,7 +97,7 @@ public class VectorAddNode extends BinaryNode implements LIRLowerable, VectorOp 
             binaryOp = SPIRVAssembler.SPIRVBinaryOp.ADD_FLOAT;
         }
 
-        gen.getLIRGeneratorTool().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(binaryOp, lirKind, input1, input2)));
+        gen.getLIRGeneratorTool().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(result, binaryOp, lirKind, input1, input2)));
         gen.setResult(this, result);
     }
 }

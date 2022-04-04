@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl;
@@ -63,17 +61,17 @@ public class OCLProgram extends TornadoLogger {
         this.buffer.order(OpenCL.BYTE_ORDER);
     }
 
-    native static void clReleaseProgram(long programId) throws OCLException;
+    static native void clReleaseProgram(long programId) throws OCLException;
 
-    native static void clBuildProgram(long programId, long[] devices, String options) throws OCLException;
+    static native void clBuildProgram(long programId, long[] devices, String options) throws OCLException;
 
-    native static void clGetProgramInfo(long programId, int param, byte[] buffer) throws OCLException;
+    static native void clGetProgramInfo(long programId, int param, byte[] buffer) throws OCLException;
 
-    native static void clGetProgramBuildInfo(long programId, long deviceId, int param, byte[] buffer) throws OCLException;
+    static native void clGetProgramBuildInfo(long programId, long deviceId, int param, byte[] buffer) throws OCLException;
 
-    native static long clCreateKernel(long programId, String name) throws OCLException;
+    static native long clCreateKernel(long programId, String name) throws OCLException;
 
-    native static void getBinaries(long programId, long numDevices, ByteBuffer buffer) throws OCLException;
+    static native void getBinaries(long programId, long numDevices, ByteBuffer buffer) throws OCLException;
 
     public OCLBuildStatus getStatus(long deviceId) {
         OCLBuildStatus result = CL_BUILD_UNKNOWN;
@@ -103,6 +101,7 @@ public class OCLProgram extends TornadoLogger {
     }
 
     public void build(String options) {
+
         buffer.clear();
 
         try {

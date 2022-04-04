@@ -390,7 +390,7 @@ parallelFilter.execute();
 
 For each task (red, blue and green) of the TaskSchedule (blur) the device can be specified as in:
 ```bash
-tornado -Dblur.red.device=0:0 -Dblur.green.device=0:1 -Dblur.blue.device=0:2 uk.ac.manchester.tornado.examples.compute.BlurFilter
+tornado -Dblur.red.device=0:0 -Dblur.green.device=0:1 -Dblur.blue.device=0:2 -m tornado.examples/uk.ac.manchester.tornado.examples.compute.BlurFilter
 ```
 
 Where device ids (0:0, 0:1 and 0:2) correspond to device ids obtained from:

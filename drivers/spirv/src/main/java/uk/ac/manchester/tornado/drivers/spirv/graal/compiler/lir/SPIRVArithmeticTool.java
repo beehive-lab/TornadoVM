@@ -29,15 +29,19 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
+import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
 
 import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.PlatformKind;
+import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVLIRKindTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler.SPIRVBinaryOp;
@@ -51,6 +55,8 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.MemoryAccess;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary.SPIRVAddressCast;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVVectorElementSelect;
+import uk.ac.manchester.tornado.drivers.spirv.graal.meta.SPIRVMemorySpace;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
 
@@ -58,13 +64,13 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         return (SPIRVLIRGenerator) getLIRGen();
     }
 
-    public SPIRVLIROp genBinaryExpr(SPIRVBinaryOp op, LIRKind lirKind, Value x, Value y) {
-        return new SPIRVBinary.Expr(op, lirKind, x, y);
+    public SPIRVLIROp genBinaryExpr(Variable result, SPIRVBinaryOp op, LIRKind lirKind, Value x, Value y) {
+        return new SPIRVBinary.Expr(result, op, lirKind, x, y);
     }
 
     public Variable emitBinaryAssign(SPIRVBinaryOp op, LIRKind lirKind, Value x, Value y) {
         final Variable result = getGen().newVariable(lirKind);
-        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(op, lirKind, x, y)));
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(result, op, lirKind, x, y)));
         return result;
     }
 
@@ -162,7 +168,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
     public Value emitNegate(Value input) {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitNegate:  - %s", input);
         final Variable result = getGen().newVariable(LIRKind.combine(input));
-        SPIRVUnary.Negate negateValue = new SPIRVUnary.Negate(LIRKind.combine(input), input);
+        SPIRVUnary.Negate negateValue = new SPIRVUnary.Negate(LIRKind.combine(input), result, input);
         getGen().append(new SPIRVLIRStmt.AssignStmt(result, negateValue));
         return result;
     }
@@ -278,7 +284,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         LIRKind lirKind = LIRKind.combine(a, b);
         final Variable result = getGen().newVariable(lirKind);
         SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_AND;
-        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(op, lirKind, a, b)));
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(result, op, lirKind, a, b)));
         return result;
     }
 
@@ -288,7 +294,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         LIRKind lirKind = LIRKind.combine(a, b);
         final Variable result = getGen().newVariable(lirKind);
         SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_OR;
-        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(op, lirKind, a, b)));
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(result, op, lirKind, a, b)));
         return result;
     }
 
@@ -298,7 +304,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         LIRKind lirKind = LIRKind.combine(a, b);
         final Variable result = getGen().newVariable(lirKind);
         SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_XOR;
-        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(op, lirKind, a, b)));
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(result, op, lirKind, a, b)));
         return result;
     }
 
@@ -314,7 +320,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         LIRKind lirKind = LIRKind.combine(a, b);
         final Variable result = getGen().newVariable(lirKind);
         SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_LEFT_SHIFT;
-        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(op, lirKind, a, b)));
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(result, op, lirKind, a, b)));
         return result;
     }
 
@@ -324,7 +330,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         LIRKind lirKind = LIRKind.combine(a, b);
         final Variable result = getGen().newVariable(lirKind);
         SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_RIGHT_SHIFT;
-        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(op, lirKind, a, b)));
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(result, op, lirKind, a, b)));
         return result;
     }
 
@@ -334,7 +340,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         LIRKind lirKind = LIRKind.combine(a, b);
         final Variable result = getGen().newVariable(lirKind);
         SPIRVBinaryOp op = SPIRVBinaryOp.BITWISE_UNSIGNED_RIGHT_SHIFT;
-        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(op, lirKind, a, b)));
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, genBinaryExpr(result, op, lirKind, a, b)));
         return result;
     }
 
@@ -353,7 +359,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitNarrow: %s, %d", inputVal, bits);
         LIRKind lirKind = getGen().getLIRKindTool().getIntegerKind(bits);
         final Variable result = getGen().newVariable(lirKind);
-        SPIRVUnary.SignNarrowValue signNarrowValue = new SPIRVUnary.SignNarrowValue(lirKind, inputVal, bits);
+        SPIRVUnary.SignNarrowValue signNarrowValue = new SPIRVUnary.SignNarrowValue(lirKind, result, inputVal, bits);
         getGen().append(new SPIRVLIRStmt.AssignStmt(result, signNarrowValue));
         return result;
     }
@@ -363,7 +369,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "signExtend: %s , from %s to %s", inputVal, fromBits, toBits);
         LIRKind lirKind = getGen().getLIRKindTool().getIntegerKind(toBits);
         final Variable result = getGen().newVariable(lirKind);
-        SPIRVUnary.SignExtend signExtend = new SPIRVUnary.SignExtend(lirKind, inputVal, fromBits, toBits);
+        SPIRVUnary.SignExtend signExtend = new SPIRVUnary.SignExtend(lirKind, result, inputVal, fromBits, toBits);
         getGen().append(new SPIRVLIRStmt.AssignStmt(result, signExtend));
         return result;
     }
@@ -386,7 +392,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         Variable result = getGen().newVariable(toKind);
 
         LIRKind lirKind = getGen().getLIRKindTool().getIntegerKind(toBits);
-        SPIRVUnary.SignExtend signExtend = new SPIRVUnary.SignExtend(lirKind, inputVal, fromBits, toBits);
+        SPIRVUnary.SignExtend signExtend = new SPIRVUnary.SignExtend(lirKind, result, inputVal, fromBits, toBits);
         getGen().append(new SPIRVLIRStmt.AssignStmt(result, signExtend));
         return result;
     }
@@ -437,10 +443,17 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         SPIRVKind spirvKind = (SPIRVKind) kind.getPlatformKind();
         if (address instanceof SPIRVUnary.MemoryIndexedAccess) {
             SPIRVUnary.MemoryIndexedAccess indexedAccess = (SPIRVUnary.MemoryIndexedAccess) address;
-            Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emit IndexedLoadMemAccess in address: " + address + "[ " + indexedAccess.getIndex() + "]");
-            getGen().append(new SPIRVLIRStmt.IndexedLoadMemAccess(indexedAccess, result));
+            if (spirvKind.isVector() && indexedAccess.getMemoryRegion().getMemorySpace() == SPIRVMemorySpace.PRIVATE) {
+                Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "~~ emit IndexedLoadMemCollectionAccess in address: " + address + "[ " + indexedAccess.getIndex() + "]");
+                Value offset = getOffsetValue(spirvKind, indexedAccess);
+                getGen().append(new SPIRVLIRStmt.IndexedLoadMemCollectionAccess(indexedAccess, result, offset));
+            } else {
+                Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "~~ emit IndexedLoadMemAccess in address: " + address + "[ " + indexedAccess.getIndex() + "]");
+                getGen().append(new SPIRVLIRStmt.IndexedLoadMemAccess(indexedAccess, result));
+            }
         } else if (address instanceof MemoryAccess) {
             SPIRVArchitecture.SPIRVMemoryBase base = ((MemoryAccess) (address)).getMemoryRegion();
+            Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "~~ emit SPIRVAddressCast in address: " + address);
             SPIRVAddressCast cast = new SPIRVAddressCast(address, base, kind);
             if (spirvKind.isVector()) {
                 emitLoadVectorType(result, cast, (MemoryAccess) address);
@@ -455,6 +468,28 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
     @Override
     public Variable emitVolatileLoad(LIRKind kind, Value address, LIRFrameState state) {
         return null;
+    }
+
+    private Value getOffsetValue(SPIRVKind spirvKind, SPIRVUnary.MemoryIndexedAccess memoryAccess) {
+        if (memoryAccess.getMemoryRegion().getMemorySpace() == SPIRVMemorySpace.GLOBAL) {
+            return new ConstantValue(LIRKind.value(OCLKind.INT), PrimitiveConstant.INT_0);
+        } else {
+            return getPrivateOffsetValue(spirvKind, memoryAccess);
+        }
+    }
+
+    private Value getPrivateOffsetValue(SPIRVKind spirvKind, SPIRVUnary.MemoryIndexedAccess memoryAccess) {
+        Value privateOffsetValue = null;
+        if (memoryAccess == null) {
+            return null;
+        }
+        if (memoryAccess.getIndex() instanceof ConstantValue) {
+            ConstantValue constantValue = (ConstantValue) memoryAccess.getIndex();
+            int parsedIntegerIndex = Integer.parseInt(constantValue.getConstant().toValueString());
+            int index = parsedIntegerIndex / spirvKind.getVectorLength();
+            privateOffsetValue = new ConstantValue(LIRKind.value(SPIRVKind.OP_TYPE_INT_64), JavaConstant.forInt(index));
+        }
+        return privateOffsetValue;
     }
 
     @Override
@@ -472,19 +507,30 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         }
 
         if (spirvKind.isVector()) {
-            MemoryAccess memoryAccess2 = (MemoryAccess) address;
-            SPIRVAddressCast cast = new SPIRVAddressCast(memAccess.getValue(), memoryAccess2.getMemoryRegion(), LIRKind.value(spirvKind));
-            getGen().append(new SPIRVLIRStmt.StoreVectorStmt(cast, memoryAccess2, input));
+            if (address instanceof SPIRVUnary.MemoryIndexedAccess) {
+                // Use a vector intrinsic within private/local memory with index value.
+                SPIRVUnary.MemoryIndexedAccess indexedAccess = (SPIRVUnary.MemoryIndexedAccess) address;
+                SPIRVAddressCast cast = new SPIRVAddressCast(indexedAccess.getValue(), indexedAccess.getMemoryRegion(), LIRKind.value(spirvKind));
+                Value offset = getOffsetValue(spirvKind, indexedAccess);
+                Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "~~ emit StoreVectorCollectionStmt in address: " + address + "[ " + indexedAccess.getIndex() + "]");
+                getGen().append(new SPIRVLIRStmt.StoreVectorCollectionStmt(cast, indexedAccess, input, offset));
+            } else {
+                SPIRVAddressCast cast = new SPIRVAddressCast(memAccess.getValue(), memAccess.getMemoryRegion(), LIRKind.value(spirvKind));
+                Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "~~ emit StoreVectorStmt in address: " + address);
+                getGen().append(new SPIRVLIRStmt.StoreVectorStmt(cast, (MemoryAccess) memAccess, input));
+            }
         } else {
             if (memAccess != null) {
                 if (address instanceof MemoryAccess) {
                     MemoryAccess memoryAccess2 = (MemoryAccess) address;
+                    Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "~~ emit SPIRVAddressCast in address: " + address);
                     SPIRVAddressCast cast = new SPIRVAddressCast(memAccess.getValue(), memoryAccess2.getMemoryRegion(), LIRKind.value(spirvKind));
                     if (memoryAccess2.getIndex() == null) {
                         getGen().append(new SPIRVLIRStmt.StoreStmt(cast, memoryAccess2, input));
                     }
                 } else if (address instanceof SPIRVUnary.MemoryIndexedAccess) {
                     SPIRVUnary.MemoryIndexedAccess indexedAccess = (SPIRVUnary.MemoryIndexedAccess) address;
+                    Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "~~ emit StoreIndexedMemAccess in address: " + address + "[ " + indexedAccess.getIndex() + "]");
                     getGen().append(new SPIRVLIRStmt.StoreIndexedMemAccess(indexedAccess, input));
                 }
             }
@@ -548,7 +594,11 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         }
 
         Variable result = getGen().newVariable(resultKind);
-        getGen().append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVTernary.TernaryIntrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.FMA, resultKind, op1, op2, op3)));
+        SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic operation = SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.FMA;
+        if (TornadoOptions.FAST_MATH_OPTIMIZATIONS) {
+            operation = SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.MAD;
+        }
+        getGen().append(new SPIRVLIRStmt.AssignStmt(result, new SPIRVTernary.TernaryIntrinsic(result, operation, resultKind, op1, op2, op3)));
         return result;
     }
 

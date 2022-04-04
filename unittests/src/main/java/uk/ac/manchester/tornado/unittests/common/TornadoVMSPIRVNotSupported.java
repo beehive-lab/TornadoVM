@@ -23,7 +23,4 @@ public class TornadoVMSPIRVNotSupported extends RuntimeException {
         super(message);
     }
 
-    public TornadoVMSPIRVNotSupported(String message, Throwable cause) {
-        super(message, cause);
-    }
 }

@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -112,6 +112,7 @@ public class OCLPlatform extends TornadoLogger implements TornadoPlatform {
         return clGetPlatformInfo(id, OCLPlatformInfo.CL_PLATFORM_PROFILE.getValue());
     }
 
+    @Override
     public String getVersion() {
         return clGetPlatformInfo(id, OCLPlatformInfo.CL_PLATFORM_VERSION.getValue());
     }

@@ -31,6 +31,11 @@ public class LevelZeroContext {
     ZeContextHandle contextHandle;
     ZeContextDesc contextDescription;
 
+    public LevelZeroContext(ZeDriverHandle driver, ZeContextDesc contextDescription) {
+        this.driver = driver;
+        this.contextDescription = contextDescription;
+    }
+
     native int zeContextCreate(long driverHandler, ZeContextDesc contextDescriptionPtr, long[] contextPtr);
 
     public int zeContextCreate(long driverHandler) {
@@ -38,11 +43,6 @@ public class LevelZeroContext {
         int status = zeContextCreate(driverHandler, contextDescription, contextPointers);
         this.contextHandle = new ZeContextHandle(contextPointers);
         return status;
-    }
-
-    public LevelZeroContext(ZeDriverHandle driver, ZeContextDesc contextDescription) {
-        this.driver = driver;
-        this.contextDescription = contextDescription;
     }
 
     public ZeDriverHandle getDriver() {
@@ -71,29 +71,30 @@ public class LevelZeroContext {
         return zeCommandListCreateImmediate_native(contextPtr, deviceHandlerPtr, commandQueueDescription, commandList);
     }
 
-    native int zeMemAllocShared_native(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, ZeHostMemAllocDesc hostMemAllocDesc, int bufferSize, int alignment, long deviceHandlerPtr,
+    native int zeMemAllocShared_native(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, ZeHostMemAllocDesc hostMemAllocDesc, long bufferSize, long alignment, long deviceHandlerPtr,
             LevelZeroBufferInteger buffer);
 
-    native int zeMemAllocShared_nativeByte(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, ZeHostMemAllocDesc hostMemAllocDesc, int bufferSize, int alignment, long deviceHandlerPtr,
+    native int zeMemAllocShared_nativeByte(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, ZeHostMemAllocDesc hostMemAllocDesc, long bufferSize, long alignment, long deviceHandlerPtr,
             LevelZeroByteBuffer buffer);
 
-    public int zeMemAllocShared(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, ZeHostMemAllocDesc hostMemAllocDesc, int bufferSize, int alignment, long deviceHandlerPtr,
+    public int zeMemAllocShared(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, ZeHostMemAllocDesc hostMemAllocDesc, long bufferSize, long alignment, long deviceHandlerPtr,
             LevelZeroBufferInteger buffer) {
         return zeMemAllocShared_native(contextPtr, deviceMemAllocDesc, hostMemAllocDesc, bufferSize, alignment, deviceHandlerPtr, buffer);
     }
 
-    public int zeMemAllocShared(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, ZeHostMemAllocDesc hostMemAllocDesc, int bufferSize, int alignment, long deviceHandlerPtr,
+    public int zeMemAllocShared(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, ZeHostMemAllocDesc hostMemAllocDesc, long bufferSize, long alignment, long deviceHandlerPtr,
             LevelZeroByteBuffer buffer) {
         return zeMemAllocShared_nativeByte(contextPtr, deviceMemAllocDesc, hostMemAllocDesc, bufferSize, alignment, deviceHandlerPtr, buffer);
     }
 
-    native int zeMemAllocDevice_native(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, int allocSize, int alignment, long deviceHandlerPtr, LevelZeroByteBuffer deviceBuffer);
+    native int zeMemAllocDevice_native(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, long allocSize, long alignment, long deviceHandlerPtr, LevelZeroByteBuffer deviceBuffer);
 
-    public int zeMemAllocDevice(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, int allocSize, int alignment, long deviceHandlerPtr, LevelZeroByteBuffer deviceBuffer) {
+    public int zeMemAllocDevice(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, long allocSize, long alignment, long deviceHandlerPtr, LevelZeroByteBuffer deviceBuffer) {
         return zeMemAllocDevice_native(contextPtr, deviceMemAllocDesc, allocSize, alignment, deviceHandlerPtr, deviceBuffer);
     }
 
-    private native int zeMemAllocDevice_nativeLong(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, int allocSize, int alignment, long deviceHandlerPtr, LevelZeroBufferLong deviceBufferLong);
+    private native int zeMemAllocDevice_nativeLong(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, long allocSize, long alignment, long deviceHandlerPtr,
+            LevelZeroBufferLong deviceBufferLong);
 
     public int zeMemAllocDevice(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, int allocSize, int alignment, long deviceHandlerPtr, LevelZeroBufferLong deviceBufferLong) {
         return zeMemAllocDevice_nativeLong(contextPtr, deviceMemAllocDesc, allocSize, alignment, deviceHandlerPtr, deviceBufferLong);
@@ -268,10 +269,10 @@ public class LevelZeroContext {
      * <li>The application may call this function from simultaneous threads.</li>
      * <li>- The implementation of this function must be thread-safe.</li>
      * </ul>
-     * 
-     * 
+     *
+     *
      * @return Error code:
-     * 
+     *
      *         <p>
      *         ZE_RESULT_SUCCESS
      *         </p>
@@ -312,7 +313,7 @@ public class LevelZeroContext {
 
     /**
      * Creates an event from the pool.
-     * 
+     *
      * Details:
      * <ul>
      * <li>An event is used to communicate fine-grain host-to-device, device-to-host
@@ -323,13 +324,13 @@ public class LevelZeroContext {
      * with the same event pool handle.</li>
      * <li>The implementation of this function should be lock-free.</li>
      * </ul>
-     * 
+     *
      * Similar to:
-     * 
+     *
      * <code>
      *     clCreateUserEvent, vkCreateEvent
      * </code>
-     * 
+     *
      * @param eventPool
      *            [IN] Handle of the event Pool
      * @param eventDescription
@@ -338,7 +339,7 @@ public class LevelZeroContext {
      *            [out] Object that contains a pointer to handle of event object
      *            created
      * @return An error code:
-     * 
+     *
      *         <p>
      *         ZE_RESULT_SUCCESS
      *         </p>
@@ -360,8 +361,8 @@ public class LevelZeroContext {
      *         <p>
      *         ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY
      *         </p>
-     * 
-     * 
+     *
+     *
      */
     public int zeEventCreate(ZeEventPoolHandle eventPool, ZeEventDescription eventDescription, ZeEventHandle event) {
         return zeEventCreate_native(eventPool, eventDescription, event);
@@ -383,9 +384,9 @@ public class LevelZeroContext {
         return result;
     }
 
-    private native int zeMemAllocHost_native(long contextPtr, ZeHostMemAllocDesc hostMemAllocDesc, int allocSize, int alignment, LevelZeroByteBuffer hostBuffer);
+    private native int zeMemAllocHost_native(long contextPtr, ZeHostMemAllocDesc hostMemAllocDesc, long allocSize, long alignment, LevelZeroByteBuffer hostBuffer);
 
-    public int zeMemAllocHost(long contextPtr, ZeHostMemAllocDesc hostMemAllocDesc, int allocSize, int alignment, LevelZeroByteBuffer hostBuffer) {
+    public int zeMemAllocHost(long contextPtr, ZeHostMemAllocDesc hostMemAllocDesc, long allocSize, long alignment, LevelZeroByteBuffer hostBuffer) {
         return zeMemAllocHost_native(contextPtr, hostMemAllocDesc, allocSize, alignment, hostBuffer);
     }
 

@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022 APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,10 +26,12 @@ package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.lir.ConstantValue;
+import org.graalvm.compiler.lir.LIRInstruction.Def;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.Variable;
 
+import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVInstScope;
@@ -78,10 +80,32 @@ public class SPIRVUnary {
         @Use
         protected Value value;
 
-        protected UnaryConsumer(SPIRVUnaryOp opcode, LIRKind valueKind, Value value) {
+        @Def
+        protected Variable result;
+
+        protected UnaryConsumer(SPIRVUnaryOp opcode, Variable result, LIRKind valueKind, Value value) {
             super(valueKind);
             this.opcode = opcode;
             this.value = value;
+            this.result = result;
+        }
+
+        protected SPIRVId obtainPhiValueIdIfNeeded(SPIRVAssembler asm) {
+            SPIRVId operationId;
+            if (!asm.isPhiMapEmpty() && asm.isResultInPhiMap(result)) {
+                operationId = asm.getPhiId(result);
+                AllocatableValue allocatableValue = result;
+                while (operationId == null) {
+                    // We loop-up the operation ID. In the case it's in the Phi Table, we look at
+                    // the trace to obtain the root Phi Variable.
+                    AllocatableValue tempValue = asm.getPhiTraceValue((Variable) allocatableValue);
+                    operationId = asm.getPhiId((Variable) tempValue);
+                    allocatableValue = tempValue;
+                }
+            } else {
+                operationId = asm.module.getNextId();
+            }
+            return operationId;
         }
 
         public Value getValue() {
@@ -97,8 +121,8 @@ public class SPIRVUnary {
 
     public static class Expr extends UnaryConsumer {
 
-        public Expr(SPIRVUnaryOp opcode, LIRKind lirKind, Value value) {
-            super(opcode, lirKind, value);
+        public Expr(SPIRVUnaryOp opcode, Variable result, LIRKind lirKind, Value value) {
+            super(opcode, result, lirKind, value);
         }
 
     }
@@ -111,7 +135,7 @@ public class SPIRVUnary {
         protected int parameterIndex;
 
         public LoadFromStackFrameExpr(LIRKind lirKind, SPIRVKind type, int indexFromStackFrame, int parameterIndex) {
-            super(null, lirKind, null);
+            super(null, null, lirKind, null);
             this.type = type;
             this.indexFromStackFrame = indexFromStackFrame;
             this.parameterIndex = parameterIndex;
@@ -188,7 +212,7 @@ public class SPIRVUnary {
         protected Value parameterIndex;
 
         public LoadIndexValueFromStack(LIRKind lirKind, SPIRVKind type, Value parameterIndex) {
-            super(null, lirKind, null);
+            super(null, null, lirKind, null);
             this.type = type;
             this.parameterIndex = parameterIndex;
         }
@@ -236,11 +260,13 @@ public class SPIRVUnary {
         }
     }
 
-    public static class AbstractMemoryAccess extends UnaryConsumer {
+    public abstract static class AbstractMemoryAccess extends UnaryConsumer {
 
-        protected AbstractMemoryAccess(SPIRVUnaryOp opcode, LIRKind valueKind, Value value) {
-            super(opcode, valueKind, value);
+        protected AbstractMemoryAccess(SPIRVUnaryOp opcode, Variable result, LIRKind valueKind, Value value) {
+            super(opcode, result, valueKind, value);
         }
+
+        public abstract SPIRVMemoryBase getMemoryRegion();
     }
 
     public static class MemoryAccess extends AbstractMemoryAccess {
@@ -250,7 +276,7 @@ public class SPIRVUnary {
         private Value index;
 
         MemoryAccess(SPIRVMemoryBase base, Value value) {
-            super(null, LIRKind.Illegal, value);
+            super(null, null, LIRKind.Illegal, value);
             this.memoryRegion = base;
         }
 
@@ -278,7 +304,7 @@ public class SPIRVUnary {
         private Value index;
 
         public MemoryIndexedAccess(SPIRVMemoryBase memoryRegion, Value baseValue, Value indexValue) {
-            super(null, LIRKind.Illegal, baseValue);
+            super(null, null, LIRKind.Illegal, baseValue);
             this.memoryRegion = memoryRegion;
             this.index = indexValue;
         }
@@ -300,19 +326,23 @@ public class SPIRVUnary {
             if (index instanceof ConstantValue) {
                 indexId = asm.lookUpConstant(((ConstantValue) index).getConstant().toValueString(), (SPIRVKind) index.getPlatformKind());
             } else {
+                SPIRVId loadId;
                 indexId = asm.lookUpLIRInstructions(index);
-                SPIRVKind kindIndex = (SPIRVKind) index.getPlatformKind();
-                SPIRVId loadId = asm.module.getNextId();
-                SPIRVId typeIndex = asm.primitives.getTypePrimitive(kindIndex);
-                asm.currentBlockScope().add(new SPIRVOpLoad( //
-                        typeIndex, //
-                        loadId, //
-                        indexId, //
-                        new SPIRVOptionalOperand<>(//
-                                SPIRVMemoryAccess.Aligned(//
-                                        new SPIRVLiteralInteger(kindIndex.getSizeInBytes())))//
-                ));
-
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                    loadId = indexId;
+                } else {
+                    SPIRVKind kindIndex = (SPIRVKind) index.getPlatformKind();
+                    loadId = asm.module.getNextId();
+                    SPIRVId typeIndex = asm.primitives.getTypePrimitive(kindIndex);
+                    asm.currentBlockScope().add(new SPIRVOpLoad( //
+                            typeIndex, //
+                            loadId, //
+                            indexId, //
+                            new SPIRVOptionalOperand<>(//
+                                    SPIRVMemoryAccess.Aligned(//
+                                            new SPIRVLiteralInteger(kindIndex.getSizeInBytes())))//
+                    ));
+                }
                 SPIRVId typeLong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
                 SPIRVId idConversion = asm.module.getNextId();
                 asm.currentBlockScope().add(new SPIRVOpSConvert(typeLong, idConversion, loadId));
@@ -337,18 +367,22 @@ public class SPIRVUnary {
             if (index instanceof ConstantValue) {
                 indexId = asm.lookUpConstant(((ConstantValue) index).getConstant().toValueString(), (SPIRVKind) index.getPlatformKind());
             } else {
-
-                SPIRVId loadId = asm.module.getNextId();
+                SPIRVId loadId;
                 indexId = asm.lookUpLIRInstructions(index);
-                SPIRVId type = asm.primitives.getTypePrimitive(kind);
-                asm.currentBlockScope().add(new SPIRVOpLoad( //
-                        type, //
-                        loadId, //
-                        indexId, //
-                        new SPIRVOptionalOperand<>(//
-                                SPIRVMemoryAccess.Aligned(//
-                                        new SPIRVLiteralInteger(kind.getSizeInBytes())))//
-                ));
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                    loadId = indexId;
+                } else {
+                    loadId = asm.module.getNextId();
+                    SPIRVId type = asm.primitives.getTypePrimitive(kind);
+                    asm.currentBlockScope().add(new SPIRVOpLoad( //
+                            type, //
+                            loadId, //
+                            indexId, //
+                            new SPIRVOptionalOperand<>(//
+                                    SPIRVMemoryAccess.Aligned(//
+                                            new SPIRVLiteralInteger(kind.getSizeInBytes())))//
+                    ));
+                }
                 SPIRVId typeLong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
                 SPIRVId idConversion = asm.module.getNextId();
                 asm.currentBlockScope().add(new SPIRVOpSConvert(typeLong, idConversion, loadId));
@@ -363,11 +397,11 @@ public class SPIRVUnary {
         }
 
         private boolean isPrivateMemoryAccess() {
-            return this.memoryRegion.number == SPIRVArchitecture.privateSpace.number;
+            return this.memoryRegion.getNumber() == SPIRVArchitecture.privateSpace.getNumber();
         }
 
         private boolean isLocalMemoryAccess() {
-            return this.memoryRegion.number == SPIRVArchitecture.localSpace.number;
+            return this.memoryRegion.getNumber() == SPIRVArchitecture.localSpace.getNumber();
         }
 
         @Override
@@ -383,8 +417,8 @@ public class SPIRVUnary {
 
         }
 
-        public void emitForLoad(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-            SPIRVId arrayAccessId = asm.module.getNextId();
+        public void emitForLoad(SPIRVAssembler asm, SPIRVKind resultKind) {
+            SPIRVId resultArrayAccessId = asm.module.getNextId();
 
             SPIRVId baseIndex = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_64);
 
@@ -392,18 +426,25 @@ public class SPIRVUnary {
             if (index instanceof ConstantValue) {
                 indexId = asm.lookUpConstant(((ConstantValue) index).getConstant().toValueString(), (SPIRVKind) index.getPlatformKind());
             } else {
+
+                SPIRVId loadId;
                 indexId = asm.lookUpLIRInstructions(index);
-                SPIRVId loadId = asm.module.getNextId();
-                SPIRVKind spirvKind = (SPIRVKind) index.getPlatformKind();
-                SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
-                asm.currentBlockScope().add(new SPIRVOpLoad( //
-                        type, //
-                        loadId, //
-                        indexId, //
-                        new SPIRVOptionalOperand<>(//
-                                SPIRVMemoryAccess.Aligned(//
-                                        new SPIRVLiteralInteger(spirvKind.getSizeInBytes())))//
-                ));
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                    loadId = indexId;
+                } else {
+                    loadId = asm.module.getNextId();
+                    SPIRVKind spirvKind = (SPIRVKind) index.getPlatformKind();
+                    SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
+                    asm.currentBlockScope().add(new SPIRVOpLoad( //
+                            type, //
+                            loadId, //
+                            indexId, //
+                            new SPIRVOptionalOperand<>(//
+                                    SPIRVMemoryAccess.Aligned(//
+                                            new SPIRVLiteralInteger(spirvKind.getSizeInBytes())))//
+                    ));
+
+                }
 
                 SPIRVId typeLong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
                 SPIRVId convertID = asm.module.getNextId();
@@ -414,16 +455,22 @@ public class SPIRVUnary {
             SPIRVId baseId = asm.lookUpLIRInstructions(getValue());
 
             SPIRVId type;
-            if (getMemoryRegion().memorySpace == SPIRVMemorySpace.LOCAL) {
+            if (getMemoryRegion().getMemorySpace() == SPIRVMemorySpace.LOCAL) {
                 type = asm.primitives.getPtrOpTypePointerWithStorage((SPIRVKind) getValue().getPlatformKind(), SPIRVStorageClass.Workgroup());
-            } else if (getMemoryRegion().memorySpace == SPIRVMemorySpace.PRIVATE) {
+            } else if (getMemoryRegion().getMemorySpace() == SPIRVMemorySpace.PRIVATE) {
                 type = asm.primitives.getPtrToTypeFunctionPrimitive((SPIRVKind) getValue().getPlatformKind());
             } else {
                 throw new RuntimeException("Memory access not valid for a SPIRVOpInBoundsPtrAccessChain instruction");
             }
 
-            asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain(type, arrayAccessId, baseId, baseIndex, new SPIRVMultipleOperands(indexId)));
-            asm.registerLIRInstructionValue(this, arrayAccessId);
+            if (resultKind.isVector() && getMemoryRegion().getMemorySpace() == SPIRVMemorySpace.PRIVATE) {
+                // When we copy a collection from private to local, the index is set in the
+                // VLOAD intrinsic. Thus, as index, we choose 0 to comply with CLANG/LLVM
+                indexId = asm.lookUpConstant("0", SPIRVKind.OP_TYPE_INT_64);
+            }
+            // } else {
+            asm.currentBlockScope().add(new SPIRVOpInBoundsPtrAccessChain(type, resultArrayAccessId, baseId, baseIndex, new SPIRVMultipleOperands(indexId)));
+            asm.registerLIRInstructionValue(this, resultArrayAccessId);
         }
     }
 
@@ -434,7 +481,7 @@ public class SPIRVUnary {
         private final Value address;
 
         public SPIRVAddressCast(Value address, SPIRVMemoryBase base, LIRKind valueKind) {
-            super(null, valueKind, address);
+            super(null, null, valueKind, address);
             this.base = base;
             this.address = address;
         }
@@ -447,33 +494,34 @@ public class SPIRVUnary {
          * </code>
          *
          * @param crb
+         *            {@link SPIRVCompilationResultBuilder}
          * @param asm
+         *            {@link SPIRVAssembler}
          */
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
             Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVAddressCast with LIRKIND: " + getLIRKind().getPlatformKind());
-            SPIRVId idLoad = asm.module.getNextId();
 
-            // We force to load a pointer to long
-            SPIRVId typeLoad = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
-
-            SPIRVId addressToLoad = asm.lookUpLIRInstructions(address);
-
-            if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+            final SPIRVId idLoad;
+            SPIRVId addressId = asm.lookUpLIRInstructions(this.address);
+            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                idLoad = addressId;
+            } else {
+                // We force to load a pointer to long
+                SPIRVId typeLoad = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
+                idLoad = asm.module.getNextId();
                 asm.currentBlockScope().add(new SPIRVOpLoad( //
                         typeLoad, //
                         idLoad, //
-                        addressToLoad, //
+                        addressId, //
                         new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(SPIRVKind.OP_TYPE_INT_64.getByteCount())))));
-            } else {
-                idLoad = addressToLoad;
             }
 
             SPIRVId ptrCrossGroup = asm.primitives.getPtrToCrossWorkGroupPrimitive((SPIRVKind) getLIRKind().getPlatformKind());
 
-            SPIRVId storeAddressID = asm.module.getNextId();
-            asm.currentBlockScope().add(new SPIRVOpConvertUToPtr(ptrCrossGroup, storeAddressID, idLoad));
-            asm.registerLIRInstructionValue(this, storeAddressID);
+            SPIRVId convertToPtrId = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpConvertUToPtr(ptrCrossGroup, convertToPtrId, idLoad));
+            asm.registerLIRInstructionValue(this, convertToPtrId);
         }
     }
 
@@ -482,8 +530,8 @@ public class SPIRVUnary {
         protected SPIRVThreadBuiltIn builtIn;
         protected Value dimension;
 
-        public ThreadBuiltinCallForSPIRV(SPIRVThreadBuiltIn builtIn, LIRKind valueKind, Value dimension) {
-            super(null, valueKind, dimension);
+        public ThreadBuiltinCallForSPIRV(SPIRVThreadBuiltIn builtIn, Variable result, LIRKind valueKind, Value dimension) {
+            super(null, result, valueKind, dimension);
             this.dimension = dimension;
             this.builtIn = builtIn;
         }
@@ -543,9 +591,8 @@ public class SPIRVUnary {
                                     new SPIRVLiteralInteger(dimensionValue)) //
                     ));
 
-            SPIRVId conv = asm.module.getNextId();
+            SPIRVId conv = obtainPhiValueIdIfNeeded(asm);
             SPIRVId uint = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32);
-
             asm.currentBlockScope().add(new SPIRVOpUConvert(uint, conv, callIntrinsicId));
 
             // Store will be performed in the Assigment, if enabled.
@@ -553,17 +600,49 @@ public class SPIRVUnary {
         }
     }
 
+    public abstract static class AbstractExtend extends UnaryConsumer {
+
+        protected AbstractExtend(SPIRVUnaryOp opcode, Variable result, LIRKind valueKind, Value value) {
+            super(opcode, result, valueKind, value);
+        }
+
+        protected SPIRVId loadConvertIfNeeded(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, SPIRVId type, SPIRVKind spirvKind) {
+            if (value instanceof SPIRVVectorElementSelect) {
+                ((SPIRVLIROp) value).emit(crb, asm);
+                return asm.lookUpLIRInstructions(value);
+            } else {
+                SPIRVId param = asm.lookUpLIRInstructions(value);
+
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                    return param;
+                } else {
+                    SPIRVId loadConvert = asm.module.getNextId();
+                    asm.currentBlockScope().add(new SPIRVOpLoad(//
+                            type, //
+                            loadConvert, //
+                            param, //
+                            new SPIRVOptionalOperand<>( //
+                                    SPIRVMemoryAccess.Aligned( //
+                                            new SPIRVLiteralInteger(spirvKind.getByteCount())))//
+                    ));
+                    return loadConvert;
+                }
+            }
+        }
+
+    }
+
     /*
      * FIXME: Possible refactor to merge this class with SIGNNarrowValue. Note that
      * SConvert in SPIRV works for Sign Extend as well as truncate.
      */
-    public static class SignExtend extends UnaryConsumer {
+    public static class SignExtend extends AbstractExtend {
 
         private int fromBits;
         private int toBits;
 
-        public SignExtend(LIRKind lirKind, Value inputVal, int fromBits, int toBits) {
-            super(null, lirKind, inputVal);
+        public SignExtend(LIRKind lirKind, Variable result, Value inputVal, int fromBits, int toBits) {
+            super(null, result, lirKind, inputVal);
             this.fromBits = fromBits;
             this.toBits = toBits;
         }
@@ -576,22 +655,7 @@ public class SPIRVUnary {
             SPIRVKind spirvKind = (SPIRVKind) value.getPlatformKind();
             SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
 
-            SPIRVId loadConvert;
-            if (value instanceof SPIRVVectorElementSelect) {
-                ((SPIRVLIROp) value).emit(crb, asm);
-                loadConvert = asm.lookUpLIRInstructions(value);
-            } else {
-                SPIRVId param = asm.lookUpLIRInstructions(value);
-                loadConvert = asm.module.getNextId();
-                asm.currentBlockScope().add(new SPIRVOpLoad(//
-                        type, //
-                        loadConvert, //
-                        param, //
-                        new SPIRVOptionalOperand<>( //
-                                SPIRVMemoryAccess.Aligned( //
-                                        new SPIRVLiteralInteger(spirvKind.getByteCount())))//
-                ));
-            }
+            SPIRVId loadConvert = loadConvertIfNeeded(crb, asm, type, spirvKind);
 
             SPIRVId toTypeId;
             if (toBits == 64) {
@@ -602,7 +666,7 @@ public class SPIRVUnary {
                 throw new RuntimeException("to Type not supported: " + toBits);
             }
 
-            SPIRVId result = asm.module.getNextId();
+            SPIRVId result = obtainPhiValueIdIfNeeded(asm);
             asm.currentBlockScope().add(new SPIRVOpSConvert(toTypeId, result, loadConvert));
 
             asm.registerLIRInstructionValue(this, result);
@@ -610,12 +674,12 @@ public class SPIRVUnary {
         }
     }
 
-    public static class SignNarrowValue extends UnaryConsumer {
+    public static class SignNarrowValue extends AbstractExtend {
 
         private int toBits;
 
-        public SignNarrowValue(LIRKind lirKind, Value inputVal, int toBits) {
-            super(null, lirKind, inputVal);
+        public SignNarrowValue(LIRKind lirKind, Variable result, Value inputVal, int toBits) {
+            super(null, result, lirKind, inputVal);
             this.toBits = toBits;
         }
 
@@ -643,22 +707,7 @@ public class SPIRVUnary {
             SPIRVKind spirvKind = (SPIRVKind) value.getPlatformKind();
             SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
 
-            SPIRVId loadConvert;
-            if (value instanceof SPIRVVectorElementSelect) {
-                ((SPIRVLIROp) value).emit(crb, asm);
-                loadConvert = asm.lookUpLIRInstructions(value);
-            } else {
-                SPIRVId param = asm.lookUpLIRInstructions(value);
-                loadConvert = asm.module.getNextId();
-                asm.currentBlockScope().add(new SPIRVOpLoad(//
-                        type, //
-                        loadConvert, //
-                        param, //
-                        new SPIRVOptionalOperand<>( //
-                                SPIRVMemoryAccess.Aligned( //
-                                        new SPIRVLiteralInteger(spirvKind.getByteCount())))//
-                ));
-            }
+            SPIRVId loadConvert = loadConvertIfNeeded(crb, asm, type, spirvKind);
 
             if ((spirvKind.getSizeInBytes() * 8) == toBits) {
                 // There is no conversion for types of the same width
@@ -675,7 +724,7 @@ public class SPIRVUnary {
                 } else {
                     throw new RuntimeException("ToBits not supported");
                 }
-                SPIRVId result = asm.module.getNextId();
+                SPIRVId result = obtainPhiValueIdIfNeeded(asm);
                 asm.currentBlockScope().add(new SPIRVOpSConvert(toType, result, loadConvert));
 
                 asm.registerLIRInstructionValue(this, result);
@@ -685,17 +734,40 @@ public class SPIRVUnary {
 
     public static class CastOperations extends UnaryConsumer {
 
-        protected CastOperations(SPIRVUnaryOp opcode, LIRKind valueKind, Value value) {
-            super(opcode, valueKind, value);
+        protected CastOperations(SPIRVUnaryOp opcode, Variable result, LIRKind valueKind, Value value) {
+            super(opcode, result, valueKind, value);
         }
+
+        protected SPIRVId loadConvertIfNeeded(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, SPIRVId fromTypeID, SPIRVKind spirvKind) {
+            if (value instanceof SPIRVVectorElementSelect) {
+                ((SPIRVLIROp) value).emit(crb, asm);
+                return asm.lookUpLIRInstructions(value);
+            } else {
+                SPIRVId param = asm.lookUpLIRInstructions(value);
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                    return param;
+                }
+                SPIRVId loadConvert = asm.module.getNextId();
+                asm.currentBlockScope().add(new SPIRVOpLoad(//
+                        fromTypeID, //
+                        loadConvert, //
+                        param, //
+                        new SPIRVOptionalOperand<>( //
+                                SPIRVMemoryAccess.Aligned( //
+                                        new SPIRVLiteralInteger(spirvKind.getByteCount())))//
+                ));
+                return loadConvert;
+            }
+        }
+
     }
 
     public static class CastIToFloat extends CastOperations {
 
         private SPIRVKind toType;
 
-        public CastIToFloat(LIRKind lirKind, Value inputVal, SPIRVKind toType) {
-            super(null, lirKind, inputVal);
+        public CastIToFloat(LIRKind lirKind, Variable result, Value inputVal, SPIRVKind toType) {
+            super(null, result, lirKind, inputVal);
             this.toType = toType;
         }
 
@@ -708,25 +780,10 @@ public class SPIRVUnary {
             SPIRVId fromTypeID = asm.primitives.getTypePrimitive((SPIRVKind) value.getPlatformKind());
             SPIRVId toTypeId = asm.primitives.getTypePrimitive(toType);
 
-            SPIRVId loadConvert;
-            if (value instanceof SPIRVVectorElementSelect) {
-                ((SPIRVLIROp) value).emit(crb, asm);
-                loadConvert = asm.lookUpLIRInstructions(value);
-            } else {
-                SPIRVId param = asm.lookUpLIRInstructions(value);
-                loadConvert = asm.module.getNextId();
-                asm.currentBlockScope().add(new SPIRVOpLoad(//
-                        fromTypeID, //
-                        loadConvert, //
-                        param, //
-                        new SPIRVOptionalOperand<>( //
-                                SPIRVMemoryAccess.Aligned( //
-                                        new SPIRVLiteralInteger(spirvKind.getByteCount())))//
-                ));
-            }
+            SPIRVId loadConvert = loadConvertIfNeeded(crb, asm, fromTypeID, spirvKind);
 
             // OpSConvert
-            SPIRVId result = asm.module.getNextId();
+            SPIRVId result = obtainPhiValueIdIfNeeded(asm);
             asm.currentBlockScope().add(new SPIRVOpConvertSToF(toTypeId, result, loadConvert));
 
             asm.registerLIRInstructionValue(this, result);
@@ -737,8 +794,8 @@ public class SPIRVUnary {
 
         private SPIRVKind toType;
 
-        public CastFloatDouble(LIRKind lirKind, Value inputVal, SPIRVKind toType) {
-            super(null, lirKind, inputVal);
+        public CastFloatDouble(LIRKind lirKind, Variable result, Value inputVal, SPIRVKind toType) {
+            super(null, result, lirKind, inputVal);
             this.toType = toType;
         }
 
@@ -751,25 +808,10 @@ public class SPIRVUnary {
             SPIRVId fromType = asm.primitives.getTypePrimitive((SPIRVKind) value.getPlatformKind());
             SPIRVId toTypeId = asm.primitives.getTypePrimitive(toType);
 
-            SPIRVId loadConvert;
-            if (value instanceof SPIRVVectorElementSelect) {
-                ((SPIRVLIROp) value).emit(crb, asm);
-                loadConvert = asm.lookUpLIRInstructions(value);
-            } else {
-                SPIRVId param = asm.lookUpLIRInstructions(value);
-                loadConvert = asm.module.getNextId();
-                asm.currentBlockScope().add(new SPIRVOpLoad(//
-                        fromType, //
-                        loadConvert, //
-                        param, //
-                        new SPIRVOptionalOperand<>( //
-                                SPIRVMemoryAccess.Aligned( //
-                                        new SPIRVLiteralInteger(spirvKind.getByteCount())))//
-                ));
-            }
+            SPIRVId loadConvert = loadConvertIfNeeded(crb, asm, fromType, spirvKind);
 
             // OpFConvert
-            SPIRVId result = asm.module.getNextId();
+            SPIRVId result = obtainPhiValueIdIfNeeded(asm);
             asm.currentBlockScope().add(new SPIRVOpFConvert(toTypeId, result, loadConvert));
 
             asm.registerLIRInstructionValue(this, result);
@@ -780,8 +822,8 @@ public class SPIRVUnary {
 
         private SPIRVKind toType;
 
-        public CastFloatToLong(LIRKind lirKind, Value inputVal, SPIRVKind toType) {
-            super(null, lirKind, inputVal);
+        public CastFloatToLong(LIRKind lirKind, Variable result, Value inputVal, SPIRVKind toType) {
+            super(null, result, lirKind, inputVal);
             this.toType = toType;
         }
 
@@ -794,25 +836,10 @@ public class SPIRVUnary {
             SPIRVId fromTypeID = asm.primitives.getTypePrimitive((SPIRVKind) value.getPlatformKind());
             SPIRVId toTypeId = asm.primitives.getTypePrimitive(toType);
 
-            SPIRVId loadConvert;
-            if (value instanceof SPIRVVectorElementSelect) {
-                ((SPIRVLIROp) value).emit(crb, asm);
-                loadConvert = asm.lookUpLIRInstructions(value);
-            } else {
-                SPIRVId param = asm.lookUpLIRInstructions(value);
-                loadConvert = asm.module.getNextId();
-                asm.currentBlockScope().add(new SPIRVOpLoad(//
-                        fromTypeID, //
-                        loadConvert, //
-                        param, //
-                        new SPIRVOptionalOperand<>( //
-                                SPIRVMemoryAccess.Aligned( //
-                                        new SPIRVLiteralInteger(spirvKind.getByteCount())))//
-                ));
-            }
+            SPIRVId loadConvert = loadConvertIfNeeded(crb, asm, fromTypeID, spirvKind);
 
             // OpSConvert
-            SPIRVId result = asm.module.getNextId();
+            SPIRVId result = obtainPhiValueIdIfNeeded(asm);
             asm.currentBlockScope().add(new SPIRVOpConvertSToF(toTypeId, result, loadConvert));
 
             asm.registerLIRInstructionValue(this, result);
@@ -823,8 +850,8 @@ public class SPIRVUnary {
 
         private SPIRVKind toType;
 
-        public CastFloatToInt(LIRKind lirKind, Value inputVal, SPIRVKind toType) {
-            super(null, lirKind, inputVal);
+        public CastFloatToInt(LIRKind lirKind, Variable result, Value inputVal, SPIRVKind toType) {
+            super(null, result, lirKind, inputVal);
             this.toType = toType;
         }
 
@@ -837,24 +864,9 @@ public class SPIRVUnary {
             SPIRVId fromTypeID = asm.primitives.getTypePrimitive((SPIRVKind) value.getPlatformKind());
             SPIRVId toTypeId = asm.primitives.getTypePrimitive(toType);
 
-            SPIRVId loadConvert;
-            if (value instanceof SPIRVVectorElementSelect) {
-                ((SPIRVLIROp) value).emit(crb, asm);
-                loadConvert = asm.lookUpLIRInstructions(value);
-            } else {
-                SPIRVId param = asm.lookUpLIRInstructions(value);
-                loadConvert = asm.module.getNextId();
-                asm.currentBlockScope().add(new SPIRVOpLoad(//
-                        fromTypeID, //
-                        loadConvert, //
-                        param, //
-                        new SPIRVOptionalOperand<>( //
-                                SPIRVMemoryAccess.Aligned( //
-                                        new SPIRVLiteralInteger(spirvKind.getByteCount())))//
-                ));
-            }
+            SPIRVId loadConvert = loadConvertIfNeeded(crb, asm, fromTypeID, spirvKind);
 
-            SPIRVId resultConversion = asm.module.getNextId();
+            SPIRVId resultConversion = obtainPhiValueIdIfNeeded(asm);
             asm.currentBlockScope().add(new SPIRVOpConvertFToS(toTypeId, resultConversion, loadConvert));
             asm.registerLIRInstructionValue(this, resultConversion);
         }
@@ -864,13 +876,36 @@ public class SPIRVUnary {
      * OpenCL Extended Instruction Set Intrinsics. As specified in the SPIR-V 1.0
      * standard, the following intrinsics in SPIR-V represents builtin functions
      * from the OpenCL standard.
-     * 
+     *
      * For obtaining the correct Int-Reference of the function:
-     * 
+     *
      * <url>https://www.khronos.org/registry/spir-v/specs/1.0/OpenCL.ExtendedInstructionSet.100.html</url>
-     * 
+     *
      */
     public static class Intrinsic extends UnaryConsumer {
+
+        private final OpenCLExtendedIntrinsic builtIn;
+
+        public Intrinsic(OpenCLExtendedIntrinsic opcode, LIRKind valueKind, Value value) {
+            super(null, null, valueKind, value);
+            this.builtIn = opcode;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVLiteralExtInstInteger: " + builtIn.name);
+
+            SPIRVId type = asm.primitives.getTypePrimitive(getSPIRVPlatformKind());
+
+            SPIRVId loadParam = loadSPIRVId(crb, asm, getValue());
+
+            SPIRVId result = asm.module.getNextId();
+            SPIRVId set = asm.getOpenclImport();
+            SPIRVLiteralExtInstInteger intrinsic = new SPIRVLiteralExtInstInteger(builtIn.value, builtIn.name);
+            asm.currentBlockScope().add(new SPIRVOpExtInst(type, result, set, intrinsic, new SPIRVMultipleOperands<>(loadParam)));
+            asm.registerLIRInstructionValue(this, result);
+        }
 
         // @formatter:off
         public enum OpenCLExtendedIntrinsic {
@@ -910,6 +945,7 @@ public class SPIRVUnary {
             LOG("log", 37),
             LOG2("log2", 38),
             LOG10("log10", 39),
+            MAD("mad", 42),
             POW("pow", 48),
             REMAINDER("remainder", 51),
             RSQRT("rsqrt", 56),
@@ -937,7 +973,7 @@ public class SPIRVUnary {
             VSTORE_HALF("vstore_half", 175),
             VSTORE_HALFN("vstore_halfn", 176);
 
-            
+
             int value;
             String name;
 
@@ -954,31 +990,6 @@ public class SPIRVUnary {
                 return this.value;
             }
         }
-        // @formatter:on
-
-        public static final String COS = "cos";
-        private final OpenCLExtendedIntrinsic builtIn;
-
-        public Intrinsic(OpenCLExtendedIntrinsic opcode, LIRKind valueKind, Value value) {
-            super(null, valueKind, value);
-            this.builtIn = opcode;
-        }
-
-        @Override
-        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-
-            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVLiteralExtInstInteger: " + builtIn.name);
-
-            SPIRVId type = asm.primitives.getTypePrimitive(getSPIRVPlatformKind());
-
-            SPIRVId loadParam = loadSPIRVId(crb, asm, getValue());
-
-            SPIRVId result = asm.module.getNextId();
-            SPIRVId set = asm.getOpenclImport();
-            SPIRVLiteralExtInstInteger intrinsic = new SPIRVLiteralExtInstInteger(builtIn.value, builtIn.name);
-            asm.currentBlockScope().add(new SPIRVOpExtInst(type, result, set, intrinsic, new SPIRVMultipleOperands<>(loadParam)));
-            asm.registerLIRInstructionValue(this, result);
-        }
     }
 
     public static class Negate extends UnaryConsumer {
@@ -986,17 +997,34 @@ public class SPIRVUnary {
         boolean isInteger;
         String nameDebugInstruction;
 
-        public Negate(LIRKind lirKind, Value inputVal) {
-            super(null, lirKind, inputVal);
-            if (getSPIRVPlatformKind().isInteger()) {
+        public Negate(LIRKind lirKind, Variable result,  Value inputVal) {
+            super(null, result, lirKind, inputVal);
+            if (getSPIRVPlatformKind().isInteger() || isVectorElementInteger()) {
                 isInteger = true;
                 nameDebugInstruction = "SPIRVOpSNegate";
-            } else if (getSPIRVPlatformKind().isFloatingPoint()) {
+            } else if (getSPIRVPlatformKind().isFloatingPoint() || isVectorElementFloat()) {
                 nameDebugInstruction = "SPIRVOpFNegate";
             } else {
                 throw new RuntimeException("Error - not valid type");
             }
         }
+
+        private boolean isVectorElementInteger() {
+            if (getSPIRVPlatformKind().isVector()) {
+                SPIRVKind kind = getSPIRVPlatformKind();
+                return (kind.getElementKind().isInteger());
+            }
+            return false;
+        }
+
+        private boolean isVectorElementFloat() {
+            if (getSPIRVPlatformKind().isVector()) {
+                SPIRVKind kind = getSPIRVPlatformKind();
+                return (kind.getElementKind().isFloatingPoint());
+            }
+            return false;
+        }
+
 
         protected SPIRVId getId(Value inputValue, SPIRVAssembler asm, SPIRVKind spirvKind) {
             if (inputValue instanceof ConstantValue) {
@@ -1004,41 +1032,36 @@ public class SPIRVUnary {
                 return asm.lookUpConstant(((ConstantValue) inputValue).getConstant().toValueString(), kind);
             } else {
                 SPIRVId param = asm.lookUpLIRInstructions(inputValue);
-                if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
-                    // We need to perform a load first
-                    Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit LOAD Variable: " + inputValue);
-                    SPIRVId load = asm.module.getNextId();
-                    SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
-                    asm.currentBlockScope().add(new SPIRVOpLoad(//
-                            type, //
-                            load, //
-                            param, //
-                            new SPIRVOptionalOperand<>( //
-                                    SPIRVMemoryAccess.Aligned( //
-                                            new SPIRVLiteralInteger(spirvKind.getByteCount())))//
-                    ));
-                    return load;
-                } else {
+                if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                     return param;
                 }
+                // We need to perform a load first
+                Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit LOAD Variable: " + inputValue);
+                SPIRVId load = asm.module.getNextId();
+                SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
+                asm.currentBlockScope().add(new SPIRVOpLoad(//
+                    type, //
+                    load, //
+                    param, //
+                    new SPIRVOptionalOperand<>( //
+                    SPIRVMemoryAccess.Aligned( //
+                    new SPIRVLiteralInteger(spirvKind.getByteCount())))//
+                ));
+                return load;
             }
         }
 
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-
             Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit " + nameDebugInstruction + getValue() + " with type: " + getSPIRVPlatformKind());
-
-            SPIRVId valueID = getId(getValue(), asm, getSPIRVPlatformKind());
+            SPIRVId valueID =  loadSPIRVId(crb, asm, getValue());
             SPIRVId type = asm.primitives.getTypePrimitive(getSPIRVPlatformKind());
-            SPIRVId result = asm.module.getNextId();
-
+            SPIRVId result = obtainPhiValueIdIfNeeded(asm);
             if (isInteger) {
                 asm.currentBlockScope().add(new SPIRVOpSNegate(type, result, valueID));
-            } else if (getSPIRVPlatformKind().isFloatingPoint()) {
+            } else if (getSPIRVPlatformKind().isFloatingPoint() || isVectorElementFloat()) {
                 asm.currentBlockScope().add(new SPIRVOpFNegate(type, result, valueID));
             }
-
             asm.registerLIRInstructionValue(this, result);
         }
     }
@@ -1048,7 +1071,7 @@ public class SPIRVUnary {
         private SPIRVBarrierNode.SPIRVMemFenceFlags flags;
 
         public Barrier(SPIRVBarrierNode.SPIRVMemFenceFlags flags) {
-            super(null, LIRKind.Illegal, null);
+            super(null, null,  LIRKind.Illegal, null);
             this.flags = flags;
         }
 

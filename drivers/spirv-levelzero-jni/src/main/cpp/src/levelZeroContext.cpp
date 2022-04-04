@@ -315,10 +315,10 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext
  * Method:    zeMemAllocShared_native
- * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeDeviceMemAllocDesc;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeHostMemAllocDesc;IIJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroBufferInteger;)I
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeDeviceMemAllocDesc;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeHostMemAllocDesc;JJJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroBufferInteger;)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeMemAllocShared_1native
-        (JNIEnv *env, jobject object, jlong javaContextPtr, jobject javaDeviceMemAllocDesc, jobject javaHostMemAllocDesc, jint bufferSize, jint aligmnent, jlong javaDeviceHandler, jobject javaLevelZeroBuffer) {
+        (JNIEnv *env, jobject object, jlong javaContextPtr, jobject javaDeviceMemAllocDesc, jobject javaHostMemAllocDesc, jlong bufferSize, jlong aligmnent, jlong javaDeviceHandler, jobject javaLevelZeroBuffer) {
 
     ze_context_handle_t context = reinterpret_cast<ze_context_handle_t>(javaContextPtr);
     ze_device_handle_t device = reinterpret_cast<ze_device_handle_t>(javaDeviceHandler);
@@ -362,10 +362,10 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext
  * Method:    zeMemAllocShared_nativeByte
- * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeDeviceMemAllocDesc;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeHostMemAllocDesc;IIJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;)I
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeDeviceMemAllocDesc;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeHostMemAllocDesc;JJJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeMemAllocShared_1nativeByte
-        (JNIEnv *env, jobject object, jlong javaContextPtr, jobject javaDeviceMemAllocDesc, jobject javaHostMemAllocDesc, jint bufferSize, jint aligmnent, jlong javaDeviceHandler, jobject javaLevelZeroBuffer) {
+        (JNIEnv *env, jobject object, jlong javaContextPtr, jobject javaDeviceMemAllocDesc, jobject javaHostMemAllocDesc, jlong bufferSize, jlong aligmnent, jlong javaDeviceHandler, jobject javaLevelZeroBuffer) {
 
     ze_context_handle_t context = reinterpret_cast<ze_context_handle_t>(javaContextPtr);
     ze_device_handle_t device = reinterpret_cast<ze_device_handle_t>(javaDeviceHandler);
@@ -409,10 +409,10 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext
  * Method:    zeMemAllocDevice_native
- * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeDeviceMemAllocDesc;IIJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;)I
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeDeviceMemAllocDesc;JJJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeMemAllocDevice_1native
-        (JNIEnv *env, jobject object, jlong javaContextPtr, jobject javaDeviceMemAllocDesc, jint allocSize, jint alignment, jlong javaDeviceHandler, jobject javaLevelZeroBuffer) {
+        (JNIEnv *env, jobject object, jlong javaContextPtr, jobject javaDeviceMemAllocDesc, jlong allocSize, jlong alignment, jlong javaDeviceHandler, jobject javaLevelZeroBuffer) {
 
     ze_context_handle_t context = reinterpret_cast<ze_context_handle_t>(javaContextPtr);
     ze_device_handle_t device = reinterpret_cast<ze_device_handle_t>(javaDeviceHandler);
@@ -438,11 +438,11 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     LOG_ZE_JNI("zeMemAllocDevice", result)
 
     // Set Buffer Pointer and attributes
-    jfieldID fieldBufferSize = env->GetFieldID(javaBufferClass, "size", "I");
-    jfieldID alignmentField = env->GetFieldID(javaBufferClass, "alignment", "I");
+    jfieldID fieldBufferSize = env->GetFieldID(javaBufferClass, "size", "J");
+    jfieldID alignmentField = env->GetFieldID(javaBufferClass, "alignment", "J");
     env->SetLongField(javaLevelZeroBuffer, fieldBuffer, reinterpret_cast<ulong>(buffer));
-    env->SetIntField(javaLevelZeroBuffer, fieldBufferSize, allocSize);
-    env->SetIntField(javaLevelZeroBuffer, alignmentField, alignment);
+    env->SetLongField(javaLevelZeroBuffer, fieldBufferSize, allocSize);
+    env->SetLongField(javaLevelZeroBuffer, alignmentField, alignment);
 
     return result;
 }
@@ -450,10 +450,10 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext
  * Method:    zeMemAllocDevice_nativeLong
- * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeDeviceMemAllocDesc;IIJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroBufferLong;)I
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeDeviceMemAllocDesc;JJJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroBufferLong;)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeMemAllocDevice_1nativeLong
-        (JNIEnv * env, jobject object, jlong javaContextPtr, jobject javaDeviceMemAllocDesc, jint allocSize, jint alignment, jlong javaDeviceHandler, jobject javaLevelZeroBuffer) {
+        (JNIEnv * env, jobject object, jlong javaContextPtr, jobject javaDeviceMemAllocDesc, jlong allocSize, jlong alignment, jlong javaDeviceHandler, jobject javaLevelZeroBuffer) {
     ze_context_handle_t context = reinterpret_cast<ze_context_handle_t>(javaContextPtr);
     ze_device_handle_t device = reinterpret_cast<ze_device_handle_t>(javaDeviceHandler);
 
@@ -478,11 +478,11 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     LOG_ZE_JNI("zeMemAllocDevice - [LONG]", result)
 
     // Set Buffer Pointer and attributes
-    jfieldID fieldBufferSize = env->GetFieldID(javaBufferClass, "size", "I");
-    jfieldID alignmentField = env->GetFieldID(javaBufferClass, "alignment", "I");
+    jfieldID fieldBufferSize = env->GetFieldID(javaBufferClass, "size", "J");
+    jfieldID alignmentField = env->GetFieldID(javaBufferClass, "alignment", "J");
     env->SetLongField(javaLevelZeroBuffer, fieldBuffer, reinterpret_cast<ulong>(buffer));
-    env->SetIntField(javaLevelZeroBuffer, fieldBufferSize, allocSize);
-    env->SetIntField(javaLevelZeroBuffer, alignmentField, alignment);
+    env->SetLongField(javaLevelZeroBuffer, fieldBufferSize, allocSize);
+    env->SetLongField(javaLevelZeroBuffer, alignmentField, alignment);
 
     return result;
 }
@@ -797,10 +797,10 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext
  * Method:    zeMemAllocHost_native
- * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeHostMemAllocDesc;IILuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;)I
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeHostMemAllocDesc;JJLuk/ac/manchester/tornado/drivers/spirv/levelzero/LevelZeroByteBuffer;)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroContext_zeMemAllocHost_1native
-        (JNIEnv *env, jobject, jlong javaContextPtr, jobject javaHostMemAllocDesc, jint allocSize, jint alignment, jobject javaLevelZeroBuffer) {
+        (JNIEnv *env, jobject, jlong javaContextPtr, jobject javaHostMemAllocDesc, jlong allocSize, jlong alignment, jobject javaLevelZeroBuffer) {
 
 
     ze_context_handle_t context = reinterpret_cast<ze_context_handle_t>(javaContextPtr);
@@ -829,11 +829,11 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     LOG_ZE_JNI("zeMemAllocHost", result);
     
     // Set Buffer Pointer and attributes
-    jfieldID fieldBufferSize = env->GetFieldID(javaBufferClass, "size", "I");
-    jfieldID alignmentField = env->GetFieldID(javaBufferClass, "alignment", "I");
+    jfieldID fieldBufferSize = env->GetFieldID(javaBufferClass, "size", "J");
+    jfieldID alignmentField = env->GetFieldID(javaBufferClass, "alignment", "J");
     env->SetLongField(javaLevelZeroBuffer, fieldBuffer, reinterpret_cast<jlong>(buffer));
-    env->SetIntField(javaLevelZeroBuffer, fieldBufferSize, allocSize);
-    env->SetIntField(javaLevelZeroBuffer, alignmentField, alignment);
+    env->SetLongField(javaLevelZeroBuffer, fieldBufferSize, allocSize);
+    env->SetLongField(javaLevelZeroBuffer, alignmentField, alignment);
 
     return result;
 }

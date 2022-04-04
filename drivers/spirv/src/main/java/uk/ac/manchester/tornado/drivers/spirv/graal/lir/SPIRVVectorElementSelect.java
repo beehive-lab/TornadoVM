@@ -47,8 +47,11 @@ public class SPIRVVectorElementSelect extends SPIRVLIROp {
     private final Variable vector;
     private final int laneId;
 
-    public SPIRVVectorElementSelect(LIRKind lirKind, Variable vector, int laneId) {
+    private final LIRKind vectorKind;
+
+    public SPIRVVectorElementSelect(LIRKind lirKind, LIRKind vectorKind, Variable vector, int laneId) {
         super(lirKind);
+        this.vectorKind = vectorKind;
         this.vector = vector;
         this.laneId = laneId;
     }
@@ -67,32 +70,31 @@ public class SPIRVVectorElementSelect extends SPIRVLIROp {
             return asm.lookUpConstant(((ConstantValue) inputValue).getConstant().toValueString(), kind);
         } else {
             SPIRVId param = asm.lookUpLIRInstructions(inputValue);
-            if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
-                // We need to perform a load first
-                Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit LOAD Variable: " + inputValue);
-                SPIRVId load = asm.module.getNextId();
-                SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
-                asm.currentBlockScope().add(new SPIRVOpLoad(//
-                        type, //
-                        load, //
-                        param, //
-                        new SPIRVOptionalOperand<>( //
-                                SPIRVMemoryAccess.Aligned( //
-                                        new SPIRVLiteralInteger(spirvKind.getByteCount())))//
-                ));
-                return load;
-            } else {
+            if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                 return param;
             }
+
+            // We need to perform a load first
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit LOAD Variable: " + inputValue);
+            SPIRVId load = asm.module.getNextId();
+            SPIRVId type = asm.primitives.getTypePrimitive(spirvKind);
+            asm.currentBlockScope().add(new SPIRVOpLoad(//
+                    type, //
+                    load, //
+                    param, //
+                    new SPIRVOptionalOperand<>( //
+                            SPIRVMemoryAccess.Aligned( //
+                                    new SPIRVLiteralInteger(spirvKind.getByteCount())))//
+            ));
+            return load;
         }
     }
 
     @Override
     public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
-        SPIRVId vectorId = getId(vector, asm, getSPIRVPlatformKind());
+        SPIRVId vectorId = getId(vector, asm, (SPIRVKind) vectorKind.getPlatformKind());
 
-        SPIRVKind vectorElementKind = getSPIRVPlatformKind().getElementKind();
-        SPIRVId idElementKind = asm.primitives.getTypePrimitive(vectorElementKind);
+        SPIRVId idElementKind = asm.primitives.getTypePrimitive(getSPIRVPlatformKind());
         Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit CompositeExtract: " + vector + " lane: " + laneId);
         SPIRVId resultSelect1 = asm.module.getNextId();
         asm.currentBlockScope().add(new SPIRVOpCompositeExtract(idElementKind, resultSelect1, vectorId, new SPIRVMultipleOperands<>(new SPIRVLiteralInteger(getLaneId()))));

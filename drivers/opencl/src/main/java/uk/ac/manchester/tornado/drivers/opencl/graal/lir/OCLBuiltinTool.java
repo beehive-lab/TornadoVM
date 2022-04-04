@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +26,7 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.ATAN2;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.CROSS;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.DOT;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.FLOAT_MAX;
@@ -35,6 +36,8 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCL
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.INT_MIN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic.CLAMP;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.ABS;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.ACOS;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.ASIN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.ATAN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.COS;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.EXP;
@@ -63,8 +66,8 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 public class OCLBuiltinTool {
 
     public Value genFloatACos(Value input) {
-        unimplemented();
-        return null;
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genAcos: acos(%s)", input);
+        return new OCLUnary.Intrinsic(ACOS, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatACosh(Value input) {
@@ -78,8 +81,8 @@ public class OCLBuiltinTool {
     }
 
     public Value genFloatASin(Value input) {
-        unimplemented();
-        return null;
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genAsin: asin(%s)", input);
+        return new OCLUnary.Intrinsic(ASIN, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatASinh(Value input) {
@@ -272,8 +275,8 @@ public class OCLBuiltinTool {
     }
 
     public Value genFloatATan2(Value x, Value y) {
-        unimplemented();
-        return null;
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genFloatAtan2: atan(%s, %s)", x, y);
+        return new OCLBinary.Intrinsic(ATAN2, LIRKind.combine(x, y), x, y);
     }
 
     public Value genFloatATan2pi(Value x, Value y) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -39,7 +39,6 @@ import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LabelRef;
-import org.graalvm.compiler.lir.StandardOp;
 import org.graalvm.compiler.lir.SwitchStrategy;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
@@ -89,6 +88,35 @@ public class PTXLIRGenerator extends LIRGenerator {
         ptxGenTool = new PTXGenTool(this);
         parameterAllocations = new HashMap<>();
         ptxBuiltinTool = new PTXBuiltinTool();
+    }
+
+    public static PTXBinaryOp getConditionalOp(Condition condition) {
+        switch (condition) {
+            case AE:
+            case GE:
+                return PTXBinaryOp.SETP_GE;
+            case AT:
+            case GT:
+                return PTXBinaryOp.SETP_GT;
+
+            case EQ:
+                return PTXBinaryOp.SETP_EQ;
+
+            case BE:
+            case LE:
+                return PTXBinaryOp.SETP_LE;
+
+            case BT:
+            case LT:
+                return PTXBinaryOp.SETP_LT;
+            case NE:
+                return PTXBinaryOp.SETP_NE;
+            default:
+                shouldNotReachHere();
+                break;
+
+        }
+        return null;
     }
 
     @Override
@@ -278,39 +306,38 @@ public class PTXLIRGenerator extends LIRGenerator {
         return result;
     }
 
-    public static PTXBinaryOp getConditionalOp(Condition condition) {
-        switch (condition) {
-            case AE:
-            case GE:
-                return PTXBinaryOp.SETP_GE;
-            case AT:
-            case GT:
-                return PTXBinaryOp.SETP_GT;
-
-            case EQ:
-                return PTXBinaryOp.SETP_EQ;
-
-            case BE:
-            case LE:
-                return PTXBinaryOp.SETP_LE;
-
-            case BT:
-            case LT:
-                return PTXBinaryOp.SETP_LT;
-            case NE:
-                return PTXBinaryOp.SETP_NE;
-            default:
-                shouldNotReachHere();
-                break;
-
-        }
-        return null;
-    }
-
+    /**
+     * It generates an IntegerTestMove operation, which moves a value to a parameter
+     * based on a bitwise and operation between two values.
+     *
+     * @param leftVal
+     *            the left value of a condition
+     * @param right
+     *            the right value of a condition
+     * @param trueValue
+     *            the true value to move in the result
+     * @param falseValue
+     *            the false value to move in the result
+     * @return Variable: reference to the variable that contains the result
+     */
     @Override
     public Variable emitIntegerTestMove(Value leftVal, Value right, Value trueValue, Value falseValue) {
-        unimplemented();
-        return null;
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitIntegerTestMove: " + leftVal + " " + "&" + right + " ? " + trueValue + " : " + falseValue);
+        assert leftVal.getPlatformKind() == right.getPlatformKind() && ((PTXKind) leftVal.getPlatformKind()).isInteger();
+
+        assert trueValue.getPlatformKind() == falseValue.getPlatformKind();
+
+        LIRKind kind = LIRKind.combine(trueValue, falseValue);
+        final Variable andResult = newVariable(LIRKind.combine(leftVal, right));
+        final ConstantValue zeroConstant = new ConstantValue(andResult.getValueKind(), JavaConstant.forInt(0));
+        final Variable predicate = newVariable(LIRKind.value(PTXKind.PRED));
+        final Variable result = newVariable(kind);
+
+        append(new PTXLIRStmt.AssignStmt(andResult, new PTXBinary.Expr(PTXBinaryOp.BITWISE_AND, kind, leftVal, right)));
+        append(new PTXLIRStmt.AssignStmt(predicate, new PTXBinary.Expr(PTXBinaryOp.SETP_EQ, kind, andResult, zeroConstant)));
+        append(new PTXLIRStmt.AssignStmt(result, new PTXTernary.Expr(PTXAssembler.PTXTernaryOp.SELP, kind, trueValue, falseValue, predicate)));
+
+        return result;
     }
 
     @Override
@@ -421,7 +448,7 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     public void emitParameterAlloc() {
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitParameterAlloc");
-        Variable stackPointer = newVariable(LIRKind.value(PTXArchitecture.STACK_POINTER.ptxKind));
+        Variable stackPointer = newVariable(LIRKind.value(PTXArchitecture.STACK_POINTER.getLirKind()));
         parameterAllocations.put(PTXArchitecture.STACK_POINTER.getName(), stackPointer);
         append(new PTXLIRStmt.LoadStmt(new PTXUnary.MemoryAccess(PTXAssemblerConstants.STACK_PTR_NAME), stackPointer, PTXNullaryOp.LD));
     }

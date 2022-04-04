@@ -12,14 +12,40 @@ GPUs (NVIDIA, AMD), integrated GPUs (Intel HD Graphics and ARM Mali), and FPGAs 
 
 For a quick introduction please read the following [FAQ](assembly/src/docs/15_FAQ.md).
 
-**Current Release:** TornadoVM 0.12 - 17/11/2021 : See [CHANGELOG](assembly/src/docs/CHANGELOG.md#tornadovm-0.12)
+**Current Release:** TornadoVM 0.13 - 21/03/2022 : See [CHANGELOG](assembly/src/docs/CHANGELOG.md#tornadovm-0.13)
 
 Previous Releases can be found [here](assembly/src/docs/Releases.md)
 
 ## 1. Installation
 
-In Linux and Mac OSx, TornadoVM can be installed by the [installer](https://github.com/beehive-lab/tornadovm-installer).
-Alternatively, TornadoVM can be installed either [from source](INSTALL.md) or 
+In Linux and Mac OSx, TornadoVM can be installed automatically with the [installation script](INSTALL.md#a-automatic-installation). For example:
+```bash
+./scripts/tornadovmInstaller.sh 
+TornadoVM installer for Linux and OSx
+Usage:
+       --jdk8           : Install TornadoVM with OpenJDK 8
+       --jdk11          : Install TornadoVM with OpenJDK 11
+       --jdk17          : Install TornadoVM with OpenJDK 17
+       --graal-jdk-11   : Install TornadoVM with GraalVM and JDK 11 (GraalVM 21.3.0)
+       --graal-jdk-17   : Install TornadoVM with GraalVM and JDK 16 (GraalVM 21.3.0)
+       --corretto-11    : Install TornadoVM with Corretto JDK 11
+       --corretto-17    : Install TornadoVM with Corretto JDK 16
+       --mandrel-11     : Install TornadoVM with Mandrel 21.3.0 (JDK 11)
+       --mandrel-17     : Install TornadoVM with Mandrel 21.3.0 (JDK 17)
+       --windows-jdk-11 : Install TornadoVM with Windows JDK 11
+       --windows-jdk-17 : Install TornadoVM with Windows JDK 17
+       --opencl         : Install TornadoVM and build the OpenCL backend
+       --ptx            : Install TornadoVM and build the PTX backend
+       --spirv          : Install TornadoVM and build the SPIR-V backend
+       --help           : Print this help
+```
+
+**NOTE** Select the desired backend:
+  * `--opencl`: Enables the OpenCL backend (requires OpenCL drivers)
+  * `--ptx`: Enables the PTX backend (requires NVIDIA CUDA drivers)
+  * `--spirv`: Enables the SPIRV backend (requires Intel Level Zero drivers)
+
+Alternatively, TornadoVM can be installed either manually [from source](INSTALL.md#b-manual-installation) or 
 by [using Docker](assembly/src/docs/13_INSTALL_WITH_DOCKER.md).
 
 You can also run TornadoVM on Amazon AWS CPUs, GPUs, and FPGAs following the
@@ -175,12 +201,12 @@ You can import the API and start using TornadoVM. Set this in the `pom.xml` file
 <dependency>
     <groupId>tornado</groupId>
     <artifactId>tornado-api</artifactId>
-    <version>0.12</version>
+    <version>0.13</version>
 </dependency>
 <dependency>
     <groupId>tornado</groupId>
     <artifactId>tornado-matrices</artifactId>
-    <version>0.12</version>
+    <version>0.13</version>
 </dependency>
 </dependencies>
 ```

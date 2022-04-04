@@ -86,17 +86,6 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         index++;
     }
 
-    private static class DeviceThreadScheduling {
-        long[] globalWork;
-        long[] localWork;
-
-        public DeviceThreadScheduling(long[] globalWork, long[] localWork) {
-            this.globalWork = globalWork;
-            this.localWork = localWork;
-        }
-
-    }
-
     private DeviceThreadScheduling calculateGlobalAndLocalBlockOfThreads(TaskMetaData meta, long batchThreads) {
         long[] globalWork = new long[3];
         long[] localWork = new long[3];
@@ -127,18 +116,6 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
 
         }
         return new DeviceThreadScheduling(globalWork, localWork);
-    }
-
-    private static class ThreadBlockDispatcher {
-        int[] groupSizeX;
-        int[] groupSizeY;
-        int[] groupSizeZ;
-
-        public ThreadBlockDispatcher(int[] groupSizeX, int[] groupSizeY, int[] groupSizeZ) {
-            this.groupSizeX = groupSizeX;
-            this.groupSizeY = groupSizeY;
-            this.groupSizeZ = groupSizeZ;
-        }
     }
 
     private int setThreadSuggestionFromLevelZero(LevelZeroKernel levelZeroKernel, ZeKernelHandle kernel, int[] groupSizeX, int[] groupSizeY, int[] groupSizeZ) {
@@ -226,7 +203,14 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
             // if the worker grid is available, the user can update the number of threads to
             // run at any point during runtime.
             threadScheduling = calculateGlobalAndLocalBlockOfThreads(meta, batchThreads);
-            dispatcher = suggestThreadSchedulingToLevelZeroDriver(threadScheduling, levelZeroKernel, kernel, meta);
+            if (TornadoOptions.USE_LEVELZERO_THREAD_DISPATCHER_SUGGESTIONS) {
+                dispatcher = suggestThreadSchedulingToLevelZeroDriver(threadScheduling, levelZeroKernel, kernel, meta);
+            } else {
+                int[] groupSizeX = new int[] { (int) threadScheduling.localWork[0] };
+                int[] groupSizeY = new int[] { (int) threadScheduling.localWork[1] };
+                int[] groupSizeZ = new int[] { (int) threadScheduling.localWork[2] };
+                dispatcher = new ThreadBlockDispatcher(groupSizeX, groupSizeY, groupSizeZ);
+            }
         }
 
         if (meta.isThreadInfoEnabled()) {
@@ -337,5 +321,28 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
     @Override
     public void invalidate() {
         valid = false;
+    }
+
+    private static class DeviceThreadScheduling {
+        long[] globalWork;
+        long[] localWork;
+
+        public DeviceThreadScheduling(long[] globalWork, long[] localWork) {
+            this.globalWork = globalWork;
+            this.localWork = localWork;
+        }
+
+    }
+
+    private static class ThreadBlockDispatcher {
+        int[] groupSizeX;
+        int[] groupSizeY;
+        int[] groupSizeZ;
+
+        public ThreadBlockDispatcher(int[] groupSizeX, int[] groupSizeY, int[] groupSizeZ) {
+            this.groupSizeX = groupSizeX;
+            this.groupSizeY = groupSizeY;
+            this.groupSizeZ = groupSizeZ;
+        }
     }
 }

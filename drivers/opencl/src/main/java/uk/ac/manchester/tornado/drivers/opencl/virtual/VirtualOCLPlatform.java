@@ -23,8 +23,8 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.virtual;
 
-import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
+import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.TornadoPlatform;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
@@ -56,6 +56,11 @@ public class VirtualOCLPlatform extends TornadoLogger implements TornadoPlatform
 
     @Override
     public String getVendor() {
+        return null;
+    }
+
+    @Override
+    public String getVersion() {
         return null;
     }
 

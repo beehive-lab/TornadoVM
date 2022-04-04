@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,14 +29,12 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerCons
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.SQUARE_BRACKETS_CLOSE;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.SQUARE_BRACKETS_OPEN;
 
-import jdk.vm.ci.meta.AllocatableValue;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
-import org.graalvm.compiler.lir.Variable;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
@@ -126,8 +124,8 @@ public class OCLUnary {
 
     public static class IntrinsicAtomicInc extends UnaryConsumer {
 
-        private int index;
         private static final String arrayName = OCLArchitecture.atomicSpace.getName();
+        private int index;
 
         public IntrinsicAtomicInc(OCLUnaryOp opcode, LIRKind lirKind, Value value, int index) {
             super(opcode, lirKind, value);
@@ -142,6 +140,27 @@ public class OCLUnary {
         @Override
         public String toString() {
             return String.format("%s(&%s[%s])", opcode.toString(), arrayName, index);
+        }
+    }
+
+    public static class IntrinsicAtomicGet extends UnaryConsumer {
+
+        private static final String arrayName = OCLArchitecture.atomicSpace.getName();
+        private int index;
+
+        public IntrinsicAtomicGet(OCLUnaryOp opcode, LIRKind lirKind, Value value, int index) {
+            super(opcode, lirKind, value);
+            this.index = index;
+        }
+
+        @Override
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.emit(toString());
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s[%s]", arrayName, index);
         }
     }
 
@@ -260,14 +279,14 @@ public class OCLUnary {
         }
 
         private boolean keepIntegerIndexing() {
-            return (base.memorySpace == OCLMemorySpace.PRIVATE || base.memorySpace == OCLMemorySpace.LOCAL);
+            return (base.getMemorySpace() == OCLMemorySpace.PRIVATE || base.getMemorySpace() == OCLMemorySpace.LOCAL);
         }
 
         @Override
         public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             if (shouldEmitRelativeAddress(crb)) {
                 asm.emitSymbol(ADDRESS_OF);
-                asm.emit(base.name);
+                asm.emit(base.getName());
                 asm.emitSymbol(SQUARE_BRACKETS_OPEN);
                 asm.emitValue(crb, value);
                 asm.emitSymbol(SQUARE_BRACKETS_CLOSE);
@@ -302,11 +321,11 @@ public class OCLUnary {
         @Override
         public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             OCLKind oclKind = getOCLPlatformKind();
-            asm.emit(((OCLUnaryTemplate) opcode).getTemplate(), base.memorySpace.name() + " " + oclKind.toString());
+            asm.emit(((OCLUnaryTemplate) opcode).getTemplate(), base.getMemorySpace().name() + " " + oclKind.toString());
         }
 
         OCLMemorySpace getMemorySpace() {
-            return base.memorySpace;
+            return base.getMemorySpace();
         }
 
     }

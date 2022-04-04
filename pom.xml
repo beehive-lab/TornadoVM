@@ -5,7 +5,7 @@
 
     <groupId>tornado</groupId>
     <artifactId>tornado</artifactId>
-    <version>0.13-dev</version>
+    <version>0.14-dev</version>
     <packaging>pom</packaging>
     <name>tornado</name>
     <url>https://github.com/beehive-lab/tornadovm</url>
@@ -454,6 +454,12 @@
                                 </arg>
                                 <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.word=tornado.drivers.common</arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.util=tornado.drivers.common</arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.framemap=tornado.runtime</arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.alloc=tornado.runtime</arg>
                                 <!-- OpenCL exports-->
                                 <arg>--add-opens</arg>
                                 <arg>java.base/java.lang=tornado.drivers.opencl</arg>
@@ -1208,6 +1214,12 @@
                                 </arg>
                                 <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.word=tornado.drivers.common</arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.util=tornado.drivers.common</arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.framemap=tornado.runtime</arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.alloc=tornado.runtime</arg>
                                 <!-- OpenCL exports-->
                                 <arg>--add-opens</arg>
                                 <arg>java.base/java.lang=tornado.drivers.opencl</arg>
@@ -1961,12 +1973,12 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
-            <version>2.17.0</version>
+            <version>2.17.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <version>2.17.0</version>
+            <version>2.17.1</version>
         </dependency>
     </dependencies>
     <modules>

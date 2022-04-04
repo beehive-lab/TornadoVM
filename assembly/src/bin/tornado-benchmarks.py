@@ -4,10 +4,8 @@
 # This file is part of Tornado: A heterogeneous programming framework:
 # https://github.com/beehive-lab/tornadovm
 #
-# Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+# Copyright (c) 2013-2022, APT Group, Department of Computer Science,
 # Department of Engineering, The University of Manchester. All rights reserved.
-# Copyright (c) 2013-2019, APT Group, Department of Computer Science,
-# The University of Manchester. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -52,23 +50,26 @@ JDK_8_VERSION = "1.8"
 __JAVA_VERSION__ = subprocess.Popen(__JAVA_HOME__ + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0].decode('utf-8')[:-1]
 
 ## ========================================================================================
-## Script Options
+## TornadoVM/JVM Options
 ## ========================================================================================
 __RUNNER__ = ""
 if (__JAVA_VERSION__ != JDK_8_VERSION):
-    __RUNNER__ = " -m tornado.benchmarks/"
-__RUNNER__ += "uk.ac.manchester.tornado.benchmarks.BenchmarkRunner "
-__TORNADO_FLAGS__ = "-Dtornado.kernels.coarsener=False -Dtornado.profiles.print=True -Dtornado.profiling.enable=True -Dtornado.opencl.schedule=True"
-__JVM_FLAGS__ = "-Xms24G -Xmx24G -server "
-__TORNADO_COMMAND__ = "tornado "
-__SKIP_SERIAL__   = " -Dtornado.benchmarks.skipserial=True "
-__SKIP_PARALLEL__ = " -Dtornado.enable=False "
-__SKIP_DEVICES__  = " -Dtornado.blacklist.devices="
-__VALIDATE__      = " -Dtornado.benchmarks.validate=True "
-__ENABLE_PROFILER_SILENT_MODE__  = " --enableProfiler silent "
+    __RUNNER__					= " -m tornado.benchmarks/"
+__RUNNER__					   += "uk.ac.manchester.tornado.benchmarks.BenchmarkRunner "
+__JVM_FLAGS__ 					= "-Xms24G -Xmx24G -server -Dtornado.recover.bailout=False "
+__TORNADO_COMMAND__				= "tornado "
+__SKIP_SERIAL__   				= " -Dtornado.benchmarks.skipserial=True "
+__SKIP_PARALLEL__ 				= " -Dtornado.enable=False "
+__SKIP_DEVICES__  				= " -Dtornado.blacklist.devices="
+__VALIDATE__      				= " -Dtornado.benchmarks.validate=True "
+__ENABLE_PROFILER_SILENT_MODE__ = " --enableProfiler silent "
+__DISABLE_LEVEL_ZERO_DEFAULT_SCHEDULER__ = " -Dtornado.spirv.levelzero.thread.dispatcher=False "
+__ENABLE_SPIRV_OPTIMIZER__      = " -Dtornado.spirv.loadstore=True "
 ## ========================================================================================
 
+## ========================================================================================
 ## Include here benchmarks to run
+## ========================================================================================
 __BENCHMARKS__ = [
 	"saxpy",
 	"addImage",
@@ -87,6 +88,7 @@ __BENCHMARKS__ = [
 	"dft",
 	"juliaset",
 ]
+## ========================================================================================
 
 def getSize():
 	return ITERATIONS
@@ -130,6 +132,12 @@ def composeAllOptions(args):
 		options = options + __SKIP_DEVICES__ + args.skip_devices  + " "
 	if args.profiler:
 		options = options + __ENABLE_PROFILER_SILENT_MODE__
+	if (args.jvmFlags != None):
+		options = options + args.jvmFlags
+	if (args.tornadoThreadScheduler == True):
+		options = options + __DISABLE_LEVEL_ZERO_DEFAULT_SCHEDULER__ 
+	if (args.spirvOptimizer):
+		options = options + __ENABLE_SPIRV_OPTIMIZER__
 	return options
 
 def printBenchmarks(indent=""):
@@ -184,6 +192,9 @@ def parseArguments():
 	parser.add_argument('--printBenchmarks', action="store_true", dest="benchmarks", default=False, help="Print the list of available benchmarks")
 	parser.add_argument('--profiler', action="store_true", dest="profiler", default=False, help="Run Benchmarks with the OpenCL|PTX|SPIRV profiler")
 	parser.add_argument('--jmh', action="store_true", dest="jmh", default=False, help="Run with JMH")
+	parser.add_argument('--jvm', "-J", dest="jvmFlags", required=False, default=None, help="Pass options to the JVM e.g. -J=\"-Ds0.t0.device=0:1\"")
+	parser.add_argument('--tornadoThreadScheduler', action="store_true", dest="tornadoThreadScheduler", required=False, default=False, help="Use the thread scheduler provided with TornadoVM when running SPIRV")
+	parser.add_argument('--spirvOptimizer', action="store_true", dest="spirvOptimizer", default=False, help="Enable the SPIRV optimizer")
 	args = parser.parse_args()
 	return args
 

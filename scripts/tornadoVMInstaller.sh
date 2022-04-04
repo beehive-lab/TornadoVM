@@ -128,7 +128,7 @@ function downloadGraalVMJDK17() {
     elif [[ "$platform" == 'darwin' ]]; then
         wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.3.0/graalvm-ce-java17-darwin-amd64-21.3.0.tar.gz
         tar -xf graalvm-ce-java17-darwin-amd64-21.3.0.tar.gz
-        export JAVA_HOME=$PWD/graalvm-ce-java16-21.3.0/Contents/Home/
+        export JAVA_HOME=$PWD/graalvm-ce-java17-21.3.0/Contents/Home/
     fi
 }
 
@@ -444,13 +444,13 @@ function printHelp() {
     echo "       --jdk11          : Install TornadoVM with OpenJDK 11"
     echo "       --jdk17          : Install TornadoVM with OpenJDK 17"
     echo "       --graal-jdk-11   : Install TornadoVM with GraalVM and JDK 11 (GraalVM 21.3.0)"
-    echo "       --graal-jdk-17   : Install TornadoVM with GraalVM and JDK 16 (GraalVM 21.3.0)"
+    echo "       --graal-jdk-17   : Install TornadoVM with GraalVM and JDK 17 (GraalVM 21.3.0)"
     echo "       --corretto-11    : Install TornadoVM with Corretto JDK 11"
-    echo "       --corretto-17    : Install TornadoVM with Corretto JDK 16"
+    echo "       --corretto-17    : Install TornadoVM with Corretto JDK 17"
     echo "       --mandrel-11     : Install TornadoVM with Mandrel 21.3.0 (JDK 11)"
     echo "       --mandrel-17     : Install TornadoVM with Mandrel 21.3.0 (JDK 17)"
     echo "       --windows-jdk-11 : Install TornadoVM with Windows JDK 11"
-    echo "       --windows-jdk-17 : Install TornadoVM with Windows JDK 16"
+    echo "       --windows-jdk-17 : Install TornadoVM with Windows JDK 17"
     echo "       --opencl         : Install TornadoVM and build the OpenCL backend"
     echo "       --ptx            : Install TornadoVM and build the PTX backend"
     echo "       --spirv          : Install TornadoVM and build the SPIR-V backend"

@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009-2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -41,11 +41,12 @@ import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import jdk.vm.ci.code.CallingConvention;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 
-public class SPIRVIRGenerationResult extends LIRGenerationResult {
+public class SPIRVLIRGenerationResult extends LIRGenerationResult {
 
     private final Map<SPIRVKind, Set<Variable>> variableTable;
+    private int methodIndex;
 
-    public SPIRVIRGenerationResult(CompilationIdentifier compilationId, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig,
+    public SPIRVLIRGenerationResult(CompilationIdentifier compilationId, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig,
             CallingConvention callingConvention) {
         super(compilationId, lir, frameMapBuilder, registerAllocationConfig, callingConvention);
         variableTable = new HashMap<>();
@@ -55,6 +56,14 @@ public class SPIRVIRGenerationResult extends LIRGenerationResult {
         guarantee(variable.getPlatformKind() instanceof SPIRVKind, "invalid variable kind: %s", variable.getValueKind());
         SPIRVKind kind = (SPIRVKind) variable.getPlatformKind();
         variableTable.computeIfAbsent(kind, k -> new HashSet<>()).add(variable);
+    }
+
+    public int getMethodIndex() {
+        return this.methodIndex;
+    }
+
+    public void setMethodIndex(int methodIndex) {
+        this.methodIndex = methodIndex;
     }
 
 }

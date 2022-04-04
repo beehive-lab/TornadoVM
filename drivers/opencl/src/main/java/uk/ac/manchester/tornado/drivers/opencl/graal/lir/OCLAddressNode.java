@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2018, 2020-2022 APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -88,11 +88,11 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
     }
 
     private boolean isLocalMemoryAccess() {
-        return this.memoryRegister.name.equals(OCLAssemblerConstants.LOCAL_REGION_NAME);
+        return this.memoryRegister.getName().equals(OCLAssemblerConstants.LOCAL_REGION_NAME);
     }
 
     private boolean isPrivateMemoryAccess() {
-        return this.memoryRegister.name.equals(OCLAssemblerConstants.PRIVATE_REGION_NAME);
+        return this.memoryRegister.getName().equals(OCLAssemblerConstants.PRIVATE_REGION_NAME);
     }
 
     @Override

@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,7 +33,7 @@ public abstract class SPIRVInstalledCode extends InstalledCode implements Tornad
     protected SPIRVDeviceContext deviceContext;
     protected SPIRVModule spirvModule;
 
-    public SPIRVInstalledCode(String name, SPIRVModule spirvModule, SPIRVDeviceContext deviceContext) {
+    protected SPIRVInstalledCode(String name, SPIRVModule spirvModule, SPIRVDeviceContext deviceContext) {
         super(name);
         this.deviceContext = deviceContext;
         this.spirvModule = spirvModule;
@@ -50,7 +50,7 @@ public abstract class SPIRVInstalledCode extends InstalledCode implements Tornad
     /**
      * The SPIR-V backend generates a binary, not source code. This method is not
      * applicable for this backend.
-     * 
+     *
      * @return String.
      */
     public String getGeneratedSourceCode() {

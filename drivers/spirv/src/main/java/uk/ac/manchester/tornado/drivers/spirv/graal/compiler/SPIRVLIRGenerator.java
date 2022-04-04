@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009-2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -38,7 +38,6 @@ import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LabelRef;
-import org.graalvm.compiler.lir.StandardOp;
 import org.graalvm.compiler.lir.SwitchStrategy;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
@@ -56,6 +55,7 @@ import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVTargetDescription;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVLIRKindTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStamp;
+import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.lir.SPIRVArithmeticTool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBinary;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVBuiltinTool;
@@ -72,9 +72,9 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
  */
 public class SPIRVLIRGenerator extends LIRGenerator {
 
+    private final int methodIndex;
     private SPIRVGenTool spirvGenTool;
     private SPIRVBuiltinTool spirvBuiltinTool;
-    private final int methodIndex;
 
     public SPIRVLIRGenerator(CodeGenProviders providers, LIRGenerationResult lirGenRes, final int methodIndex) {
         super(new SPIRVLIRKindTool((SPIRVTargetDescription) providers.getCodeCache().getTarget()), new SPIRVArithmeticTool(), new SPIRVMoveFactory(), providers, lirGenRes);
@@ -161,12 +161,12 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitMembar(int barriers) {
-
+        unimplemented();
     }
 
     @Override
     public void emitUnwind(Value operand) {
-
+        unimplemented();
     }
 
     @Override
@@ -189,12 +189,12 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     @Override
     public void emitCompareBranch(PlatformKind cmpKind, Value left, Value right, Condition cond, boolean unorderedIsTrue, LabelRef trueDestination, LabelRef falseDestination,
             double trueDestinationProbability) {
-
+        unimplemented();
     }
 
     @Override
     public void emitOverflowCheckBranch(LabelRef overflow, LabelRef noOverflow, LIRKind cmpKind, double overflowProbability) {
-
+        unimplemented();
     }
 
     @Override
@@ -211,18 +211,45 @@ public class SPIRVLIRGenerator extends LIRGenerator {
         return resultConditionalMove;
     }
 
+    /**
+     * It generates an IntegerTestMove operation, which moves a value to a parameter
+     * based on a bitwise and operation between two values.
+     *
+     * @param leftVal
+     *            the left value of a condition
+     * @param right
+     *            the right value of a condition
+     * @param trueValue
+     *            the true value to move in the result
+     * @param falseValue
+     *            the false value to move in the result
+     * @return Variable: reference to the variable that contains the result
+     */
     @Override
     public Variable emitIntegerTestMove(Value leftVal, Value right, Value trueValue, Value falseValue) {
-        return null;
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitIntegerTestMove: " + leftVal + " " + "&" + right + " ? " + trueValue + " : " + falseValue);
+        assert leftVal.getPlatformKind() == right.getPlatformKind() && ((SPIRVKind) leftVal.getPlatformKind()).isInteger();
+
+        assert trueValue.getPlatformKind() == falseValue.getPlatformKind();
+
+        LIRKind kind = LIRKind.combine(trueValue, falseValue);
+        final Variable result = newVariable(kind);
+
+        SPIRVBinary.IntegerTestNode integerTestNode = new SPIRVBinary.IntegerTestNode(SPIRVAssembler.SPIRVBinaryOp.BITWISE_AND, kind, leftVal, right);
+        SPIRVBinary.IntegerTestMoveNode moveNode = new SPIRVBinary.IntegerTestMoveNode(integerTestNode, result, kind, trueValue, falseValue);
+        append(new SPIRVLIRStmt.AssignStmt(result, moveNode));
+
+        return result;
     }
 
     @Override
     protected void emitForeignCallOp(ForeignCallLinkage linkage, Value targetAddress, Value result, Value[] arguments, Value[] temps, LIRFrameState info) {
-
+        unimplemented();
     }
 
     @Override
     public Variable emitByteSwap(Value operand) {
+        unimplemented();
         return null;
     }
 
@@ -233,7 +260,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitPrefetchAllocate(Value address) {
-
+        unimplemented();
     }
 
     @Override
@@ -250,7 +277,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitSpeculationFence() {
-
+        unimplemented();
     }
 
     @Override
@@ -299,35 +326,9 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
         // Format of the variable "<type>_<number>"
         variable.setName("spirv_" + spirvKind.getTypePrefix() + "_" + variable.index + "F" + methodIndex);
-        SPIRVIRGenerationResult res = (SPIRVIRGenerationResult) getResult();
+        SPIRVLIRGenerationResult res = (SPIRVLIRGenerationResult) getResult();
         res.insertVariable(variable);
         return variable;
-    }
-
-    public static class ArrayVariable extends Variable {
-
-        private Variable variable;
-        private Value length;
-
-        public ArrayVariable(Variable variable, Value length) {
-            super(variable.getValueKind(), variable.index);
-            this.variable = variable;
-            this.length = length;
-            this.setName(variable.getName());
-        }
-
-        public Value getLength() {
-            return length;
-        }
-
-        public Variable getVariable() {
-            return variable;
-        }
-
-        @Override
-        public String getName() {
-            return variable.getName();
-        }
     }
 
     public Variable newArrayVariable(Variable variable, Value length) {
@@ -375,5 +376,31 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     public void emitJump(LabelRef label, boolean isLoopEdgeBack) {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitJump: label=%s isLoopEdgeBack=%b", label, isLoopEdgeBack);
         append(new SPIRVControlFlow.Branch(label));
+    }
+
+    public static class ArrayVariable extends Variable {
+
+        private Variable variable;
+        private Value length;
+
+        public ArrayVariable(Variable variable, Value length) {
+            super(variable.getValueKind(), variable.index);
+            this.variable = variable;
+            this.length = length;
+            this.setName(variable.getName());
+        }
+
+        public Value getLength() {
+            return length;
+        }
+
+        public Variable getVariable() {
+            return variable;
+        }
+
+        @Override
+        public String getName() {
+            return variable.getName();
+        }
     }
 }

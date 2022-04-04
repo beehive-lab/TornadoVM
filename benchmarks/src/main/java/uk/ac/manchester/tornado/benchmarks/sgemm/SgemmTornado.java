@@ -1,19 +1,19 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 package uk.ac.manchester.tornado.benchmarks.sgemm;
 
@@ -26,6 +26,7 @@ import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -35,12 +36,12 @@ public class SgemmTornado extends BenchmarkDriver {
 
     private final int m;
     private final int n;
+    private final boolean USE_PREBUILT = Boolean.parseBoolean(TornadoRuntime.getProperty("usePrebuilt", "False"));
+    private WorkerGrid worker;
     private float[] a;
     private float[] b;
     private float[] c;
     private GridScheduler grid;
-    WorkerGrid worker;
-
     private boolean USE_GRID = Boolean.parseBoolean(TornadoRuntime.getProperty("usegrid", "False"));
 
     public SgemmTornado(int iterations, int m, int n) {
@@ -73,10 +74,34 @@ public class SgemmTornado extends BenchmarkDriver {
         }
 
         ts = new TaskSchedule("benchmark");
-        ts.streamIn(a, b);
-        ts.task("sgemm", LinearAlgebraArrays::sgemm, m, n, n, a, b, c);
-        ts.streamOut(c);
-        ts.warmup();
+        if (!USE_PREBUILT) {
+            ts.streamIn(a, b);
+            ts.task("sgemm", LinearAlgebraArrays::sgemm, m, n, n, a, b, c);
+            ts.streamOut(c);
+            ts.warmup();
+        } else {
+            String filePath = "/tmp/mxmFloat.spv";
+
+            TornadoDevice device = null;
+            int maxDevices = TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
+            for (int i = 0; i < maxDevices; i++) {
+                device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(i);
+                if (device.isSPIRVSupported()) {
+                    break;
+                }
+            }
+
+            // @formatter:off
+            ts.prebuiltTask("t0",
+            "sgemm",
+                filePath,
+                new Object[]{m, n, n, a, b, c},
+                new Access[]{Access.READ, Access.READ,Access.READ,Access.READ, Access.READ, Access.WRITE},
+                device,
+                new int[]{ n, n })
+                .streamOut(c);
+            // @formatter:on
+        }
     }
 
     @Override

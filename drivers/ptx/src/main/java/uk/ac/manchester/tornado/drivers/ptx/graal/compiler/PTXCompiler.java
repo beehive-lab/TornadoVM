@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,10 +24,30 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.compiler;
 
-import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.meta.Assumptions;
-import jdk.vm.ci.meta.ProfilingInfo;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerationPhase.LIRGenerationContext;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.DUMP_COMPILED_METHODS;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.graalvm.compiler.core.common.alloc.ComputeBlockOrder;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
@@ -52,6 +72,11 @@ import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.util.Providers;
+
+import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.meta.Assumptions;
+import jdk.vm.ci.meta.ProfilingInfo;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXProviders;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXSuitesProvider;
 import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
@@ -69,24 +94,6 @@ import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerationPhase.*;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.*;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
-
 public class PTXCompiler {
 
     private static final AtomicInteger compilationId = new AtomicInteger();
@@ -98,170 +105,6 @@ public class PTXCompiler {
     private static final TimerKey EmitCode = DebugContext.timer("PTXEmitCode");
 
     private static final PTXLIRGenerationPhase LIR_GENERATION_PHASE = new PTXLIRGenerationPhase();
-
-    public static class PTXCompilationRequest {
-        public final StructuredGraph graph;
-        public final ResolvedJavaMethod installedCodeOwner;
-        public final Object[] args;
-        public final TaskMetaData meta;
-        public final Providers providers;
-        public final PTXBackend backend;
-        public final PhaseSuite<HighTierContext> graphBuilderSuite;
-        public final OptimisticOptimizations optimisticOpts;
-        public final ProfilingInfo profilingInfo;
-        public final TornadoSuites suites;
-        public final TornadoLIRSuites lirSuites;
-        public final PTXCompilationResult compilationResult;
-        public final CompilationResultBuilderFactory factory;
-        public final boolean isKernel;
-        public final boolean buildGraph;
-        public final long batchThreads;
-        public final boolean includePrintf;
-
-        private PTXCompilationRequest(StructuredGraph graph, ResolvedJavaMethod installedCodeOwner, Object[] args, TaskMetaData meta, Providers providers, PTXBackend backend,
-                PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, TornadoSuites suites, TornadoLIRSuites lirSuites,
-                PTXCompilationResult compilationResult, CompilationResultBuilderFactory factory, boolean isKernel, boolean buildGraph, long batchThreads, boolean includePrintf) {
-            this.graph = graph;
-            this.installedCodeOwner = installedCodeOwner;
-            this.args = args;
-            this.meta = meta;
-            this.providers = providers;
-            this.backend = backend;
-            this.graphBuilderSuite = graphBuilderSuite;
-            this.optimisticOpts = optimisticOpts;
-            this.profilingInfo = profilingInfo;
-            this.suites = suites;
-            this.lirSuites = lirSuites;
-            this.compilationResult = compilationResult;
-            this.factory = factory;
-            this.isKernel = isKernel;
-            this.buildGraph = buildGraph;
-            this.batchThreads = batchThreads;
-            this.includePrintf = includePrintf;
-        }
-
-        public PTXCompilationResult execute() {
-            return PTXCompiler.compile(this);
-        }
-
-        // FIXME <REFACTOR> this class can be merged into PTXCompilationRequest
-        public static class PTXCompilationRequestBuilder {
-            private StructuredGraph graph;
-            private ResolvedJavaMethod codeOwner;
-            private Object[] args;
-            private TaskMetaData meta;
-            private Providers providers;
-            private PTXBackend backend;
-            private PhaseSuite<HighTierContext> graphBuilderSuite;
-            private OptimisticOptimizations optimisticOpts;
-            private ProfilingInfo profilingInfo;
-            private TornadoSuites suites;
-            private TornadoLIRSuites lirSuites;
-            private PTXCompilationResult compilationResult;
-            private CompilationResultBuilderFactory factory;
-            private boolean isKernel;
-            private boolean buildGraph;
-            private long batchThreads;
-            private boolean includePrintf;
-
-            private PTXCompilationRequestBuilder() {
-            }
-
-            public PTXCompilationRequest build() {
-                return new PTXCompilationRequest(graph, codeOwner, args, meta, providers, backend, graphBuilderSuite, optimisticOpts, profilingInfo, suites, lirSuites, compilationResult, factory,
-                        isKernel, buildGraph, batchThreads, includePrintf);
-            }
-
-            public static PTXCompilationRequestBuilder getInstance() {
-                return new PTXCompilationRequestBuilder();
-            }
-
-            public PTXCompilationRequestBuilder withGraph(StructuredGraph graph) {
-                this.graph = graph;
-                return this;
-            }
-
-            public PTXCompilationRequestBuilder withCodeOwner(ResolvedJavaMethod owner) {
-                this.codeOwner = owner;
-                return this;
-            }
-
-            public PTXCompilationRequestBuilder withArgs(Object[] args) {
-                this.args = args;
-                return this;
-            }
-
-            public PTXCompilationRequestBuilder withMetaData(TaskMetaData metaData) {
-                this.meta = metaData;
-                return this;
-            }
-
-            public PTXCompilationRequestBuilder withProviders(Providers providers) {
-                this.providers = providers;
-                return this;
-            }
-
-            public PTXCompilationRequestBuilder withBackend(PTXBackend backend) {
-                this.backend = backend;
-                return this;
-            }
-
-            public PTXCompilationRequestBuilder withGraphBuilderSuite(PhaseSuite<HighTierContext> builderSuite) {
-                this.graphBuilderSuite = builderSuite;
-                return this;
-            }
-
-            public PTXCompilationRequestBuilder withOptimizations(OptimisticOptimizations optimizations) {
-                this.optimisticOpts = optimizations;
-                return this;
-            }
-
-            public PTXCompilationRequestBuilder withProfilingInfo(ProfilingInfo profilingInfo) {
-                this.profilingInfo = profilingInfo;
-                return this;
-            }
-
-            public PTXCompilationRequestBuilder withSuites(TornadoSuites suites) {
-                this.suites = suites;
-                return this;
-            }
-
-            public PTXCompilationRequestBuilder withLIRSuites(TornadoLIRSuites suites) {
-                this.lirSuites = suites;
-                return this;
-            }
-
-            public PTXCompilationRequestBuilder withResult(PTXCompilationResult result) {
-                this.compilationResult = result;
-                return this;
-            }
-
-            public PTXCompilationRequestBuilder withResultBuilderFactory(CompilationResultBuilderFactory factory) {
-                this.factory = factory;
-                return this;
-            }
-
-            public PTXCompilationRequestBuilder isKernel(boolean isKernel) {
-                this.isKernel = isKernel;
-                return this;
-            }
-
-            public PTXCompilationRequestBuilder buildGraph(boolean buildGraph) {
-                this.buildGraph = buildGraph;
-                return this;
-            }
-
-            public PTXCompilationRequestBuilder withBatchThreads(long batchThreads) {
-                this.batchThreads = batchThreads;
-                return this;
-            }
-
-            public PTXCompilationRequestBuilder includePrintf(boolean includePrintf) {
-                this.includePrintf = includePrintf;
-                return this;
-            }
-        }
-    }
 
     private static PTXCompilationResult compile(PTXCompilationRequest r) {
         assert !r.graph.isFrozen();
@@ -297,7 +140,8 @@ public class PTXCompiler {
         try (DebugCloseable a = EmitCode.start(getDebugContext())) {
             FrameMap frameMap = lirGenRes.getFrameMap();
             final PTXCompilationResultBuilder crb = r.backend.newCompilationResultBuilder(lirGenRes, frameMap, r.compilationResult, r.factory, r.isKernel, isParallel, r.includePrintf);
-            r.backend.emitCode(crb, ((PTXLIRGenerationResult) lirGenRes), r.installedCodeOwner);
+            crb.setPTXLIRGenerationResult((PTXLIRGenerationResult) lirGenRes);
+            r.backend.emitCode(crb, lirGenRes.getLIR(), r.installedCodeOwner);
 
             Assumptions assumptions = r.graph.getAssumptions();
             if (assumptions != null && !assumptions.isEmpty()) {
@@ -443,16 +287,19 @@ public class PTXCompiler {
             methods.addAll(Arrays.asList(kernelCompResult.getMethods()));
         }
 
+        // @formatter:off
         /*
-         * Given the non-inlined methods A, B, C, D and the call graph below, method D can be compiled twice.
-         * A  → B → D
-         *    ↘ C ↗
+         * Given the non-inlined methods A, B, C, D and the call graph below, method D
+         * can be compiled twice.
+         *     A → B → D
+         *       ↘ C ↗
          * We use hash set below to prevent this.
          */
+        // @formatter:on
         final Set<ResolvedJavaMethod> nonInlinedCompiledMethods = new HashSet<>();
-        final Deque<ResolvedJavaMethod> worklist = new ArrayDeque<>(kernelCompResult.getNonInlinedMethods());
-        while (!worklist.isEmpty()) {
-            final ResolvedJavaMethod currentMethod = worklist.pop();
+        final Deque<ResolvedJavaMethod> workList = new ArrayDeque<>(kernelCompResult.getNonInlinedMethods());
+        while (!workList.isEmpty()) {
+            final ResolvedJavaMethod currentMethod = workList.pop();
             if (nonInlinedCompiledMethods.contains(currentMethod)) {
                 continue;
             } else {
@@ -468,7 +315,7 @@ public class PTXCompiler {
                     .includePrintf(false).withBatchThreads(0).build();
 
             methodCompilationRequest.execute();
-            worklist.addAll(compResult.getNonInlinedMethods());
+            workList.addAll(compResult.getNonInlinedMethods());
 
             if (DUMP_COMPILED_METHODS) {
                 methods.add(graph.method());
@@ -556,5 +403,169 @@ public class PTXCompiler {
         kernelCompResult.addPTXHeader(backend);
 
         return kernelCompResult;
+    }
+
+    public static class PTXCompilationRequest {
+        public final StructuredGraph graph;
+        public final ResolvedJavaMethod installedCodeOwner;
+        public final Object[] args;
+        public final TaskMetaData meta;
+        public final Providers providers;
+        public final PTXBackend backend;
+        public final PhaseSuite<HighTierContext> graphBuilderSuite;
+        public final OptimisticOptimizations optimisticOpts;
+        public final ProfilingInfo profilingInfo;
+        public final TornadoSuites suites;
+        public final TornadoLIRSuites lirSuites;
+        public final PTXCompilationResult compilationResult;
+        public final CompilationResultBuilderFactory factory;
+        public final boolean isKernel;
+        public final boolean buildGraph;
+        public final long batchThreads;
+        public final boolean includePrintf;
+
+        private PTXCompilationRequest(StructuredGraph graph, ResolvedJavaMethod installedCodeOwner, Object[] args, TaskMetaData meta, Providers providers, PTXBackend backend,
+                PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, TornadoSuites suites, TornadoLIRSuites lirSuites,
+                PTXCompilationResult compilationResult, CompilationResultBuilderFactory factory, boolean isKernel, boolean buildGraph, long batchThreads, boolean includePrintf) {
+            this.graph = graph;
+            this.installedCodeOwner = installedCodeOwner;
+            this.args = args;
+            this.meta = meta;
+            this.providers = providers;
+            this.backend = backend;
+            this.graphBuilderSuite = graphBuilderSuite;
+            this.optimisticOpts = optimisticOpts;
+            this.profilingInfo = profilingInfo;
+            this.suites = suites;
+            this.lirSuites = lirSuites;
+            this.compilationResult = compilationResult;
+            this.factory = factory;
+            this.isKernel = isKernel;
+            this.buildGraph = buildGraph;
+            this.batchThreads = batchThreads;
+            this.includePrintf = includePrintf;
+        }
+
+        public PTXCompilationResult execute() {
+            return PTXCompiler.compile(this);
+        }
+
+        // FIXME <REFACTOR> this class can be merged into PTXCompilationRequest
+        public static class PTXCompilationRequestBuilder {
+            private StructuredGraph graph;
+            private ResolvedJavaMethod codeOwner;
+            private Object[] args;
+            private TaskMetaData meta;
+            private Providers providers;
+            private PTXBackend backend;
+            private PhaseSuite<HighTierContext> graphBuilderSuite;
+            private OptimisticOptimizations optimisticOpts;
+            private ProfilingInfo profilingInfo;
+            private TornadoSuites suites;
+            private TornadoLIRSuites lirSuites;
+            private PTXCompilationResult compilationResult;
+            private CompilationResultBuilderFactory factory;
+            private boolean isKernel;
+            private boolean buildGraph;
+            private long batchThreads;
+            private boolean includePrintf;
+
+            private PTXCompilationRequestBuilder() {
+            }
+
+            public static PTXCompilationRequestBuilder getInstance() {
+                return new PTXCompilationRequestBuilder();
+            }
+
+            public PTXCompilationRequest build() {
+                return new PTXCompilationRequest(graph, codeOwner, args, meta, providers, backend, graphBuilderSuite, optimisticOpts, profilingInfo, suites, lirSuites, compilationResult, factory,
+                        isKernel, buildGraph, batchThreads, includePrintf);
+            }
+
+            public PTXCompilationRequestBuilder withGraph(StructuredGraph graph) {
+                this.graph = graph;
+                return this;
+            }
+
+            public PTXCompilationRequestBuilder withCodeOwner(ResolvedJavaMethod owner) {
+                this.codeOwner = owner;
+                return this;
+            }
+
+            public PTXCompilationRequestBuilder withArgs(Object[] args) {
+                this.args = args;
+                return this;
+            }
+
+            public PTXCompilationRequestBuilder withMetaData(TaskMetaData metaData) {
+                this.meta = metaData;
+                return this;
+            }
+
+            public PTXCompilationRequestBuilder withProviders(Providers providers) {
+                this.providers = providers;
+                return this;
+            }
+
+            public PTXCompilationRequestBuilder withBackend(PTXBackend backend) {
+                this.backend = backend;
+                return this;
+            }
+
+            public PTXCompilationRequestBuilder withGraphBuilderSuite(PhaseSuite<HighTierContext> builderSuite) {
+                this.graphBuilderSuite = builderSuite;
+                return this;
+            }
+
+            public PTXCompilationRequestBuilder withOptimizations(OptimisticOptimizations optimizations) {
+                this.optimisticOpts = optimizations;
+                return this;
+            }
+
+            public PTXCompilationRequestBuilder withProfilingInfo(ProfilingInfo profilingInfo) {
+                this.profilingInfo = profilingInfo;
+                return this;
+            }
+
+            public PTXCompilationRequestBuilder withSuites(TornadoSuites suites) {
+                this.suites = suites;
+                return this;
+            }
+
+            public PTXCompilationRequestBuilder withLIRSuites(TornadoLIRSuites suites) {
+                this.lirSuites = suites;
+                return this;
+            }
+
+            public PTXCompilationRequestBuilder withResult(PTXCompilationResult result) {
+                this.compilationResult = result;
+                return this;
+            }
+
+            public PTXCompilationRequestBuilder withResultBuilderFactory(CompilationResultBuilderFactory factory) {
+                this.factory = factory;
+                return this;
+            }
+
+            public PTXCompilationRequestBuilder isKernel(boolean isKernel) {
+                this.isKernel = isKernel;
+                return this;
+            }
+
+            public PTXCompilationRequestBuilder buildGraph(boolean buildGraph) {
+                this.buildGraph = buildGraph;
+                return this;
+            }
+
+            public PTXCompilationRequestBuilder withBatchThreads(long batchThreads) {
+                this.batchThreads = batchThreads;
+                return this;
+            }
+
+            public PTXCompilationRequestBuilder includePrintf(boolean includePrintf) {
+                this.includePrintf = includePrintf;
+                return this;
+            }
+        }
     }
 }

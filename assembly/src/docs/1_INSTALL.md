@@ -40,13 +40,13 @@ Usage:
        --jdk11          : Install TornadoVM with OpenJDK 11
        --jdk17          : Install TornadoVM with OpenJDK 17
        --graal-jdk-11   : Install TornadoVM with GraalVM and JDK 11 (GraalVM 21.3.0)
-       --graal-jdk-17   : Install TornadoVM with GraalVM and JDK 16 (GraalVM 21.3.0)
+       --graal-jdk-17   : Install TornadoVM with GraalVM and JDK 17 (GraalVM 21.3.0)
        --corretto-11    : Install TornadoVM with Corretto JDK 11
-       --corretto-17    : Install TornadoVM with Corretto JDK 16
+       --corretto-17    : Install TornadoVM with Corretto JDK 17
        --mandrel-11     : Install TornadoVM with Mandrel 21.3.0 (JDK 11)
        --mandrel-17     : Install TornadoVM with Mandrel 21.3.0 (JDK 17)
        --windows-jdk-11 : Install TornadoVM with Windows JDK 11
-       --windows-jdk-17 : Install TornadoVM with Windows JDK 16
+       --windows-jdk-17 : Install TornadoVM with Windows JDK 17
        --opencl         : Install TornadoVM and build the OpenCL backend
        --ptx            : Install TornadoVM and build the PTX backend
        --spirv          : Install TornadoVM and build the SPIR-V backend
@@ -105,7 +105,7 @@ $ make BACKENDS=opencl,ptx,spirv
 ## 2. Running Examples
 
 ```bash
-$ tornado uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D
+$ tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D
 ```
 
 Use the following command to identify the ids of the Tornado-compatible heterogeneous devices:
@@ -177,7 +177,7 @@ Where `s` is the *TaskSchedule name* and `t` is the *task name*.
 For example running on `driver:device` `1:1` (Intel HD Graphics in our example) will look like this:
 
 ```bash
-$ tornado -Ds0.t0.device=1:1 uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D
+$ tornado -Ds0.t0.device=1:1 -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D
 ```
 
 The command above will run the MatrixMultiplication1D example on the integrated GPU (Intel HD Graphics).
@@ -213,7 +213,7 @@ List of benchmarks:
 ###### Running a specific benchmark
 
 ```bash
-$ tornado uk.ac.manchester.tornado.benchmarks.BenchmarkRunner sgemm
+$ tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner sgemm
 ```
 
 ## 4. Running Unittests
@@ -305,13 +305,13 @@ To use the TornadoVM API in your projects, you can checkout our maven repository
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>0.12</version>
+         <version>0.13</version>
       </dependency>
 
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-matrices</artifactId>
-         <version>0.12</version>
+         <version>0.13</version>
       </dependency>
    </dependencies>
 ```
@@ -320,6 +320,7 @@ Notice that, for running with TornadoVM, you will need either the docker images 
 
 #### Versions available
 
+* 0.13
 * 0.12
 * 0.11
 * 0.10
