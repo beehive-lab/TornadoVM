@@ -40,7 +40,7 @@ public class PTXInstalledCode extends InstalledCode implements TornadoInstalledC
         super(name);
         this.module = module;
         this.deviceContext = deviceContext;
-        valid = false;
+        valid = true;
     }
 
     @Override

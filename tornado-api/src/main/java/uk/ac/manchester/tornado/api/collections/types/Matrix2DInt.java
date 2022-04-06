@@ -41,18 +41,13 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-
-
-
 import java.nio.IntBuffer;
 import java.util.Arrays;
-
 
 public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
     /**
      * backing array
      */
-    
     final protected int[] storage;
 
     /**

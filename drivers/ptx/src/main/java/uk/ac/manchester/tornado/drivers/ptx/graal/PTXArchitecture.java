@@ -72,7 +72,7 @@ public class PTXArchitecture extends Architecture {
     public PTXArchitecture(PTXKind wordKind, ByteOrder byteOrder) {
         super("Tornado PTX", wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, NATIVE_CALL_DISPLACEMENT_OFFSET, RETURN_ADDRESS_SIZE);
 
-        STACK_POINTER = new PTXParam(PTXAssemblerConstants.STACK_PTR_NAME, wordKind);
+        STACK_POINTER = new PTXParam(PTXAssemblerConstants.STACK_PTR_NAME, 8, wordKind);
 
         abiRegisters = new PTXParam[] { STACK_POINTER };
     }
@@ -165,14 +165,24 @@ public class PTXArchitecture extends Architecture {
     }
 
     public static class PTXParam extends PTXRegister {
+        private int alignment = 0;
 
         public PTXParam(String name, PTXKind lirKind) {
             super(name, lirKind);
         }
 
+        public PTXParam(String name, int alignment, PTXKind lirKind) {
+            super(name, lirKind);
+            this.alignment = alignment;
+        }
+
         @Override
         public String getDeclaration() {
-            return String.format(".param .%s %s", getLirKind().toString(), name);
+            if (alignment != 0) {
+                return String.format(".param .align %d .%s %s", alignment, getLirKind().toString(), name);
+            } else {
+                return String.format(".param .%s %s", getLirKind().toString(), name);
+            }
         }
     }
 

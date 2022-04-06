@@ -38,22 +38,17 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-
-
-
 import static java.lang.String.format;
 import static uk.ac.manchester.tornado.api.collections.types.Double8.add;
 import static uk.ac.manchester.tornado.api.collections.types.Double8.loadFromArray;
 
 import java.nio.DoubleBuffer;
 
-
 public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
 
     /**
      * backing array
      */
-    
     protected final double[] storage;
 
     /**

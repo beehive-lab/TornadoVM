@@ -41,18 +41,13 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-
-
-
 import java.nio.FloatBuffer;
-
 
 public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
 
     /**
      * backing array
      */
-    
     protected final float[] storage;
 
     /**

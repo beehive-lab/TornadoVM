@@ -28,7 +28,7 @@ import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 
 public class PTXDoubleArrayWrapper extends PTXArrayWrapper<double[]> {
     public PTXDoubleArrayWrapper(PTXDeviceContext deviceContext) {
-        super(deviceContext, JavaKind.Double, false);
+        super(deviceContext, JavaKind.Double);
     }
 
     /**

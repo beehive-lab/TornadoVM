@@ -46,13 +46,9 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
-
-
-
 public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
 
     private final int numElements;
-    
     private final float[] storage;
     private static final int ELEMENT_SIZE = 1;
 

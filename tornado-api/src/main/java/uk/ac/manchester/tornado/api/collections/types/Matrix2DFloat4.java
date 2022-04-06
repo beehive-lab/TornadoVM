@@ -43,17 +43,13 @@ package uk.ac.manchester.tornado.api.collections.types;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
-
-
 import java.nio.FloatBuffer;
 import java.util.Arrays;
-
 
 public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
-    
     protected final float[] storage;
 
     /**

@@ -46,13 +46,9 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
-
-
-
 public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
 
     private final int numElements;
-    
     private final double[] storage;
     private static final int ELEMENT_SIZE = 1;
 

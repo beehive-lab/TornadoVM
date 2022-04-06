@@ -28,7 +28,7 @@ import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 
 public class PTXShortArrayWrapper extends PTXArrayWrapper<short[]> {
     public PTXShortArrayWrapper(PTXDeviceContext deviceContext) {
-        super(deviceContext, JavaKind.Short, false);
+        super(deviceContext, JavaKind.Short);
     }
 
     /**

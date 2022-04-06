@@ -46,6 +46,8 @@ import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 
 public interface TornadoDeviceContext {
 
+    TornadoTargetDevice getDevice();
+
     TornadoMemoryProvider getMemoryManager();
 
     boolean needsBump();

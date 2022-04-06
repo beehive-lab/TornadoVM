@@ -30,8 +30,10 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEFAULT_HEA
 
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
+import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
@@ -60,8 +62,11 @@ import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.common.BackendDeopt;
+import uk.ac.manchester.tornado.drivers.common.code.CodeUtil;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.drivers.ptx.PTXTargetDescription;
@@ -149,8 +154,6 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
             return;
         }
 
-        allocateHeapMemoryOnDevice();
-
         isInitialised = true;
     }
 
@@ -165,12 +168,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
      */
     @Override
     public void allocateHeapMemoryOnDevice() {
-        long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getDeviceMaxAllocationSize());
-        if (memorySize < DEFAULT_HEAP_ALLOCATION) {
-            Tornado.info("Unable to allocate %s of heap space - resized to %s", humanReadableByteCount(DEFAULT_HEAP_ALLOCATION, false), humanReadableByteCount(memorySize, false));
-        }
-        Tornado.info("%s: allocating %s of heap space", deviceContext.getDevice().getDeviceName(), humanReadableByteCount(memorySize, false));
-        deviceContext.getMemoryManager().allocateRegion(memorySize);
+        TornadoInternalError.shouldNotReachHere("Should not allocate any heap memory");
     }
 
     @Override
@@ -236,12 +234,54 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
 
     private void emitPrologue(PTXCompilationResultBuilder crb, PTXAssembler asm, PTXLIRGenerationResult lirGenRes, ResolvedJavaMethod method) {
         emitPrintfPrototype(crb);
+        final CallingConvention incomingArguments = CodeUtil.getCallingConvention(codeCache, HotSpotCallingConventionType.JavaCallee, method, false);
         if (crb.isKernel()) {
-            emitKernelFunction(asm, crb.compilationResult.getName());
+            asm.emit("%s %s %s(%s", PTXAssemblerConstants.EXTERNALLY_VISIBLE, PTXAssemblerConstants.KERNEL_ENTRYPOINT, crb.compilationResult.getName(), architecture.getABI());
+            emitMethodParameters(asm, method, incomingArguments, true);
+            asm.emit(") {");
+            asm.eol();
             emitVariableDefs(asm, lirGenRes);
         } else {
             emitFunctionHeader(asm, method, lirGenRes);
             emitVariableDefs(asm, lirGenRes);
+        }
+    }
+
+    private void emitMethodParameters(PTXAssembler asm, ResolvedJavaMethod method, CallingConvention incomingArguments, boolean isKernel) {
+        final Local[] locals = method.getLocalVariableTable().getLocalsAt(0);
+
+        for (int i = 0; i < incomingArguments.getArgumentCount(); i++) {
+            if (isKernel) {
+                if (locals[i].getType().getJavaKind().isPrimitive()) {
+                    final AllocatableValue param = incomingArguments.getArgument(i);
+                    PTXKind kind = (PTXKind) param.getPlatformKind();
+                    asm.emit(", ");
+                    asm.emit(".param .align 8 .%s %s", kind.toString(), locals[i].getName());
+                } else {
+                    // Skip the kernel context object
+                    if (locals[i].getType().toJavaName().equals(KernelContext.class.getName())) {
+                        continue;
+                    }
+                    // Skip atomic integers
+                    if (locals[i].getType().toJavaName().equals(AtomicInteger.class.getName())) {
+                        continue;
+                    }
+                    asm.emit(", ");
+                    asm.emit(".param .align 8 .u64 %s", locals[i].getName());
+                }
+            } else {
+                final AllocatableValue param = incomingArguments.getArgument(i);
+                PTXKind ptxKind = (PTXKind) param.getPlatformKind();
+                if (locals[i].getType().getJavaKind().isObject()) {
+                    PTXKind tmpKind = PTXKind.resolveToVectorKind(locals[i].getType().resolve(method.getDeclaringClass()));
+                    if (tmpKind != PTXKind.ILLEGAL) {
+                        ptxKind = tmpKind;
+                    }
+                }
+                guarantee(ptxKind != PTXKind.ILLEGAL, "illegal type for %s", param.getPlatformKind());
+                asm.emit(", ");
+                asm.emit("%s %s", ptxKind.toString(), locals[i].getName());
+            }
         }
     }
 
@@ -303,9 +343,6 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         }
     }
 
-    private void emitKernelFunction(PTXAssembler asm, String methodName) {
-        asm.emitLine("%s %s %s(%s) {", PTXAssemblerConstants.EXTERNALLY_VISIBLE, PTXAssemblerConstants.KERNEL_ENTRYPOINT, methodName, architecture.getABI());
-    }
 
     private void emitVariableDefs(PTXAssembler asm, PTXLIRGenerationResult lirGenRes) {
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitVariableDefs");

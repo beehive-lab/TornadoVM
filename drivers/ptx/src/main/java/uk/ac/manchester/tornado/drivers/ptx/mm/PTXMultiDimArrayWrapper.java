@@ -35,46 +35,26 @@ import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 
 public class PTXMultiDimArrayWrapper<T, E> extends PTXArrayWrapper<T> {
 
-    private Function<PTXDeviceContext, ? extends PTXArrayWrapper<E>> innerWrapperFactory;
-    private PTXLongArrayWrapper tableWrapper;
+    private final Function<PTXDeviceContext, ? extends PTXArrayWrapper<E>> innerWrapperFactory;
+    private final PTXLongArrayWrapper tableWrapper;
     private long[] addresses;
     private PTXArrayWrapper<E>[] wrappers;
-    private PTXDeviceContext deviceContext;
+    private final PTXDeviceContext deviceContext;
 
     public PTXMultiDimArrayWrapper(PTXDeviceContext device, Function<PTXDeviceContext, ? extends PTXArrayWrapper<E>> factory, long batchSize) {
-        this(device, factory, false, batchSize);
+        this(device, factory);
     }
 
-    private PTXMultiDimArrayWrapper(PTXDeviceContext device, Function<PTXDeviceContext, ? extends PTXArrayWrapper<E>> factory, boolean isFinal, long batchSize) {
-        super(device, JavaKind.Object, isFinal);
+    private PTXMultiDimArrayWrapper(PTXDeviceContext device, Function<PTXDeviceContext, ? extends PTXArrayWrapper<E>> factory) {
+        super(device, JavaKind.Object);
         this.deviceContext = device;
         innerWrapperFactory = factory;
         tableWrapper = new PTXLongArrayWrapper(device);
     }
 
     @Override
-    public long toRelativeAddress() {
-        return tableWrapper.toRelativeAddress();
-    }
-
-    @Override
     public long toBuffer() {
         return tableWrapper.toBuffer();
-    }
-
-    @Override
-    public long toAbsoluteAddress() {
-        return tableWrapper.toAbsoluteAddress();
-    }
-
-    @Override
-    public void invalidate() {
-        tableWrapper.invalidate();
-    }
-
-    @Override
-    public boolean isValid() {
-        return tableWrapper.isValid();
     }
 
     @Override
@@ -109,11 +89,25 @@ public class PTXMultiDimArrayWrapper<T, E> extends PTXArrayWrapper<T> {
             for (int i = 0; i < elements.length; i++) {
                 wrappers[i] = innerWrapperFactory.apply(deviceContext);
                 wrappers[i].allocate(elements[i], batchSize);
-                addresses[i] = deviceContext.useRelativeAddresses() ? wrappers[i].toRelativeAddress() : wrappers[i].toAbsoluteAddress();
+                addresses[i] = wrappers[i].toBuffer();
             }
         } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
             fatal("OOM: multi-dim array: %s", e.getMessage());
             System.exit(-1);
+        }
+    }
+
+    @Override
+    public void deallocate() throws TornadoMemoryException {
+        deallocateElements();
+        tableWrapper.deallocate();
+        wrappers = null;
+        addresses = null;
+    }
+
+    private void deallocateElements() {
+        for (int i = 0; i < wrappers.length; i++) {
+            wrappers[i].deallocate();
         }
     }
 

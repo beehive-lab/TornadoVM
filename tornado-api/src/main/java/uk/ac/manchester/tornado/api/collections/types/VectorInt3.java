@@ -38,22 +38,17 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-
-
-
 import static java.lang.String.format;
 import static uk.ac.manchester.tornado.api.collections.types.Int3.add;
 import static uk.ac.manchester.tornado.api.collections.types.Int3.loadFromArray;
 
 import java.nio.DoubleBuffer;
 
-
 public class VectorInt3 implements PrimitiveStorage<DoubleBuffer> {
 
     /**
      * backing array
      */
-    
     protected final int[] storage;
 
     /**

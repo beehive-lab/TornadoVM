@@ -29,6 +29,7 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstan
 
 import java.util.HashMap;
 
+import jdk.vm.ci.meta.Local;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.Variable;
@@ -50,7 +51,7 @@ public class PTXGenTool {
 
     protected PTXLIRGenerator gen;
 
-    private final HashMap<ParameterNode, Variable> parameterToVariable = new HashMap<>();
+    private final HashMap<ParameterNode, Value> parameterToVariable = new HashMap<>();
 
     public PTXGenTool(PTXLIRGenerator generator) {
         gen = generator;
@@ -61,7 +62,7 @@ public class PTXGenTool {
         gen.append(new PTXLIRStmt.VectorLoadStmt(result, address));
     }
 
-    public Value emitParameterLoad(ParameterNode paramNode, int paramOffset) {
+    public Value emitParameterLoad(Local[] locals,  ParameterNode paramNode) {
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitParameterLoad: stamp=%s", paramNode.stamp(NodeView.DEFAULT));
 
         LIRKind lirKind = gen.getLIRKind(paramNode.stamp(NodeView.DEFAULT));
@@ -71,7 +72,7 @@ public class PTXGenTool {
         PTXTargetDescription target = gen.target();
 
         Variable result = (kind.isVector()) ? gen.newVariable(LIRKind.value(target.getPTXKind(JavaKind.Object))) : gen.newVariable(lirKind);
-        emitParameterLoad(result, paramOffset);
+        gen.append(new PTXLIRStmt.LoadStmt(new PTXUnary.MemoryAccess(locals[paramNode.index()].getName()), result, PTXAssembler.PTXNullaryOp.LD));
         parameterToVariable.put(paramNode, result);
 
         if (kind.isVector()) {
@@ -109,7 +110,7 @@ public class PTXGenTool {
         gen.append(loadStmt);
     }
 
-    public HashMap<ParameterNode, Variable> getParameterToVariable() {
+    public HashMap<ParameterNode, Value> getParameterToVariable() {
         return parameterToVariable;
     }
 

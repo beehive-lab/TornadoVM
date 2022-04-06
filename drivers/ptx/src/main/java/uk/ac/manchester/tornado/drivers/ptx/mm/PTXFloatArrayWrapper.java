@@ -28,7 +28,7 @@ import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 
 public class PTXFloatArrayWrapper extends PTXArrayWrapper<float[]> {
     public PTXFloatArrayWrapper(PTXDeviceContext deviceContext) {
-        super(deviceContext, JavaKind.Float, false);
+        super(deviceContext, JavaKind.Float);
     }
 
     /**

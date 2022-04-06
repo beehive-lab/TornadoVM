@@ -41,7 +41,6 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-
 import java.nio.ShortBuffer;
 
 public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
@@ -49,7 +48,6 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
     /**
      * backing array
      */
-    
     protected final short[] storage;
 
     /**

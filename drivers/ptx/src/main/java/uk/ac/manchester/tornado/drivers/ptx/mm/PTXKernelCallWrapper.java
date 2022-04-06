@@ -1,9 +1,9 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
- * The University of Manchester. All rights reserved.
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,27 +20,26 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
-package uk.ac.manchester.tornado.drivers.opencl.mm;
+package uk.ac.manchester.tornado.drivers.ptx.mm;
+
+import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
+import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
+import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
 
-public class OCLKernelCallWrapper extends OCLByteBuffer implements KernelCallWrapper {
 
-    public final static int RETURN_VALUE_INDEX = 0;
+public class PTXKernelCallWrapper extends PTXByteBuffer implements KernelCallWrapper {
+
     public static final int RESERVED_SLOTS = 3;
-
     private final ArrayList<CallArgument> callArguments;
 
-    OCLKernelCallWrapper(long bufferId, int numArgs, OCLDeviceContext device) {
-        super(device, bufferId, 0, RESERVED_SLOTS << 3);
+    public PTXKernelCallWrapper(long address, int numArgs, PTXDeviceContext deviceContext) {
+        super(address,RESERVED_SLOTS << 3, 0, deviceContext);
         this.callArguments = new ArrayList<>(numArgs);
 
         buffer.clear();

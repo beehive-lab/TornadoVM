@@ -538,11 +538,9 @@ public class TornadoVM extends TornadoLogger {
             final int argIndex = buffer.getInt();
 
             if (argType == TornadoVMBytecodes.CONSTANT_ARGUMENT.value()) {
-//                stack.push(constants.get(argIndex));
                 stack.addCallArgument(constants.get(argIndex));
             } else if (argType == TornadoVMBytecodes.REFERENCE_ARGUMENT.value()) {
                 if (isObjectKernelContext(objects.get(argIndex))) {
-//                    stack.push(null);
                     continue;
                 }
 
@@ -550,7 +548,6 @@ public class TornadoVM extends TornadoLogger {
                 final DeviceObjectState objectState = globalState.getDeviceState(contexts.get(contextIndex));
 
                 if (!isObjectInAtomicRegion(objectState, device, task)) {
-//                    stack.push(objects.get(argIndex), objectState);
                     stack.addCallArgument(objectState.getBuffer().toBuffer());
                 } else {
                     atomicsArray = device.updateAtomicRegionAndObjectState(task, atomicsArray, i, objects.get(argIndex), objectState);

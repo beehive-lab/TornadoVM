@@ -23,7 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitive;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -37,18 +39,19 @@ import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
-import uk.ac.manchester.tornado.drivers.ptx.mm.PTXCallStack;
+import uk.ac.manchester.tornado.drivers.ptx.mm.PTXKernelCallWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMemoryManager;
+import uk.ac.manchester.tornado.drivers.ptx.runtime.PTXBufferProvider;
 import uk.ac.manchester.tornado.drivers.ptx.runtime.PTXTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
-import uk.ac.manchester.tornado.runtime.common.Initialisable;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class PTXDeviceContext extends TornadoLogger implements Initialisable, TornadoDeviceContext {
+public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceContext {
 
     private final PTXDevice device;
     private final PTXMemoryManager memoryManager;
@@ -57,6 +60,8 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
     private final PTXScheduler scheduler;
     private boolean wasReset;
 
+    private final TornadoBufferProvider bufferProvider;
+
     public PTXDeviceContext(PTXDevice device, PTXStream stream) {
         this.device = device;
         this.stream = stream;
@@ -64,12 +69,17 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
         this.scheduler = new PTXScheduler(device);
         codeCache = new PTXCodeCache(this);
         memoryManager = new PTXMemoryManager(this);
+        bufferProvider = new PTXBufferProvider(this);
         wasReset = false;
     }
 
     @Override
     public PTXMemoryManager getMemoryManager() {
         return memoryManager;
+    }
+
+    public TornadoBufferProvider getBufferProvider() {
+        return bufferProvider;
     }
 
     @Override
@@ -95,16 +105,6 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
     @Override
     public boolean isPlatformXilinxFPGA() {
         return false;
-    }
-
-    @Override
-    public boolean useRelativeAddresses() {
-        return false;
-    }
-
-    @Override
-    public boolean isInitialised() {
-        return memoryManager.isInitialised();
     }
 
     public PTXTornadoDevice asMapping() {
@@ -194,7 +194,6 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
 
     public void reset() {
         stream.reset();
-        memoryManager.reset();
         codeCache.reset();
         wasReset = true;
     }
@@ -224,27 +223,35 @@ public class PTXDeviceContext extends TornadoLogger implements Initialisable, To
             blockDimension = scheduler.calculateBlockDimension(module, taskMeta);
             gridDimension = scheduler.calculateGridDimension(module, taskMeta, blockDimension);
         }
-        int kernelLaunchEvent = stream.enqueueKernelLaunch(module, taskMeta, writePTXStackOnDevice((PTXCallStack) stack, taskMeta), gridDimension, blockDimension);
+        int kernelLaunchEvent = stream.enqueueKernelLaunch(module, taskMeta, writePTXStackOnDevice((PTXKernelCallWrapper) stack, taskMeta), gridDimension, blockDimension);
         updateProfiler(kernelLaunchEvent, taskMeta);
         return kernelLaunchEvent;
     }
 
-    private byte[] writePTXStackOnDevice(PTXCallStack stack, TaskMetaData meta) {
-        ByteBuffer args = ByteBuffer.allocate(8);
+    private byte[] writePTXStackOnDevice(PTXKernelCallWrapper stack, TaskMetaData meta) {
+        ByteBuffer args = ByteBuffer.allocate(Long.BYTES + stack.getCallArguments().size() * Long.BYTES);
         args.order(getByteOrder());
 
         // Stack pointer
-        if (!stack.isOnDevice()) {
-            int stackWriteEventId = stack.enqueueWrite();
-            updateProfilerStackWrite(stackWriteEventId, meta, stack);
-        }
-        long address = stack.getAddress();
+        int stackWriteEventId = stack.enqueueWrite();
+        updateProfilerStackWrite(stackWriteEventId, meta, stack);
+        long address = stack.toAbsoluteAddress();
         args.putLong(address);
+
+        // Parameters
+        for (int argIndex = 0; argIndex < stack.getCallArguments().size(); argIndex++) {
+            uk.ac.manchester.tornado.runtime.common.KernelCallWrapper.CallArgument arg = stack.getCallArguments().get(argIndex);
+            if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
+                args.putLong(((Number) arg.getValue()).longValue());
+            } else {
+                shouldNotReachHere();
+            }
+        }
 
         return args.array();
     }
 
-    private void updateProfilerStackWrite(int stackWriteEventId, TaskMetaData meta, PTXCallStack stack) {
+    private void updateProfilerStackWrite(int stackWriteEventId, TaskMetaData meta, PTXKernelCallWrapper stack) {
         if (TornadoOptions.isProfilerEnabled()) {
             TornadoProfiler profiler = meta.getProfiler();
             Event event = resolveEvent(stackWriteEventId);

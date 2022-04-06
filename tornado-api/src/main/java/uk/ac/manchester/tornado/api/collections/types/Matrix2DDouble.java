@@ -41,18 +41,13 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-
-
-
 import java.nio.DoubleBuffer;
 import java.util.Arrays;
-
 
 public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
     /**
      * backing array
      */
-    
     protected final double[] storage;
 
     /**

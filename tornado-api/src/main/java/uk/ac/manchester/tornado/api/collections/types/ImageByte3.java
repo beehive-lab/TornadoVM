@@ -41,19 +41,14 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-
-
-
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-
 
 public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
 
     /**
      * backing array
      */
-    
     final protected byte[] storage;
 
     /**

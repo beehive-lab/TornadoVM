@@ -102,7 +102,7 @@ public class PTX {
                     tornadoDevice.ensurePresent(object, deviceState, null, 0, 0);
                     break;
                 case WRITE:
-                    tornadoDevice.ensureAllocated(object, 0, deviceState);
+                    tornadoDevice.allocate(object, 0, deviceState);
                 default:
                     break;
             }
@@ -114,11 +114,11 @@ public class PTX {
         KernelCallWrapper stack = tornadoDevice.createStack(numArgs);
 
         // Fill header of call stack with empty values
-        stack.setHeader(new HashMap<>());
+        stack.setKernelContext(new HashMap<>());
 
         // Pass arguments to the call stack
         for (int i = 0; i < numArgs; i++) {
-            stack.push(parameters[i], states.get(i));
+            stack.addCallArgument(parameters[i]);
         }
 
         // Run the code

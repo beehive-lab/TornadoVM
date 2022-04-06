@@ -41,9 +41,6 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-
-
-
 import static java.lang.Math.min;
 import static java.lang.String.format;
 import static java.nio.FloatBuffer.wrap;
@@ -53,12 +50,10 @@ import static uk.ac.manchester.tornado.api.collections.types.StorageFormats.toRo
 
 import java.nio.FloatBuffer;
 
-
 public class Matrix2DFloat implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
-    
     protected final float[] storage;
 
     /**

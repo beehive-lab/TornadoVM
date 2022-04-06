@@ -41,17 +41,12 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-
-
-
 import java.nio.FloatBuffer;
-
 
 public class Matrix3DFloat4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
-    
     protected final float[] storage;
 
     /**

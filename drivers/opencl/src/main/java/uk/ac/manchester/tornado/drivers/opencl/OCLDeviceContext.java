@@ -386,7 +386,7 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
 
     public void reset() {
         oclEventPool.reset();
-//        codeCache.reset();
+        codeCache.reset();
         wasReset = true;
     }
 

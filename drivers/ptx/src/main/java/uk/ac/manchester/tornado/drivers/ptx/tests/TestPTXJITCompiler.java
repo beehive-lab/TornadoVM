@@ -135,17 +135,17 @@ public class TestPTXJITCompiler {
         // Copy-IN B
         tornadoDevice.ensurePresent(b, objectStateB, null, 0, 0);
         // Alloc C
-        tornadoDevice.ensureAllocated(c, 0, objectStateC);
+        tornadoDevice.allocate(c, 0, objectStateC);
 
         // Create stack
         KernelCallWrapper stack = tornadoDevice.createStack(3);
 
         // Fill header of call stack with empty values
-        stack.setHeader(new HashMap<>());
+        stack.setKernelContext(new HashMap<>());
 
-        stack.push(a, objectStateA);
-        stack.push(b, objectStateB);
-        stack.push(c, objectStateC);
+        stack.addCallArgument(a);
+        stack.addCallArgument(b);
+        stack.addCallArgument(c);
 
         // Run the code
         ptxCode.launchWithoutDependencies(stack, null, taskMeta, 0);

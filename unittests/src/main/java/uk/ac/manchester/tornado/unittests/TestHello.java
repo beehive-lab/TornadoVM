@@ -146,8 +146,7 @@ public class TestHello extends TornadoTestBase {
 
     @Test
     public void testSimpleInOut() {
-//        int numElements = 256;
-        int numElements = 10;
+        int numElements = 256;
         int[] a = new int[numElements];
 
         Arrays.fill(a, 10);
@@ -162,35 +161,6 @@ public class TestHello extends TornadoTestBase {
         for (int i = 0; i < a.length; i++) {
             assertEquals(20, a[i]);
         }
-    }
-
-    @Test
-    @Ignore
-    public void testSimpleInOutPrebuilt() {
-//        int numElements = 256;
-        int numElements = 10;
-        int[] a = new int[numElements];
-
-        Arrays.fill(a, 10);
-
-        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
-
-        //@formatter:off
-        new TaskSchedule("s0")
-                .prebuiltTask("t0", "compute", "/home/gogu/git/tornado-src/tornadovm/out.txt",
-                        new Object[] { a },
-                        new Access[] { Access.READ_WRITE },
-                        defaultDevice,
-                        new int[] { 1 })
-                .streamOut(a)
-                .execute();
-        //@formatter:on
-
-        System.out.println(Arrays.toString(a));
-
-//        for (int i = 0; i < a.length; i++) {
-//            assertEquals(20, a[i]);
-//        }
     }
 
 }
