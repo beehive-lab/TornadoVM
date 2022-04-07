@@ -565,6 +565,11 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         getGen().emitJump(getLIRBlock(loopBegin), true);
     }
 
+    private boolean isPhiValueInPhiTraceTableOrConstant(ValuePhiNode phi) {
+        Value operand = operand(phi.valueAt(0));
+        return phiTrace.containsKey(operand) || (operand instanceof ConstantValue);
+    }
+
     @Override
     public void visitMerge(final AbstractMergeNode mergeNode) {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "visitMerge %s", mergeNode);
@@ -593,17 +598,13 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
                 Value src = operand(phi.valueAt(1));
                 append(new SPIRVLIRStmt.AssignStmtWithLoad(dest, src));
-            } else if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV && (phiTrace.containsKey(operand(phi.valueAt(0))))) {
+            } else if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV && isPhiValueInPhiTraceTableOrConstant(phi)) {
                 // We look up of if the first phi-value is in the phiTrace table. In that case,
                 // we need to generate a new OpPhi instruction with a value that is forwarded to
                 // another basic block.
-
                 List<PhiHolder> phiHolderList = new LinkedList<>();
 
                 final Block block = (Block) gen.getCurrentBlock();
-                final Block predBlock = block.getFirstPredecessor();
-                Block dependentPhiValueBlock = block.getPredecessors()[1];
-
                 for (int i = 0; i < phi.values().size(); i++) {
                     PhiHolder ph = new PhiHolder(operand(phi.valueAt(i)), block.getPredecessors()[i]);
                     phiHolderList.add(ph);
@@ -611,7 +612,6 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
                 AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
                 Value src = operand(valuePhi);
-                // Value forwardId = operand(phi.valueAt(0));
                 phiTrace.put(result, null);
 
                 boolean forwardId = true;

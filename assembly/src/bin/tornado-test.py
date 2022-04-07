@@ -164,8 +164,9 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm2DKernelContext01",
     "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm2DKernelContext02",
 
-    # It might have errors during type casting and type conversion. However the Mandelbrot fractal image looks correct
+    # It might have errors during type casting and type conversion. However the fractals images look correct
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testMandelbrot",
+    "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testJuliaSets",
 ]
 
 # ################################################################################################################

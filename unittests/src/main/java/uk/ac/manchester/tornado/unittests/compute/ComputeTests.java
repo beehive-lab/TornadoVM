@@ -19,9 +19,15 @@ package uk.ac.manchester.tornado.unittests.compute;
 
 import static org.junit.Assert.assertEquals;
 
+import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.awt.image.WritableRaster;
+import java.io.File;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
+
+import javax.imageio.ImageIO;
 
 import org.junit.Test;
 
@@ -52,6 +58,13 @@ public class ComputeTests extends TornadoTestBase {
 
     private static final float DELTA = 0.005f;
     private static final float ESP_SQR = 500.0f;
+    // Parameters for the algorithm used
+    private static final int MAX_ITERATIONS = 1000;
+    private static final float ZOOM = 1;
+    private static final float CX = -0.7f;
+    private static final float CY = 0.27015f;
+    private static final float MOVE_X = 0;
+    private static final float MOVE_Y = 0;
     private static int NROWS = 1024;
     private static int NCOLS = 1024;
 
@@ -299,6 +312,49 @@ public class ComputeTests extends TornadoTestBase {
                 output.set(x, y, pixel);
             }
         }
+    }
+
+    public static void juliaSetTornado(int size, float[] hue, float[] brightness) {
+        for (@Parallel int ix = 0; ix < size; ix++) {
+            for (@Parallel int jx = 0; jx < size; jx++) {
+                float zx = 1.5f * (ix - size / 2) / (0.5f * ZOOM * size) + MOVE_X;
+                float zy = (jx - size / 2) / (0.5f * ZOOM * size) + MOVE_Y;
+                float k = MAX_ITERATIONS;
+                while ((zx * zx + zy * zy < 4)) {
+                    if (k < 0) {
+                        break;
+                    }
+                    float tmp = zx * zx - zy * zy + CX;
+                    zy = 2.0f * zx * zy + CY;
+                    zx = tmp;
+                    k--;
+                }
+                hue[ix * size + jx] = (MAX_ITERATIONS / k);
+                brightness[ix * size + jx] = k > 0 ? 1 : 0;
+            }
+        }
+    }
+
+    private static BufferedImage writeFile(int[] output, int size) {
+        BufferedImage img = null;
+        try {
+            img = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
+            WritableRaster write = img.getRaster();
+
+            String tmpDirsLocation = System.getProperty("java.io.tmpdir");
+            File outputFile = new File(tmpDirsLocation + "/juliaSets.png");
+
+            for (int i = 0; i < size; i++) {
+                for (int j = 0; j < size; j++) {
+                    int colour = output[(i * size + j)];
+                    write.setSample(i, j, 1, colour);
+                }
+            }
+            ImageIO.write(img, "PNG", outputFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return img;
     }
 
     @Test
@@ -622,5 +678,39 @@ public class ComputeTests extends TornadoTestBase {
                 assertEquals(outputJava.get(x, y).getZ(), outputTornadoVM.get(x, y).getZ(), 0.1);
             }
         }
+    }
+
+    @Test
+    public void testJuliaSets() {
+        final int size = 1024;
+        float[] hue = new float[size * size];
+        float[] brightness = new float[size * size];
+        int[] result = new int[size * size];
+
+        TaskSchedule ts = new TaskSchedule("s0") //
+                .task("t0", ComputeTests::juliaSetTornado, size, hue, brightness) //
+                .streamOut(hue, brightness);
+
+        ts.execute();
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                result[i * size + j] = Color.HSBtoRGB(hue[i * size + j] % 1, 1, brightness[i * size + j]);
+            }
+        }
+
+        writeFile(result, size);
+
+        // Run Sequential Code
+        float[] hueSeq = new float[size * size];
+        float[] brightnessSeq = new float[size * size];
+        juliaSetTornado(size, hueSeq, brightnessSeq);
+
+        float delta = 0.01f;
+        for (int i = 0; i < hueSeq.length; i++) {
+            assertEquals(hueSeq[i], hue[i], delta);
+            assertEquals(brightnessSeq[i], brightness[i], delta);
+        }
+
     }
 }
