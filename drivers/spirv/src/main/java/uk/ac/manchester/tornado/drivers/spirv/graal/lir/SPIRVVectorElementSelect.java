@@ -28,6 +28,7 @@ import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.Variable;
 
+import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpCompositeExtract;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpLoad;
@@ -71,6 +72,9 @@ public class SPIRVVectorElementSelect extends SPIRVLIROp {
         } else {
             SPIRVId param = asm.lookUpLIRInstructions(inputValue);
             if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                if (asm.isPhiAcrossBlocksPresent((AllocatableValue) inputValue)) {
+                    return asm.getPhiIdAcrossBlock((AllocatableValue) inputValue);
+                }
                 return param;
             }
 
@@ -90,6 +94,24 @@ public class SPIRVVectorElementSelect extends SPIRVLIROp {
         }
     }
 
+    protected SPIRVId obtainPhiValueIdIfNeeded(SPIRVAssembler asm, Variable result) {
+        SPIRVId operationId;
+        if (!asm.isPhiMapEmpty() && asm.isResultInPhiMap(result)) {
+            operationId = asm.getPhiId(result);
+            Variable allocatableValue = result;
+            while (operationId == null) {
+                // We loop-up the operation ID. In the case it's in the Phi Table, we look at
+                // the trace to obtain the root Phi Variable.
+                Variable tempValue = (Variable) asm.getPhiTraceValue(allocatableValue);
+                operationId = asm.getPhiId(tempValue);
+                allocatableValue = tempValue;
+            }
+        } else {
+            operationId = asm.module.getNextId();
+        }
+        return operationId;
+    }
+
     @Override
     public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
         SPIRVId vectorId = getId(vector, asm, (SPIRVKind) vectorKind.getPlatformKind());
@@ -101,4 +123,5 @@ public class SPIRVVectorElementSelect extends SPIRVLIROp {
 
         asm.registerLIRInstructionValue(this, resultSelect1);
     }
+
 }

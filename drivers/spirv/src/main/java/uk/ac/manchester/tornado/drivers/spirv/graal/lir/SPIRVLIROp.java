@@ -27,6 +27,7 @@ package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.ConstantValue;
 
+import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVModule;
@@ -76,6 +77,9 @@ public abstract class SPIRVLIROp extends Value {
             SPIRVId param = asm.lookUpLIRInstructions(inputValue);
             if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
                 // Do not generate a load if Load/Store optimization is enabled.
+                if (asm.isPhiAcrossBlocksPresent((AllocatableValue) inputValue)) {
+                    return asm.getPhiIdAcrossBlock((AllocatableValue) inputValue);
+                }
                 return param;
             }
 
