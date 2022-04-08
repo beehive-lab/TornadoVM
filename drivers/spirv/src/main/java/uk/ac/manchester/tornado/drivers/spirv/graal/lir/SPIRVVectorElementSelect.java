@@ -28,6 +28,7 @@ import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.Variable;
 
+import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpCompositeExtract;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpLoad;
@@ -71,6 +72,9 @@ public class SPIRVVectorElementSelect extends SPIRVLIROp {
         } else {
             SPIRVId param = asm.lookUpLIRInstructions(inputValue);
             if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                if (asm.isPhiAcrossBlocksPresent((AllocatableValue) inputValue)) {
+                    return asm.getPhiIdAcrossBlock((AllocatableValue) inputValue);
+                }
                 return param;
             }
 
@@ -101,4 +105,5 @@ public class SPIRVVectorElementSelect extends SPIRVLIROp {
 
         asm.registerLIRInstructionValue(this, resultSelect1);
     }
+
 }
