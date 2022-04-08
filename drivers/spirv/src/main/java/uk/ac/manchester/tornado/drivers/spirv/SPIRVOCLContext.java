@@ -74,6 +74,11 @@ public class SPIRVOCLContext extends SPIRVContext {
     }
 
     @Override
+    public void freeMemory(long buffer, int deviceIndex) {
+        throw new RuntimeException("Unimplemented");
+    }
+
+    @Override
     public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransferp) {
         throw new RuntimeException("Unimplemented");
     }

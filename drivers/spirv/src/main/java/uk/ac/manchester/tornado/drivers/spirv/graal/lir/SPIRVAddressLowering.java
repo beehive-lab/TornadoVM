@@ -36,6 +36,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalArrayNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.calc.TornadoAddressArithmeticNode;
 
 public class SPIRVAddressLowering extends AddressLoweringPhase.AddressLowering {
 
@@ -46,7 +47,8 @@ public class SPIRVAddressLowering extends AddressLoweringPhase.AddressLowering {
             memoryRegister = ((FixedArrayNode) base).getMemoryRegister();
         } else if (base instanceof LocalArrayNode) {
             memoryRegister = ((LocalArrayNode) base).getMemoryRegister();
-        } else if (!((base instanceof ParameterNode) || (base instanceof ReadNode) || (base instanceof FloatingReadNode) || (base instanceof PiNode))) {
+        } else if (!((base instanceof TornadoAddressArithmeticNode) || (base instanceof ParameterNode) ||
+                (base instanceof ReadNode) || (base instanceof FloatingReadNode) || (base instanceof PiNode))) {
             TornadoInternalError.unimplemented("address origin unimplemented: %s", base.getClass().getName());
         }
 

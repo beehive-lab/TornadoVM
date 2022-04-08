@@ -31,21 +31,24 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 // FIXME <Refactor> <S>
 public class SPIRVByteBuffer {
 
+    private static final int BYTES_PER_INTEGER = 4;
     protected ByteBuffer buffer;
-    private long numBytes;
-    private long offset;
+    private final long bufferId;
+    protected final long bytes;
+    private final long offset;
     private SPIRVDeviceContext deviceContext;
 
-    public SPIRVByteBuffer(SPIRVDeviceContext deviceContext, long offset, long numBytes) {
-        this.numBytes = numBytes;
-        this.offset = offset;
+    public SPIRVByteBuffer(final SPIRVDeviceContext deviceContext, final long bufferId, final long offset, final long numBytes) {
         this.deviceContext = deviceContext;
+        this.bufferId = bufferId;
+        this.bytes = numBytes;
+        this.offset = offset;
         buffer = ByteBuffer.allocate((int) numBytes);
-        buffer.order(deviceContext.getDevice().getByteOrder());
+        buffer.order(this.deviceContext.getDevice().getByteOrder());
     }
 
     public long getSize() {
-        return this.numBytes;
+        return this.bytes;
     }
 
     public void read() {
@@ -53,20 +56,19 @@ public class SPIRVByteBuffer {
     }
 
     private void read(int[] events) {
-        // deviceContext.readBuffer(heapPointer() + offset, numBytes, buffer.array(), 0,
-        // events);
-    }
-
-    private long heapPointer() {
-        return deviceContext.getMemoryManager().toBuffer();
+        deviceContext.readBuffer(toBuffer(), offset, bytes, buffer.array(), 0, events);
     }
 
     public int getInt(int offset) {
         return buffer.getInt(offset);
     }
 
-    protected long toAbsoluteAddress() {
-        return deviceContext.getMemoryManager().toAbsoluteDeviceAddress(offset);
+    public long toBuffer() {
+        return bufferId;
+    }
+
+    public long getOffset() {
+        return offset;
     }
 
     public void write() {
@@ -74,9 +76,7 @@ public class SPIRVByteBuffer {
     }
 
     public void write(int[] events) {
-        deviceContext.enqueueWriteBuffer(toBuffer(), offset, numBytes, buffer.array(), 0, events);
-        // deviceContext.enqueueWriteBuffer(heapPointer() + offset, numBytes,
-        // buffer.array(), 0, events);
+        deviceContext.enqueueWriteBuffer(toBuffer(), offset, bytes, buffer.array(), 0, events);
     }
 
     // FIXME <PENDING> enqueueWrite
@@ -88,10 +88,9 @@ public class SPIRVByteBuffer {
     // FIXME <REFACTOR> This method is common with the 3 backends
     public void dump(int width) {
         buffer.position(buffer.capacity());
-        System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities.humanReadableByteCount(numBytes, true),
+        System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities.humanReadableByteCount(bytes, true),
                 RuntimeUtilities.humanReadableByteCount(buffer.position(), true), deviceContext.getDevice().getDeviceName());
         for (int i = 0; i < buffer.position(); i += width) {
-            System.out.printf("[0x%04x]: ", i + toAbsoluteAddress());
             for (int j = 0; j < Math.min(buffer.capacity() - i, width); j++) {
                 if (j % 2 == 0) {
                     System.out.print(" ");
@@ -106,20 +105,12 @@ public class SPIRVByteBuffer {
         }
     }
 
-    public SPIRVByteBuffer getSubBuffer(int offset, int numBytes) {
-        return new SPIRVByteBuffer(deviceContext, offset, numBytes);
-    }
-
-    public long toBuffer() {
-        return deviceContext.getMemoryManager().toBuffer();
-    }
-
     public int enqueueRead() {
         return enqueueRead(null);
     }
 
     public int enqueueRead(final int[] events) {
-        return deviceContext.enqueueReadBuffer(toBuffer(), offset, numBytes, buffer.array(), 0, events);
+        return deviceContext.enqueueReadBuffer(toBuffer(), offset, bytes, buffer.array(), 0, events);
     }
 
     public int enqueueWrite() {
@@ -128,10 +119,6 @@ public class SPIRVByteBuffer {
 
     public int enqueueWrite(int[] events) {
         // XXX: offset 0
-        return deviceContext.enqueueWriteBuffer(toBuffer(), offset, numBytes, buffer.array(), 0, events);
-    }
-
-    public long toRelativeAddress() {
-        return deviceContext.getMemoryManager().toRelativeDeviceAddress(offset);
+        return deviceContext.enqueueWriteBuffer(toBuffer(), offset, bytes, buffer.array(), 0, events);
     }
 }

@@ -27,15 +27,8 @@ package uk.ac.manchester.tornado.drivers.spirv;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEFAULT_HEAP_ALLOCATION;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -119,9 +112,9 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVOptio
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVSourceLanguage;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVStorageClass;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.common.BackendDeopt;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
-import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVCodeProvider;
@@ -142,12 +135,10 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVNodeLIRBuilder
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVNodeMatchRules;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVReferenceMapBuilder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
-import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVCallStack;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVKernelCallWrapper;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
-import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -156,9 +147,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     private final SPIRVArchitecture spirvArchitecture;
     private final SPIRVDeviceContext deviceContext;
     private final SPIRVCodeProvider codeCache;
-    private final ScheduleMetaData scheduleMetaData;
     private SPIRVDeviceContext context;
-    private boolean isInitialized;
     private SPIRVId pointerToGlobalMemoryHeap;
     private SPIRVId pointerToULongFunction;
     private SPIRVInstScope blockScope;
@@ -176,20 +165,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         this.codeCache = codeProvider;
         this.deviceContext = deviceContext;
         this.spirvArchitecture = targetDescription.getArch();
-        this.scheduleMetaData = new ScheduleMetaData("spirvBackend");
         this.supportsFP64 = targetDescription.isSupportsFP64();
-        this.isInitialized = false;
         this.methodIndex = new AtomicInteger(0);
-    }
-
-    private static void writeBufferToFile(ByteBuffer buffer, String filepath) {
-        buffer.flip();
-        File out = new File(filepath);
-        try (FileChannel channel = new FileOutputStream(out, false).getChannel()) {
-            channel.write(buffer);
-        } catch (IOException e) {
-            System.err.println("IO exception: " + e.getMessage());
-        }
     }
 
     @Override
@@ -199,7 +176,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
     @Override
     public boolean isInitialised() {
-        return isInitialized;
+        return true;
     }
 
     // FIXME: <REFACTOR> Common between OCL and SPIRV
@@ -210,26 +187,11 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
      */
     @Override
     public void allocateHeapMemoryOnDevice() {
-        long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, context.getDevice().getDeviceMaxAllocationSize());
-        if (memorySize < DEFAULT_HEAP_ALLOCATION) {
-            Tornado.info("Unable to allocate %s of heap space - resized to %s", humanReadableByteCount(DEFAULT_HEAP_ALLOCATION, false), humanReadableByteCount(memorySize, false));
-        }
-        Tornado.info("%s: allocating %s of heap space", context.getDevice().getDeviceName(), humanReadableByteCount(memorySize, false));
-        context.getMemoryManager().allocateDeviceMemoryRegions(memorySize);
+        TornadoInternalError.shouldNotReachHere("Should not allocate any heap memory");
     }
 
     @Override
     public void init() {
-        if (!isInitialized) {
-            Tornado.info("Initialization of the SPIRV Backend - Calling Memory Allocator");
-            allocateHeapMemoryOnDevice();
-
-            // Initialize deviceHeapPointer via the lookupBufferAddress
-            TaskMetaData meta = new TaskMetaData(scheduleMetaData, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
-            runAndReadLookUpKernel(meta);
-
-            isInitialized = true;
-        }
     }
 
     @Override
@@ -282,11 +244,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     @Override
     public SPIRVCodeProvider getCodeCache() {
         return codeCache;
-    }
-
-    private void runAndReadLookUpKernel(TaskMetaData meta) {
-        long address = context.getMemoryManager().launchAndReadLookupBufferAddress(meta);
-        deviceContext.getMemoryManager().init(this, address);
     }
 
     private FrameMap newFrameMap(RegisterConfig registerConfig) {
@@ -819,7 +776,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         }
 
         // Add constant 3 --> Frame Access
-        int reservedSlots = SPIRVCallStack.RESERVED_SLOTS;
+        int reservedSlots = SPIRVKernelCallWrapper.RESERVED_SLOTS;
         asm.lookUpConstant(Integer.toString(reservedSlots), SPIRVKind.OP_TYPE_INT_32);
 
         // And the reminder of the constants

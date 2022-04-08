@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.drivers.spirv;
 import java.util.ArrayList;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroByteBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
@@ -206,6 +207,11 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
             LevelZeroUtils.errorLog("zeMemAllocDevice", result);
         }
         return deviceBuffer.getPtrBuffer();
+    }
+
+    @Override
+    public void freeMemory(long buffer, int deviceIndex) {
+        TornadoInternalError.unimplemented();
     }
 
     @Override
