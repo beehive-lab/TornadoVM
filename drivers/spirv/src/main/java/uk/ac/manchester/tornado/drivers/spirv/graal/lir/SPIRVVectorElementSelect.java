@@ -94,24 +94,6 @@ public class SPIRVVectorElementSelect extends SPIRVLIROp {
         }
     }
 
-    protected SPIRVId obtainPhiValueIdIfNeeded(SPIRVAssembler asm, Variable result) {
-        SPIRVId operationId;
-        if (!asm.isPhiMapEmpty() && asm.isResultInPhiMap(result)) {
-            operationId = asm.getPhiId(result);
-            Variable allocatableValue = result;
-            while (operationId == null) {
-                // We loop-up the operation ID. In the case it's in the Phi Table, we look at
-                // the trace to obtain the root Phi Variable.
-                Variable tempValue = (Variable) asm.getPhiTraceValue(allocatableValue);
-                operationId = asm.getPhiId(tempValue);
-                allocatableValue = tempValue;
-            }
-        } else {
-            operationId = asm.module.getNextId();
-        }
-        return operationId;
-    }
-
     @Override
     public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
         SPIRVId vectorId = getId(vector, asm, (SPIRVKind) vectorKind.getPlatformKind());
