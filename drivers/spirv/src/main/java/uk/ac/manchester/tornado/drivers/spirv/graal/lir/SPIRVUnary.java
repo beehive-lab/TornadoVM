@@ -745,6 +745,9 @@ public class SPIRVUnary {
             } else {
                 SPIRVId param = asm.lookUpLIRInstructions(value);
                 if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+                    if (asm.isPhiAcrossBlocksPresent((AllocatableValue) value)) {
+                        return asm.getPhiIdAcrossBlock((AllocatableValue) value);
+                    }
                     return param;
                 }
                 SPIRVId loadConvert = asm.module.getNextId();
