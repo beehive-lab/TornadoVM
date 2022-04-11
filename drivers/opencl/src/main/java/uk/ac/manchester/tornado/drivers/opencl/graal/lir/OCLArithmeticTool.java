@@ -466,8 +466,16 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitMathSignum(Value input) {
-        unimplemented();
-        return null;
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitMathSignum: input=%s", input);
+        OCLBuiltinTool builtinTool = getGen().getOCLBuiltinTool();
+        OCLKind oclKind = (OCLKind) input.getPlatformKind();
+        Variable result = getGen().newVariable(input.getValueKind());
+        if (oclKind.isFloating()) {
+            getGen().append(new AssignStmt(result, builtinTool.genFloatSign(input)));
+        } else {
+            shouldNotReachHere();
+        }
+        return result;
     }
 
     @Override
