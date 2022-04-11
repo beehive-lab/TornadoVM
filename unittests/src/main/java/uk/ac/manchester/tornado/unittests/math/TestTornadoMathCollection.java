@@ -37,6 +37,12 @@ public class TestTornadoMathCollection extends TornadoTestBase {
         }
     }
 
+    public static void testTornadoSignum(float[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = TornadoMath.signum(a[i]);
+        }
+    }
+
     public static void testTornadoSin(float[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = TornadoMath.sin(a[i]);
@@ -174,6 +180,26 @@ public class TestTornadoMathCollection extends TornadoTestBase {
         s0.task("t0", TestTornadoMathCollection::testTornadoCos, data).streamOut(data).execute();
 
         testTornadoCos(seq);
+
+        assertArrayEquals(data, seq, 0.01f);
+
+    }
+
+    @Test
+    public void testTornadoMathSignum() {
+        final int size = 128;
+        float[] data = new float[size];
+        float[] seq = new float[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            data[i] = (float) Math.random();
+            seq[i] = data[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestTornadoMathCollection::testTornadoSignum, data).streamOut(data).execute();
+
+        testTornadoSignum(seq);
 
         assertArrayEquals(data, seq, 0.01f);
 

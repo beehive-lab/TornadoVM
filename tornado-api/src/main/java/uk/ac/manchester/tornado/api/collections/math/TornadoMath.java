@@ -333,4 +333,8 @@ public class TornadoMath {
     public static float sin(float angle) {
         return (float) Math.sin(angle);
     }
+
+    public static float signum(float a) {
+        return Math.signum(a);
+    }
 }
