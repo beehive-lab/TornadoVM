@@ -687,7 +687,7 @@ public class OCLCodeCache {
         final File file = lookupPath.toFile();
         OCLInstalledCode lookupCode = null;
         if (file.length() == 0) {
-            error("Empty input binary: %s (%s)", file);
+            error("Empty input binary: %s", file);
         }
         try {
             final byte[] binary = Files.readAllBytes(lookupPath);
