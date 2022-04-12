@@ -129,7 +129,6 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
     private static final String KERNEL_WARMUP = System.getProperty("tornado.fpga.kernel.warmup");
-    private static boolean isFPGAInit = false;
     final OptionValues options;
 
     final OCLTargetDescription target;
