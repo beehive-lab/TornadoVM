@@ -636,6 +636,7 @@ public class TestMath extends TornadoTestBase {
     @Test
     public void testMathSignumFloatNaN() {
         assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         Random r = new Random();
         final int size = 128;
@@ -678,6 +679,7 @@ public class TestMath extends TornadoTestBase {
     @Test
     public void testMathSignumDoubleNaN() {
         assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         Random r = new Random();
         final int size = 128;

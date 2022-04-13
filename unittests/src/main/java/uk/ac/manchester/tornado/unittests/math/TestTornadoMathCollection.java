@@ -212,8 +212,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathSignumFloatNan() {
+    public void testTornadoMathSignumFloatNaN() {
         assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 128;
         float[] data = new float[size];
@@ -254,8 +255,9 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathSignumDoubleNan() {
+    public void testTornadoMathSignumDoubleNaN() {
         assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 128;
         double[] data = new double[size];
