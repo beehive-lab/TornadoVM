@@ -337,4 +337,8 @@ public class TornadoMath {
     public static float signum(float a) {
         return Math.signum(a);
     }
+
+    public static double signum(double a) {
+        return Math.signum(a);
+    }
 }
