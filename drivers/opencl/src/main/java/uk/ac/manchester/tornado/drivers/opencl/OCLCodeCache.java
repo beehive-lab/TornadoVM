@@ -326,14 +326,10 @@ public class OCLCodeCache {
         return kernelAvailable;
     }
 
-    private void appendSourceToFile(String entryPoint, byte[] source) {
+    private void writeSourceToFile(byte[] source) {
         final Path outDir = deviceContext.isPlatformFPGA() ? resolveBitstreamDirectory() : resolveSourceDirectory();
         File file = new File(outDir + "/" + FPGA_BIN_DIRECTORY + OPENCL_SOURCE_SUFFIX);
-        boolean createFile = false;
-        if (!entryPoint.equals(FPGA_BIN_DIRECTORY)) {
-            createFile = true;
-        }
-        RuntimeUtilities.writeStreamToFile(file, source, createFile);
+        RuntimeUtilities.writeStreamToFile(file, source, false);
     }
 
     private String[] composeIntelHLSCommand(String inputFile, String outputFile) {
@@ -442,7 +438,7 @@ public class OCLCodeCache {
         final String outputFile = fpgaSourceDir + FPGA_BIN_DIRECTORY;
         File fpgaBitStreamFile = new File(fpgaBinLocation);
 
-        appendSourceToFile(entryPoint, source);
+        writeSourceToFile(source);
 
         RuntimeUtilities.maybePrintSource(source);
 
@@ -529,7 +525,7 @@ public class OCLCodeCache {
         }
 
         if (deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR) {
-            appendSourceToFile(entryPoint, source);
+            writeSourceToFile(source);
         }
 
         RuntimeUtilities.maybePrintSource(source);
