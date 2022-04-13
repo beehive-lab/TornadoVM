@@ -961,6 +961,7 @@ public class SPIRVUnary {
             NATIVE_SQRT("native_sqrt", 93),  // Optimization
             NATIVE_TAN("native_tan", 94),  // Optimization
             FCLAMP("flamp", 95),
+            SIGN("sign", 103),
             SABS("s_abs", 141),
             SCLAMP("s_clamp", 149),
             SMAX("s_max", 156),
