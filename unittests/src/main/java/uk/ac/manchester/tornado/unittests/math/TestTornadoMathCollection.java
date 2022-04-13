@@ -43,6 +43,12 @@ public class TestTornadoMathCollection extends TornadoTestBase {
         }
     }
 
+    public static void testTornadoSignum(double[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = TornadoMath.signum(a[i]);
+        }
+    }
+
     public static void testTornadoSin(float[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = TornadoMath.sin(a[i]);
@@ -186,7 +192,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathSignum() {
+    public void testTornadoMathSignumFloat() {
         final int size = 128;
         float[] data = new float[size];
         float[] seq = new float[size];
@@ -201,7 +207,71 @@ public class TestTornadoMathCollection extends TornadoTestBase {
 
         testTornadoSignum(seq);
 
-        assertArrayEquals(data, seq, 0.01f);
+        assertArrayEquals(seq, data, 0.01f);
+
+    }
+
+    @Test
+    public void testTornadoMathSignumFloatNan() {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+
+        final int size = 128;
+        float[] data = new float[size];
+        float[] seq = new float[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            data[i] = Float.NaN;
+            seq[i] = data[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestTornadoMathCollection::testTornadoSignum, data).streamOut(data).execute();
+
+        testTornadoSignum(seq);
+
+        assertArrayEquals(seq, data, 0.01f);
+
+    }
+
+    @Test
+    public void testTornadoMathSignumDouble() {
+        final int size = 128;
+        double[] data = new double[size];
+        double[] seq = new double[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            data[i] = Math.random();
+            seq[i] = data[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestTornadoMathCollection::testTornadoSignum, data).streamOut(data).execute();
+
+        testTornadoSignum(seq);
+
+        assertArrayEquals(seq, data, 0.01f);
+
+    }
+
+    @Test
+    public void testTornadoMathSignumDoubleNan() {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+
+        final int size = 128;
+        double[] data = new double[size];
+        double[] seq = new double[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            data[i] = Double.NaN;
+            seq[i] = data[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestTornadoMathCollection::testTornadoSignum, data).streamOut(data).execute();
+
+        testTornadoSignum(seq);
+
+        assertArrayEquals(seq, data, 0.01f);
 
     }
 
