@@ -52,6 +52,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryTemplate;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLLIRGenerator;
+import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.VectorLoadStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
@@ -82,8 +83,10 @@ public class OCLGenTool {
         // + paramValue;
         LIRKind lirKind = gen.getLIRKind(paramNode.stamp(NodeView.DEFAULT));
         OCLKind oclKind = (OCLKind) lirKind.getPlatformKind();
+        OCLTargetDescription oclTarget = gen.target();
 
-        Value result = new OCLNullary.Parameter(locals[paramNode.index()].getName(), lirKind);
+        Variable result = (oclKind.isVector()) ? gen.newVariable(LIRKind.value(oclTarget.getOCLKind(JavaKind.Object))) : gen.newVariable(lirKind);
+        gen.append(new AssignStmt(result, new OCLNullary.Parameter(OCLUnaryOp.CAST_TO_ULONG + locals[paramNode.index()].getName(), lirKind)));
         parameterToVariable.put(paramNode, result);
 
         if (oclKind.isVector()) {
