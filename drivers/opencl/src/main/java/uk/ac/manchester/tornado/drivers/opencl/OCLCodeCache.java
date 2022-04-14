@@ -63,7 +63,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLCodeCache {
 
-    public static final String FPGA_BIN_DIRECTORY = "binaries";
+    public static final String FPGA_BIN_FILE_NAME = "binaries";
 
     private static final String FALSE = "False";
     private static final String TRUE = "True";
@@ -156,7 +156,7 @@ public class OCLCodeCache {
                             break;
                         case "DIRECTORY_BITSTREAM":
                             directoryBitstream = resolveAbsoluteDirectory(tokenizer.nextToken(" ="));
-                            fpgaBinLocation = directoryBitstream + FPGA_BIN_DIRECTORY;
+                            fpgaBinLocation = directoryBitstream + FPGA_BIN_FILE_NAME;
                             fpgaSourceDir = directoryBitstream;
                             break;
                         case "FLAGS":
@@ -328,7 +328,7 @@ public class OCLCodeCache {
 
     private void writeSourceToFile(byte[] source) {
         final Path outDir = deviceContext.isPlatformFPGA() ? resolveBitstreamDirectory() : resolveSourceDirectory();
-        File file = new File(outDir + "/" + FPGA_BIN_DIRECTORY + OPENCL_SOURCE_SUFFIX);
+        File file = new File(outDir + "/" + FPGA_BIN_FILE_NAME + OPENCL_SOURCE_SUFFIX);
         RuntimeUtilities.writeStreamToFile(file, source, false);
     }
 
@@ -368,7 +368,7 @@ public class OCLCodeCache {
         }
     }
 
-    private String[] composeXilinxHLSLinkCommand(String entryPoint) {
+    private String[] composeXilinxHLSLinkCommand() {
         StringJoiner bufferCommand = new StringJoiner(" ");
 
         bufferCommand.add(fpgaCompiler);
@@ -381,7 +381,7 @@ public class OCLCodeCache {
             bufferCommand.add(compilationFlags);
         }
         bufferCommand.add("--remote_ip_cache " + directoryBitstream + "ip_cache");
-        bufferCommand.add("-o " + directoryBitstream + entryPoint + ".xclbin");
+        bufferCommand.add("-o " + directoryBitstream + FPGA_BIN_FILE_NAME + ".xclbin");
         addObjectKernelsToLinker(bufferCommand);
         return bufferCommand.toString().split(" ");
     }
@@ -434,8 +434,8 @@ public class OCLCodeCache {
 
     OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source, boolean shouldCompile) { // TODO Override this method for each FPGA backend
         String[] compilationCommand;
-        final String inputFile = fpgaSourceDir + FPGA_BIN_DIRECTORY + OPENCL_SOURCE_SUFFIX;
-        final String outputFile = fpgaSourceDir + FPGA_BIN_DIRECTORY;
+        final String inputFile = fpgaSourceDir + FPGA_BIN_FILE_NAME + OPENCL_SOURCE_SUFFIX;
+        final String outputFile = fpgaSourceDir + FPGA_BIN_FILE_NAME;
         File fpgaBitStreamFile = new File(fpgaBinLocation);
 
         writeSourceToFile(source);
@@ -459,7 +459,7 @@ public class OCLCodeCache {
             if (isPlatform("xilinx")) {
                 compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
                 linkObjectFiles.add(entryPoint);
-                linkCommand = composeXilinxHLSLinkCommand(entryPoint);
+                linkCommand = composeXilinxHLSLinkCommand();
             } else if (isPlatform("intel")) {
                 compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
             } else {
@@ -469,7 +469,7 @@ public class OCLCodeCache {
 
             String vendor = getDeviceVendor();
 
-            commandRename = new String[] { FPGA_CLEANUP_SCRIPT, vendor, fpgaSourceDir };
+            commandRename = new String[] { FPGA_CLEANUP_SCRIPT, vendor, fpgaSourceDir, FPGA_BIN_FILE_NAME};
             Path path = Paths.get(fpgaBinLocation);
             addNewEntryInBitstreamHashMap(id, fpgaBinLocation);
             if (RuntimeUtilities.ifFileExists(fpgaBitStreamFile)) {
