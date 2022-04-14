@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [ "$#" -ne 2 ]
+if [ "$#" -ne 3 ]
 then
 	echo "$0: invalid number of arguments."
 	exit 1

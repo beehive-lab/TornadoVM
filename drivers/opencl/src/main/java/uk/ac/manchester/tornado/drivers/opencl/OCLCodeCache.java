@@ -604,7 +604,7 @@ public class OCLCodeCache {
         OCLProgram program;
         boolean isSPIRVBinary = false;
         OCLBuildStatus status = CL_BUILD_SUCCESS;
-        if (shouldReuseProgramObject(entryPoint)) {
+        if (shouldReuseProgramObject(entryPoint) && cache.containsKey(entryPoint)) {
             program = cache.get(entryPoint).getProgram();
         } else {
             long beforeLoad = (Tornado.TIME_IN_NANOSECONDS) ? System.nanoTime() : System.currentTimeMillis();
