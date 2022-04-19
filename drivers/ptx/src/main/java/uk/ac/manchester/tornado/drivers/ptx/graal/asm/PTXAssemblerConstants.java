@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,6 +35,7 @@ public class PTXAssemblerConstants {
     public static final String CONVERT_ADDRESS = "cvta";
     public static final String MOVE = "mov";
     public static final String TEST_NUMBER = "testp.number";
+    public static final String TEST_NOTANUMBER = "testp.notanumber";
     public static final String TEST_NORMAL = "testp.normal";
     public static final String TEST_SUBNORMAL = "testp.subnormal";
 

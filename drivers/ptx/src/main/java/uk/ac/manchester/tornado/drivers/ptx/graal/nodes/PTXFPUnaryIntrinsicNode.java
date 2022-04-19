@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -23,6 +23,7 @@ package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
+import jdk.vm.ci.meta.PrimitiveConstant;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.FloatStamp;
 import org.graalvm.compiler.core.common.type.PrimitiveStamp;
@@ -46,10 +47,16 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
+import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
+import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerator;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXArithmeticTool;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBinary;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBuiltinTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AssignStmt;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXTernary;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkFloatingPointIntrinsicsNode;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
@@ -77,6 +84,7 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
         FABS,
         FLOOR,
         LOG,
+        SIGN,
         SIN,
         SQRT,
         TAN,
@@ -150,6 +158,9 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
             case EXP:
                 generateExp(builder, lirGenPTX, gen, initialInput);
                 return;
+            case SIGN:
+                generateSign(builder, lirGenPTX, initialInput);
+                return;
             case SIN:
                 result = gen.genFloatSin(auxValue);
                 break;
@@ -203,6 +214,46 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
             auxVar = builder.getLIRGeneratorTool().newVariable(LIRKind.value(x.getPlatformKind()));
             result = builder.getLIRGeneratorTool().append(new AssignStmt(auxVar, result)).getResult();
         }
+        builder.setResult(this, result);
+    }
+
+    /**
+     * Generates the instructions to compute a signum function in Java: signum(x),
+     * where x can be a NaN number or a positive or negative value of type float or
+     * double.
+     *
+     * The intrinsic follows the implementation in Java and calculates first if the
+     * input value is zero or a NaN value. If that condition is true, the result of
+     * this intrinsic will take the input value. Otherwise, it takes the value of
+     * the copySign function.
+     *
+     * return (x == 0.0f || Float.isNaN(x))? x : copySign(1.0f, x);
+     */
+    public void generateSign(NodeLIRBuilderTool builder, PTXArithmeticTool lirGen, Value x) {
+        PTXLIRGenerator ptxlirGenerator = (PTXLIRGenerator) builder.getLIRGeneratorTool();
+
+        Variable equalZeroPred = ptxlirGenerator.newVariable(LIRKind.value(PTXKind.PRED));
+        ptxlirGenerator.append(new AssignStmt(equalZeroPred,
+                new PTXBinary.Expr(PTXAssembler.PTXBinaryOp.SETP_EQ, LIRKind.value(PTXKind.F32), x, new ConstantValue(LIRKind.value(PTXKind.F32), PrimitiveConstant.FLOAT_0))));
+
+        Variable isNanPred = ptxlirGenerator.newVariable(LIRKind.value(PTXKind.PRED));
+        ptxlirGenerator.append(new PTXLIRStmt.AssignStmt(isNanPred, new PTXUnary.Expr(PTXAssembler.PTXUnaryOp.TESTP_NOTANUMBER, LIRKind.value(x.getPlatformKind()), x)));
+
+        Value orPred = lirGen.emitOr(isNanPred, equalZeroPred);
+
+        ConstantValue constantOne = null;
+        if (((PTXKind) x.getPlatformKind()).isF32()) {
+            constantOne = new ConstantValue(LIRKind.value(PTXKind.F32), PrimitiveConstant.FLOAT_1);
+        } else if (((PTXKind) x.getPlatformKind()).isF64()) {
+            constantOne = new ConstantValue(LIRKind.value(PTXKind.F64), PrimitiveConstant.DOUBLE_1);
+        } else {
+            shouldNotReachHere("The kind of the input parameter in the signum method is not float or double.");
+        }
+        Value copySign = lirGen.emitMathCopySign(constantOne, x);
+
+        Variable result = builder.getLIRGeneratorTool().newVariable(LIRKind.value(x.getPlatformKind()));
+        ptxlirGenerator.append(new PTXLIRStmt.AssignStmt(result, new PTXTernary.Expr(PTXAssembler.PTXTernaryOp.SELP, LIRKind.value(x.getPlatformKind()), x, copySign, orPred)));
+
         builder.setResult(this, result);
     }
 
@@ -271,9 +322,8 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
     }
 
     private boolean shouldConvertInput(Value input) {
-        return (operation() == Operation.TAN || operation() == Operation.TANH || operation() == Operation.COS ||
-                operation() == Operation.SIN || operation() == Operation.EXP || operation() == Operation.LOG)
-                && !((PTXKind) input.getPlatformKind()).isF32();
+        return (operation() == Operation.TAN || operation() == Operation.TANH || operation() == Operation.COS || operation() == Operation.SIN || operation() == Operation.EXP
+                || operation() == Operation.LOG) && !((PTXKind) input.getPlatformKind()).isF32();
     }
 
     private static double doCompute(double value, Operation op) {

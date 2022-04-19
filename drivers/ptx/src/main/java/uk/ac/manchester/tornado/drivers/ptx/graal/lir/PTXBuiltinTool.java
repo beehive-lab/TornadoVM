@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -21,6 +21,7 @@
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryIntrinsic.COPY_SIGN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryIntrinsic.FLOAT_MAX;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryIntrinsic.FLOAT_MIN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryIntrinsic.INT_MAX;
@@ -234,9 +235,8 @@ public class PTXBuiltinTool {
         return null;
     }
 
-    public Value genFloatCopySign(Value x, Value y) {
-        unimplemented();
-        return null;
+    public Value genCopySign(Value x, Value y) {
+        return new PTXBinary.Intrinsic(COPY_SIGN, LIRKind.combine(x, y), x, y);
     }
 
     public Value genFloatDim(Value x, Value y) {

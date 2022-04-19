@@ -124,6 +124,11 @@ public class SPIRVBuiltinTool {
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.EXP, LIRKind.value(input.getPlatformKind()), input);
     }
 
+    public Value generateSign(Value input) {
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "gen: sign(%s)", input);
+        return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.SIGN, LIRKind.value(input.getPlatformKind()), input);
+    }
+
     public Value genFloatExp2(Value input) {
         unimplemented();
         return null;

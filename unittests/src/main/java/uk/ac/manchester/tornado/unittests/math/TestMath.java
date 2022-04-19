@@ -1,19 +1,19 @@
 /*
  * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.unittests.math;
@@ -34,7 +34,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run:
  *
  * <code>
- *     tornado-test.py -V --fast uk.ac.manchester.tornado.unittests.math.TestMath
+ * tornado-test.py -V --fast uk.ac.manchester.tornado.unittests.math.TestMath
  * </code>
  */
 public class TestMath extends TornadoTestBase {
@@ -169,6 +169,16 @@ public class TestMath extends TornadoTestBase {
         for (@Parallel int i = 0; i < a.length; i++) {
             b[i] = a[i] + b[i] * a[i];
         }
+    }
+
+    private static void testSignumFloat(float[] a) {
+        for (@Parallel int i = 0; i < a.length; i++)
+            a[i] = Math.signum(a[i]);
+    }
+
+    private static void testSignumDouble(double[] a) {
+        for (@Parallel int i = 0; i < a.length; i++)
+            a[i] = Math.signum(a[i]);
     }
 
     @Test
@@ -601,6 +611,92 @@ public class TestMath extends TornadoTestBase {
         testAsin(seqA);
 
         assertArrayEquals(a, seqA, 0.01);
+    }
+
+    @Test
+    public void testMathSignumFloat() {
+        Random r = new Random();
+        final int size = 128;
+        float[] a = new float[size];
+        float[] seqA = new float[size];
+
+        IntStream.range(0, size).forEach(i -> {
+            a[i] = r.nextFloat() * (r.nextBoolean() ? -1 : 1);
+            seqA[i] = a[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestMath::testSignumFloat, a).streamOut(a).execute();
+
+        testSignumFloat(seqA);
+
+        assertArrayEquals(seqA, a, 0.01f);
+    }
+
+    @Test
+    public void testMathSignumFloatNaN() {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        Random r = new Random();
+        final int size = 128;
+        float[] a = new float[size];
+        float[] seqA = new float[size];
+
+        IntStream.range(0, size).forEach(i -> {
+            a[i] = Float.NaN;
+            seqA[i] = a[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestMath::testSignumFloat, a).streamOut(a).execute();
+
+        testSignumFloat(seqA);
+
+        assertArrayEquals(seqA, a, 0.01f);
+    }
+
+    @Test
+    public void testMathSignumDouble() {
+        Random r = new Random();
+        final int size = 128;
+        double[] a = new double[size];
+        double[] seqA = new double[size];
+
+        IntStream.range(0, size).forEach(i -> {
+            a[i] = r.nextDouble() * (r.nextBoolean() ? -1 : 1);
+            seqA[i] = a[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestMath::testSignumDouble, a).streamOut(a).execute();
+
+        testSignumDouble(seqA);
+
+        assertArrayEquals(seqA, a, 0.01f);
+    }
+
+    @Test
+    public void testMathSignumDoubleNaN() {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
+
+        Random r = new Random();
+        final int size = 128;
+        double[] a = new double[size];
+        double[] seqA = new double[size];
+
+        IntStream.range(0, size).forEach(i -> {
+            a[i] = Double.NaN;
+            seqA[i] = a[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestMath::testSignumDouble, a).streamOut(a).execute();
+
+        testSignumDouble(seqA);
+
+        assertArrayEquals(seqA, a, 0.01f);
     }
 
 }

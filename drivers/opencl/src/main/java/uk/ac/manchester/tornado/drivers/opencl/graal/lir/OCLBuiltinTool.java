@@ -50,6 +50,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCL
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.NATIVE_SQRT;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.NATIVE_TAN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.POPCOUNT;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.SIGN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.SIN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.SQRT;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.TAN;
@@ -226,6 +227,11 @@ public class OCLBuiltinTool {
     public Value genFloatRSqrt(Value input) {
         unimplemented();
         return null;
+    }
+
+    public Value genFloatSign(Value input) {
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genSign: sign(%s)", input);
+        return new OCLUnary.Intrinsic(SIGN, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatSin(Value input) {
