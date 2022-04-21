@@ -141,7 +141,7 @@ public final class SPIRVAssembler extends Assembler {
     private ByteBuffer spirvByteBuffer;
     private int methodIndex;
 
-    private Map<SPIRVId, Map<Integer, LinkedList<SPIRVOpFunctionTable>>> opFunctionTable;
+    private Map<SPIRVId, Map<Integer, LinkedList<FunctionTable>>> opFunctionTable;
     private Map<AllocatableValue, SPIRVId> phiMap;
     private Map<AllocatableValue, SPIRVId> phiNamesAcrossBlocks;
     private Map<AllocatableValue, AllocatableValue> phiTrace;
@@ -370,10 +370,10 @@ public final class SPIRVAssembler extends Assembler {
         int numParams = operands.length;
         SPIRVId functionId = createNewOpTypeFunction(returnType, operands);
         functionSignature = functionId;
-        SPIRVOpFunctionTable functionTable = new SPIRVOpFunctionTable(returnType, functionId, operands);
-        LinkedList<SPIRVOpFunctionTable> list = new LinkedList<>();
+        FunctionTable functionTable = new FunctionTable(returnType, functionId, operands);
+        LinkedList<FunctionTable> list = new LinkedList<>();
         list.add(functionTable);
-        HashMap<Integer, LinkedList<SPIRVOpFunctionTable>> m = new HashMap<>();
+        HashMap<Integer, LinkedList<FunctionTable>> m = new HashMap<>();
         m.put(numParams, list);
         opFunctionTable.put(returnType, m);
         return functionId;
@@ -397,7 +397,7 @@ public final class SPIRVAssembler extends Assembler {
      *
      * If we have the same number of parameters with the same return type, when we
      * do a sequential search over the linked-list to check the type of each
-     * parameter (stored in the {@link SPIRVOpFunctionTable) class).
+     * parameter (stored in the {@link FunctionTable ) class).
      *
      * @param returnType
      *            ID with the return value.
@@ -410,14 +410,14 @@ public final class SPIRVAssembler extends Assembler {
             createNewFunctionAndUpdateTables(returnType, operands);
         } else {
             // Search the type
-            Map<Integer, LinkedList<SPIRVOpFunctionTable>> internalMap = opFunctionTable.get(returnType);
+            Map<Integer, LinkedList<FunctionTable>> internalMap = opFunctionTable.get(returnType);
 
             if (internalMap.containsKey(operands.length)) {
                 // Sequential Check for all operands
-                LinkedList<SPIRVOpFunctionTable> opFunctionTableList = internalMap.get(operands.length);
+                LinkedList<FunctionTable> opFunctionTableList = internalMap.get(operands.length);
                 boolean isInCache = false;
                 SPIRVId functionType = null;
-                for (SPIRVOpFunctionTable functionTable : opFunctionTableList) {
+                for (FunctionTable functionTable : opFunctionTableList) {
                     if (functionTable.areParamsEqual(operands)) {
                         isInCache = true;
                         functionType = functionTable.functionID;
@@ -428,7 +428,7 @@ public final class SPIRVAssembler extends Assembler {
                 if (!isInCache) {
                     // Add a new Entry
                     functionType = createNewOpTypeFunction(returnType, operands);
-                    opFunctionTableList.add(new SPIRVOpFunctionTable(returnType, functionType, operands));
+                    opFunctionTableList.add(new FunctionTable(returnType, functionType, operands));
 
                     // Update function tables
                     internalMap.put(operands.length, opFunctionTableList);
@@ -830,13 +830,13 @@ public final class SPIRVAssembler extends Assembler {
         }
     }
 
-    private static class SPIRVOpFunctionTable {
+    private static class FunctionTable {
 
         SPIRVId[] params;
         private SPIRVId returnId;
         private SPIRVId functionID;
 
-        public SPIRVOpFunctionTable(SPIRVId returnId, SPIRVId functionID, SPIRVId... params) {
+        public FunctionTable(SPIRVId returnId, SPIRVId functionID, SPIRVId... params) {
             this.returnId = returnId;
             this.functionID = functionID;
             this.params = params;
