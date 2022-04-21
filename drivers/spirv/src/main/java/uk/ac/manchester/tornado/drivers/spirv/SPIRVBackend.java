@@ -679,20 +679,16 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             emitFP64Capability(asm.module);
         }
 
-        // Emit the Store between from the parameter
-        if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
-            // Complete here the store
-            for (int i = 0; i < ptrParameters.size(); i++) {
-                SPIRVId ptrToParam = ptrParameters.get(i);
-                SPIRVId resultType = asm.primitives.getPtrFunctionToPtrCrossWorkGroup(SPIRVKind.OP_TYPE_INT_8);
-                blockScope.add(new SPIRVOpVariable(resultType, ptrToParam, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
-            }
-
-            for (int i = 0; i < ptrParameters.size(); i++) {
-                blockScope.add(new SPIRVOpStore(ptrParameters.get(i), //
-                        parameters.get(i), //
-                        new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
-            }
+        // Emit the Store between from the parameter value and the local variable
+        // assigned
+        for (SPIRVId ptrToParam : ptrParameters) {
+            SPIRVId resultType = asm.primitives.getPtrFunctionToPtrCrossWorkGroup(SPIRVKind.OP_TYPE_INT_8);
+            blockScope.add(new SPIRVOpVariable(resultType, ptrToParam, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+        }
+        for (int i = 0; i < ptrParameters.size(); i++) {
+            blockScope.add(new SPIRVOpStore(ptrParameters.get(i), //
+                    parameters.get(i), //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
         }
     }
 

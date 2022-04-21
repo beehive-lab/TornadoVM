@@ -64,7 +64,11 @@ public class SPIRVGenTool {
         Variable result = (spirvKind.isVector()) ? generator.newVariable(LIRKind.value(target.getSPIRVKind(JavaKind.Object))) : generator.newVariable(lirKind);
 
         if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
-            emitParameterLoadWithNoStore(result, index);
+            if (TornadoOptions.NEW_MM) {
+                emitParameterLoadWithNoStoreNewMemoryModel(result, index);
+            } else {
+                emitParameterLoadWithNoStore(result, index);
+            }
         } else {
             if (TornadoOptions.NEW_MM) {
                 emitParameterLoadWithNewMemoryModel(result, index);
@@ -133,6 +137,21 @@ public class SPIRVGenTool {
                 new SPIRVUnary.LoadFromStackFrameExpr( //
                         lirKind, //
                         SPIRVKind.OP_TYPE_INT_64, //
+                        (STACK_BASE_OFFSET + index), //
+                        index));
+
+        generator.append(assignStmt);
+    }
+
+    private void emitParameterLoadWithNoStoreNewMemoryModel(AllocatableValue resultValue, int index) {
+        SPIRVKind spirvKind = (SPIRVKind) resultValue.getPlatformKind();
+        LIRKind lirKind = LIRKind.value(spirvKind);
+
+        SPIRVLIRStmt.ASSIGNParameterWithNoStore assignStmt = new SPIRVLIRStmt.ASSIGNParameterWithNoStore( //
+                resultValue, //
+                new SPIRVUnary.AssignLoadFromInputFrame( //
+                        lirKind, //
+                        SPIRVKind.OP_TYPE_INT_8, //
                         (STACK_BASE_OFFSET + index), //
                         index));
 

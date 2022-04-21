@@ -684,6 +684,55 @@ public class SPIRVLIRStmt {
 
     }
 
+    @Opcode("ASSIGNParameterWithNoStoreNewMemoryModel")
+    public static class ASSIGNParameterWithNoStoreNewMemoryModel extends AbstractInstruction {
+
+        public static final LIRInstructionClass<ASSIGNParameterWithNoStoreNewMemoryModel> TYPE = LIRInstructionClass.create(ASSIGNParameterWithNoStoreNewMemoryModel.class);
+
+        @Def
+        private AllocatableValue lhs;
+        @Use
+        private Value rhs;
+
+        public ASSIGNParameterWithNoStoreNewMemoryModel(AllocatableValue lhs, Value rhs) {
+            super(TYPE);
+            this.lhs = lhs;
+            this.rhs = rhs;
+        }
+
+        /**
+         * Emit the following SPIR-V structure:
+         *
+         * Loads the stack frame. This version optimizes Loads/Stores.
+         *
+         * @param crb
+         *            {@link SPIRVCompilationResultBuilder}
+         * @param asm
+         *            {@link SPIRVAssembler}
+         */
+        @Override
+        protected void emitCode(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "µIns ASSIGNParameterWithNoStoreNewMemoryModel");
+
+            // This call will register the lhs id in case is not in the lookupTable yet.
+            asm.emitValue(crb, lhs);
+
+            if (rhs instanceof SPIRVLIROp) {
+                ((SPIRVLIROp) rhs).emit(crb, asm);
+            } else {
+                asm.emitValue(crb, rhs);
+            }
+
+            SPIRVId rightSideParameterID = asm.lookUpLIRInstructions(rhs);
+            asm.registerLIRInstructionValue(lhs, rightSideParameterID);
+        }
+
+        public AllocatableValue getResult() {
+            return lhs;
+        }
+
+    }
+
     @Opcode("ASSIGNIndexedParameter")
     public static class ASSIGNIndexedParameter extends AbstractInstruction {
 
