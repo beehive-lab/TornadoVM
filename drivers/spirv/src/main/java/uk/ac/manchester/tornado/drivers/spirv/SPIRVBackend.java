@@ -28,7 +28,13 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -79,9 +85,14 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVInstScope;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVModule;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpBitcast;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpCapability;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpCompositeExtract;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpConstant;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpDecorate;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpEntryPoint;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpExtInstImport;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpFunction;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpFunctionEnd;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpFunctionParameter;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpInBoundsPtrAccessChain;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpLabel;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpLoad;
@@ -90,18 +101,26 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpName;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpReturn;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpSource;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpStore;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpTypeFunction;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpTypeInt;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpTypePointer;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpTypeVector;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpTypeVoid;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpUConvert;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpVariable;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVAddressingModel;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVBuiltIn;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVCapability;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVContextDependentDouble;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVContextDependentFloat;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVContextDependentInt;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVContextDependentLong;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVDecoration;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVExecutionModel;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVFunctionControl;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVFunctionParameterAttribute;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVId;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLinkageType;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiteralContextDependentNumber;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiteralInteger;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiteralString;
@@ -327,6 +346,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
         // 3. Close kernel
         emitEpilogue(asm);
+        writeModuleToFile(asm.module, "/tmp/testSPIRV2.spv");
 
         // 4. Clean-up
         cleanUp(asm);
@@ -546,6 +566,139 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         }
     }
 
+    private void emitPrologueForMainKernel(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, ResolvedJavaMethod method, LIR lir, SPIRVId methodId, IDTable idTable) {
+
+        final SPIRVId returnId = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_VOID);
+
+        final Local[] locals = method.getLocalVariableTable().getLocalsAt(0);
+        LocalParameter[] localParameters;
+
+        int index = 0;
+        if (TornadoOptions.SPIRV_DIRECT_CALL_WITH_LOAD_HEAP) {
+            localParameters = new LocalParameter[locals.length + 2];
+            SPIRVId ptrToUChar = asm.primitives.getPtrToCrossWorkGroupPrimitive(SPIRVKind.OP_TYPE_INT_8);
+            SPIRVId ulong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
+            localParameters[0] = new LocalParameter();
+            localParameters[0].typeId = ptrToUChar;
+
+            localParameters[1] = new LocalParameter();
+            localParameters[1].typeId = ulong;
+            index = 2;
+        } else {
+            localParameters = new LocalParameter[locals.length];
+        }
+
+        List<SPIRVKind> parameterKind = new ArrayList<>();
+
+        int j = 0;
+        for (int i = index; i < locals.length; i++, j++) {
+            Local l = locals[j];
+            JavaKind type = l.getType().getJavaKind();
+            SPIRVKind kind = SPIRVKind.fromJavaKindForMethodCalls(type);
+
+            if (l.getType().getJavaKind() == JavaKind.Object) {
+                // Check here if it is a vector Component Type
+                String javaName = l.getType().toJavaName();
+                if (javaName.startsWith(SPIRVKind.VECTOR_COLLECTION_PATH)) {
+                    String[] vectorTypeNames = javaName.split("\\.");
+                    int nameIndex = vectorTypeNames.length - 1;
+                    kind = SPIRVKind.getKindFromStringClassVector(vectorTypeNames[nameIndex]);
+                }
+            }
+            parameterKind.add(kind);
+
+            // All Parameters Access Global Memory (PtrToCrossWorkGroup)
+            SPIRVId kindId = asm.primitives.getPtrToCrossWorkGroupPrimitive(SPIRVKind.OP_TYPE_INT_8);
+
+            if (localParameters[i] == null) {
+                localParameters[i] = new LocalParameter();
+            }
+
+            localParameters[i].actualName = locals[j].getName();
+            localParameters[i].typeId = kindId;
+        }
+        SPIRVId[] typesOfLocalVars = new SPIRVId[localParameters.length];
+        Arrays.setAll(typesOfLocalVars, i -> localParameters[i].typeId);
+
+        SPIRVId methodSignatureId = asm.emitOpTypeFunction(returnId, typesOfLocalVars);
+
+        // --------------------------------------
+        // Method Begins
+        // --------------------------------------
+        SPIRVInstScope functionScope = asm.emitOpFunction(returnId, methodId, methodSignatureId, SPIRVFunctionControl.DontInline());
+
+        List<SPIRVId> ptrParameters = new ArrayList<>();
+        List<SPIRVId> parameters = new ArrayList<>();
+
+        // --------------------------------------
+        // Main kernel parameters
+        // --------------------------------------
+        for (LocalParameter localParameter : localParameters) {
+            SPIRVId id = asm.module.getNextId();
+            String name = localParameter.actualName + "F" + asm.getMethodIndex();
+            asm.module.add(new SPIRVOpName(id, new SPIRVLiteralString(name)));
+            asm.module.add(new SPIRVOpDecorate(id, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(1))));
+            asm.emitParameterFunction(localParameter.typeId, id, functionScope);
+
+            // Global Ptr To Cross WorkGroup Parameters
+            name += "_ptr";
+            SPIRVId idPtr = asm.module.getNextId();
+            asm.module.add(new SPIRVOpName(idPtr, new SPIRVLiteralString(name)));
+            asm.module.add(new SPIRVOpDecorate(idPtr, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8))));
+            ptrParameters.add(idPtr);
+            parameters.add(id);
+            asm.registerLIRInstructionValue(name, idPtr);
+            asm.addFunctionParameterId(idPtr);
+        }
+
+        // --------------------------------------
+        // Label Entry
+        // --------------------------------------
+        blockScope = asm.emitBlockLabel("B0", functionScope);
+        asm.setBlockZeroScope(blockScope);
+
+        // --------------------------------------
+        // All variable declaration
+        // --------------------------------------
+        if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+            // Only emit variables for all names that are needed. For instance private
+            // memory, local memory and constants in the case that the SPIR-V optimizer on.
+            // If the SPIR-V optimizer is off, then we emit all variables registered through
+            // Graal.
+            for (Tuple2<SPIRVId, SPIRVKind> id : idTable.list) {
+                SPIRVKind kind = id.second;
+                // we need a pointer to kind
+                SPIRVId resultType = asm.primitives.getPtrOpTypePointerWithStorage(kind, SPIRVStorageClass.Function());
+                blockScope.add(new SPIRVOpVariable(resultType, id.first, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+            }
+        }
+
+        // We declare the arrays for local/private memory (if any)
+        for (AllocatableValue value : idTable.resultArrays) {
+            ArrayGen.emit(asm, value, value.getValueKind());
+        }
+
+        if (idTable.kindToVariable.containsKey(SPIRVKind.OP_TYPE_FLOAT_64)) {
+            emitFP64Capability(asm.module);
+        }
+
+        // Emit the Store between from the parameter
+        if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
+            // Complete here the store
+            for (int i = 0; i < ptrParameters.size(); i++) {
+                SPIRVId ptrToParam = ptrParameters.get(i);
+                SPIRVId resultType = asm.primitives.getPtrFunctionToPtrCrossWorkGroup(SPIRVKind.OP_TYPE_INT_8);
+                blockScope.add(new SPIRVOpVariable(resultType, ptrToParam, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+            }
+
+            for (int i = 0; i < ptrParameters.size(); i++) {
+                blockScope.add(new SPIRVOpStore(ptrParameters.get(i), //
+                        parameters.get(i), //
+                        new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+            }
+        }
+    }
+
     private void emitPrologueForNonMainKernel(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, ResolvedJavaMethod method, LIR lir) {
         String methodName = SPIRVUtils.makeMethodName(method);
 
@@ -557,7 +710,6 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         }
 
         // Register the function
-        // final JavaKind returnKind = method.getSignature().getReturnKind();
         final ResolvedJavaType returnType = method.getSignature().getReturnType(null).resolve(method.getDeclaringClass());
         SPIRVKind returnKind = SPIRVKind.fromResolvedJavaTypeToVectorKind(returnType);
         if (returnKind == SPIRVKind.ILLEGAL) {
@@ -647,7 +799,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         // --------------------------------------
         if (!TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
             // Only emit variables for all names that are needed. For instance private
-            // memory, local memory and constants in the case that the SPIRV optimizer on.
+            // memory, local memory and constants in the case that the SPIR-V optimizer on.
             // If the SPIR-V optimizer is off, then we emit all variables registered through
             // Graal.
             for (Tuple2<SPIRVId, SPIRVKind> id : idTable.list) {
@@ -657,7 +809,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                 blockScope.add(new SPIRVOpVariable(resultType, id.first, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
             }
         }
-        // We declare the arrays for private memory (if any)
+
+        // We declare the arrays for local/private memory (if any)
         for (AllocatableValue value : idTable.resultArrays) {
             ArrayGen.emit(asm, value, value.getValueKind());
         }
@@ -864,12 +1017,112 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         emitLookUpBufferAccess(module, heapBaseAddrId, frameBaseAddrId, frameId, heap_base, frame_base, asm);
     }
 
+    private void emitPrologueForMainKernelEntryV2(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, ResolvedJavaMethod method, LIR lir, SPIRVModule module) {
+        final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
+
+        if (cfg.getStartBlock().getEndNode().predecessor().asNode() instanceof FPGAWorkGroupSizeNode) {
+            FPGAWorkGroupSizeNode fpgaNode = (FPGAWorkGroupSizeNode) (cfg.getStartBlock().getEndNode().predecessor().asNode());
+            String attribute = fpgaNode.createThreadAttribute();
+
+            throw new RuntimeException("FPGA Thread Attributes not supported yet.");
+            // asm.emitSymbol(attribute);
+            // asm.emitLine("");
+        }
+
+        emitSPIRVCapabilities(module);
+        emitImportOpenCL(asm, module);
+        emitOpenCLAddressingMode(module);
+        emitOpSourceForOpenCL(module, SPIRV_HEADER_VALUES.SPIRV_VERSION_FOR_OPENCL);
+
+        registerParallelIntrinsics(cfg, asm, module);
+
+        // ----------------------------------
+        // Emit all variables (types and initial values)
+        // ----------------------------------
+        IDTable idTable = emitVariableDefs(crb, asm, lir);
+        if (idTable.kindToVariable.containsKey(SPIRVKind.OP_TYPE_FLOAT_64)) {
+            emitFP64Capability(module);
+        }
+
+        // ----------------------------------
+        // Emit Entry Kernel
+        // ----------------------------------
+        if (fp64CapabilityEnabled && !supportsFP64) {
+            throw new TornadoDeviceFP64NotSupported("Error - The current SPIR-V device does not support FP64");
+        }
+        asm.emitEntryPointMainKernel(cfg.graph, method.getName(), fp64CapabilityEnabled);
+
+        // Add all KINDS we generate the corresponding declaration
+        for (SPIRVKind kind : idTable.kindToVariable.keySet()) {
+            asm.primitives.getTypePrimitive(kind);
+        }
+
+        // ----------------------------------
+        // Emit Constants
+        // ----------------------------------
+        // Stack used for declaring all constants
+        Stack<TypeConstant> stack = new Stack<>();
+        StructuredGraph graph = cfg.graph;
+        for (ConstantNode constantNode : graph.getNodes().filter(ConstantNode.class)) {
+            // Insert all constants
+            JavaKind stackKind = constantNode.getStackKind();
+            Constant value = constantNode.getValue();
+
+            SPIRVKind kind = SPIRVKind.fromJavaKind(stackKind);
+            SPIRVId typeId;
+            if (kind.isPrimitive()) {
+                typeId = asm.primitives.getTypePrimitive(kind);
+            } else {
+                throw new RuntimeException("Type not supported");
+            }
+
+            SPIRVLiteralContextDependentNumber literalNumber = buildLiteralContextNumber(kind, value);
+            stack.add(new TypeConstant(typeId, literalNumber, value.toValueString(), kind));
+        }
+
+        // Add constant 3 --> Frame Access
+        int reservedSlots = SPIRVKernelCallWrapper.RESERVED_SLOTS;
+        asm.lookUpConstant(Integer.toString(reservedSlots), SPIRVKind.OP_TYPE_INT_32);
+
+        // And the reminder of the constants
+        while (!stack.isEmpty()) {
+            TypeConstant t = stack.pop();
+            SPIRVId idConstant = module.getNextId();
+            module.add(new SPIRVOpConstant(t.typeID, idConstant, t.n));
+            asm.getConstants().put(new SPIRVAssembler.ConstantKeyPair(t.valueString, t.kind), idConstant);
+        }
+
+        emitBuiltinVariables(asm);
+
+        emitPrologueForMainKernel(crb, asm, method, lir, asm.getMainKernelId(), idTable);
+    }
+
+    public static void writeModuleToFile(SPIRVModule module, String filepath) {
+        ByteBuffer out = ByteBuffer.allocate(module.getByteCount());
+        out.order(ByteOrder.LITTLE_ENDIAN);
+        module.close().write(out);
+        writeBufferToFile(out, filepath);
+    }
+
+    private static void writeBufferToFile(ByteBuffer buffer, String filepath) {
+        buffer.flip();
+        File out = new File(filepath);
+        try {
+            FileChannel channel = new FileOutputStream(out, false).getChannel();
+            channel.write(buffer);
+            channel.close();
+        } catch (IOException e) {
+            System.err.println("IO exception: " + e.getMessage());
+        }
+
+    }
+
     private void emitPrologue(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, ResolvedJavaMethod method, LIR lir, SPIRVModule module) {
         asm.intializeScopeStack();
         String methodName = crb.compilationResult.getName();
-        Logger.traceCodeGen(Logger.BACKEND.SPIRV, "[SPIR-V CodeGen] Generating SPIRV-Header for method: %s", methodName);
+        Logger.traceCodeGen(Logger.BACKEND.SPIRV, "[SPIR-V CodeGen] Generating SPIRV Preamble for method: %s", methodName);
         if (crb.isKernel()) {
-            emitPrologueForMainKernelEntry(crb, asm, method, lir, module);
+            emitPrologueForMainKernelEntryV2(crb, asm, method, lir, module);
         } else {
             emitPrologueForNonMainKernel(crb, asm, method, lir);
         }
@@ -966,4 +1219,157 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         public String actualName;
         private SPIRVId typeId;
     }
+
+    /**
+     * SPIR-V CODE for the following OpenCL kernel:
+     *
+     * <code>
+     *     __kernel void testVectorInit(__global int* a) {
+     *          int idx = get_global_id(0);
+     * 	        a[idx] = 50;
+     *     }
+     * </code>
+     *
+     */
+    public static void testVectorInit() {
+
+        // SPIRV Header
+        SPIRVModule module = new SPIRVModule(new SPIRVHeader(1, 2, 29, 0, 0));
+        SPIRVInstScope functionScope;
+        SPIRVInstScope blockScope;
+
+        module.add(new SPIRVOpCapability(SPIRVCapability.Addresses())); // Uses physical addressing, non-logical addressing modes.
+        module.add(new SPIRVOpCapability(SPIRVCapability.Linkage())); // Uses partially linked modules and libraries. (e.g., OpenCL)
+        module.add(new SPIRVOpCapability(SPIRVCapability.Kernel())); // Uses the Kernel Execution Model.
+        module.add(new SPIRVOpCapability(SPIRVCapability.Int64())); // Uses OpTypeInt to declare 64-bit integer types
+
+        // For Double support: Float64 capability
+        // module.add(new SPIRVOpCapability(SPIRVCapability.Float64()));
+
+        // Extension for Import "OpenCL.std"
+        SPIRVId idExtension = module.getNextId();
+        module.add(new SPIRVOpExtInstImport(idExtension, new SPIRVLiteralString("OpenCL.std")));
+
+        // OpenCL Version Set
+        module.add(new SPIRVOpSource(SPIRVSourceLanguage.OpenCL_C(), new SPIRVLiteralInteger(100000), new SPIRVOptionalOperand<>(), new SPIRVOptionalOperand<>()));
+
+        // Indicates a 64-bit module, where the address width is equal to 64 bits.
+        module.add(new SPIRVOpMemoryModel(SPIRVAddressingModel.Physical64(), SPIRVMemoryModel.OpenCL()));
+
+        // OpName: Assign a name string to another instruction’s Result <id>. This has
+        // no semantic impact and can safely be removed from a module.
+        SPIRVId idName = module.getNextId();
+        module.add(new SPIRVOpName(idName, new SPIRVLiteralString("__spirv_BuiltInGlobalInvocationId")));
+
+        SPIRVId aName = module.getNextId();
+        module.add(new SPIRVOpName(aName, new SPIRVLiteralString("a")));
+
+        SPIRVId aAddrName = module.getNextId();
+        module.add(new SPIRVOpName(aAddrName, new SPIRVLiteralString("a.addr")));
+
+        // Decorates
+        // A) Global ID invocation
+        module.add(new SPIRVOpDecorate(idName, SPIRVDecoration.BuiltIn(SPIRVBuiltIn.GlobalInvocationId())));
+
+        // B) Constant
+        module.add(new SPIRVOpDecorate(idName, SPIRVDecoration.Constant()));
+
+        // C) LinkageAttributes
+        SPIRVLiteralString literalGlobalID = new SPIRVLiteralString("__spirv_BuiltInGlobalInvocationId");
+        module.add(new SPIRVOpDecorate(idName, SPIRVDecoration.LinkageAttributes(literalGlobalID, SPIRVLinkageType.Import())));
+
+        // Int 32
+        SPIRVId uint = module.getNextId();
+        module.add(new SPIRVOpTypeInt(uint, new SPIRVLiteralInteger(32), new SPIRVLiteralInteger(0)));
+
+        // Int 64
+        SPIRVId ulong = module.getNextId();
+        module.add(new SPIRVOpTypeInt(ulong, new SPIRVLiteralInteger(64), new SPIRVLiteralInteger(0)));
+
+        // Type Vector: 3 elements of type long
+        SPIRVId v3ulong = module.getNextId();
+        module.add(new SPIRVOpTypeVector(v3ulong, ulong, new SPIRVLiteralInteger(3)));
+
+        // OpConstants
+        // Type, result, value
+        SPIRVId constant50 = module.getNextId();
+        module.add(new SPIRVOpConstant(uint, constant50, new SPIRVContextDependentInt(BigInteger.valueOf(50))));
+
+        // Type pointer
+        SPIRVId pointerResult = module.getNextId();
+        // STORAGE CLASS <Input>: from pipeline. Visible across all functions in the
+        // current invocation. Variables declared with this
+        // storage class are read-only, and must not have initializers.
+        module.add(new SPIRVOpTypePointer(pointerResult, SPIRVStorageClass.Input(), v3ulong));
+
+        // Type Void
+        SPIRVId voidType = module.getNextId();
+        module.add(new SPIRVOpTypeVoid(voidType));
+
+        SPIRVId ptrCrossWorkGroupUInt = module.getNextId();
+        // STORAGE CLASS <CrossWorkGroup> Visible across all functions of all
+        // invocations of all work groups. OpenCL global memory.
+        module.add(new SPIRVOpTypePointer(ptrCrossWorkGroupUInt, SPIRVStorageClass.CrossWorkgroup(), uint));
+
+        // Function declaration
+        SPIRVId mainFunctionPre = module.getNextId();
+        module.add(new SPIRVOpTypeFunction(mainFunctionPre, voidType, new SPIRVMultipleOperands<>(ptrCrossWorkGroupUInt)));
+
+        SPIRVId ptrFunctionPtrCrossWorkGroup = module.getNextId();
+        module.add(new SPIRVOpTypePointer(ptrFunctionPtrCrossWorkGroup, SPIRVStorageClass.Function(), uint));
+
+        SPIRVId functionTypePtr = module.getNextId();
+        module.add(new SPIRVOpTypePointer(functionTypePtr, SPIRVStorageClass.Function(), ptrCrossWorkGroupUInt));
+
+        SPIRVId pointer = module.getNextId();
+        module.add(new SPIRVOpTypePointer(pointer, SPIRVStorageClass.Input(), v3ulong));
+        module.add(new SPIRVOpVariable(pointer, idName, SPIRVStorageClass.Input(), new SPIRVOptionalOperand<>()));
+
+        SPIRVId functionDef = module.getNextId();
+        functionScope = module.add(new SPIRVOpFunction(voidType, functionDef, SPIRVFunctionControl.DontInline(), mainFunctionPre));
+        functionScope.add(new SPIRVOpFunctionParameter(ptrCrossWorkGroupUInt, aName));
+
+        // Entry point is define at the module level, not at the function level
+        module.add(new SPIRVOpEntryPoint(SPIRVExecutionModel.Kernel(), functionDef, new SPIRVLiteralString("testVectorInit"), new SPIRVMultipleOperands<>(idName)));
+
+        SPIRVOpLabel entryLabel = new SPIRVOpLabel(module.getNextId());
+        blockScope = functionScope.add(entryLabel);
+
+        blockScope.add(new SPIRVOpVariable(functionTypePtr, aAddrName, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+        SPIRVId idx = module.getNextId();
+        blockScope.add(new SPIRVOpVariable(ptrFunctionPtrCrossWorkGroup, idx, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
+
+        blockScope.add(new SPIRVOpStore(aAddrName, aName, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+
+        SPIRVId load17 = module.getNextId();
+        blockScope.add(new SPIRVOpLoad(v3ulong, load17, idName, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(32)))));
+
+        SPIRVId call = module.getNextId();
+        blockScope.add(new SPIRVOpCompositeExtract(ulong, call, load17, new SPIRVMultipleOperands<>(new SPIRVLiteralInteger(0))));
+
+        SPIRVId conv = module.getNextId();
+        blockScope.add(new SPIRVOpUConvert(uint, conv, call));
+
+        blockScope.add(new SPIRVOpStore(idx, conv, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4)))));
+
+        SPIRVId load20 = module.getNextId();
+        blockScope.add(new SPIRVOpLoad(ptrCrossWorkGroupUInt, load20, aAddrName, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
+
+        SPIRVId load21 = module.getNextId();
+        blockScope.add(new SPIRVOpLoad(uint, load21, idx, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4)))));
+
+        SPIRVId idxprom = module.getNextId();
+        blockScope.add(new SPIRVOpUConvert(ulong, idxprom, load21));
+
+        SPIRVId ptridx = module.getNextId();
+        blockScope.add(new SPIRVOpInBoundsPtrAccessChain(ptrCrossWorkGroupUInt, ptridx, load20, idxprom, new SPIRVMultipleOperands()));
+
+        blockScope.add(new SPIRVOpStore(ptridx, constant50, new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(4)))));
+
+        blockScope.add(new SPIRVOpReturn());
+        functionScope.add(new SPIRVOpFunctionEnd());
+
+        writeModuleToFile(module, "/tmp/testSPIRV.spv");
+    }
+
 }

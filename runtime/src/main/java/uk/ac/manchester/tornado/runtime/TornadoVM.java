@@ -55,8 +55,8 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
-import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
@@ -69,7 +69,6 @@ import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
 /**
  * TornadoVM: it includes a bytecode interpreter (Tornado bytecodes), a memory
@@ -444,7 +443,8 @@ public class TornadoVM extends TornadoLogger {
         final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
         final SchedulableTask task = tasks.get(taskIndex);
 
-        // Check if a different batch size was used for the same kernel. If true, then the kernel needs to be recompiled.
+        // Check if a different batch size was used for the same kernel. If true, then
+        // the kernel needs to be recompiled.
         if (!shouldCompile(installedCodes[taskIndex]) && task.getBatchThreads() != 0 && task.getBatchThreads() != batchThreads) {
             installedCodes[taskIndex].invalidate();
         }

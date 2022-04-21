@@ -194,6 +194,8 @@ public enum SPIRVKind implements PlatformKind {
                 return SPIRVKind.OP_TYPE_VOID;
             case Boolean:
                 return SPIRVKind.OP_TYPE_BOOL;
+            case Char:
+                return SPIRVKind.OP_TYPE_INT_8;
             case Byte:
                 return SPIRVKind.OP_TYPE_INT_8;
             case Short:

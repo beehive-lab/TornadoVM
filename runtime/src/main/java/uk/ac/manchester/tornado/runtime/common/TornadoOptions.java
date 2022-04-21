@@ -195,7 +195,7 @@ public class TornadoOptions {
     /**
      * Trace code generation
      */
-    public static final boolean TRACE_CODE_GEN = getBooleanValue("tornado.logger.codegen", FALSE);
+    public static final boolean TRACE_CODE_GEN = getBooleanValue("tornado.logger.codegen", TRUE);
     /**
      * Trace code generation
      */
@@ -227,6 +227,7 @@ public class TornadoOptions {
      * memory)
      */
     public static final int LEVEL_ZERO_BUFFER_ALIGNMENT = getIntValue("tornado.spirv.levelzero.alignment", "64");
+    public static final boolean NEW_MM = getBooleanValue("tornado.new.memorymodel", TRUE);
     /**
      * Option to load FPGA pre-compiled binaries.
      */

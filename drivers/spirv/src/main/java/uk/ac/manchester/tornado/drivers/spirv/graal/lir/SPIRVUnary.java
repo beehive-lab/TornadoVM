@@ -38,6 +38,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVInstScope;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpCompositeExtract;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpControlBarrier;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpConvertFToS;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpConvertPtrToU;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpConvertSToF;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpConvertUToPtr;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpExtInst;
@@ -202,6 +203,62 @@ public class SPIRVUnary {
 
             // The final store is emitted in the assignParameter
             asm.registerLIRInstructionValue(this, loadPtr);
+        }
+    }
+
+    public static class AssignLoadFromInputFrame extends Expr {
+
+        protected SPIRVKind type;
+        protected SPIRVId address;
+        protected int indexFromStackFrame;
+        protected int parameterIndex;
+
+        /**
+         * In OpenCL:
+         *
+         * ul_0 = (ulong) a;
+         *
+         * Equivalent generated code:
+         *
+         * <code>
+         *    %46 = OpLoad %_ptr_CrossWorkgroup_uchar %a_addr Aligned 8
+         *    %47 = OpConvertPtrToU %ulong %46
+         *          OpStore %ul_0 %47 Aligned 8
+         * </code>
+         */
+        public AssignLoadFromInputFrame(LIRKind lirKind, SPIRVKind type, int indexFromStackFrame, int parameterIndex) {
+            super(null, null, lirKind, null);
+            this.type = type;
+            this.indexFromStackFrame = indexFromStackFrame;
+            this.parameterIndex = parameterIndex;
+        }
+
+        @Override
+        public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
+            Logger.traceCodeGen(Logger.BACKEND.SPIRV, "µIns AssignLoadFromInputFrame with Index: " + parameterIndex);
+
+            SPIRVId resultType = asm.primitives.getPtrToCrossWorkGroupPrimitive(type);
+
+            SPIRVId address = asm.lookupParameterFromIndex(parameterIndex);
+
+            final int alignment = 8;
+            SPIRVId loadID = asm.module.getNextId();
+            asm.currentBlockScope().add(new SPIRVOpLoad( //
+                    resultType, //
+                    loadID, //
+                    address, //
+                    new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(alignment))) //
+            ));
+
+            SPIRVId convertId = asm.module.getNextId();
+            SPIRVId ulong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
+            asm.currentBlockScope().add(new SPIRVOpConvertPtrToU( //
+                    ulong, //
+                    convertId, //
+                    loadID));
+
+            // The final store is emitted in the assignParameter
+            asm.registerLIRInstructionValue(this, convertId);
         }
     }
 
