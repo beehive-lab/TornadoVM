@@ -336,17 +336,14 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         }
 
         // 1. Emit SPIR-V preamble, variable declaration, decorators, types and
-        // constants.
-        // 1.1 Emit main function parameters and variables
-        // 1.2 Emit the logic for the stack frame-access within TornadoVM
+        // constants. Emit main function parameters and variables
         emitPrologue(crb, asm, method, lir, asm.module);
 
-        // // 2. Code emission. Visitor traversal for the whole LIR for SPIR-V
+        // 2. Code emission. Visitor traversal for the whole LIR for SPIR-V
         crb.emit(lir);
 
         // 3. Close kernel
         emitEpilogue(asm);
-        writeModuleToFile(asm.module, "/tmp/testSPIRV2.spv");
 
         // 4. Clean-up
         cleanUp(asm);
@@ -1120,7 +1117,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     private void emitPrologue(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, ResolvedJavaMethod method, LIR lir, SPIRVModule module) {
         asm.intializeScopeStack();
         String methodName = crb.compilationResult.getName();
-        Logger.traceCodeGen(Logger.BACKEND.SPIRV, "[SPIR-V CodeGen] Generating SPIRV Preamble for method: %s", methodName);
+        Logger.traceCodeGen(Logger.BACKEND.SPIRV, "[SPIR-V CodeGen] Generating SPIR-V Preamble for method: %s", methodName);
         if (crb.isKernel()) {
             emitPrologueForMainKernelEntryV2(crb, asm, method, lir, module);
         } else {

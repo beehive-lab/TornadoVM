@@ -226,14 +226,11 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
             meta.printThreadDims();
         }
 
-        System.out.println("KERNEL about to be LAUNCHED");
         launchKernelWithLevelZero(kernel, threadScheduling, dispatcher);
 
         if (TornadoOptions.isProfilerEnabled()) {
             kernelTimeStamp.solveEvent(meta);
         }
-
-        System.out.println("KERNEL LAUNCHED");
 
         return 0;
     }
