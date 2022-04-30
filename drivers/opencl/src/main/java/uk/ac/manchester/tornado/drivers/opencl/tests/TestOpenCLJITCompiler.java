@@ -144,9 +144,9 @@ public class TestOpenCLJITCompiler {
         // Fill header of call stack with empty values
         stack.setKernelContext(new HashMap<>());
 
-        stack.addCallArgument(a);
-        stack.addCallArgument(b);
-        stack.addCallArgument(c);
+        stack.addCallArgument(a, true);
+        stack.addCallArgument(b, true);
+        stack.addCallArgument(c, true);
 
         // Run the code
         openCLCode.launchWithoutDependencies(stack, null, taskMeta, 0);

@@ -88,6 +88,10 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         for (int argIndex = 0; argIndex < stack.getCallArguments().size(); argIndex++) {
             uk.ac.manchester.tornado.runtime.common.KernelCallWrapper.CallArgument arg = stack.getCallArguments().get(argIndex);
             if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
+                if (!arg.isReferenceType()) {
+                    index++;
+                    continue;
+                }
                 int result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), index, Sizeof.LONG.getNumBytes(), ((Number) arg.getValue()).longValue());
                 LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
                 index++;

@@ -32,13 +32,19 @@ public interface KernelCallWrapper {
 
     public static class CallArgument {
         private final Object value;
+        private final boolean isReferenceType;
 
-        public CallArgument(Object value) {
+        public CallArgument(Object value, boolean isReferenceType) {
             this.value = value;
+            this.isReferenceType = isReferenceType;
         }
 
         public Object getValue() {
             return value;
+        }
+
+        public boolean isReferenceType() {
+            return isReferenceType;
         }
     }
 
@@ -46,7 +52,7 @@ public interface KernelCallWrapper {
 
     List<CallArgument> getCallArguments();
 
-    void addCallArgument(Object value);
+    void addCallArgument(Object value, boolean isReferenceType);
 
     void setKernelContext(HashMap<Integer, Integer> map);
 }

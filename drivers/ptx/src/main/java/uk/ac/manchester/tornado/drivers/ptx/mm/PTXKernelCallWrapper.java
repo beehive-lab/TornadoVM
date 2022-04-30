@@ -46,8 +46,8 @@ public class PTXKernelCallWrapper extends PTXByteBuffer implements KernelCallWra
     }
 
     @Override
-    public void addCallArgument(Object value) {
-        callArguments.add(new CallArgument(value));
+    public void addCallArgument(Object value, boolean isReferenceType) {
+        callArguments.add(new CallArgument(value, isReferenceType));
     }
 
     @Override

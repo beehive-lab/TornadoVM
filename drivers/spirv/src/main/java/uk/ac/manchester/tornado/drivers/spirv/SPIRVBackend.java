@@ -585,25 +585,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             localParameters = new LocalParameter[locals.length];
         }
 
-        List<SPIRVKind> parameterKind = new ArrayList<>();
-
         int j = 0;
         for (int i = index; i < locals.length; i++, j++) {
-            Local l = locals[j];
-            JavaKind type = l.getType().getJavaKind();
-            SPIRVKind kind = SPIRVKind.fromJavaKindForMethodCalls(type);
-
-            if (l.getType().getJavaKind() == JavaKind.Object) {
-                // Check here if it is a vector Component Type
-                String javaName = l.getType().toJavaName();
-                if (javaName.startsWith(SPIRVKind.VECTOR_COLLECTION_PATH)) {
-                    String[] vectorTypeNames = javaName.split("\\.");
-                    int nameIndex = vectorTypeNames.length - 1;
-                    kind = SPIRVKind.getKindFromStringClassVector(vectorTypeNames[nameIndex]);
-                }
-            }
-            parameterKind.add(kind);
-
             // All Parameters Access Global Memory (PtrToCrossWorkGroup)
             SPIRVId kindId = asm.primitives.getPtrToCrossWorkGroupPrimitive(SPIRVKind.OP_TYPE_INT_8);
 

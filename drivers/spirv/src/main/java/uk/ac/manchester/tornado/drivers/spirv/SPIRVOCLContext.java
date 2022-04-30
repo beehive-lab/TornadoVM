@@ -157,10 +157,4 @@ public class SPIRVOCLContext extends SPIRVContext {
     public void flush(int deviceIndex) {
         throw new RuntimeException("Unimplemented");
     }
-
-    @Override
-    public long executeAndReadLookupBufferAddressKernel(TaskMetaData meta) {
-        throw new RuntimeException("Unimplemented");
-    }
-
 }

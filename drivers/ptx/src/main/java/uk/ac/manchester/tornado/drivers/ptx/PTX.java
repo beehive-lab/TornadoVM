@@ -118,7 +118,7 @@ public class PTX {
 
         // Pass arguments to the call stack
         for (int i = 0; i < numArgs; i++) {
-            stack.addCallArgument(parameters[i]);
+            stack.addCallArgument(parameters[i], true);
         }
 
         // Run the code
