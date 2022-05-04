@@ -30,6 +30,7 @@ import java.util.HashMap;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.drivers.ptx.PTX;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDriver;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXInstalledCode;
@@ -116,7 +117,7 @@ public class TestPTXJITCompiler {
     }
 
     public void runWithPTXAPI(PTXTornadoDevice tornadoDevice, PTXInstalledCode ptxCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
-        PTX.run(tornadoDevice, ptxCode, taskMeta, new Access[] { Access.READ, Access.READ, Access.WRITE }, new Object[] { a, b, c });
+        PTX.run(tornadoDevice, ptxCode, taskMeta, new Access[] { Access.READ, Access.READ, Access.WRITE }, a, b, c);
     }
 
     public void run(PTXTornadoDevice tornadoDevice, PTXInstalledCode ptxCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
@@ -130,12 +131,12 @@ public class TestPTXJITCompiler {
         GlobalObjectState stateC = new GlobalObjectState();
         DeviceObjectState objectStateC = stateC.getDeviceState(tornadoDevice);
 
+        tornadoDevice.allocateBulk(new Object[] {a, b, c}, 0, new TornadoDeviceObjectState[] {objectStateA, objectStateB, objectStateC});
+
         // Copy-IN A
         tornadoDevice.ensurePresent(a, objectStateA, null, 0, 0);
         // Copy-IN B
         tornadoDevice.ensurePresent(b, objectStateB, null, 0, 0);
-        // Alloc C
-        tornadoDevice.allocate(c, 0, objectStateC);
 
         // Create stack
         KernelCallWrapper stack = tornadoDevice.createStack(3);
@@ -143,9 +144,9 @@ public class TestPTXJITCompiler {
         // Fill header of call stack with empty values
         stack.setKernelContext(new HashMap<>());
 
-        stack.addCallArgument(a, true);
-        stack.addCallArgument(b, true);
-        stack.addCallArgument(c, true);
+        stack.addCallArgument(objectStateA.getBuffer().toBuffer(), true);
+        stack.addCallArgument(objectStateB.getBuffer().toBuffer(), true);
+        stack.addCallArgument(objectStateC.getBuffer().toBuffer(), true);
 
         // Run the code
         ptxCode.launchWithoutDependencies(stack, null, taskMeta, 0);

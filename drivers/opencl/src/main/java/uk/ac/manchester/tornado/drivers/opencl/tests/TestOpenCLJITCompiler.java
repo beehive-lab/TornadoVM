@@ -32,6 +32,7 @@ import java.util.HashMap;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
 import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
@@ -117,7 +118,7 @@ public class TestOpenCLJITCompiler {
     }
 
     public void runWithOpenCLAPI(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
-        OpenCL.run(tornadoDevice, openCLCode, taskMeta, new Access[] { Access.READ, Access.READ, Access.WRITE }, new Object[] { a, b, c });
+        OpenCL.run(tornadoDevice, openCLCode, taskMeta, new Access[] { Access.READ, Access.READ, Access.WRITE }, a, b, c);
     }
 
     public void run(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
@@ -131,12 +132,12 @@ public class TestOpenCLJITCompiler {
         GlobalObjectState stateC = new GlobalObjectState();
         DeviceObjectState objectStateC = stateC.getDeviceState(tornadoDevice);
 
+        tornadoDevice.allocateBulk(new Object[] {a, b, c}, 0, new TornadoDeviceObjectState[] {objectStateA, objectStateB, objectStateC});
+
         // Copy-IN A
         tornadoDevice.ensurePresent(a, objectStateA, null, 0, 0);
         // Copy-IN B
         tornadoDevice.ensurePresent(b, objectStateB, null, 0, 0);
-        // Alloc C
-        tornadoDevice.allocate(c, 0, objectStateC);
 
         // Create stack
         KernelCallWrapper stack = tornadoDevice.createStack(3);
@@ -144,9 +145,9 @@ public class TestOpenCLJITCompiler {
         // Fill header of call stack with empty values
         stack.setKernelContext(new HashMap<>());
 
-        stack.addCallArgument(a, true);
-        stack.addCallArgument(b, true);
-        stack.addCallArgument(c, true);
+        stack.addCallArgument(objectStateA.getBuffer().toBuffer(), true);
+        stack.addCallArgument(objectStateB.getBuffer().toBuffer(), true);
+        stack.addCallArgument(objectStateC.getBuffer().toBuffer(), true);
 
         // Run the code
         openCLCode.launchWithoutDependencies(stack, null, taskMeta, 0);

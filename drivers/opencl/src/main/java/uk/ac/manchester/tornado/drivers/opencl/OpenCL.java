@@ -182,10 +182,12 @@ public class OpenCL {
             switch (access) {
                 case READ_WRITE:
                 case READ:
+                    tornadoDevice.allocate(object, 0, deviceState);
                     tornadoDevice.ensurePresent(object, deviceState, null, 0, 0);
                     break;
                 case WRITE:
                     tornadoDevice.allocate(object, 0, deviceState);
+                    break;
                 default:
                     break;
             }
@@ -195,13 +197,14 @@ public class OpenCL {
         // Create stack
         final int numArgs = parameters.length;
         KernelCallWrapper stack = tornadoDevice.createStack(numArgs);
+        stack.reset();
 
         // Fill header of call stack with empty values
         stack.setKernelContext(new HashMap<>());
 
         // Pass arguments to the call stack
         for (int i = 0; i < numArgs; i++) {
-            stack.addCallArgument(parameters[i], true);
+            stack.addCallArgument(states.get(i).getBuffer().toBuffer(), true);
         }
 
         // Run the code
@@ -216,6 +219,7 @@ public class OpenCL {
                     Object object = parameters[i];
                     DeviceObjectState deviceState = states.get(i);
                     tornadoDevice.streamOutBlocking(object, 0, deviceState, null);
+                    break;
                 default:
                     break;
             }
