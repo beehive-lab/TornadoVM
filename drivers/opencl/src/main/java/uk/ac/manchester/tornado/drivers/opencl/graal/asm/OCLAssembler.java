@@ -706,6 +706,7 @@ public final class OCLAssembler extends Assembler {
         public static final OCLUnaryIntrinsic ATAN = new OCLUnaryIntrinsic("atan");
         public static final OCLUnaryIntrinsic ASIN = new OCLUnaryIntrinsic("asin");
         public static final OCLUnaryIntrinsic ACOS = new OCLUnaryIntrinsic("acos");
+        public static final OCLUnaryIntrinsic SIGN = new OCLUnaryIntrinsic("sign");
 
         public static final OCLUnaryIntrinsic LOCAL_MEMORY = new OCLUnaryIntrinsic("__local");
 

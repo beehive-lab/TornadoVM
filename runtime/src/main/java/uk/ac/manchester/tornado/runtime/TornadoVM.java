@@ -33,6 +33,7 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEV
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
@@ -128,10 +129,13 @@ public class TornadoVM extends TornadoLogger {
 
         TornadoInternalError.guarantee(buffer.get() == TornadoVMBytecodes.SETUP.value(), "invalid code");
 
-        contexts = graphContext.getDevices();
+        contexts = new ArrayList<>();
+        for (TornadoAcceleratorDevice dev : graphContext.getDevices()) {
+            contexts.add(dev);
+        }
         buffer.getInt();
         int taskCount = buffer.getInt();
-        stacks = graphContext.getFrames();
+        stacks = graphContext.getFrames().clone();
         events = new int[buffer.getInt()][MAX_EVENTS];
         eventsIndexes = new int[events.length];
 

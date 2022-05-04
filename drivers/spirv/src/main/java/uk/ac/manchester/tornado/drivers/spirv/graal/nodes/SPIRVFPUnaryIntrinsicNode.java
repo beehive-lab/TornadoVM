@@ -90,6 +90,7 @@ public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLI
         RINT,
         ROUND,
         RSQRT,
+        SIGN,
         SIN,
         SINH,
         SINPI,
@@ -171,6 +172,9 @@ public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLI
                 break;
             case EXP:
                 result = gen.genFloatExp(input);
+                break;
+            case SIGN:
+                result = gen.generateSign(input);
                 break;
             case SQRT:
                 result = gen.genFloatSqrt(input);

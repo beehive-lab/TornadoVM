@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -37,6 +37,7 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstan
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.STMT_DELIMITER;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TAB;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TEST_NORMAL;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TEST_NOTANUMBER;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TEST_NUMBER;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TEST_SUBNORMAL;
 
@@ -413,6 +414,7 @@ public class PTXAssembler extends Assembler {
         public static final PTXUnaryOp CVT_FLOAT = new PTXUnaryOp(CONVERT, false, null);
         public static final PTXUnaryOp CVT_INT_RTZ = new PTXUnaryOp(CONVERT, false, ROUND_TOWARD_ZERO_INTEGER);
         public static final PTXUnaryOp TESTP_NUMBER = new PTXUnaryOp(TEST_NUMBER, false, null);
+        public static final PTXUnaryOp TESTP_NOTANUMBER = new PTXUnaryOp(TEST_NOTANUMBER, false, null);
         public static final PTXUnaryOp TESTP_NORMAL = new PTXUnaryOp(TEST_NORMAL, false, null);
         public static final PTXUnaryOp TESTP_SUBNORMAL = new PTXUnaryOp(TEST_SUBNORMAL, false, null);
 
@@ -611,6 +613,8 @@ public class PTXAssembler extends Assembler {
 
         public static final PTXBinaryIntrinsic FLOAT_MIN = new PTXBinaryIntrinsic("min", false);
         public static final PTXBinaryIntrinsic FLOAT_MAX = new PTXBinaryIntrinsic("max", false);
+
+        public static final PTXBinaryIntrinsic COPY_SIGN = new PTXBinaryIntrinsic("copysign", false);
         // @formatter:on
 
         protected PTXBinaryIntrinsic(String opcode) {
@@ -673,17 +677,25 @@ public class PTXAssembler extends Assembler {
     public static class PTXTernaryOp extends PTXOp {
         public static final PTXTernaryOp MAD_LO = new PTXTernaryOp("mad.lo");
         public static final PTXTernaryOp MAD = new PTXTernaryOp("mad");
-        public static final PTXTernaryOp SELP = new PTXTernaryOp("selp");
+        public static final PTXTernaryOp SELP = new PTXTernaryOp("selp", false);
+
+        private boolean needsRounding;
 
         protected PTXTernaryOp(String opcode) {
             super(opcode);
+            this.needsRounding = true;
+        }
+
+        protected PTXTernaryOp(String opcode, boolean needsRounding) {
+            super(opcode);
+            this.needsRounding = needsRounding;
         }
 
         public void emit(PTXCompilationResultBuilder crb, Value x, Value y, Value z, Variable dest) {
             final PTXAssembler asm = crb.getAssembler();
             emitOpcode(asm);
             asm.emitSymbol(DOT);
-            if (((PTXKind) dest.getPlatformKind()).isFloating()) {
+            if (((PTXKind) dest.getPlatformKind()).isFloating() && needsRounding) {
                 asm.emit(PTXAssemblerConstants.ROUND_NEAREST_EVEN);
                 asm.emitSymbol(DOT);
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -251,8 +251,17 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitMathCopySign(Value magnitude, Value sign) {
-        unimplemented();
-        return null;
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitMathCopySign magnitude=%s sign=%s", sign, magnitude);
+        PTXBuiltinTool builtinTool = getGen().getPtxBuiltinTool();
+        Variable result = getGen().newVariable(sign.getValueKind());
+
+        /*
+         * This method will reverse the two input parameters, as the PTX copySign
+         * instruction follows the opposite order of parameters than the Java copySign
+         * implementation.
+         */
+        getGen().append(new PTXLIRStmt.AssignStmt(result, builtinTool.genCopySign(sign, magnitude)));
+        return result;
     }
 
     @Override
