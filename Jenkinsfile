@@ -21,6 +21,8 @@ pipeline {
         TORNADO_SDK="/var/lib/jenkins/workspace/Tornado-pipeline/bin/sdk" 
         CMAKE_ROOT="/opt/jenkins/cmake-3.10.2-Linux-x86_64"
         KFUSION_ROOT="/var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor"
+        TORNADO_RAY_TRACER_ROOT="/var/lib/jenkins/workspace/TornadoVM-Ray-Tracer"
+        JAVAFX_SDK="/var/lib/jenkins/workspace/TornadoVM-Ray-Tracer/javafx-sdk-18.0.1/"
     }
     stages {
         stage('Checkout Current Branch') {
@@ -157,7 +159,7 @@ void buildAndTest(String JDK, String tornadoProfile) {
             sh 'python assembly/src/bin/tornado-benchmarks.py --medium --skipSequential --iterations 5 '
         }
     }
-     stage('Clone & Build KFusion') {
+    stage('Clone & Build KFusion') {
         timeout(time: 5, unit: 'MINUTES') {
             sh 'cd ${KFUSION_ROOT} && git reset HEAD --hard && git fetch && git pull origin master && mvn clean install -DskipTests'
         }
@@ -174,6 +176,25 @@ void buildAndTest(String JDK, String tornadoProfile) {
         timeout(time: 5, unit: 'MINUTES') {
             sh "cd ${KFUSION_ROOT} && sed -i 's/kfusion.tornado.backend=OpenCL/kfusion.tornado.backend=PTX/' conf/kfusion.settings"
             sh 'cd ${KFUSION_ROOT} && kfusion kfusion.tornado.Benchmark ${KFUSION_ROOT}/conf/traj2.settings'
+        }
+    }
+    stage('Clone & Build TornadoVM-Ray-Tracer') {
+        if (JDK == 'JDK 8') {
+            echo 'TornadoVM-Ray-Tracer builds for JDK > 11'
+        } else {
+            timeout(time: 5, unit: 'MINUTES') {
+                sh 'cd ${TORNADO_RAY_TRACER_ROOT} && git reset HEAD --hard && git fetch && git checkout master && git pull origin master && mvn clean install'
+            }
+        }
+    }
+    stage('Run TornadoVM-Ray-Tracer') {
+        sleep 5
+        if (JDK == 'JDK 8') {
+            echo 'TornadoVM-Ray-Tracer builds for JDK > 11'
+        } else {
+            timeout(time: 5, unit: 'MINUTES') {
+                sh 'cd ${TORNADO_RAY_TRACER_ROOT} && ./bin/tornadovm-ray-tracer benchmark'
+            }
         }
     }
 }
