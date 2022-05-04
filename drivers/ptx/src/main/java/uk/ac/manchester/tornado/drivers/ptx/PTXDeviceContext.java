@@ -241,6 +241,9 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
         // Parameters
         for (int argIndex = 0; argIndex < stack.getCallArguments().size(); argIndex++) {
             uk.ac.manchester.tornado.runtime.common.KernelCallWrapper.CallArgument arg = stack.getCallArguments().get(argIndex);
+            if (arg.getValue() instanceof KernelCallWrapper.KernelContextDummyArgument) {
+                continue;
+            }
             if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
                 args.putLong(((Number) arg.getValue()).longValue());
             } else {

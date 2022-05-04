@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
@@ -130,6 +131,7 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMulti
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVOptionalOperand;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVSourceLanguage;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVStorageClass;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.common.BackendDeopt;
@@ -568,37 +570,33 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         final SPIRVId returnId = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_VOID);
 
         final Local[] locals = method.getLocalVariableTable().getLocalsAt(0);
-        LocalParameter[] localParameters;
+        ArrayList<LocalParameter> localParameters = new ArrayList<>();
 
-        int index = 0;
-        if (TornadoOptions.SPIRV_DIRECT_CALL_WITH_LOAD_HEAP) {
-            localParameters = new LocalParameter[locals.length + 2];
-            SPIRVId ptrToUChar = asm.primitives.getPtrToCrossWorkGroupPrimitive(SPIRVKind.OP_TYPE_INT_8);
-            SPIRVId ulong = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
-            localParameters[0] = new LocalParameter();
-            localParameters[0].typeId = ptrToUChar;
+        // Kernel context
+        LocalParameter kernelContextParameter = new LocalParameter();
+        kernelContextParameter.actualName = "kernelContext";
+        kernelContextParameter.typeId = asm.primitives.getPtrToCrossWorkGroupPrimitive(SPIRVKind.OP_TYPE_INT_64);
+        kernelContextParameter.kind = SPIRVKind.OP_TYPE_INT_64;
+        localParameters.add(kernelContextParameter);
 
-            localParameters[1] = new LocalParameter();
-            localParameters[1].typeId = ulong;
-            index = 2;
-        } else {
-            localParameters = new LocalParameter[locals.length];
-        }
-
-        int j = 0;
-        for (int i = index; i < locals.length; i++, j++) {
-            // All Parameters Access Global Memory (PtrToCrossWorkGroup)
-            SPIRVId kindId = asm.primitives.getPtrToCrossWorkGroupPrimitive(SPIRVKind.OP_TYPE_INT_8);
-
-            if (localParameters[i] == null) {
-                localParameters[i] = new LocalParameter();
+        for (Local local : locals) {
+            SPIRVKind spirvKind = SPIRVKind.OP_TYPE_INT_8;
+            if (local.getType().toJavaName().equals(KernelContext.class.getName())) {
+                spirvKind = SPIRVKind.OP_TYPE_INT_64;
             }
 
-            localParameters[i].actualName = locals[j].getName();
-            localParameters[i].typeId = kindId;
+            // All Parameters Access Global Memory (PtrToCrossWorkGroup)
+            SPIRVId kindId = asm.primitives.getPtrToCrossWorkGroupPrimitive(spirvKind);
+
+            LocalParameter localParameter = new LocalParameter();
+            localParameters.add(localParameter);
+
+            localParameter.actualName = local.getName();
+            localParameter.typeId = kindId;
+            localParameter.kind = spirvKind;
         }
-        SPIRVId[] typesOfLocalVars = new SPIRVId[localParameters.length];
-        Arrays.setAll(typesOfLocalVars, i -> localParameters[i].typeId);
+        SPIRVId[] typesOfLocalVars = new SPIRVId[localParameters.size()];
+        Arrays.setAll(typesOfLocalVars, i -> localParameters.get(i).typeId);
 
         SPIRVId methodSignatureId = asm.emitOpTypeFunction(returnId, typesOfLocalVars);
 
@@ -607,29 +605,34 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         // --------------------------------------
         SPIRVInstScope functionScope = asm.emitOpFunction(returnId, methodId, methodSignatureId, SPIRVFunctionControl.DontInline());
 
-        List<SPIRVId> ptrParameters = new ArrayList<>();
-        List<SPIRVId> parameters = new ArrayList<>();
-
         // --------------------------------------
         // Main kernel parameters
         // --------------------------------------
-        for (LocalParameter localParameter : localParameters) {
+        List<Tuple2<SPIRVId, SPIRVKind>> ptrParameters = new ArrayList<>();
+        List<SPIRVId> parameters = new ArrayList<>();
+        for (int i = 0; i < localParameters.size(); i++) {
+            LocalParameter localParameter = localParameters.get(i);
             SPIRVId id = asm.module.getNextId();
             String name = localParameter.actualName + "F" + asm.getMethodIndex();
             asm.module.add(new SPIRVOpName(id, new SPIRVLiteralString(name)));
-            asm.module.add(new SPIRVOpDecorate(id, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(1))));
+            asm.module.add(new SPIRVOpDecorate(id, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(localParameter.kind.getSizeInBytes()))));
             asm.emitParameterFunction(localParameter.typeId, id, functionScope);
 
             // Global Ptr To Cross WorkGroup Parameters
             name += "_ptr";
             SPIRVId idPtr = asm.module.getNextId();
             asm.module.add(new SPIRVOpName(idPtr, new SPIRVLiteralString(name)));
-            asm.module.add(new SPIRVOpDecorate(idPtr, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(8))));
-            ptrParameters.add(idPtr);
+            asm.module.add(new SPIRVOpDecorate(idPtr, SPIRVDecoration.Alignment(new SPIRVLiteralInteger(SPIRVKind.OP_TYPE_INT_64.getSizeInBytes()))));
+            ptrParameters.add(new Tuple2<>(idPtr, localParameter.kind));
             parameters.add(id);
             asm.registerLIRInstructionValue(name, idPtr);
             asm.addFunctionParameterId(idPtr);
+            if (i == 0) {
+                asm.setStackFrameId(idPtr);
+            }
         }
+        
+        asm.setPtrCrossWorkGroupULong(asm.primitives.getPtrToCrossWorkGroupPrimitive(SPIRVKind.OP_TYPE_INT_64));
 
         // --------------------------------------
         // Label Entry
@@ -664,12 +667,13 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
         // Emit the Store between from the parameter value and the local variable
         // assigned
-        for (SPIRVId ptrToParam : ptrParameters) {
-            SPIRVId resultType = asm.primitives.getPtrFunctionToPtrCrossWorkGroup(SPIRVKind.OP_TYPE_INT_8);
+        for (Tuple2<SPIRVId, SPIRVKind> t2 : ptrParameters) {
+            SPIRVId ptrToParam = t2.first;
+            SPIRVId resultType = asm.primitives.getPtrFunctionToPtrCrossWorkGroup(t2.second);
             blockScope.add(new SPIRVOpVariable(resultType, ptrToParam, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
         }
         for (int i = 0; i < ptrParameters.size(); i++) {
-            blockScope.add(new SPIRVOpStore(ptrParameters.get(i), //
+            blockScope.add(new SPIRVOpStore(ptrParameters.get(i).first, //
                     parameters.get(i), //
                     new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new SPIRVLiteralInteger(8)))));
         }
@@ -1194,6 +1198,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     private static class LocalParameter {
         public String actualName;
         private SPIRVId typeId;
+        private SPIRVKind kind;
     }
 
     /**

@@ -23,18 +23,13 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.mm;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitive;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 // FIXME <REFACTOR> THis class has similarities with the rest of the backends
 public class SPIRVKernelCallWrapper extends SPIRVByteBuffer implements KernelCallWrapper {

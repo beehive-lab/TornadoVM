@@ -34,7 +34,6 @@ public class SPIRVMemoryManager implements TornadoMemoryProvider {
     private static final int STACK_ALIGNMENT_SIZE = 128;
 
     private SPIRVDeviceContext deviceContext;
-    public SPIRVKernelCallWrapper spirvKernelCallWrapper = null;
 
     public SPIRVMemoryManager(SPIRVDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
@@ -46,11 +45,8 @@ public class SPIRVMemoryManager implements TornadoMemoryProvider {
     }
 
     public SPIRVKernelCallWrapper createCallStack(final int maxArgs) {
-        if (this.spirvKernelCallWrapper == null) {
-            long kernelCallBuffer = deviceContext.getSpirvContext().allocateMemory(deviceContext.getDevice().getDeviceIndex(), RESERVED_SLOTS * Long.BYTES);
-            this.spirvKernelCallWrapper = new SPIRVKernelCallWrapper(kernelCallBuffer, maxArgs, deviceContext);;
-        }
-        return this.spirvKernelCallWrapper;
+        long kernelCallBuffer = deviceContext.getSpirvContext().allocateMemory(deviceContext.getDevice().getDeviceIndex(), RESERVED_SLOTS * Long.BYTES);
+        return new SPIRVKernelCallWrapper(kernelCallBuffer, maxArgs, deviceContext);
     }
 
     private static long align(final long address, final long alignment) {

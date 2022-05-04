@@ -49,6 +49,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelCallWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -193,8 +194,11 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         index++;
 
         // Parameters
-        for (int argIndex = 0; argIndex < stack.getCallArguments().size(); argIndex++) {
-            uk.ac.manchester.tornado.runtime.common.KernelCallWrapper.CallArgument arg = stack.getCallArguments().get(argIndex);
+        for (int i = 0, argIndex = 0; i < stack.getCallArguments().size(); i++) {
+            uk.ac.manchester.tornado.runtime.common.KernelCallWrapper.CallArgument arg = stack.getCallArguments().get(i);
+            if (arg.getValue() instanceof KernelCallWrapper.KernelContextDummyArgument) {
+                continue;
+            }
             if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
                 buffer.clear();
                 PrimitiveSerialiser.put(buffer, arg.getValue());
@@ -202,6 +206,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             } else {
                 shouldNotReachHere();
             }
+            argIndex++;
         }
     }
 

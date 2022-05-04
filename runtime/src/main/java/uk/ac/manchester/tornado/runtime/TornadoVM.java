@@ -541,6 +541,7 @@ public class TornadoVM extends TornadoLogger {
                 stack.addCallArgument(constants.get(argIndex), false);
             } else if (argType == TornadoVMBytecodes.REFERENCE_ARGUMENT.value()) {
                 if (isObjectKernelContext(objects.get(argIndex))) {
+                    stack.addCallArgument(new KernelCallWrapper.KernelContextDummyArgument(), false);
                     continue;
                 }
 

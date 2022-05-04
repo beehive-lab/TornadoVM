@@ -77,24 +77,26 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         LevelZeroKernel levelZeroKernel = module.getKernel();
         ZeKernelHandle kernel = levelZeroKernel.getKernelHandle();
 
-        int index = 0;
-        // // device's kernel context
-        // int result =
-        // levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(),
-        // index, Sizeof.LONG.getNumBytes(), stack.toBuffer());
-        // LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
-        // index++;
+
+        // device's kernel context
+        int result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 0, Sizeof.LONG.getNumBytes(), stack.toBuffer());
+        LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
 
         for (int argIndex = 0; argIndex < stack.getCallArguments().size(); argIndex++) {
-            uk.ac.manchester.tornado.runtime.common.KernelCallWrapper.CallArgument arg = stack.getCallArguments().get(argIndex);
+            int kernelParamIndex = argIndex + 1;
+            KernelCallWrapper.CallArgument arg = stack.getCallArguments().get(argIndex);
+            if (arg.getValue() instanceof KernelCallWrapper.KernelContextDummyArgument) {
+                result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), kernelParamIndex, Sizeof.LONG.getNumBytes(), stack.toBuffer());
+                LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
+                continue;
+            }
+
             if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
                 if (!arg.isReferenceType()) {
-                    index++;
                     continue;
                 }
-                int result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), index, Sizeof.LONG.getNumBytes(), ((Number) arg.getValue()).longValue());
+                result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), kernelParamIndex, Sizeof.LONG.getNumBytes(), ((Number) arg.getValue()).longValue());
                 LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
-                index++;
             } else {
                 shouldNotReachHere();
             }
