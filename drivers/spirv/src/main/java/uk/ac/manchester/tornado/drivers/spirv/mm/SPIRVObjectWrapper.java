@@ -46,18 +46,13 @@ import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
 // FIXME <REFACTOR> This class can be common for the three backends. 
 public class SPIRVObjectWrapper implements ObjectBuffer {
 
     private static final int SPIRV_OBJECT_ALIGNMENT = 64;
-
-    private final Class<?> type;
-    final SPIRVDeviceContext deviceContext;
-
-    private final int hubOffset;
-    private final int fieldsOffset;
 
     private long bufferId;
     private long bufferOffset;
@@ -66,16 +61,22 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
     private final HotSpotResolvedJavaField[] fields;
     private final FieldBuffer[] wrappedFields;
 
+    private final Class<?> objectType;
+
+    private final int hubOffset;
+    private final int fieldsOffset;
+
+    private final SPIRVDeviceContext deviceContext;
+
     private static final int BYTES_OBJECT_REFERENCE = 8;
 
     public SPIRVObjectWrapper(final SPIRVDeviceContext deviceContext, Object object) {
-        this.type = object.getClass();
+        this.objectType = object.getClass();
         this.deviceContext = deviceContext;
 
         hubOffset = getVMConfig().hubOffset;
         fieldsOffset = getVMConfig().instanceKlassFieldsOffset;
-
-        resolvedType = (HotSpotResolvedJavaType) getVMRuntime().getHostJVMCIBackend().getMetaAccess().lookupJavaType(type);
+        resolvedType = (HotSpotResolvedJavaType) getVMRuntime().getHostJVMCIBackend().getMetaAccess().lookupJavaType(objectType);
 
         fields = (HotSpotResolvedJavaField[]) resolvedType.getInstanceFields(false);
         sortFieldsByOffset();
@@ -84,7 +85,7 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
 
         for (int index = 0; index < fields.length; index++) {
             HotSpotResolvedJavaField field = fields[index];
-            final Field reflectedField = getField(type, field.getName());
+            final Field reflectedField = getField(objectType, field.getName());
             final Class<?> type = reflectedField.getType();
 
             if (DEBUG) {
@@ -118,30 +119,38 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
             }
 
             if (wrappedField != null) {
-                wrappedFields[index] = new uk.ac.manchester.tornado.drivers.spirv.mm.FieldBuffer(reflectedField, wrappedField);
+                wrappedFields[index] = new FieldBuffer(reflectedField, wrappedField);
             }
         }
 
         if (buffer == null) {
             buffer = ByteBuffer.allocate((int) getObjectSize());
-            buffer.order(deviceContext.getDevice().getByteOrder());
+            buffer.order(this.deviceContext.getDevice().getByteOrder());
         }
     }
 
-    // FIXME <REFACTOR> Common method 3 backends
-    private void sortFieldsByOffset() {
-        for (int i = 0; i < fields.length; i++) {
-            for (int j = 0; j < fields.length; j++) {
-                if (fields[i].getOffset() < fields[j].getOffset()) {
-                    final HotSpotResolvedJavaField tmp = fields[j];
-                    fields[j] = fields[i];
-                    fields[i] = tmp;
-                }
-            }
+    @Override
+    public void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
+        if (DEBUG) {
+            debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
+        }
+
+        this.bufferId = deviceContext.getBufferProvider().getBuffer(size());
+        this.bufferOffset = 0;
+        setBuffer(new ObjectBufferWrapper(bufferId, bufferOffset));
+
+
+        if (DEBUG) {
+            debug("object: object=0x%x @ bufferId 0x%x", reference.hashCode(), bufferId);
         }
     }
 
-    // FIXME <REFACTOR> Common method 3 backends
+    @Override
+    public void deallocate() throws TornadoMemoryException {
+        deviceContext.getBufferProvider().markBufferReleased(this.bufferId, size());
+        bufferId = -1;
+    }
+
     private Field getField(Class<?> type, String name) {
         Field result = null;
         try {
@@ -157,36 +166,19 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
         return result;
     }
 
-    @Override
-    public long toBuffer() {
-        return bufferId;
-    }
-
-    @Override
-    public void setBuffer(ObjectBufferWrapper bufferWrapper) {
-        this.bufferId = bufferWrapper.buffer;
-        this.bufferOffset = bufferWrapper.bufferOffset;
-
-        bufferWrapper.bufferOffset += getObjectSize();
-
-        for (int i = 0; i < fields.length; i++) {
-            uk.ac.manchester.tornado.drivers.spirv.mm.FieldBuffer fieldBuffer = wrappedFields[i];
-            if (fieldBuffer == null) {
-                continue;
+    private void writeFieldToBuffer(int index, Field field, Object obj) {
+        Class<?> fieldType = field.getType();
+        if (fieldType.isPrimitive()) {
+            try {
+                PrimitiveSerialiser.put(buffer, field.get(obj));
+            } catch (IllegalArgumentException | IllegalAccessException e) {
+                shouldNotReachHere("unable to write primitive to buffer: ", e.getMessage());
             }
-
-            fieldBuffer.setBuffer(bufferWrapper);
+        } else if (wrappedFields[index] != null) {
+            buffer.putLong(wrappedFields[index].getBufferOffset());
+        } else {
+            unimplemented("field type %s", fieldType.getName());
         }
-    }
-
-    @Override
-    public long getBufferOffset() {
-        return bufferOffset;
-    }
-
-    @Override
-    public void read(Object reference) {
-        read(reference, 0, null, false);
     }
 
     private void readFieldFromBuffer(int index, Field field, Object obj) {
@@ -216,6 +208,40 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
         }
     }
 
+    private void sortFieldsByOffset() {
+        // TODO Replace bubble sort with Arrays.sort + comparator
+        for (int i = 0; i < fields.length; i++) {
+            for (int j = 0; j < fields.length; j++) {
+                if (fields[i].getOffset() < fields[j].getOffset()) {
+                    final HotSpotResolvedJavaField tmp = fields[j];
+                    fields[j] = fields[i];
+                    fields[i] = tmp;
+                }
+            }
+        }
+
+    }
+
+    private void serialise(Object object) {
+        buffer.rewind();
+        buffer.position(hubOffset);
+        buffer.putLong(0);
+
+        if (fields.length > 0) {
+            buffer.position(fields[0].getOffset());
+            for (int i = 0; i < fields.length; i++) {
+                HotSpotResolvedJavaField field = fields[i];
+                Field f = getField(objectType, field.getName());
+                if (DEBUG) {
+                    trace("writing field: name=%s, offset=%d", field.getName(), field.getOffset());
+                }
+
+                buffer.position(field.getOffset());
+                writeFieldToBuffer(i, f, object);
+            }
+        }
+    }
+
     private void deserialise(Object object) {
         buffer.rewind();
 
@@ -224,7 +250,7 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
 
             for (int i = 0; i < fields.length; i++) {
                 HotSpotResolvedJavaField field = fields[i];
-                Field f = getField(type, field.getName());
+                Field f = getField(objectType, field.getName());
                 f.setAccessible(true);
                 if (DEBUG) {
                     trace("reading field: name=%s, offset=%d", field.getName(), field.getOffset());
@@ -232,6 +258,51 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
                 readFieldFromBuffer(i, f, object);
             }
         }
+    }
+
+    @Override
+    public void write(Object object) {
+        serialise(object);
+        // XXX: Offset 0
+        deviceContext.writeBuffer(toBuffer(), bufferOffset, getObjectSize(), buffer.array(), 0, null);
+        for (int i = 0; i < fields.length; i++) {
+            if (wrappedFields[i] != null) {
+                wrappedFields[i].write(object);
+            }
+        }
+    }
+
+    @Override
+    public long toBuffer() {
+        return bufferId;
+    }
+
+    @Override
+    public void setBuffer(ObjectBufferWrapper bufferWrapper) {
+        this.bufferId = bufferWrapper.buffer;
+        this.bufferOffset = bufferWrapper.bufferOffset;
+
+        bufferWrapper.bufferOffset += getObjectSize();
+
+        for (int i = 0; i < fields.length; i++) {
+            FieldBuffer fieldBuffer = wrappedFields[i];
+            if (fieldBuffer == null) {
+                continue;
+            }
+
+            fieldBuffer.setBuffer(bufferWrapper);
+        }
+    }
+
+    @Override
+    public long getBufferOffset() {
+        return bufferOffset;
+    }
+
+    @Override
+    public void read(Object object) {
+        // XXX: offset 0
+        read(object, 0, null, false);
     }
 
     @Override
@@ -247,50 +318,34 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
         return event;
     }
 
-    private void writeFieldToBuffer(int index, Field field, Object obj) {
-        Class<?> fieldType = field.getType();
-        if (fieldType.isPrimitive()) {
-            try {
-                PrimitiveSerialiser.put(buffer, field.get(obj));
-            } catch (IllegalArgumentException | IllegalAccessException e) {
-                shouldNotReachHere("unable to write primitive to buffer: ", e.getMessage());
-            }
-        } else if (wrappedFields[index] != null) {
-            buffer.putLong(wrappedFields[index].getBufferOffset());
-        } else {
-            unimplemented("field type %s", fieldType.getName());
-        }
-    }
-
-    private void serialise(Object object) {
+    public void clear() {
         buffer.rewind();
-        buffer.position(hubOffset);
-        buffer.putLong(0);
-
-        if (fields.length > 0) {
-            buffer.position(fields[0].getOffset());
-            for (int i = 0; i < fields.length; i++) {
-                HotSpotResolvedJavaField field = fields[i];
-                Field f = getField(type, field.getName());
-                if (DEBUG) {
-                    trace("writing field: name=%s, offset=%d", field.getName(), field.getOffset());
-                }
-
-                buffer.position(field.getOffset());
-                writeFieldToBuffer(i, f, object);
-            }
+        while (buffer.hasRemaining()) {
+            buffer.put((byte) 0);
         }
+        buffer.rewind();
     }
 
-    @Override
-    public void write(Object object) {
-        serialise(object);
-        // XXX: Offset 0
-        deviceContext.writeBuffer(toBuffer(), bufferOffset, getObjectSize(), buffer.array(), 0, null);
-        for (int i = 0; i < fields.length; i++) {
-            if (wrappedFields[i] != null) {
-                wrappedFields[i].write(object);
+    public void dump() {
+        dump(8);
+    }
+
+    protected void dump(int width) {
+        System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities.humanReadableByteCount(getObjectSize(), true),
+                RuntimeUtilities.humanReadableByteCount(buffer.position(), true), deviceContext.getDevice().getDeviceName());
+        for (int i = 0; i < buffer.position(); i += width) {
+            System.out.printf("[0x%04x]: ", i);
+            for (int j = 0; j < Math.min(buffer.capacity() - i, width); j++) {
+                if (j % 2 == 0) {
+                    System.out.printf(" ");
+                }
+                if (j < buffer.position() - i) {
+                    System.out.printf("%02x", buffer.get(i + j));
+                } else {
+                    System.out.printf("..");
+                }
             }
+            System.out.println();
         }
     }
 
@@ -338,25 +393,8 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
     }
 
     @Override
-    public void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
-        if (DEBUG) {
-            debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
-        }
-
-        this.bufferId = deviceContext.getBufferProvider().getBuffer(size());
-        this.bufferOffset = 0;
-        setBuffer(new ObjectBufferWrapper(bufferId, bufferOffset));
-
-
-        if (DEBUG) {
-            debug("object: object=0x%x @ bufferId 0x%x", reference.hashCode(), bufferId);
-        }
-    }
-
-    @Override
-    public void deallocate() throws TornadoMemoryException {
-        deviceContext.getBufferProvider().markBufferReleased(this.bufferId, size());
-        bufferId = -1;
+    public String toString() {
+        return String.format("object wrapper: type=%s, fields=%d\n", resolvedType.getName(), wrappedFields.length);
     }
 
     private long getObjectSize() {

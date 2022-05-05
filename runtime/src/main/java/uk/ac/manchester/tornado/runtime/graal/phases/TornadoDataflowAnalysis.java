@@ -215,6 +215,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 isWrittenTrueCondition = meta.isWrittenTrueCondition();
                 isWrittenFalseCondition = meta.isWrittenFalseCondition();
                 isWritten = true;
+                isRead = true;
             } else if (currentNode instanceof MarkVectorStore) {
                 isWritten = true;
             } else if (isNodeFromKnownObject(currentNode)) {
