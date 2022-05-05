@@ -115,8 +115,8 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public KernelCallWrapper createStack(int numArgs) {
-        return getDeviceContext().getMemoryManager().createCallStack(numArgs);
+    public KernelCallWrapper createCallWrapper(int numArgs) {
+        return getDeviceContext().getMemoryManager().createCallWrapper(numArgs);
     }
 
     @Override

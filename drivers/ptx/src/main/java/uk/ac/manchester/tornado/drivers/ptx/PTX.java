@@ -111,21 +111,21 @@ public class PTX {
             states.add(deviceState);
         }
 
-        // Create stack
+        // Create call wrapper
         final int numArgs = parameters.length;
-        KernelCallWrapper stack = tornadoDevice.createStack(numArgs);
-        stack.reset();
+        KernelCallWrapper callWrapper = tornadoDevice.createCallWrapper(numArgs);
+        callWrapper.reset();
 
-        // Fill header of call stack with empty values
-        stack.setKernelContext(new HashMap<>());
+        // Fill header of call callWrapper with empty values
+        callWrapper.setKernelContext(new HashMap<>());
 
-        // Pass arguments to the call stack
+        // Pass arguments to the call callWrapper
         for (int i = 0; i < numArgs; i++) {
-            stack.addCallArgument(states.get(i).getBuffer().toBuffer(), true);
+            callWrapper.addCallArgument(states.get(i).getBuffer().toBuffer(), true);
         }
 
         // Run the code
-        openCLCode.launchWithoutDependencies(stack, null, taskMeta, 0);
+        openCLCode.launchWithoutDependencies(callWrapper, null, taskMeta, 0);
 
         // Obtain the result
         for (int i = 0; i < accesses.length; i++) {

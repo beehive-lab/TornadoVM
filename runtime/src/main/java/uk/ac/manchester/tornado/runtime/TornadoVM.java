@@ -93,7 +93,7 @@ public class TornadoVM extends TornadoLogger {
     private final List<Object> objects;
 
     private final GlobalObjectState[] globalStates;
-    private final KernelCallWrapper[] stacks;
+    private final KernelCallWrapper[] callWrappers;
     private final int[][] events;
     private final int[] eventsIndexes;
     private final List<TornadoAcceleratorDevice> contexts;
@@ -135,7 +135,7 @@ public class TornadoVM extends TornadoLogger {
         }
         buffer.getInt();
         int taskCount = buffer.getInt();
-        stacks = graphContext.getFrames().clone();
+        callWrappers = graphContext.getCallWrappers().clone();
         events = new int[buffer.getInt()][MAX_EVENTS];
         eventsIndexes = new int[events.length];
 
@@ -147,7 +147,7 @@ public class TornadoVM extends TornadoLogger {
         }
 
         debug("found %d contexts", contexts.size());
-        debug("created %d stacks", stacks.length);
+        debug("created %d callWrappers", callWrappers.length);
         debug("created %d event lists", events.length);
 
         objects = graphContext.getObjects();
@@ -198,14 +198,14 @@ public class TornadoVM extends TornadoLogger {
         return globalStates[index].getDeviceState(contexts.get(device));
     }
 
-    private KernelCallWrapper resolveStack(int index, int numArgs, KernelCallWrapper[] stacks, TornadoAcceleratorDevice device, boolean setNewDevice) {
+    private KernelCallWrapper resolveCallWrapper(int index, int numArgs, KernelCallWrapper[] callWrappers, TornadoAcceleratorDevice device, boolean setNewDevice) {
         if (graphContext.meta().isDebug() && setNewDevice) {
             debug("Recompiling task on device " + device);
         }
-        if (stacks[index] == null || setNewDevice) {
-            stacks[index] = device.createStack(numArgs);
+        if (callWrappers[index] == null || setNewDevice) {
+            callWrappers[index] = device.createCallWrapper(numArgs);
         }
-        return stacks[index];
+        return callWrappers[index];
     }
 
     public void warmup() {
@@ -433,7 +433,7 @@ public class TornadoVM extends TornadoLogger {
         }
     }
 
-    private ExecutionInfo compileTaskFromBytecodeToBinary(final int contextIndex, final int stackIndex, final int numArgs, final int eventList, final int taskIndex, final long batchThreads) {
+    private ExecutionInfo compileTaskFromBytecodeToBinary(final int contextIndex, final int callWrapperIndex, final int numArgs, final int eventList, final int taskIndex, final long batchThreads) {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
 
         if (device.getDeviceContext().wasReset() && finishedWarmup) {
@@ -442,7 +442,7 @@ public class TornadoVM extends TornadoLogger {
 
         boolean redeployOnDevice = graphContext.redeployOnDevice();
 
-        final KernelCallWrapper stack = resolveStack(stackIndex, numArgs, stacks, device, redeployOnDevice);
+        final KernelCallWrapper callWrapper = resolveCallWrapper(callWrapperIndex, numArgs, callWrappers, device, redeployOnDevice);
 
         final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
         final SchedulableTask task = tasks.get(taskIndex);
@@ -483,7 +483,7 @@ public class TornadoVM extends TornadoLogger {
                 throw e;
             }
         }
-        return new ExecutionInfo(stack, waitList);
+        return new ExecutionInfo(callWrapper, waitList);
     }
 
     private boolean shouldCompile(TornadoInstalledCode installedCode) {
@@ -499,7 +499,7 @@ public class TornadoVM extends TornadoLogger {
 
         final SchedulableTask task = tasks.get(taskIndex);
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
-        KernelCallWrapper stack = info.stack;
+        KernelCallWrapper callWrapper = info.callWrapper;
         int[] waitList = info.waitList;
 
         if (installedCodes[taskIndex] == null) {
@@ -532,8 +532,8 @@ public class TornadoVM extends TornadoLogger {
                 map.put(i++, (int) maxThread);
             }
         }
-        stack.reset();
-        stack.setKernelContext(map);
+        callWrapper.reset();
+        callWrapper.setKernelContext(map);
 
         ObjectBuffer bufferAtomics = null;
 
@@ -542,10 +542,10 @@ public class TornadoVM extends TornadoLogger {
             final int argIndex = buffer.getInt();
 
             if (argType == TornadoVMBytecodes.CONSTANT_ARGUMENT.value()) {
-                stack.addCallArgument(constants.get(argIndex), false);
+                callWrapper.addCallArgument(constants.get(argIndex), false);
             } else if (argType == TornadoVMBytecodes.REFERENCE_ARGUMENT.value()) {
                 if (isObjectKernelContext(objects.get(argIndex))) {
-                    stack.addCallArgument(new KernelCallWrapper.KernelContextDummyArgument(), false);
+                    callWrapper.addCallArgument(new KernelCallWrapper.KernelContextDummyArgument(), false);
                     continue;
                 }
 
@@ -553,7 +553,7 @@ public class TornadoVM extends TornadoLogger {
                 final DeviceObjectState objectState = globalState.getDeviceState(contexts.get(contextIndex));
 
                 if (!isObjectInAtomicRegion(objectState, device, task)) {
-                    stack.addCallArgument(objectState.getBuffer().toBuffer(), true);
+                    callWrapper.addCallArgument(objectState.getBuffer().toBuffer(), true);
                 } else {
                     atomicsArray = device.updateAtomicRegionAndObjectState(task, atomicsArray, i, objects.get(argIndex), objectState);
                 }
@@ -599,9 +599,9 @@ public class TornadoVM extends TornadoLogger {
         int lastEvent;
         try {
             if (useDependencies) {
-                lastEvent = installedCode.launchWithDependencies(stack, bufferAtomics, metadata, batchThreads, waitList);
+                lastEvent = installedCode.launchWithDependencies(callWrapper, bufferAtomics, metadata, batchThreads, waitList);
             } else {
-                lastEvent = installedCode.launchWithoutDependencies(stack, bufferAtomics, metadata, batchThreads);
+                lastEvent = installedCode.launchWithoutDependencies(callWrapper, bufferAtomics, metadata, batchThreads);
             }
 
             resetEventIndexes(eventList);
@@ -729,16 +729,16 @@ public class TornadoVM extends TornadoLogger {
                 executeStreamOutBlocking(tornadoVMBytecodeList, objectIndex, contextIndex, offset, eventList, sizeBatch, waitList);
 
             } else if (op == TornadoVMBytecodes.LAUNCH.value()) {
-                final int stackIndex = buffer.getInt();
+                final int callWrapperIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();
                 final int taskIndex = buffer.getInt();
                 final int numArgs = buffer.getInt();
                 final int eventList = buffer.getInt();
                 final long offset = buffer.getLong();
                 final long batchThreads = buffer.getLong();
-                ExecutionInfo info = compileTaskFromBytecodeToBinary(contextIndex, stackIndex, numArgs, eventList, taskIndex, batchThreads);
+                ExecutionInfo info = compileTaskFromBytecodeToBinary(contextIndex, callWrapperIndex, numArgs, eventList, taskIndex, batchThreads);
                 if (isWarmup) {
-                    popArgumentsFromStack(numArgs);
+                    popArgumentsFromCall(numArgs);
                     continue;
                 }
                 lastEvent = executeLaunch(tornadoVMBytecodeList, contextIndex, numArgs, eventList, taskIndex, batchThreads, offset, info);
@@ -810,7 +810,7 @@ public class TornadoVM extends TornadoLogger {
         }
     }
 
-    private void popArgumentsFromStack(int numArgs) {
+    private void popArgumentsFromCall(int numArgs) {
         for (int i = 0; i < numArgs; i++) {
             buffer.get();
             buffer.getInt();
@@ -870,11 +870,11 @@ public class TornadoVM extends TornadoLogger {
     }
 
     private static class ExecutionInfo {
-        KernelCallWrapper stack;
+        KernelCallWrapper callWrapper;
         int[] waitList;
 
-        public ExecutionInfo(KernelCallWrapper stack, int[] waitList) {
-            this.stack = stack;
+        public ExecutionInfo(KernelCallWrapper callWrapper, int[] waitList) {
+            this.callWrapper = callWrapper;
             this.waitList = waitList;
         }
     }

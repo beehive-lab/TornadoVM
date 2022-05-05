@@ -44,7 +44,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.IntStream;
 
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
@@ -628,7 +627,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             asm.registerLIRInstructionValue(name, idPtr);
             asm.addFunctionParameterId(idPtr);
             if (i == 0) {
-                asm.setStackFrameId(idPtr);
+                asm.setKernelContextId(idPtr);
             }
         }
         
@@ -989,7 +988,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         }
 
         blockScope.add(new SPIRVOpVariable(pointerToFrameAccess, frameId, SPIRVStorageClass.Function(), new SPIRVOptionalOperand<>()));
-        asm.setStackFrameId(frameId);
+        asm.setKernelContextId(frameId);
 
         // --------------------------------------
         // Emit Lookup buffer access

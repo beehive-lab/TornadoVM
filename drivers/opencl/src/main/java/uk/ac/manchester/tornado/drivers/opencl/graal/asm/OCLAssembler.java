@@ -667,7 +667,7 @@ public final class OCLAssembler extends Assembler {
         public static final OCLUnaryIntrinsic GLOBAL_ID = new OCLUnaryIntrinsic("get_global_id");
         public static final OCLUnaryIntrinsic GLOBAL_SIZE = new OCLUnaryIntrinsic("get_global_size");
 
-        public static final OCLUnaryIntrinsic OCL_STACK_ACCESS = new OCLUnaryIntrinsic("_kernel_context");
+        public static final OCLUnaryIntrinsic OCL_KERNEL_CONTEXT_ACCESS = new OCLUnaryIntrinsic("_kernel_context");
 
         public static final OCLUnaryIntrinsic LOCAL_ID = new OCLUnaryIntrinsic("get_local_id");
         public static final OCLUnaryIntrinsic LOCAL_SIZE = new OCLUnaryIntrinsic("get_local_size");

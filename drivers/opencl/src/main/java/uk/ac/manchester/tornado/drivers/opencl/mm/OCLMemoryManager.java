@@ -23,7 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
@@ -32,15 +31,12 @@ import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 import static uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelCallWrapper.RESERVED_SLOTS;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.OCL_CALL_STACK_LIMIT;
 
 public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProvider {
 
     private final OCLDeviceContext deviceContext;
     private long constantPointer;
     private long atomicsRegion = -1;
-
-    private static final int STACK_ALIGNMENT_SIZE = 128;
 
     private static final int MAX_NUMBER_OF_ATOMICS_PER_KERNEL = 128;
     private static final int INTEGER_BYTES_SIZE = 4;
@@ -61,7 +57,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         return (address % alignment == 0) ? address : address + (alignment - address % alignment);
     }
 
-    public OCLKernelCallWrapper createCallStack(final int maxArgs) {
+    public OCLKernelCallWrapper createCallWrapper(final int maxArgs) {
         if (this.oclKernelCallWrapper == null) {
             long kernelCallBuffer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE, RESERVED_SLOTS * Long.BYTES).getBuffer();
             this.oclKernelCallWrapper = new OCLKernelCallWrapper(kernelCallBuffer, maxArgs, deviceContext);;

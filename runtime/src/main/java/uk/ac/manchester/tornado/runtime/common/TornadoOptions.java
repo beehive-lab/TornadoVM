@@ -85,18 +85,6 @@ public class TornadoOptions {
      */
     public static final boolean DUMP_EVENTS = Boolean.parseBoolean(getProperty("tornado.events.dump", FALSE));
     /**
-     * Sets the call stack limit in bytes for the OpenCL backend. Default is 8192.
-     */
-    public static final int OCL_CALL_STACK_LIMIT = Integer.parseInt(getProperty("tornado.opencl.callstack.limit", "8192"));
-    /**
-     * Sets the call stack limit in bytes for the PTX backend. Default is 8192.
-     */
-    public static final int PTX_CALL_STACK_LIMIT = Integer.parseInt(getProperty("tornado.ptx.callstack.limit", "8192"));
-    /**
-     * Sets the call stack limit in bytes for the SPIRV backend. Default is 8192.
-     */
-    public static final int SPIRV_CALL_STACK_LIMIT = Integer.parseInt(getProperty("tornado.spirv.callstack.limit", "8192"));
-    /**
      * Prints the generated code by the TornadoVM compiler. Default is False.
      */
     public static final boolean PRINT_SOURCE = Boolean.parseBoolean(getProperty("tornado.print.kernel", FALSE));

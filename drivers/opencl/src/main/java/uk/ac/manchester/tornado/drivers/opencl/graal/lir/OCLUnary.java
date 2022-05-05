@@ -192,9 +192,9 @@ public class OCLUnary {
         }
     }
 
-    public static class LoadOCLStack extends UnaryConsumer {
+    public static class LoadOCLKernelContext extends UnaryConsumer {
 
-        public LoadOCLStack(OCLUnaryOp opcode, LIRKind lirKind, Value value) {
+        public LoadOCLKernelContext(OCLUnaryOp opcode, LIRKind lirKind, Value value) {
             super(opcode, lirKind, value);
         }
 

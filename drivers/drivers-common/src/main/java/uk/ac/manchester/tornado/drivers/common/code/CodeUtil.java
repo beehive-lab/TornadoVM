@@ -40,7 +40,7 @@ public class CodeUtil {
     /**
      * Create a calling convention from a {@link ResolvedJavaMethod}.
      */
-    public static CallingConvention getCallingConvention(CodeCacheProvider codeCache, CallingConvention.Type type, ResolvedJavaMethod method, boolean stackOnly) {
+    public static CallingConvention getCallingConvention(CodeCacheProvider codeCache, CallingConvention.Type type, ResolvedJavaMethod method) {
         Signature sig = method.getSignature();
         JavaType retType = sig.getReturnType(method.getDeclaringClass());
         int sigCount = sig.getParameterCount(false);
@@ -55,10 +55,10 @@ public class CodeUtil {
         for (int i = 0; i < sigCount; i++) {
             argTypes[argIndex++] = sig.getParameterType(i, null);
         }
-        return getCallingConvention(type, retType, argTypes, codeCache.getTarget(), stackOnly);
+        return getCallingConvention(type, retType, argTypes, codeCache.getTarget());
     }
 
-    private static CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] argTypes, TargetDescription target, boolean stackOnly) {
+    private static CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] argTypes, TargetDescription target) {
         int variableIndex = 0;
 
         Variable[] inputParameters = new Variable[argTypes.length];

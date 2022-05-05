@@ -1,8 +1,6 @@
 /*
  * Copyright (c) 2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
- * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -21,32 +19,38 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
+package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
+import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
+import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerator;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
+import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
 
-import jdk.vm.ci.meta.JavaKind;
-import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture.globalSpace;
 
 @NodeInfo
-public class OCLStackAccessNode extends FloatingNode implements LIRLowerable {
+public class PTXKernelContextAccessNode extends FloatingNode implements LIRLowerable {
 
     @Input
     private ConstantNode index;
 
-    public static final NodeClass<OCLStackAccessNode> TYPE = NodeClass.create(OCLStackAccessNode.class);
+    public static final NodeClass<PTXKernelContextAccessNode> TYPE = NodeClass.create(PTXKernelContextAccessNode.class);
 
-    public OCLStackAccessNode(ConstantNode index) {
+    public PTXKernelContextAccessNode(ConstantNode index) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));
         this.index = index;
     }
@@ -57,9 +61,13 @@ public class OCLStackAccessNode extends FloatingNode implements LIRLowerable {
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        LIRGeneratorTool tool = gen.getLIRGeneratorTool();
-        Variable result = tool.newVariable(tool.getLIRKind(stamp));
-        tool.append(new OCLLIRStmt.AssignStmt(result, new OCLUnary.LoadOCLStack(OCLAssembler.OCLUnaryIntrinsic.OCL_STACK_ACCESS, tool.getLIRKind(stamp), gen.operand(index))));
+        PTXLIRGenerator tool = (PTXLIRGenerator) gen.getLIRGeneratorTool();
+        LIRKind resultKind = tool.getLIRKind(stamp);
+        Variable result = tool.newVariable(resultKind);
+
+        ConstantValue indexValue = new ConstantValue(resultKind, JavaConstant.forInt(((ConstantValue) gen.operand(index)).getJavaConstant().asInt() * PTXKind.U64.getSizeInBytes()));
+
+        tool.append(new PTXLIRStmt.LoadStmt(new PTXUnary.MemoryAccess(globalSpace, tool.getParameterAllocation(PTXArchitecture.KERNEL_CONTEXT), indexValue), result, PTXAssembler.PTXNullaryOp.LDU));
         gen.setResult(this, result);
     }
 }

@@ -30,9 +30,9 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public interface TornadoInstalledCode {
 
-    int launchWithDependencies(KernelCallWrapper stack, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents);
+    int launchWithDependencies(KernelCallWrapper callWrapper, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents);
 
-    int launchWithoutDependencies(KernelCallWrapper stack, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads);
+    int launchWithoutDependencies(KernelCallWrapper callWrapper, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads);
 
     boolean isValid();
 

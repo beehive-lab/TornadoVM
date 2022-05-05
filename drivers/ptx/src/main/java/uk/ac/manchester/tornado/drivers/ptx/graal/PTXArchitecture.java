@@ -50,7 +50,7 @@ public class PTXArchitecture extends Architecture {
     public static final PTXMemoryBase localSpace = new PTXMemoryBase(PTXMemorySpace.LOCAL);
     private static final int NATIVE_CALL_DISPLACEMENT_OFFSET = 0;
     private static final int RETURN_ADDRESS_SIZE = 0;
-    public static PTXParam STACK_POINTER;
+    public static PTXParam KERNEL_CONTEXT;
     public static PTXParam[] abiRegisters;
 
     public static PTXBuiltInRegister ThreadIDX = new PTXBuiltInRegister("%tid.x");
@@ -72,9 +72,9 @@ public class PTXArchitecture extends Architecture {
     public PTXArchitecture(PTXKind wordKind, ByteOrder byteOrder) {
         super("Tornado PTX", wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, NATIVE_CALL_DISPLACEMENT_OFFSET, RETURN_ADDRESS_SIZE);
 
-        STACK_POINTER = new PTXParam(PTXAssemblerConstants.STACK_PTR_NAME, 8, wordKind);
+        KERNEL_CONTEXT = new PTXParam(PTXAssemblerConstants.KERNEL_CONTEXT_NAME, 8, wordKind);
 
-        abiRegisters = new PTXParam[] { STACK_POINTER };
+        abiRegisters = new PTXParam[] {KERNEL_CONTEXT};
     }
 
     @Override

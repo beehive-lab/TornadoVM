@@ -234,7 +234,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
 
     private void emitPrologue(PTXCompilationResultBuilder crb, PTXAssembler asm, PTXLIRGenerationResult lirGenRes, ResolvedJavaMethod method) {
         emitPrintfPrototype(crb);
-        final CallingConvention incomingArguments = CodeUtil.getCallingConvention(codeCache, HotSpotCallingConventionType.JavaCallee, method, false);
+        final CallingConvention incomingArguments = CodeUtil.getCallingConvention(codeCache, HotSpotCallingConventionType.JavaCallee, method);
         if (crb.isKernel()) {
             asm.emit("%s %s %s(%s", PTXAssemblerConstants.EXTERNALLY_VISIBLE, PTXAssemblerConstants.KERNEL_ENTRYPOINT, crb.compilationResult.getName(), architecture.getABI());
             emitMethodParameters(asm, method, incomingArguments, true);

@@ -138,18 +138,17 @@ public class TestPTXJITCompiler {
         // Copy-IN B
         tornadoDevice.ensurePresent(b, objectStateB, null, 0, 0);
 
-        // Create stack
-        KernelCallWrapper stack = tornadoDevice.createStack(3);
+        // Create call wrapper
+        KernelCallWrapper callWrapper = tornadoDevice.createCallWrapper(3);
 
-        // Fill header of call stack with empty values
-        stack.setKernelContext(new HashMap<>());
+        callWrapper.setKernelContext(new HashMap<>());
 
-        stack.addCallArgument(objectStateA.getBuffer().toBuffer(), true);
-        stack.addCallArgument(objectStateB.getBuffer().toBuffer(), true);
-        stack.addCallArgument(objectStateC.getBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateA.getBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateB.getBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateC.getBuffer().toBuffer(), true);
 
         // Run the code
-        ptxCode.launchWithoutDependencies(stack, null, taskMeta, 0);
+        ptxCode.launchWithoutDependencies(callWrapper, null, taskMeta, 0);
 
         // Obtain the result
         tornadoDevice.streamOutBlocking(c, 0, objectStateC, null);

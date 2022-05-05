@@ -1,7 +1,10 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2021, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009-2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,39 +22,35 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
+package uk.ac.manchester.tornado.drivers.spirv.graal.nodes;
 
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.PrimitiveConstant;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
-import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
-import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerator;
-import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
-import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt;
-import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXUnary;
 
-import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture.globalSpace;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVLIRGenerator;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
+import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVUnary;
 
 @NodeInfo
-public class PTXStackAccessNode extends FloatingNode implements LIRLowerable {
+public class SPIRVKernelContextAccessNode extends FloatingNode implements LIRLowerable {
 
     @Input
     private ConstantNode index;
 
-    public static final NodeClass<PTXStackAccessNode> TYPE = NodeClass.create(PTXStackAccessNode.class);
+    public static final NodeClass<SPIRVKernelContextAccessNode> TYPE = NodeClass.create(SPIRVKernelContextAccessNode.class);
 
-    public PTXStackAccessNode(ConstantNode index) {
+    public SPIRVKernelContextAccessNode(ConstantNode index) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));
         this.index = index;
     }
@@ -62,13 +61,18 @@ public class PTXStackAccessNode extends FloatingNode implements LIRLowerable {
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        PTXLIRGenerator tool = (PTXLIRGenerator) gen.getLIRGeneratorTool();
-        LIRKind resultKind = tool.getLIRKind(stamp);
-        Variable result = tool.newVariable(resultKind);
+        LIRGeneratorTool tool = gen.getLIRGeneratorTool();
+        Variable result = tool.newVariable(tool.getLIRKind(stamp));
 
-        ConstantValue indexValue = new ConstantValue(resultKind, JavaConstant.forInt(((ConstantValue) gen.operand(index)).getJavaConstant().asInt() * PTXKind.U64.getSizeInBytes()));
+        // We know we load an integer value
+        SPIRVKind spirvKind = SPIRVKind.OP_TYPE_INT_32;
+        LIRKind lirKind = LIRKind.value(spirvKind);
 
-        tool.append(new PTXLIRStmt.LoadStmt(new PTXUnary.MemoryAccess(globalSpace, tool.getParameterAllocation(PTXArchitecture.STACK_POINTER), indexValue), result, PTXAssembler.PTXNullaryOp.LDU));
+        Value value = gen.operand(index);
+        SPIRVLIRStmt.ASSIGNIndexedParameter assignStmt = new SPIRVLIRStmt.ASSIGNIndexedParameter(result, new SPIRVUnary.LoadIndexValueFromKernelContext(lirKind, spirvKind, value));
         gen.setResult(this, result);
+
+        SPIRVLIRGenerator spirvlirGenerator = (SPIRVLIRGenerator) gen.getLIRGeneratorTool();
+        spirvlirGenerator.append(assignStmt);
     }
 }

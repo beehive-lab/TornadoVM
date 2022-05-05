@@ -358,8 +358,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             vm.fetchGlobalStates();
         }
 
-        // 5. Set the update data flag to true in order to create a new call stack on
-        // the device.
+        // 5. Set the update data flag to true in order to create a new call wrapper
+        // on the device.
         updateData = true;
 
         // 6. Update task-parameters
@@ -586,7 +586,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
              *
              * @Parallel API and the Grid Task. The @Parallel task might need the loop bound
              * updated. TODO This check will no longer be needed once we pass the loop
-             * bounds via the call stack instead of constant folding.
+             * bounds via the call wrapper instead of constant folding.
              */
             for (TaskPackage taskPackage : taskPackages) {
                 if (!gridScheduler.contains(taskScheduleName, taskPackage.getId())) {
@@ -620,9 +620,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         vm.setGridScheduler(gridScheduler);
 
         if (updateData) {
-            executionContext.newStack(true);
+            executionContext.newCallWrapper(true);
         } else {
-            executionContext.newStack(compileInfo.updateDevice);
+            executionContext.newCallWrapper(compileInfo.updateDevice);
         }
         return compileInfo.compile;
     }

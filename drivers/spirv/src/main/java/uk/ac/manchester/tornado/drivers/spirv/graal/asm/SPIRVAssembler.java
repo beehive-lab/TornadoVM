@@ -135,7 +135,7 @@ public final class SPIRVAssembler extends Assembler {
     private Map<SPIRVKind, HashMap<SPIRVId, SPIRVId>> arrayDeclarationTable;
     private Map<SPIRVId, SPIRVId> functionPtrToArray;
     private Map<SPIRVId, SPIRVId> functionPtrToArrayLocal;
-    private SPIRVId frameId;
+    private SPIRVId kernelContextId;
     private SPIRVId ptrCrossWorkULong;
     private SPIRVId openclImport;
     private ByteBuffer spirvByteBuffer;
@@ -192,12 +192,12 @@ public final class SPIRVAssembler extends Assembler {
         return blockTable;
     }
 
-    public SPIRVId getStackFrameId() {
-        return this.frameId;
+    public SPIRVId getKernelContextId() {
+        return this.kernelContextId;
     }
 
-    public void setStackFrameId(SPIRVId frameId) {
-        this.frameId = frameId;
+    public void setKernelContextId(SPIRVId kernelContextId) {
+        this.kernelContextId = kernelContextId;
     }
 
     public void setReturnWithValue(boolean returnWithValue) {

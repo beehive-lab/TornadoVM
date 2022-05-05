@@ -43,7 +43,7 @@ public class PTXMemoryManager extends TornadoLogger implements TornadoMemoryProv
         return deviceContext.getDevice().getDeviceMaxAllocationSize();
     }
 
-    public PTXKernelCallWrapper createCallStack(final int maxArgs) {
+    public PTXKernelCallWrapper createCallWrapper(final int maxArgs) {
         if (this.ptxKernelCallWrapper == null) {
             long kernelCallBuffer = deviceContext.getDevice().getPTXContext().allocateMemory(RESERVED_SLOTS * Long.BYTES);
             this.ptxKernelCallWrapper = new PTXKernelCallWrapper(kernelCallBuffer, maxArgs, deviceContext);

@@ -162,7 +162,7 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public KernelCallWrapper createStack(int numArgs) {
+    public KernelCallWrapper createCallWrapper(int numArgs) {
         return null;
     }
 

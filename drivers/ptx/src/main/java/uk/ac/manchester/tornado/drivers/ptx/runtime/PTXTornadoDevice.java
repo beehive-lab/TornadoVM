@@ -25,9 +25,7 @@ package uk.ac.manchester.tornado.drivers.ptx.runtime;
 
 import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -61,7 +59,6 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompiler;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXByteArrayWrapper;
-import uk.ac.manchester.tornado.drivers.ptx.mm.PTXByteBuffer;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXCharArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXDoubleArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXFloatArrayWrapper;
@@ -107,8 +104,8 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public KernelCallWrapper createStack(int numArgs) {
-        return getDeviceContext().getMemoryManager().createCallStack(numArgs);
+    public KernelCallWrapper createCallWrapper(int numArgs) {
+        return getDeviceContext().getMemoryManager().createCallWrapper(numArgs);
     }
 
     @Override

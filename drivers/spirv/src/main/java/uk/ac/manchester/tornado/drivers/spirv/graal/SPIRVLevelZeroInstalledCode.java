@@ -65,13 +65,13 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
     }
 
     @Override
-    public int launchWithDependencies(KernelCallWrapper stack, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents) {
+    public int launchWithDependencies(KernelCallWrapper callWrapper, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents) {
         throw new RuntimeException("Unimplemented");
     }
 
-    private void setKernelArgs(final SPIRVKernelCallWrapper stack, final ObjectBuffer atomicSpace, TaskMetaData meta) {
+    private void setKernelArgs(final SPIRVKernelCallWrapper callWrapper, final ObjectBuffer atomicSpace, TaskMetaData meta) {
         // Enqueue write
-        stack.enqueueWrite(null);
+        callWrapper.enqueueWrite(null);
 
         SPIRVLevelZeroModule module = (SPIRVLevelZeroModule) spirvModule;
         LevelZeroKernel levelZeroKernel = module.getKernel();
@@ -79,14 +79,14 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
 
 
         // device's kernel context
-        int result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 0, Sizeof.LONG.getNumBytes(), stack.toBuffer());
+        int result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 0, Sizeof.LONG.getNumBytes(), callWrapper.toBuffer());
         LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
 
-        for (int argIndex = 0; argIndex < stack.getCallArguments().size(); argIndex++) {
+        for (int argIndex = 0; argIndex < callWrapper.getCallArguments().size(); argIndex++) {
             int kernelParamIndex = argIndex + 1;
-            KernelCallWrapper.CallArgument arg = stack.getCallArguments().get(argIndex);
+            KernelCallWrapper.CallArgument arg = callWrapper.getCallArguments().get(argIndex);
             if (arg.getValue() instanceof KernelCallWrapper.KernelContextDummyArgument) {
-                result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), kernelParamIndex, Sizeof.LONG.getNumBytes(), stack.toBuffer());
+                result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), kernelParamIndex, Sizeof.LONG.getNumBytes(), callWrapper.toBuffer());
                 LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
                 continue;
             }
@@ -207,12 +207,12 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
     }
 
     @Override
-    public int launchWithoutDependencies(KernelCallWrapper stack, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
+    public int launchWithoutDependencies(KernelCallWrapper callWrapper, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
         SPIRVLevelZeroModule module = (SPIRVLevelZeroModule) spirvModule;
         LevelZeroKernel levelZeroKernel = module.getKernel();
         ZeKernelHandle kernel = levelZeroKernel.getKernelHandle();
 
-        setKernelArgs((SPIRVKernelCallWrapper) stack, null, meta);
+        setKernelArgs((SPIRVKernelCallWrapper) callWrapper, null, meta);
 
         if (threadScheduling == null || dispatcher == null || meta.isWorkerGridAvailable()) {
             // if the worker grid is available, the user can update the number of threads to

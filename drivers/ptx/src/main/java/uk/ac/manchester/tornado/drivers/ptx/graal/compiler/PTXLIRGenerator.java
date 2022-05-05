@@ -448,9 +448,9 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     public void emitParameterAlloc() {
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitParameterAlloc");
-        Variable stackPointer = newVariable(LIRKind.value(PTXArchitecture.STACK_POINTER.getLirKind()));
-        parameterAllocations.put(PTXArchitecture.STACK_POINTER.getName(), stackPointer);
-        append(new PTXLIRStmt.LoadStmt(new PTXUnary.MemoryAccess(PTXAssemblerConstants.STACK_PTR_NAME), stackPointer, PTXNullaryOp.LD));
+        Variable kernelContextPointer = newVariable(LIRKind.value(PTXArchitecture.KERNEL_CONTEXT.getLirKind()));
+        parameterAllocations.put(PTXArchitecture.KERNEL_CONTEXT.getName(), kernelContextPointer);
+        append(new PTXLIRStmt.LoadStmt(new PTXUnary.MemoryAccess(PTXAssemblerConstants.KERNEL_CONTEXT_NAME), kernelContextPointer, PTXNullaryOp.LD));
     }
 
     public void emitConditionalBranch(LabelRef ref, Variable predicate, boolean isNegated, boolean isLoopEdgeBack) {

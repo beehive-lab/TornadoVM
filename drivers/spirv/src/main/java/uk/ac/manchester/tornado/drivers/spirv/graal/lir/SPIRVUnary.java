@@ -170,7 +170,7 @@ public class SPIRVUnary {
             if (type == SPIRVKind.OP_TYPE_INT_64) {
                 ptrCrossWorkGroupULong = asm.getPTrCrossWorkULong();
             }
-            SPIRVId address = asm.getStackFrameId();
+            SPIRVId address = asm.getKernelContextId();
             int alignment = 8;
             asm.currentBlockScope().add(new SPIRVOpLoad( //
                     ptrCrossWorkGroupULong, //
@@ -210,7 +210,7 @@ public class SPIRVUnary {
 
         protected SPIRVKind type;
         protected SPIRVId address;
-        protected int indexFromStackFrame;
+        protected int indexFromKernelContext;
         protected int parameterIndex;
 
         /**
@@ -226,10 +226,10 @@ public class SPIRVUnary {
          *          OpStore %ul_0 %47 Aligned 8
          * </code>
          */
-        public AssignLoadFromInputFrame(LIRKind lirKind, SPIRVKind type, int indexFromStackFrame, int parameterIndex) {
+        public AssignLoadFromInputFrame(LIRKind lirKind, SPIRVKind type, int indexFromKernelContext, int parameterIndex) {
             super(null, null, lirKind, null);
             this.type = type;
-            this.indexFromStackFrame = indexFromStackFrame;
+            this.indexFromKernelContext = indexFromKernelContext;
             this.parameterIndex = parameterIndex;
         }
 
@@ -262,13 +262,13 @@ public class SPIRVUnary {
         }
     }
 
-    public static class LoadIndexValueFromStack extends Expr {
+    public static class LoadIndexValueFromKernelContext extends Expr {
 
         protected SPIRVKind type;
         protected SPIRVId address;
         protected Value parameterIndex;
 
-        public LoadIndexValueFromStack(LIRKind lirKind, SPIRVKind type, Value parameterIndex) {
+        public LoadIndexValueFromKernelContext(LIRKind lirKind, SPIRVKind type, Value parameterIndex) {
             super(null, null, lirKind, null);
             this.type = type;
             this.parameterIndex = parameterIndex;
@@ -281,7 +281,7 @@ public class SPIRVUnary {
 
             SPIRVId ptrCrossWorkGroupULong = asm.getPTrCrossWorkULong();
 
-            SPIRVId address = asm.getStackFrameId();
+            SPIRVId address = asm.getKernelContextId();
             final int alignment = 8;
             asm.currentBlockScope().add(new SPIRVOpLoad( //
                     ptrCrossWorkGroupULong, //

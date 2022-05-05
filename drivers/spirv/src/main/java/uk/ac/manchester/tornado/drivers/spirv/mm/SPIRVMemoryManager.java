@@ -31,8 +31,6 @@ import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 // FIXME <REFACTOR> This class can be almost common for all three backends
 public class SPIRVMemoryManager implements TornadoMemoryProvider {
 
-    private static final int STACK_ALIGNMENT_SIZE = 128;
-
     private SPIRVDeviceContext deviceContext;
 
     public SPIRVMemoryManager(SPIRVDeviceContext deviceContext) {
@@ -44,7 +42,7 @@ public class SPIRVMemoryManager implements TornadoMemoryProvider {
         return deviceContext.getDevice().getDeviceMaxAllocationSize() * 4;
     }
 
-    public SPIRVKernelCallWrapper createCallStack(final int maxArgs) {
+    public SPIRVKernelCallWrapper createCallWrapper(final int maxArgs) {
         long kernelCallBuffer = deviceContext.getSpirvContext().allocateMemory(deviceContext.getDevice().getDeviceIndex(), RESERVED_SLOTS * Long.BYTES);
         return new SPIRVKernelCallWrapper(kernelCallBuffer, maxArgs, deviceContext);
     }

@@ -328,7 +328,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     private void emitPrologue(OCLCompilationResultBuilder crb, OCLAssembler asm, ResolvedJavaMethod method, LIR lir) {
 
         String methodName = crb.compilationResult.getName();
-        final CallingConvention incomingArguments = CodeUtil.getCallingConvention(codeCache, HotSpotCallingConventionType.JavaCallee, method, false);
+        final CallingConvention incomingArguments = CodeUtil.getCallingConvention(codeCache, HotSpotCallingConventionType.JavaCallee, method);
 
         if (crb.isKernel()) {
             /*

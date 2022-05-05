@@ -63,7 +63,7 @@ public class TornadoExecutionContext {
     private final List<Object> objects;
     private final List<LocalObjectState> objectState;
     private final List<TornadoAcceleratorDevice> devices;
-    private final KernelCallWrapper[] stacks;
+    private final KernelCallWrapper[] callWrappers;
     private final int[] taskToDevice;
     private int nextTask;
 
@@ -83,7 +83,7 @@ public class TornadoExecutionContext {
         objects = new ArrayList<>();
         objectState = new ArrayList<>();
         devices = new ArrayList<>(INITIAL_DEVICE_CAPACITY);
-        stacks = new KernelCallWrapper[MAX_TASKS];
+        callWrappers = new KernelCallWrapper[MAX_TASKS];
         taskToDevice = new int[MAX_TASKS];
         Arrays.fill(taskToDevice, -1);
         nextTask = 0;
@@ -91,8 +91,8 @@ public class TornadoExecutionContext {
         this.profiler = profiler;
     }
 
-    public KernelCallWrapper[] getFrames() {
-        return stacks;
+    public KernelCallWrapper[] getCallWrappers() {
+        return callWrappers;
     }
 
     public int insertVariable(Object var) {
@@ -333,7 +333,7 @@ public class TornadoExecutionContext {
                 canonicalisedId = getId() + "." + id;
             }
             if (tasks.get(i).getId().equalsIgnoreCase(canonicalisedId)) {
-                return stacks[i];
+                return callWrappers[i];
             }
         }
         return null;
@@ -384,8 +384,8 @@ public class TornadoExecutionContext {
         return lastDevices;
     }
 
-    public void newStack(boolean newStack) {
-        this.redeployOnDevice = newStack;
+    public void newCallWrapper(boolean newCallWrapper) {
+        this.redeployOnDevice = newCallWrapper;
     }
 
     public boolean redeployOnDevice() {
