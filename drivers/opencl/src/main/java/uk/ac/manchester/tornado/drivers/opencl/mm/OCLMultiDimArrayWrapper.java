@@ -82,7 +82,6 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
             for (int i = 0; i < elements.length; i++) {
                 wrappers[i] = innerWrapperFactory.apply(deviceContext);
                 wrappers[i].allocate(elements[i], batchSize);
-//                addresses[i] = deviceContext.useRelativeAddresses() ? wrappers[i].toRelativeAddress() : wrappers[i].toAbsoluteAddress();
                 addresses[i] = wrappers[i].toBuffer();
             }
         } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {

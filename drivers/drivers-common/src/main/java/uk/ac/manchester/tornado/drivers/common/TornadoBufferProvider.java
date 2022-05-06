@@ -1,3 +1,25 @@
+/*
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2022, APT Group, Department of Computer Science,
+ * The University of Manchester. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
 package uk.ac.manchester.tornado.drivers.common;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
@@ -7,6 +29,8 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 
 import java.util.ArrayList;
+
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
 
 public abstract class TornadoBufferProvider {
 
@@ -33,8 +57,6 @@ public abstract class TornadoBufferProvider {
         }
     }
 
-    public static final long DEVICE_AVAILABLE_MEMORY = RuntimeUtilities.parseSize(System.getProperty("tornado.device.memory", "1GB"));
-
     protected final TornadoDeviceContext deviceContext;
     protected final ArrayList<BufferInfo> freeBuffers;
     protected final ArrayList<BufferInfo> usedBuffers;
@@ -45,7 +67,7 @@ public abstract class TornadoBufferProvider {
         this.usedBuffers = new ArrayList<>();
         this.freeBuffers = new ArrayList<>();
 
-        // There is no way of querying the available memory on the device. For the moment, I use a user defined value.
+        // There is no way of querying the available memory on the device. Instead, use a flag similar to -Xmx.
         availableMemory = DEVICE_AVAILABLE_MEMORY;
     }
 

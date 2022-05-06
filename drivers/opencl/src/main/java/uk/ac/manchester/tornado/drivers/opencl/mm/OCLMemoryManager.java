@@ -49,7 +49,6 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
 
     @Override
     public long getHeapSize() {
-        // TODO query for actual device memory size
         return deviceContext.getDevice().getDeviceMaxAllocationSize() * 4;
     }
 

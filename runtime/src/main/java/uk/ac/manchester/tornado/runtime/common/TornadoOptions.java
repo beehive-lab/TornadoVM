@@ -33,9 +33,9 @@ public class TornadoOptions {
     public static final String TRUE = "TRUE";
 
     /**
-     * Option to set the device heap's size. It is set to 1GB by default.
+     * Option to set the device maximum memory usage. It is set to 1GB by default.
      */
-    public static final long DEFAULT_HEAP_ALLOCATION = RuntimeUtilities.parseSize(System.getProperty("tornado.heap.allocation", "1GB"));
+    public static final long DEVICE_AVAILABLE_MEMORY = RuntimeUtilities.parseSize(System.getProperty("tornado.device.memory", "1GB"));
 
     /**
      * Option to enable exceptions for the OpenCL generated code. This is

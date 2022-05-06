@@ -127,7 +127,7 @@ void buildAndTest(String JDK, String tornadoProfile) {
         timeout(time: 12, unit: 'MINUTES') {
             sh 'tornado --devices'
             sh 'tornado-test.py --verbose -J"-Dtornado.unittests.device=0:0 -Dtornado.ptx.priority=100"'
-            sh 'tornado-test.py -V  -J"-Dtornado.unittests.device=0:0 -Dtornado.heap.allocation=1MB -Dtornado.ptx.priority=100" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+            sh 'tornado-test.py -V  -J"-Dtornado.unittests.device=0:0 -Dtornado.device.memory=1MB -Dtornado.ptx.priority=100" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
             sh 'test-native.sh'
         }
     }
@@ -137,7 +137,7 @@ void buildAndTest(String JDK, String tornadoProfile) {
                 timeout(time: 12, unit: 'MINUTES') {
                     sh 'tornado --devices'
                     sh 'tornado-test.py --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:1"'
-                    sh 'tornado-test.py -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:1 -Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+                    sh 'tornado-test.py -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:1 -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
                     sh 'test-native.sh'
                 }
             },
@@ -145,7 +145,7 @@ void buildAndTest(String JDK, String tornadoProfile) {
                 timeout(time: 12, unit: 'MINUTES') {
                     sh 'tornado --devices'
                     sh 'tornado-test.py --verbose -J"-Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:0"'
-                    sh 'tornado-test.py -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:0 -Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
+                    sh 'tornado-test.py -V  -J" -Dtornado.ptx.priority=100 -Dtornado.unittests.device=1:0 -Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03'
                     sh 'test-native.sh'
                 }
             }

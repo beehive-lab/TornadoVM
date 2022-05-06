@@ -81,8 +81,6 @@ public class OCLEvent implements Event {
 
     native static void clReleaseEvent(long eventId) throws OCLException;
 
-    public native static void dumpEventInfo(long eventId);
-
     private long readEventTime(OCLProfilingInfo eventType) {
         if (!ENABLE_PROFILING) {
             return -1;

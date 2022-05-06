@@ -97,19 +97,3 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clR
     cl_int status = clReleaseEvent((const cl_event) event);
     LOG_OCL_AND_VALIDATE("clReleaseEvent", status);
 }
-
-JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_dumpEventInfo
-(JNIEnv *env, jclass clazz, jlong event_id) {
-    cl_event event = (cl_event) event_id;
-    cl_ulong start, end, queued, submitted;
-    cl_command_queue queue;
-    cl_command_type comm;
-
-    clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start, NULL);
-    clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end, NULL);
-    clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_QUEUED , sizeof(cl_ulong), &queued, NULL);
-    clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_SUBMIT , sizeof(cl_ulong), &submitted, NULL);
-    clGetEventInfo(event, CL_EVENT_COMMAND_QUEUE, sizeof(cl_command_queue), &queue, NULL);
-    clGetEventInfo(event, CL_EVENT_COMMAND_TYPE, sizeof(cl_command_type), &comm, NULL);
-    fprintf(stdout, "Queue %ld Event %ld command %x start %ld end %ld queued %ld submitted %ld\n", queue, event, comm, start, end, queued, submitted);
-}

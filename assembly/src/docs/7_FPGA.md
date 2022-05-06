@@ -141,12 +141,12 @@ tornado \
     -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 1
 ```
 
-Note: The Full JIT mode on the Alveo U50 presents some constraints regarding the maximum allocated space on the device memory. Although the Xilinx driver reports 1GB as the maximum allocation space, the XRT layer throws an error (`[XRT] ERROR: std::bad_alloc`) when the heap size is larger than 64MB. This issue is reported to Xilinx, and it is anticipated to be fixed soon. For applications that do not require more than 64MB of heap size, the following flag can be used `-Dtornado.heap.allocation=64MB`.
+Note: The Full JIT mode on the Alveo U50 presents some constraints regarding the maximum allocated space on the device memory. Although the Xilinx driver reports 1GB as the maximum allocation space, the XRT layer throws an error (`[XRT] ERROR: std::bad_alloc`) when the heap size is larger than 64MB. This issue is reported to Xilinx, and it is anticipated to be fixed soon. For applications that do not require more than 64MB of heap size, the following flag can be used `-Dtornado.device.memory=64MB`.
 
 ```bash
 tornado \
     -Ds0.t0.device=0:1 \
-    -Dtornado.heap.allocation=64MB \
+    -Dtornado.device.memory=64MB \
     -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 1
 ```
 
@@ -165,12 +165,12 @@ tornado \
     -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 10
 ```
 
-Note: The Ahead of Time mode on the Alveo U50 presents some constraints regarding the maximum allocated space on the device memory. Although the Xilinx driver reports 1GB as the maximum allocation space, the XRT layer throws an error (`[XRT] ERROR: std::bad_alloc`) when the heap size is larger than 64MB. This issue is reported to Xilinx, and it is anticipated to be fixed soon. For applications that do not require more than 64MB of heap size, the following flag can be used `-Dtornado.heap.allocation=64MB`.
+Note: The Ahead of Time mode on the Alveo U50 presents some constraints regarding the maximum allocated space on the device memory. Although the Xilinx driver reports 1GB as the maximum allocation space, the XRT layer throws an error (`[XRT] ERROR: std::bad_alloc`) when the heap size is larger than 64MB. This issue is reported to Xilinx, and it is anticipated to be fixed soon. For applications that do not require more than 64MB of heap size, the following flag can be used `-Dtornado.device.memory=64MB`.
 
 ```bash
 tornado \
     -Ds0.t0.device=0:1 \
-    -Dtornado.heap.allocation=64MB \
+    -Dtornado.device.memory=64MB \
     -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 1
 ```
 

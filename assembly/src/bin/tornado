@@ -104,7 +104,7 @@ function print_all_options() {
   echo ""
   echo -e "$COLOR_CYAN Device Heap: $COLOR_NC"
   echo ""
-  echo -e "\tResize the device heap (1GB by default): -Dtornado.heap.allocation=512MB"
+  echo -e "\tResize the maximum amount of memory to use on the device (1GB by default): -Dtornado.device.memory=512MB"
   echo ""
   echo -e "$COLOR_CYAN FPGA: $COLOR_NC"
   echo ""
