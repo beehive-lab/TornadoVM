@@ -25,15 +25,12 @@ package uk.ac.manchester.tornado.drivers.ptx.graal.backend;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEFAULT_HEAP_ALLOCATION;
 
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
-import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
@@ -56,6 +53,7 @@ import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Local;
@@ -88,7 +86,6 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXNodeMatchRules;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXVectorSplit;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
@@ -342,7 +339,6 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
             asm.emitLine("");
         }
     }
-
 
     private void emitVariableDefs(PTXAssembler asm, PTXLIRGenerationResult lirGenRes) {
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitVariableDefs");
