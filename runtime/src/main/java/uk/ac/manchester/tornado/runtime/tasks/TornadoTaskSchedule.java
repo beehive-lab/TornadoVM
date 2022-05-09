@@ -407,6 +407,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public void setDevice(TornadoDevice device) {
+        TornadoDevice oldDevice = meta().getLogicDevice();
+
         meta().setDevice(device);
 
         // Make sure that a sketch is available for the device.
@@ -418,6 +420,16 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 if (!meta().getLogicDevice().getDeviceContext().isCached(method.getName(), task)) {
                     updateInner(i, executionContext.getTask(i));
                 }
+            }
+        }
+
+        // Release locked buffers from the old device and lock them on the new one.
+        for (LocalObjectState localState : executionContext.getObjectStates()) {
+            final GlobalObjectState globalState = localState.getGlobalState();
+            final DeviceObjectState deviceState = globalState.getDeviceState(oldDevice);
+            if (deviceState.isPinnedBuffer()) {
+                releasePinnedBufferFromDevice(localState, oldDevice);
+                pinObjectInMemoryOnDevice(localState, device);
             }
         }
     }
@@ -833,8 +845,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public void pinObjectInMemory(Object object) {
         final LocalObjectState localState = executionContext.getObjectState(object);
+        pinObjectInMemoryOnDevice(localState, meta().getLogicDevice());
+    }
+
+    private void pinObjectInMemoryOnDevice(final LocalObjectState localState, final TornadoDevice device) {
         final GlobalObjectState globalState = localState.getGlobalState();
-        final TornadoAcceleratorDevice device = meta().getLogicDevice();
         final DeviceObjectState deviceState = globalState.getDeviceState(device);
         deviceState.setPinnedBuffer(true);
     }
@@ -853,11 +868,16 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
 
         final LocalObjectState localState = executionContext.getObjectState(object);
+        releasePinnedBufferFromDevice(localState, meta().getLogicDevice());
+    }
+
+    private void releasePinnedBufferFromDevice(final LocalObjectState localState, final TornadoDevice device) {
         final GlobalObjectState globalState = localState.getGlobalState();
-        final TornadoAcceleratorDevice device = meta().getLogicDevice();
         final DeviceObjectState deviceState = globalState.getDeviceState(device);
         deviceState.setPinnedBuffer(false);
-        device.deallocate(object, deviceState);
+        if (deviceState.hasBuffer()) {
+            device.deallocate(deviceState);
+        }
     }
 
     @Override

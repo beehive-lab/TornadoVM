@@ -299,7 +299,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int deallocate(Object object, TornadoDeviceObjectState state) {
+    public int deallocate(TornadoDeviceObjectState state) {
         if (state.isPinnedBuffer()) {
             return -1;
         }

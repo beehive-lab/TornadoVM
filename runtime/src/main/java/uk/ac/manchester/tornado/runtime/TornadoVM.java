@@ -262,7 +262,7 @@ public class TornadoVM extends TornadoLogger {
         }
 
         final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
-        return device.deallocate(object, objectState);
+        return device.deallocate(objectState);
     }
 
     private boolean isObjectAtomic(Object object) {

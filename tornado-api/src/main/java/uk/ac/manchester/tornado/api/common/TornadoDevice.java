@@ -71,7 +71,7 @@ public interface TornadoDevice {
 
     int allocateBulk(Object[] objects, long batchSize, TornadoDeviceObjectState[] states);
 
-    int deallocate(Object object, TornadoDeviceObjectState state);
+    int deallocate(TornadoDeviceObjectState state);
 
     /**
      * It allocates and copy in the content of the object to the target device.

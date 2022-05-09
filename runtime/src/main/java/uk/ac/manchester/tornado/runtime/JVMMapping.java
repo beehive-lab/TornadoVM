@@ -153,7 +153,7 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int deallocate(Object object, TornadoDeviceObjectState state) {
+    public int deallocate(TornadoDeviceObjectState state) {
         return 0;
     }
 

@@ -284,7 +284,7 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int deallocate(Object object, TornadoDeviceObjectState state) {
+    public int deallocate(TornadoDeviceObjectState state) {
         unimplemented();
         return -1;
     }
