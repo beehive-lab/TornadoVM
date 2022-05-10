@@ -42,7 +42,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResu
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
@@ -140,14 +140,14 @@ public class TestOpenCLJITCompiler {
         tornadoDevice.ensurePresent(b, objectStateB, null, 0, 0);
 
         // Create call wrapper
-        KernelCallWrapper callWrapper = tornadoDevice.createCallWrapper(3);
+        KernelArgs callWrapper = tornadoDevice.createCallWrapper(3);
 
         // Fill header of call callWrapper with empty values
         callWrapper.setKernelContext(new HashMap<>());
 
-        callWrapper.addCallArgument(objectStateA.getBuffer().toBuffer(), true);
-        callWrapper.addCallArgument(objectStateB.getBuffer().toBuffer(), true);
-        callWrapper.addCallArgument(objectStateC.getBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateA.getObjectBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateB.getObjectBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateC.getObjectBuffer().toBuffer(), true);
 
         // Run the code
         openCLCode.launchWithoutDependencies(callWrapper, null, taskMeta, 0);

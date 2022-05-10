@@ -32,34 +32,34 @@ import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 
 public class DeviceObjectState implements TornadoDeviceObjectState {
 
-    private ObjectBuffer buffer;
+    private ObjectBuffer objectBuffer;
     private boolean atomicRegionPresent;
 
     private boolean contents;
     private boolean pinnedBuffer;
 
     public DeviceObjectState() {
-        buffer = null;
+        objectBuffer = null;
         atomicRegionPresent = false;
         contents = false;
         pinnedBuffer = false;
     }
 
-    public void setBuffer(ObjectBuffer value) {
-        buffer = value;
+    public void setObjectBuffer(ObjectBuffer value) {
+        objectBuffer = value;
     }
 
     public void setAtomicRegion(ObjectBuffer buffer) {
-        this.buffer = buffer;
+        this.objectBuffer = buffer;
         atomicRegionPresent = true;
     }
 
-    public boolean hasBuffer() {
-        return buffer != null;
+    public boolean hasObjectBuffer() {
+        return objectBuffer != null;
     }
 
-    public ObjectBuffer getBuffer() {
-        return buffer;
+    public ObjectBuffer getObjectBuffer() {
+        return objectBuffer;
     }
 
     public boolean isPinnedBuffer() {
@@ -86,8 +86,8 @@ public class DeviceObjectState implements TornadoDeviceObjectState {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        if (hasBuffer()) {
-            sb.append(String.format(" buffer=0x%x, size=%s ", buffer.toBuffer(), humanReadableByteCount(buffer.size(), true)));
+        if (hasObjectBuffer()) {
+            sb.append(String.format(" buffer=0x%x, size=%s ", objectBuffer.toBuffer(), humanReadableByteCount(objectBuffer.size(), true)));
         } else {
             sb.append(" <unbuffered>");
         }

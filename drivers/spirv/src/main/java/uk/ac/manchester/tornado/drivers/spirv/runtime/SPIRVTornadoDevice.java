@@ -67,7 +67,7 @@ import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVShortArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVVectorWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
@@ -115,7 +115,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public KernelCallWrapper createCallWrapper(int numArgs) {
+    public KernelArgs createCallWrapper(int numArgs) {
         return getDeviceContext().getMemoryManager().createCallWrapper(numArgs);
     }
 
@@ -336,12 +336,12 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public int allocate(Object object, long batchSize, TornadoDeviceObjectState state) {
         final ObjectBuffer buffer;
-        if (state.hasBuffer() && state.isPinnedBuffer()) {
-            buffer = state.getBuffer();
+        if (state.hasObjectBuffer() && state.isPinnedBuffer()) {
+            buffer = state.getObjectBuffer();
         } else {
-            TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasBuffer(), "A device memory leak might be occurring.");
+            TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
             buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext(), batchSize);
-            state.setBuffer(buffer);
+            state.setObjectBuffer(buffer);
             buffer.allocate(object, batchSize);
         }
 
@@ -362,9 +362,9 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
             return -1;
         }
 
-        state.getBuffer().deallocate();
+        state.getObjectBuffer().deallocate();
         state.setContents(false);
-        state.setBuffer(null);
+        state.setObjectBuffer(null);
         return -1;
     }
 
@@ -390,7 +390,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long batchSize, long offset) {
         if (!objectState.hasContents() || BENCHMARKING_MODE) {
             objectState.setContents(true);
-            return objectState.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
+            return objectState.getObjectBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
         }
         return null;
     }
@@ -398,13 +398,13 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public List<Integer> streamIn(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
         objectState.setContents(true);
-        return objectState.getBuffer().enqueueWrite(object, batchSize, hostOffset, events, events == null);
+        return objectState.getObjectBuffer().enqueueWrite(object, batchSize, hostOffset, events, events == null);
     }
 
     @Override
     public int streamOut(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
-        TornadoInternalError.guarantee(objectState.hasBuffer(), "invalid variable");
-        int event = objectState.getBuffer().enqueueRead(object, hostOffset, events, events == null);
+        TornadoInternalError.guarantee(objectState.hasObjectBuffer(), "invalid variable");
+        int event = objectState.getObjectBuffer().enqueueRead(object, hostOffset, events, events == null);
         if (events != null) {
             return event;
         }
@@ -414,14 +414,14 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
         if (objectState.isAtomicRegionPresent()) {
-            int eventID = objectState.getBuffer().enqueueRead(null, 0, null, false);
+            int eventID = objectState.getObjectBuffer().enqueueRead(null, 0, null, false);
             if (object instanceof AtomicInteger) {
                 throw new RuntimeException("Atomics Not supported yet");
             }
             return eventID;
         } else {
-            TornadoInternalError.guarantee(objectState.hasBuffer(), "invalid variable");
-            int event = objectState.getBuffer().read(object, hostOffset, events, events == null);
+            TornadoInternalError.guarantee(objectState.hasObjectBuffer(), "invalid variable");
+            int event = objectState.getObjectBuffer().read(object, hostOffset, events, events == null);
             // We force a blocking copy -> we need to close the command list and command
             // queue
             flush();
@@ -585,6 +585,6 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
      * Move Data from the device region that corresponds to buffer A into buffer B.
      */
     public void moveDataFromDeviceBufferToHost(DeviceObjectState objectStateA, Object b) {
-        objectStateA.getBuffer().read(b, 0, null, false);
+        objectStateA.getObjectBuffer().read(b, 0, null, false);
     }
 }

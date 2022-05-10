@@ -25,15 +25,13 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
-import uk.ac.manchester.tornado.api.KernelContext;
-
 import java.util.HashMap;
 import java.util.List;
 
-public interface KernelCallWrapper {
+public interface KernelArgs {
 
     // Marks an argument of type KernelContext being passed explicitly as a parameter.
-    class KernelContextDummyArgument {}
+    class KernelContextArgument {}
 
     class CallArgument {
         private final Object value;

@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.drivers.ptx.runtime.PTXTornadoDevice;
-import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
@@ -113,7 +113,7 @@ public class PTX {
 
         // Create call wrapper
         final int numArgs = parameters.length;
-        KernelCallWrapper callWrapper = tornadoDevice.createCallWrapper(numArgs);
+        KernelArgs callWrapper = tornadoDevice.createCallWrapper(numArgs);
         callWrapper.reset();
 
         // Fill header of call callWrapper with empty values
@@ -121,7 +121,7 @@ public class PTX {
 
         // Pass arguments to the call callWrapper
         for (int i = 0; i < numArgs; i++) {
-            callWrapper.addCallArgument(states.get(i).getBuffer().toBuffer(), true);
+            callWrapper.addCallArgument(states.get(i).getObjectBuffer().toBuffer(), true);
         }
 
         // Run the code

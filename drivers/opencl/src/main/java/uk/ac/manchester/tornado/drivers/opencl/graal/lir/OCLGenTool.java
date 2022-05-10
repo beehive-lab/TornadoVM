@@ -95,61 +95,13 @@ public class OCLGenTool {
             OCLMemoryBase base = OCLArchitecture.globalSpace;
             OCLBinaryIntrinsic intrinsic = VectorUtil.resolveLoadIntrinsic(oclKind);
             OCLAddressCast cast = new OCLAddressCast(base, LIRKind.value(oclKind.getElementKind()));
-            MemoryAccess address = new MemoryAccess(base, result, false);
+            MemoryAccess address = new MemoryAccess(base, result);
 
             emitVectorLoad(vector, intrinsic, new ConstantValue(LIRKind.value(OCLKind.INT), PrimitiveConstant.INT_0), cast, address);
             result = vector;
         }
 
         return result;
-    }
-
-    private OCLUnaryOp getParameterLoadOp(OCLKind type) {
-
-        if (type.isVector()) {
-            return OCLUnaryTemplate.LOAD_PARAM_ULONG;
-        }
-
-        switch (type) {
-
-            case DOUBLE:
-                return OCLUnaryTemplate.LOAD_PARAM_DOUBLE;
-            case FLOAT:
-                return OCLUnaryTemplate.LOAD_PARAM_FLOAT;
-            case INT:
-                return OCLUnaryTemplate.LOAD_PARAM_INT;
-            case UINT:
-                return OCLUnaryTemplate.LOAD_PARAM_UINT;
-            case LONG:
-                return OCLUnaryTemplate.LOAD_PARAM_LONG;
-            case ULONG:
-                return OCLUnaryTemplate.LOAD_PARAM_ULONG;
-            default:
-                unimplemented("parameter load: type=%s", type);
-                break;
-        }
-        return null;
-    }
-
-    /**
-     * This represents a load from a parameter.
-     *
-     * This an example of the target code to generate:
-     *
-     * <code>
-     *      ulong0 = (ulong) frame[3];
-     * </code>
-     *
-     * @param resultValue
-     *            result
-     * @param index
-     *            Parameter index to be loaded.
-     *
-     */
-    private void emitParameterLoad(AllocatableValue resultValue, String paramName) {
-        OCLKind oclKind = (OCLKind) resultValue.getPlatformKind();
-        LIRKind lirKind = LIRKind.value(oclKind);
-        gen.append(new AssignStmt(resultValue, new OCLNullary.Parameter(paramName, lirKind)));
     }
 
     public HashMap<ParameterNode, Value> getParameterToVariable() {

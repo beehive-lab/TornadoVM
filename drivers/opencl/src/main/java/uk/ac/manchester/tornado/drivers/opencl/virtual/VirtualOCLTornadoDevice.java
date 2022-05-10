@@ -54,7 +54,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -162,7 +162,7 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public KernelCallWrapper createCallWrapper(int numArgs) {
+    public KernelArgs createCallWrapper(int numArgs) {
         return null;
     }
 

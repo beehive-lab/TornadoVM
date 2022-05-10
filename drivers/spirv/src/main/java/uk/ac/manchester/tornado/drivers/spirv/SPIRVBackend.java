@@ -155,7 +155,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVNodeLIRBuilder
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVNodeMatchRules;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVReferenceMapBuilder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
-import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVKernelCallWrapper;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVKernelArgs;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
@@ -202,12 +202,11 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     // FIXME: <REFACTOR> Common between OCL and SPIRV
 
     /**
-     * It allocates the smallest of the requested heap size or the max global memory
-     * size.
+     * It allocated the extra buffers that are used by this backend.
      */
     @Override
-    public void allocateHeapMemoryOnDevice() {
-        TornadoInternalError.shouldNotReachHere("Should not allocate any heap memory");
+    public void allocateTornadoVMBuffersOnDevice() {
+        TornadoInternalError.shouldNotReachHere("Should not allocate extra buffers on the device.");
     }
 
     @Override
@@ -908,7 +907,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         }
 
         // Add constant 3 --> Frame Access
-        int reservedSlots = SPIRVKernelCallWrapper.RESERVED_SLOTS;
+        int reservedSlots = SPIRVKernelArgs.RESERVED_SLOTS;
         asm.lookUpConstant(Integer.toString(reservedSlots), SPIRVKind.OP_TYPE_INT_32);
 
         // And the reminder of the constants
@@ -1060,7 +1059,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         }
 
         // Add constant 3 --> Frame Access
-        int reservedSlots = SPIRVKernelCallWrapper.RESERVED_SLOTS;
+        int reservedSlots = SPIRVKernelArgs.RESERVED_SLOTS;
         asm.lookUpConstant(Integer.toString(reservedSlots), SPIRVKind.OP_TYPE_INT_32);
 
         // And the reminder of the constants

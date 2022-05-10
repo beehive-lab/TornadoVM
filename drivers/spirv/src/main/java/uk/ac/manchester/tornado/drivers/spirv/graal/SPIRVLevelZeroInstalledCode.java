@@ -42,9 +42,9 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeGroupDispatch;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
-import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVKernelCallWrapper;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVKernelArgs;
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.LevelZeroKernelTimeStamp;
-import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -65,11 +65,11 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
     }
 
     @Override
-    public int launchWithDependencies(KernelCallWrapper callWrapper, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents) {
+    public int launchWithDependencies(KernelArgs callWrapper, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents) {
         throw new RuntimeException("Unimplemented");
     }
 
-    private void setKernelArgs(final SPIRVKernelCallWrapper callWrapper, final ObjectBuffer atomicSpace, TaskMetaData meta) {
+    private void setKernelArgs(final SPIRVKernelArgs callWrapper, final ObjectBuffer atomicSpace, TaskMetaData meta) {
         // Enqueue write
         callWrapper.enqueueWrite(null);
 
@@ -84,8 +84,8 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
 
         for (int argIndex = 0; argIndex < callWrapper.getCallArguments().size(); argIndex++) {
             int kernelParamIndex = argIndex + 1;
-            KernelCallWrapper.CallArgument arg = callWrapper.getCallArguments().get(argIndex);
-            if (arg.getValue() instanceof KernelCallWrapper.KernelContextDummyArgument) {
+            KernelArgs.CallArgument arg = callWrapper.getCallArguments().get(argIndex);
+            if (arg.getValue() instanceof KernelArgs.KernelContextArgument) {
                 result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), kernelParamIndex, Sizeof.LONG.getNumBytes(), callWrapper.toBuffer());
                 LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
                 continue;
@@ -207,12 +207,12 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
     }
 
     @Override
-    public int launchWithoutDependencies(KernelCallWrapper callWrapper, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
+    public int launchWithoutDependencies(KernelArgs callWrapper, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
         SPIRVLevelZeroModule module = (SPIRVLevelZeroModule) spirvModule;
         LevelZeroKernel levelZeroKernel = module.getKernel();
         ZeKernelHandle kernel = levelZeroKernel.getKernelHandle();
 
-        setKernelArgs((SPIRVKernelCallWrapper) callWrapper, null, meta);
+        setKernelArgs((SPIRVKernelArgs) callWrapper, null, meta);
 
         if (threadScheduling == null || dispatcher == null || meta.isWorkerGridAvailable()) {
             // if the worker grid is available, the user can update the number of threads to

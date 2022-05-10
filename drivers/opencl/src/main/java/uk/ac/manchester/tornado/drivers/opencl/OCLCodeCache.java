@@ -326,7 +326,7 @@ public class OCLCodeCache {
         return kernelAvailable;
     }
 
-    private void writeSourceToFile(byte[] source) {
+    private void appendSourceToFile(byte[] source) {
         final Path outDir = deviceContext.isPlatformFPGA() ? resolveBitstreamDirectory() : resolveSourceDirectory();
         File file = new File(outDir + "/" + FPGA_BIN_FILE_NAME + OPENCL_SOURCE_SUFFIX);
         RuntimeUtilities.writeStreamToFile(file, source, false);
@@ -438,7 +438,7 @@ public class OCLCodeCache {
         final String outputFile = fpgaSourceDir + FPGA_BIN_FILE_NAME;
         File fpgaBitStreamFile = new File(fpgaBinLocation);
 
-        writeSourceToFile(source);
+        appendSourceToFile(source);
 
         RuntimeUtilities.maybePrintSource(source);
 
@@ -525,7 +525,7 @@ public class OCLCodeCache {
         }
 
         if (deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR) {
-            writeSourceToFile(source);
+            appendSourceToFile(source);
         }
 
         RuntimeUtilities.maybePrintSource(source);

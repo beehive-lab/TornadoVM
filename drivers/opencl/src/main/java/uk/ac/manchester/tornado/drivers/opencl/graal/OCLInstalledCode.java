@@ -47,9 +47,9 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLKernelScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.OCLProgram;
 import uk.ac.manchester.tornado.drivers.opencl.OCLScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
-import uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelCallWrapper;
+import uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelArgs;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
-import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -148,7 +148,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
      * @param meta
      *            task metadata {@link TaskMetaData}
      */
-    private void setKernelArgs(final OCLKernelCallWrapper callWrapper, final ObjectBuffer atomicSpace, TaskMetaData meta) {
+    private void setKernelArgs(final OCLKernelArgs callWrapper, final ObjectBuffer atomicSpace, TaskMetaData meta) {
         int index = 0;
 
         if (deviceContext.needsBump()) {
@@ -195,8 +195,8 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
         // Parameters
         for (int i = 0, argIndex = 0; i < callWrapper.getCallArguments().size(); i++) {
-            uk.ac.manchester.tornado.runtime.common.KernelCallWrapper.CallArgument arg = callWrapper.getCallArguments().get(i);
-            if (arg.getValue() instanceof KernelCallWrapper.KernelContextDummyArgument) {
+            KernelArgs.CallArgument arg = callWrapper.getCallArguments().get(i);
+            if (arg.getValue() instanceof KernelArgs.KernelContextArgument) {
                 continue;
             }
             if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
@@ -210,7 +210,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
     }
 
-    public int submitWithEvents(final OCLKernelCallWrapper callWrapper, final ObjectBuffer atomicSpace, final TaskMetaData meta, final int[] events, long batchThreads) {
+    public int submitWithEvents(final OCLKernelArgs kernelArgs, final ObjectBuffer atomicSpace, final TaskMetaData meta, final int[] events, long batchThreads) {
         guarantee(kernel != null, "kernel is null");
 
         if (DEBUG) {
@@ -221,10 +221,10 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
          * Only set the kernel arguments if they are either: - not set or - have changed
          */
         final int[] waitEvents;
-        setKernelArgs(callWrapper, atomicSpace, meta);
-        internalEvents[0] = callWrapper.enqueueWrite(events);
+        setKernelArgs(kernelArgs, atomicSpace, meta);
+        internalEvents[0] = kernelArgs.enqueueWrite(events);
         waitEvents = internalEvents;
-        updateProfilerKernelContextWrite(internalEvents[0], meta, callWrapper);
+        updateProfilerKernelContextWrite(internalEvents[0], meta, kernelArgs);
 
         int task;
         if (meta == null) {
@@ -258,7 +258,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
             if (meta.enableExceptions()) {
                 internalEvents[0] = task;
-                task = callWrapper.enqueueRead(internalEvents);
+                task = kernelArgs.enqueueRead(internalEvents);
             }
         }
 
@@ -311,7 +311,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         return task;
     }
 
-    private void launchKernel(final OCLKernelCallWrapper callWrapper, final TaskMetaData meta, long batchThreads) {
+    private void launchKernel(final OCLKernelArgs callWrapper, final TaskMetaData meta, long batchThreads) {
         final int task;
         if (meta.isParallel() || meta.isWorkerGridAvailable()) {
             task = submitParallel(meta, batchThreads);
@@ -336,7 +336,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
     }
 
-    private void submitWithoutEvents(final OCLKernelCallWrapper callWrapper, final ObjectBuffer atomicSpace, final TaskMetaData meta, long batchThreads) {
+    private void submitWithoutEvents(final OCLKernelArgs callWrapper, final ObjectBuffer atomicSpace, final TaskMetaData meta, long batchThreads) {
 
         checkKernelNotNull();
 
@@ -356,7 +356,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
     }
 
-    private void updateProfilerKernelContextWrite(int kernelContextWriteEventId, TaskMetaData meta, OCLKernelCallWrapper callWrapper) {
+    private void updateProfilerKernelContextWrite(int kernelContextWriteEventId, TaskMetaData meta, OCLKernelArgs callWrapper) {
         if (TornadoOptions.isProfilerEnabled()) {
             TornadoProfiler profiler = meta.getProfiler();
             Event event = deviceContext.resolveEvent(kernelContextWriteEventId);
@@ -373,13 +373,13 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     }
 
     @Override
-    public int launchWithDependencies(uk.ac.manchester.tornado.runtime.common.KernelCallWrapper callWrapper, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents) {
-        return submitWithEvents((OCLKernelCallWrapper) callWrapper, atomicSpace, meta, waitEvents, batchThreads);
+    public int launchWithDependencies(KernelArgs callWrapper, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents) {
+        return submitWithEvents((OCLKernelArgs) callWrapper, atomicSpace, meta, waitEvents, batchThreads);
     }
 
     @Override
-    public int launchWithoutDependencies(uk.ac.manchester.tornado.runtime.common.KernelCallWrapper callWrapper, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
-        submitWithoutEvents((OCLKernelCallWrapper) callWrapper, atomicSpace, meta, batchThreads);
+    public int launchWithoutDependencies(KernelArgs callWrapper, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
+        submitWithoutEvents((OCLKernelArgs) callWrapper, atomicSpace, meta, batchThreads);
         return -1;
     }
 

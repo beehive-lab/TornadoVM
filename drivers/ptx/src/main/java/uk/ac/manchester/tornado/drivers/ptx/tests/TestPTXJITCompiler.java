@@ -40,7 +40,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompiler;
 import uk.ac.manchester.tornado.drivers.ptx.runtime.PTXTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
@@ -139,13 +139,13 @@ public class TestPTXJITCompiler {
         tornadoDevice.ensurePresent(b, objectStateB, null, 0, 0);
 
         // Create call wrapper
-        KernelCallWrapper callWrapper = tornadoDevice.createCallWrapper(3);
+        KernelArgs callWrapper = tornadoDevice.createCallWrapper(3);
 
         callWrapper.setKernelContext(new HashMap<>());
 
-        callWrapper.addCallArgument(objectStateA.getBuffer().toBuffer(), true);
-        callWrapper.addCallArgument(objectStateB.getBuffer().toBuffer(), true);
-        callWrapper.addCallArgument(objectStateC.getBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateA.getObjectBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateB.getObjectBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateC.getObjectBuffer().toBuffer(), true);
 
         // Run the code
         ptxCode.launchWithoutDependencies(callWrapper, null, taskMeta, 0);

@@ -38,8 +38,6 @@ public class PTXAssemblerConstants {
     public static final String TEST_NOTANUMBER = "testp.notanumber";
     public static final String TEST_NORMAL = "testp.normal";
     public static final String TEST_SUBNORMAL = "testp.subnormal";
-
-    public static final String HEAP_PTR_NAME = "heap_pointer";
     public static final String KERNEL_CONTEXT_NAME = "kernel_context";
     public static final String GLOBAL_MEM_MODIFIER = "global";
     public static final String PARAM_MEM_MODIFIER = "param";

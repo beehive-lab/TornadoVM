@@ -193,7 +193,7 @@ public class OCLContext implements OCLExecutionEnvironment {
             for (OCLProgram program : programs) {
                 program.cleanup();
             }
-            long t2 = System.nanoTime();
+            long t1 = System.nanoTime();
 
             for (OCLCommandQueue queue : queues) {
                 if (queue != null) {
@@ -201,15 +201,15 @@ public class OCLContext implements OCLExecutionEnvironment {
                 }
             }
 
-            long t3 = System.nanoTime();
+            long t2 = System.nanoTime();
             clReleaseContext(contextID);
-            long t4 = System.nanoTime();
+            long t3 = System.nanoTime();
 
             if (Tornado.FULL_DEBUG) {
-                System.out.printf("cleanup: %-10s..........%.9f s%n", "programs", (t2 - t0) * 1e-9);
-                System.out.printf("cleanup: %-10s..........%.9f s%n", "queues", (t3 - t2) * 1e-9);
-                System.out.printf("cleanup: %-10s..........%.9f s%n", "context", (t4 - t3) * 1e-9);
-                System.out.printf("cleanup: %-10s..........%.9f s%n", "total", (t4 - t0) * 1e-9);
+                System.out.printf("cleanup: %-10s..........%.9f s%n", "programs", (t1 - t0) * 1e-9);
+                System.out.printf("cleanup: %-10s..........%.9f s%n", "queues", (t2 - t1) * 1e-9);
+                System.out.printf("cleanup: %-10s..........%.9f s%n", "context", (t3 - t2) * 1e-9);
+                System.out.printf("cleanup: %-10s..........%.9f s%n", "total", (t3 - t0) * 1e-9);
             }
         } catch (OCLException e) {
             TornadoLogger.error(e.getMessage());

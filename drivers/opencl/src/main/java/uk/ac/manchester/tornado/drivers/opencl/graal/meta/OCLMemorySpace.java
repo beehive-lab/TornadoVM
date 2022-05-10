@@ -37,7 +37,6 @@ public class OCLMemorySpace extends Value {
     public static final OCLMemorySpace LOCAL = new OCLMemorySpace(OCLAssemblerConstants.LOCAL_MEM_MODIFIER);
     public static final OCLMemorySpace PRIVATE = new OCLMemorySpace(OCLAssemblerConstants.PRIVATE_MEM_MODIFIER);
     public static final OCLMemorySpace CONSTANT = new OCLMemorySpace(OCLAssemblerConstants.CONSTANT_MEM_MODIFIER);
-    public static final OCLMemorySpace HEAP = new OCLMemorySpace(OCLAssemblerConstants.TORNADO_HEAP_MEMORY);
 
     private final String name;
 
@@ -47,7 +46,7 @@ public class OCLMemorySpace extends Value {
     }
 
     public OCLArchitecture.OCLMemoryBase getBase() {
-        if (this == GLOBAL || this == HEAP) {
+        if (this == GLOBAL) {
             return OCLArchitecture.globalSpace;
         } else if (this == LOCAL) {
             return OCLArchitecture.localSpace;

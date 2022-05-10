@@ -74,15 +74,11 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.common.BackendDeopt;
 import uk.ac.manchester.tornado.drivers.common.code.CodeUtil;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
-import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
@@ -93,7 +89,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLCodeProvider;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLFrameContext;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLFrameMap;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLFrameMapBuilder;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLSuitesProvider;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLUtils;
@@ -101,7 +96,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
-import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLDataBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLLIRGenerationResult;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLLIRGenerator;
@@ -110,15 +104,11 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLNodeMatchRules;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLReferenceMapBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
-import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.directives.CompilerInternals;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
-import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -171,11 +161,10 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     /**
-     * It allocates the smallest of the requested heap size or the max global memory
-     * size.
+     * It allocated the extra internal buffers that are used by this backend (constant and atomic).
      */
     @Override
-    public void allocateHeapMemoryOnDevice() {
+    public void allocateTornadoVMBuffersOnDevice() {
         deviceContext.getMemoryManager().allocateDeviceMemoryRegions();
     }
 
@@ -209,7 +198,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             return;
         }
 
-        allocateHeapMemoryOnDevice();
+        allocateTornadoVMBuffersOnDevice();
         backEndInitialized = true;
     }
 

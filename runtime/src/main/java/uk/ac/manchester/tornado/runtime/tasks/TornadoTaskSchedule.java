@@ -875,7 +875,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         final GlobalObjectState globalState = localState.getGlobalState();
         final DeviceObjectState deviceState = globalState.getDeviceState(device);
         deviceState.setPinnedBuffer(false);
-        if (deviceState.hasBuffer()) {
+        if (deviceState.hasObjectBuffer()) {
             device.deallocate(deviceState);
         }
     }
@@ -963,7 +963,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME_SYNC, value);
                 LocalObjectState localState = executionContext.getObjectState(objects[i]);
                 DeviceObjectState deviceObjectState = localState.getGlobalState().getDeviceState(meta().getLogicDevice());
-                timeProfiler.addValueToMetric(ProfilerType.COPY_OUT_SIZE_BYTES_SYNC, TimeProfiler.NO_TASK_NAME, deviceObjectState.getBuffer().size());
+                timeProfiler.addValueToMetric(ProfilerType.COPY_OUT_SIZE_BYTES_SYNC, TimeProfiler.NO_TASK_NAME, deviceObjectState.getObjectBuffer().size());
             }
             updateProfiler();
         }

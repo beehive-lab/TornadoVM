@@ -26,12 +26,6 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.asm;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.CONSTANT_REGION_NAME;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.GLOBAL_REGION_NAME;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.HEAP_REF_NAME;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.LOCAL_REGION_NAME;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.PRIVATE_REGION_NAME;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.FLOAT;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.LONG;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.ULONG;
@@ -56,8 +50,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResu
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLNullary;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLReturnSlot;
-import uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelCallWrapper;
 
 public final class OCLAssembler extends Assembler {
 
@@ -427,19 +419,11 @@ public final class OCLAssembler extends Assembler {
     }
 
     public void emitValue(OCLCompilationResultBuilder crb, Value value) {
-        if (value instanceof OCLReturnSlot) {
-            ((OCLReturnSlot) value).emit(crb, this);
-        } else {
-            emit(toString(value));
-        }
+        emit(toString(value));
     }
 
     public String getStringValue(OCLCompilationResultBuilder crb, Value value) {
-        if (value instanceof OCLReturnSlot) {
-            return ((OCLReturnSlot) value).getStringFormat();
-        } else {
-            return toString(value);
-        }
+        return toString(value);
     }
 
     public void assign() {
@@ -462,20 +446,6 @@ public final class OCLAssembler extends Assembler {
         emitSymbol(OCLAssemblerConstants.CLOSE_PARENTHESIS);
         eol();
 
-    }
-
-    public void loadParam(Variable result, int index) {
-        emit("(%s) %s[%d]", result.getPlatformKind().name(), FRAME_REF_NAME, OCLKernelCallWrapper.RESERVED_SLOTS + index);
-    }
-
-    @Deprecated
-    public void loadParam64(Variable result, int paramIndex) {
-        loadParam(result, paramIndex);
-    }
-
-    @Deprecated
-    public void loadParam32(Variable result, int paramIndex) {
-        loadParam(result, paramIndex);
     }
 
     public void space() {
@@ -542,33 +512,12 @@ public final class OCLAssembler extends Assembler {
 
         // @formatter:off
         public static final OCLNullaryOp RETURN = new OCLNullaryOp("return");
-        public static final OCLNullaryOp SLOTS_BASE_ADDRESS = new OCLNullaryOp("(ulong) " + HEAP_REF_NAME);
         // @formatter:on
 
         protected OCLNullaryOp(String opcode) {
             super(opcode);
         }
 
-        public void emit(OCLCompilationResultBuilder crb) {
-            final OCLAssembler asm = crb.getAssembler();
-            emitOpcode(asm);
-        }
-    }
-
-    public static class OCLMemoryOp extends OCLNullaryOp {
-
-        // @formatter:off
-        public static final OCLMemoryOp GLOBAL_REGION = new OCLMemoryOp(GLOBAL_REGION_NAME);
-        public static final OCLMemoryOp LOCAL_REGION = new OCLMemoryOp(LOCAL_REGION_NAME);
-        public static final OCLMemoryOp PRIVATE_REGION = new OCLMemoryOp(PRIVATE_REGION_NAME);
-        public static final OCLMemoryOp CONSTANT_REGION = new OCLMemoryOp(CONSTANT_REGION_NAME);
-        // @formatter:on
-
-        protected OCLMemoryOp(String opcode) {
-            super(opcode);
-        }
-
-        @Override
         public void emit(OCLCompilationResultBuilder crb) {
             final OCLAssembler asm = crb.getAssembler();
             emitOpcode(asm);
@@ -747,19 +696,10 @@ public final class OCLAssembler extends Assembler {
     public static class OCLUnaryTemplate extends OCLUnaryOp {
         // @formatter:off
 
-        public static final OCLUnaryTemplate LOAD_PARAM_INT = new OCLUnaryTemplate("param", "(int) " + FRAME_REF_NAME + "[%s]");
-        public static final OCLUnaryTemplate LOAD_PARAM_LONG = new OCLUnaryTemplate("param", "(long) " + FRAME_REF_NAME + "[%s]");
-        public static final OCLUnaryTemplate LOAD_PARAM_FLOAT = new OCLUnaryTemplate("param", "(float) " + FRAME_REF_NAME + "[%s]");
-        public static final OCLUnaryTemplate LOAD_PARAM_DOUBLE = new OCLUnaryTemplate("param", "(double) " + FRAME_REF_NAME + "[%s]");
-        public static final OCLUnaryTemplate LOAD_PARAM_ULONG = new OCLUnaryTemplate("param", "(ulong) " + FRAME_REF_NAME + "[%s]");
-        public static final OCLUnaryTemplate LOAD_PARAM_UINT = new OCLUnaryTemplate("param", "(uint) " + FRAME_REF_NAME + "[%s]");
-        public static final OCLUnaryTemplate SLOT_ADDRESS = new OCLUnaryTemplate("param", "(ulong) &" + FRAME_REF_NAME + "[%s]");
-
         public static final OCLUnaryTemplate MEM_CHECK = new OCLUnaryTemplate("mem check", "MEM_CHECK(%s)");
         public static final OCLUnaryTemplate INDIRECTION = new OCLUnaryTemplate("deref", "*(%s)");
         public static final OCLUnaryTemplate CAST_TO_POINTER = new OCLUnaryTemplate("cast ptr", "(%s *)");
         public static final OCLUnaryTemplate LOAD_ADDRESS_ABS = new OCLUnaryTemplate("load address", "*(%s)");
-        public static final OCLUnaryTemplate LOAD_ADDRESS_REL = new OCLUnaryTemplate("load address", "*(%s) + (ulong) " + OCLAssemblerConstants.HEAP_REF_NAME + ")");
         public static final OCLUnaryTemplate ADDRESS_OF = new OCLUnaryTemplate("address of", "&(%s)");
 
         public static final OCLUnaryTemplate NEW_INT_ARRAY = new OCLUnaryTemplate("int[]", "int[%s]");

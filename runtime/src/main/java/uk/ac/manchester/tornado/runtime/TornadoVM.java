@@ -57,7 +57,7 @@ import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
@@ -93,7 +93,7 @@ public class TornadoVM extends TornadoLogger {
     private final List<Object> objects;
 
     private final GlobalObjectState[] globalStates;
-    private final KernelCallWrapper[] callWrappers;
+    private final KernelArgs[] callWrappers;
     private final int[][] events;
     private final int[] eventsIndexes;
     private final List<TornadoAcceleratorDevice> contexts;
@@ -198,7 +198,7 @@ public class TornadoVM extends TornadoLogger {
         return globalStates[index].getDeviceState(contexts.get(device));
     }
 
-    private KernelCallWrapper resolveCallWrapper(int index, int numArgs, KernelCallWrapper[] callWrappers, TornadoAcceleratorDevice device, boolean setNewDevice) {
+    private KernelArgs resolveCallWrapper(int index, int numArgs, KernelArgs[] callWrappers, TornadoAcceleratorDevice device, boolean setNewDevice) {
         if (graphContext.meta().isDebug() && setNewDevice) {
             debug("Recompiling task on device " + device);
         }
@@ -307,7 +307,7 @@ public class TornadoVM extends TornadoLogger {
                 copyInTimer += event.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
 
-                timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getBuffer().size());
+                timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getObjectBuffer().size());
 
                 long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
                 dispatchValue += event.getDriverDispatchTime();
@@ -344,7 +344,7 @@ public class TornadoVM extends TornadoLogger {
                 copyInTimer += event.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
 
-                timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getBuffer().size());
+                timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getObjectBuffer().size());
 
                 long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
                 dispatchValue += event.getDriverDispatchTime();
@@ -381,7 +381,7 @@ public class TornadoVM extends TornadoLogger {
             value += event.getElapsedTime();
             timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
 
-            timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getBuffer().size());
+            timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getObjectBuffer().size());
 
             long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
             dispatchValue += event.getDriverDispatchTime();
@@ -416,7 +416,7 @@ public class TornadoVM extends TornadoLogger {
             value += event.getElapsedTime();
             timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
 
-            timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getBuffer().size());
+            timeProfiler.addValueToMetric(ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getObjectBuffer().size());
 
             long dispatchValue = timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
             dispatchValue += event.getDriverDispatchTime();
@@ -442,7 +442,7 @@ public class TornadoVM extends TornadoLogger {
 
         boolean redeployOnDevice = graphContext.redeployOnDevice();
 
-        final KernelCallWrapper callWrapper = resolveCallWrapper(callWrapperIndex, numArgs, callWrappers, device, redeployOnDevice);
+        final KernelArgs callWrapper = resolveCallWrapper(callWrapperIndex, numArgs, callWrappers, device, redeployOnDevice);
 
         final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
         final SchedulableTask task = tasks.get(taskIndex);
@@ -499,7 +499,7 @@ public class TornadoVM extends TornadoLogger {
 
         final SchedulableTask task = tasks.get(taskIndex);
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
-        KernelCallWrapper callWrapper = info.callWrapper;
+        KernelArgs callWrapper = info.callWrapper;
         int[] waitList = info.waitList;
 
         if (installedCodes[taskIndex] == null) {
@@ -545,7 +545,7 @@ public class TornadoVM extends TornadoLogger {
                 callWrapper.addCallArgument(constants.get(argIndex), false);
             } else if (argType == TornadoVMBytecodes.REFERENCE_ARGUMENT.value()) {
                 if (isObjectKernelContext(objects.get(argIndex))) {
-                    callWrapper.addCallArgument(new KernelCallWrapper.KernelContextDummyArgument(), false);
+                    callWrapper.addCallArgument(new KernelArgs.KernelContextArgument(), false);
                     continue;
                 }
 
@@ -553,7 +553,7 @@ public class TornadoVM extends TornadoLogger {
                 final DeviceObjectState objectState = globalState.getDeviceState(contexts.get(contextIndex));
 
                 if (!isObjectInAtomicRegion(objectState, device, task)) {
-                    callWrapper.addCallArgument(objectState.getBuffer().toBuffer(), true);
+                    callWrapper.addCallArgument(objectState.getObjectBuffer().toBuffer(), true);
                 } else {
                     atomicsArray = device.updateAtomicRegionAndObjectState(task, atomicsArray, i, objects.get(argIndex), objectState);
                 }
@@ -870,10 +870,10 @@ public class TornadoVM extends TornadoLogger {
     }
 
     private static class ExecutionInfo {
-        KernelCallWrapper callWrapper;
+        KernelArgs callWrapper;
         int[] waitList;
 
-        public ExecutionInfo(KernelCallWrapper callWrapper, int[] waitList) {
+        public ExecutionInfo(KernelArgs callWrapper, int[] waitList) {
             this.callWrapper = callWrapper;
             this.waitList = waitList;
         }

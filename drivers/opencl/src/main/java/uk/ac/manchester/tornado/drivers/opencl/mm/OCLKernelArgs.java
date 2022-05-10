@@ -30,16 +30,16 @@ import java.util.HashMap;
 import java.util.List;
 
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 
-public class OCLKernelCallWrapper extends OCLByteBuffer implements KernelCallWrapper {
+public class OCLKernelArgs extends OCLByteBuffer implements KernelArgs {
 
     public final static int RETURN_VALUE_INDEX = 0;
     public static final int RESERVED_SLOTS = 3;
 
     private final ArrayList<CallArgument> callArguments;
 
-    OCLKernelCallWrapper(long bufferId, int numArgs, OCLDeviceContext device) {
+    OCLKernelArgs(long bufferId, int numArgs, OCLDeviceContext device) {
         super(device, bufferId, 0, RESERVED_SLOTS << 3);
         this.callArguments = new ArrayList<>(numArgs);
 

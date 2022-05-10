@@ -69,7 +69,7 @@ import uk.ac.manchester.tornado.drivers.ptx.mm.PTXObjectWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXShortArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXVectorWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -104,7 +104,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public KernelCallWrapper createCallWrapper(int numArgs) {
+    public KernelArgs createCallWrapper(int numArgs) {
         return getDeviceContext().getMemoryManager().createCallWrapper(numArgs);
     }
 
@@ -284,10 +284,10 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public int allocate(Object object, long batchSize, TornadoDeviceObjectState state) {
         final ObjectBuffer buffer;
-        if (!state.hasBuffer() || !state.isPinnedBuffer()) {
-            TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasBuffer(), "A device memory leak might be occurring.");
+        if (!state.hasObjectBuffer() || !state.isPinnedBuffer()) {
+            TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
             buffer = createDeviceBuffer(object.getClass(), object, batchSize);
-            state.setBuffer(buffer);
+            state.setObjectBuffer(buffer);
             buffer.allocate(object, batchSize);
         }
 
@@ -304,9 +304,9 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
             return -1;
         }
 
-        state.getBuffer().deallocate();
+        state.getObjectBuffer().deallocate();
         state.setContents(false);
-        state.setBuffer(null);
+        state.setObjectBuffer(null);
         return -1;
     }
 
@@ -378,7 +378,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long batchSize, long hostOffset) {
         if (!objectState.hasContents() || BENCHMARKING_MODE) {
             objectState.setContents(true);
-            return objectState.getBuffer().enqueueWrite(object, batchSize, hostOffset, events, events != null);
+            return objectState.getObjectBuffer().enqueueWrite(object, batchSize, hostOffset, events, events != null);
         }
         return null;
     }
@@ -405,7 +405,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public List<Integer> streamIn(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
         objectState.setContents(true);
-        return objectState.getBuffer().enqueueWrite(object, batchSize, hostOffset, events, events != null);
+        return objectState.getObjectBuffer().enqueueWrite(object, batchSize, hostOffset, events, events != null);
     }
 
     /**
@@ -426,8 +426,8 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
      */
     @Override
     public int streamOut(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
-        TornadoInternalError.guarantee(objectState.hasBuffer(), "invalid variable");
-        int event = objectState.getBuffer().enqueueRead(object, hostOffset, events, events != null);
+        TornadoInternalError.guarantee(objectState.hasObjectBuffer(), "invalid variable");
+        int event = objectState.getObjectBuffer().enqueueRead(object, hostOffset, events, events != null);
         if (events != null) {
             return event;
         }
@@ -452,8 +452,8 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
      */
     @Override
     public int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
-        TornadoInternalError.guarantee(objectState.hasBuffer(), "invalid variable");
-        return objectState.getBuffer().read(object, hostOffset, events, events != null);
+        TornadoInternalError.guarantee(objectState.hasObjectBuffer(), "invalid variable");
+        return objectState.getObjectBuffer().read(object, hostOffset, events, events != null);
     }
 
     /**

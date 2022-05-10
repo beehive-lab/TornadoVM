@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.mm;
 
-import static uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVKernelCallWrapper.RESERVED_SLOTS;
+import static uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVKernelArgs.RESERVED_SLOTS;
 
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
@@ -42,9 +42,9 @@ public class SPIRVMemoryManager implements TornadoMemoryProvider {
         return deviceContext.getDevice().getDeviceMaxAllocationSize() * 4;
     }
 
-    public SPIRVKernelCallWrapper createCallWrapper(final int maxArgs) {
+    public SPIRVKernelArgs createCallWrapper(final int maxArgs) {
         long kernelCallBuffer = deviceContext.getSpirvContext().allocateMemory(deviceContext.getDevice().getDeviceIndex(), RESERVED_SLOTS * Long.BYTES);
-        return new SPIRVKernelCallWrapper(kernelCallBuffer, maxArgs, deviceContext);
+        return new SPIRVKernelArgs(kernelCallBuffer, maxArgs, deviceContext);
     }
 
     private static long align(final long address, final long alignment) {

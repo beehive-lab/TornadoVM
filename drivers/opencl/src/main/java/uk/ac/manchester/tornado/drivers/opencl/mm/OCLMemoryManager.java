@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-import static uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelCallWrapper.RESERVED_SLOTS;
+import static uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelArgs.RESERVED_SLOTS;
 
 public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProvider {
 
@@ -41,7 +41,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     private static final int MAX_NUMBER_OF_ATOMICS_PER_KERNEL = 128;
     private static final int INTEGER_BYTES_SIZE = 4;
 
-    public OCLKernelCallWrapper oclKernelCallWrapper = null;
+    public OCLKernelArgs oclKernelCallWrapper = null;
 
     public OCLMemoryManager(final OCLDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
@@ -56,10 +56,10 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         return (address % alignment == 0) ? address : address + (alignment - address % alignment);
     }
 
-    public OCLKernelCallWrapper createCallWrapper(final int maxArgs) {
+    public OCLKernelArgs createCallWrapper(final int maxArgs) {
         if (this.oclKernelCallWrapper == null) {
             long kernelCallBuffer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE, RESERVED_SLOTS * Long.BYTES).getBuffer();
-            this.oclKernelCallWrapper = new OCLKernelCallWrapper(kernelCallBuffer, maxArgs, deviceContext);;
+            this.oclKernelCallWrapper = new OCLKernelArgs(kernelCallBuffer, maxArgs, deviceContext);;
         }
         return this.oclKernelCallWrapper;
     }

@@ -160,12 +160,11 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     }
 
     /**
-     * It allocates the smallest of the requested heap size or the max global memory
-     * size.
+     * It allocated the extra buffers that are used by this backend.
      */
     @Override
-    public void allocateHeapMemoryOnDevice() {
-        TornadoInternalError.shouldNotReachHere("Should not allocate any heap memory");
+    public void allocateTornadoVMBuffersOnDevice() {
+        TornadoInternalError.shouldNotReachHere("Should not allocate extra buffers on the device.");
     }
 
     @Override

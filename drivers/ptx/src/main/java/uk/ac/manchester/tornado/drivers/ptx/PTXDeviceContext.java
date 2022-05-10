@@ -41,11 +41,11 @@ import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
-import uk.ac.manchester.tornado.drivers.ptx.mm.PTXKernelCallWrapper;
+import uk.ac.manchester.tornado.drivers.ptx.mm.PTXKernelArgs;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMemoryManager;
 import uk.ac.manchester.tornado.drivers.ptx.runtime.PTXBufferProvider;
 import uk.ac.manchester.tornado.drivers.ptx.runtime.PTXTornadoDevice;
-import uk.ac.manchester.tornado.runtime.common.KernelCallWrapper;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -198,7 +198,7 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
         wasReset = true;
     }
 
-    public int enqueueKernelLaunch(PTXModule module, KernelCallWrapper callWrapper, TaskMetaData taskMeta, long batchThreads) {
+    public int enqueueKernelLaunch(PTXModule module, KernelArgs callWrapper, TaskMetaData taskMeta, long batchThreads) {
         int[] blockDimension = { 1, 1, 1 };
         int[] gridDimension = { 1, 1, 1 };
         if (taskMeta.isWorkerGridAvailable()) {
@@ -223,12 +223,12 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
             blockDimension = scheduler.calculateBlockDimension(module, taskMeta);
             gridDimension = scheduler.calculateGridDimension(module, taskMeta, blockDimension);
         }
-        int kernelLaunchEvent = stream.enqueueKernelLaunch(module, taskMeta, writePTXKernelContextOnDevice((PTXKernelCallWrapper) callWrapper, taskMeta), gridDimension, blockDimension);
+        int kernelLaunchEvent = stream.enqueueKernelLaunch(module, taskMeta, writePTXKernelContextOnDevice((PTXKernelArgs) callWrapper, taskMeta), gridDimension, blockDimension);
         updateProfiler(kernelLaunchEvent, taskMeta);
         return kernelLaunchEvent;
     }
 
-    private byte[] writePTXKernelContextOnDevice(PTXKernelCallWrapper callWrapper, TaskMetaData meta) {
+    private byte[] writePTXKernelContextOnDevice(PTXKernelArgs callWrapper, TaskMetaData meta) {
         ByteBuffer args = ByteBuffer.allocate(Long.BYTES + callWrapper.getCallArguments().size() * Long.BYTES);
         args.order(getByteOrder());
 
@@ -240,8 +240,8 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
 
         // Parameters
         for (int argIndex = 0; argIndex < callWrapper.getCallArguments().size(); argIndex++) {
-            uk.ac.manchester.tornado.runtime.common.KernelCallWrapper.CallArgument arg = callWrapper.getCallArguments().get(argIndex);
-            if (arg.getValue() instanceof KernelCallWrapper.KernelContextDummyArgument) {
+            KernelArgs.CallArgument arg = callWrapper.getCallArguments().get(argIndex);
+            if (arg.getValue() instanceof KernelArgs.KernelContextArgument) {
                 continue;
             }
             if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
@@ -254,7 +254,7 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
         return args.array();
     }
 
-    private void updateProfilerKernelContextWrite(int kernelContextWriteEventId, TaskMetaData meta, PTXKernelCallWrapper callWrapper) {
+    private void updateProfilerKernelContextWrite(int kernelContextWriteEventId, TaskMetaData meta, PTXKernelArgs callWrapper) {
         if (TornadoOptions.isProfilerEnabled()) {
             TornadoProfiler profiler = meta.getProfiler();
             Event event = resolveEvent(kernelContextWriteEventId);
