@@ -143,12 +143,12 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     /**
      * Set arguments into the OpenCL device Kernel.
      *
-     * @param callWrapper
+     * @param kernelArgs
      *            OpenCL kernel parameters {@link OCLByteBuffer}
      * @param meta
      *            task metadata {@link TaskMetaData}
      */
-    private void setKernelArgs(final OCLKernelArgs callWrapper, final ObjectBuffer atomicSpace, TaskMetaData meta) {
+    private void setKernelArgs(final OCLKernelArgs kernelArgs, final ObjectBuffer atomicSpace, TaskMetaData meta) {
         int index = 0;
 
         if (deviceContext.needsBump()) {
@@ -160,11 +160,31 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
         // kernel context
         buffer.clear();
-        buffer.putLong(callWrapper.toBuffer());
+        buffer.putLong(kernelArgs.toBuffer());
         kernel.setArg(index, buffer);
         index++;
 
         if (isSPIRVBinary) {
+            // Set the rest of the SPIR-V kernel arguments.
+            for (int i = 0, argIndex = 0; i < kernelArgs.getCallArguments().size(); i++) {
+                KernelArgs.CallArgument arg = kernelArgs.getCallArguments().get(i);
+                // Include the extra kernel context argument for SPIR-V binaries.
+                if (arg.getValue() instanceof KernelArgs.KernelContextArgument) {
+                    buffer.clear();
+                    buffer.putLong(kernelArgs.toBuffer());
+                    kernel.setArg(index + argIndex, buffer);
+                    argIndex++;
+                    continue;
+                }
+                if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
+                    buffer.clear();
+                    PrimitiveSerialiser.put(buffer, arg.getValue());
+                    kernel.setArg(index + argIndex, buffer);
+                } else {
+                    shouldNotReachHere();
+                }
+                argIndex++;
+            }
             return;
         }
 
@@ -173,7 +193,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             kernel.setArg(index, ByteBuffer.wrap(meta.getConstantData()));
         } else {
             buffer.clear();
-            buffer.putLong(callWrapper.toConstantAddress());
+            buffer.putLong(kernelArgs.toConstantAddress());
             kernel.setArg(index, buffer);
         }
         index++;
@@ -189,13 +209,13 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
         // Atomics in Global Memory
         buffer.clear();
-        buffer.putLong(callWrapper.toAtomicAddress());
+        buffer.putLong(kernelArgs.toAtomicAddress());
         kernel.setArg(index, buffer);
         index++;
 
         // Parameters
-        for (int i = 0, argIndex = 0; i < callWrapper.getCallArguments().size(); i++) {
-            KernelArgs.CallArgument arg = callWrapper.getCallArguments().get(i);
+        for (int i = 0, argIndex = 0; i < kernelArgs.getCallArguments().size(); i++) {
+            KernelArgs.CallArgument arg = kernelArgs.getCallArguments().get(i);
             if (arg.getValue() instanceof KernelArgs.KernelContextArgument) {
                 continue;
             }
