@@ -27,15 +27,12 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMRuntime;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.trace;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,9 +42,7 @@ import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
-import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -135,7 +130,7 @@ public class PTXObjectWrapper implements ObjectBuffer {
             debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
         }
 
-        this.address = deviceContext.getBufferProvider().getBuffer(getObjectSize());
+        this.address = deviceContext.getBufferProvider().getBufferWithSize(getObjectSize());
 
         if (DEBUG) {
             debug("object: object=0x%x @ address 0x%x", reference.hashCode(), address);
@@ -350,23 +345,21 @@ public class PTXObjectWrapper implements ObjectBuffer {
     @Override
     public int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps) {
         final int returnEvent;
-            int index = 0;
-            int[] internalEvents = new int[fields.length];
-            Arrays.fill(internalEvents, -1);
+        int index = 0;
+        int[] internalEvents = new int[fields.length];
+        Arrays.fill(internalEvents, -1);
 
-            for (FieldBuffer fb : wrappedFields) {
-                if (fb != null) {
-                    internalEvents[index] = fb.enqueueRead(reference, (useDeps) ? events : null, useDeps);
-                    index++;
-                }
+        for (FieldBuffer fb : wrappedFields) {
+            if (fb != null) {
+                internalEvents[index] = fb.enqueueRead(reference, (useDeps) ? events : null, useDeps);
+                index++;
             }
+        }
 
-            internalEvents[index] = deviceContext.enqueueReadBuffer(toBuffer(), getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null);
-            index++;
+        internalEvents[index] = deviceContext.enqueueReadBuffer(toBuffer(), getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null);
+        index++;
 
-            // TODO this needs to run asynchronously
-            deserialise(reference);
-
+        deserialise(reference);
         if (index == 1) {
             returnEvent = internalEvents[0];
         } else {
@@ -378,7 +371,7 @@ public class PTXObjectWrapper implements ObjectBuffer {
     @Override
     public List<Integer> enqueueWrite(Object ref, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         ArrayList<Integer> eventList = new ArrayList<>();
-        // TODO this needs to run asynchronously
+
         serialise(ref);
         eventList.add(deviceContext.enqueueWriteBuffer(toBuffer(), getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null));
         for (final FieldBuffer field : wrappedFields) {

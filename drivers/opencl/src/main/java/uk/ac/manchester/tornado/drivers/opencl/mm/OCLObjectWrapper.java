@@ -108,6 +108,8 @@ public class OCLObjectWrapper implements ObjectBuffer {
                     wrappedField = new OCLLongArrayWrapper((long[]) objectFromField, device, 0);
                 } else if (type == short[].class) {
                     wrappedField = new OCLShortArrayWrapper((short[]) objectFromField, device, 0);
+                } else if (type == char[].class) {
+                    wrappedField = new OCLCharArrayWrapper((char[]) objectFromField, device, 0);
                 } else if (type == byte[].class) {
                     wrappedField = new OCLByteArrayWrapper((byte[]) objectFromField, device, 0);
                 } else {
@@ -138,7 +140,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
             debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
         }
 
-        this.bufferId = deviceContext.getBufferProvider().getBuffer(size());
+        this.bufferId = deviceContext.getBufferProvider().getBufferWithSize(size());
         this.bufferOffset = 0;
         setBuffer(new ObjectBufferWrapper(bufferId, bufferOffset));
 
@@ -369,7 +371,6 @@ public class OCLObjectWrapper implements ObjectBuffer {
         internalEvents[index] = deviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null);
         index++;
 
-        // TODO this needs to run asynchronously
         deserialise(reference);
 
         if (index == 1) {
@@ -384,7 +385,6 @@ public class OCLObjectWrapper implements ObjectBuffer {
     public List<Integer> enqueueWrite(Object ref, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         ArrayList<Integer> eventList = new ArrayList<>();
 
-        // TODO this needs to run asynchronously
         serialise(ref);
         eventList.add(deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null));
         for (final FieldBuffer field : wrappedFields) {

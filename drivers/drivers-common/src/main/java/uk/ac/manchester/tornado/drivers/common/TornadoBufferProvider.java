@@ -107,7 +107,7 @@ public abstract class TornadoBufferProvider {
         return buffer;
     }
 
-    public long getBuffer(long size) {
+    public long getBufferWithSize(long size) {
         TornadoTargetDevice targetDevice = deviceContext.getDevice();
         if (size <= availableMemory && size < targetDevice.getDeviceMaxAllocationSize()) {
             // Allocate if there is enough device memory.

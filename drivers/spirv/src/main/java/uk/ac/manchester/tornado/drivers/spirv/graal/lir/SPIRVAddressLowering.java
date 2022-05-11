@@ -42,7 +42,7 @@ public class SPIRVAddressLowering extends AddressLoweringPhase.AddressLowering {
 
     @Override
     public AddressNode lower(ValueNode base, ValueNode offset) {
-        SPIRVArchitecture.SPIRVMemoryBase memoryRegister = SPIRVArchitecture.globalSpace;
+        SPIRVArchitecture.SPIRVMemoryBase memoryRegister = SPIRVArchitecture.kernelContextSpace;
         if (base instanceof FixedArrayNode) {
             memoryRegister = ((FixedArrayNode) base).getMemoryRegister();
         } else if (base instanceof LocalArrayNode) {

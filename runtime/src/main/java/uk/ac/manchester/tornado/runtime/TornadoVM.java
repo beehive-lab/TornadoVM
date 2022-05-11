@@ -563,7 +563,7 @@ public class TornadoVM extends TornadoLogger {
         }
 
         if (atomicsArray != null) {
-            bufferAtomics = device.createOrReuseBufferAtomicsBuffer(atomicsArray);
+            bufferAtomics = device.createOrReuseAtomicsBuffer(atomicsArray);
             List<Integer> allEvents = bufferAtomics.enqueueWrite(null, 0, 0, null, false);
             if (TornadoOptions.isProfilerEnabled()) {
                 for (Integer e : allEvents) {

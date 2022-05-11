@@ -53,7 +53,7 @@ public interface TornadoDeviceObjectState {
 
     void setAtomicRegion();
 
-    boolean isPinnedBuffer();
+    boolean isLockedBuffer();
 
     boolean hasContents();
 

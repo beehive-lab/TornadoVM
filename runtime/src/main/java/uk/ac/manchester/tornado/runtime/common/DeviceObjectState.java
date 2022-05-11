@@ -36,13 +36,13 @@ public class DeviceObjectState implements TornadoDeviceObjectState {
     private boolean atomicRegionPresent;
 
     private boolean contents;
-    private boolean pinnedBuffer;
+    private boolean lockBuffer;
 
     public DeviceObjectState() {
         objectBuffer = null;
         atomicRegionPresent = false;
         contents = false;
-        pinnedBuffer = false;
+        lockBuffer = false;
     }
 
     public void setObjectBuffer(ObjectBuffer value) {
@@ -62,12 +62,12 @@ public class DeviceObjectState implements TornadoDeviceObjectState {
         return objectBuffer;
     }
 
-    public boolean isPinnedBuffer() {
-        return pinnedBuffer;
+    public boolean isLockedBuffer() {
+        return lockBuffer;
     }
 
-    public void setPinnedBuffer(boolean pinnedBuffer) {
-        this.pinnedBuffer = pinnedBuffer;
+    public void setLockBuffer(boolean lockBuffer) {
+        this.lockBuffer = lockBuffer;
     }
 
     public boolean hasContents() {

@@ -109,12 +109,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public ObjectBuffer createAtomicsBuffer(int[] arr) {
-        throw new TornadoRuntimeException("[PTX] Atomics not implemented !");
-    }
-
-    @Override
-    public ObjectBuffer createOrReuseBufferAtomicsBuffer(int[] arr) {
+    public ObjectBuffer createOrReuseAtomicsBuffer(int[] arr) {
         return null;
     }
 
@@ -284,7 +279,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public int allocate(Object object, long batchSize, TornadoDeviceObjectState state) {
         final ObjectBuffer buffer;
-        if (!state.hasObjectBuffer() || !state.isPinnedBuffer()) {
+        if (!state.hasObjectBuffer() || !state.isLockedBuffer()) {
             TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
             buffer = createDeviceBuffer(object.getClass(), object, batchSize);
             state.setObjectBuffer(buffer);
@@ -300,7 +295,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public int deallocate(TornadoDeviceObjectState state) {
-        if (state.isPinnedBuffer()) {
+        if (state.isLockedBuffer()) {
             return -1;
         }
 

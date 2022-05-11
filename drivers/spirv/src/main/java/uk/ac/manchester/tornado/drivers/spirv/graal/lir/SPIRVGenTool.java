@@ -64,17 +64,9 @@ public class SPIRVGenTool {
         Variable result = (spirvKind.isVector()) ? generator.newVariable(LIRKind.value(target.getSPIRVKind(JavaKind.Object))) : generator.newVariable(lirKind);
 
         if (TornadoOptions.OPTIMIZE_LOAD_STORE_SPIRV) {
-            if (TornadoOptions.NEW_MM) {
-                emitParameterLoadWithNoStoreNewMemoryModel(result, index);
-            } else {
-                emitParameterLoadWithNoStore(result, index);
-            }
+            emitParameterLoadWithNoStore(result, index);
         } else {
-            if (TornadoOptions.NEW_MM) {
-                emitParameterLoadWithNewMemoryModel(result, index);
-            } else {
-                emitParameterLoad(result, index);
-            }
+            emitParameterLoad(result, index);
         }
         parameterToVariable.put(paramNode, result);
 
@@ -87,7 +79,7 @@ public class SPIRVGenTool {
 
     private Variable emitLoadParameterForVectorType(Variable result, LIRKind lirKind) {
         Variable vectorToLoad = generator.newVariable(lirKind);
-        SPIRVArchitecture.SPIRVMemoryBase base = SPIRVArchitecture.globalSpace;
+        SPIRVArchitecture.SPIRVMemoryBase base = SPIRVArchitecture.kernelContextSpace;
         SPIRVUnary.MemoryAccess address = new SPIRVUnary.MemoryAccess(base, result);
         SPIRVUnary.SPIRVAddressCast cast = new SPIRVUnary.SPIRVAddressCast(address, base, lirKind);
         generator.append(new SPIRVLIRStmt.LoadVectorStmt(vectorToLoad, cast, address));
@@ -95,23 +87,6 @@ public class SPIRVGenTool {
     }
 
     private void emitParameterLoad(AllocatableValue resultValue, int index) {
-        SPIRVKind spirvKind = (SPIRVKind) resultValue.getPlatformKind();
-        LIRKind lirKind = LIRKind.value(spirvKind);
-
-        SPIRVLIRStmt.ASSIGNParameter assignStmt = new SPIRVLIRStmt.ASSIGNParameter( //
-                resultValue, //
-                new SPIRVUnary.LoadFromStackFrameExpr( //
-                        lirKind, //
-                        SPIRVKind.OP_TYPE_INT_64, //
-                        (STACK_BASE_OFFSET + index), //
-                        index), //
-                SPIRVKind.OP_TYPE_INT_64.getSizeInBytes(), //
-                index); //
-
-        generator.append(assignStmt);
-    }
-
-    private void emitParameterLoadWithNewMemoryModel(AllocatableValue resultValue, int index) {
         SPIRVKind spirvKind = (SPIRVKind) resultValue.getPlatformKind();
         LIRKind lirKind = LIRKind.value(spirvKind);
 
@@ -129,21 +104,6 @@ public class SPIRVGenTool {
     }
 
     private void emitParameterLoadWithNoStore(AllocatableValue resultValue, int index) {
-        SPIRVKind spirvKind = (SPIRVKind) resultValue.getPlatformKind();
-        LIRKind lirKind = LIRKind.value(spirvKind);
-
-        SPIRVLIRStmt.ASSIGNParameterWithNoStore assignStmt = new SPIRVLIRStmt.ASSIGNParameterWithNoStore( //
-                resultValue, //
-                new SPIRVUnary.LoadFromStackFrameExpr( //
-                        lirKind, //
-                        SPIRVKind.OP_TYPE_INT_64, //
-                        (STACK_BASE_OFFSET + index), //
-                        index));
-
-        generator.append(assignStmt);
-    }
-
-    private void emitParameterLoadWithNoStoreNewMemoryModel(AllocatableValue resultValue, int index) {
         SPIRVKind spirvKind = (SPIRVKind) resultValue.getPlatformKind();
         LIRKind lirKind = LIRKind.value(spirvKind);
 

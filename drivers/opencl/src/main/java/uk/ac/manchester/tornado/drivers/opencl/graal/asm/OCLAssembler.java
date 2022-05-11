@@ -50,6 +50,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResu
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLNullary;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 
 public final class OCLAssembler extends Assembler {
 
@@ -419,11 +420,19 @@ public final class OCLAssembler extends Assembler {
     }
 
     public void emitValue(OCLCompilationResultBuilder crb, Value value) {
-        emit(toString(value));
+        if (value instanceof OCLReturnSlot) {
+            ((OCLReturnSlot) value).emit(crb, this);
+        } else {
+            emit(toString(value));
+        }
     }
 
     public String getStringValue(OCLCompilationResultBuilder crb, Value value) {
-        return toString(value);
+        if (value instanceof OCLReturnSlot) {
+            return ((OCLReturnSlot) value).getStringFormat();
+        } else {
+            return toString(value);
+        }
     }
 
     public void assign() {

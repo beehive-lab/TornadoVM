@@ -241,7 +241,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         if (isKernel) {
             getGen().emitParameterAlloc();
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
-                setResult(param, getGen().getPTXGenTool().emitParameterLoad(locals, param));
+                setResult(param, getGen().getPTXGenTool().emitParameterLoad(locals[param.index()], param));
             }
         } else {
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {

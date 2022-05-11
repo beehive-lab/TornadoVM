@@ -54,7 +54,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.meta.SPIRVMemorySpace;
  */
 public class SPIRVArchitecture extends Architecture {
 
-    public static final SPIRVMemoryBase globalSpace = new SPIRVMemoryBase(0, GLOBAL_REGION_NAME, SPIRVMemorySpace.GLOBAL, SPIRVKind.OP_TYPE_INT_8);
+    public static final SPIRVMemoryBase kernelContextSpace = new SPIRVMemoryBase(0, GLOBAL_REGION_NAME, SPIRVMemorySpace.GLOBAL, SPIRVKind.OP_TYPE_INT_8);
     public static final SPIRVMemoryBase localSpace = new SPIRVMemoryBase(1, LOCAL_REGION_NAME, SPIRVMemorySpace.LOCAL, SPIRVKind.OP_TYPE_INT_8);
     public static final SPIRVMemoryBase privateSpace = new SPIRVMemoryBase(2, PRIVATE_REGION_NAME, SPIRVMemorySpace.PRIVATE, SPIRVKind.OP_TYPE_INT_8);
     private static final int NATIVE_CALL_DISPLACEMENT_OFFSET = 0;
@@ -64,7 +64,7 @@ public class SPIRVArchitecture extends Architecture {
 
     public SPIRVArchitecture(SPIRVKind wordKind, ByteOrder byteOrder) {
         super(BACKEND_ARCHITECTURE, wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, NATIVE_CALL_DISPLACEMENT_OFFSET, RETURN_ADDRESS_SIZE);
-        abiRegisters = new SPIRVRegister[] { globalSpace };
+        abiRegisters = new SPIRVRegister[] {kernelContextSpace};
     }
 
     @Override

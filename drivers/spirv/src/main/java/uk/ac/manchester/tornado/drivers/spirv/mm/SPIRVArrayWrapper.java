@@ -267,7 +267,7 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
-        this.bufferId = deviceContext.getBufferProvider().getBuffer(bufferSize);
+        this.bufferId = deviceContext.getBufferProvider().getBufferWithSize(bufferSize);
 
         if (Tornado.FULL_DEBUG) {
             info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset,

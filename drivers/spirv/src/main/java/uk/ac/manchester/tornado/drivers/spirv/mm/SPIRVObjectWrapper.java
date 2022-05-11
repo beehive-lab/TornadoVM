@@ -105,6 +105,8 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
                     wrappedField = new SPIRVLongArrayWrapper((long[]) objectFromField, deviceContext, 0);
                 } else if (type == short[].class) {
                     wrappedField = new SPIRVShortArrayWrapper((short[]) objectFromField, deviceContext, 0);
+                } else if (type == char[].class) {
+                    wrappedField = new SPIRVCharArrayWrapper((char[]) objectFromField, deviceContext, 0);
                 } else if (type == byte[].class) {
                     wrappedField = new SPIRVByteArrayWrapper((byte[]) objectFromField, deviceContext, 0);
                 } else {
@@ -135,7 +137,7 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
             debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
         }
 
-        this.bufferId = deviceContext.getBufferProvider().getBuffer(size());
+        this.bufferId = deviceContext.getBufferProvider().getBufferWithSize(size());
         this.bufferOffset = 0;
         setBuffer(new ObjectBufferWrapper(bufferId, bufferOffset));
 
@@ -366,9 +368,7 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
         internalEvents[index] = deviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null);
         index++;
 
-        // TODO this needs to run asynchronously
         deserialise(reference);
-
         if (index == 1) {
             returnEvent = internalEvents[0];
         } else {
@@ -381,7 +381,6 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
     public List<Integer> enqueueWrite(Object ref, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         ArrayList<Integer> eventList = new ArrayList<>();
 
-        // TODO this needs to run asynchronously
         serialise(ref);
         eventList.add(deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null));
         for (final FieldBuffer field : wrappedFields) {

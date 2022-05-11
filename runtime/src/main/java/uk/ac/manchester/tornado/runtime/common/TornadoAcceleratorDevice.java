@@ -36,9 +36,7 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
 
     KernelArgs createCallWrapper(int numArgs);
 
-    ObjectBuffer createAtomicsBuffer(int[] buffer);
-
-    ObjectBuffer createOrReuseBufferAtomicsBuffer(int[] arr);
+    ObjectBuffer createOrReuseAtomicsBuffer(int[] arr);
 
     TornadoInstalledCode installCode(SchedulableTask task);
 

@@ -120,12 +120,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public ObjectBuffer createAtomicsBuffer(int[] buffer) {
-        return null;
-    }
-
-    @Override
-    public ObjectBuffer createOrReuseBufferAtomicsBuffer(int[] arr) {
+    public ObjectBuffer createOrReuseAtomicsBuffer(int[] arr) {
         return null;
     }
 
@@ -336,7 +331,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public int allocate(Object object, long batchSize, TornadoDeviceObjectState state) {
         final ObjectBuffer buffer;
-        if (state.hasObjectBuffer() && state.isPinnedBuffer()) {
+        if (state.hasObjectBuffer() && state.isLockedBuffer()) {
             buffer = state.getObjectBuffer();
         } else {
             TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
@@ -358,7 +353,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public int deallocate(TornadoDeviceObjectState state) {
-        if (state.isPinnedBuffer()) {
+        if (state.isLockedBuffer()) {
             return -1;
         }
 

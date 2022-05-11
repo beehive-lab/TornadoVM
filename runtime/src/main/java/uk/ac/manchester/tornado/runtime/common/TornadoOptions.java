@@ -215,7 +215,6 @@ public class TornadoOptions {
      * memory)
      */
     public static final int LEVEL_ZERO_BUFFER_ALIGNMENT = getIntValue("tornado.spirv.levelzero.alignment", "64");
-    public static final boolean NEW_MM = getBooleanValue("tornado.new.memorymodel", TRUE);
     /**
      * Option to load FPGA pre-compiled binaries.
      */

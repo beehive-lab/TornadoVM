@@ -614,7 +614,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         final Local[] locals = graph.method().getLocalVariableTable().getLocalsAt(0);
         if (isKernel) {
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
-                setResult(param, getGen().getOCLGenTool().emitParameterLoad(locals, param));
+                setResult(param, getGen().getOCLGenTool().emitParameterLoad(locals[param.index()], param));
             }
         } else {
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {

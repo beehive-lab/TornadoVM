@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,7 +29,6 @@ import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
 
 
 public class PTXKernelArgs extends PTXByteBuffer implements KernelArgs {

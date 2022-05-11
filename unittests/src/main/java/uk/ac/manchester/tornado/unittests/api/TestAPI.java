@@ -27,7 +27,6 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.unittests.arrays.TestArrays;
-import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestAPI extends TornadoTestBase {
@@ -45,12 +44,12 @@ public class TestAPI extends TornadoTestBase {
         TaskSchedule s0 = new TaskSchedule("s0");
         assertNotNull(s0);
 
-        s0.pinObjectInMemory(data);
+        s0.lockObjectInMemory(data);
 
         s0.task("t0", TestArrays::addAccumulator, data, 1).execute();
         s0.syncObject(data);
 
-        s0.releasePinnedObject(data);
+        s0.unlockObjectFromMemory(data);
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data[i]);
@@ -71,13 +70,13 @@ public class TestAPI extends TornadoTestBase {
         TaskSchedule s0 = new TaskSchedule("s0");
         assertNotNull(s0);
 
-        s0.pinObjectInMemory(data);
+        s0.lockObjectInMemory(data);
 
         s0.task("t0", TestArrays::addAccumulator, data, 1);
         s0.execute();
         s0.syncObjects(data);
 
-        s0.releasePinnedObject(data);
+        s0.unlockObjectFromMemory(data);
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data[i]);
@@ -98,14 +97,14 @@ public class TestAPI extends TornadoTestBase {
         TaskSchedule s0 = new TaskSchedule("s0");
         assertNotNull(s0);
 
-        s0.pinObjectInMemory(data);
+        s0.lockObjectInMemory(data);
 
         s0.task("t0", TestArrays::addAccumulator, data, 1);
         s0.streamOut(data);
         s0.warmup();
         s0.execute();
 
-        s0.releasePinnedObject(data);
+        s0.unlockObjectFromMemory(data);
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data[i]);

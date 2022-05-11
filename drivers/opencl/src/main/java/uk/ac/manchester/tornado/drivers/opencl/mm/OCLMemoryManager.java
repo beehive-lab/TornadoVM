@@ -29,8 +29,10 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 import static uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelArgs.RESERVED_SLOTS;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
 
 public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProvider {
 
@@ -49,7 +51,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
 
     @Override
     public long getHeapSize() {
-        return deviceContext.getDevice().getDeviceMaxAllocationSize() * 4;
+        return DEVICE_AVAILABLE_MEMORY;
     }
 
     private static long align(final long address, final long alignment) {
@@ -58,8 +60,8 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
 
     public OCLKernelArgs createCallWrapper(final int maxArgs) {
         if (this.oclKernelCallWrapper == null) {
-            long kernelCallBuffer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE, RESERVED_SLOTS * Long.BYTES).getBuffer();
-            this.oclKernelCallWrapper = new OCLKernelArgs(kernelCallBuffer, maxArgs, deviceContext);;
+            long kernelCallBuffer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_ONLY, RESERVED_SLOTS * Long.BYTES).getBuffer();
+            this.oclKernelCallWrapper = new OCLKernelArgs(kernelCallBuffer, maxArgs, deviceContext);
         }
         return this.oclKernelCallWrapper;
     }
@@ -72,7 +74,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
      * Allocate regions on the device.
      */
     public void allocateDeviceMemoryRegions() {
-        this.constantPointer = createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, 4).getBuffer();
+        this.constantPointer = createBuffer(OCLMemFlags.CL_MEM_READ_ONLY | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, 4).getBuffer();
         allocateAtomicRegion();
     }
 

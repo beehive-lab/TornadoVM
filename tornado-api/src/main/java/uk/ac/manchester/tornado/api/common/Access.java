@@ -60,4 +60,10 @@ public enum Access {
         this.position = position;
     }
 
+    // Enum.values() always allocates, so use this cached version instead and do not change elements in the array.
+    private static final Access[] accessesArray = Access.values();
+    public static Access[] asArray() {
+        return accessesArray;
+    }
+
 }

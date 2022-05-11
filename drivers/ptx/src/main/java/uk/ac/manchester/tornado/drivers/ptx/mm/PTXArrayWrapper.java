@@ -29,7 +29,6 @@ import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanRead
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VALIDATE_ARRAY_HEADERS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PTX_ARRAY_ALIGNMENT;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -220,7 +219,7 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
-        this.buffer = deviceContext.getBufferProvider().getBuffer(bufferSize);
+        this.buffer = deviceContext.getBufferProvider().getBufferWithSize(bufferSize);
 
         if (Tornado.FULL_DEBUG) {
             info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset,

@@ -427,9 +427,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         for (LocalObjectState localState : executionContext.getObjectStates()) {
             final GlobalObjectState globalState = localState.getGlobalState();
             final DeviceObjectState deviceState = globalState.getDeviceState(oldDevice);
-            if (deviceState.isPinnedBuffer()) {
-                releasePinnedBufferFromDevice(localState, oldDevice);
-                pinObjectInMemoryOnDevice(localState, device);
+            if (deviceState.isLockedBuffer()) {
+                unlockObjectFromDevice(localState, oldDevice);
+                lockObjectInMemoryOnDevice(localState, device);
             }
         }
     }
@@ -843,47 +843,47 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @Override
-    public void pinObjectInMemory(Object object) {
+    public void lockObjectInMemory(Object object) {
         final LocalObjectState localState = executionContext.getObjectState(object);
-        pinObjectInMemoryOnDevice(localState, meta().getLogicDevice());
+        lockObjectInMemoryOnDevice(localState, meta().getLogicDevice());
     }
 
-    private void pinObjectInMemoryOnDevice(final LocalObjectState localState, final TornadoDevice device) {
+    private void lockObjectInMemoryOnDevice(final LocalObjectState localState, final TornadoDevice device) {
         final GlobalObjectState globalState = localState.getGlobalState();
         final DeviceObjectState deviceState = globalState.getDeviceState(device);
-        deviceState.setPinnedBuffer(true);
+        deviceState.setLockBuffer(true);
     }
 
     @Override
-    public void pinObjectsInMemory(Object[] objects) {
+    public void lockObjectsInMemory(Object[] objects) {
         for (Object obj : objects) {
-            pinObjectInMemory(obj);
+            lockObjectInMemory(obj);
         }
     }
 
     @Override
-    public void releasePinnedObject(Object object) {
+    public void unlockObjectFromMemory(Object object) {
         if (vm == null) {
             return;
         }
 
         final LocalObjectState localState = executionContext.getObjectState(object);
-        releasePinnedBufferFromDevice(localState, meta().getLogicDevice());
+        unlockObjectFromDevice(localState, meta().getLogicDevice());
     }
 
-    private void releasePinnedBufferFromDevice(final LocalObjectState localState, final TornadoDevice device) {
+    private void unlockObjectFromDevice(final LocalObjectState localState, final TornadoDevice device) {
         final GlobalObjectState globalState = localState.getGlobalState();
         final DeviceObjectState deviceState = globalState.getDeviceState(device);
-        deviceState.setPinnedBuffer(false);
+        deviceState.setLockBuffer(false);
         if (deviceState.hasObjectBuffer()) {
             device.deallocate(deviceState);
         }
     }
 
     @Override
-    public void releasePinnedObjects(Object[] objects) {
+    public void unlockObjectsFromMemory(Object[] objects) {
         for (Object obj : objects) {
-            releasePinnedObject(obj);
+            unlockObjectFromMemory(obj);
         }
     }
 
@@ -907,7 +907,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         final GlobalObjectState globalState = localState.getGlobalState();
         final TornadoAcceleratorDevice device = meta().getLogicDevice();
         final DeviceObjectState deviceState = globalState.getDeviceState(device);
-        if (deviceState.isPinnedBuffer()) {
+        if (deviceState.isLockedBuffer()) {
             return device.resolveEvent(device.streamOutBlocking(object, 0, deviceState, null));
         }
         return null;

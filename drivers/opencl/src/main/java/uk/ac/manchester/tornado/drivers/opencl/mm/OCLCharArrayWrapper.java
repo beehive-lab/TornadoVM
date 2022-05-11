@@ -34,8 +34,8 @@ public class OCLCharArrayWrapper extends OCLArrayWrapper<char[]> {
         super(device, JavaKind.Char, batchSize);
     }
 
-    protected OCLCharArrayWrapper(final char[] array, final OCLDeviceContext device, final JavaKind kind, long batchSize) {
-        super(array, device, kind, batchSize);
+    protected OCLCharArrayWrapper(final char[] array, final OCLDeviceContext device, long batchSize) {
+        super(array, device, JavaKind.Char, batchSize);
     }
 
     @Override

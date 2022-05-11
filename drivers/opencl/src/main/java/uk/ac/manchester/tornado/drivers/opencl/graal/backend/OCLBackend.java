@@ -140,24 +140,9 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return backEndInitialized;
     }
 
-    @SuppressWarnings("unused")
-    private static Object lookupBufferAddress() {
-        return CompilerInternals.getSlotsAddress();
-    }
-
     @Override
     public ReferenceMapBuilder newReferenceMapBuilder(int totalFrameSize) {
         return new OCLReferenceMapBuilder();
-    }
-
-    private Method getLookupMethod() {
-        Method method = null;
-        try {
-            method = this.getClass().getDeclaredMethod("lookupBufferAddress");
-        } catch (NoSuchMethodException e) {
-            Tornado.fatal("[FATAL ERROR] Unable to find the <lookupBufferAddress> method within OCLBackend");
-        }
-        return method;
     }
 
     /**

@@ -128,12 +128,7 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public ObjectBuffer createAtomicsBuffer(int[] arr) {
-        return null;
-    }
-
-    @Override
-    public ObjectBuffer createOrReuseBufferAtomicsBuffer(int[] arr) {
+    public ObjectBuffer createOrReuseAtomicsBuffer(int[] arr) {
         return null;
     }
 

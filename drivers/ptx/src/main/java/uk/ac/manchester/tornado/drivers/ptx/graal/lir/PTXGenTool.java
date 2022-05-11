@@ -61,7 +61,7 @@ public class PTXGenTool {
         gen.append(new PTXLIRStmt.VectorLoadStmt(result, address));
     }
 
-    public Value emitParameterLoad(Local[] locals,  ParameterNode paramNode) {
+    public Value emitParameterLoad(Local local,  ParameterNode paramNode) {
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitParameterLoad: stamp=%s", paramNode.stamp(NodeView.DEFAULT));
 
         LIRKind lirKind = gen.getLIRKind(paramNode.stamp(NodeView.DEFAULT));
@@ -71,7 +71,7 @@ public class PTXGenTool {
         PTXTargetDescription target = gen.target();
 
         Variable result = (kind.isVector()) ? gen.newVariable(LIRKind.value(target.getPTXKind(JavaKind.Object))) : gen.newVariable(lirKind);
-        gen.append(new PTXLIRStmt.LoadStmt(new PTXUnary.MemoryAccess(locals[paramNode.index()].getName()), result, PTXAssembler.PTXNullaryOp.LD));
+        gen.append(new PTXLIRStmt.LoadStmt(new PTXUnary.MemoryAccess(local.getName()), result, PTXAssembler.PTXNullaryOp.LD));
         parameterToVariable.put(paramNode, result);
 
         if (kind.isVector()) {

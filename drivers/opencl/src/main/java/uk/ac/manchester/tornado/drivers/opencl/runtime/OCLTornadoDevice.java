@@ -201,12 +201,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public ObjectBuffer createAtomicsBuffer(int[] array) {
-        return getDeviceContext().getMemoryManager().createAtomicsBuffer(array);
-    }
-
-    @Override
-    public ObjectBuffer createOrReuseBufferAtomicsBuffer(int[] array) {
+    public ObjectBuffer createOrReuseAtomicsBuffer(int[] array) {
         if (reuseBuffer == null) {
             reuseBuffer = getDeviceContext().getMemoryManager().createAtomicsBuffer(array);
         }
@@ -539,7 +534,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public int allocate(Object object, long batchSize, TornadoDeviceObjectState state) {
         final ObjectBuffer buffer;
-        if (state.hasObjectBuffer() && state.isPinnedBuffer()) {
+        if (state.hasObjectBuffer() && state.isLockedBuffer()) {
             buffer = state.getObjectBuffer();
         } else {
             TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
@@ -561,7 +556,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public int deallocate(TornadoDeviceObjectState state) {
-        if (state.isPinnedBuffer()) {
+        if (state.isLockedBuffer()) {
             return -1;
         }
 

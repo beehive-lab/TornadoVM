@@ -645,13 +645,21 @@ public interface TornadoAPI {
 
     void clearProfiles();
 
-    TornadoAPI pinObjectInMemory(Object object);
+    /**
+     * Locks this object on the device memory. If a {@link TaskSchedule} is executed multiple times, then
+     * this object will be copied in only for the first execution.
+     */
+    TornadoAPI lockObjectInMemory(Object object);
 
-    TornadoAPI pinObjectsInMemory(Object... objects);
+    TornadoAPI lockObjectsInMemory(Object... objects);
 
-    TornadoAPI releasePinnedObject(Object object);
+    /**
+     * Unlocks this object from the device memory. The object must have been previously locked in order to unlock it.
+     * Once the object has been unlocked, it will be copied in on every subsequent execution of the {@link TaskSchedule}.
+     */
+    TornadoAPI unlockObjectFromMemory(Object object);
 
-    TornadoAPI releasePinnedObjects(Object... objects);
+    TornadoAPI unlockObjectsFromMemory(Object... objects);
 
     void syncObjects();
 

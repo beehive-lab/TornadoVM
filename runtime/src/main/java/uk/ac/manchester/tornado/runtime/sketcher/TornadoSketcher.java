@@ -278,7 +278,7 @@ public class TornadoSketcher {
             Access calleeAcc = calleeAccesses[index];
             Access callerAcc = callerAccesses[paramIndex];
 
-            callerAccesses[paramIndex] = Access.values()[callerAcc.position | calleeAcc.position];
+            callerAccesses[paramIndex] = Access.asArray()[callerAcc.position | calleeAcc.position];
         }
     }
 }

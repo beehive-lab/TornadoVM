@@ -63,7 +63,7 @@ public class OCLGenTool {
 
     protected OCLLIRGenerator gen;
 
-    private final HashMap<ParameterNode, Value> parameterToVariable = new HashMap<>();
+    private final HashMap<ParameterNode, Variable> parameterToVariable = new HashMap<>();
 
     public OCLGenTool(OCLLIRGenerator gen) {
         this.gen = gen;
@@ -74,7 +74,7 @@ public class OCLGenTool {
         gen.append(new VectorLoadStmt(result, op, index, cast, address));
     }
 
-    public Value emitParameterLoad(Local[] locals, ParameterNode paramNode) {
+    public Value emitParameterLoad(Local local, ParameterNode paramNode) {
 
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitParameterLoad: stamp=%s", paramNode.stamp(NodeView.DEFAULT));
 
@@ -86,7 +86,7 @@ public class OCLGenTool {
         OCLTargetDescription oclTarget = gen.target();
 
         Variable result = (oclKind.isVector()) ? gen.newVariable(LIRKind.value(oclTarget.getOCLKind(JavaKind.Object))) : gen.newVariable(lirKind);
-        gen.append(new AssignStmt(result, new OCLNullary.Parameter(OCLUnaryOp.CAST_TO_ULONG + locals[paramNode.index()].getName(), lirKind)));
+        gen.append(new AssignStmt(result, new OCLNullary.Parameter(OCLUnaryOp.CAST_TO_ULONG + local.getName(), lirKind)));
         parameterToVariable.put(paramNode, result);
 
         if (oclKind.isVector()) {
@@ -104,7 +104,7 @@ public class OCLGenTool {
         return result;
     }
 
-    public HashMap<ParameterNode, Value> getParameterToVariable() {
+    public HashMap<ParameterNode, Variable> getParameterToVariable() {
         return parameterToVariable;
     }
 }

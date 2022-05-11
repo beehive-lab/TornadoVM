@@ -89,12 +89,12 @@ public class TestFields extends TornadoTestBase {
         TaskSchedule s0 = new TaskSchedule("s0");
         assertNotNull(s0);
 
-        s0.pinObjectInMemory(foo);
+        s0.lockObjectInMemory(foo);
 
         s0.task("t0", foo::computeInit).execute();
         s0.syncObject(foo.output);
 
-        s0.releasePinnedObject(foo);
+        s0.unlockObjectFromMemory(foo);
 
         for (int i = 0; i < N; i++) {
             assertEquals(100, foo.output[i]);
@@ -110,12 +110,12 @@ public class TestFields extends TornadoTestBase {
         TaskSchedule s0 = new TaskSchedule("s0");
         assertNotNull(s0);
 
-        s0.pinObjectInMemory(foo);
+        s0.lockObjectInMemory(foo);
 
         s0.task("t0", foo::computeAdd).execute();
         s0.syncObject(foo.output);
 
-        s0.releasePinnedObject(foo);
+        s0.unlockObjectFromMemory(foo);
 
         for (int i = 0; i < N; i++) {
             assertEquals(foo.a[i] + foo.b[i], foo.output[i]);
@@ -130,12 +130,12 @@ public class TestFields extends TornadoTestBase {
         TaskSchedule s0 = new TaskSchedule("Bar");
         assertNotNull(s0);
 
-        s0.pinObjectInMemory(bar);
+        s0.lockObjectInMemory(bar);
 
         s0.task("init", bar::computeInit).execute();
         s0.syncObject(bar.output);
 
-        s0.releasePinnedObject(bar);
+        s0.unlockObjectFromMemory(bar);
 
         for (int i = 0; i < N; i++) {
             assertEquals(15, bar.output[i]);
