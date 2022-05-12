@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.drivers.opencl.virtual;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
@@ -36,12 +37,11 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
-import uk.ac.manchester.tornado.runtime.common.Initialisable;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisable, OCLDeviceContextInterface {
+public class VirtualOCLDeviceContext extends TornadoLogger implements OCLDeviceContextInterface {
 
     private final OCLTargetDevice device;
     private final VirtualOCLContext context;
@@ -116,6 +116,11 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
     }
 
     @Override
+    public TornadoBufferProvider getBufferProvider() {
+        return null;
+    }
+
+    @Override
     public void sync() {
     }
 
@@ -146,11 +151,6 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
 
     @Override
     public void flushEvents() {
-    }
-
-    @Override
-    public boolean isInitialised() {
-        return true;
     }
 
     public void reset() {
@@ -205,16 +205,6 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements Initialisa
     @Override
     public int getDevicePlatform() {
         return context.getPlatformIndex();
-    }
-
-    @Override
-    public boolean useRelativeAddresses() {
-        if (isPlatformFPGA() && !Tornado.OPENCL_USE_RELATIVE_ADDRESSES && printOnce) {
-            System.out.println("Warning: -Dtornado.opencl.userelative was set to False. TornadoVM changed it to True because it is required for FPGA execution.");
-            printOnce = false;
-        }
-
-        return useRelativeAddresses;
     }
 
     public boolean isKernelAvailable() {

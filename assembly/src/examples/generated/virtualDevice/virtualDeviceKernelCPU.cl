@@ -1,31 +1,16 @@
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
-__kernel void lookupBufferAddress(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics)
+__kernel void maxReduction(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global uchar *input, __global uchar *result)
 {
-
-  __global ulong *_frame = (__global ulong *) &_heap_base[_frame_base];
-
-
-  // BLOCK 0
-  _frame[0]  =  (ulong) _heap_base;
-}  //  kernel
-
-#pragma OPENCL EXTENSION cl_khr_fp64 : enable
-#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
-__kernel void maxReduction(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics)
-{
-  bool z_11;
-  float f_17, f_23, f_22;
-  int i_3, i_4, i_2, i_7, i_8, i_24, i_5, i_6, i_12, i_9, i_10;
+  long l_14, l_15, l_20, l_18, l_19, l_13;
+  int i_4, i_3, i_6, i_5, i_2, i_12, i_8, i_24, i_7, i_10, i_9;
   ulong ul_0, ul_16, ul_1, ul_21;
-  long l_20, l_15, l_14, l_13, l_19, l_18;
-
-  __global ulong *_frame = (__global ulong *) &_heap_base[_frame_base];
-
+  float f_23, f_17, f_22;
+  bool z_11;
 
   // BLOCK 0
-  ul_0  =  (ulong) _frame[3];
-  ul_1  =  (ulong) _frame[4];
+  ul_0  =  (ulong) input;
+  ul_1  =  (ulong) result;
   i_2  =  get_global_size(0);
   i_3  =  i_2 + 8191;
   i_4  =  i_3 / i_2;
@@ -35,7 +20,8 @@ __kernel void maxReduction(__global uchar *_heap_base, ulong _frame_base, __cons
   i_8  =  min(i_7, 8192);
   // BLOCK 1 MERGES [0 5 ]
   i_9  =  i_6;
-  for(;i_9 < i_8;)  {
+  for(;i_9 < i_8;)
+  {
     // BLOCK 2
     barrier(CLK_LOCAL_MEM_FENCE);
     i_10  =  i_9 + 1;
@@ -71,16 +57,13 @@ __kernel void maxReduction(__global uchar *_heap_base, ulong _frame_base, __cons
 
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
-__kernel void rMax(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics)
+__kernel void rMax(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global uchar *array, __private int size)
 {
-  float f_35, f_36, f_33, f_34, f_31, f_32, f_29, f_30, f_27, f_28, f_26, f_24, f_22, f_20, f_18, f_16, f_14, f_12, f_10, f_8, f_6, f_4, f_2, f_37, f_38;
-  ulong ul_15, ul_13, ul_19, ul_17, ul_23, ul_21, ul_25, ul_0, ul_3, ul_1, ul_7, ul_5, ul_11, ul_9;
-
-  __global ulong *_frame = (__global ulong *) &_heap_base[_frame_base];
-
+  ulong ul_9, ul_11, ul_13, ul_15, ul_1, ul_3, ul_5, ul_7, ul_25, ul_0, ul_17, ul_19, ul_21, ul_23;
+  float f_26, f_24, f_30, f_29, f_28, f_27, f_34, f_33, f_32, f_31, f_38, f_37, f_36, f_35, f_10, f_8, f_14, f_12, f_18, f_16, f_22, f_20, f_2, f_6, f_4;
 
   // BLOCK 0
-  ul_0  =  (ulong) _frame[3];
+  ul_0  =  (ulong) array;
   ul_1  =  ul_0 + 72L;
   f_2  =  *((__global float *) ul_1);
   ul_3  =  ul_0 + 24L;

@@ -27,14 +27,16 @@ package uk.ac.manchester.tornado.runtime.graph;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.List;
 
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 
 public class TornadoGraphAssembler {
 
     public enum TornadoVMBytecodes {
         // @formatter:off
-        ALLOCATE((byte) 10),            // ALLOCATE(obj,dest)
+        PERSIST((byte) 10),             // PERSIST(dest, numObjects, objects)
         COPY_IN((byte) 11),             // COPY(obj, src, dest)
         STREAM_IN((byte) 12),           // STREAM_IN(obj, src, dest)
         STREAM_OUT((byte) 13),          // STREAM_OUT(obj, src, dest)
@@ -47,7 +49,8 @@ public class TornadoGraphAssembler {
         CONTEXT((byte) 20),             // CONTEXT(ctx)
         END((byte) 21),                 // END(ctx)
         CONSTANT_ARGUMENT((byte) 22),
-        REFERENCE_ARGUMENT((byte) 23);
+        REFERENCE_ARGUMENT((byte) 23),
+        DEALLOCATE((byte) 24);          // DEALLOCATE(obj,dest)
         // @formatter:on
 
         private byte value;
@@ -101,11 +104,20 @@ public class TornadoGraphAssembler {
         buffer.putInt(index);
     }
 
-    public void allocate(int object, int ctx, long size) {
-        buffer.put(TornadoVMBytecodes.ALLOCATE.value);
+    public void persist(List<AbstractNode> values, int ctx, long batchSize) {
+        buffer.put(TornadoVMBytecodes.PERSIST.value);
+        buffer.putInt(ctx);
+        buffer.putLong(batchSize);
+        buffer.putInt(values.size());
+        for (AbstractNode node : values) {
+            buffer.putInt(node.getIndex());
+        }
+    }
+
+    public void deallocate(int object, int ctx) {
+        buffer.put(TornadoVMBytecodes.DEALLOCATE.value);
         buffer.putInt(object);
         buffer.putInt(ctx);
-        buffer.putLong(size);
     }
 
     void copyToContext(int obj, int ctx, int dep, long offset, long size) {

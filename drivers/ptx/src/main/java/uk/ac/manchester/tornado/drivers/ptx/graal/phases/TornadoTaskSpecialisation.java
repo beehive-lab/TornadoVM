@@ -55,7 +55,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
-import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXStackAccessNode;
+import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXKernelContextAccessNode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
@@ -194,8 +194,8 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             if (gridScheduling && isParameterInvolvedInParallelLoopBound(node)) {
                 printWarningMessageForDynamicLoopBounds();
                 ConstantNode constantValue = graph.addOrUnique(ConstantNode.forInt(index));
-                PTXStackAccessNode ptxStackAccessNode = graph.addOrUnique(new PTXStackAccessNode(constantValue));
-                node.replaceAtUsages(ptxStackAccessNode);
+                PTXKernelContextAccessNode kernelContextAccessNode = graph.addOrUnique(new PTXKernelContextAccessNode(constantValue));
+                node.replaceAtUsages(kernelContextAccessNode);
                 index++;
             } else {
                 final ConstantNode constant;
@@ -273,8 +273,8 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             if (gridScheduling && isParameterInvolvedInParallelLoopBound(parameterNode)) {
                 printWarningMessageForDynamicLoopBounds();
                 ConstantNode constantValue = graph.addOrUnique(ConstantNode.forInt(index));
-                PTXStackAccessNode ptxStackAccessNode = graph.addOrUnique(new PTXStackAccessNode(constantValue));
-                parameterNode.replaceAtUsages(ptxStackAccessNode);
+                PTXKernelContextAccessNode kernelContextAccessNode = graph.addOrUnique(new PTXKernelContextAccessNode(constantValue));
+                parameterNode.replaceAtUsages(kernelContextAccessNode);
                 index++;
             } else {
                 ConstantNode constant = createConstantFromObject(args[parameterNode.index()]);

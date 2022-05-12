@@ -46,6 +46,8 @@ import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 
 public interface TornadoDeviceContext {
 
+    TornadoTargetDevice getDevice();
+
     TornadoMemoryProvider getMemoryManager();
 
     boolean needsBump();
@@ -57,8 +59,6 @@ public interface TornadoDeviceContext {
     boolean isPlatformFPGA();
 
     boolean isPlatformXilinxFPGA();
-
-    boolean useRelativeAddresses();
 
     boolean isCached(String methodName, SchedulableTask task);
 

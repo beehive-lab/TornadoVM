@@ -43,31 +43,19 @@ package uk.ac.manchester.tornado.api.mm;
 
 public interface TornadoDeviceObjectState {
 
-    void setBuffer(ObjectBuffer value);
+    void setObjectBuffer(ObjectBuffer value);
 
-    boolean hasBuffer();
+    boolean hasObjectBuffer();
 
-    ObjectBuffer getBuffer();
+    ObjectBuffer getObjectBuffer();
 
     boolean isAtomicRegionPresent();
 
-    boolean isValid();
+    void setAtomicRegion();
 
-    boolean isModified();
-
-    void invalidate();
+    boolean isLockedBuffer();
 
     boolean hasContents();
 
     void setContents(boolean value);
-
-    void setModified(boolean value);
-
-    void setValid(boolean value);
-
-    long getAddress();
-
-    long getOffset();
-
-    void setAtomicRegion();
 }

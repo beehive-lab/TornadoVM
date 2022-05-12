@@ -26,6 +26,10 @@
 package uk.ac.manchester.tornado.runtime.utils;
 
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 
 public class TornadoUtils {
 
@@ -46,6 +50,40 @@ public class TornadoUtils {
                 return size;
             default:
                 return 0;
+        }
+    }
+
+    public static boolean hasAnnotatedField(Object wrapper, Class<? extends Annotation> annotation) {
+        for (Field field : wrapper.getClass().getDeclaredFields()) {
+            if (field.isAnnotationPresent(annotation)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static Object getAnnotatedObjectFromField(Object wrapper, Class<? extends Annotation> annotation) {
+        Field storageField = null;
+        for (Field field : wrapper.getClass().getDeclaredFields()) {
+            if (field.isAnnotationPresent(annotation)) {
+                storageField = field;
+            }
+        }
+        assert storageField != null;
+        storageField.setAccessible(true);
+        try {
+            return storageField.get(wrapper);
+        } catch (IllegalAccessException e) {
+            throw new TornadoRuntimeException(e);
+        }
+    }
+
+    public static Object getObjectFromField(Field field, Object obj) {
+        try {
+            field.setAccessible(true);
+            return field.get(obj);
+        } catch (IllegalAccessException e) {
+            throw new TornadoRuntimeException(e);
         }
     }
 

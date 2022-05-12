@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [ "$#" -ne 2 ]
+if [ "$#" -ne 3 ]
 then
 	echo "$0: invalid number of arguments."
 	exit 1
@@ -8,13 +8,13 @@ fi
 
 vendor=$1
 fpga_directory=$2
-BINARY="lookupBufferAddress"
+BINARY=$3
 
 ## Back up current kernel 
-mv $fpga_directory/lookupBufferAddress.cl $fpga_directory/backup_source.cl
+mv $fpga_directory/${BINARY}.cl $fpga_directory/backup_source.cl
 
 ## Move current generated directory
-mv $fpga_directory/lookupBufferAddress $fpga_directory/intelFPGAFiles
+mv $fpga_directory/${BINARY} $fpga_directory/intelFPGAFiles
 
 ## Create sym link to the original kernel
 current=`pwd`

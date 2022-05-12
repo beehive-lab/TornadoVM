@@ -1,7 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
- * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -21,45 +19,48 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
+package uk.ac.manchester.tornado.runtime.graal.nodes.calc;
 
+import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.type.StampFactory;
+import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaKind;
-import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 
 @NodeInfo
-public class OCLStackAccessNode extends FloatingNode implements LIRLowerable {
+public class TornadoAddressArithmeticNode extends FloatingNode implements LIRLowerable {
 
-    @Input
-    private ConstantNode index;
+    public static final NodeClass<TornadoAddressArithmeticNode> TYPE = NodeClass.create(TornadoAddressArithmeticNode.class);
 
-    public static final NodeClass<OCLStackAccessNode> TYPE = NodeClass.create(OCLStackAccessNode.class);
+    @Node.Input
+    protected ValueNode base;
 
-    public OCLStackAccessNode(ConstantNode index) {
-        super(TYPE, StampFactory.forKind(JavaKind.Int));
-        this.index = index;
+    @Node.Input
+    protected ValueNode offset;
+
+
+    public TornadoAddressArithmeticNode(ValueNode base, ValueNode offset) {
+        super(TYPE, StampFactory.forKind(JavaKind.Long));
+        this.base = base;
+        this.offset = offset;
     }
 
-    public ConstantNode getIndex() {
-        return this.index;
+    public ValueNode getBase() {
+        return base;
     }
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
-        Variable result = tool.newVariable(tool.getLIRKind(stamp));
-        tool.append(new OCLLIRStmt.AssignStmt(result, new OCLUnary.LoadOCLStack(OCLAssembler.OCLUnaryIntrinsic.OCL_STACK_ACCESS, tool.getLIRKind(stamp), gen.operand(index))));
-        gen.setResult(this, result);
+        Value base = gen.operand(this.base);
+        Value offset = gen.operand(this.offset);
+        gen.setResult(this, tool.getArithmetic().emitAdd(base, offset, false));
     }
 }

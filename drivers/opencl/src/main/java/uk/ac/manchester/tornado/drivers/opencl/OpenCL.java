@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualDeviceDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualJSONParser;
 import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualOCLPlatform;
-import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
@@ -182,30 +182,33 @@ public class OpenCL {
             switch (access) {
                 case READ_WRITE:
                 case READ:
+                    tornadoDevice.allocate(object, 0, deviceState);
                     tornadoDevice.ensurePresent(object, deviceState, null, 0, 0);
                     break;
                 case WRITE:
-                    tornadoDevice.ensureAllocated(object, 0, deviceState);
+                    tornadoDevice.allocate(object, 0, deviceState);
+                    break;
                 default:
                     break;
             }
             states.add(deviceState);
         }
 
-        // Create stack
+        // Create call wrapper
         final int numArgs = parameters.length;
-        CallStack stack = tornadoDevice.createStack(numArgs);
+        KernelArgs callWrapper = tornadoDevice.createCallWrapper(numArgs);
+        callWrapper.reset();
 
-        // Fill header of call stack with empty values
-        stack.setHeader(new HashMap<>());
+        // Fill header of call callWrapper with empty values
+        callWrapper.setKernelContext(new HashMap<>());
 
-        // Pass arguments to the call stack
+        // Pass arguments to the call callWrapper
         for (int i = 0; i < numArgs; i++) {
-            stack.push(parameters[i], states.get(i));
+            callWrapper.addCallArgument(states.get(i).getObjectBuffer().toBuffer(), true);
         }
 
         // Run the code
-        openCLCode.launchWithoutDependencies(stack, null, taskMeta, 0);
+        openCLCode.launchWithoutDependencies(callWrapper, null, taskMeta, 0);
 
         // Obtain the result
         for (int i = 0; i < accesses.length; i++) {
@@ -216,6 +219,7 @@ public class OpenCL {
                     Object object = parameters[i];
                     DeviceObjectState deviceState = states.get(i);
                     tornadoDevice.streamOutBlocking(object, 0, deviceState, null);
+                    break;
                 default:
                     break;
             }

@@ -31,13 +31,13 @@ import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanRead
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VALIDATE_ARRAY_HEADERS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.OPENCL_ARRAY_ALIGNMENT;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
@@ -46,35 +46,35 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
-    private final int arrayHeaderSize;
+    private static final int INIT_VALUE = -1;
 
+    private final int arrayHeaderSize;
     private final int arrayLengthOffset;
 
+    private long bufferId;
     private long bufferOffset;
-
-    private long bytesToAllocate;
+    private long bufferSize;
 
     protected final OCLDeviceContext deviceContext;
 
     private final JavaKind kind;
-    private boolean onDevice;
-    private boolean isFinal;
-    private long batchSize;
+    private final long batchSize;
 
     public OCLArrayWrapper(final OCLDeviceContext device, final JavaKind kind, long batchSize) {
-        this(device, kind, false, batchSize);
-    }
-
-    public OCLArrayWrapper(final OCLDeviceContext device, final JavaKind kind, final boolean isFinal, long batchSize) {
         this.deviceContext = device;
         this.kind = kind;
-        this.isFinal = isFinal;
         this.batchSize = batchSize;
+        this.bufferId = INIT_VALUE;
+        this.bufferSize = INIT_VALUE;
+        this.bufferOffset = 0;
 
         arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
         arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
-        onDevice = false;
-        bufferOffset = -1;
+    }
+
+    protected OCLArrayWrapper(final T array, final OCLDeviceContext device, final JavaKind kind, long batchSize) {
+        this(device, kind, batchSize);
+        bufferSize = sizeOf(array);
     }
 
     public long getBatchSize() {
@@ -93,42 +93,45 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
     @Override
     public void allocate(Object value, long batchSize) {
-
-        long newBufferSize = 0;
-        if (batchSize > 0) {
-            newBufferSize = sizeOfBatch(batchSize);
+        final T hostArray = cast(value);
+        if (batchSize <= 0) {
+            bufferSize = sizeOf(hostArray);
+        } else {
+            bufferSize = sizeOfBatch(batchSize);
         }
 
-        if ((batchSize > 0) && (bufferOffset != -1) && (newBufferSize < bytesToAllocate)) {
-            bytesToAllocate = newBufferSize;
+        if (bufferSize <= 0) {
+            throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
-        if (bufferOffset == -1) {
-            final T hostArray = cast(value);
-            if (batchSize <= 0) {
-                bytesToAllocate = sizeOf(hostArray);
-            } else {
-                bytesToAllocate = sizeOfBatch(batchSize);
-            }
+        this.bufferId = deviceContext.getBufferProvider().getBufferWithSize(bufferSize);
 
-            if (bytesToAllocate <= 0) {
-                throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bytesToAllocate);
-            }
-
-            bufferOffset = deviceContext.getMemoryManager().tryAllocate(bytesToAllocate, arrayHeaderSize, getAlignment());
-
-            if (Tornado.FULL_DEBUG) {
-                info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d, bo=0x%x", kind.getJavaName(), humanReadableByteCount(bytesToAllocate, true), arrayLengthOffset,
-                        arrayHeaderSize, bufferOffset);
-                info("allocated: %s", toString());
-            }
+        if (Tornado.FULL_DEBUG) {
+            info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset,
+                    arrayHeaderSize);
+            info("allocated: %s", toString());
         }
 
     }
 
     @Override
+    public void deallocate() {
+        TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
+
+        deviceContext.getBufferProvider().markBufferReleased(bufferId, bufferSize);
+        bufferId = INIT_VALUE;
+        bufferSize = INIT_VALUE;
+
+        if (Tornado.FULL_DEBUG) {
+            info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset,
+                    arrayHeaderSize);
+            info("deallocated: %s", toString());
+        }
+    }
+
+    @Override
     public long size() {
-        return bytesToAllocate;
+        return bufferSize;
     }
 
     /*
@@ -165,11 +168,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         }
         final int returnEvent;
         // FIXME: <REFACTOR>
-        if (isFinal) {
-            returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
-        } else {
-            returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
-        }
+        returnEvent = enqueueReadArrayData(toBuffer(), arrayHeaderSize + bufferOffset, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         return useDeps ? returnEvent : -1;
     }
 
@@ -199,24 +198,18 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
             throw new TornadoRuntimeException("ERROR] Data to be copied is NULL");
         }
         final int returnEvent;
-        if (isFinal && onDevice) {
-            returnEvent = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+        // We first write the header for the object, and then we write actual
+        // buffer
+        final int headerEvent;
+        if (batchSize <= 0) {
+            headerEvent = buildArrayHeader(Array.getLength(array)).enqueueWrite((useDeps) ? events : null);
         } else {
-            // We first write the header for the object, and then we write actual
-            // buffer
-            final int headerEvent;
-            if (batchSize <= 0) {
-                headerEvent = buildArrayHeader(Array.getLength(array)).enqueueWrite((useDeps) ? events : null);
-            } else {
-                headerEvent = buildArrayHeaderBatch(batchSize).enqueueWrite((useDeps) ? events : null);
-            }
-            returnEvent = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
-            onDevice = true;
-            // returnEvent = deviceContext.enqueueMarker(internalEvents);
-
-            listEvents.add(headerEvent);
-            listEvents.add(returnEvent);
+            headerEvent = buildArrayHeaderBatch(batchSize).enqueueWrite((useDeps) ? events : null);
         }
+        returnEvent = enqueueWriteArrayData(toBuffer(), arrayHeaderSize + bufferOffset, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+
+        listEvents.add(headerEvent);
+        listEvents.add(returnEvent);
         return useDeps ? listEvents : null;
     }
 
@@ -238,30 +231,10 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
      */
     abstract protected int enqueueWriteArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
-    @Override
-    public int getAlignment() {
-        return OPENCL_ARRAY_ALIGNMENT;
-    }
-
     private OCLByteBuffer getArrayHeader() {
-        final OCLByteBuffer header = deviceContext.getMemoryManager().getSubBuffer((int) getBufferOffset(), arrayHeaderSize);
+        final OCLByteBuffer header = new OCLByteBuffer(deviceContext, bufferId, bufferOffset, arrayHeaderSize);
         header.buffer.clear();
         return header;
-    }
-
-    @Override
-    public long getBufferOffset() {
-        return bufferOffset;
-    }
-
-    @Override
-    public boolean isValid() {
-        return onDevice;
-    }
-
-    @Override
-    public void invalidate() {
-        onDevice = false;
     }
 
     /*
@@ -303,50 +276,47 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
         if (VALIDATE_ARRAY_HEADERS) {
             if (validateArrayHeader(array)) {
-                return readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+                return readArrayData(toBuffer(), arrayHeaderSize + bufferOffset, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
             } else {
                 shouldNotReachHere("Array header is invalid");
             }
         } else {
-            return readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+            return readArrayData(toBuffer(), arrayHeaderSize + bufferOffset, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         }
         return -1;
     }
 
     abstract protected int readArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
-    private long sizeOf(final T array) {
-        return (long) arrayHeaderSize + ((long) Array.getLength(array) * (long) kind.getByteCount());
+    public long sizeOf(final T array) {
+        return arrayHeaderSize + ((long) Array.getLength(array) * (long) kind.getByteCount());
     }
 
     private long sizeOfBatch(long batchSize) {
-        return (long) arrayHeaderSize + batchSize;
-    }
-
-    @Override
-    public long toAbsoluteAddress() {
-        return deviceContext.getMemoryManager().toAbsoluteDeviceAddress(bufferOffset);
+        return arrayHeaderSize + batchSize;
     }
 
     @Override
     public long toBuffer() {
-        return deviceContext.getMemoryManager().toBuffer();
+        return bufferId;
     }
 
     @Override
-    public long toRelativeAddress() {
+    public void setBuffer(ObjectBufferWrapper bufferWrapper) {
+        this.bufferId = bufferWrapper.buffer;
+        this.bufferOffset = bufferWrapper.bufferOffset;
+
+        bufferWrapper.bufferOffset += size();
+    }
+
+    @Override
+    public long getBufferOffset() {
         return bufferOffset;
     }
 
     @Override
     public String toString() {
-        return String.format("buffer<%s> %s @ 0x%x (0x%x)", kind.getJavaName(), humanReadableByteCount(bytesToAllocate, true), toAbsoluteAddress(), toRelativeAddress());
-    }
-
-    @Override
-    public void printHeapTrace() {
-        System.out.printf("0x%x\ttype=%s\n", toAbsoluteAddress(), kind.getJavaName());
-
+        return String.format("buffer<%s> %s", kind.getJavaName(), humanReadableByteCount(bufferSize, true));
     }
 
     /*
@@ -373,8 +343,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         }
         buildArrayHeader(Array.getLength(array)).write();
         // TODO: Writing with offset != 0
-        writeArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, 0, null);
-        onDevice = true;
+        writeArrayData(toBuffer(), arrayHeaderSize + bufferOffset, bufferSize - arrayHeaderSize, array, 0, null);
     }
 
     abstract protected void writeArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);

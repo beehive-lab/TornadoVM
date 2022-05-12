@@ -29,11 +29,11 @@ import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 public class SPIRVIntArrayWrapper extends SPIRVArrayWrapper<int[]> {
 
     public SPIRVIntArrayWrapper(SPIRVDeviceContext device, long batchSize) {
-        this(device, false, batchSize);
+        super(device, JavaKind.Int, batchSize);
     }
 
-    public SPIRVIntArrayWrapper(SPIRVDeviceContext device, boolean isFinal, long batchSize) {
-        super(device, JavaKind.Int, isFinal, batchSize);
+    protected SPIRVIntArrayWrapper(final int[] array, final SPIRVDeviceContext device, long batchSize) {
+        super(array, device, JavaKind.Int, batchSize);
     }
 
     @Override

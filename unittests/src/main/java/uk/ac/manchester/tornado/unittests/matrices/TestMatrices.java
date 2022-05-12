@@ -33,6 +33,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+@Ignore
 public class TestMatrices extends TornadoTestBase {
 
     public static void fillMatrix(int[][] values) {
@@ -169,7 +170,6 @@ public class TestMatrices extends TornadoTestBase {
 		        .streamOut(new Object[] { a });
 	    //@formatter:on
 
-        t.warmup();
         t.execute();
 
         for (int i = 0; i < a.length; i++) {

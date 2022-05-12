@@ -32,11 +32,11 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 public class OCLLongArrayWrapper extends OCLArrayWrapper<long[]> {
 
     public OCLLongArrayWrapper(OCLDeviceContext deviceContext, long batchSize) {
-        this(deviceContext, false, batchSize);
+        super(deviceContext, JavaKind.Long, batchSize);
     }
 
-    public OCLLongArrayWrapper(OCLDeviceContext deviceContext, boolean isFinal, long batchSize) {
-        super(deviceContext, JavaKind.Long, isFinal, batchSize);
+    protected OCLLongArrayWrapper(final long[] array, final OCLDeviceContext device, long batchSize) {
+        super(array, device, JavaKind.Long, batchSize);
     }
 
     @Override

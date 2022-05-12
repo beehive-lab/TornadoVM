@@ -27,13 +27,16 @@ package uk.ac.manchester.tornado.runtime.graph;
 
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ConstantNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.CopyInNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.CopyOutNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.DeallocateNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.DependentReadNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ObjectNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.PersistNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.StreamInNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
 
@@ -72,10 +75,12 @@ public class TornadoVMGraphCompilationResult {
     }
 
     void emitAsyncNode(AbstractNode node, int contextID, int dependencyBC, long offset, long batchSize, long nThreads) {
-        if (node instanceof CopyInNode) {
+        if (node instanceof PersistNode) {
+            bitcodeASM.persist(((PersistNode) node).getValues(), contextID, batchSize);
+        } else if (node instanceof CopyInNode) {
             bitcodeASM.copyToContext(((CopyInNode) node).getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
         } else if (node instanceof AllocateNode) {
-            bitcodeASM.allocate(((AllocateNode) node).getValue().getIndex(), contextID, batchSize);
+            TornadoLogger.info("[%s]: Skipping deprecated node %s", getClass().getSimpleName(), AllocateNode.class.getSimpleName());
         } else if (node instanceof CopyOutNode) {
             ObjectNode value = ((CopyOutNode) node).getValue().getValue();
             if (value != null) {
@@ -83,6 +88,8 @@ public class TornadoVMGraphCompilationResult {
             }
         } else if (node instanceof StreamInNode) {
             bitcodeASM.streamInToContext(((StreamInNode) node).getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
+        } else if (node instanceof DeallocateNode) {
+            bitcodeASM.deallocate(((DeallocateNode) node).getValue().getIndex(), contextID);
         } else if (node instanceof TaskNode) {
             final TaskNode taskNode = (TaskNode) node;
             bitcodeASM.launch(globalTaskID, taskNode.getContext().getDeviceIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), dependencyBC, offset, nThreads);

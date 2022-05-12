@@ -28,8 +28,8 @@ import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.ATOMICS_REGION_NAME;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.CONSTANT_REGION_NAME;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_BASE_NAME;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.HEAP_REF_NAME;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.GLOBAL_REGION_NAME;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.KERNEL_CONTEXT;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.LOCAL_REGION_NAME;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.PRIVATE_REGION_NAME;
 
@@ -48,18 +48,18 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.meta.OCLMemorySpace;
 public class OCLArchitecture extends Architecture {
 
     public static final RegisterCategory OCL_ABI = new RegisterCategory("abi");
-    public static final OCLMemoryBase globalSpace = new OCLMemoryBase(0, HEAP_REF_NAME, OCLMemorySpace.GLOBAL, OCLKind.UCHAR);
+    public static final OCLMemoryBase globalSpace = new OCLMemoryBase(0, GLOBAL_REGION_NAME, OCLMemorySpace.GLOBAL, OCLKind.UCHAR);
+    public static final OCLMemoryBase kernelContext = new OCLMemoryBase(1, KERNEL_CONTEXT, OCLMemorySpace.GLOBAL, OCLKind.LONG);
     public static final OCLMemoryBase constantSpace = new OCLMemoryBase(2, CONSTANT_REGION_NAME, OCLMemorySpace.CONSTANT, OCLKind.UCHAR);
     public static final OCLMemoryBase localSpace = new OCLMemoryBase(3, LOCAL_REGION_NAME, OCLMemorySpace.LOCAL, OCLKind.UCHAR);
     public static final OCLMemoryBase privateSpace = new OCLMemoryBase(4, PRIVATE_REGION_NAME, OCLMemorySpace.PRIVATE, OCLKind.UCHAR);
     public static final OCLMemoryBase atomicSpace = new OCLMemoryBase(5, ATOMICS_REGION_NAME, OCLMemorySpace.GLOBAL, OCLKind.INT);
-    public static OCLRegister stackPointer;
+
     public static OCLRegister[] abiRegisters;
 
     public OCLArchitecture(final OCLKind wordKind, final ByteOrder byteOrder) {
         super("Tornado OpenCL", wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, 0, 0);
-        stackPointer = new OCLRegister(1, FRAME_BASE_NAME, wordKind);
-        abiRegisters = new OCLRegister[] { globalSpace, stackPointer, constantSpace, localSpace, atomicSpace };
+        abiRegisters = new OCLRegister[] { kernelContext, constantSpace, localSpace, atomicSpace };
     }
 
     @Override

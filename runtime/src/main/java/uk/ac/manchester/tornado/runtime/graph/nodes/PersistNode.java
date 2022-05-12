@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -20,12 +20,38 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
-package uk.ac.manchester.tornado.runtime.common;
+package uk.ac.manchester.tornado.runtime.graph.nodes;
 
-// FIXME <REFACTOR> We can move this interface to the TornadoDeviceContext
-public interface Initialisable {
-    boolean isInitialised();
+import java.util.ArrayList;
+import java.util.List;
+
+public class PersistNode extends ContextOpNode {
+
+    public PersistNode(ContextNode context) {
+        super(context);
+        this.values = new ArrayList<>();
+    }
+
+    private final ArrayList<AbstractNode> values;
+
+    public void addValue(ObjectNode object) {
+        values.add(object);
+    }
+
+    public List<AbstractNode> getValues() {
+        return values;
+    }
+
+    public String toString() {
+        return String.format("[%d]: persist node", id);
+    }
+
+    public boolean hasInputs() {
+        return !values.isEmpty();
+    }
+
+    public List<AbstractNode> getInputs() {
+        return values;
+    }
 }

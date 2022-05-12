@@ -39,7 +39,6 @@ import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LabelRef;
-import org.graalvm.compiler.lir.StandardOp;
 import org.graalvm.compiler.lir.SwitchStrategy;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;

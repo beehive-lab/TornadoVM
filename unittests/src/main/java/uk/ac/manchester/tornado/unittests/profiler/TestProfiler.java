@@ -91,9 +91,6 @@ public class TestProfiler extends TornadoTestBase {
         assertEquals(ts.getWriteTime() + ts.getReadTime(), ts.getDataTransfersTime());
         assertEquals(ts.getTornadoCompilerTime() + ts.getDriverInstallTime(), ts.getCompileTime());
 
-        // Will dump profile information about the sync stream outs.
-        ts.syncObjects(c);
-
         // Disable profiler
         System.setProperty("tornado.profiler", "False");
     }

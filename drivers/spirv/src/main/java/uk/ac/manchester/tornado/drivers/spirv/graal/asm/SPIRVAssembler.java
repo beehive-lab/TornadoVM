@@ -135,17 +135,18 @@ public final class SPIRVAssembler extends Assembler {
     private Map<SPIRVKind, HashMap<SPIRVId, SPIRVId>> arrayDeclarationTable;
     private Map<SPIRVId, SPIRVId> functionPtrToArray;
     private Map<SPIRVId, SPIRVId> functionPtrToArrayLocal;
-    private SPIRVId frameId;
+    private SPIRVId kernelContextId;
     private SPIRVId ptrCrossWorkULong;
     private SPIRVId openclImport;
     private ByteBuffer spirvByteBuffer;
     private int methodIndex;
 
-    private Map<SPIRVId, Map<Integer, LinkedList<SPIRVOpFunctionTable>>> opFunctionTable;
+    private Map<SPIRVId, Map<Integer, LinkedList<FunctionTable>>> opFunctionTable;
     private Map<AllocatableValue, SPIRVId> phiMap;
     private Map<AllocatableValue, SPIRVId> phiNamesAcrossBlocks;
     private Map<AllocatableValue, AllocatableValue> phiTrace;
     private Map<AllocatableValue, SPIRVId> pendingIDs;
+    private List<SPIRVId> parameterIdList;
 
     public SPIRVAssembler(TargetDescription target) {
         super(target);
@@ -164,6 +165,7 @@ public final class SPIRVAssembler extends Assembler {
         opFunctionTable = new HashMap<>();
         phiNamesAcrossBlocks = new HashMap<>();
         pendingIDs = new HashMap<>();
+        parameterIdList = new ArrayList<>();
     }
 
     public SPIRVInstScope getFunctionScope() {
@@ -190,12 +192,12 @@ public final class SPIRVAssembler extends Assembler {
         return blockTable;
     }
 
-    public SPIRVId getStackFrameId() {
-        return this.frameId;
+    public SPIRVId getKernelContextId() {
+        return this.kernelContextId;
     }
 
-    public void setStackFrameId(SPIRVId frameId) {
-        this.frameId = frameId;
+    public void setKernelContextId(SPIRVId kernelContextId) {
+        this.kernelContextId = kernelContextId;
     }
 
     public void setReturnWithValue(boolean returnWithValue) {
@@ -368,10 +370,10 @@ public final class SPIRVAssembler extends Assembler {
         int numParams = operands.length;
         SPIRVId functionId = createNewOpTypeFunction(returnType, operands);
         functionSignature = functionId;
-        SPIRVOpFunctionTable functionTable = new SPIRVOpFunctionTable(returnType, functionId, operands);
-        LinkedList<SPIRVOpFunctionTable> list = new LinkedList<>();
+        FunctionTable functionTable = new FunctionTable(returnType, functionId, operands);
+        LinkedList<FunctionTable> list = new LinkedList<>();
         list.add(functionTable);
-        HashMap<Integer, LinkedList<SPIRVOpFunctionTable>> m = new HashMap<>();
+        HashMap<Integer, LinkedList<FunctionTable>> m = new HashMap<>();
         m.put(numParams, list);
         opFunctionTable.put(returnType, m);
         return functionId;
@@ -395,7 +397,7 @@ public final class SPIRVAssembler extends Assembler {
      *
      * If we have the same number of parameters with the same return type, when we
      * do a sequential search over the linked-list to check the type of each
-     * parameter (stored in the {@link SPIRVOpFunctionTable) class).
+     * parameter (stored in the {@link FunctionTable ) class).
      *
      * @param returnType
      *            ID with the return value.
@@ -408,14 +410,14 @@ public final class SPIRVAssembler extends Assembler {
             createNewFunctionAndUpdateTables(returnType, operands);
         } else {
             // Search the type
-            Map<Integer, LinkedList<SPIRVOpFunctionTable>> internalMap = opFunctionTable.get(returnType);
+            Map<Integer, LinkedList<FunctionTable>> internalMap = opFunctionTable.get(returnType);
 
             if (internalMap.containsKey(operands.length)) {
                 // Sequential Check for all operands
-                LinkedList<SPIRVOpFunctionTable> spirvOpFunctionTables = internalMap.get(operands.length);
+                LinkedList<FunctionTable> opFunctionTableList = internalMap.get(operands.length);
                 boolean isInCache = false;
                 SPIRVId functionType = null;
-                for (SPIRVOpFunctionTable functionTable : spirvOpFunctionTables) {
+                for (FunctionTable functionTable : opFunctionTableList) {
                     if (functionTable.areParamsEqual(operands)) {
                         isInCache = true;
                         functionType = functionTable.functionID;
@@ -426,10 +428,10 @@ public final class SPIRVAssembler extends Assembler {
                 if (!isInCache) {
                     // Add a new Entry
                     functionType = createNewOpTypeFunction(returnType, operands);
-                    spirvOpFunctionTables.add(new SPIRVOpFunctionTable(returnType, functionType, operands));
+                    opFunctionTableList.add(new FunctionTable(returnType, functionType, operands));
 
                     // Update function tables
-                    internalMap.put(operands.length, spirvOpFunctionTables);
+                    internalMap.put(operands.length, opFunctionTableList);
                     opFunctionTable.put(returnType, internalMap);
                 }
                 functionSignature = functionType;
@@ -478,11 +480,12 @@ public final class SPIRVAssembler extends Assembler {
             operands = new SPIRVMultipleOperands(array);
         }
 
-        module.add(new SPIRVOpEntryPoint(SPIRVExecutionModel.Kernel(), mainFunctionID, new SPIRVLiteralString(kernelName), operands));
-
         if (fp64Capability) {
             module.add(new SPIRVOpExecutionMode(mainFunctionID, SPIRVExecutionMode.ContractionOff()));
         }
+
+        module.add(new SPIRVOpEntryPoint(SPIRVExecutionModel.Kernel(), mainFunctionID, new SPIRVLiteralString(kernelName), operands));
+
     }
 
     public SPIRVId getFunctionSignature() {
@@ -783,6 +786,14 @@ public final class SPIRVAssembler extends Assembler {
         return builtinTable.entrySet();
     }
 
+    public SPIRVId lookupParameterFromIndex(int parameterIndex) {
+        return parameterIdList.get(parameterIndex);
+    }
+
+    public void addFunctionParameterId(SPIRVId id) {
+        this.parameterIdList.add(id);
+    }
+
     public static class ConstantKeyPair {
         private String name;
         private SPIRVKind kind;
@@ -819,13 +830,13 @@ public final class SPIRVAssembler extends Assembler {
         }
     }
 
-    private static class SPIRVOpFunctionTable {
+    private static class FunctionTable {
 
         SPIRVId[] params;
         private SPIRVId returnId;
         private SPIRVId functionID;
 
-        public SPIRVOpFunctionTable(SPIRVId returnId, SPIRVId functionID, SPIRVId... params) {
+        public FunctionTable(SPIRVId returnId, SPIRVId functionID, SPIRVId... params) {
             this.returnId = returnId;
             this.functionID = functionID;
             this.params = params;

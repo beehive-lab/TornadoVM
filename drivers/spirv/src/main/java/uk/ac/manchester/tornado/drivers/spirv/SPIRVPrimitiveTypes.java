@@ -50,6 +50,8 @@ public class SPIRVPrimitiveTypes {
 
     final private Map<SPIRVKind, HashMap<String, SPIRVId>> ptrWithStorageClassToPrimitive;
 
+    final private Map<SPIRVKind, HashMap<String, SPIRVId>> ptrFunctionToPtrWG;
+
     private final uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVModule module;
 
     private final Set<SPIRVKind> capabilities;
@@ -62,6 +64,7 @@ public class SPIRVPrimitiveTypes {
         this.primitives = new HashMap<>();
         this.undefTable = new HashMap<>();
         this.ptrWithStorageClassToPrimitive = new HashMap<>();
+        this.ptrFunctionToPtrWG = new HashMap<>();
         capabilities = new HashSet<>();
     }
 
@@ -165,6 +168,31 @@ public class SPIRVPrimitiveTypes {
                 module.add(new SPIRVOpTypePointer(resultType, storageClass, primitiveId));
                 spirvStorageClassSPIRVIdMap.put(storageClass.name, resultType);
                 ptrWithStorageClassToPrimitive.put(primitive, spirvStorageClassSPIRVIdMap);
+            }
+            return spirvStorageClassSPIRVIdMap.get(storageClass.name);
+        }
+    }
+
+    public SPIRVId getPtrFunctionToPtrCrossWorkGroup(SPIRVKind primitive) {
+        return getPtrFunctionToPtrCrossWorkGroup(primitive, SPIRVStorageClass.Function());
+    }
+
+    public SPIRVId getPtrFunctionToPtrCrossWorkGroup(SPIRVKind primitive, SPIRVStorageClass storageClass) {
+        SPIRVId idCrossWorkGroup = getPtrToCrossWorkGroupPrimitive(primitive);
+        if (!ptrFunctionToPtrWG.containsKey(primitive)) {
+            HashMap<String, SPIRVId> spirvStorageClassSPIRVIdMap = new HashMap<>();
+            SPIRVId resultType = module.getNextId();
+            module.add(new SPIRVOpTypePointer(resultType, storageClass, idCrossWorkGroup));
+            spirvStorageClassSPIRVIdMap.put(storageClass.name, resultType);
+            ptrFunctionToPtrWG.put(primitive, spirvStorageClassSPIRVIdMap);
+            return spirvStorageClassSPIRVIdMap.get(storageClass.name);
+        } else {
+            HashMap<String, SPIRVId> spirvStorageClassSPIRVIdMap = ptrFunctionToPtrWG.get(primitive);
+            if (!spirvStorageClassSPIRVIdMap.containsKey(storageClass.name)) {
+                SPIRVId resultType = module.getNextId();
+                module.add(new SPIRVOpTypePointer(resultType, storageClass, idCrossWorkGroup));
+                spirvStorageClassSPIRVIdMap.put(storageClass.name, resultType);
+                ptrFunctionToPtrWG.put(primitive, spirvStorageClassSPIRVIdMap);
             }
             return spirvStorageClassSPIRVIdMap.get(storageClass.name);
         }

@@ -28,7 +28,7 @@ import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 
 public class PTXByteArrayWrapper extends PTXArrayWrapper<byte[]> {
     public PTXByteArrayWrapper(PTXDeviceContext deviceContext) {
-        super(deviceContext, JavaKind.Byte, false);
+        super(deviceContext, JavaKind.Byte);
     }
 
     /**

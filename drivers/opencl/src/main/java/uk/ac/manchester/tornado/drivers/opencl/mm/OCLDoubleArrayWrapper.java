@@ -31,11 +31,11 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 public class OCLDoubleArrayWrapper extends OCLArrayWrapper<double[]> {
 
     public OCLDoubleArrayWrapper(OCLDeviceContext deviceContext, long batchSize) {
-        this(deviceContext, false, batchSize);
+        super(deviceContext, JavaKind.Double, batchSize);
     }
 
-    public OCLDoubleArrayWrapper(OCLDeviceContext deviceContext, boolean isFinal, long batchSize) {
-        super(deviceContext, JavaKind.Double, isFinal, batchSize);
+    protected OCLDoubleArrayWrapper(final double[] array, final OCLDeviceContext device, long batchSize) {
+        super(array, device, JavaKind.Double, batchSize);
     }
 
     @Override

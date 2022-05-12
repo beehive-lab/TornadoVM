@@ -2,8 +2,8 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
- * The University of Manchester. All rights reserved.
+ * Copyright (c) 2022, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,30 +20,27 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
-package uk.ac.manchester.tornado.runtime.common;
+package uk.ac.manchester.tornado.drivers.opencl.runtime;
 
-import java.util.HashMap;
+import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 
-public interface CallStack {
+public class OCLBufferProvider extends TornadoBufferProvider {
 
-    void reset();
+    public OCLBufferProvider(OCLDeviceContext deviceContext) {
+        super(deviceContext);
+    }
 
-    long getDeoptValue();
+    @Override
+    public long allocateBuffer(long size) {
+        return ((OCLDeviceContext) deviceContext).getMemoryManager().createBuffer(size, OCLMemFlags.CL_MEM_READ_WRITE).getBuffer();
+    }
 
-    long getReturnValue();
+    @Override
+    protected void releaseBuffer(long buffer) {
+        ((OCLDeviceContext) deviceContext).getMemoryManager().releaseBuffer(buffer);
+    }
 
-    int getArgCount();
-
-    void push(Object arg);
-
-    void push(Object arg, DeviceObjectState state);
-
-    boolean isOnDevice();
-
-    void dump();
-
-    void setHeader(HashMap<Integer, Integer> map);
 }

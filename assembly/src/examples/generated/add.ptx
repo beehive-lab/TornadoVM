@@ -1,5 +1,5 @@
 // kernel function
-.visible .entry s0_t0_add_int8_int8_int8(.param .u64 stack_pointer) {
+.visible .entry s0_t0_add_int8_int8_int8(.param .align 8 .u64 stack_pointer, .param .align 8 .u64 a, .param .align 8 .u64 b, .param .align 8 .u64 c) {
     // register declaration
 	.reg .u64 rud<9>;
 	.reg .s64 rsd<4>;
@@ -8,11 +8,11 @@
 	.reg .s32 rsi<8>;
 
 BLOCK_0:
-    // load arguments from the stack
-	ld.param.u64	rud0, [stack_pointer];
-	ldu.global.u64	rud1, [rud0+24];
-	ldu.global.u64	rud2, [rud0+32];
-	ldu.global.u64	rud3, [rud0+40];
+    // load arguments
+        ld.param.u64    rud0, [stack_pointer];
+        ld.param.u64    rud1, [a];
+        ld.param.u64    rud2, [b];
+        ld.param.u64    rud3, [c];
 
 	// getGlobalId() in rsi0
 	mov.u32	rui0, %tid.x;

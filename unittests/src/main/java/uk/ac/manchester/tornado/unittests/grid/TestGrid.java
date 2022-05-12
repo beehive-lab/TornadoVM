@@ -83,7 +83,7 @@ public class TestGrid extends TornadoTestBase {
         worker.setGlobalWork(512, 1, 1);
         ts.execute(gridScheduler);
 
-        for (int i = 0; i < c.length; i++) {
+        for (int i = 0; i < 512; i++) {
             assertEquals(a[i] + b[i], c[i], 0.01f);
         }
     }
@@ -184,7 +184,7 @@ public class TestGrid extends TornadoTestBase {
         worker.setGlobalWork(512, 1, 1);
         ts.execute(gridScheduler);
 
-        for (int i = 0; i < c.length; i++) {
+        for (int i = 0; i < 512; i++) {
             assertEquals(a[i] + b[i], c[i], 0.01f);
         }
     }

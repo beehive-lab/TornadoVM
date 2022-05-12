@@ -30,17 +30,19 @@ import java.nio.ByteBuffer;
 
 public class PTXByteBuffer {
     protected ByteBuffer buffer;
-    private long bytes;
-    private long offset;
-    private PTXDeviceContext deviceContext;
+    private final long address;
+    private final long bytes;
+    private final long offset;
+    private final PTXDeviceContext deviceContext;
 
-    public PTXByteBuffer(long bytes, long offset, PTXDeviceContext deviceContext) {
+    public PTXByteBuffer(long address, long bytes, long offset, PTXDeviceContext deviceContext) {
+        this.address = address;
         this.bytes = bytes;
         this.offset = offset;
         this.deviceContext = deviceContext;
 
-        buffer = ByteBuffer.allocate((int) bytes);
-        buffer.order(deviceContext.getByteOrder());
+        this.buffer = ByteBuffer.allocate((int) bytes);
+        this.buffer.order(deviceContext.getByteOrder());
     }
 
     public long getSize() {
@@ -52,7 +54,7 @@ public class PTXByteBuffer {
     }
 
     private void read(int[] events) {
-        deviceContext.readBuffer(heapPointer() + offset, bytes, buffer.array(), 0, events);
+        deviceContext.readBuffer(getAddress() + offset, bytes, buffer.array(), 0, events);
     }
 
     public int getInt(int offset) {
@@ -79,8 +81,8 @@ public class PTXByteBuffer {
         }
     }
 
-    protected long toAbsoluteAddress() {
-        return deviceContext.getMemoryManager().toAbsoluteDeviceAddress(offset);
+    public long toAbsoluteAddress() {
+        return getAddress() + offset;
     }
 
     public void write() {
@@ -88,11 +90,11 @@ public class PTXByteBuffer {
     }
 
     public void write(int[] events) {
-        deviceContext.writeBuffer(heapPointer() + offset, bytes, buffer.array(), 0, events);
+        deviceContext.writeBuffer(getAddress() + offset, bytes, buffer.array(), 0, events);
     }
 
-    private long heapPointer() {
-        return deviceContext.getMemoryManager().toBuffer();
+    private long getAddress() {
+        return address;
     }
 
     public int enqueueWrite() {
@@ -100,10 +102,6 @@ public class PTXByteBuffer {
     }
 
     public int enqueueWrite(int[] events) {
-        return deviceContext.enqueueWriteBuffer(heapPointer() + offset, bytes, buffer.array(), 0, events);
-    }
-
-    public ByteBuffer buffer() {
-        return buffer;
+        return deviceContext.enqueueWriteBuffer(getAddress() + offset, bytes, buffer.array(), 0, events);
     }
 }

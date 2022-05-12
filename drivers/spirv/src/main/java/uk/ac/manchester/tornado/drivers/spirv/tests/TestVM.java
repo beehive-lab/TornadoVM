@@ -83,7 +83,7 @@ public class TestVM {
         device.ensurePresent(a, objectStateA, null, 0, 0);
 
         // Allocate buffer B
-        device.ensureAllocated(b, 0, objectStateB);
+        device.allocate(b, 0, objectStateB);
 
         // Stream IN
         device.streamIn(c, 0, 0, objectStateC, null);

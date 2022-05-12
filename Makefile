@@ -40,7 +40,7 @@ example:
 tests:
 	tornado --devices
 	tornado-test.py --ea --verbose
-	tornado-test.py --ea -V -J"-Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	tornado-test.py --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
 tests-opt:

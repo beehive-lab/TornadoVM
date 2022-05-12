@@ -35,51 +35,22 @@ import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 
 public class SPIRVMultiDimArrayWrapper<T, E> extends SPIRVArrayWrapper<T> {
 
-    private Function<SPIRVDeviceContext, ? extends SPIRVArrayWrapper<E>> innerWrapperFactory;
-    private SPIRVLongArrayWrapper tableWrapper;
+    private final Function<SPIRVDeviceContext, ? extends SPIRVArrayWrapper<E>> innerWrapperFactory;
+    private final SPIRVLongArrayWrapper tableWrapper;
     private long[] addresses;
     private SPIRVArrayWrapper<E>[] wrappers;
-    private SPIRVDeviceContext deviceContext;
+    private final SPIRVDeviceContext deviceContext;
 
     public SPIRVMultiDimArrayWrapper(SPIRVDeviceContext deviceContext, Function<SPIRVDeviceContext, ? extends SPIRVArrayWrapper<E>> innerWrapperFactory, long batchSize) {
-        this(deviceContext, innerWrapperFactory, false, batchSize);
-    }
-
-    private SPIRVMultiDimArrayWrapper(SPIRVDeviceContext deviceContext, Function<SPIRVDeviceContext, ? extends SPIRVArrayWrapper<E>> innerWrapperFactory, boolean isFinal, long batchSize) {
-        super(deviceContext, JavaKind.Object, isFinal, batchSize);
+        super(deviceContext, JavaKind.Object, batchSize);
         this.deviceContext = deviceContext;
         this.innerWrapperFactory = innerWrapperFactory;
-        this.tableWrapper = new SPIRVLongArrayWrapper(deviceContext, false, batchSize);
-    }
-
-    @Override
-    public long toRelativeAddress() {
-        return tableWrapper.toRelativeAddress();
+        this.tableWrapper = new SPIRVLongArrayWrapper(deviceContext, batchSize);
     }
 
     @Override
     public long toBuffer() {
         return tableWrapper.toBuffer();
-    }
-
-    @Override
-    public long toAbsoluteAddress() {
-        return tableWrapper.toAbsoluteAddress();
-    }
-
-    @Override
-    public void invalidate() {
-        tableWrapper.invalidate();
-    }
-
-    @Override
-    public boolean isValid() {
-        return tableWrapper.isValid();
-    }
-
-    @Override
-    public long getBufferOffset() {
-        return tableWrapper.getBufferOffset();
     }
 
     @Override
@@ -97,7 +68,7 @@ public class SPIRVMultiDimArrayWrapper<T, E> extends SPIRVArrayWrapper<T> {
             for (int i = 0; i < elements.length; i++) {
                 wrappers[i] = innerWrapperFactory.apply(deviceContext);
                 wrappers[i].allocate(elements[i], batchSize);
-                addresses[i] = deviceContext.useRelativeAddresses() ? wrappers[i].toRelativeAddress() : wrappers[i].toAbsoluteAddress();
+                addresses[i] = wrappers[i].toBuffer();
             }
         } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
             fatal("OOM: multi-dim array: %s", e.getMessage());

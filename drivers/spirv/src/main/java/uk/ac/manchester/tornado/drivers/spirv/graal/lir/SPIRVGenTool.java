@@ -79,7 +79,7 @@ public class SPIRVGenTool {
 
     private Variable emitLoadParameterForVectorType(Variable result, LIRKind lirKind) {
         Variable vectorToLoad = generator.newVariable(lirKind);
-        SPIRVArchitecture.SPIRVMemoryBase base = SPIRVArchitecture.globalSpace;
+        SPIRVArchitecture.SPIRVMemoryBase base = SPIRVArchitecture.kernelContextSpace;
         SPIRVUnary.MemoryAccess address = new SPIRVUnary.MemoryAccess(base, result);
         SPIRVUnary.SPIRVAddressCast cast = new SPIRVUnary.SPIRVAddressCast(address, base, lirKind);
         generator.append(new SPIRVLIRStmt.LoadVectorStmt(vectorToLoad, cast, address));
@@ -90,12 +90,11 @@ public class SPIRVGenTool {
         SPIRVKind spirvKind = (SPIRVKind) resultValue.getPlatformKind();
         LIRKind lirKind = LIRKind.value(spirvKind);
 
-        // ASSIGN ( result, LOAD_FROM_STACK_FRAME_EXPR)
         SPIRVLIRStmt.ASSIGNParameter assignStmt = new SPIRVLIRStmt.ASSIGNParameter( //
                 resultValue, //
-                new SPIRVUnary.LoadFromStackFrameExpr( //
+                new SPIRVUnary.AssignLoadFromInputFrame( //
                         lirKind, //
-                        SPIRVKind.OP_TYPE_INT_64, //
+                        SPIRVKind.OP_TYPE_INT_8, //
                         (STACK_BASE_OFFSET + index), //
                         index), //
                 SPIRVKind.OP_TYPE_INT_64.getSizeInBytes(), //
@@ -110,9 +109,9 @@ public class SPIRVGenTool {
 
         SPIRVLIRStmt.ASSIGNParameterWithNoStore assignStmt = new SPIRVLIRStmt.ASSIGNParameterWithNoStore( //
                 resultValue, //
-                new SPIRVUnary.LoadFromStackFrameExpr( //
+                new SPIRVUnary.AssignLoadFromInputFrame( //
                         lirKind, //
-                        SPIRVKind.OP_TYPE_INT_64, //
+                        SPIRVKind.OP_TYPE_INT_8, //
                         (STACK_BASE_OFFSET + index), //
                         index));
 

@@ -29,37 +29,38 @@ import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanRead
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VALIDATE_ARRAY_HEADERS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PTX_ARRAY_ALIGNMENT;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
 
+    private static final int INIT_VALUE = -1;
+
     private int arrayHeaderSize;
-    private long bytesToAllocate;
-    private long bufferOffset;
+    private int arrayLengthOffset;
+
+    private long buffer;
+    private long bufferSize;
+
     protected PTXDeviceContext deviceContext;
     private JavaKind kind;
-    private int arrayLengthOffset;
-    private boolean onDevice;
-    private boolean isFinal;
 
-    public PTXArrayWrapper(PTXDeviceContext deviceContext, JavaKind kind, boolean isFinal) {
+    public PTXArrayWrapper(PTXDeviceContext deviceContext, JavaKind kind) {
         this.deviceContext = deviceContext;
         this.kind = kind;
-        this.isFinal = isFinal;
+        this.buffer = INIT_VALUE;
+        this.bufferSize = INIT_VALUE;
 
-        bufferOffset = -1;
         arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
         arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
     }
@@ -76,22 +77,17 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
 
     @Override
     public long toBuffer() {
-        return deviceContext.getMemoryManager().toBuffer();
+        return buffer;
+    }
+
+    @Override
+    public void setBuffer(ObjectBufferWrapper bufferWrapper) {
+        TornadoInternalError.shouldNotReachHere();
     }
 
     @Override
     public long getBufferOffset() {
-        return bufferOffset;
-    }
-
-    @Override
-    public long toAbsoluteAddress() {
-        return deviceContext.getMemoryManager().toAbsoluteDeviceAddress(bufferOffset);
-    }
-
-    @Override
-    public long toRelativeAddress() {
-        return bufferOffset;
+        return 0;
     }
 
     @Override
@@ -107,12 +103,12 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
 
         if (VALIDATE_ARRAY_HEADERS) {
             if (validateArrayHeader(array)) {
-                return readArrayData(toBuffer() + bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+                return readArrayData(toBuffer() + arrayHeaderSize, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
             } else {
                 shouldNotReachHere("Array header is invalid");
             }
         } else {
-            return readArrayData(toBuffer() + bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+            return readArrayData(toBuffer() + arrayHeaderSize, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         }
         return -1;
     }
@@ -129,8 +125,14 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
         return valid;
     }
 
+    private PTXByteBuffer getArrayHeader() {
+        final PTXByteBuffer header = new PTXByteBuffer(buffer, arrayHeaderSize, 0, deviceContext);
+        header.buffer.clear();
+        return header;
+    }
+
     private PTXByteBuffer prepareArrayHeader() {
-        final PTXByteBuffer header = deviceContext.getMemoryManager().getSubBuffer((int) getBufferOffset(), arrayHeaderSize);
+        final PTXByteBuffer header = getArrayHeader();
         header.buffer.clear();
         header.buffer.position(header.buffer.capacity());
         return header;
@@ -144,12 +146,11 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
         }
         buildArrayHeader(Array.getLength(array)).write();
         // TODO: Writing with offset != 0
-        writeArrayData(toBuffer() + bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, 0, null);
-        onDevice = true;
+        writeArrayData(toBuffer() + arrayHeaderSize, bufferSize - arrayHeaderSize, array, 0, null);
     }
 
     private PTXByteBuffer buildArrayHeader(int arraySize) {
-        final PTXByteBuffer header = deviceContext.getMemoryManager().getSubBuffer((int) getBufferOffset(), arrayHeaderSize);
+        final PTXByteBuffer header = getArrayHeader();
         header.buffer.clear();
         int index = 0;
         while (index < arrayLengthOffset) {
@@ -166,13 +167,7 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
         if (array == null) {
             throw new TornadoRuntimeException("[ERROR] output data is NULL");
         }
-        final int returnEvent;
-        if (isFinal) {
-            returnEvent = enqueueReadArrayData(toBuffer() + bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
-        } else {
-            returnEvent = enqueueReadArrayData(toBuffer() + bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
-        }
-        return returnEvent;
+        return enqueueReadArrayData(toBuffer() + arrayHeaderSize, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
     }
 
     @Override
@@ -184,30 +179,23 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
             throw new TornadoRuntimeException("ERROR] Data to be copied is NULL");
         }
         final int returnEvent;
-        if (isFinal && onDevice) {
-            returnEvent = enqueueWriteArrayData(toBuffer() + bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
-            listEvents.add(returnEvent);
+        // We first write the header for the object and then we write actual
+        // buffer
+        final int headerEvent;
+        if (batchSize <= 0) {
+            headerEvent = buildArrayHeader(Array.getLength(array)).enqueueWrite((useDeps) ? events : null);
         } else {
-            // We first write the header for the object and then we write actual
-            // buffer
-            final int headerEvent;
-            if (batchSize <= 0) {
-                headerEvent = buildArrayHeader(Array.getLength(array)).enqueueWrite((useDeps) ? events : null);
-            } else {
-                headerEvent = buildArrayHeaderBatch(batchSize).enqueueWrite((useDeps) ? events : null);
-            }
-            returnEvent = enqueueWriteArrayData(toBuffer() + bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
-            onDevice = true;
-            // returnEvent = deviceContext.enqueueMarker(internalEvents);
-
-            listEvents.add(headerEvent);
-            listEvents.add(returnEvent);
+            headerEvent = buildArrayHeaderBatch(batchSize).enqueueWrite((useDeps) ? events : null);
         }
+        returnEvent = enqueueWriteArrayData(toBuffer() + arrayHeaderSize, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+
+        listEvents.add(headerEvent);
+        listEvents.add(returnEvent);
         return listEvents;
     }
 
     private PTXByteBuffer buildArrayHeaderBatch(long arraySize) {
-        final PTXByteBuffer header = deviceContext.getMemoryManager().getSubBuffer((int) getBufferOffset(), arrayHeaderSize);
+        final PTXByteBuffer header = getArrayHeader();
         header.buffer.clear();
         int index = 0;
         while (index < arrayLengthOffset) {
@@ -220,36 +208,38 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
 
     @Override
     public void allocate(Object value, long batchSize) {
-        long newBufferSize = 0;
-        long sizeOfBatch = arrayHeaderSize + batchSize;
-        if (batchSize > 0) {
-            newBufferSize = sizeOfBatch;
+        final T hostArray = cast(value);
+        if (batchSize <= 0) {
+            bufferSize = sizeOf(hostArray);
+        } else {
+            bufferSize = arrayHeaderSize + batchSize;
         }
 
-        if ((batchSize > 0) && (bufferOffset != -1) && (newBufferSize < bytesToAllocate)) {
-            bytesToAllocate = newBufferSize;
+        if (bufferSize <= 0) {
+            throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
-        if (bufferOffset == -1) {
-            final T hostArray = cast(value);
-            if (batchSize <= 0) {
-                bytesToAllocate = sizeOf(hostArray);
-            } else {
-                bytesToAllocate = sizeOfBatch;
-            }
+        this.buffer = deviceContext.getBufferProvider().getBufferWithSize(bufferSize);
 
-            if (bytesToAllocate <= 0) {
-                throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bytesToAllocate);
-            }
-            assert hostArray != null;
-            bufferOffset = deviceContext.getMemoryManager().tryAllocate(bytesToAllocate, arrayHeaderSize, getAlignment());
+        if (Tornado.FULL_DEBUG) {
+            info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset,
+                    arrayHeaderSize);
+            info("allocated: %s", toString());
+        }
+    }
 
-            if (Tornado.FULL_DEBUG) {
-                info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d, bo=0x%x", kind.getJavaName(), humanReadableByteCount(bytesToAllocate, true), arrayLengthOffset,
-                        arrayHeaderSize, bufferOffset);
+    @Override
+    public void deallocate() throws TornadoMemoryException {
+        TornadoInternalError.guarantee(buffer != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
 
-                info("allocated: %s", toString());
-            }
+        deviceContext.getBufferProvider().markBufferReleased(buffer, bufferSize);
+        buffer = INIT_VALUE;
+        bufferSize = INIT_VALUE;
+
+        if (Tornado.FULL_DEBUG) {
+            info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset,
+                    arrayHeaderSize);
+            info("deallocated: %s", toString());
         }
     }
 
@@ -258,28 +248,8 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
     }
 
     @Override
-    public int getAlignment() {
-        return PTX_ARRAY_ALIGNMENT;
-    }
-
-    @Override
-    public boolean isValid() {
-        return onDevice;
-    }
-
-    @Override
-    public void invalidate() {
-        onDevice = false;
-    }
-
-    @Override
-    public void printHeapTrace() {
-        System.out.printf("0x%x\ttype=%s\n", toAbsoluteAddress(), kind.getJavaName());
-    }
-
-    @Override
     public long size() {
-        return bytesToAllocate;
+        return bufferSize;
     }
 
     /**

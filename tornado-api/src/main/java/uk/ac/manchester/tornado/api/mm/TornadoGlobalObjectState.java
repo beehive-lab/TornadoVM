@@ -45,13 +45,7 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 
 public interface TornadoGlobalObjectState {
 
-    boolean isShared();
-
-    boolean isExclusive();
-
     TornadoDeviceObjectState getDeviceState(TornadoDevice device);
-
-    void invalidate();
 
     void clear();
 

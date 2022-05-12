@@ -29,7 +29,7 @@ import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 public class PTXIntArrayWrapper extends PTXArrayWrapper<int[]> {
 
     public PTXIntArrayWrapper(PTXDeviceContext deviceContext) {
-        super(deviceContext, JavaKind.Int, false);
+        super(deviceContext, JavaKind.Int);
     }
 
     @Override

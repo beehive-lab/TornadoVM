@@ -25,9 +25,7 @@ package uk.ac.manchester.tornado.drivers.ptx.runtime;
 
 import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -43,14 +41,14 @@ import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.api.type.annotations.Vector;
+import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.ptx.PTX;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDevice;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
@@ -61,18 +59,17 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompiler;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXByteArrayWrapper;
-import uk.ac.manchester.tornado.drivers.ptx.mm.PTXByteBuffer;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXCharArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXDoubleArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXFloatArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXIntArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXLongArrayWrapper;
-import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMemoryManager;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMultiDimArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXObjectWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXShortArrayWrapper;
+import uk.ac.manchester.tornado.drivers.ptx.mm.PTXVectorWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -107,17 +104,12 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public CallStack createStack(int numArgs) {
-        return getDeviceContext().getMemoryManager().createCallStack(numArgs);
+    public KernelArgs createCallWrapper(int numArgs) {
+        return getDeviceContext().getMemoryManager().createCallWrapper(numArgs);
     }
 
     @Override
-    public ObjectBuffer createBuffer(int[] arr) {
-        throw new TornadoRuntimeException("[PTX] Atomics not implemented !");
-    }
-
-    @Override
-    public ObjectBuffer createOrReuseBuffer(int[] arr) {
+    public ObjectBuffer createOrReuseAtomicsBuffer(int[] arr) {
         return null;
     }
 
@@ -240,72 +232,6 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
         return getDeviceContext().getInstalledCode(functionName);
     }
 
-    /**
-     * It allocates an object in the pre-defined heap of the target device. It also
-     * ensure that there is enough space for the input object.
-     *
-     * @param object
-     *            to be allocated
-     * @param batchSize
-     *            size of the object to be allocated. If this value is <= 0, then it
-     *            allocates the sizeof(object).
-     * @param state
-     *            state of the object in the target device
-     *            {@link TornadoDeviceObjectState}
-     * @return an event ID
-     */
-    @Override
-    public int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state) {
-        if (!state.hasBuffer()) {
-            reserveMemory(object, batchSize, state);
-        } else {
-            checkForResizeBuffer(object, batchSize, state);
-        }
-
-        if (!state.isValid()) {
-            reAllocateInvalidBuffer(object, batchSize, state);
-        }
-        return -1;
-    }
-
-    private void reserveMemory(Object object, long batchSize, TornadoDeviceObjectState state) {
-
-        final ObjectBuffer buffer = createDeviceBuffer(object.getClass(), object, batchSize);
-        buffer.allocate(object, batchSize);
-        state.setBuffer(buffer);
-
-        final Class<?> type = object.getClass();
-        if (!type.isArray()) {
-            checkBatchSize(batchSize);
-        }
-
-        state.setValid(true);
-    }
-
-    private void checkForResizeBuffer(Object object, long batchSize, TornadoDeviceObjectState state) {
-        // We re-allocate if the buffer size has changed
-        final ObjectBuffer buffer = state.getBuffer();
-        try {
-            buffer.allocate(object, batchSize);
-        } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void reAllocateInvalidBuffer(Object object, long batchSize, TornadoDeviceObjectState state) {
-        try {
-            state.getBuffer().allocate(object, batchSize);
-            final Class<?> type = object.getClass();
-            if (!type.isArray()) {
-                checkBatchSize(batchSize);
-                state.getBuffer().write(object);
-            }
-            state.setValid(true);
-        } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
-            e.printStackTrace();
-        }
-    }
-
     private void checkBatchSize(long batchSize) {
         if (batchSize > 0) {
             throw new TornadoRuntimeException("[ERROR] Batch computation with non-arrays not supported yet.");
@@ -326,13 +252,57 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
                     TornadoInternalError.unimplemented("multi-dimensional array of type %s", type.getName());
                 }
             }
-
-        } else if (!type.isPrimitive() && !type.isArray()) {
-            result = new PTXObjectWrapper(getDeviceContext(), arg, batchSize);
+        } else if (!type.isPrimitive()) {
+            if (arg.getClass().getAnnotation(Vector.class) != null) {
+                result = new PTXVectorWrapper(getDeviceContext(), arg, batchSize);
+            } else {
+                result = new PTXObjectWrapper(getDeviceContext(), arg);
+            }
         }
 
         TornadoInternalError.guarantee(result != null, "Unable to create buffer for object: " + type);
         return result;
+    }
+
+    @Override
+    public int allocateBulk(Object[] objects, long batchSize, TornadoDeviceObjectState[] states) {
+        TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
+        if (!bufferProvider.canAllocate(objects.length)) {
+            bufferProvider.resetBuffers();
+        }
+        for (int i = 0; i < objects.length; i++) {
+            allocate(objects[i], batchSize, states[i]);
+        }
+        return -1;
+    }
+
+    @Override
+    public int allocate(Object object, long batchSize, TornadoDeviceObjectState state) {
+        final ObjectBuffer buffer;
+        if (!state.hasObjectBuffer() || !state.isLockedBuffer()) {
+            TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
+            buffer = createDeviceBuffer(object.getClass(), object, batchSize);
+            state.setObjectBuffer(buffer);
+            buffer.allocate(object, batchSize);
+        }
+
+        final Class<?> type = object.getClass();
+        if (!type.isArray()) {
+            checkBatchSize(batchSize);
+        }
+        return -1;
+    }
+
+    @Override
+    public int deallocate(TornadoDeviceObjectState state) {
+        if (state.isLockedBuffer()) {
+            return -1;
+        }
+
+        state.getObjectBuffer().deallocate();
+        state.setContents(false);
+        state.setObjectBuffer(null);
+        return -1;
     }
 
     private ObjectBuffer createArrayWrapper(Class<?> type, PTXDeviceContext deviceContext, long batchSize) {
@@ -401,13 +371,9 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
      */
     @Override
     public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long batchSize, long hostOffset) {
-        if (!objectState.isValid()) {
-            ensureAllocated(object, batchSize, objectState);
-        }
-
-        if (BENCHMARKING_MODE || !objectState.hasContents()) {
+        if (!objectState.hasContents() || BENCHMARKING_MODE) {
             objectState.setContents(true);
-            return objectState.getBuffer().enqueueWrite(object, batchSize, hostOffset, events, events != null);
+            return objectState.getObjectBuffer().enqueueWrite(object, batchSize, hostOffset, events, events != null);
         }
         return null;
     }
@@ -433,11 +399,8 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
      */
     @Override
     public List<Integer> streamIn(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
-        if (batchSize > 0 || !objectState.isValid()) {
-            ensureAllocated(object, batchSize, objectState);
-        }
         objectState.setContents(true);
-        return objectState.getBuffer().enqueueWrite(object, batchSize, hostOffset, events, events != null);
+        return objectState.getObjectBuffer().enqueueWrite(object, batchSize, hostOffset, events, events != null);
     }
 
     /**
@@ -458,8 +421,8 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
      */
     @Override
     public int streamOut(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
-        TornadoInternalError.guarantee(objectState.isValid(), "invalid variable");
-        int event = objectState.getBuffer().enqueueRead(object, hostOffset, events, events != null);
+        TornadoInternalError.guarantee(objectState.hasObjectBuffer(), "invalid variable");
+        int event = objectState.getObjectBuffer().enqueueRead(object, hostOffset, events, events != null);
         if (events != null) {
             return event;
         }
@@ -484,8 +447,8 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
      */
     @Override
     public int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
-        TornadoInternalError.guarantee(objectState.isValid(), "invalid variable");
-        return objectState.getBuffer().read(object, hostOffset, events, events != null);
+        TornadoInternalError.guarantee(objectState.hasObjectBuffer(), "invalid variable");
+        return objectState.getObjectBuffer().read(object, hostOffset, events, events != null);
     }
 
     /**
@@ -564,19 +527,6 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public void dumpEvents() {
         getDeviceContext().dumpEvents();
-    }
-
-    @Override
-    public void dumpMemory(String file) {
-        final PTXMemoryManager mm = getDeviceContext().getMemoryManager();
-        final PTXByteBuffer buffer = mm.getSubBuffer(0, (int) mm.getHeapSize());
-        buffer.read();
-
-        try (FileOutputStream fos = new FileOutputStream(file); FileChannel channel = fos.getChannel()) {
-            channel.write(buffer.buffer());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     @Override

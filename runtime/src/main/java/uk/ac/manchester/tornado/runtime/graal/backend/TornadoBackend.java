@@ -68,7 +68,7 @@ public abstract class TornadoBackend<P extends Providers> extends Backend {
 
     public abstract int getMethodIndex();
 
-    public abstract void allocateHeapMemoryOnDevice();
+    public abstract void allocateTornadoVMBuffersOnDevice();
 
     public abstract FrameMapBuilder newFrameMapBuilder(RegisterConfig registerConfig);
 

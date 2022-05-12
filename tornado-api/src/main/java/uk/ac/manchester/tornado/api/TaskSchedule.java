@@ -326,11 +326,6 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public long getReturnValue(String id) {
-        return taskScheduleImpl.getReturnValue(id);
-    }
-
-    @Override
     public void dumpEvents() {
         taskScheduleImpl.dumpEvents();
     }
@@ -348,6 +343,30 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     @Override
     public void clearProfiles() {
         taskScheduleImpl.clearProfiles();
+    }
+
+    @Override
+    public TaskSchedule lockObjectInMemory(Object object) {
+        taskScheduleImpl.lockObjectInMemory(object);
+        return this;
+    }
+
+    @Override
+    public TaskSchedule lockObjectsInMemory(Object... objects) {
+        taskScheduleImpl.lockObjectsInMemory(objects);
+        return this;
+    }
+
+    @Override
+    public TaskSchedule unlockObjectsFromMemory(Object... objects) {
+        taskScheduleImpl.unlockObjectsFromMemory(objects);
+        return this;
+    }
+
+    @Override
+    public TaskSchedule unlockObjectFromMemory(Object object) {
+        taskScheduleImpl.unlockObjectFromMemory(object);
+        return this;
     }
 
     @Override

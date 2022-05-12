@@ -34,41 +34,49 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
 
+    private static final int INIT_VALUE = -1;
+
     private final int arrayHeaderSize;
     private final int arrayLengthOffset;
-    private boolean onDevice;
+
+    private long bufferId;
     private long bufferOffset;
-    private long bytesToAllocate;
+    private long bufferSize;
 
-    protected SPIRVDeviceContext deviceContext;
-    private JavaKind kind;
-    private boolean isFinal;
-    private long size;
+    protected final SPIRVDeviceContext deviceContext;
 
-    public SPIRVArrayWrapper(SPIRVDeviceContext deviceContext, JavaKind javaKind, boolean isFinal, long batchSize) {
+    private final JavaKind kind;
+    private final long batchSize;
+
+    public SPIRVArrayWrapper(SPIRVDeviceContext deviceContext, JavaKind javaKind, long batchSize) {
         this.deviceContext = deviceContext;
         this.kind = javaKind;
-        this.isFinal = isFinal;
-        this.size = batchSize;
+        this.batchSize = batchSize;
+        this.bufferId = INIT_VALUE;
+        this.bufferSize = INIT_VALUE;
+        this.bufferOffset = 0;
 
         this.arrayLengthOffset = TornadoCoreRuntime.getVMConfig().arrayOopDescLengthOffset();
         this.arrayHeaderSize = TornadoCoreRuntime.getVMConfig().getArrayBaseOffset(kind);
-        this.onDevice = false;
-        this.bufferOffset = -1;
+    }
+
+    protected SPIRVArrayWrapper(final T array, final SPIRVDeviceContext device, final JavaKind kind, long batchSize) {
+        this(device, kind, batchSize);
+        bufferSize = sizeOf(array);
     }
 
     public long getBatchSize() {
-        return size;
+        return batchSize;
     }
 
     // FIXME <REFACTOR> <Common for ALl backends>
@@ -90,22 +98,19 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
 
     @Override
     public long toBuffer() {
-        return deviceContext.getMemoryManager().toBuffer();
+        return bufferId;
+    }
+
+    @Override
+    public void setBuffer(ObjectBufferWrapper bufferWrapper) {
+        this.bufferId = bufferWrapper.buffer;
+        this.bufferOffset = bufferWrapper.bufferOffset;
+
+        bufferWrapper.bufferOffset += size();
     }
 
     @Override
     public long getBufferOffset() {
-        return toRelativeAddress();
-    }
-
-    @Override
-    public long toAbsoluteAddress() {
-        long address = deviceContext.getMemoryManager().toAbsoluteDeviceAddress(bufferOffset);
-        return address;
-    }
-
-    @Override
-    public long toRelativeAddress() {
         return bufferOffset;
     }
 
@@ -150,19 +155,19 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
 
         if (VALIDATE_ARRAY_HEADERS) {
             if (validateArrayHeader(array)) {
-                return readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+                return readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
             } else {
                 shouldNotReachHere("Array header is invalid");
             }
         } else {
-            return readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+            return readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         }
         return -1;
     }
 
     // FIXME <REFACTOR> <Same for all backends>
     private SPIRVByteBuffer getArrayHeader() {
-        final SPIRVByteBuffer header = deviceContext.getMemoryManager().getSubBuffer((int) getBufferOffset(), arrayHeaderSize);
+        final SPIRVByteBuffer header = new SPIRVByteBuffer(deviceContext, bufferId, bufferOffset, arrayHeaderSize);
         header.buffer.clear();
         return header;
     }
@@ -186,7 +191,7 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
             throw new TornadoRuntimeException("[SPIRV][Error] data are NULL");
         }
         buildArrayHeader(Array.getLength(array));
-
+        writeArrayData(toBuffer(), arrayHeaderSize + bufferOffset, bufferSize - arrayHeaderSize, array, 0, null);
     }
 
     // FIXME <REFACTOR> <S>
@@ -197,11 +202,7 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
             throw new TornadoRuntimeException("[ERROR] output data is NULL");
         }
         final int returnEvent;
-        if (isFinal) {
-            returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
-        } else {
-            returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
-        }
+        returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         return useDeps ? returnEvent : -1;
     }
 
@@ -227,24 +228,18 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
             throw new TornadoRuntimeException("ERROR] Data to be copied is NULL");
         }
         final int returnEvent;
-        if (isFinal && onDevice) {
-            returnEvent = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+        // We first write the header for the object and then we write actual
+        // buffer
+        final int headerEvent;
+        if (batchSize <= 0) {
+            headerEvent = buildArrayHeader(Array.getLength(array)).enqueueWrite((useDeps) ? events : null);
         } else {
-            // We first write the header for the object and then we write actual
-            // buffer
-            final int headerEvent;
-            if (batchSize <= 0) {
-                headerEvent = buildArrayHeader(Array.getLength(array)).enqueueWrite((useDeps) ? events : null);
-            } else {
-                headerEvent = buildArrayHeaderBatch(batchSize).enqueueWrite((useDeps) ? events : null);
-            }
-            returnEvent = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
-            onDevice = true;
-            // returnEvent = deviceContext.enqueueMarker(internalEvents);
-
-            listEvents.add(headerEvent);
-            listEvents.add(returnEvent);
+            headerEvent = buildArrayHeaderBatch(batchSize).enqueueWrite((useDeps) ? events : null);
         }
+        returnEvent = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+
+        listEvents.add(headerEvent);
+        listEvents.add(returnEvent);
         return useDeps ? listEvents : null;
     }
 
@@ -261,61 +256,45 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
     // FIXME <REFACTOR> <S>
     @Override
     public void allocate(Object objectReference, long batchSize) {
-        long newBufferSize = 0;
-        if (batchSize > 0) {
-            newBufferSize = sizeOfBatch(batchSize);
+        final T hostArray = cast(objectReference);
+        if (batchSize <= 0) {
+            bufferSize = sizeOf(hostArray);
+        } else {
+            bufferSize = sizeOfBatch(batchSize);
         }
 
-        if ((batchSize > 0) && (bufferOffset != -1) && (newBufferSize < bytesToAllocate)) {
-            bytesToAllocate = newBufferSize;
+        if (bufferSize <= 0) {
+            throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
-        if (bufferOffset == -1) {
-            final T hostArray = cast(objectReference);
-            if (batchSize <= 0) {
-                bytesToAllocate = sizeOf(hostArray);
-            } else {
-                bytesToAllocate = sizeOfBatch(batchSize);
-            }
+        this.bufferId = deviceContext.getBufferProvider().getBufferWithSize(bufferSize);
 
-            if (bytesToAllocate <= 0) {
-                throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bytesToAllocate);
-            }
-
-            bufferOffset = deviceContext.getMemoryManager().tryAllocate(bytesToAllocate, arrayHeaderSize, getAlignment());
-
-            if (Tornado.FULL_DEBUG) {
-                info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d, bo=0x%x", kind.getJavaName(), humanReadableByteCount(bytesToAllocate, true), arrayLengthOffset,
-                        arrayHeaderSize, bufferOffset);
-                info("allocated: %s", toString());
-            }
+        if (Tornado.FULL_DEBUG) {
+            info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset,
+                    arrayHeaderSize);
+            info("allocated: %s", toString());
         }
 
     }
 
     @Override
-    public int getAlignment() {
-        return TornadoOptions.SPIRV_ARRAY_ALIGNMENT;
-    }
+    public void deallocate() {
+        TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
 
-    @Override
-    public boolean isValid() {
-        return onDevice;
-    }
+        deviceContext.getBufferProvider().markBufferReleased(bufferId, bufferSize);
+        bufferId = INIT_VALUE;
+        bufferSize = INIT_VALUE;
 
-    @Override
-    public void invalidate() {
-        onDevice = false;
-    }
-
-    @Override
-    public void printHeapTrace() {
-
+        if (Tornado.FULL_DEBUG) {
+            info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset,
+                    arrayHeaderSize);
+            info("deallocated: %s", toString());
+        }
     }
 
     @Override
     public long size() {
-        return bytesToAllocate;
+        return bufferSize;
     }
 
 }

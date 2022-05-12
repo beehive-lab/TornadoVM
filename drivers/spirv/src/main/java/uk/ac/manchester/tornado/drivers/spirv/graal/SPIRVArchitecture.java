@@ -26,8 +26,9 @@ package uk.ac.manchester.tornado.drivers.spirv.graal;
 
 import static jdk.vm.ci.code.MemoryBarriers.LOAD_STORE;
 import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_BASE_NAME;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.HEAP_REF_NAME;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.GLOBAL_REGION_NAME;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.LOCAL_REGION_NAME;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.PRIVATE_REGION_NAME;
 
 import java.nio.ByteOrder;
 import java.util.Set;
@@ -53,19 +54,17 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.meta.SPIRVMemorySpace;
  */
 public class SPIRVArchitecture extends Architecture {
 
-    public static final SPIRVMemoryBase globalSpace = new SPIRVMemoryBase(0, HEAP_REF_NAME, SPIRVMemorySpace.GLOBAL, SPIRVKind.OP_TYPE_INT_8);
-    public static final SPIRVMemoryBase localSpace = new SPIRVMemoryBase(3, HEAP_REF_NAME, SPIRVMemorySpace.LOCAL, SPIRVKind.OP_TYPE_INT_8);
-    public static final SPIRVMemoryBase privateSpace = new SPIRVMemoryBase(4, HEAP_REF_NAME, SPIRVMemorySpace.PRIVATE, SPIRVKind.OP_TYPE_INT_8);
+    public static final SPIRVMemoryBase kernelContextSpace = new SPIRVMemoryBase(0, GLOBAL_REGION_NAME, SPIRVMemorySpace.GLOBAL, SPIRVKind.OP_TYPE_INT_8);
+    public static final SPIRVMemoryBase localSpace = new SPIRVMemoryBase(1, LOCAL_REGION_NAME, SPIRVMemorySpace.LOCAL, SPIRVKind.OP_TYPE_INT_8);
+    public static final SPIRVMemoryBase privateSpace = new SPIRVMemoryBase(2, PRIVATE_REGION_NAME, SPIRVMemorySpace.PRIVATE, SPIRVKind.OP_TYPE_INT_8);
     private static final int NATIVE_CALL_DISPLACEMENT_OFFSET = 0;
     private static final int RETURN_ADDRESS_SIZE = 0;
     public static String BACKEND_ARCHITECTURE = "TornadoVM SPIR-V";
     private SPIRVRegister[] abiRegisters;
-    private SPIRVRegister sp;
 
     public SPIRVArchitecture(SPIRVKind wordKind, ByteOrder byteOrder) {
         super(BACKEND_ARCHITECTURE, wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, NATIVE_CALL_DISPLACEMENT_OFFSET, RETURN_ADDRESS_SIZE);
-        sp = new SPIRVRegister(1, FRAME_BASE_NAME, wordKind);
-        abiRegisters = new SPIRVRegister[] { globalSpace, sp };
+        abiRegisters = new SPIRVRegister[] {kernelContextSpace};
     }
 
     @Override

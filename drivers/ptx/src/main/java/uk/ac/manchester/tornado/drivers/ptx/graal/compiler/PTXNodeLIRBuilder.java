@@ -237,13 +237,13 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     protected void emitPrologue(StructuredGraph graph, boolean isKernel) {
+        final Local[] locals = graph.method().getLocalVariableTable().getLocalsAt(0);
         if (isKernel) {
             getGen().emitParameterAlloc();
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
-                setResult(param, getGen().getPTXGenTool().emitParameterLoad(param, param.index()));
+                setResult(param, getGen().getPTXGenTool().emitParameterLoad(locals[param.index()], param));
             }
         } else {
-            final Local[] locals = graph.method().getLocalVariableTable().getLocalsAt(0);
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
                 LIRKind lirKind = getGen().getLIRKind(param.stamp(NodeView.DEFAULT));
                 Variable result = getGen().newVariable(lirKind);

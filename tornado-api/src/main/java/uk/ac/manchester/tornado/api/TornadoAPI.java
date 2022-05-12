@@ -637,8 +637,6 @@ public interface TornadoAPI {
      */
     void warmup();
 
-    long getReturnValue(String id);
-
     void dumpEvents();
 
     void dumpTimes();
@@ -646,6 +644,22 @@ public interface TornadoAPI {
     void dumpProfiles();
 
     void clearProfiles();
+
+    /**
+     * Locks this object on the device memory. If a {@link TaskSchedule} is executed multiple times, then
+     * this object will be copied in only for the first execution.
+     */
+    TornadoAPI lockObjectInMemory(Object object);
+
+    TornadoAPI lockObjectsInMemory(Object... objects);
+
+    /**
+     * Unlocks this object from the device memory. The object must have been previously locked in order to unlock it.
+     * Once the object has been unlocked, it will be copied in on every subsequent execution of the {@link TaskSchedule}.
+     */
+    TornadoAPI unlockObjectFromMemory(Object object);
+
+    TornadoAPI unlockObjectsFromMemory(Object... objects);
 
     void syncObjects();
 

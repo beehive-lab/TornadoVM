@@ -266,7 +266,7 @@ public class OCLCompiler {
 
             try (DebugContext.Scope s = getDebugContext().scope("LIRStages", nodeLirGen, lir)) {
                 getDebugContext().dump(DebugContext.BASIC_LEVEL, lir, "After LIR generation");
-                LIRGenerationResult result = emitLowLevel(backend.getTarget(), lirGenRes, lirGen, lirSuites, registerAllocationConfig);
+                LIRGenerationResult result = emitLowLevel((OCLTargetDescription) backend.getTarget(), lirGenRes, lirGen, lirSuites, registerAllocationConfig);
                 getDebugContext().dump(DebugContext.BASIC_LEVEL, lir, "Before code generation");
                 return result;
             } catch (Throwable e) {

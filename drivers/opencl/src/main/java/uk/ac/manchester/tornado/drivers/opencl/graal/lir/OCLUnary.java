@@ -25,10 +25,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.ADDRESS_OF;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.SQUARE_BRACKETS_CLOSE;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.SQUARE_BRACKETS_OPEN;
-
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
@@ -192,9 +188,9 @@ public class OCLUnary {
         }
     }
 
-    public static class LoadOCLStack extends UnaryConsumer {
+    public static class LoadOCLKernelContext extends UnaryConsumer {
 
-        public LoadOCLStack(OCLUnaryOp opcode, LIRKind lirKind, Value value) {
+        public LoadOCLKernelContext(OCLUnaryOp opcode, LIRKind lirKind, Value value) {
             super(opcode, lirKind, value);
         }
 
@@ -257,41 +253,22 @@ public class OCLUnary {
     public static class MemoryAccess extends UnaryConsumer {
 
         private final OCLMemoryBase base;
-        private final boolean needsBase;
         private Value index;
 
-        MemoryAccess(OCLMemoryBase base, Value value, boolean needsBase) {
+        MemoryAccess(OCLMemoryBase base, Value value) {
             super(null, LIRKind.Illegal, value);
             this.base = base;
-            this.needsBase = needsBase;
         }
 
-        MemoryAccess(OCLMemoryBase base, Value value, Value index, boolean needsBase) {
+        MemoryAccess(OCLMemoryBase base, Value value, Value index) {
             super(null, LIRKind.Illegal, value);
             this.base = base;
             this.index = index;
-            this.needsBase = needsBase;
-        }
-
-        private boolean shouldEmitRelativeAddress(OCLCompilationResultBuilder crb) {
-            return needsBase || (!keepIntegerIndexing() && crb.getDeviceContext().useRelativeAddresses());
-        }
-
-        private boolean keepIntegerIndexing() {
-            return (base.getMemorySpace() == OCLMemorySpace.PRIVATE || base.getMemorySpace() == OCLMemorySpace.LOCAL);
         }
 
         @Override
         public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            if (shouldEmitRelativeAddress(crb)) {
-                asm.emitSymbol(ADDRESS_OF);
-                asm.emit(base.getName());
-                asm.emitSymbol(SQUARE_BRACKETS_OPEN);
-                asm.emitValue(crb, value);
-                asm.emitSymbol(SQUARE_BRACKETS_CLOSE);
-            } else {
-                asm.emitValue(crb, value);
-            }
+            asm.emitValue(crb, value);
         }
 
         public OCLMemoryBase getBase() {

@@ -27,7 +27,7 @@ import jdk.vm.ci.code.InstalledCode;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.drivers.ptx.PTXModule;
-import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -40,18 +40,18 @@ public class PTXInstalledCode extends InstalledCode implements TornadoInstalledC
         super(name);
         this.module = module;
         this.deviceContext = deviceContext;
-        valid = false;
+        valid = true;
     }
 
     @Override
-    public int launchWithDependencies(CallStack stack, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents) {
+    public int launchWithDependencies(KernelArgs callWrapper, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents) {
         unimplemented("launch with deps");
         return 0;
     }
 
     @Override
-    public int launchWithoutDependencies(CallStack stack, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
-        return deviceContext.enqueueKernelLaunch(module, stack, meta, batchThreads);
+    public int launchWithoutDependencies(KernelArgs callWrapper, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
+        return deviceContext.enqueueKernelLaunch(module, callWrapper, meta, batchThreads);
     }
 
     public String getGeneratedSourceCode() {

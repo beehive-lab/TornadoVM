@@ -23,8 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.runtime;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -40,14 +38,14 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+import uk.ac.manchester.tornado.api.type.annotations.Vector;
+import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.mm.AtomicsBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDevice;
@@ -66,9 +64,10 @@ import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVLongArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMultiDimArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVObjectWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVShortArrayWrapper;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVVectorWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
@@ -86,9 +85,9 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     private static final boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
     private static SPIRVDriver driver = null;
-    private SPIRVDevice device;
-    private int deviceIndex;
-    private int platformIndex;
+    private final SPIRVDevice device;
+    private final int deviceIndex;
+    private final int platformIndex;
 
     public SPIRVTornadoDevice(int platformIndex, int deviceIndex) {
         this.platformIndex = platformIndex;
@@ -116,17 +115,12 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public CallStack createStack(int numArgs) {
-        return getDeviceContext().getMemoryManager().createCallStack(numArgs);
+    public KernelArgs createCallWrapper(int numArgs) {
+        return getDeviceContext().getMemoryManager().createCallWrapper(numArgs);
     }
 
     @Override
-    public ObjectBuffer createBuffer(int[] buffer) {
-        return null;
-    }
-
-    @Override
-    public ObjectBuffer createOrReuseBuffer(int[] arr) {
+    public ObjectBuffer createOrReuseAtomicsBuffer(int[] arr) {
         return null;
     }
 
@@ -148,14 +142,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         }
         final Path pathToSPIRVBin = Paths.get(task.getFilename());
         TornadoInternalError.guarantee(pathToSPIRVBin.toFile().exists(), "files does not exists %s", task.getFilename());
-        try {
-            final byte[] spirvBinary = Files.readAllBytes(pathToSPIRVBin);
-            // return deviceContext.installCode(task.meta(), task.getId(),
-            // task.getEntryPoint(), spirvBinary);
-            return deviceContext.installBinary(task.meta(), task.getId(), task.getEntryPoint(), task.getFilename());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return deviceContext.installBinary(task.meta(), task.getId(), task.getEntryPoint(), task.getFilename());
     }
 
     public SPIRVBackend getBackend() {
@@ -313,9 +300,11 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         } else if (!type.isPrimitive()) {
             if (object instanceof AtomicInteger) {
                 throw new RuntimeException("Atomic Integers not supported yet");
+            } else if (object.getClass().getAnnotation(Vector.class) != null) {
+                return new SPIRVVectorWrapper(deviceContext, object, batchSize);
             } else {
                 // Possible a vector type, we encapsulate in an object
-                return new SPIRVObjectWrapper(deviceContext, object, batchSize);
+                return new SPIRVObjectWrapper(deviceContext, object);
             }
         }
         return null;
@@ -327,11 +316,29 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         }
     }
 
-    private void reserveMemory(Object object, long batchSize, TornadoDeviceObjectState state) {
+    @Override
+    public int allocateBulk(Object[] objects, long batchSize, TornadoDeviceObjectState[] states) {
+        TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
+        if (!bufferProvider.canAllocate(objects.length)) {
+            bufferProvider.resetBuffers();
+        }
+        for (int i = 0; i < objects.length; i++) {
+            allocate(objects[i], batchSize, states[i]);
+        }
+        return -1;
+    }
 
-        final ObjectBuffer buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext(), batchSize);
-        buffer.allocate(object, batchSize);
-        state.setBuffer(buffer);
+    @Override
+    public int allocate(Object object, long batchSize, TornadoDeviceObjectState state) {
+        final ObjectBuffer buffer;
+        if (state.hasObjectBuffer() && state.isLockedBuffer()) {
+            buffer = state.getObjectBuffer();
+        } else {
+            TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
+            buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext(), batchSize);
+            state.setObjectBuffer(buffer);
+            buffer.allocate(object, batchSize);
+        }
 
         if (buffer.getClass() == AtomicsBuffer.class) {
             state.setAtomicRegion();
@@ -341,46 +348,18 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         if (!type.isArray()) {
             checkBatchSize(batchSize);
         }
-        state.setValid(true);
+        return -1;
     }
 
-    // FIXME <REFACTOR> Common 3 backends
-    private void checkForResizeBuffer(Object object, long batchSize, TornadoDeviceObjectState state) {
-        // We re-allocate if the buffer size has changed
-        final ObjectBuffer buffer = state.getBuffer();
-        try {
-            buffer.allocate(object, batchSize);
-        } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // FIXME <REFACTOR> <S>
-    private void reAllocateInvalidBuffer(Object object, long batchSize, TornadoDeviceObjectState state) {
-        try {
-            state.getBuffer().allocate(object, batchSize);
-            final Class<?> type = object.getClass();
-            if (!type.isArray()) {
-                checkBatchSize(batchSize);
-                state.getBuffer().write(object);
-            }
-            state.setValid(true);
-        } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // FIXME <REFACTOR> <S>
     @Override
-    public int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state) {
-        if (!state.hasBuffer()) {
-            reserveMemory(object, batchSize, state);
-        } else {
-            checkForResizeBuffer(object, batchSize, state);
+    public int deallocate(TornadoDeviceObjectState state) {
+        if (state.isLockedBuffer()) {
+            return -1;
         }
-        if (!state.isValid()) {
-            reAllocateInvalidBuffer(object, batchSize, state);
-        }
+
+        state.getObjectBuffer().deallocate();
+        state.setContents(false);
+        state.setObjectBuffer(null);
         return -1;
     }
 
@@ -404,30 +383,23 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
      */
     @Override
     public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long batchSize, long offset) {
-        if (!objectState.isValid()) {
-            ensureAllocated(object, batchSize, objectState);
-        }
-
-        if (BENCHMARKING_MODE || !objectState.hasContents()) {
+        if (!objectState.hasContents() || BENCHMARKING_MODE) {
             objectState.setContents(true);
-            return objectState.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
+            return objectState.getObjectBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
         }
         return null;
     }
 
     @Override
     public List<Integer> streamIn(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
-        if (batchSize > 0 || !objectState.isValid()) {
-            ensureAllocated(object, batchSize, objectState);
-        }
         objectState.setContents(true);
-        return objectState.getBuffer().enqueueWrite(object, batchSize, hostOffset, events, events == null);
+        return objectState.getObjectBuffer().enqueueWrite(object, batchSize, hostOffset, events, events == null);
     }
 
     @Override
     public int streamOut(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
-        TornadoInternalError.guarantee(objectState.isValid(), "invalid variable");
-        int event = objectState.getBuffer().enqueueRead(object, hostOffset, events, events == null);
+        TornadoInternalError.guarantee(objectState.hasObjectBuffer(), "invalid variable");
+        int event = objectState.getObjectBuffer().enqueueRead(object, hostOffset, events, events == null);
         if (events != null) {
             return event;
         }
@@ -437,14 +409,14 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
         if (objectState.isAtomicRegionPresent()) {
-            int eventID = objectState.getBuffer().enqueueRead(null, 0, null, false);
+            int eventID = objectState.getObjectBuffer().enqueueRead(null, 0, null, false);
             if (object instanceof AtomicInteger) {
                 throw new RuntimeException("Atomics Not supported yet");
             }
             return eventID;
         } else {
-            TornadoInternalError.guarantee(objectState.isValid(), "invalid variable");
-            int event = objectState.getBuffer().read(object, hostOffset, events, events == null);
+            TornadoInternalError.guarantee(objectState.hasObjectBuffer(), "invalid variable");
+            int event = objectState.getObjectBuffer().read(object, hostOffset, events, events == null);
             // We force a blocking copy -> we need to close the command list and command
             // queue
             flush();
@@ -506,11 +478,6 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public void dumpEvents() {
-
-    }
-
-    @Override
-    public void dumpMemory(String file) {
 
     }
 
@@ -609,23 +576,10 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         return device.getName();
     }
 
-    // FIXME <THis should be in the parent class> All backends
-    public void sync(Object... objects) {
-        for (Object obj : objects) {
-            sync(obj);
-        }
-    }
-
-    // FIXME <THis should be in the parent class> All backends
-    public void sync(Object object) {
-        final DeviceObjectState state = TornadoCoreRuntime.getTornadoRuntime().resolveObject(object).getDeviceState(this);
-        resolveEvent(streamOut(object, 0, state, null)).waitOn();
-    }
-
     /**
      * Move Data from the device region that corresponds to buffer A into buffer B.
      */
     public void moveDataFromDeviceBufferToHost(DeviceObjectState objectStateA, Object b) {
-        objectStateA.getBuffer().read(b, 0, null, false);
+        objectStateA.getObjectBuffer().read(b, 0, null, false);
     }
 }

@@ -49,14 +49,6 @@ public class FieldBuffer {
         this.objectBuffer = objectBuffer;
     }
 
-    public boolean isFinal() {
-        return Modifier.isFinal(field.getModifiers());
-    }
-
-    public void allocate(final Object ref, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
-        objectBuffer.allocate(getFieldValue(ref), batchSize);
-    }
-
     public int enqueueRead(final Object ref, final int[] events, boolean useDeps) {
         if (DEBUG) {
             trace("fieldBuffer: enqueueRead* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
@@ -72,14 +64,6 @@ public class FieldBuffer {
         return (useDeps) ? objectBuffer.enqueueWrite(getFieldValue(ref), 0, 0, (useDeps) ? events : null, useDeps) : null;
     }
 
-    public int getAlignment() {
-        return objectBuffer.getAlignment();
-    }
-
-    public long getBufferOffset() {
-        return objectBuffer.getBufferOffset();
-    }
-
     private Object getFieldValue(final Object container) {
         Object value = null;
         try {
@@ -88,10 +72,6 @@ public class FieldBuffer {
             warn("Illegal access to field: name=%s, object=0x%x", field.getName(), container.hashCode());
         }
         return value;
-    }
-
-    public boolean onDevice() {
-        return objectBuffer.isValid();
     }
 
     public void read(final Object ref) {
@@ -104,22 +84,6 @@ public class FieldBuffer {
         }
         // TODO: reading with offset != 0
         return objectBuffer.read(getFieldValue(ref), 0, events, useDeps);
-    }
-
-    public long toAbsoluteAddress() {
-        return objectBuffer.toAbsoluteAddress();
-    }
-
-    public long toBuffer() {
-        return objectBuffer.toBuffer();
-    }
-
-    public long toRelativeAddress() {
-        return objectBuffer.toRelativeAddress();
-    }
-
-    public boolean needsWrite() {
-        return !onDevice() || !RuntimeUtilities.isPrimitive(field.getType());
     }
 
     public void write(final Object ref) {
@@ -135,5 +99,13 @@ public class FieldBuffer {
 
     public long size() {
         return objectBuffer.size();
+    }
+
+    void setBuffer(ObjectBuffer.ObjectBufferWrapper bufferWrapper) {
+        objectBuffer.setBuffer(bufferWrapper);
+    }
+
+    long getBufferOffset() {
+        return objectBuffer.getBufferOffset();
     }
 }

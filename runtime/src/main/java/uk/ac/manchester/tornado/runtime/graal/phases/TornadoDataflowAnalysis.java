@@ -182,6 +182,8 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
 
         boolean isRead = false;
         boolean isWritten = false;
+        boolean isReadField = false;
+        boolean isWrittenField = false;
 
         Queue<Node> nf = new ArrayDeque<>();
         parameter.usages().forEach(nf::add);
@@ -208,13 +210,14 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 if (loadField.stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
                     loadField.usages().forEach(nf::add);
                 }
-                isRead = true;
+                isReadField = true;
             } else if (currentNode instanceof StoreFieldNode) {
                 MetaControlFlow meta = analyseControlFlowForWriting(currentNode, fatherNodeStore, isWrittenTrueCondition, isWrittenFalseCondition);
                 fatherNodeStore = meta.getFatherNodeStore();
                 isWrittenTrueCondition = meta.isWrittenTrueCondition();
                 isWrittenFalseCondition = meta.isWrittenFalseCondition();
-                isWritten = true;
+                isWrittenField = true;
+                isReadField = true;
             } else if (currentNode instanceof MarkVectorStore) {
                 isWritten = true;
             } else if (isNodeFromKnownObject(currentNode)) {
@@ -237,6 +240,14 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
             result = Access.READ;
         } else if (isWritten) {
             result = Access.WRITE;
+        }
+
+        if (isReadField && isWrittenField) {
+            result = Access.asArray()[result.position | Access.READ_WRITE.position];
+        } else if (isReadField) {
+            result = Access.asArray()[result.position | Access.READ.position];
+        } else if (isWrittenField) {
+            result = Access.asArray()[result.position | Access.WRITE.position];
         }
 
         return result;

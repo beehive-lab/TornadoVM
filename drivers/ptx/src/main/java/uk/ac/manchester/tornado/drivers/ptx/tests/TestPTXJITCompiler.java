@@ -30,6 +30,7 @@ import java.util.HashMap;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.drivers.ptx.PTX;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDriver;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXInstalledCode;
@@ -39,7 +40,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompiler;
 import uk.ac.manchester.tornado.drivers.ptx.runtime.PTXTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
@@ -116,7 +117,7 @@ public class TestPTXJITCompiler {
     }
 
     public void runWithPTXAPI(PTXTornadoDevice tornadoDevice, PTXInstalledCode ptxCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
-        PTX.run(tornadoDevice, ptxCode, taskMeta, new Access[] { Access.READ, Access.READ, Access.WRITE }, new Object[] { a, b, c });
+        PTX.run(tornadoDevice, ptxCode, taskMeta, new Access[] { Access.READ, Access.READ, Access.WRITE }, a, b, c);
     }
 
     public void run(PTXTornadoDevice tornadoDevice, PTXInstalledCode ptxCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
@@ -130,25 +131,24 @@ public class TestPTXJITCompiler {
         GlobalObjectState stateC = new GlobalObjectState();
         DeviceObjectState objectStateC = stateC.getDeviceState(tornadoDevice);
 
+        tornadoDevice.allocateBulk(new Object[] {a, b, c}, 0, new TornadoDeviceObjectState[] {objectStateA, objectStateB, objectStateC});
+
         // Copy-IN A
         tornadoDevice.ensurePresent(a, objectStateA, null, 0, 0);
         // Copy-IN B
         tornadoDevice.ensurePresent(b, objectStateB, null, 0, 0);
-        // Alloc C
-        tornadoDevice.ensureAllocated(c, 0, objectStateC);
 
-        // Create stack
-        CallStack stack = tornadoDevice.createStack(3);
+        // Create call wrapper
+        KernelArgs callWrapper = tornadoDevice.createCallWrapper(3);
 
-        // Fill header of call stack with empty values
-        stack.setHeader(new HashMap<>());
+        callWrapper.setKernelContext(new HashMap<>());
 
-        stack.push(a, objectStateA);
-        stack.push(b, objectStateB);
-        stack.push(c, objectStateC);
+        callWrapper.addCallArgument(objectStateA.getObjectBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateB.getObjectBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateC.getObjectBuffer().toBuffer(), true);
 
         // Run the code
-        ptxCode.launchWithoutDependencies(stack, null, taskMeta, 0);
+        ptxCode.launchWithoutDependencies(callWrapper, null, taskMeta, 0);
 
         // Obtain the result
         tornadoDevice.streamOutBlocking(c, 0, objectStateC, null);

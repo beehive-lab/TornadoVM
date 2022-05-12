@@ -68,7 +68,10 @@ public class TestGridScheduler {
         WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
 
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(a, b, size).task("t0", TestGridScheduler::vectorAddFloat, a, b, tornadoC).task("t1", TestGridScheduler::reduceAdd, tornadoC, size)
+        TaskSchedule s0 = new TaskSchedule("s0")
+                .streamIn(a, b, size)
+                .task("t0", TestGridScheduler::vectorAddFloat, a, b, tornadoC)
+                .task("t1", TestGridScheduler::reduceAdd, tornadoC, size)
                 .streamOut(tornadoC);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);

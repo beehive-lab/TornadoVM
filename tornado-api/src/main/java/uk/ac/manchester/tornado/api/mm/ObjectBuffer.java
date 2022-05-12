@@ -48,13 +48,21 @@ import java.util.List;
 
 public interface ObjectBuffer {
 
+    class ObjectBufferWrapper {
+        public final long buffer;
+        public long bufferOffset;
+
+        public ObjectBufferWrapper(long buffer, long bufferOffset) {
+            this.buffer = buffer;
+            this.bufferOffset = bufferOffset;
+        }
+    }
+
     long toBuffer();
 
+    void setBuffer(ObjectBufferWrapper bufferWrapper);
+
     long getBufferOffset();
-
-    long toAbsoluteAddress();
-
-    long toRelativeAddress();
 
     void read(Object reference);
 
@@ -68,13 +76,7 @@ public interface ObjectBuffer {
 
     void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException;
 
-    int getAlignment();
-
-    boolean isValid();
-
-    void invalidate();
-
-    void printHeapTrace();
+    void deallocate() throws TornadoMemoryException;
 
     long size();
 

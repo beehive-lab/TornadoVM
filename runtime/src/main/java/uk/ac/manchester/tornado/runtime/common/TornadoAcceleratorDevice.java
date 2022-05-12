@@ -34,11 +34,9 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
 
     TornadoSchedulingStrategy getPreferredSchedule();
 
-    CallStack createStack(int numArgs);
+    KernelArgs createCallWrapper(int numArgs);
 
-    ObjectBuffer createBuffer(int[] buffer);
-
-    ObjectBuffer createOrReuseBuffer(int[] arr);
+    ObjectBuffer createOrReuseAtomicsBuffer(int[] arr);
 
     TornadoInstalledCode installCode(SchedulableTask task);
 

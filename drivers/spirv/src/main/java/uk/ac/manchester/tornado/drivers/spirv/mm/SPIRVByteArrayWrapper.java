@@ -28,12 +28,12 @@ import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 
 public class SPIRVByteArrayWrapper extends SPIRVArrayWrapper<byte[]> {
 
-    public SPIRVByteArrayWrapper(SPIRVDeviceContext device, long size) {
-        this(device, false, size);
+    public SPIRVByteArrayWrapper(SPIRVDeviceContext device, long batchSize) {
+        super(device, JavaKind.Byte, batchSize);
     }
 
-    public SPIRVByteArrayWrapper(SPIRVDeviceContext device, boolean isFinal, long size) {
-        super(device, JavaKind.Byte, isFinal, size);
+    protected SPIRVByteArrayWrapper(final byte[] array, final SPIRVDeviceContext device, long batchSize) {
+        super(array, device, JavaKind.Byte, batchSize);
     }
 
     @Override

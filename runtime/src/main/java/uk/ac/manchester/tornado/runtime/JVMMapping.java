@@ -38,7 +38,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
-import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
@@ -48,11 +48,6 @@ public class JVMMapping implements TornadoAcceleratorDevice {
 
     @Override
     public void dumpEvents() {
-        TornadoInternalError.unimplemented();
-    }
-
-    @Override
-    public void dumpMemory(String file) {
         TornadoInternalError.unimplemented();
     }
 
@@ -128,17 +123,12 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public CallStack createStack(int numArgs) {
+    public KernelArgs createCallWrapper(int numArgs) {
         return null;
     }
 
     @Override
-    public ObjectBuffer createBuffer(int[] arr) {
-        return null;
-    }
-
-    @Override
-    public ObjectBuffer createOrReuseBuffer(int[] arr) {
+    public ObjectBuffer createOrReuseAtomicsBuffer(int[] arr) {
         return null;
     }
 
@@ -148,8 +138,18 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state) {
+    public int allocate(Object object, long batchSize, TornadoDeviceObjectState state) {
         return -1;
+    }
+
+    @Override
+    public int allocateBulk(Object[] objects, long batchSize, TornadoDeviceObjectState[] states) {
+        return -1;
+    }
+
+    @Override
+    public int deallocate(TornadoDeviceObjectState state) {
+        return 0;
     }
 
     @Override

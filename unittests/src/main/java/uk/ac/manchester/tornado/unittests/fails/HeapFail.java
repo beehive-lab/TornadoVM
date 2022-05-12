@@ -37,7 +37,7 @@ public class HeapFail {
      * How to run:
      *
      * <code>
-     * $ tornado-test.py -V --fast -J"-Dtornado.heap.allocation=1MB"
+     * $ tornado-test.py -V --fast -J"-Dtornado.device.memory=1MB"
      * uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
      * </code>
      *

@@ -26,6 +26,7 @@
 package uk.ac.manchester.tornado.runtime.graph;
 
 import java.nio.ByteBuffer;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
 
@@ -40,8 +41,10 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextOpNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.CopyInNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.CopyOutNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.DeallocateNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.DependentReadNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ObjectNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.PersistNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.StreamInNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
@@ -52,28 +55,31 @@ import uk.ac.manchester.tornado.runtime.tasks.TornadoGraphBitcodes;
 
 public class TornadoGraphBuilder {
 
-    private static void createStreamInNode(ContextNode context, TornadoGraph graph, ObjectNode value, AbstractNode[] args, int argIndex) {
+    private static void createStreamInNode(ContextNode context, TornadoGraph graph, ObjectNode arg, AbstractNode[] args, int argIndex, PersistNode persistNode) {
         final StreamInNode streamInNode = new StreamInNode(context);
-        streamInNode.setValue(value);
+        streamInNode.setValue(arg);
         graph.add(streamInNode);
         context.addUse(streamInNode);
         args[argIndex] = streamInNode;
+        persistNode.addValue(arg);
     }
 
-    private static void createAllocateNode(ContextNode context, TornadoGraph graph, AbstractNode arg, AbstractNode[] args, int argIndex) {
+    private static void createAllocateNode(ContextNode context, TornadoGraph graph, AbstractNode arg, AbstractNode[] args, int argIndex, PersistNode persistNode) {
         final AllocateNode allocateNode = new AllocateNode(context);
         allocateNode.setValue((ObjectNode) arg);
         graph.add(allocateNode);
         context.addUse(allocateNode);
         args[argIndex] = allocateNode;
+        persistNode.addValue((ObjectNode) arg);
     }
 
-    private static void createCopyInNode(ContextNode context, TornadoGraph graph, AbstractNode arg, AbstractNode[] args, int argIndex) {
+    private static void createCopyInNode(ContextNode context, TornadoGraph graph, AbstractNode arg, AbstractNode[] args, int argIndex, PersistNode persistNode) {
         final CopyInNode copyInNode = new CopyInNode(context);
         copyInNode.setValue((ObjectNode) arg);
         graph.add(copyInNode);
         context.addUse(copyInNode);
         args[argIndex] = copyInNode;
+        persistNode.addValue((ObjectNode) arg);
     }
 
     private static boolean shouldPerformSharedObjectCopy(AbstractNode arg, ContextNode contextNode) {
@@ -86,6 +92,7 @@ public class TornadoGraphBuilder {
         SchedulableTask task;
         AbstractNode[] args = null;
         ContextNode context = null;
+        PersistNode persist = null;
         TaskNode taskNode = null;
         int argIndex = 0;
         int taskIndex = 0;
@@ -122,19 +129,19 @@ public class TornadoGraphBuilder {
                 final AbstractNode arg = objectNodes[variableIndex];
                 if (!(arg instanceof ContextOpNode)) {
                     if (Objects.requireNonNull(accesses)[argIndex] == Access.WRITE) {
-                        createAllocateNode(context, graph, arg, args, argIndex);
+                        createAllocateNode(context, graph, arg, args, argIndex, persist);
                     } else {
                         final ObjectNode objectNode = (ObjectNode) arg;
                         final LocalObjectState state = states.get(objectNode.getIndex());
                         if (state.isStreamIn()) {
-                            createStreamInNode(context, graph, objectNode, args, argIndex);
+                            createStreamInNode(context, graph, objectNode, args, argIndex, persist);
                         } else {
-                            createCopyInNode(context, graph, arg, args, argIndex);
+                            createCopyInNode(context, graph, arg, args, argIndex, persist);
                         }
                     }
                 } else {
                     if (shouldPerformSharedObjectCopy(arg, context)) {
-                        createCopyInNode(context, graph, arg.getInputs().get(0), args, argIndex);
+                        createCopyInNode(context, graph, arg.getInputs().get(0), args, argIndex, persist);
                     }
                     args[argIndex] = arg;
                 }
@@ -148,7 +155,7 @@ public class TornadoGraphBuilder {
                     } else if (objectNodes[variableIndex] instanceof DependentReadNode) {
                         value = ((DependentReadNode) objectNodes[variableIndex]).getValue();
                         if (states.get(variableIndex).isForcedStreamIn()) {
-                            createStreamInNode(context, graph, value, args, argIndex);
+                            createStreamInNode(context, graph, value, args, argIndex, persist);
                         }
                     } else if (objectNodes[variableIndex] instanceof CopyInNode) {
                         value = ((CopyInNode) objectNodes[variableIndex]).getValue();
@@ -184,6 +191,9 @@ public class TornadoGraphBuilder {
 
                 context = graph.addUnique(new ContextNode(graphContext.getDeviceIndexForTask(globalTaskId)));
 
+                persist = graph.addUnique(new PersistNode(context));
+                context.addUse(persist);
+
                 if (task instanceof CompilableTask) {
                     final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(((CompilableTask) task).getMethod());
                     Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
@@ -211,8 +221,34 @@ public class TornadoGraphBuilder {
                 streamInNode.setValue((ObjectNode) objectNodes[i]);
                 graph.add(streamInNode);
                 context.addUse(streamInNode);
+                persist.addValue((ObjectNode) objectNodes[i]);
             }
         }
+
+        // Add deallocate nodes to the graph for each copy-in/allocate/stream-in
+        final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
+        int dependencyIndex = asyncNodes.previousSetBit(asyncNodes.length() - 1);
+        ContextOpNode dependencyNode = (ContextOpNode) graph.getNode(dependencyIndex);
+        for (int i = asyncNodes.nextSetBit(0); i != -1 && i < asyncNodes.length(); i = asyncNodes.nextSetBit(i + 1)) {
+            ContextOpNode node = (ContextOpNode) graph.getNode(i);
+            if (node instanceof CopyInNode || node instanceof AllocateNode || node instanceof StreamInNode) {
+                ObjectNode objectNode;
+                if (node instanceof CopyInNode) {
+                    objectNode = ((CopyInNode) node).getValue();
+                } else if (node instanceof AllocateNode) {
+                    objectNode = ((AllocateNode) node).getValue();
+                } else {
+                    objectNode = ((StreamInNode) node).getValue();
+                }
+                ContextNode contextNode = node.getContext();
+                DeallocateNode deallocateNode = new DeallocateNode(contextNode);
+                deallocateNode.setValue(objectNode);
+                deallocateNode.setDependent(dependencyNode);
+                graph.add(deallocateNode);
+                contextNode.addUse(deallocateNode);
+            }
+        }
+
         return graph;
     }
 }

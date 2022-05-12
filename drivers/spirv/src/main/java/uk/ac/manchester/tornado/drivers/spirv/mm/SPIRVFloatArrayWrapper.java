@@ -28,12 +28,12 @@ import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 
 public class SPIRVFloatArrayWrapper extends SPIRVArrayWrapper<float[]> {
 
-    public SPIRVFloatArrayWrapper(SPIRVDeviceContext device, long size) {
-        this(device, false, size);
+    public SPIRVFloatArrayWrapper(SPIRVDeviceContext device, long batchSize) {
+        super(device, JavaKind.Float, batchSize);
     }
 
-    public SPIRVFloatArrayWrapper(SPIRVDeviceContext device, boolean isFinal, long size) {
-        super(device, JavaKind.Float, isFinal, size);
+    protected SPIRVFloatArrayWrapper(final float[] array, final SPIRVDeviceContext device, long batchSize) {
+        super(array, device, JavaKind.Float, batchSize);
     }
 
     @Override

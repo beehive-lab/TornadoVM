@@ -35,16 +35,12 @@ public class OCLAssemblerConstants {
     public static final String PRIVATE_MEM_MODIFIER = "__private";
     public static final String CONSTANT_MEM_MODIFIER = "__constant";
 
-    public static final String TORNADO_HEAP_MEMORY = "heap";
-
     public static final String GLOBAL_REGION_NAME = "_global_region";
     public static final String LOCAL_REGION_NAME = "_local_region";
     public static final String PRIVATE_REGION_NAME = "_private_region";
     public static final String ATOMICS_REGION_NAME = "_atomics";
     public static final String CONSTANT_REGION_NAME = "_constant_region";
-
-    public static final String HEAP_REF_NAME = "_heap_base";
-    public static final String FRAME_BASE_NAME = "_frame_base";
+    public static final String KERNEL_CONTEXT = "_kernel_context";
     public static final String FRAME_REF_NAME = "_frame";
 
     public static final String STMT_DELIMITER = ";";

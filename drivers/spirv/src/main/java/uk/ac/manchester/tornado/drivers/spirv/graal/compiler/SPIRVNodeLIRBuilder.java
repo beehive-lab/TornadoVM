@@ -254,7 +254,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         if (isKernel) {
             // Load Parameters for the main kernel method
             for (ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
-                setResult(param, getGen().getSPIRVGenTool().emitParameterLoad(param, param.index()));
+                setResult(param, getGen().getSPIRVGenTool().emitParameterLoad(param, param.index() + 1)); // + 1 to account for the kernel context
             }
         } else {
             // Load parameters for a GPU function (not the main kernel).

@@ -45,6 +45,8 @@ public abstract class SPIRVContext {
 
     public abstract long allocateMemory(int deviceIndex, long numBytes);
 
+    public abstract void freeMemory(long buffer, int deviceIndex);
+
     public abstract int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
 
     public abstract int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, char[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
@@ -76,7 +78,5 @@ public abstract class SPIRVContext {
     public abstract void enqueueBarrier(int deviceIndex);
 
     public abstract void flush(int deviceIndex);
-
-    public abstract long executeAndReadLookupBufferAddressKernel(TaskMetaData meta);
 
 }

@@ -35,7 +35,6 @@ public class PTXContext {
     private final PTXDevice device;
     private final PTXStream stream;
     private final PTXDeviceContext deviceContext;
-    private long allocatedRegion;
 
     public PTXContext(PTXDevice device) {
         this.device = device;
@@ -66,7 +65,6 @@ public class PTXContext {
         }
 
         deviceContext.cleanup();
-        cuMemFree(ptxContext, allocatedRegion);
         cuCtxDestroy(ptxContext);
     }
 
@@ -75,12 +73,14 @@ public class PTXContext {
     }
 
     public long allocateMemory(long numBytes) {
-        TornadoInternalError.guarantee(allocatedRegion == 0, "Only a single heap allocation is supported");
         try {
-            allocatedRegion = cuMemAlloc(ptxContext, numBytes);
+            return cuMemAlloc(ptxContext, numBytes);
         } catch (Exception e) {
             throw new TornadoBailoutRuntimeException("[Error during memory allocation] ", e);
         }
-        return allocatedRegion;
+    }
+
+    public void freeMemory(long address) {
+        cuMemFree(ptxContext, address);
     }
 }

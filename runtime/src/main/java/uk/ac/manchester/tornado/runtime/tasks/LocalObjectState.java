@@ -29,7 +29,7 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRunt
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.runtime.EmptyEvent;
+import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 
 public class LocalObjectState {
 
@@ -37,7 +37,7 @@ public class LocalObjectState {
     private boolean forceStreamIn;
     private boolean streamOut;
 
-    private GlobalObjectState global;
+    private final GlobalObjectState global;
 
     public LocalObjectState(Object object) {
         global = getTornadoRuntime().resolveObject(object);
@@ -69,33 +69,17 @@ public class LocalObjectState {
         this.streamOut = streamOut;
     }
 
-    public boolean isModified(TornadoDevice device) {
-        return global.getDeviceState(device).isModified();
-    }
-
-    public void setModified(boolean modified, TornadoDevice device) {
-        global.getDeviceState(device).setModified(modified);
-    }
-
-    public boolean isShared() {
-        return global.isShared();
-    }
-
-    public boolean isExclusive() {
-        return global.isExclusive();
-    }
-
     public GlobalObjectState getGlobalState() {
         return global;
     }
 
     public Event sync(Object object, TornadoDevice device) {
-        if (isModified(device)) {
-            int eventId = device.streamOutBlocking(object, 0, global.getDeviceState(device), null);
-            setModified(false, device);
+        DeviceObjectState objectState = global.getDeviceState(device);
+        if (objectState.isLockedBuffer()) {
+            int eventId = device.streamOutBlocking(object, 0, objectState, null);
             return device.resolveEvent(eventId);
         }
-        return new EmptyEvent();
+        return null;
     }
 
     @Override

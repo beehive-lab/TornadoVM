@@ -55,6 +55,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoTaskSpecializa
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionSuppression;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFieldAccessFixup;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFullInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLocalMemoryAllocation;
@@ -91,6 +92,7 @@ public class SPIRVHighTier extends TornadoHighTier {
         }
 
         appendPhase(new TornadoTaskSpecialization(canonicalizer));
+        appendPhase(new TornadoFieldAccessFixup());
         appendPhase(canonicalizer);
         appendPhase(new DeadCodeEliminationPhase(Optional));
 

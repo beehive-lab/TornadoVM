@@ -19,6 +19,7 @@ open module tornado.runtime {
     exports uk.ac.manchester.tornado.runtime.graal.loop;
     exports uk.ac.manchester.tornado.runtime.graal.nodes;
     exports uk.ac.manchester.tornado.runtime.graal.nodes.logic;
+    exports uk.ac.manchester.tornado.runtime.graal.nodes.calc;
     exports uk.ac.manchester.tornado.runtime.graal.phases;
     exports uk.ac.manchester.tornado.runtime.graal.phases.lir;
     exports uk.ac.manchester.tornado.runtime.graph;

@@ -32,15 +32,16 @@ import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.drivers.common.EventDescriptor;
+import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMemoryManager;
+import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVBufferProvider;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.LevelZeroTransferTimeStamp;
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.TimeStamp;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
-import uk.ac.manchester.tornado.runtime.common.Initialisable;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
@@ -51,7 +52,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
  * Class to map a SPIR-V device (Device represented either in LevelZero or an
  * OpenCL device) with an SPIR-V Context.
  */
-public abstract class SPIRVDeviceContext implements Initialisable, TornadoDeviceContext {
+public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
 
     protected static final Event EMPTY_EVENT = new EmptyEvent();
 
@@ -63,6 +64,7 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
     protected SPIRVCodeCache codeCache;
     protected boolean wasReset;
     protected SPIRVEventPool spirvEventPool;
+    private TornadoBufferProvider bufferProvider;
 
     protected SPIRVDeviceContext(SPIRVDevice device, SPIRVCommandQueue queue, SPIRVContext context) {
         init(device, queue);
@@ -81,7 +83,7 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
         }
         this.wasReset = false;
         this.spirvEventPool = new SPIRVEventPool(Tornado.EVENT_WINDOW);
-
+        this.bufferProvider = new SPIRVBufferProvider(this);
     }
 
     public SPIRVContext getSpirvContext() {
@@ -93,13 +95,12 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
     }
 
     @Override
-    public boolean isInitialised() {
-        return memoryManager.isInitialised();
-    }
-
-    @Override
     public SPIRVMemoryManager getMemoryManager() {
         return this.memoryManager;
+    }
+
+    public TornadoBufferProvider getBufferProvider() {
+        return bufferProvider;
     }
 
     @Override
@@ -119,11 +120,6 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
 
     @Override
     public boolean isPlatformFPGA() {
-        return false;
-    }
-
-    @Override
-    public boolean useRelativeAddresses() {
         return false;
     }
 
@@ -180,7 +176,6 @@ public abstract class SPIRVDeviceContext implements Initialisable, TornadoDevice
     }
 
     public void reset() {
-        memoryManager.reset();
         codeCache.reset();
         wasReset = true;
     }

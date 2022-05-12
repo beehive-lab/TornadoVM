@@ -134,7 +134,7 @@ public class TornadoSPIRVIntrinsicsReplacements extends BasePhase<TornadoHighTie
     private void lowerPrivateInvokeNodeNewArray(StructuredGraph graph, int size, JavaKind elementKind, InvokeNode invokeWithNewArray) {
         final ConstantNode newLenghNode = ConstantNode.forInt(size, graph);
         ResolvedJavaType elementType = metaAccessProvider.lookupJavaType(elementKind.toJavaClass());
-        FixedArrayNode fixedArrayNode = graph.addOrUnique(new FixedArrayNode(SPIRVArchitecture.globalSpace, elementType, newLenghNode));
+        FixedArrayNode fixedArrayNode = graph.addOrUnique(new FixedArrayNode(SPIRVArchitecture.kernelContextSpace, elementType, newLenghNode));
         invokeWithNewArray.replaceAtUsages(fixedArrayNode);
     }
 

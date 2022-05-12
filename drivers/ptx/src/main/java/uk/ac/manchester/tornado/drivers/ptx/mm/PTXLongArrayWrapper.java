@@ -28,7 +28,7 @@ import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 
 public class PTXLongArrayWrapper extends PTXArrayWrapper<long[]> {
     public PTXLongArrayWrapper(PTXDeviceContext deviceContext) {
-        super(deviceContext, JavaKind.Long, false);
+        super(deviceContext, JavaKind.Long);
     }
 
     @Override

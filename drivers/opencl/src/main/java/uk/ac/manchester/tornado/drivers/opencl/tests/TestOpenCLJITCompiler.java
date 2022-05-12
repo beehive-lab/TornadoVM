@@ -32,6 +32,7 @@ import java.util.HashMap;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
 import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
@@ -41,7 +42,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResu
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
@@ -117,7 +118,7 @@ public class TestOpenCLJITCompiler {
     }
 
     public void runWithOpenCLAPI(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
-        OpenCL.run(tornadoDevice, openCLCode, taskMeta, new Access[] { Access.READ, Access.READ, Access.WRITE }, new Object[] { a, b, c });
+        OpenCL.run(tornadoDevice, openCLCode, taskMeta, new Access[] { Access.READ, Access.READ, Access.WRITE }, a, b, c);
     }
 
     public void run(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
@@ -131,25 +132,25 @@ public class TestOpenCLJITCompiler {
         GlobalObjectState stateC = new GlobalObjectState();
         DeviceObjectState objectStateC = stateC.getDeviceState(tornadoDevice);
 
+        tornadoDevice.allocateBulk(new Object[] {a, b, c}, 0, new TornadoDeviceObjectState[] {objectStateA, objectStateB, objectStateC});
+
         // Copy-IN A
         tornadoDevice.ensurePresent(a, objectStateA, null, 0, 0);
         // Copy-IN B
         tornadoDevice.ensurePresent(b, objectStateB, null, 0, 0);
-        // Alloc C
-        tornadoDevice.ensureAllocated(c, 0, objectStateC);
 
-        // Create stack
-        CallStack stack = tornadoDevice.createStack(3);
+        // Create call wrapper
+        KernelArgs callWrapper = tornadoDevice.createCallWrapper(3);
 
-        // Fill header of call stack with empty values
-        stack.setHeader(new HashMap<>());
+        // Fill header of call callWrapper with empty values
+        callWrapper.setKernelContext(new HashMap<>());
 
-        stack.push(a, objectStateA);
-        stack.push(b, objectStateB);
-        stack.push(c, objectStateC);
+        callWrapper.addCallArgument(objectStateA.getObjectBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateB.getObjectBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateC.getObjectBuffer().toBuffer(), true);
 
         // Run the code
-        openCLCode.launchWithoutDependencies(stack, null, taskMeta, 0);
+        openCLCode.launchWithoutDependencies(callWrapper, null, taskMeta, 0);
 
         // Obtain the result
         tornadoDevice.streamOutBlocking(c, 0, objectStateC, null);

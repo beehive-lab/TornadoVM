@@ -23,25 +23,21 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
-import static uk.ac.manchester.tornado.drivers.opencl.mm.OCLCallStack.RETURN_VALUE_INDEX;
-
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.Opcode;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
-import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLNullaryOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
+
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
+import static uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelArgs.RETURN_VALUE_INDEX;
 
 @Opcode("RETURN VALUE")
 public class OCLReturnSlot extends AllocatableValue {
 
-    private OCLNullaryOp op;
-
     public OCLReturnSlot(LIRKind lirKind) {
         super(lirKind);
-        op = OCLNullaryOp.SLOTS_BASE_ADDRESS;
     }
 
     public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {

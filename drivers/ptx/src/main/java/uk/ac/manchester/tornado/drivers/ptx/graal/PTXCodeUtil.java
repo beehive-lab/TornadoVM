@@ -103,7 +103,11 @@ public class PTXCodeUtil {
             } else if (argClass.isArray() && RuntimeUtilities.isPrimitiveArray(argClass)) {
                 // Need to append type and length
                 sb.append(argClass.getComponentType().getName().replace('[', '_'));
-                sb.append(Array.getLength(arg));
+                if (task.getBatchThreads() != 0) {
+                    sb.append(task.getBatchThreads());
+                } else {
+                    sb.append(Array.getLength(arg));
+                }
             } else {
                 sb.append(argClass.getName().replace('.', '_'));
 

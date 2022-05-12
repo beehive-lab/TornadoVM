@@ -18,7 +18,6 @@
 
 package uk.ac.manchester.tornado.unittests.prebuilt;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
@@ -189,7 +188,12 @@ public class PrebuiltTest extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.PTX);
         assertNotBackend(TornadoVMBackendType.OPENCL);
 
-        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
+        TornadoDevice device = checkSPIRVSupport();
+
+        if (device == null) {
+            assertNotBackend(TornadoVMBackendType.OPENCL);
+        }
+
         String tornadoSDK = System.getenv("TORNADO_SDK");
         String filePath = tornadoSDK + "/examples/generated/reduce04.spv";
 
@@ -211,7 +215,7 @@ public class PrebuiltTest extends TornadoTestBase {
                         filePath,
                         new Object[]{context, input, reduce},
                         new Access[]{Access.READ, Access.READ, Access.WRITE},
-                        defaultDevice,
+                        device,
                         new int[]{size})
                 .streamOut(reduce)
                 .execute(gridScheduler);
@@ -226,43 +230,4 @@ public class PrebuiltTest extends TornadoTestBase {
         assertEquals(64, finalSum, 0.0f);
 
     }
-
-    @Test
-    public void testPrebuild05() {
-        // Check only for the SPIR-V backend
-        assertNotBackend(TornadoVMBackendType.PTX);
-        assertNotBackend(TornadoVMBackendType.OPENCL);
-
-        final int numElements = 8192 * 16;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-
-        Arrays.fill(a, 0);
-        Arrays.fill(b, 0);
-        int[] expectedResultA = new int[numElements];
-        int[] expectedResultB = new int[numElements];
-        Arrays.fill(expectedResultA, 100);
-        Arrays.fill(expectedResultB, 500);
-
-        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
-        String tornadoSDK = System.getenv("TORNADO_SDK");
-        String filePath = tornadoSDK + "/examples/generated/init.spv";
-
-        // @formatter:off
-        new TaskSchedule("s0")
-                .prebuiltTask("t0",
-                        "init",
-                        filePath,
-                        new Object[]{a, b},
-                        new Access[]{Access.WRITE, Access.WRITE},
-                        defaultDevice,
-                        new int[]{numElements})
-                .streamOut(a, b)
-                .execute();
-        // @formatter:on
-
-        assertArrayEquals(expectedResultA, a);
-        assertArrayEquals(expectedResultB, b);
-    }
-
 }

@@ -32,11 +32,11 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 public class OCLByteArrayWrapper extends OCLArrayWrapper<byte[]> {
 
     public OCLByteArrayWrapper(OCLDeviceContext device, long batchSize) {
-        this(device, false, batchSize);
+        super(device, JavaKind.Byte, batchSize);
     }
 
-    public OCLByteArrayWrapper(OCLDeviceContext device, boolean isFinal, long batchSize) {
-        super(device, JavaKind.Byte, isFinal, batchSize);
+    protected OCLByteArrayWrapper(final byte[] array, final OCLDeviceContext device, long batchSize) {
+        super(array, device, JavaKind.Byte, batchSize);
     }
 
     @Override

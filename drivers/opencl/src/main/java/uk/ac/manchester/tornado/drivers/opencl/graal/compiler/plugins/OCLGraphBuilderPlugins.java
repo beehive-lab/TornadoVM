@@ -81,11 +81,9 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNo
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PrintfNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.SlotsBaseAddressNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TPrintfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.directives.CompilerInternals;
 
 public class OCLGraphBuilderPlugins {
 
@@ -94,7 +92,6 @@ public class OCLGraphBuilderPlugins {
             ps.appendInlineInvokePlugin(new InlineDuringParsingPlugin());
         }
 
-        registerCompilerIntrinsicsPlugins(plugins);
         registerTornadoVMIntrinsicsPlugins(plugins);
         registerOpenCLBuiltinPlugins(plugins);
 
@@ -108,18 +105,6 @@ public class OCLGraphBuilderPlugins {
 
         // Register TornadoAtomicInteger
         registerTornadoAtomicInteger(ps, plugins);
-    }
-
-    private static void registerCompilerIntrinsicsPlugins(InvocationPlugins plugins) {
-        Registration r = new Registration(plugins, CompilerInternals.class);
-
-        r.register0("getSlotsAddress", new InvocationPlugin() {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-                b.addPush(JavaKind.Object, new SlotsBaseAddressNode());
-                return true;
-            }
-        });
     }
 
     private static void registerTornadoVMAtomicsPlugins(Registration r) {

@@ -27,13 +27,12 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMRuntime;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.trace;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,136 +43,116 @@ import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
-import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
 // FIXME <REFACTOR> This class can be common for the three backends. 
 public class SPIRVObjectWrapper implements ObjectBuffer {
 
     private static final int SPIRV_OBJECT_ALIGNMENT = 64;
 
-    private final Class<?> type;
-    final SPIRVDeviceContext deviceContext;
-    long batchSize;
-
-    private boolean valid;
-    private boolean isFinal;
-
-    private int hubOffset;
-    private int fieldsOffset;
-
-    private final boolean vectorObject;
-    private int vectorStorageIndex;
+    private long bufferId;
     private long bufferOffset;
-    private long bytesToAllocate;
     private ByteBuffer buffer;
-    private HotSpotResolvedJavaType resolvedType;
-    private HotSpotResolvedJavaField[] fields;
-    private FieldBuffer[] wrappedFields;
+    private final HotSpotResolvedJavaType resolvedType;
+    private final HotSpotResolvedJavaField[] fields;
+    private final FieldBuffer[] wrappedFields;
+
+    private final Class<?> objectType;
+
+    private final int hubOffset;
+    private final int fieldsOffset;
+
+    private final SPIRVDeviceContext deviceContext;
 
     private static final int BYTES_OBJECT_REFERENCE = 8;
 
-    public SPIRVObjectWrapper(final SPIRVDeviceContext deviceContext, Object object, long batchSize) {
-        this.type = object.getClass();
+    public SPIRVObjectWrapper(final SPIRVDeviceContext deviceContext, Object object) {
+        this.objectType = object.getClass();
         this.deviceContext = deviceContext;
-        this.batchSize = batchSize;
-
-        this.valid = false;
-        this.isFinal = true;
 
         hubOffset = getVMConfig().hubOffset;
         fieldsOffset = getVMConfig().instanceKlassFieldsOffset;
-        bufferOffset = -1;
+        resolvedType = (HotSpotResolvedJavaType) getVMRuntime().getHostJVMCIBackend().getMetaAccess().lookupJavaType(objectType);
 
-        resolvedType = (HotSpotResolvedJavaType) getVMRuntime().getHostJVMCIBackend().getMetaAccess().lookupJavaType(object.getClass());
-
-        vectorObject = resolvedType.getAnnotation(Vector.class) != null;
-
-        vectorStorageIndex = -1;
-
-        fields = (HotSpotResolvedJavaField[]) resolvedType.getInstanceFields(true);
+        fields = (HotSpotResolvedJavaField[]) resolvedType.getInstanceFields(false);
         sortFieldsByOffset();
 
         wrappedFields = new FieldBuffer[fields.length];
 
-        int index = 0;
-
-        // calculate object size
-        bytesToAllocate = (fields.length > 0) ? fields[0].getOffset() : fieldsOffset;
-        for (HotSpotResolvedJavaField field : fields) {
-            final Field reflectedField = getField(type, field.getName());
+        for (int index = 0; index < fields.length; index++) {
+            HotSpotResolvedJavaField field = fields[index];
+            final Field reflectedField = getField(objectType, field.getName());
             final Class<?> type = reflectedField.getType();
-            final boolean isFinal = Modifier.isFinal(reflectedField.getModifiers());
-
-            if (vectorObject && field.getAnnotation(Payload.class) != null) {
-                vectorStorageIndex = index;
-            }
 
             if (DEBUG) {
                 trace("field: name=%s, kind=%s, offset=%d", field.getName(), type.getName(), field.getOffset());
             }
-            bytesToAllocate = field.getOffset();
-            bytesToAllocate += (field.getJavaKind().isObject()) ? BYTES_OBJECT_REFERENCE : field.getJavaKind().getByteCount();
 
             ObjectBuffer wrappedField = null;
             if (type.isArray()) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 if (type == int[].class) {
-                    wrappedField = new SPIRVIntArrayWrapper(deviceContext, isFinal, batchSize);
+                    wrappedField = new SPIRVIntArrayWrapper((int[]) objectFromField, deviceContext, 0);
                 } else if (type == float[].class) {
-                    wrappedField = new SPIRVFloatArrayWrapper(deviceContext, isFinal, batchSize);
+                    wrappedField = new SPIRVFloatArrayWrapper((float[]) objectFromField, deviceContext, 0);
                 } else if (type == double[].class) {
-                    wrappedField = new SPIRVDoubleArrayWrapper(deviceContext, isFinal, batchSize);
+                    wrappedField = new SPIRVDoubleArrayWrapper((double[]) objectFromField, deviceContext, 0);
                 } else if (type == long[].class) {
-                    wrappedField = new SPIRVLongArrayWrapper(deviceContext, isFinal, batchSize);
+                    wrappedField = new SPIRVLongArrayWrapper((long[]) objectFromField, deviceContext, 0);
                 } else if (type == short[].class) {
-                    wrappedField = new SPIRVShortArrayWrapper(deviceContext, isFinal, batchSize);
+                    wrappedField = new SPIRVShortArrayWrapper((short[]) objectFromField, deviceContext, 0);
+                } else if (type == char[].class) {
+                    wrappedField = new SPIRVCharArrayWrapper((char[]) objectFromField, deviceContext, 0);
                 } else if (type == byte[].class) {
-                    wrappedField = new SPIRVByteArrayWrapper(deviceContext, isFinal, batchSize);
+                    wrappedField = new SPIRVByteArrayWrapper((byte[]) objectFromField, deviceContext, 0);
                 } else {
-                    throw new RuntimeException("Cannot wrap field array type: " + type.getName());
+                    warn("cannot wrap field: array type=%s", type.getName());
                 }
-
+            } else if (object.getClass().getAnnotation(Vector.class) != null) {
+                wrappedField = new SPIRVVectorWrapper(deviceContext, object, 0);
             } else if (field.getJavaKind().isObject()) {
                 // We capture the field by the scope definition of the input
                 // lambda expression
-                try {
-                    wrappedField = new SPIRVObjectWrapper(deviceContext, reflectedField.get(object), batchSize);
-                } catch (IllegalAccessException | IllegalArgumentException e) {
-                    throw new RuntimeException(e);
-                }
-            } else {
-                this.isFinal &= isFinal;
+                wrappedField = new SPIRVObjectWrapper(deviceContext, TornadoUtils.getObjectFromField(reflectedField, object));
             }
 
             if (wrappedField != null) {
                 wrappedFields[index] = new FieldBuffer(reflectedField, wrappedField);
             }
-
-            index++;
         }
+
+        if (buffer == null) {
+            buffer = ByteBuffer.allocate((int) getObjectSize());
+            buffer.order(this.deviceContext.getDevice().getByteOrder());
+        }
+    }
+
+    @Override
+    public void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
+        if (DEBUG) {
+            debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
+        }
+
+        this.bufferId = deviceContext.getBufferProvider().getBufferWithSize(size());
+        this.bufferOffset = 0;
+        setBuffer(new ObjectBufferWrapper(bufferId, bufferOffset));
+
 
         if (DEBUG) {
-            trace("object: type=%s, size=%s", resolvedType.getName(), humanReadableByteCount(bytesToAllocate, true));
-        }
-
-    }
-
-    // FIXME <REFACTOR> Common method 3 backends
-    private void sortFieldsByOffset() {
-        for (int i = 0; i < fields.length; i++) {
-            for (int j = 0; j < fields.length; j++) {
-                if (fields[i].getOffset() < fields[j].getOffset()) {
-                    final HotSpotResolvedJavaField tmp = fields[j];
-                    fields[j] = fields[i];
-                    fields[i] = tmp;
-                }
-            }
+            debug("object: object=0x%x @ bufferId 0x%x", reference.hashCode(), bufferId);
         }
     }
 
-    // FIXME <REFACTOR> Common method 3 backends
+    @Override
+    public void deallocate() throws TornadoMemoryException {
+        deviceContext.getBufferProvider().markBufferReleased(this.bufferId, size());
+        bufferId = -1;
+    }
+
     private Field getField(Class<?> type, String name) {
         Field result = null;
         try {
@@ -189,39 +168,19 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
         return result;
     }
 
-    @Override
-    public long toBuffer() {
-        return deviceContext.getMemoryManager().toBuffer();
-    }
-
-    @Override
-    public long getBufferOffset() {
-        return bufferOffset;
-    }
-
-    @Override
-    public long toAbsoluteAddress() {
-        return (vectorObject) ? getVectorAddress(false) : deviceContext.getMemoryManager().toAbsoluteDeviceAddress(bufferOffset);
-    }
-
-    // FIXME <REFACTOR>
-    private long getVectorAddress(boolean relative) {
-        final HotSpotResolvedJavaField resolvedField = fields[vectorStorageIndex];
-        final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];
-        final long address = (relative) ? fieldBuffer.toRelativeAddress() : fieldBuffer.toAbsoluteAddress();
-
-        final long arrayBaseOffset = getVMConfig().getArrayBaseOffset(resolvedField.getJavaKind());
-        return address + arrayBaseOffset;
-    }
-
-    @Override
-    public long toRelativeAddress() {
-        return (vectorObject) ? getVectorAddress(true) : bufferOffset;
-    }
-
-    @Override
-    public void read(Object reference) {
-        read(reference, 0, null, false);
+    private void writeFieldToBuffer(int index, Field field, Object obj) {
+        Class<?> fieldType = field.getType();
+        if (fieldType.isPrimitive()) {
+            try {
+                PrimitiveSerialiser.put(buffer, field.get(obj));
+            } catch (IllegalArgumentException | IllegalAccessException e) {
+                shouldNotReachHere("unable to write primitive to buffer: ", e.getMessage());
+            }
+        } else if (wrappedFields[index] != null) {
+            buffer.putLong(wrappedFields[index].getBufferOffset());
+        } else {
+            unimplemented("field type %s", fieldType.getName());
+        }
     }
 
     private void readFieldFromBuffer(int index, Field field, Object obj) {
@@ -251,60 +210,18 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
         }
     }
 
-    private void deserialise(Object object) {
-        buffer.rewind();
-
-        if (fields.length > 0) {
-            buffer.position(fields[0].getOffset());
-
-            for (int i = 0; i < fields.length; i++) {
-                HotSpotResolvedJavaField field = fields[i];
-                Field f = getField(type, field.getName());
-                f.setAccessible(true);
-                if (DEBUG) {
-                    trace("reading field: name=%s, offset=%d", field.getName(), field.getOffset());
-                }
-                readFieldFromBuffer(i, f, object);
-            }
-        }
-    }
-
-    @Override
-    public int read(Object reference, long hostOffset, int[] events, boolean useDeps) {
-        int event;
-        if (vectorObject) {
-            final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];
-            event = fieldBuffer.read(reference, events, useDeps);
-        } else {
-            buffer.position(buffer.capacity());
-            event = deviceContext.readBuffer(toBuffer(), bufferOffset, bytesToAllocate, buffer.array(), hostOffset, (useDeps) ? events : null);
-            for (int i = 0; i < fields.length; i++) {
-                if (wrappedFields[i] != null) {
-                    wrappedFields[i].read(reference);
+    private void sortFieldsByOffset() {
+        // TODO Replace bubble sort with Arrays.sort + comparator
+        for (int i = 0; i < fields.length; i++) {
+            for (int j = 0; j < fields.length; j++) {
+                if (fields[i].getOffset() < fields[j].getOffset()) {
+                    final HotSpotResolvedJavaField tmp = fields[j];
+                    fields[j] = fields[i];
+                    fields[i] = tmp;
                 }
             }
-            deserialise(reference);
         }
-        return event;
-    }
 
-    private void writeFieldToBuffer(int index, Field field, Object obj) {
-        Class<?> fieldType = field.getType();
-        if (fieldType.isPrimitive()) {
-            try {
-                PrimitiveSerialiser.put(buffer, field.get(obj));
-            } catch (IllegalArgumentException | IllegalAccessException e) {
-                shouldNotReachHere("unable to write primitive to buffer: ", e.getMessage());
-            }
-        } else if (wrappedFields[index] != null) {
-            if (deviceContext.useRelativeAddresses()) {
-                buffer.putLong(wrappedFields[index].toRelativeAddress());
-            } else {
-                buffer.putLong(wrappedFields[index].toAbsoluteAddress());
-            }
-        } else {
-            unimplemented("field type %s", fieldType.getName());
-        }
     }
 
     private void serialise(Object object) {
@@ -316,7 +233,7 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
             buffer.position(fields[0].getOffset());
             for (int i = 0; i < fields.length; i++) {
                 HotSpotResolvedJavaField field = fields[i];
-                Field f = getField(type, field.getName());
+                Field f = getField(objectType, field.getName());
                 if (DEBUG) {
                     trace("writing field: name=%s, offset=%d", field.getName(), field.getOffset());
                 }
@@ -327,158 +244,170 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
         }
     }
 
-    @Override
-    public void write(Object reference) {
-        if (vectorObject) {
-            final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];
-            fieldBuffer.write(reference);
-        } else {
-            if (!valid) {
-                serialise(reference);
-                // XXX: Offset 0
-                deviceContext.writeBuffer(toBuffer(), bufferOffset, bytesToAllocate, buffer.array(), 0, null);
-            }
+    private void deserialise(Object object) {
+        buffer.rewind();
+
+        if (fields.length > 0) {
+            buffer.position(fields[0].getOffset());
+
             for (int i = 0; i < fields.length; i++) {
-                if (wrappedFields[i] != null) {
-                    wrappedFields[i].write(reference);
+                HotSpotResolvedJavaField field = fields[i];
+                Field f = getField(objectType, field.getName());
+                f.setAccessible(true);
+                if (DEBUG) {
+                    trace("reading field: name=%s, offset=%d", field.getName(), field.getOffset());
                 }
+                readFieldFromBuffer(i, f, object);
             }
         }
-        valid = true;
+    }
+
+    @Override
+    public void write(Object object) {
+        serialise(object);
+        // XXX: Offset 0
+        deviceContext.writeBuffer(toBuffer(), bufferOffset, getObjectSize(), buffer.array(), 0, null);
+        for (int i = 0; i < fields.length; i++) {
+            if (wrappedFields[i] != null) {
+                wrappedFields[i].write(object);
+            }
+        }
+    }
+
+    @Override
+    public long toBuffer() {
+        return bufferId;
+    }
+
+    @Override
+    public void setBuffer(ObjectBufferWrapper bufferWrapper) {
+        this.bufferId = bufferWrapper.buffer;
+        this.bufferOffset = bufferWrapper.bufferOffset;
+
+        bufferWrapper.bufferOffset += getObjectSize();
+
+        for (int i = 0; i < fields.length; i++) {
+            FieldBuffer fieldBuffer = wrappedFields[i];
+            if (fieldBuffer == null) {
+                continue;
+            }
+
+            fieldBuffer.setBuffer(bufferWrapper);
+        }
+    }
+
+    @Override
+    public long getBufferOffset() {
+        return bufferOffset;
+    }
+
+    @Override
+    public void read(Object object) {
+        // XXX: offset 0
+        read(object, 0, null, false);
+    }
+
+    @Override
+    public int read(Object object, long hostOffset, int[] events, boolean useDeps) {
+        buffer.position(buffer.capacity());
+        int event = deviceContext.readBuffer(toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null);
+        for (int i = 0; i < fields.length; i++) {
+            if (wrappedFields[i] != null) {
+                wrappedFields[i].read(object);
+            }
+        }
+        deserialise(object);
+        return event;
+    }
+
+    public void clear() {
+        buffer.rewind();
+        while (buffer.hasRemaining()) {
+            buffer.put((byte) 0);
+        }
+        buffer.rewind();
+    }
+
+    public void dump() {
+        dump(8);
+    }
+
+    protected void dump(int width) {
+        System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities.humanReadableByteCount(getObjectSize(), true),
+                RuntimeUtilities.humanReadableByteCount(buffer.position(), true), deviceContext.getDevice().getDeviceName());
+        for (int i = 0; i < buffer.position(); i += width) {
+            System.out.printf("[0x%04x]: ", i);
+            for (int j = 0; j < Math.min(buffer.capacity() - i, width); j++) {
+                if (j % 2 == 0) {
+                    System.out.printf(" ");
+                }
+                if (j < buffer.position() - i) {
+                    System.out.printf("%02x", buffer.get(i + j));
+                } else {
+                    System.out.printf("..");
+                }
+            }
+            System.out.println();
+        }
     }
 
     @Override
     public int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps) {
         final int returnEvent;
-        if (vectorObject) {
-            final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];
-            returnEvent = fieldBuffer.enqueueRead(reference, (useDeps) ? events : null, useDeps);
-        } else {
-            int index = 0;
-            int[] internalEvents = new int[fields.length];
-            Arrays.fill(internalEvents, -1);
+        int index = 0;
+        int[] internalEvents = new int[fields.length];
+        Arrays.fill(internalEvents, -1);
 
-            for (FieldBuffer fb : wrappedFields) {
-                if (fb != null) {
-                    internalEvents[index] = fb.enqueueRead(reference, (useDeps) ? events : null, useDeps);
-                    index++;
-                }
-            }
-
-            if (!isFinal) {
-                internalEvents[index] = deviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, bytesToAllocate, buffer.array(), hostOffset, (useDeps) ? events : null);
+        for (FieldBuffer fb : wrappedFields) {
+            if (fb != null) {
+                internalEvents[index] = fb.enqueueRead(reference, (useDeps) ? events : null, useDeps);
                 index++;
-
-                // TODO this needs to run asynchronously
-                deserialise(reference);
             }
+        }
 
-            switch (index) {
-                case 0:
-                    returnEvent = -1;
-                    break;
-                case 1:
-                    returnEvent = internalEvents[0];
-                    break;
-                default:
-                    returnEvent = deviceContext.enqueueMarker();
-            }
+        internalEvents[index] = deviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null);
+        index++;
 
+        deserialise(reference);
+        if (index == 1) {
+            returnEvent = internalEvents[0];
+        } else {
+            returnEvent = deviceContext.enqueueMarker();
         }
         return useDeps ? returnEvent : -1;
     }
 
     @Override
-    public List<Integer> enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
+    public List<Integer> enqueueWrite(Object ref, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         ArrayList<Integer> eventList = new ArrayList<>();
 
-        if (vectorObject) {
-            final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];
-            if (!valid) {
-                valid = true;
-                eventList.addAll(fieldBuffer.enqueueWrite(reference, (useDeps) ? events : null, useDeps));
-            } else {
-                eventList = null;
-            }
-        } else {
-            // TODO this needs to run asynchronously
-            if (!valid || (valid && !isFinal)) {
-                serialise(reference);
-                eventList.add(deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset, bytesToAllocate, buffer.array(), hostOffset, (useDeps) ? events : null));
-                valid = true;
-            }
-            for (final FieldBuffer field : wrappedFields) {
-                if (field != null && field.needsWrite()) {
-                    eventList.addAll(field.enqueueWrite(reference, (useDeps) ? events : null, useDeps));
-                }
+        serialise(ref);
+        eventList.add(deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null));
+        for (final FieldBuffer field : wrappedFields) {
+            if (field != null) {
+                eventList.addAll(field.enqueueWrite(ref, (useDeps) ? events : null, useDeps));
             }
         }
         return useDeps ? eventList : null;
     }
 
     @Override
-    public void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
-        if (DEBUG) {
-            debug("object: object=0x%x, class=%s, size=%s", reference.hashCode(), reference.getClass().getName(), humanReadableByteCount(bytesToAllocate, true));
-        }
-
-        if (bytesToAllocate < 0) {
-            throw new TornadoMemoryException("[ERROR] Bytes Allocated < 0: " + bytesToAllocate);
-        } else if (bytesToAllocate > Integer.MAX_VALUE) {
-            throw new TornadoOutOfMemoryException("[ERROR] Tornado cannot allocate: " + bytesToAllocate + " bytes");
-        }
-
-        if (buffer == null) {
-            buffer = ByteBuffer.allocate((int) bytesToAllocate);
-            buffer.order(deviceContext.getDevice().getByteOrder());
-        }
-
-        if (bufferOffset == -1) {
-            bufferOffset = deviceContext.getMemoryManager().tryAllocate(bytesToAllocate, 32, getAlignment());
-        }
-
-        if (DEBUG) {
-            debug("object: object=0x%x @ 0x%x (0x%x)", reference.hashCode(), toAbsoluteAddress(), toRelativeAddress());
-        }
-        for (FieldBuffer buffer : wrappedFields) {
-            if (buffer != null) {
-                // TODO: support batch sizes for scope/field arguments
-                if (batchSize > 0) {
-                    throw new TornadoMemoryException("[ERROR] BatchSize Allocation currently not supported for Objects Fields. BatchSize = " + batchSize + " (bytes)");
-                }
-                buffer.allocate(reference, batchSize);
-            }
-        }
+    public String toString() {
+        return String.format("object wrapper: type=%s, fields=%d\n", resolvedType.getName(), wrappedFields.length);
     }
 
-    @Override
-    public int getAlignment() {
-        return SPIRV_OBJECT_ALIGNMENT;
-    }
-
-    @Override
-    public boolean isValid() {
-        return valid;
-    }
-
-    @Override
-    public void invalidate() {
-        valid = false;
-    }
-
-    @Override
-    public void printHeapTrace() {
-        System.out.printf("0x%x:\ttype=%s, num fields=%d (%d)\n", toAbsoluteAddress(), type.getName(), fields.length, wrappedFields.length);
-        for (FieldBuffer fb : wrappedFields) {
-            if (fb != null) {
-                System.out.printf("\t0x%x\tname=%s\n", fb.toAbsoluteAddress(), fb.getFieldName());
-            }
+    private long getObjectSize() {
+        long size = fieldsOffset;
+        if (fields.length > 0) {
+            HotSpotResolvedJavaField field = fields[fields.length - 1];
+            size = field.getOffset() + ((field.getJavaKind().isObject()) ? BYTES_OBJECT_REFERENCE : field.getJavaKind().getByteCount());
         }
+        return size;
     }
 
     @Override
     public long size() {
-        long size = bytesToAllocate;
+        long size = getObjectSize();
         for (FieldBuffer wrappedField : wrappedFields) {
             if (wrappedField != null) {
                 size += wrappedField.size();

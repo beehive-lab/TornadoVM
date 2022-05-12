@@ -37,51 +37,22 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 
 public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
 
-    private Function<OCLDeviceContext, ? extends OCLArrayWrapper<E>> innerWrapperFactory;
-    private OCLLongArrayWrapper tableWrapper;
+    private final Function<OCLDeviceContext, ? extends OCLArrayWrapper<E>> innerWrapperFactory;
+    private final OCLLongArrayWrapper tableWrapper;
     private long[] addresses;
     private OCLArrayWrapper<E>[] wrappers;
-    private OCLDeviceContext deviceContext;
+    private final OCLDeviceContext deviceContext;
 
     public OCLMultiDimArrayWrapper(OCLDeviceContext device, Function<OCLDeviceContext, ? extends OCLArrayWrapper<E>> factory, long batchSize) {
-        this(device, factory, false, batchSize);
-    }
-
-    private OCLMultiDimArrayWrapper(OCLDeviceContext device, Function<OCLDeviceContext, ? extends OCLArrayWrapper<E>> factory, boolean isFinal, long batchSize) {
-        super(device, JavaKind.Object, isFinal, batchSize);
+        super(device, JavaKind.Object, batchSize);
         this.deviceContext = device;
         innerWrapperFactory = factory;
-        tableWrapper = new OCLLongArrayWrapper(device, false, batchSize);
-    }
-
-    @Override
-    public long toRelativeAddress() {
-        return tableWrapper.toRelativeAddress();
+        tableWrapper = new OCLLongArrayWrapper(device, batchSize);
     }
 
     @Override
     public long toBuffer() {
         return tableWrapper.toBuffer();
-    }
-
-    @Override
-    public long toAbsoluteAddress() {
-        return tableWrapper.toAbsoluteAddress();
-    }
-
-    @Override
-    public void invalidate() {
-        tableWrapper.invalidate();
-    }
-
-    @Override
-    public boolean isValid() {
-        return tableWrapper.isValid();
-    }
-
-    @Override
-    public long getBufferOffset() {
-        return tableWrapper.getBufferOffset();
     }
 
     @Override
@@ -111,7 +82,7 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
             for (int i = 0; i < elements.length; i++) {
                 wrappers[i] = innerWrapperFactory.apply(deviceContext);
                 wrappers[i].allocate(elements[i], batchSize);
-                addresses[i] = deviceContext.useRelativeAddresses() ? wrappers[i].toRelativeAddress() : wrappers[i].toAbsoluteAddress();
+                addresses[i] = wrappers[i].toBuffer();
             }
         } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
             fatal("OOM: multi-dim array: %s", e.getMessage());

@@ -23,6 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitive;
+
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.WorkerGrid;
@@ -39,9 +42,9 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeGroupDispatch;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
-import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVByteBuffer;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVKernelArgs;
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.LevelZeroKernelTimeStamp;
-import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -62,28 +65,42 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
     }
 
     @Override
-    public int launchWithDependencies(CallStack stack, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents) {
+    public int launchWithDependencies(KernelArgs callWrapper, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads, int[] waitEvents) {
         throw new RuntimeException("Unimplemented");
     }
 
-    private void setKernelArgs(final SPIRVByteBuffer stack, final ObjectBuffer atomicSpace, TaskMetaData meta) {
+    private void setKernelArgs(final SPIRVKernelArgs callWrapper, final ObjectBuffer atomicSpace, TaskMetaData meta) {
         // Enqueue write
-        stack.enqueueWrite(null);
+        callWrapper.enqueueWrite(null);
 
         SPIRVLevelZeroModule module = (SPIRVLevelZeroModule) spirvModule;
         LevelZeroKernel levelZeroKernel = module.getKernel();
         ZeKernelHandle kernel = levelZeroKernel.getKernelHandle();
 
-        int index = 0;
-        // device's heap (on the device global's memory)
-        int result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), index, Sizeof.LONG.getNumBytes(), stack.toBuffer());
-        LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
-        index++;
 
-        // index of the stack pointer (it is usually zero)
-        result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), index, Sizeof.LONG.getNumBytes(), stack.toRelativeAddress());
+        // device's kernel context
+        int result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), 0, Sizeof.LONG.getNumBytes(), callWrapper.toBuffer());
         LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
-        index++;
+
+        for (int argIndex = 0; argIndex < callWrapper.getCallArguments().size(); argIndex++) {
+            int kernelParamIndex = argIndex + 1;
+            KernelArgs.CallArgument arg = callWrapper.getCallArguments().get(argIndex);
+            if (arg.getValue() instanceof KernelArgs.KernelContextArgument) {
+                result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), kernelParamIndex, Sizeof.LONG.getNumBytes(), callWrapper.toBuffer());
+                LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
+                continue;
+            }
+
+            if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
+                if (!arg.isReferenceType()) {
+                    continue;
+                }
+                result = levelZeroKernel.zeKernelSetArgumentValue(kernel.getPtrZeKernelHandle(), kernelParamIndex, Sizeof.LONG.getNumBytes(), ((Number) arg.getValue()).longValue());
+                LevelZeroUtils.errorLog("zeKernelSetArgumentValue", result);
+            } else {
+                shouldNotReachHere();
+            }
+        }
     }
 
     private DeviceThreadScheduling calculateGlobalAndLocalBlockOfThreads(TaskMetaData meta, long batchThreads) {
@@ -190,14 +207,12 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
     }
 
     @Override
-    public int launchWithoutDependencies(CallStack stack, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
+    public int launchWithoutDependencies(KernelArgs callWrapper, ObjectBuffer atomicSpace, TaskMetaData meta, long batchThreads) {
         SPIRVLevelZeroModule module = (SPIRVLevelZeroModule) spirvModule;
         LevelZeroKernel levelZeroKernel = module.getKernel();
         ZeKernelHandle kernel = levelZeroKernel.getKernelHandle();
 
-        if (!stack.isOnDevice()) {
-            setKernelArgs((SPIRVByteBuffer) stack, null, meta);
-        }
+        setKernelArgs((SPIRVKernelArgs) callWrapper, null, meta);
 
         if (threadScheduling == null || dispatcher == null || meta.isWorkerGridAvailable()) {
             // if the worker grid is available, the user can update the number of threads to
