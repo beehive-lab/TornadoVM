@@ -29,14 +29,14 @@ public class LevelZeroContext {
 
     ZeDriverHandle driver;
     ZeContextHandle contextHandle;
-    ZeContextDesc contextDescription;
+    ZeContextDescriptor contextDescription;
 
-    public LevelZeroContext(ZeDriverHandle driver, ZeContextDesc contextDescription) {
+    public LevelZeroContext(ZeDriverHandle driver, ZeContextDescriptor contextDescription) {
         this.driver = driver;
         this.contextDescription = contextDescription;
     }
 
-    native int zeContextCreate(long driverHandler, ZeContextDesc contextDescriptionPtr, long[] contextPtr);
+    native int zeContextCreate(long driverHandler, ZeContextDescriptor contextDescriptionPtr, long[] contextPtr);
 
     public int zeContextCreate(long driverHandler) {
         long[] contextPointers = new long[1];
@@ -53,56 +53,56 @@ public class LevelZeroContext {
         return contextHandle;
     }
 
-    native int zeCommandQueueCreate_native(long contextPtr, long deviceHandlerPtr, ZeCommandQueueDescription commandQueueDescription, ZeCommandQueueHandle commandQueue);
+    native int zeCommandQueueCreate_native(long contextPtr, long deviceHandlerPtr, ZeCommandQueueDescriptor commandQueueDescription, ZeCommandQueueHandle commandQueue);
 
-    public int zeCommandQueueCreate(long contextPtr, long deviceHandlerPtr, ZeCommandQueueDescription commandQueueDescription, ZeCommandQueueHandle commandQueue) {
+    public int zeCommandQueueCreate(long contextPtr, long deviceHandlerPtr, ZeCommandQueueDescriptor commandQueueDescription, ZeCommandQueueHandle commandQueue) {
         return zeCommandQueueCreate_native(contextPtr, deviceHandlerPtr, commandQueueDescription, commandQueue);
     }
 
-    native int zeCommandListCreate_native(long contextPtr, long deviceHandlerPtr, ZeCommandListDescription commandListDescription, ZeCommandListHandle commandList);
+    native int zeCommandListCreate_native(long contextPtr, long deviceHandlerPtr, ZeCommandListDescriptor commandListDescription, ZeCommandListHandle commandList);
 
-    public int zeCommandListCreate(long contextPtr, long deviceHandlerPtr, ZeCommandListDescription commandListDescription, ZeCommandListHandle commandList) {
+    public int zeCommandListCreate(long contextPtr, long deviceHandlerPtr, ZeCommandListDescriptor commandListDescription, ZeCommandListHandle commandList) {
         return zeCommandListCreate_native(contextPtr, deviceHandlerPtr, commandListDescription, commandList);
     }
 
-    public native int zeCommandListCreateImmediate_native(long contextPtr, long deviceHandlerPtr, ZeCommandQueueDescription commandQueueDescription, ZeCommandListHandle commandList);
+    public native int zeCommandListCreateImmediate_native(long contextPtr, long deviceHandlerPtr, ZeCommandQueueDescriptor commandQueueDescription, ZeCommandListHandle commandList);
 
-    public int zeCommandListCreateImmediate(long contextPtr, long deviceHandlerPtr, ZeCommandQueueDescription commandQueueDescription, ZeCommandListHandle commandList) {
+    public int zeCommandListCreateImmediate(long contextPtr, long deviceHandlerPtr, ZeCommandQueueDescriptor commandQueueDescription, ZeCommandListHandle commandList) {
         return zeCommandListCreateImmediate_native(contextPtr, deviceHandlerPtr, commandQueueDescription, commandList);
     }
 
-    native int zeMemAllocShared_native(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, ZeHostMemAllocDesc hostMemAllocDesc, long bufferSize, long alignment, long deviceHandlerPtr,
-            LevelZeroBufferInteger buffer);
+    native int zeMemAllocShared_native(long contextPtr, ZeDeviceMemAllocDescriptor deviceMemAllocDesc, ZeHostMemAllocDescriptor hostMemAllocDesc, long bufferSize, long alignment, long deviceHandlerPtr,
+                                       LevelZeroBufferInteger buffer);
 
-    native int zeMemAllocShared_nativeByte(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, ZeHostMemAllocDesc hostMemAllocDesc, long bufferSize, long alignment, long deviceHandlerPtr,
-            LevelZeroByteBuffer buffer);
+    native int zeMemAllocShared_nativeByte(long contextPtr, ZeDeviceMemAllocDescriptor deviceMemAllocDesc, ZeHostMemAllocDescriptor hostMemAllocDesc, long bufferSize, long alignment, long deviceHandlerPtr,
+                                           LevelZeroByteBuffer buffer);
 
-    public int zeMemAllocShared(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, ZeHostMemAllocDesc hostMemAllocDesc, long bufferSize, long alignment, long deviceHandlerPtr,
-            LevelZeroBufferInteger buffer) {
+    public int zeMemAllocShared(long contextPtr, ZeDeviceMemAllocDescriptor deviceMemAllocDesc, ZeHostMemAllocDescriptor hostMemAllocDesc, long bufferSize, long alignment, long deviceHandlerPtr,
+                                LevelZeroBufferInteger buffer) {
         return zeMemAllocShared_native(contextPtr, deviceMemAllocDesc, hostMemAllocDesc, bufferSize, alignment, deviceHandlerPtr, buffer);
     }
 
-    public int zeMemAllocShared(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, ZeHostMemAllocDesc hostMemAllocDesc, long bufferSize, long alignment, long deviceHandlerPtr,
-            LevelZeroByteBuffer buffer) {
+    public int zeMemAllocShared(long contextPtr, ZeDeviceMemAllocDescriptor deviceMemAllocDesc, ZeHostMemAllocDescriptor hostMemAllocDesc, long bufferSize, long alignment, long deviceHandlerPtr,
+                                LevelZeroByteBuffer buffer) {
         return zeMemAllocShared_nativeByte(contextPtr, deviceMemAllocDesc, hostMemAllocDesc, bufferSize, alignment, deviceHandlerPtr, buffer);
     }
 
-    native int zeMemAllocDevice_native(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, long allocSize, long alignment, long deviceHandlerPtr, LevelZeroByteBuffer deviceBuffer);
+    native int zeMemAllocDevice_native(long contextPtr, ZeDeviceMemAllocDescriptor deviceMemAllocDesc, long allocSize, long alignment, long deviceHandlerPtr, LevelZeroByteBuffer deviceBuffer);
 
-    public int zeMemAllocDevice(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, long allocSize, long alignment, long deviceHandlerPtr, LevelZeroByteBuffer deviceBuffer) {
+    public int zeMemAllocDevice(long contextPtr, ZeDeviceMemAllocDescriptor deviceMemAllocDesc, long allocSize, long alignment, long deviceHandlerPtr, LevelZeroByteBuffer deviceBuffer) {
         return zeMemAllocDevice_native(contextPtr, deviceMemAllocDesc, allocSize, alignment, deviceHandlerPtr, deviceBuffer);
     }
 
-    private native int zeMemAllocDevice_nativeLong(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, long allocSize, long alignment, long deviceHandlerPtr,
-            LevelZeroBufferLong deviceBufferLong);
+    private native int zeMemAllocDevice_nativeLong(long contextPtr, ZeDeviceMemAllocDescriptor deviceMemAllocDesc, long allocSize, long alignment, long deviceHandlerPtr,
+                                                   LevelZeroBufferLong deviceBufferLong);
 
-    public int zeMemAllocDevice(long contextPtr, ZeDeviceMemAllocDesc deviceMemAllocDesc, int allocSize, int alignment, long deviceHandlerPtr, LevelZeroBufferLong deviceBufferLong) {
+    public int zeMemAllocDevice(long contextPtr, ZeDeviceMemAllocDescriptor deviceMemAllocDesc, int allocSize, int alignment, long deviceHandlerPtr, LevelZeroBufferLong deviceBufferLong) {
         return zeMemAllocDevice_nativeLong(contextPtr, deviceMemAllocDesc, allocSize, alignment, deviceHandlerPtr, deviceBufferLong);
     }
 
-    native int zeModuleCreate_nativeWithPath(long contextPtr, long deviceHandlerPtr, ZeModuleDesc moduleDesc, ZeModuleHandle module, ZeBuildLogHandle buildLog, String pathToBinary);
+    native int zeModuleCreate_nativeWithPath(long contextPtr, long deviceHandlerPtr, ZeModuleDescriptor moduleDesc, ZeModuleHandle module, ZeBuildLogHandle buildLog, String pathToBinary);
 
-    public int zeModuleCreate(long contextPtr, long deviceHandlerPtr, ZeModuleDesc moduleDesc, ZeModuleHandle module, ZeBuildLogHandle buildLog, String pathToBinary) {
+    public int zeModuleCreate(long contextPtr, long deviceHandlerPtr, ZeModuleDescriptor moduleDesc, ZeModuleHandle module, ZeBuildLogHandle buildLog, String pathToBinary) {
         return zeModuleCreate_nativeWithPath(contextPtr, deviceHandlerPtr, moduleDesc, module, buildLog, pathToBinary);
     }
 
@@ -257,7 +257,7 @@ public class LevelZeroContext {
         return zeModuleBuildLogGetString_native(buildLog, sizeLog, errorMessage);
     }
 
-    private native int zeEventPoolCreate_native(long defaultContextPtr, ZeEventPoolDescription eventPoolDesc, int numDevices, long deviceHandlerPtr, ZeEventPoolHandle eventPool);
+    private native int zeEventPoolCreate_native(long defaultContextPtr, ZeEventPoolDescriptor eventPoolDesc, int numDevices, long deviceHandlerPtr, ZeEventPoolHandle eventPool);
 
     /**
      * Creates a pool of events on the context.
@@ -305,11 +305,11 @@ public class LevelZeroContext {
      *         0) && (null == devices)
      *         </p>
      */
-    public int zeEventPoolCreate(long defaultContextPtr, ZeEventPoolDescription eventPoolDesc, int numDevices, long deviceHandlerPtr, ZeEventPoolHandle eventPool) {
+    public int zeEventPoolCreate(long defaultContextPtr, ZeEventPoolDescriptor eventPoolDesc, int numDevices, long deviceHandlerPtr, ZeEventPoolHandle eventPool) {
         return zeEventPoolCreate_native(defaultContextPtr, eventPoolDesc, numDevices, deviceHandlerPtr, eventPool);
     }
 
-    private native int zeEventCreate_native(ZeEventPoolHandle eventPool, ZeEventDescription eventDescription, ZeEventHandle event);
+    private native int zeEventCreate_native(ZeEventPoolHandle eventPool, ZeEventDescriptor eventDescription, ZeEventHandle event);
 
     /**
      * Creates an event from the pool.
@@ -364,7 +364,7 @@ public class LevelZeroContext {
      *
      *
      */
-    public int zeEventCreate(ZeEventPoolHandle eventPool, ZeEventDescription eventDescription, ZeEventHandle event) {
+    public int zeEventCreate(ZeEventPoolHandle eventPool, ZeEventDescriptor eventDescription, ZeEventHandle event) {
         return zeEventCreate_native(eventPool, eventDescription, event);
     }
 
@@ -384,9 +384,9 @@ public class LevelZeroContext {
         return result;
     }
 
-    private native int zeMemAllocHost_native(long contextPtr, ZeHostMemAllocDesc hostMemAllocDesc, long allocSize, long alignment, LevelZeroByteBuffer hostBuffer);
+    private native int zeMemAllocHost_native(long contextPtr, ZeHostMemAllocDescriptor hostMemAllocDesc, long allocSize, long alignment, LevelZeroByteBuffer hostBuffer);
 
-    public int zeMemAllocHost(long contextPtr, ZeHostMemAllocDesc hostMemAllocDesc, long allocSize, long alignment, LevelZeroByteBuffer hostBuffer) {
+    public int zeMemAllocHost(long contextPtr, ZeHostMemAllocDescriptor hostMemAllocDesc, long allocSize, long alignment, LevelZeroByteBuffer hostBuffer) {
         return zeMemAllocHost_native(contextPtr, hostMemAllocDesc, allocSize, alignment, hostBuffer);
     }
 

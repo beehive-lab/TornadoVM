@@ -39,33 +39,33 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeAPIVersion;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeBuildLogHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCacheConfigFlag;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupPropertyFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueMode;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeContextDesc;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeContextDescriptor;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDevicesHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverProperties;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventPoolDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventPoolDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventPoolFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventPoolHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventScopeFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeGroupDispatch;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeInitFlag;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelTimeStampResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeMemoryAdvice;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleFormat;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
@@ -121,7 +121,7 @@ public class TestKernelTimer {
         // Create the Context
         // ============================================
         // Create context Description
-        ZeContextDesc contextDescription = new ZeContextDesc();
+        ZeContextDescriptor contextDescription = new ZeContextDescriptor();
         // Create context object
         LevelZeroContext context = new LevelZeroContext(driverHandler, contextDescription);
         // Call native method for creating the context
@@ -179,7 +179,7 @@ public class TestKernelTimer {
 
         ZeCommandQueueHandle commandQueueHandle = new ZeCommandQueueHandle();
         LevelZeroCommandQueue commandQueue = new LevelZeroCommandQueue(context, commandQueueHandle);
-        ZeCommandQueueDescription commandQueueDescription = new ZeCommandQueueDescription();
+        ZeCommandQueueDescriptor commandQueueDescription = new ZeCommandQueueDescriptor();
 
         for (int i = 0; i < numQueueGroups[0]; i++) {
             if ((commandQueueGroupProperties[i].getFlags()
@@ -200,18 +200,18 @@ public class TestKernelTimer {
         // ============================================
         ZeCommandListHandle zeCommandListHandler = new ZeCommandListHandle();
         LevelZeroCommandList commandList = new LevelZeroCommandList(context, zeCommandListHandler);
-        ZeCommandListDescription commandListDescription = new ZeCommandListDescription();
+        ZeCommandListDescriptor commandListDescription = new ZeCommandListDescriptor();
         commandListDescription.setCommandQueueGroupOrdinal(commandQueueDescription.getOrdinal());
         result = context.zeCommandListCreate(context.getContextHandle().getContextPtr()[0], device.getDeviceHandlerPtr(), commandListDescription, zeCommandListHandler);
         LevelZeroUtils.errorLog("zeCommandListCreate", result);
 
         final int elements = 8192;
         final int bufferSize = elements * 4;
-        ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
+        ZeDeviceMemAllocDescriptor deviceMemAllocDesc = new ZeDeviceMemAllocDescriptor();
         // deviceMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED);
         deviceMemAllocDesc.setOrdinal(0);
 
-        ZeHostMemAllocDesc hostMemAllocDesc = new ZeHostMemAllocDesc();
+        ZeHostMemAllocDescriptor hostMemAllocDesc = new ZeHostMemAllocDescriptor();
         // hostMemAllocDesc.setFlags(ZeHostMemAllocFlags.ZE_HOST_MEM_ALLOC_FLAG_BIAS_UNCACHED);
 
         LevelZeroBufferInteger bufferA = new LevelZeroBufferInteger();
@@ -226,7 +226,7 @@ public class TestKernelTimer {
         LevelZeroUtils.errorLog("zeCommandListAppendMemoryPrefetch", result);
 
         result = commandList.zeCommandListAppendMemAdvise(commandList.getCommandListHandlerPtr(), device.getDeviceHandlerPtr(), bufferA, bufferSize, ZeMemoryAdvice.ZE_MEMORY_ADVICE_SET_PREFERRED_LOCATION);
-        LevelZeroUtils.errorLog("zeCommandListAppendMemoryPrefetch", result);
+        LevelZeroUtils.errorLog("zeCommandListAppendMemAdvise", result);
 
         bufferA.memset(100, elements);
         bufferB.memset(0, elements);
@@ -236,7 +236,7 @@ public class TestKernelTimer {
         LevelZeroUtils.errorLog("zeMemAllocHost", result);
 
         ZeModuleHandle module = new ZeModuleHandle();
-        ZeModuleDesc moduleDesc = new ZeModuleDesc();
+        ZeModuleDescriptor moduleDesc = new ZeModuleDescriptor();
         ZeBuildLogHandle buildLog = new ZeBuildLogHandle();
         moduleDesc.setFormat(ZeModuleFormat.ZE_MODULE_FORMAT_IL_SPIRV);
         moduleDesc.setBuildFlags("");
@@ -260,7 +260,7 @@ public class TestKernelTimer {
         result = levelZeroModule.zeModuleBuildLogDestroy(buildLog);
         LevelZeroUtils.errorLog("zeModuleBuildLogDestroy", result);
 
-        ZeKernelDesc kernelDesc = new ZeKernelDesc();
+        ZeKernelDescriptor kernelDesc = new ZeKernelDescriptor();
         ZeKernelHandle kernel = new ZeKernelHandle();
         kernelDesc.setKernelName("copydata");
         result = levelZeroModule.zeKernelCreate(module.getPtrZeModuleHandle(), kernelDesc, kernel);
@@ -352,7 +352,7 @@ public class TestKernelTimer {
 
     private static void createEventPoolAndEvents(LevelZeroContext context, LevelZeroDevice device, ZeEventPoolHandle eventPoolHandle, int poolEventFlags, int poolSize, ZeEventHandle kernelEvent) {
 
-        ZeEventPoolDescription eventPoolDescription = new ZeEventPoolDescription();
+        ZeEventPoolDescriptor eventPoolDescription = new ZeEventPoolDescriptor();
 
         eventPoolDescription.setCount(poolSize);
         eventPoolDescription.setFlags(poolEventFlags);
@@ -361,7 +361,7 @@ public class TestKernelTimer {
         LevelZeroUtils.errorLog("zeEventPoolCreate", result);
 
         // Create Kernel Event
-        ZeEventDescription eventDescription = new ZeEventDescription();
+        ZeEventDescriptor eventDescription = new ZeEventDescriptor();
         eventDescription.setIndex(0);
         eventDescription.setSignal(ZeEventScopeFlags.ZE_EVENT_SCOPE_FLAG_HOST);
         eventDescription.setWait(ZeEventScopeFlags.ZE_EVENT_SCOPE_FLAG_HOST);

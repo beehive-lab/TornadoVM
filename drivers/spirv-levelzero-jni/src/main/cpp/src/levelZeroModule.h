@@ -42,7 +42,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroModule
  * Method:    zeKernelCreate_native
- * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeKernelDesc;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeKernelHandle;)I
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeKernelDescriptor;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeKernelHandle;)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroModule_zeKernelCreate_1native
         (JNIEnv *, jobject, jlong, jobject, jobject);

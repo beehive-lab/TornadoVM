@@ -24,20 +24,42 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 
-public class ZeCommandListDescription {
+public class ZeKernelDescriptor extends LevelZeroDescriptor {
 
-    private int stype;
-    private long pNext;
-    private long commandQueueGroupOrdinal;
-    private int flags;
+    private long flags;
+    private String kernelName;
 
-    private long ptrZeCommandListDescription;
+    private long ptrZeKernelDesc;
 
-    public ZeCommandListDescription() {
-        this.ptrZeCommandListDescription = -1;
+    public ZeKernelDescriptor() {
+        pNext = -1;
+        stype = Ze_Structure_Type.ZE_STRUCTURE_TYPE_KERNEL_DESC;
     }
 
-    public int getStype() {
+    private native void materializeNative_ZeKernelDescriptor();
+
+    @Override
+    public void materialize() {
+        materializeNative_ZeKernelDescriptor();
+    }
+
+    public void setType(int stype) {
+        this.stype = stype;
+    }
+
+    public void setNext(long pNext) {
+        this.pNext = pNext;
+    }
+
+    public void setFlags(long flags) {
+        this.flags = flags;
+    }
+
+    public void setKernelName(String kernelName) {
+        this.kernelName = kernelName;
+    }
+
+    public int getType() {
         return stype;
     }
 
@@ -45,23 +67,11 @@ public class ZeCommandListDescription {
         return pNext;
     }
 
-    public long getCommandQueueGroupOrdinal() {
-        return commandQueueGroupOrdinal;
-    }
-
-    public int getFlags() {
+    public long getFlags() {
         return flags;
     }
 
-    public long getPtrZeCommandListDescription() {
-        return ptrZeCommandListDescription;
-    }
-
-    public void setCommandQueueGroupOrdinal(long ordinal) {
-        this.commandQueueGroupOrdinal = ordinal;
-    }
-
-    public void setFlags(int flags) {
-        this.flags = flags;
+    public String getKernelName() {
+        return kernelName;
     }
 }

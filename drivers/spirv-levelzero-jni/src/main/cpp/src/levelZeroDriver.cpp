@@ -146,16 +146,16 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
         (JNIEnv *env, jobject object, jlong javaDriverHandler, jobject javaDriverProperties) {
 
     jclass descriptionClass = env->GetObjectClass(javaDriverProperties);
-    jfieldID fieldDescriptionPointer = env->GetFieldID(descriptionClass, "nativePointer", "J");
-    long valuePointerDescription = env->GetLongField(javaDriverProperties, fieldDescriptionPointer);
+    jfieldID fieldDescriptorPointer = env->GetFieldID(descriptionClass, "nativePointer", "J");
+    long valuePointerDescriptor = env->GetLongField(javaDriverProperties, fieldDescriptorPointer);
 
-    jfieldID fieldDescriptionType = env->GetFieldID(descriptionClass, "type", "I");
-    auto type = static_cast<ze_structure_type_t>(env->GetIntField(javaDriverProperties, fieldDescriptionType));
+    jfieldID fieldDescriptorType = env->GetFieldID(descriptionClass, "type", "I");
+    auto type = static_cast<ze_structure_type_t>(env->GetIntField(javaDriverProperties, fieldDescriptorType));
 
     ze_driver_properties_t driverProperties = {};
     ze_driver_properties_t *driverPropertiesPtr;
-    if (valuePointerDescription != -1) {
-        driverPropertiesPtr = reinterpret_cast<ze_driver_properties_t *>(valuePointerDescription);
+    if (valuePointerDescriptor != -1) {
+        driverPropertiesPtr = reinterpret_cast<ze_driver_properties_t *>(valuePointerDescriptor);
         driverProperties = *(driverPropertiesPtr);
     }
 
@@ -164,8 +164,8 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     ze_result_t  result = zeDriverGetProperties(driver, &driverProperties);
     LOG_ZE_JNI("zeDriverGetProperties", result);
 
-    valuePointerDescription = reinterpret_cast<long>(&(driverProperties));
-    env->SetLongField(javaDriverProperties, fieldDescriptionPointer, valuePointerDescription);
+    valuePointerDescriptor = reinterpret_cast<long>(&(driverProperties));
+    env->SetLongField(javaDriverProperties, fieldDescriptorPointer, valuePointerDescriptor);
 
     jfieldID field = env->GetFieldID(descriptionClass, "uuid", "[I");
     jintArray array = env->NewIntArray(ZE_MAX_DRIVER_UUID_SIZE);

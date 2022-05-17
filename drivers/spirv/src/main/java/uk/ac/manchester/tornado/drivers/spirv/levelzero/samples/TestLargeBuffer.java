@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,8 +24,6 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.levelzero.samples;
 
-import java.util.Arrays;
-
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroByteBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
@@ -46,11 +44,19 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDescript
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDevicesHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverHandle;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeInitFlag;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.Ze_Structure_Type;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeRelaxedAllocationLimitsExpDescriptor;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeRelaxedAllocationLimitsFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 
-public class TestTransferTimers {
+public class TestLargeBuffer {
+
+    /**
+     * 6GB Allocation
+     */
+    private static final long SIZE = 6147483648l;
+
 
     public static LevelZeroContext zeInitContext(LevelZeroDriver driver) {
         if (driver == null) {
@@ -69,7 +75,6 @@ public class TestTransferTimers {
         LevelZeroUtils.errorLog("zeDriverGet", result);
 
         ZeContextDescriptor contextDescription = new ZeContextDescriptor();
-        contextDescription.setSType(Ze_Structure_Type.ZE_STRUCTURE_TYPE_CONTEXT_DESC);
         LevelZeroContext context = new LevelZeroContext(driverHandler, contextDescription);
         result = context.zeContextCreate(driverHandler.getZe_driver_handle_t_ptr()[0]);
         LevelZeroUtils.errorLog("zeContextCreate", result);
@@ -118,7 +123,6 @@ public class TestTransferTimers {
             if ((commandQueueGroupProperties[i].getFlags()
                     & ZeCommandQueueGroupPropertyFlags.ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) == ZeCommandQueueGroupPropertyFlags.ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) {
                 ordinal = i;
-                System.out.println("ORDINAL: " + ordinal);
                 break;
             }
         }
@@ -150,16 +154,11 @@ public class TestTransferTimers {
         return new LevelZeroCommandList(context, commandListHandler);
     }
 
-    public static boolean testAppendMemoryCopyFromHeapToDeviceToHeap(LevelZeroContext context, LevelZeroDevice device, LevelZeroDriver driver) {
+    public static void testAppendMemoryCopyFromHeapToDeviceToHeap(LevelZeroContext context, LevelZeroDevice device) {
 
-        final int allocSize = 4096;
-        byte[] heapBuffer = new byte[allocSize];
+        final long allocSize = SIZE;
 
-        LevelZeroByteBuffer deviceBuffer = new LevelZeroByteBuffer();
-        byte[] heapBuffer2 = new byte[allocSize];
-
-        LevelZeroByteBuffer globalTsStart = new LevelZeroByteBuffer();
-        LevelZeroByteBuffer globalTsEnd = new LevelZeroByteBuffer();
+        LevelZeroByteBuffer sharedBuffer = new LevelZeroByteBuffer();
 
         LevelZeroCommandQueue commandQueue = createCommandQueue(context, device);
         LevelZeroCommandList commandList = createCommandList(context, device);
@@ -167,99 +166,44 @@ public class TestTransferTimers {
         ZeDeviceMemAllocDescriptor deviceMemAllocDesc = new ZeDeviceMemAllocDescriptor();
         deviceMemAllocDesc.setOrdinal(0);
         deviceMemAllocDesc.setFlags(0);
-        final int alignment = 1;
+        final int alignment = 64;
 
-        int result = context.zeMemAllocDevice(context.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, allocSize, alignment, device.getDeviceHandlerPtr(), deviceBuffer);
+        ZeHostMemAllocDescriptor hostMemAllocDesc = new ZeHostMemAllocDescriptor();
+        hostMemAllocDesc.setFlags(0);
+
+        ZeRelaxedAllocationLimitsExpDescriptor relaxedAllocationLimitsExpDescriptor = new ZeRelaxedAllocationLimitsExpDescriptor();
+        relaxedAllocationLimitsExpDescriptor.setFlags(ZeRelaxedAllocationLimitsFlags.ZE_RELAXED_ALLOCATION_LIMITS_EXP_FLAG_MAX_SIZE);
+
+        relaxedAllocationLimitsExpDescriptor.materialize();
+
+        // These two lines allow us to use the extended memory allocation mode by appending the extended memory descriptor
+        // to the device and host memory descriptors.
+        deviceMemAllocDesc.setNext(relaxedAllocationLimitsExpDescriptor);
+        hostMemAllocDesc.setNext(relaxedAllocationLimitsExpDescriptor);
+
+        System.out.println("Allocating SHARED: " + (allocSize) + " (bytes) --> " + ((allocSize)*1e-9) + " (GBs)");
+        int result = context.zeMemAllocShared(context.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, hostMemAllocDesc, allocSize, alignment, device.getDeviceHandlerPtr(), sharedBuffer);
+        LevelZeroUtils.errorLog("zeMemAllocShared", result);
+
+        LevelZeroByteBuffer deviceBuffer = new LevelZeroByteBuffer();
+        System.out.println("Allocating DEVICE: " + (allocSize) + " (bytes) --> " + ((allocSize)*1e-9) + " (GBs)");
+        result = context.zeMemAllocDevice(context.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, allocSize, alignment, device.getDeviceHandlerPtr(), deviceBuffer);
         LevelZeroUtils.errorLog("zeMemAllocDevice", result);
 
-        result = context.zeMemAllocDevice(context.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, 64, 1, device.getDeviceHandlerPtr(), globalTsStart);
-        LevelZeroUtils.errorLog("zeMemAllocDevice", result);
-
-        result = context.zeMemAllocDevice(context.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, 64, 1, device.getDeviceHandlerPtr(), globalTsEnd);
-        LevelZeroUtils.errorLog("zeMemAllocDevice", result);
-
-        // Initialize second buffer (Java side) to 0
-        Arrays.fill(heapBuffer2, (byte) 0);
-
-        // Fill heap buffer (Java side)
-        for (int i = 0; i < allocSize; i++) {
-            heapBuffer[i] = 'a';
-        }
-
-        // --------------------------------------------
-        // Copy Global Timer start
-        // --------------------------------------------
-        result = commandList.zeCommandListAppendWriteGlobalTimestamp(commandList.getCommandListHandlerPtr(), globalTsStart, null, 0, null);
-        LevelZeroUtils.errorLog("zeCommandListAppendWriteGlobalTimestamp", result);
-
-        result = commandList.zeCommandListAppendMemoryCopy(commandList.getCommandListHandlerPtr(), deviceBuffer, heapBuffer, allocSize, null, 0, null);
-        LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopy", result);
-        result = commandList.zeCommandListAppendBarrier(commandList.getCommandListHandlerPtr(), null, 0, null);
-        LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
-
-        // --------------------------------------------
-        // Copy Global Timer END
-        // --------------------------------------------
-        result = commandList.zeCommandListAppendWriteGlobalTimestamp(commandList.getCommandListHandlerPtr(), globalTsEnd, null, 0, null);
-        LevelZeroUtils.errorLog("zeCommandListAppendWriteGlobalTimestamp", result);
-
-        // --------------------------------------------
-        // Copy the timers back to the host
-        // --------------------------------------------
-        long[] resultStart = new long[1];
-        long[] resultEnd = new long[1];
-        result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), resultStart, globalTsStart, 8, 0, 0, null, 0, null);
-        LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopyWithOffset", result);
-        result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), resultEnd, globalTsEnd, 8, 0, 0, null, 0, null);
-        LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopyWithOffset", result);
-
-        // Copy From Device-Allocated memory to host (heapBuffer2)
-        result = commandList.zeCommandListAppendMemoryCopy(commandList.getCommandListHandlerPtr(), heapBuffer2, deviceBuffer, allocSize, null, 0, null);
-        LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopy", result);
-
-        // Close the command list
-        result = commandList.zeCommandListClose(commandList.getCommandListHandlerPtr());
-        LevelZeroUtils.errorLog("zeCommandListClose", result);
-        result = commandQueue.zeCommandQueueExecuteCommandLists(commandQueue.getCommandQueueHandlerPtr(), 1, commandList.getCommandListHandler(), null);
-        LevelZeroUtils.errorLog("zeCommandQueueExecuteCommandLists", result);
-        result = commandQueue.zeCommandQueueSynchronize(commandQueue.getCommandQueueHandlerPtr(), Long.MAX_VALUE);
-        LevelZeroUtils.errorLog("zeCommandQueueSynchronize", result);
-
-        // Reset a command List
-        commandList.zeCommandListReset(commandList.getCommandListHandlerPtr());
-
-        long durationCycles = resultEnd[0] - resultStart[0];
-
-        // ============================================
-        // Query device properties
-        // ============================================
-        ZeDeviceProperties deviceProperties = new ZeDeviceProperties();
-        result = device.zeDeviceGetProperties(device.getDeviceHandlerPtr(), deviceProperties);
-        LevelZeroUtils.errorLog("zeDeviceGetProperties", result);
-
-        int timerResolution = deviceProperties.getTimerResolution();
-        long elapsedTime = timerResolution * durationCycles;
-
-        System.out.println("Global TimeStamp statistics");
-        System.out.println("Command start: " + resultStart[0] + " (cycles)");
-        System.out.println("Command end: " + resultEnd[0] + " (cycles)");
-        System.out.println("Total Time: " + elapsedTime + " (ns)");
-
-        boolean isValid = true;
-        for (int i = 0; i < allocSize; i++) {
-            if (heapBuffer[i] != heapBuffer2[i]) {
-                System.out.println(heapBuffer[i] + " != " + heapBuffer2[i]);
-                isValid = false;
-                break;
-            }
-        }
+        LevelZeroByteBuffer hostBuffer = new LevelZeroByteBuffer();
+        System.out.println("Allocating HOST: " + (allocSize) + " (bytes) --> " + ((allocSize)*1e-9) + " (GBs)");
+        result = context.zeMemAllocHost(context.getContextHandle().getContextPtr()[0], hostMemAllocDesc, allocSize, alignment, hostBuffer);
+        LevelZeroUtils.errorLog("zeMemAllocHost", result);
 
         // Free resources
+        context.zeMemFree(context.getDefaultContextPtr(), sharedBuffer);
         context.zeMemFree(context.getDefaultContextPtr(), deviceBuffer);
+        context.zeMemFree(context.getDefaultContextPtr(), hostBuffer);
         context.zeCommandListDestroy(commandList.getCommandListHandler());
         context.zeCommandQueueDestroy(commandQueue.getCommandQueueHandle());
-        return isValid;
-    }
+        System.out.println("OK ");
+
+     }
 
     public static void main(String[] args) {
         LevelZeroDriver driver = new LevelZeroDriver();
@@ -271,9 +215,8 @@ public class TestTransferTimers {
         System.out.println("\tName     : " + deviceProperties.getName());
         System.out.println("\tVendor ID: " + Integer.toHexString(deviceProperties.getVendorId()));
 
-        boolean isValid = testAppendMemoryCopyFromHeapToDeviceToHeap(context, device, driver);
+        testAppendMemoryCopyFromHeapToDeviceToHeap(context, device);
 
-        System.out.println("is valid? " + isValid);
+        driver.zeContextDestroy(context);
     }
-
 }

@@ -26,11 +26,11 @@ package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 
 public class LevelZeroKernel {
 
-    private ZeKernelDesc kernelDesc;
+    private ZeKernelDescriptor kernelDesc;
     private ZeKernelHandle kernelHandle;
     private LevelZeroModule module;
 
-    public LevelZeroKernel(ZeKernelDesc kernelDesc, ZeKernelHandle kernelHandle, LevelZeroModule module) {
+    public LevelZeroKernel(ZeKernelDescriptor kernelDesc, ZeKernelHandle kernelHandle, LevelZeroModule module) {
         this.kernelDesc = kernelDesc;
         this.kernelHandle = kernelHandle;
         this.module = module;

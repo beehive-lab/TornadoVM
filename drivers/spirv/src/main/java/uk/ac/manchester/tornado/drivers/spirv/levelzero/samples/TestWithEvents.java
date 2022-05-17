@@ -28,13 +28,13 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDriver;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueDescription;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeContextDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueDescriptor;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeContextDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDevicesHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventPoolDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventPoolDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventPoolFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventPoolHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventScopeFlags;
@@ -71,7 +71,7 @@ public class TestWithEvents {
         // Create the Context
         // ============================================
         // Create context Description
-        ZeContextDesc contextDescription = new ZeContextDesc();
+        ZeContextDescriptor contextDescription = new ZeContextDescriptor();
         // Create context object
         LevelZeroContext context = new LevelZeroContext(driverHandler, contextDescription);
         // Call native method for creating the context
@@ -83,15 +83,15 @@ public class TestWithEvents {
         // ============================================
         LevelZeroDevice device = driver.getDevice(driverHandler, 0);
 
-        ZeCommandQueueDescription commandQueueDescription = new ZeCommandQueueDescription();
+        ZeCommandQueueDescriptor commandQueueDescription = new ZeCommandQueueDescriptor();
         ZeCommandListHandle commandList = new ZeCommandListHandle();
         result = context.zeCommandListCreateImmediate(context.getContextHandle().getContextPtr()[0], device.getDeviceHandlerPtr(), commandQueueDescription, commandList);
         LevelZeroUtils.errorLog("zeCommandListCreateImmediate", result);
 
-        ZeEventPoolDescription eventPoolDesc = new ZeEventPoolDescription();
+        ZeEventPoolDescriptor eventPoolDesc = new ZeEventPoolDescriptor();
         eventPoolDesc.setCount(1);
         eventPoolDesc.setFlags(ZeEventPoolFlags.ZE_EVENT_POOL_FLAG_HOST_VISIBLE);
-        ZeEventDescription eventDescription = new ZeEventDescription();
+        ZeEventDescriptor eventDescription = new ZeEventDescriptor();
         eventDescription.setSignal(ZeEventScopeFlags.ZE_EVENT_SCOPE_FLAG_HOST);
         eventDescription.setWait(ZeEventScopeFlags.ZE_EVENT_SCOPE_FLAG_HOST);
 

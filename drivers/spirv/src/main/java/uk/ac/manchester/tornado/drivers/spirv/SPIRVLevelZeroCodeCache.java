@@ -45,9 +45,9 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroKernel;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroModule;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeBuildLogHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleFormat;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
@@ -109,7 +109,7 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
     @Override
     public SPIRVInstalledCode installSPIRVBinary(TaskMetaData meta, String id, String entryPoint, String pathToFile) {
         ZeModuleHandle module = new ZeModuleHandle();
-        ZeModuleDesc moduleDesc = new ZeModuleDesc();
+        ZeModuleDescriptor moduleDesc = new ZeModuleDescriptor();
         ZeBuildLogHandle buildLog = new ZeBuildLogHandle();
         moduleDesc.setFormat(ZeModuleFormat.ZE_MODULE_FORMAT_IL_SPIRV);
         moduleDesc.setBuildFlags("-ze-opt-level 2 -ze-opt-large-register-file");
@@ -163,7 +163,7 @@ public class SPIRVLevelZeroCodeCache extends SPIRVCodeCache {
         result = levelZeroModule.zeModuleBuildLogDestroy(buildLog);
         LevelZeroUtils.errorLog("zeModuleBuildLogDestroy", result);
 
-        ZeKernelDesc kernelDesc = new ZeKernelDesc();
+        ZeKernelDescriptor kernelDesc = new ZeKernelDescriptor();
         ZeKernelHandle kernel = new ZeKernelHandle();
         if (Tornado.DEBUG) {
             Logger.traceRuntime(Logger.BACKEND.SPIRV, "Set SPIR-V entry point: " + entryPoint);

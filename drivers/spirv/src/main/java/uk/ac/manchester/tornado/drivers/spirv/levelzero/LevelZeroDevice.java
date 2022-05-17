@@ -62,7 +62,7 @@ public class LevelZeroDevice {
         return deviceProperties;
     }
 
-    public native int zeDeviceGetComputeProperties(long deviceHandlerPtr, ZeComputeProperties computeProperties);
+    public native int zeDeviceGetComputeProperties(long deviceHandlerPtr, ZeDeviceComputeProperties computeProperties);
 
     public native int zeDeviceGetImageProperties(long deviceHandlerPtr, ZeDeviceImageProperties imageProperties);
 

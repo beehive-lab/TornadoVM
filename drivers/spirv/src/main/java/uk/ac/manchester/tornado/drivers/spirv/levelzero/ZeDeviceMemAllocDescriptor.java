@@ -24,22 +24,24 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 
-public class ZeCommandQueueDescription {
+public class ZeDeviceMemAllocDescriptor extends LevelZeroDescriptor {
 
-    private int stype;
-    private long pNext;
+    private long flags;
     private long ordinal;
-    private long index;
 
-    private int flags;
-    private int mode;
-    private int priority;
+    private long ptrZeDeviceMemAllocDesc;
 
-    private long ptrZeCommandDescription;
+    public ZeDeviceMemAllocDescriptor() {
+        this.stype = Ze_Structure_Type.ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
+        this.ptrZeDeviceMemAllocDesc = -1;
+        this.pNext = -1;
+    }
 
-    public ZeCommandQueueDescription() {
-        this.stype = Ze_Structure_Type.ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC;
-        this.ptrZeCommandDescription = -1;
+    private native void materializeNative_ZeDeviceMemAllocDescriptor();
+
+    @Override
+    public void materialize() {
+        materializeNative_ZeDeviceMemAllocDescriptor();
     }
 
     public int getStype() {
@@ -50,43 +52,23 @@ public class ZeCommandQueueDescription {
         return pNext;
     }
 
+    public long getFlags() {
+        return flags;
+    }
+
     public long getOrdinal() {
         return ordinal;
     }
 
-    public long getIndex() {
-        return index;
-    }
-
-    public int getFlags() {
-        return flags;
-    }
-
-    public int getMode() {
-        return mode;
-    }
-
-    public int getPriority() {
-        return priority;
-    }
-
-    public void setOrdinal(int ordinal) {
-        this.ordinal = ordinal;
-    }
-
-    public void setIndex(int index) {
-        this.index = index;
-    }
-
-    public void setMode(int mode) {
-        this.mode = mode;
+    public long getPtrZeDeviceMemAllocDesc() {
+        return ptrZeDeviceMemAllocDesc;
     }
 
     public void setFlags(int flags) {
         this.flags = flags;
     }
 
-    public void setPriority(int priority) {
-        this.priority = priority;
+    public void setOrdinal(int ordinal) {
+        this.ordinal = ordinal;
     }
 }

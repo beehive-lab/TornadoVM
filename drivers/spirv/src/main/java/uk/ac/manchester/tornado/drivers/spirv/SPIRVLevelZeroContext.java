@@ -34,26 +34,23 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroKernel;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListFlag;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupPropertyFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueMode;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueuePriority;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocFlags;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.LevelZeroTransferTimeStamp;
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.TimeStamp;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SPIRVLevelZeroContext extends SPIRVContext {
 
@@ -122,7 +119,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
     private LevelZeroCommandQueue createCommandQueue(LevelZeroContext context, SPIRVDevice spirvDevice) {
         LevelZeroDevice device = (LevelZeroDevice) spirvDevice.getDevice();
         // Create Command Queue
-        ZeCommandQueueDescription cmdDescriptor = new ZeCommandQueueDescription();
+        ZeCommandQueueDescriptor cmdDescriptor = new ZeCommandQueueDescriptor();
         cmdDescriptor.setFlags(0);
         cmdDescriptor.setMode(ZeCommandQueueMode.ZE_COMMAND_QUEUE_MODE_DEFAULT);
         cmdDescriptor.setPriority(ZeCommandQueuePriority.ZE_COMMAND_QUEUE_PRIORITY_NORMAL);
@@ -137,7 +134,7 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
 
     private LevelZeroCommandList createCommandList(LevelZeroContext context, SPIRVDevice spirvDevice) {
         LevelZeroDevice device = (LevelZeroDevice) spirvDevice.getDevice();
-        ZeCommandListDescription cmdListDescriptor = new ZeCommandListDescription();
+        ZeCommandListDescriptor cmdListDescriptor = new ZeCommandListDescriptor();
         cmdListDescriptor.setFlags(ZeCommandListFlag.ZE_COMMAND_LIST_FLAG_RELAXED_ORDERING);
         cmdListDescriptor.setCommandQueueGroupOrdinal(getCommandQueueOrdinal(device));
         ZeCommandListHandle commandListHandler = new ZeCommandListHandle();
@@ -164,15 +161,15 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         return null;
     }
 
-    private ZeDeviceMemAllocDesc createDeviceDescription() {
-        ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
+    private ZeDeviceMemAllocDescriptor createDeviceDescription() {
+        ZeDeviceMemAllocDescriptor deviceMemAllocDesc = new ZeDeviceMemAllocDescriptor();
         deviceMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_CACHED);
         deviceMemAllocDesc.setOrdinal(0);
         return deviceMemAllocDesc;
     }
 
-    private ZeHostMemAllocDesc createHostMemDescription() {
-        ZeHostMemAllocDesc hostMemAllocDesc = new ZeHostMemAllocDesc();
+    private ZeHostMemAllocDescriptor createHostMemDescription() {
+        ZeHostMemAllocDescriptor hostMemAllocDesc = new ZeHostMemAllocDescriptor();
         hostMemAllocDesc.setFlags(ZeHostMemAllocFlags.ZE_HOST_MEM_ALLOC_FLAG_BIAS_CACHED);
         return hostMemAllocDesc;
     }
@@ -188,10 +185,10 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
     public long allocateMemory(int deviceIndex, long numBytes) {
         LevelZeroByteBuffer deviceBuffer = new LevelZeroByteBuffer();
         LevelZeroDevice l0Device = (LevelZeroDevice) devices.get(deviceIndex).getDevice();
-        ZeDeviceMemAllocDesc deviceMemAllocDesc = createDeviceDescription();
+        ZeDeviceMemAllocDescriptor deviceMemAllocDesc = createDeviceDescription();
         if (TornadoOptions.LEVEL_ZERO_SHARED_MEMORY) {
             // Buffer Allocation in Shared Memory
-            ZeHostMemAllocDesc hostMemAllocDesc = createHostMemDescription();
+            ZeHostMemAllocDescriptor hostMemAllocDesc = createHostMemDescription();
             int result = levelZeroContext.zeMemAllocShared( //
                     levelZeroContext.getDefaultContextPtr(), //
                     deviceMemAllocDesc, //

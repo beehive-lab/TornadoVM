@@ -24,14 +24,49 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 
-public class ZeConstants {
+public class ZeCommandListDescriptor extends LevelZeroDescriptor {
 
-    public static int ZE_BIT(int value) {
-        return 1 << value;
+    private long commandQueueGroupOrdinal;
+    private int flags;
+
+    private long ptrZeCommandListDescriptor;
+
+    public ZeCommandListDescriptor() {
+        this.ptrZeCommandListDescriptor = -1;
     }
 
-    public static final int ZE_FORCE =  0x7fffffff;
 
-    private ZeConstants() {
+    private native void materializeNative_ZeCommandListDescriptor();
+    @Override
+    public void materialize() {
+        materializeNative_ZeCommandListDescriptor();
+    }
+
+    public int getStype() {
+        return stype;
+    }
+
+    public long getpNext() {
+        return pNext;
+    }
+
+    public long getCommandQueueGroupOrdinal() {
+        return commandQueueGroupOrdinal;
+    }
+
+    public int getFlags() {
+        return flags;
+    }
+
+    public long getPtrZeCommandListDescription() {
+        return ptrZeCommandListDescriptor;
+    }
+
+    public void setCommandQueueGroupOrdinal(long ordinal) {
+        this.commandQueueGroupOrdinal = ordinal;
+    }
+
+    public void setFlags(int flags) {
+        this.flags = flags;
     }
 }

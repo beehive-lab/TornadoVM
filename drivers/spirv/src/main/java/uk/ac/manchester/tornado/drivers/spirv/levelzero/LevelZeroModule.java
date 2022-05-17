@@ -27,10 +27,10 @@ package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 public class LevelZeroModule {
 
     private ZeModuleHandle module;
-    private ZeModuleDesc moduleDesc;
+    private ZeModuleDescriptor moduleDesc;
     private ZeBuildLogHandle buildLog;
 
-    public LevelZeroModule(ZeModuleHandle module, ZeModuleDesc moduleDesc, ZeBuildLogHandle buildLog) {
+    public LevelZeroModule(ZeModuleHandle module, ZeModuleDescriptor moduleDesc, ZeBuildLogHandle buildLog) {
         this.module = module;
         this.moduleDesc = moduleDesc;
         this.buildLog = buildLog;
@@ -40,7 +40,7 @@ public class LevelZeroModule {
         return module;
     }
 
-    public ZeModuleDesc getModuleDesc() {
+    public ZeModuleDescriptor getModuleDesc() {
         return moduleDesc;
     }
 
@@ -50,9 +50,9 @@ public class LevelZeroModule {
 
     public native int zeModuleBuildLogDestroy(ZeBuildLogHandle buildLog);
 
-    native int zeKernelCreate_native(long ptrZeModuleHandle, ZeKernelDesc kernelDesc, ZeKernelHandle kernel);
+    native int zeKernelCreate_native(long ptrZeModuleHandle, ZeKernelDescriptor kernelDesc, ZeKernelHandle kernel);
 
-    public int zeKernelCreate(long ptrZeModuleHandle, ZeKernelDesc kernelDesc, ZeKernelHandle kernel) {
+    public int zeKernelCreate(long ptrZeModuleHandle, ZeKernelDescriptor kernelDesc, ZeKernelHandle kernel) {
         int result = zeKernelCreate_native(ptrZeModuleHandle, kernelDesc, kernel);
         return result;
     }

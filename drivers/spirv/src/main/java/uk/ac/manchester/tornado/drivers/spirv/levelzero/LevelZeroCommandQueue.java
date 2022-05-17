@@ -28,20 +28,20 @@ public class LevelZeroCommandQueue {
 
     private LevelZeroContext context;
     private ZeCommandQueueHandle zeCommandQueueHandle;
-    private ZeCommandQueueDescription commandQueueDescription;
+    private ZeCommandQueueDescriptor commandQueueDescription;
 
     public LevelZeroCommandQueue(LevelZeroContext context, ZeCommandQueueHandle zeCommandQueueHandle) {
         this.context = context;
         this.zeCommandQueueHandle = zeCommandQueueHandle;
     }
 
-    public LevelZeroCommandQueue(LevelZeroContext context, ZeCommandQueueHandle zeCommandQueueHandle, ZeCommandQueueDescription commandQueueDescription) {
+    public LevelZeroCommandQueue(LevelZeroContext context, ZeCommandQueueHandle zeCommandQueueHandle, ZeCommandQueueDescriptor commandQueueDescription) {
         this.context = context;
         this.zeCommandQueueHandle = zeCommandQueueHandle;
         this.commandQueueDescription = commandQueueDescription;
     }
 
-    public ZeCommandQueueDescription getCommandQueueDescription() {
+    public ZeCommandQueueDescriptor getCommandQueueDescription() {
         return this.commandQueueDescription;
     }
 
@@ -57,7 +57,7 @@ public class LevelZeroCommandQueue {
 
     /**
      * Executes a command list in a command queue.
-     * 
+     *
      * <ul>
      * <li>The command lists are submitted to the device in the order they are
      * received, whether from multiple calls (on the same or different threads) or a
@@ -76,7 +76,7 @@ public class LevelZeroCommandQueue {
      * <li>The application may call this function from simultaneous threads.</li>
      * <li>The implementation of this function should be lock-free.</li>
      * </ul>
-     * 
+     *
      * @param commandQueueHandlerPointer
      *            [in] Pointer handle of the command queue
      * @param numCommandLists
@@ -88,7 +88,7 @@ public class LevelZeroCommandQueue {
      *            [in][optional] handle of the fence to signal on completion (Not
      *            YET IMPLEMENTED)
      * @return
-     * 
+     *
      *         ZE_RESULT_SUCCESS
      *
      *         ZE_RESULT_ERROR_UNINITIALIZED
@@ -113,12 +113,12 @@ public class LevelZeroCommandQueue {
 
     /**
      * Synchronizes a command queue by waiting on the host.
-     * 
+     *
      * <ul>
      * <li>The application may call this function from simultaneous threads.</li>
      * <li>The implementation of this function should be lock-free.</li>
      * </ul>
-     * 
+     *
      * @param commandQueueHandlerPointer
      *            [in] handle pointer of the command queue
      * @param timeOut
@@ -129,9 +129,9 @@ public class LevelZeroCommandQueue {
      *            until complete or device is lost. Due to external dependencies,
      *            timeout may be rounded to the closest value allowed by the
      *            accuracy of those dependencies.
-     * 
+     *
      * @return
-     * 
+     *
      *         ZE_RESULT_SUCCESS
      *
      *         ZE_RESULT_ERROR_UNINITIALIZED
