@@ -47,6 +47,8 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDescript
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocFlags;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeRelaxedAllocationLimitsExpDescriptor;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeRelaxedAllocationLimitsFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.LevelZeroTransferTimeStamp;
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.TimeStamp;
@@ -186,9 +188,22 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         LevelZeroByteBuffer deviceBuffer = new LevelZeroByteBuffer();
         LevelZeroDevice l0Device = (LevelZeroDevice) devices.get(deviceIndex).getDevice();
         ZeDeviceMemAllocDescriptor deviceMemAllocDesc = createDeviceDescription();
+
+        ZeRelaxedAllocationLimitsExpDescriptor relaxedAllocationLimitsExpDescriptor = null;
+        if (TornadoOptions.LEVEL_ZERO_EXTENDED_MEMORY_MODE) {
+            relaxedAllocationLimitsExpDescriptor = new ZeRelaxedAllocationLimitsExpDescriptor();
+            relaxedAllocationLimitsExpDescriptor.setFlags(ZeRelaxedAllocationLimitsFlags.ZE_RELAXED_ALLOCATION_LIMITS_EXP_FLAG_MAX_SIZE);
+            relaxedAllocationLimitsExpDescriptor.materialize();
+
+            deviceMemAllocDesc.setNext(relaxedAllocationLimitsExpDescriptor);
+        }
+
         if (TornadoOptions.LEVEL_ZERO_SHARED_MEMORY) {
             // Buffer Allocation in Shared Memory
             ZeHostMemAllocDescriptor hostMemAllocDesc = createHostMemDescription();
+            if (TornadoOptions.LEVEL_ZERO_EXTENDED_MEMORY_MODE) {
+                hostMemAllocDesc.setNext(relaxedAllocationLimitsExpDescriptor);
+            }
             int result = levelZeroContext.zeMemAllocShared( //
                     levelZeroContext.getDefaultContextPtr(), //
                     deviceMemAllocDesc, //
