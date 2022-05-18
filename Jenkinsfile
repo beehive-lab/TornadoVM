@@ -37,10 +37,10 @@ pipeline {
                 script {
                     if (params.fullBuild == true) {
                         runJDK8()
-                        runCorrettoJDK11()
                         runJDK17()
-                        runGraalVM11()
                         runGraalVM17()
+                        runGraalVM11()
+                        runCorrettoJDK11()
                     } else {
                         Random rnd = new Random()
                         int NO_OF_JDKS = 5
@@ -89,6 +89,7 @@ void runCorrettoJDK11() {
     stage('Corretto JDK 11') {
         withEnv(["JAVA_HOME=${CORRETTO_11_JAVA_HOME}"]) {
             buildAndTest("Corretto JDK 11", "jdk-11-plus")
+            buildAndTestRayTracer("Corretto JDK 11")
         }
     }
 }
@@ -105,6 +106,7 @@ void runGraalVM11() {
     stage('GraalVM 11') {
         withEnv(["JAVA_HOME=${GRAALVM_11_JAVA_HOME}"]) {
             buildAndTest("GraalVM JDK 11", "graal-jdk-11-plus")
+            buildAndTestRayTracer("GraalVM JDK 11")
         }
     }
 }
@@ -178,6 +180,9 @@ void buildAndTest(String JDK, String tornadoProfile) {
             sh 'cd ${KFUSION_ROOT} && kfusion kfusion.tornado.Benchmark ${KFUSION_ROOT}/conf/traj2.settings'
         }
     }
+}
+
+void buildAndTestRayTracer(String JDK) {
     stage('Clone & Build TornadoVM-Ray-Tracer') {
         if (JDK == 'JDK 8') {
             echo 'TornadoVM-Ray-Tracer builds for JDK > 11'
