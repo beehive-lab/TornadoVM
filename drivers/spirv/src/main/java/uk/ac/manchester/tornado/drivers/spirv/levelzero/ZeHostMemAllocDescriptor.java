@@ -24,41 +24,25 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 
-/**
- * Event Pool Descriptor
- */
-public class ZeEventPoolDescription {
+public class ZeHostMemAllocDescriptor extends LevelZeroDescriptor {
 
-    /**
-     * [in] Type of this structure
-     */
-    private int stype;
+    private long flags;
 
-    /**
-     * [in][optional] pointer to extension-specific structure
-     */
-    private long pNext;
+    private long ptrZeHostMemAllocDesc;
 
-    /**
-     * [in] creation flags.
-     */
-    private int flags;
+    public ZeHostMemAllocDescriptor() {
+        this.stype = Ze_Structure_Type.ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC;
+        this.ptrZeHostMemAllocDesc = -1;
+    }
 
-    /**
-     * Must be 0 (default) or a valid combination of {@link ZeEventPoolFlags}
-     * default behavior is signals and waits are visible to the entire device and
-     * peer devices.
-     */
-    private int count;
+    private native void materializeNative_ZeHostMemAllocDescriptor();
+    @Override
+    public void materialize() {
+        materializeNative_ZeHostMemAllocDescriptor();
+    }
 
-    /**
-     * C pointer with event description
-     */
-    private long ptrZeEventPoolDescription;
-
-    public ZeEventPoolDescription() {
-        this.stype = Ze_Structure_Type.ZE_STRUCTURE_TYPE_EVENT_POOL_DESC;
-        this.ptrZeEventPoolDescription = -1;
+    public void setFlags(int flags) {
+        this.flags = flags;
     }
 
     public int getStype() {
@@ -69,23 +53,11 @@ public class ZeEventPoolDescription {
         return pNext;
     }
 
-    public void setFlags(int flags) {
-        this.flags = flags;
-    }
-
-    public int getFlags() {
+    public long getFlags() {
         return flags;
     }
 
-    public void setCount(int count) {
-        this.count = count;
-    }
-
-    public int getCount() {
-        return count;
-    }
-
-    public long getPtrZeEventPoolDescription() {
-        return ptrZeEventPoolDescription;
+    public long getPtrZeHostMemAllocDesc() {
+        return ptrZeHostMemAllocDesc;
     }
 }

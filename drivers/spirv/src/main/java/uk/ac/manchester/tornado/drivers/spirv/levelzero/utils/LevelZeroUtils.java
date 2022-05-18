@@ -27,7 +27,6 @@ package uk.ac.manchester.tornado.drivers.spirv.levelzero.utils;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroByteBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandList;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
@@ -38,36 +37,39 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroKernel;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroModule;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeBuildLogHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListFlag;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupPropertyFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueMode;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueuePriority;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeContextDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeContextDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDevicesHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeGroupDispatch;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeInitFlag;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleFormat;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Ze_Structure_Type;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public class LevelZeroUtils {
+
+     public static final boolean DEBUG = Boolean.parseBoolean(System.getProperties().getProperty("tornado.debug", "False"));
+     public static final String YELLOW = "\u001B[33m";
+     public static final String RESET = "\u001B[0m";
 
     /**
      * Utility for controlling error from a method invoked using the JNI Level Zero
      * library.
-     * 
+     *
      * @param method
      *            Method called.
      * @param result
@@ -81,7 +83,7 @@ public class LevelZeroUtils {
 
     /**
      * Utility for creating a Level Zero Context.
-     * 
+     *
      * @param driver
      *            {@link LevelZeroDriver}
      * @return {@link LevelZeroContext}
@@ -102,7 +104,7 @@ public class LevelZeroUtils {
         result = driver.zeDriverGet(numDrivers, driverHandler);
         errorLog("zeDriverGet", result);
 
-        ZeContextDesc contextDescription = new ZeContextDesc();
+        ZeContextDescriptor contextDescription = new ZeContextDescriptor();
         contextDescription.setSType(Ze_Structure_Type.ZE_STRUCTURE_TYPE_CONTEXT_DESC);
         LevelZeroContext context = new LevelZeroContext(driverHandler, contextDescription);
         result = context.zeContextCreate(driverHandler.getZe_driver_handle_t_ptr()[0]);
@@ -112,7 +114,7 @@ public class LevelZeroUtils {
 
     /**
      * Utility for instantiating a {@link LevelZeroDevice}.
-     * 
+     *
      * @param context
      *            {@link LevelZeroContext}
      * @param driver
@@ -166,7 +168,7 @@ public class LevelZeroUtils {
         result = device.zeDeviceGetCommandQueueGroupProperties(device.getDeviceHandlerPtr(), numQueueGroups, commandQueueGroupProperties);
         errorLog("zeDeviceGetCommandQueueGroupProperties", result);
 
-        ZeCommandQueueDescription commandQueueDescription = new ZeCommandQueueDescription();
+        ZeCommandQueueDescriptor commandQueueDescription = new ZeCommandQueueDescriptor();
 
         for (int i = 0; i < numQueueGroups[0]; i++) {
             if ((commandQueueGroupProperties[i].getFlags()
@@ -189,7 +191,7 @@ public class LevelZeroUtils {
 
     /**
      * Utility for creating a Level Zero Command List.
-     * 
+     *
      * @param device
      *            {@link LevelZeroDevice}
      * @param context
@@ -200,7 +202,7 @@ public class LevelZeroUtils {
      */
     public static LevelZeroCommandList createCommandList(LevelZeroDevice device, LevelZeroContext context, long ordinal) {
         ZeCommandListHandle zeCommandListHandler = new ZeCommandListHandle();
-        ZeCommandListDescription commandListDescription = new ZeCommandListDescription();
+        ZeCommandListDescriptor commandListDescription = new ZeCommandListDescriptor();
         commandListDescription.setFlags(ZeCommandListFlag.ZE_COMMAND_LIST_FLAG_RELAXED_ORDERING);
         commandListDescription.setCommandQueueGroupOrdinal(ordinal);
         int result = context.zeCommandListCreate(context.getContextHandle().getContextPtr()[0], device.getDeviceHandlerPtr(), commandListDescription, zeCommandListHandler);
@@ -210,7 +212,7 @@ public class LevelZeroUtils {
 
     public static LevelZeroKernel compileSPIRVKernel(LevelZeroDevice device, LevelZeroContext context, String kernelName, String pathToBinary) {
         ZeModuleHandle module = new ZeModuleHandle();
-        ZeModuleDesc moduleDesc = new ZeModuleDesc();
+        ZeModuleDescriptor moduleDesc = new ZeModuleDescriptor();
         ZeBuildLogHandle buildLog = new ZeBuildLogHandle();
         moduleDesc.setFormat(ZeModuleFormat.ZE_MODULE_FORMAT_IL_SPIRV);
         moduleDesc.setBuildFlags("");
@@ -235,7 +237,7 @@ public class LevelZeroUtils {
         result = levelZeroModule.zeModuleBuildLogDestroy(buildLog);
         LevelZeroUtils.errorLog("zeModuleBuildLogDestroy", result);
 
-        ZeKernelDesc kernelDesc = new ZeKernelDesc();
+        ZeKernelDescriptor kernelDesc = new ZeKernelDescriptor();
         ZeKernelHandle kernel = new ZeKernelHandle();
         kernelDesc.setKernelName(kernelName);
         result = levelZeroModule.zeKernelCreate(module.getPtrZeModuleHandle(), kernelDesc, kernel);
@@ -246,7 +248,7 @@ public class LevelZeroUtils {
 
     /**
      * Dispatch the LookUpBufferKernel.
-     * 
+     *
      * @param commandList
      *            {@link LevelZeroCommandList}
      * @param commandQueue
@@ -258,7 +260,7 @@ public class LevelZeroUtils {
      * @param output
      *            Long array with the results
      * @param bufferSize
-     * 
+     *
      * @return Long value with a valid address for the device (base address).
      */
     public static long dispatchLookUpBuffer(LevelZeroCommandList commandList, LevelZeroCommandQueue commandQueue, LevelZeroKernel levelZeroKernel, LevelZeroByteBuffer deviceBuffer, long[] output,
@@ -322,9 +324,10 @@ public class LevelZeroUtils {
 
         long baseAddress = allocate.getLong(0);
         output[0] = baseAddress;
-        if (Tornado.DEBUG) {
-            Logger.traceRuntime(Logger.BACKEND.SPIRV, "Base Address: " + Long.toUnsignedString(baseAddress));
+        if (DEBUG) {
+            System.out.printf(YELLOW + "[SPIRV-V-Runtime] Base Address " + baseAddress + RESET + "%%n");
         }
+
         commandList.zeCommandListReset(commandList.getCommandListHandlerPtr());
         errorLog("zeCommandListReset", result);
         return baseAddress;

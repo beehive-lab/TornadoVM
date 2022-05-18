@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,33 +24,12 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 
-public class ZeContextDesc extends ZeNativePointer {
+public class ZeRelaxedAllocationLimitsFlags {
 
-    private int type;
-    private long pNext;
-    private int flags;
+    /**
+     * Allocation size may exceed {@link ZeDeviceProperties#maxMemAllocSize}
+     */
+    public static final int ZE_RELAXED_ALLOCATION_LIMITS_EXP_FLAG_MAX_SIZE = ZeConstants.ZE_BIT(0);
 
-    public ZeContextDesc() {
-        this.type = Ze_Structure_Type.ZE_STRUCTURE_TYPE_CONTEXT_DESC;
-    }
-
-    public long getNativePointer() {
-        return nativePointer;
-    }
-
-    public int getFlags() {
-        return flags;
-    }
-
-    public void setFlags(int flags) {
-        this.flags = flags;
-    }
-
-    public int getType() {
-        return type;
-    }
-
-    public void setSType(int type) {
-        this.type = type;
-    }
+    public static final int ZE_RELAXED_ALLOCATION_LIMITS_EXP_FLAG_FORCE_UINT32 =  ZeConstants.ZE_FORCE;
 }

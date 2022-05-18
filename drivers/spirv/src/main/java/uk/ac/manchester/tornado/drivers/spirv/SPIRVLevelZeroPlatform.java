@@ -29,7 +29,7 @@ import java.util.List;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDriver;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeContextDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeContextDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDevicesHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverHandle;
 
@@ -91,8 +91,8 @@ public class SPIRVLevelZeroPlatform implements SPIRVPlatform {
 
     @Override
     public SPIRVContext createContext() {
-        ZeContextDesc contextDescription = new ZeContextDesc();
-        levelZeroContext = new LevelZeroContext(driversHandler, contextDescription);
+        ZeContextDescriptor contextDescriptor = new ZeContextDescriptor();
+        levelZeroContext = new LevelZeroContext(driversHandler, contextDescriptor);
         levelZeroContext.zeContextCreate(driversHandler.getZe_driver_handle_t_ptr()[indexDriver]);
         spirvContext = new SPIRVLevelZeroContext(this, spirvDevices, levelZeroContext);
         return spirvContext;

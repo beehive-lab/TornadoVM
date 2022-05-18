@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,38 +25,48 @@
 package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 
 /**
- * Fence descriptor
+ * Base class for Descriptors in Level Zero.
  */
-public class ZeFenceDesc {
+public abstract class LevelZeroDescriptor {
 
-    private int stype;
-    private long pNext;
-    private int flags;
+    /**
+     * Type of the struct
+     */
+    protected int stype;
 
-    private long ptrZeFenceDesc;
+    /**
+     * C++ pointer to the next struct
+     */
+    protected long pNext;
 
-    public ZeFenceDesc() {
-        pNext = -1;
-        stype = Ze_Structure_Type.ZE_STRUCTURE_TYPE_FENCE_DESC;
+    /**
+     * Pointer to its own data structure in the C++ part
+     */
+    protected long selfPtr;
+
+    /**
+     * Reference to the next descriptor in the Java side.
+     */
+    protected LevelZeroDescriptor next;
+
+    protected LevelZeroDescriptor() {
+        this.pNext = -1;
+        this.next = null;
+        this.selfPtr = -1;
     }
 
-    public int getStype() {
-        return stype;
+    public void setNext(LevelZeroDescriptor next) {
+        this.next = next;
+
+        // We need to materialize first before this assign
+        this.pNext = next.selfPtr;
     }
 
-    public long getpNext() {
-        return pNext;
-    }
-
-    public int getFlags() {
-        return flags;
-    }
-
-    public void setFlags(int flags) {
-        this.flags = flags;
-    }
-
-    public long getPtrZeFenceDesc() {
-        return ptrZeFenceDesc;
-    }
+    /**
+     * The materialize method invoke the JNI to build the descriptor being used and
+     * update the selfPtr with a pointer to its own descriptor struct.
+     * This is useful when combining multiple descriptors (e.g., using extended
+     * memory mode for device,host and shared allocations).
+     */
+    public abstract void materialize();
 }

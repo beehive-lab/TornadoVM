@@ -27,17 +27,7 @@ package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 /**
  * Event Descriptor
  */
-public class ZeEventDescription {
-
-    /**
-     * [in] type of this structure
-     */
-    private int stype;
-
-    /**
-     * [in][optional] pointer to extension-specific structure
-     */
-    private long pNext;
+public class ZeEventDescriptor extends LevelZeroDescriptor {
 
     /**
      * [in] index of the event within the pool; must be less-than the count
@@ -64,11 +54,18 @@ public class ZeEventDescription {
      */
     private int wait;
 
-    private long ptrZeEventDescription;
+    private long ptrZeEventDescriptor;
 
-    public ZeEventDescription() {
+    public ZeEventDescriptor() {
         this.stype = Ze_Structure_Type.ZE_STRUCTURE_TYPE_EVENT_DESC;
-        this.ptrZeEventDescription = -1;
+        this.ptrZeEventDescriptor = -1;
+    }
+
+    private native void materializeNative_ZeEventDescriptor();
+
+    @Override
+    public void materialize() {
+        materializeNative_ZeEventDescriptor();
     }
 
     public void setStype(int stype) {
@@ -108,6 +105,6 @@ public class ZeEventDescription {
     }
 
     public long getPtrZeEventDescription() {
-        return ptrZeEventDescription;
+        return ptrZeEventDescriptor;
     }
 }

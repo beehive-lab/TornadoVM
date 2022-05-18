@@ -38,29 +38,29 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroModule;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeAPIVersion;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeBuildLogHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupPropertyFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueMode;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeContextDesc;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeContextDescriptor;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDevicesHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverProperties;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeFenceDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeFenceDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeFenceFlag;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeFenceHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeGroupDispatch;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeInitFlag;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleFormat;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
@@ -117,7 +117,7 @@ public class TestFences {
         // Create the Context
         // ============================================
         // Create context Description
-        ZeContextDesc contextDescription = new ZeContextDesc();
+        ZeContextDescriptor contextDescription = new ZeContextDescriptor();
         // Create context object
         LevelZeroContext context = new LevelZeroContext(driverHandler, contextDescription);
         // Call native method for creating the context
@@ -175,7 +175,7 @@ public class TestFences {
 
         ZeCommandQueueHandle commandQueueHandle = new ZeCommandQueueHandle();
         LevelZeroCommandQueue commandQueue = new LevelZeroCommandQueue(context, commandQueueHandle);
-        ZeCommandQueueDescription commandQueueDescription = new ZeCommandQueueDescription();
+        ZeCommandQueueDescriptor commandQueueDescription = new ZeCommandQueueDescriptor();
 
         for (int i = 0; i < numQueueGroups[0]; i++) {
             if ((commandQueueGroupProperties[i].getFlags()
@@ -196,18 +196,18 @@ public class TestFences {
         // ============================================
         ZeCommandListHandle zeCommandListHandler = new ZeCommandListHandle();
         LevelZeroCommandList commandList = new LevelZeroCommandList(context, zeCommandListHandler);
-        ZeCommandListDescription commandListDescription = new ZeCommandListDescription();
+        ZeCommandListDescriptor commandListDescription = new ZeCommandListDescriptor();
         commandListDescription.setCommandQueueGroupOrdinal(commandQueueDescription.getOrdinal());
         result = context.zeCommandListCreate(context.getContextHandle().getContextPtr()[0], device.getDeviceHandlerPtr(), commandListDescription, zeCommandListHandler);
         LevelZeroUtils.errorLog("zeCommandListCreate", result);
 
         final int elements = 8192;
         final int bufferSize = elements * 4;
-        ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
+        ZeDeviceMemAllocDescriptor deviceMemAllocDesc = new ZeDeviceMemAllocDescriptor();
         deviceMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED);
         deviceMemAllocDesc.setOrdinal(0);
 
-        ZeHostMemAllocDesc hostMemAllocDesc = new ZeHostMemAllocDesc();
+        ZeHostMemAllocDescriptor hostMemAllocDesc = new ZeHostMemAllocDescriptor();
         hostMemAllocDesc.setFlags(ZeHostMemAllocFlags.ZE_HOST_MEM_ALLOC_FLAG_BIAS_UNCACHED);
 
         LevelZeroBufferInteger bufferA = new LevelZeroBufferInteger();
@@ -222,7 +222,7 @@ public class TestFences {
         bufferB.memset(0, elements);
 
         ZeModuleHandle module = new ZeModuleHandle();
-        ZeModuleDesc moduleDesc = new ZeModuleDesc();
+        ZeModuleDescriptor moduleDesc = new ZeModuleDescriptor();
         ZeBuildLogHandle buildLog = new ZeBuildLogHandle();
         moduleDesc.setFormat(ZeModuleFormat.ZE_MODULE_FORMAT_IL_SPIRV);
         moduleDesc.setBuildFlags("");
@@ -246,7 +246,7 @@ public class TestFences {
         result = levelZeroModule.zeModuleBuildLogDestroy(buildLog);
         LevelZeroUtils.errorLog("zeModuleBuildLogDestroy", result);
 
-        ZeKernelDesc kernelDesc = new ZeKernelDesc();
+        ZeKernelDescriptor kernelDesc = new ZeKernelDescriptor();
         ZeKernelHandle kernel = new ZeKernelHandle();
         kernelDesc.setKernelName("copydata");
         result = levelZeroModule.zeKernelCreate(module.getPtrZeModuleHandle(), kernelDesc, kernel);
@@ -285,7 +285,7 @@ public class TestFences {
         LevelZeroUtils.errorLog("zeCommandListClose", result);
 
         // Create a Fence
-        ZeFenceDesc fenceDesc = new ZeFenceDesc();
+        ZeFenceDescriptor fenceDesc = new ZeFenceDescriptor();
         fenceDesc.setFlags(ZeFenceFlag.ZE_FENCE_FLAG_SIGNALED);
         ZeFenceHandle fenceHandler = new ZeFenceHandle();
 

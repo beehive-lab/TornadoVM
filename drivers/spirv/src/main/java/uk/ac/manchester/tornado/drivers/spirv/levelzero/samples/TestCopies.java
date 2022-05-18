@@ -32,21 +32,21 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroCommandQueue;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDriver;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListFlag;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandListHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueGroupPropertyFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueueMode;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeCommandQueuePriority;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeContextDesc;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeContextDescriptor;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDevicesHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeInitFlag;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Ze_Structure_Type;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
@@ -69,7 +69,7 @@ public class TestCopies {
         result = driver.zeDriverGet(numDrivers, driverHandler);
         LevelZeroUtils.errorLog("zeDriverGet", result);
 
-        ZeContextDesc contextDescription = new ZeContextDesc();
+        ZeContextDescriptor contextDescription = new ZeContextDescriptor();
         contextDescription.setSType(Ze_Structure_Type.ZE_STRUCTURE_TYPE_CONTEXT_DESC);
         LevelZeroContext context = new LevelZeroContext(driverHandler, contextDescription);
         result = context.zeContextCreate(driverHandler.getZe_driver_handle_t_ptr()[0]);
@@ -128,7 +128,7 @@ public class TestCopies {
 
     public static LevelZeroCommandQueue createCommandQueue(LevelZeroContext context, LevelZeroDevice device) {
         // Create Command Queue
-        ZeCommandQueueDescription cmdDescriptor = new ZeCommandQueueDescription();
+        ZeCommandQueueDescriptor cmdDescriptor = new ZeCommandQueueDescriptor();
         cmdDescriptor.setFlags(0);
         cmdDescriptor.setMode(ZeCommandQueueMode.ZE_COMMAND_QUEUE_MODE_DEFAULT);
         cmdDescriptor.setPriority(ZeCommandQueuePriority.ZE_COMMAND_QUEUE_PRIORITY_NORMAL);
@@ -142,7 +142,7 @@ public class TestCopies {
     }
 
     public static LevelZeroCommandList createCommandList(LevelZeroContext context, LevelZeroDevice device) {
-        ZeCommandListDescription cmdListDescriptor = new ZeCommandListDescription();
+        ZeCommandListDescriptor cmdListDescriptor = new ZeCommandListDescriptor();
         cmdListDescriptor.setFlags(ZeCommandListFlag.ZE_COMMAND_LIST_FLAG_RELAXED_ORDERING);
         cmdListDescriptor.setCommandQueueGroupOrdinal(getCommandQueueOrdinal(device));
         ZeCommandListHandle commandListHandler = new ZeCommandListHandle();
@@ -162,7 +162,7 @@ public class TestCopies {
         LevelZeroCommandQueue commandQueue = createCommandQueue(context, device);
         LevelZeroCommandList commandList = createCommandList(context, device);
 
-        ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
+        ZeDeviceMemAllocDescriptor deviceMemAllocDesc = new ZeDeviceMemAllocDescriptor();
         deviceMemAllocDesc.setOrdinal(0);
         deviceMemAllocDesc.setFlags(0);
         final int alignment = 1;
@@ -219,7 +219,7 @@ public class TestCopies {
     /**
      * This example creates a buffer using the zeMemHostAlloc and copies data from
      * this buffer into the device buffer created with zeMemDeviceAlloc.
-     * 
+     *
      * @param context
      *            {@link LevelZeroContext}
      * @param device
@@ -237,12 +237,12 @@ public class TestCopies {
         LevelZeroCommandQueue commandQueue = createCommandQueue(context, device);
         LevelZeroCommandList commandList = createCommandList(context, device);
 
-        ZeHostMemAllocDesc hostMemAllocDesc = new ZeHostMemAllocDesc();
+        ZeHostMemAllocDescriptor hostMemAllocDesc = new ZeHostMemAllocDescriptor();
         hostMemAllocDesc.setFlags(0);
         int result = context.zeMemAllocHost(context.getContextHandle().getContextPtr()[0], hostMemAllocDesc, allocSize, 1, hostBuffer);
         LevelZeroUtils.errorLog("zeMemAllocHost", result);
 
-        ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
+        ZeDeviceMemAllocDescriptor deviceMemAllocDesc = new ZeDeviceMemAllocDescriptor();
         deviceMemAllocDesc.setOrdinal(0);
         deviceMemAllocDesc.setFlags(0);
         result = context.zeMemAllocDevice(context.getContextHandle().getContextPtr()[0], deviceMemAllocDesc, allocSize, allocSize, device.getDeviceHandlerPtr(), deviceBuffer);
@@ -304,7 +304,7 @@ public class TestCopies {
         LevelZeroCommandQueue commandQueue = createCommandQueue(context, device);
         LevelZeroCommandList commandList = createCommandList(context, device);
 
-        ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
+        ZeDeviceMemAllocDescriptor deviceMemAllocDesc = new ZeDeviceMemAllocDescriptor();
         deviceMemAllocDesc.setOrdinal(0);
         deviceMemAllocDesc.setFlags(0);
         int alignment = 1;

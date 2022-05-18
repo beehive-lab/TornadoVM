@@ -38,7 +38,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDriver;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroKernel;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeGroupDispatch;
@@ -59,9 +59,9 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
  * <code>
  *  __kernel void copyTest(__global uchar *_heap_base)
  * {
- *   int i_8, i_7, i_1, i_2; 
- *   ulong ul_0, ul_6; 
- *   long l_3, l_5, l_4; 
+ *   int i_8, i_7, i_1, i_2;
+ *   ulong ul_0, ul_6;
+ *   long l_3, l_5, l_4;
  *
  *   __global ulong *_frame = (__global ulong *) &_heap_base[0];
  *
@@ -75,9 +75,9 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
  *   *((__global int *) ul_6)  =  555;
  * }
  * </code>
- * 
- * 
- * <code> 
+ *
+ *
+ * <code>
  *     $ tornado uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.SimulationLKBuffer
  * </code>
  */
@@ -146,7 +146,7 @@ public class SimulationLKBuffer {
 
         final int elements = 1;
         final int bufferSize = elements * 8;
-        ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
+        ZeDeviceMemAllocDescriptor deviceMemAllocDesc = new ZeDeviceMemAllocDescriptor();
         deviceMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_CACHED);
         deviceMemAllocDesc.setOrdinal(0);
 

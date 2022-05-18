@@ -24,14 +24,44 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 
-public class ZeConstants {
+/**
+ * Fence descriptor
+ */
+public class ZeFenceDescriptor extends LevelZeroDescriptor {
 
-    public static int ZE_BIT(int value) {
-        return 1 << value;
+    private int flags;
+
+    private long ptrZeFenceDesc;
+
+    public ZeFenceDescriptor() {
+        pNext = -1;
+        stype = Ze_Structure_Type.ZE_STRUCTURE_TYPE_FENCE_DESC;
     }
 
-    public static final int ZE_FORCE =  0x7fffffff;
+    private native void materializeNative_ZeFenceDescriptor();
 
-    private ZeConstants() {
+    @Override
+    public void materialize() {
+        materializeNative_ZeFenceDescriptor();
+    }
+
+    public int getStype() {
+        return stype;
+    }
+
+    public long getpNext() {
+        return pNext;
+    }
+
+    public int getFlags() {
+        return flags;
+    }
+
+    public void setFlags(int flags) {
+        this.flags = flags;
+    }
+
+    public long getPtrZeFenceDesc() {
+        return ptrZeFenceDesc;
     }
 }

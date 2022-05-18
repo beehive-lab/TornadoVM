@@ -24,14 +24,36 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 
-public class ZeConstants {
+public class ZeContextDescriptor extends LevelZeroDescriptor {
 
-    public static int ZE_BIT(int value) {
-        return 1 << value;
+    private int flags;
+    private long nativePointer;
+
+    public ZeContextDescriptor() {
+        this.stype = Ze_Structure_Type.ZE_STRUCTURE_TYPE_CONTEXT_DESC;
+        this.nativePointer = -1;
     }
 
-    public static final int ZE_FORCE =  0x7fffffff;
+    private native void materializeNative_ZeContextDescriptor();
 
-    private ZeConstants() {
+    @Override
+    public void materialize() {
+        materializeNative_ZeContextDescriptor();
+    }
+
+    public int getFlags() {
+        return flags;
+    }
+
+    public void setFlags(int flags) {
+        this.flags = flags;
+    }
+
+    public int getType() {
+        return stype;
+    }
+
+    public void setSType(int type) {
+        this.stype = type;
     }
 }

@@ -39,12 +39,12 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroKernel;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroModule;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeBuildLogHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceMemAllocFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeGroupDispatch;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleFormat;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeModuleHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
@@ -52,29 +52,29 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 
 /**
  * Kernel to test:
- * 
+ *
  * <code>
  *    __kernel void copydata(__global int* input, __global int* output) {
  * 	         uint idx = get_global_id(0);
  * 	         output[idx] = input[idx];
- *    }      
+ *    }
  * </code>
- * 
- * 
+ *
+ *
  * To compile to SPIR-V:
- * 
+ *
  * <code>
  *     $ clang -cc1 -triple spir copydata.cl -O0 -finclude-default-header -emit-llvm-bc -o copydata.bc
  *     $ llvm-spirv copydata.bc -o copydata.spv
  *     $ cp opencl-copy.spv /tmp/copydata.spv
  * </code>
- * 
+ *
  * How to run?
- * 
+ *
  * <code>
  *     $ tornado uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.TestLevelZeroDedicatedMemory
  * </code>
- * 
+ *
  */
 public class TestLevelZeroDedicatedMemory {
 
@@ -89,7 +89,7 @@ public class TestLevelZeroDedicatedMemory {
 
         final int elements = 256;
         final int bufferSize = elements * 4;
-        ZeDeviceMemAllocDesc deviceMemAllocDesc = new ZeDeviceMemAllocDesc();
+        ZeDeviceMemAllocDescriptor deviceMemAllocDesc = new ZeDeviceMemAllocDescriptor();
         deviceMemAllocDesc.setFlags(ZeDeviceMemAllocFlags.ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED);
         deviceMemAllocDesc.setOrdinal(0);
 
@@ -115,7 +115,7 @@ public class TestLevelZeroDedicatedMemory {
         LevelZeroUtils.errorLog("zeCommandListAppendBarrier", result);
 
         ZeModuleHandle module = new ZeModuleHandle();
-        ZeModuleDesc moduleDesc = new ZeModuleDesc();
+        ZeModuleDescriptor moduleDesc = new ZeModuleDescriptor();
         ZeBuildLogHandle buildLog = new ZeBuildLogHandle();
         moduleDesc.setFormat(ZeModuleFormat.ZE_MODULE_FORMAT_IL_SPIRV);
         moduleDesc.setBuildFlags("");
@@ -140,7 +140,7 @@ public class TestLevelZeroDedicatedMemory {
         result = levelZeroModule.zeModuleBuildLogDestroy(buildLog);
         LevelZeroUtils.errorLog("zeModuleBuildLogDestroy", result);
 
-        ZeKernelDesc kernelDesc = new ZeKernelDesc();
+        ZeKernelDescriptor kernelDesc = new ZeKernelDescriptor();
         ZeKernelHandle kernel = new ZeKernelHandle();
         kernelDesc.setKernelName("copydata");
         result = levelZeroModule.zeKernelCreate(module.getPtrZeModuleHandle(), kernelDesc, kernel);

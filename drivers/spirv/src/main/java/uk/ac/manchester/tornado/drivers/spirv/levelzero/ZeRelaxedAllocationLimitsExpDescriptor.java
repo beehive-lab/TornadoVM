@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,46 +24,50 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 
-public class ZeDeviceMemAllocDesc {
+/**
+ * Relaxed limits memory allocation descriptor.
+ *
+ * - This structure may be passed to `zeMemAllocShared` or `zeMemAllocDevice`,
+ * via `pNext` member of {@link ZeDeviceMemAllocDescriptor}.
+ * - This structure may also be passed to `zeMemAllocHost`, via `pNext`
+ * member of {@link ZeHostMemAllocDescriptor}.
+ */
+public class ZeRelaxedAllocationLimitsExpDescriptor extends LevelZeroDescriptor {
 
-    private int stype;
-    private long pNext;
-    private long flags;
-    private long ordinal;
+    private int flags;
 
-    private long ptrZeDeviceMemAllocDesc;
+    public ZeRelaxedAllocationLimitsExpDescriptor() {
+        pNext = -1;
+        stype = Ze_Structure_Type.ZE_STRUCTURE_TYPE_RELAXED_ALLOCATION_LIMITS_EXP_DESC;
+        selfPtr = -1;
+    }
 
-    public ZeDeviceMemAllocDesc() {
-        this.stype = Ze_Structure_Type.ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
-        this.ptrZeDeviceMemAllocDesc = -1;
-        this.pNext = -1;
+    private native void materializeNative_ZeRelaxedAllocationLimitsExpDescriptor();
+
+    @Override
+    public void materialize() {
+        // Native Call to fill with content of the selfPtr for the current object
+        materializeNative_ZeRelaxedAllocationLimitsExpDescriptor();
     }
 
     public int getStype() {
-        return stype;
+        return this.stype;
     }
 
-    public long getpNext() {
-        return pNext;
+    public long getPNext() {
+        return this.pNext;
     }
 
-    public long getFlags() {
-        return flags;
-    }
-
-    public long getOrdinal() {
-        return ordinal;
-    }
-
-    public long getPtrZeDeviceMemAllocDesc() {
-        return ptrZeDeviceMemAllocDesc;
+    public int getFlags() {
+        return this.flags;
     }
 
     public void setFlags(int flags) {
         this.flags = flags;
     }
 
-    public void setOrdinal(int ordinal) {
-        this.ordinal = ordinal;
+    public void setPNext(long pNextPtr) {
+        this.pNext = pNextPtr;
     }
+
 }

@@ -215,6 +215,13 @@ public class TornadoOptions {
      * memory)
      */
     public static final int LEVEL_ZERO_BUFFER_ALIGNMENT = getIntValue("tornado.spirv.levelzero.alignment", "64");
+
+    /**
+     * Enable/Disable the extended memory allocation mode for the Level Zero
+     * Backend. It is enabled by default.
+     */
+    public static final boolean LEVEL_ZERO_EXTENDED_MEMORY_MODE = getBooleanValue("tornado.spirv.levelzero.extended.memory", TRUE);
+
     /**
      * Option to load FPGA pre-compiled binaries.
      */

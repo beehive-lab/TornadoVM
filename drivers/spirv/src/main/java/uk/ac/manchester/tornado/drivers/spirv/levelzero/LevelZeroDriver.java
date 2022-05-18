@@ -57,29 +57,29 @@ public class LevelZeroDriver {
     }
 
     /**
-     * 
+     *
      * Initialize the 'oneAPI' driver(s)
-     * 
+     *
      * This function must be called before any other API function. - If this
      * function is not called then all other functions will return
      * {@link ZeResult.ZE_RESULT_ERROR_UNINITIALIZED}
-     * 
+     *
      * Only one instance of each driver will be initialized per process.
-     * 
+     *
      * This function is thread-safe for scenarios where multiple libraries may
      * initialize the driver(s) simultaneously.
-     * 
+     *
      * @return int An error code value:
-     * 
+     *
      *         <code>
-     *              ZeResult.ZE_RESULT_SUCCESS  
-     *              ZeResult.ZE_RESULT_ERROR_UNINITIALIZED 
-     *              ZeResult.ZE_RESULT_ERROR_DEVICE_LOST 
-     *              ZeResult.ZE_RESULT_ERROR_INVALID_ENUMERATION 
-     *                 + `0x3 < flags` 
+     *              ZeResult.ZE_RESULT_SUCCESS
+     *              ZeResult.ZE_RESULT_ERROR_UNINITIALIZED
+     *              ZeResult.ZE_RESULT_ERROR_DEVICE_LOST
+     *              ZeResult.ZE_RESULT_ERROR_INVALID_ENUMERATION
+     *                 + `0x3 < flags`
      *              ZeResult.ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY
      *           </code>
-     * 
+     *
      * @param init
      *            Flag: {@link ZeInitFlag}
      */
@@ -89,17 +89,17 @@ public class LevelZeroDriver {
 
     /**
      * Retrieves driver instances
-     * 
+     *
      * A driver represents a collection of physical devices. Multiple calls to this
      * function will return identical driver handles, in the same order. The
      * application may pass nullptr for pDrivers when only querying the number of
      * drivers. The application may call this function from simultaneous threads.
      * The implementation of this function should be lock-free.
-     * 
+     *
      * @remarks This function is similar to the clGetPlatformIDs from OpenCL.
-     * 
+     *
      * @return A status/result value:
-     * 
+     *
      *         <code>
      *              ZE_RESULT_SUCCESS
      *              ZE_RESULT_ERROR_UNINITIALIZED
@@ -107,7 +107,7 @@ public class LevelZeroDriver {
      *              ZE_RESULT_ERROR_INVALID_NULL_POINTER
      *                  + `nullptr == pCount`
      *         </code>
-     * 
+     *
      * @param driverHandle
      *            Driver Handler
      * @param deviceCount
@@ -122,7 +122,7 @@ public class LevelZeroDriver {
 
     /**
      * Retrieves driver instances
-     * 
+     *
      * <ul>
      * <li>A driver represents a collection of physical devices.</li>
      * <li>Multiple calls to this function will return identical driver handles, in
@@ -132,16 +132,16 @@ public class LevelZeroDriver {
      * <li>The application may call this function from simultaneous threads.</li>
      * <li>The implementation of this function should be lock-free.</li>
      * </ul>
-     * 
+     *
      * Similar to the OpenCL call `clGetPlatformIDs`
      *
      * @return int with an error code:
-     * 
+     *
      *         <code>
-     *         {@link ZeResult.ZE_RESULT_SUCCESS} 
+     *         {@link ZeResult.ZE_RESULT_SUCCESS}
      *         {@link ZeResult.ZE_RESULT_ERROR_UNINITIALIZED}
      *         {@link ZeResult.ZE_RESULT_ERROR_DEVICE_LOST}
-     *         {@link ZeResult.ZE_RESULT_ERROR_INVALID_NULL_POINTER}: if driverCount is null.*         
+     *         {@link ZeResult.ZE_RESULT_ERROR_INVALID_NULL_POINTER}: if driverCount is null.*
      *       </code>
      * @param driverCount
      *            array with driver count
@@ -185,23 +185,23 @@ public class LevelZeroDriver {
 
     /**
      * Retrieves properties of the driver.
-     * 
+     *
      * <ul>
      * <li>The application may call this function from simultaneous threads.</li>
      * <li>The implementation of this function should be lock-free.</li>
      * </ul>
-     * 
+     *
      * This call is similar to clGetPlatformInfo from OpenCL.
-     * 
+     *
      * @param driverHandler
      *            {@link ZeDriverHandle}
      * @param indexDriver
      *            Index from the Level Zero Platform to query
      * @param driverProperties
      *            {@link ZeDriverProperties}
-     * 
+     *
      * @return an integer representing one of the following values:
-     * 
+     *
      *         <code>
      *              ZE_RESULT_SUCCESS
      *              ZE_RESULT_ERROR_UNINITIALIZED
@@ -211,7 +211,7 @@ public class LevelZeroDriver {
      *             ZE_RESULT_ERROR_INVALID_NULL_POINTER
      *                + `nullptr == driverProperties`
      *        </code>
-     * 
+     *
      */
     public int zeDriverGetProperties(ZeDriverHandle driverHandler, int indexDriver, ZeDriverProperties driverProperties) {
         int result = zeDriverGetProperties(driverHandler.getZe_driver_handle_t_ptr()[indexDriver], driverProperties);
@@ -222,23 +222,23 @@ public class LevelZeroDriver {
 
     /**
      * Returns the API version supported by the specified driver.
-     * 
+     *
      * <ul>
      * <li>The application may call this function from simultaneous threads.</li>
      * <li>The implementation of this function should be lock-free.</li>
      * </ul>
-     * 
+     *
      * This call is similar to `clGetPlatformInfo` from OpenCL.
-     * 
+     *
      * @param driverHandler
      *            {@link ZeDriverHandle}
      * @param indexDriver
      *            Driver Index.
      * @param apiVersion
      *            {@link ZeAPIVersion}
-     * 
+     *
      * @return An error code:
-     * 
+     *
      *         <code>
      *              ZE_RESULT_SUCCESS
      *              ZE_RESULT_ERROR_UNINITIALIZED
@@ -258,7 +258,7 @@ public class LevelZeroDriver {
 
     /**
      * Destroys a context.
-     * 
+     *
      * <ul>
      * <li>The application must ensure the device is not currently referencing the
      * context before it is deleted.</li>
@@ -268,12 +268,12 @@ public class LevelZeroDriver {
      * with the same context handle.</li>
      * <li>The implementation of this function must be thread-safe.</li>
      * </ul>
-     * 
+     *
      * @param context
      *            {@link LevelZeroContext}
-     * 
+     *
      * @returns An error code:
-     * 
+     *
      *          <code>
      *              ZE_RESULT_SUCCESS
      *              ZE_RESULT_ERROR_UNINITIALIZED

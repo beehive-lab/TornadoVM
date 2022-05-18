@@ -24,21 +24,38 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 
-public class ZeHostMemAllocDesc {
+/**
+ * Event Pool Descriptor
+ */
+public class ZeEventPoolDescriptor extends LevelZeroDescriptor {
 
-    private int stype;
-    private long pNext;
-    private long flags;
+    /**
+     * [in] creation flags.
+     */
+    private int flags;
 
-    private long ptrZeHostMemAllocDesc;
+    /**
+     * Must be 0 (default) or a valid combination of {@link ZeEventPoolFlags}
+     * default behavior is signals and waits are visible to the entire device and
+     * peer devices.
+     */
+    private int count;
 
-    public ZeHostMemAllocDesc() {
-        this.stype = Ze_Structure_Type.ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC;
-        this.ptrZeHostMemAllocDesc = -1;
+    /**
+     * C pointer with event description
+     */
+    private long ptrZeEventPoolDescriptor;
+
+    public ZeEventPoolDescriptor() {
+        this.stype = Ze_Structure_Type.ZE_STRUCTURE_TYPE_EVENT_POOL_DESC;
+        this.ptrZeEventPoolDescriptor = -1;
     }
 
-    public void setFlags(int flags) {
-        this.flags = flags;
+    private native void materializeNative_ZeEventPoolDescriptor();
+
+    @Override
+    public void materialize() {
+        materializeNative_ZeEventPoolDescriptor();
     }
 
     public int getStype() {
@@ -49,11 +66,23 @@ public class ZeHostMemAllocDesc {
         return pNext;
     }
 
-    public long getFlags() {
+    public void setFlags(int flags) {
+        this.flags = flags;
+    }
+
+    public int getFlags() {
         return flags;
     }
 
-    public long getPtrZeHostMemAllocDesc() {
-        return ptrZeHostMemAllocDesc;
+    public void setCount(int count) {
+        this.count = count;
+    }
+
+    public int getCount() {
+        return count;
+    }
+
+    public long getPtrZeEventPoolDescription() {
+        return ptrZeEventPoolDescriptor;
     }
 }

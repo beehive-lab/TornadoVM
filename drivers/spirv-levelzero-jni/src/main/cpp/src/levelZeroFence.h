@@ -35,7 +35,7 @@ extern "C" {
 /*
  * Class:     uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroFence
  * Method:    zeFenceCreate_native
- * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeFenceDesc;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeFenceHandle;)I
+ * Signature: (JLuk/ac/manchester/tornado/drivers/spirv/levelzero/ZeFenceDescriptor;Luk/ac/manchester/tornado/drivers/spirv/levelzero/ZeFenceHandle;)I
 */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroFence_zeFenceCreate_1native
     (JNIEnv *, jobject, jlong, jobject, jobject);

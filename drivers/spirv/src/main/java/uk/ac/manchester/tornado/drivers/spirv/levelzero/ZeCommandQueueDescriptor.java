@@ -24,37 +24,30 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.levelzero;
 
-public class ZeKernelDesc {
+public class ZeCommandQueueDescriptor extends LevelZeroDescriptor {
 
-    private int stype;
-    private long pNext;
-    private long flags;
-    private String kernelName;
+    private long ordinal;
+    private long index;
 
-    private long ptrZeKernelDesc;
+    private int flags;
+    private int mode;
+    private int priority;
 
-    public ZeKernelDesc() {
-        pNext = -1;
-        stype = Ze_Structure_Type.ZE_STRUCTURE_TYPE_KERNEL_DESC;
+    private long ptrZeCommandDescriptor;
+
+    public ZeCommandQueueDescriptor() {
+        this.stype = Ze_Structure_Type.ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC;
+        this.ptrZeCommandDescriptor = -1;
     }
 
-    public void setType(int stype) {
-        this.stype = stype;
+    private native void materializeNative_ZeCommandQueueDescriptor();
+
+    @Override
+    public void materialize() {
+        materializeNative_ZeCommandQueueDescriptor();
     }
 
-    public void setNext(long pNext) {
-        this.pNext = pNext;
-    }
-
-    public void setFlags(long flags) {
-        this.flags = flags;
-    }
-
-    public void setKernelName(String kernelName) {
-        this.kernelName = kernelName;
-    }
-
-    public int getType() {
+    public int getStype() {
         return stype;
     }
 
@@ -62,11 +55,43 @@ public class ZeKernelDesc {
         return pNext;
     }
 
-    public long getFlags() {
+    public long getOrdinal() {
+        return ordinal;
+    }
+
+    public long getIndex() {
+        return index;
+    }
+
+    public int getFlags() {
         return flags;
     }
 
-    public String getKernelName() {
-        return kernelName;
+    public int getMode() {
+        return mode;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setOrdinal(int ordinal) {
+        this.ordinal = ordinal;
+    }
+
+    public void setIndex(int index) {
+        this.index = index;
+    }
+
+    public void setMode(int mode) {
+        this.mode = mode;
+    }
+
+    public void setFlags(int flags) {
+        this.flags = flags;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 }

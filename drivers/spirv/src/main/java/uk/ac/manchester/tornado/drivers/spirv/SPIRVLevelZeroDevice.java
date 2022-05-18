@@ -29,7 +29,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDriver;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeAPIVersion;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeComputeProperties;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceComputeProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceModuleFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceModuleProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceProperties;
@@ -44,7 +44,7 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
     private String deviceName;
     private ZeMemoryProperties[] memoryProperties;
     private ZeDeviceProperties deviceProperties;
-    private ZeComputeProperties computeProperties;
+    private ZeDeviceComputeProperties computeProperties;
     ZeAPIVersion apiVersion;
 
     private final long totalMemorySize;
@@ -69,7 +69,7 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
     }
 
     private void initDeviceComputeProperties() {
-        computeProperties = new ZeComputeProperties();
+        computeProperties = new ZeDeviceComputeProperties();
         int result = device.zeDeviceGetComputeProperties(device.getDeviceHandlerPtr(), computeProperties);
         errorLog("zeDeviceGetComputeProperties", result);
     }
@@ -161,7 +161,7 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
 
     /**
      * Return max thread for each dimension
-     * 
+     *
      * @return
      */
     @Override

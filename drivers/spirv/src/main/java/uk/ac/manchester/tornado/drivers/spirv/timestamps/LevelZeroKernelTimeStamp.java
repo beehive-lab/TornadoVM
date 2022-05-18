@@ -32,13 +32,13 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroContext;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.Sizeof;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceProperties;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventHandle;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventPoolDescription;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventPoolDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventPoolFlags;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventPoolHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventScopeFlags;
-import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDesc;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeHostMemAllocDescriptor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelTimeStampResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -76,7 +76,7 @@ public class LevelZeroKernelTimeStamp {
 
     private static void createEventPoolAndEvents(LevelZeroContext context, LevelZeroDevice device, ZeEventPoolHandle eventPoolHandle, int poolEventFlags, int poolSize, ZeEventHandle kernelEvent) {
 
-        ZeEventPoolDescription eventPoolDescription = new ZeEventPoolDescription();
+        ZeEventPoolDescriptor eventPoolDescription = new ZeEventPoolDescriptor();
 
         eventPoolDescription.setCount(poolSize);
         eventPoolDescription.setFlags(poolEventFlags);
@@ -85,7 +85,7 @@ public class LevelZeroKernelTimeStamp {
         LevelZeroUtils.errorLog("zeEventPoolCreate", result);
 
         // Create Kernel Event
-        ZeEventDescription eventDescription = new ZeEventDescription();
+        ZeEventDescriptor eventDescription = new ZeEventDescriptor();
         eventDescription.setIndex(0);
         eventDescription.setSignal(ZeEventScopeFlags.ZE_EVENT_SCOPE_FLAG_HOST);
         eventDescription.setWait(ZeEventScopeFlags.ZE_EVENT_SCOPE_FLAG_HOST);
@@ -95,7 +95,7 @@ public class LevelZeroKernelTimeStamp {
 
     public void solveEvent(TaskMetaData meta) {
         timeStampBuffer = new LevelZeroByteBuffer();
-        ZeHostMemAllocDesc hostMemAllocDesc = new ZeHostMemAllocDesc();
+        ZeHostMemAllocDescriptor hostMemAllocDesc = new ZeHostMemAllocDescriptor();
         LevelZeroContext context = commandList.getContext();
         int result = context.zeMemAllocHost(context.getDefaultContextPtr(), hostMemAllocDesc, Sizeof.ze_kernel_timestamp_result_t.getNumBytes(), 1, timeStampBuffer);
         LevelZeroUtils.errorLog("zeMemAllocHost", result);
