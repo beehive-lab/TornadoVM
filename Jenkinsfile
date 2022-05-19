@@ -198,7 +198,7 @@ void buildAndTestRayTracer(String JDK) {
             echo 'TornadoVM-Ray-Tracer builds for JDK > 11'
         } else {
             timeout(time: 5, unit: 'MINUTES') {
-                sh 'cd ${TORNADO_RAY_TRACER_ROOT} && ./bin/tornadovm-ray-tracer benchmark'
+                sh 'cd ${TORNADO_RAY_TRACER_ROOT} && ./bin/tornadovm-ray-tracer regression'
             }
         }
     }
