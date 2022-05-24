@@ -165,15 +165,15 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitNegate(Value x) {
-        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitNegate:  - %s", x);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitNegate: - %s", x);
         return emitUnaryAssign(OCLUnaryOp.NEGATE, LIRKind.combine(x), x);
     }
 
     @Override
     public Value emitNot(Value x) {
         // TODO check that this is LOGICAL_NOT and not BITWISE_NOT
-        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitNegate:  - %s", x);
-        return emitUnaryAssign(OCLUnaryOp.LOGICAL_NOT, LIRKind.combine(x), x);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitNot: ~ %s", x);
+        return emitUnaryAssign(OCLUnaryOp.BITWISE_NOT, LIRKind.combine(x), x);
     }
 
     @Override
