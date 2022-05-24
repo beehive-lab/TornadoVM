@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -197,6 +198,8 @@ public class TestNumericPromotion extends TornadoTestBase {
 
     @Test
     public void testBitwiseNot() {
+        assertNotBackend(TornadoVMBackendType.PTX);
+        assertNotBackend(TornadoVMBackendType.SPIRV);
 
         byte[] result = new byte[8];
         byte[] input = new byte[] { 0, 0, 127, -127, 1, -1, 1, 1 };
