@@ -38,8 +38,8 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerCons
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.StandardOp.BlockEndOp;
-import org.graalvm.compiler.lir.Variable;
 
+import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
@@ -262,7 +262,7 @@ public class OCLControlFlow {
         public static final LIRInstructionClass<SwitchOp> TYPE = LIRInstructionClass.create(SwitchOp.class);
 
         @Use
-        private final Variable value;
+        private final AllocatableValue value;
 
         @Use({ CONST })
         private final Constant[] keyConstants;
@@ -271,7 +271,7 @@ public class OCLControlFlow {
         private final LabelRef[] keyTargets;
         private final LabelRef defaultTarget;
 
-        public SwitchOp(Variable value, Constant[] keyConstants, LabelRef[] keyTargets, LabelRef defaultTarget) {
+        public SwitchOp(AllocatableValue value, Constant[] keyConstants, LabelRef[] keyTargets, LabelRef defaultTarget) {
             super(TYPE);
             this.value = value;
             this.keyConstants = keyConstants;

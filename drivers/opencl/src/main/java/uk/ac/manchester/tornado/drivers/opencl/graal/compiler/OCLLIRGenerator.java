@@ -303,6 +303,22 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    public void emitStrategySwitch(SwitchStrategy strategy, AllocatableValue key, LabelRef[] keyTargets, LabelRef defaultTarget) {
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitStrategySwitch: key=%s", key);
+        append(new OCLControlFlow.SwitchOp(key, strategy.getKeyConstants(), keyTargets, defaultTarget));
+    }
+
+    @Override
+    protected void emitRangeTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, AllocatableValue key) {
+
+    }
+
+    @Override
+    protected void emitHashTableSwitch(JavaConstant[] keys, LabelRef defaultTarget, LabelRef[] targets, AllocatableValue value, Value hash) {
+
+    }
+
+    @Override
     public void emitJump(LabelRef lr) {
         unimplemented();
     }
@@ -369,12 +385,6 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public void emitStrategySwitch(SwitchStrategy ss, Variable value, LabelRef[] keyTargets, LabelRef defaultTarget) {
-        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitStrategySwitch: key=%s", value);
-        append(new OCLControlFlow.SwitchOp(value, ss.getKeyConstants(), keyTargets, defaultTarget));
-    }
-
-    @Override
     public void emitUnwind(Value value) {
         unimplemented();
     }
@@ -390,9 +400,7 @@ public class OCLLIRGenerator extends LIRGenerator {
 
     @Override
     public LIRKind getValueKind(JavaKind javaKind) {
-        return super.getValueKind(javaKind); // To change body of generated
-                                             // methods, choose Tools |
-                                             // Templates.
+        return super.getValueKind(javaKind);
     }
 
     @Override
@@ -403,11 +411,6 @@ public class OCLLIRGenerator extends LIRGenerator {
     @Override
     public <K extends ValueKind<K>> K toRegisterKind(K kind) {
         return kind;
-    }
-
-    @Override
-    protected void emitTableSwitch(int i, LabelRef lr, LabelRef[] lrs, Value value) {
-        unimplemented();
     }
 
     @Override

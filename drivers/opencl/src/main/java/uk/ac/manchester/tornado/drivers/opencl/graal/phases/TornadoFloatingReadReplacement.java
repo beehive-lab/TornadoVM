@@ -425,7 +425,7 @@ public class TornadoFloatingReadReplacement extends Phase {
             StructuredGraph graph = accessNode.graph();
             LocationIdentity locationIdentity = accessNode.getLocationIdentity();
             if (accessNode.canFloat() && shouldBeFloatingRead(accessNode)) {
-                assert accessNode.getNullCheck() == false;
+                assert accessNode.getUsedAsNullCheck() == false;
                 MemoryKill lastLocationAccess = state.getLastLocationAccess(locationIdentity);
                 try (DebugCloseable position = accessNode.withNodeSourcePosition()) {
                     FloatingAccessNode floatingNode = accessNode.asFloatingNode();

@@ -27,6 +27,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
+import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
@@ -81,6 +82,11 @@ public class AtomicWriteNode extends AbstractWriteNode implements LIRLowerable {
     @Override
     public LocationIdentity getKilledLocationIdentity() {
         unimplemented("AtmomicWriteNode::getKilledLocationIdentity not implemented");
+        return null;
+    }
+
+    @Override
+    public MemoryOrderMode getMemoryOrder() {
         return null;
     }
 }

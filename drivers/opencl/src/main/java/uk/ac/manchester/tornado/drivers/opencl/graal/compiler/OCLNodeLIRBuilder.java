@@ -577,7 +577,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         if (keyCount == 0) {
             gen.emitJump(defaultTarget);
         } else {
-            Variable value = gen.load(operand(x.value()));
+            AllocatableValue value = gen.emitMove(operand(x.value()));
             if (keyCount == 1) {
                 assert defaultTarget != null;
                 unimplemented();

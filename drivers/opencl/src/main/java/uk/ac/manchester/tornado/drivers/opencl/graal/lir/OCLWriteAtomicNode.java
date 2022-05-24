@@ -31,6 +31,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
@@ -56,16 +57,23 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;
 @NodeInfo(nameTemplate = "OCLAtomicWrite#{p#location/s}")
 public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerableAccess {
 
-    @Input(InputType.Association) private AddressNode address;
-    @Input private ValueNode accumulator;
+    @Input(InputType.Association)
+    private AddressNode address;
+    @Input
+    private ValueNode accumulator;
     private Stamp accStamp;
     private JavaKind elementKind;
     private ATOMIC_OPERATION operation;
 
+    @Override
+    public MemoryOrderMode getMemoryOrder() {
+        return null;
+    }
+
     //@formatter:off
     public enum ATOMIC_OPERATION {
-        ADD,  
-        MUL, 
+        ADD,
+        MUL,
         MAX,
         MIN,
         SUB,

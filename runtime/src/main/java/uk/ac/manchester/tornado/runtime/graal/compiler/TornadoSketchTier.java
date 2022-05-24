@@ -26,7 +26,6 @@
 package uk.ac.manchester.tornado.runtime.graal.compiler;
 
 import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
-import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 import static org.graalvm.compiler.core.phases.HighTier.Options.Inline;
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 
@@ -55,13 +54,7 @@ public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
     protected final CanonicalizerPhase.CustomSimplification customSimplification;
 
     private CanonicalizerPhase createCanonicalizerPhase(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer) {
-        CanonicalizerPhase canonicalizer;
-        if (ImmutableCode.getValue(options)) {
-            canonicalizer = CanonicalizerPhase.createWithoutReadCanonicalization();
-        } else {
-            canonicalizer = CanonicalizerPhase.create();
-        }
-        return canonicalizer.copyWithCustomSimplification(customCanonicalizer);
+        return CanonicalizerPhase.create();
     }
 
     public TornadoSketchTier(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer) {

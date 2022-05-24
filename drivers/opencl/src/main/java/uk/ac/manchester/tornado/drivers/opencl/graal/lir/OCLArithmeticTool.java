@@ -30,6 +30,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCL
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
+import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
@@ -164,7 +165,7 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
-    public Value emitNegate(Value x) {
+    public Value emitNegate(Value x, boolean setFlags) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitNegate: - %s", x);
         return emitUnaryAssign(OCLUnaryOp.NEGATE, LIRKind.combine(x), x);
     }
@@ -343,8 +344,7 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
-    public Variable emitVolatileLoad(LIRKind kind, Value address, LIRFrameState state) {
-        unimplemented();
+    public Variable emitOrderedLoad(LIRKind kind, Value address, LIRFrameState state, MemoryOrderMode memoryOrder) {
         return null;
     }
 
@@ -415,7 +415,7 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
-    public void emitVolatileStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state) {
+    public void emitOrderedStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state, MemoryOrderMode memoryOrder) {
         unimplemented();
     }
 

@@ -29,8 +29,8 @@ import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.SwitchStrategy;
-import org.graalvm.compiler.lir.Variable;
 
+import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVInstScope;
@@ -244,7 +244,7 @@ public class SPIRVControlFlow {
         public static final LIRInstructionClass<SwitchStatement> TYPE = LIRInstructionClass.create(SwitchStatement.class);
 
         @Use
-        private Variable key;
+        private AllocatableValue key;
 
         private SwitchStrategy strategy;
 
@@ -254,7 +254,7 @@ public class SPIRVControlFlow {
         @Use
         private LabelRef defaultTarget;
 
-        public SwitchStatement(Variable key, SwitchStrategy strategy, LabelRef[] keyTargets, LabelRef defaultTarget) {
+        public SwitchStatement(AllocatableValue key, SwitchStrategy strategy, LabelRef[] keyTargets, LabelRef defaultTarget) {
             super(TYPE);
             this.key = key;
             this.strategy = strategy;

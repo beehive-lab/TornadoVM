@@ -225,7 +225,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
 
         StoreAtomicIndexedNodeExtension storeAtomicIndexedNodeExtension = new StoreAtomicIndexedNodeExtension(startNode);
         graph.addOrUnique(storeAtomicIndexedNodeExtension);
-        final StoreAtomicIndexedNode atomicStoreNode = graph //
+        StoreAtomicIndexedNode atomicStoreNode = graph //
                 .addOrUnique(new StoreAtomicIndexedNode(store.array(), store.index(), store.elementKind(), //
                         store.getBoundsCheck(), value, accumulator, inputArray, storeAtomicIndexedNodeExtension));
 
@@ -287,6 +287,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
 
                 ReductionMetadataNode reductionNode = createReductionNode(graph, store, inputArray, startNode);
                 Node predecessor = node.predecessor();
+                System.out.println("STORE NODE: " + store);
                 performNodeReplacement(graph, store, predecessor, reductionNode);
 
             } else if (node instanceof StoreFieldNode) {
