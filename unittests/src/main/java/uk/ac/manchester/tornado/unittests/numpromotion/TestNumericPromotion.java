@@ -67,6 +67,12 @@ public class TestNumericPromotion extends TornadoTestBase {
         }
     }
 
+    public static void bitwiseNot(byte[] result, byte[] input) {
+        for (int i = 0; i < input.length; i++) {
+            result[i] = (byte) ~input[i];
+        }
+    }
+
     public static void addition(byte[] result, byte[] input, byte[] elements) {
         for (int i = 0; i < 2; i++) {
             for (int j = 0; j < elements[0]; j++) {
@@ -184,6 +190,27 @@ public class TestNumericPromotion extends TornadoTestBase {
 
         byte[] sequential = new byte[4];
         bitwiseXor(sequential, input, elements);
+        for (int i = 0; i < result.length; i++) {
+            assertEquals(sequential[i], result[i]);
+        }
+    }
+
+    @Test
+    public void testBitwiseNot() {
+
+        byte[] result = new byte[8];
+        byte[] input = new byte[] { 0, 0, 127, -127, 1, -1, 1, 1 };
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(input)
+                .task("t0", TestNumericPromotion::bitwiseNot, result, input)
+                .streamOut(result)
+                .execute();
+        //@formatter:on
+
+        byte[] sequential = new byte[8];
+        bitwiseNot(sequential, input);
         for (int i = 0; i < result.length; i++) {
             assertEquals(sequential[i], result[i]);
         }
