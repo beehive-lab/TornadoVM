@@ -171,7 +171,6 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitNot(Value x) {
-        // TODO check that this is LOGICAL_NOT and not BITWISE_NOT
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitNot: ~ %s", x);
         return emitUnaryAssign(OCLUnaryOp.BITWISE_NOT, LIRKind.combine(x), x);
     }
