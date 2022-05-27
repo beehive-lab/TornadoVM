@@ -270,7 +270,7 @@ The code formatter in Eclipse is automatically applied after generating the sett
 
 ```bash
 $ mvn eclipse:eclipse
-$ python scripts/eclipseSetup.py
+$ python3 scripts/eclipseSetup.py
 ```
 
 For Netbeans, the Eclipse Formatter Plugin is needed.
