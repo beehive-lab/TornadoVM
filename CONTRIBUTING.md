@@ -28,7 +28,7 @@ before the pull request. The auto-formatter is set automatically by running the 
 
 ```bash
 ## For Eclipse, use the following script
-python scripts/eclipseSetup.py
+$ python3 scripts/eclipseSetup.py
 ``` 
 
 For IntelliJ, import the XML auto-formatter. Steps [here](assembly/src/docs/3_INTELLIJ.md). Additionally, be sure that
