@@ -24,6 +24,7 @@ package uk.ac.manchester.tornado.runtime.graal.phases;
 import java.util.ArrayList;
 
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.extended.UnboxNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
@@ -46,8 +47,8 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadLocalIdFixedWithNextNo
  */
 public class TornadoKernelContextReplacement extends BasePhase<TornadoSketchTierContext> {
 
-    private void replaceKernelContextNode(StructuredGraph graph, ArrayList<Node> nodesToBeRemoved, Node node, Node newNode) {
-        for (Node n : node.successors()) {
+    private void replaceKernelContextNode(StructuredGraph graph, ArrayList<Node> nodesToBeRemoved, LoadFieldNode oldNode, FixedWithNextNode newNode) {
+        for (Node n : oldNode.successors()) {
             for (Node input : n.inputs()) { // This should be NullNode
                 input.safeDelete();
             }
@@ -58,18 +59,18 @@ public class TornadoKernelContextReplacement extends BasePhase<TornadoSketchTier
             n.safeDelete();
         }
 
-        Node unboxNode = node.successors().first();
+        Node unboxNode = oldNode.successors().first();
         if (unboxNode instanceof UnboxNode) {
-            unboxNode.replaceAtUsages(node);
-            node.replaceFirstSuccessor(unboxNode, unboxNode.successors().first());
+            unboxNode.replaceAtUsages(oldNode);
+            oldNode.replaceFirstSuccessor(unboxNode, unboxNode.successors().first());
             unboxNode.safeDelete();
         }
 
         graph.addWithoutUnique(newNode);
-        newNode.replaceFirstSuccessor(null, node.successors().first());
-        node.replaceAtUsages(newNode);
-        node.replaceAtPredecessor(newNode);
-        nodesToBeRemoved.add(node);
+        newNode.replaceFirstSuccessor(null, oldNode.successors().first());
+        oldNode.replaceAtUsages(newNode);
+        oldNode.replaceAtPredecessor(newNode);
+        nodesToBeRemoved.add(oldNode);
     }
 
     private void introduceKernelContext(StructuredGraph graph) {
