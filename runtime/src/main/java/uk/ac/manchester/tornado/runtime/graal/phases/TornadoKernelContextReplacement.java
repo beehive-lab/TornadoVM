@@ -76,7 +76,7 @@ public class TornadoKernelContextReplacement extends BasePhase<TornadoSketchTier
     private void introduceKernelContext(StructuredGraph graph) {
         ArrayList<Node> nodesToBeRemoved = new ArrayList<>();
         graph.getNodes().filter(LoadFieldNode.class).forEach((node) -> {
-            if (node instanceof LoadFieldNode) {
+            if (node != null) {
                 String field = node.field().format("%H.%n");
                 if (field.contains("KernelContext.globalId")) {
                     ThreadIdFixedWithNextNode threadIdNode;
@@ -143,8 +143,6 @@ public class TornadoKernelContextReplacement extends BasePhase<TornadoSketchTier
                     }
 
                     replaceKernelContextNode(graph, nodesToBeRemoved, node, localGroupSizeNode);
-                } else {
-                    return;
                 }
             }
         });
