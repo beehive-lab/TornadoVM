@@ -292,7 +292,6 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
 
                 ReductionMetadataNode reductionNode = createReductionNode(graph, store, inputArray, startNode);
                 Node predecessor = node.predecessor();
-                System.out.println("STORE NODE: " + store);
                 performNodeReplacement(graph, store, predecessor, reductionNode);
 
             } else if (node instanceof StoreFieldNode) {
