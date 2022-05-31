@@ -426,9 +426,13 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
      * control Split (due to nested control-flow).
      *
      * @param basicBlock
+     *            {@link Block}
      * @param visitor
+     *            {@link OCLBlockVisitor}
      * @param visited
+     *            {@link HashSet}
      * @param pending
+     *            {@link HashMap}
      */
     private void rescheduleTrueBranchConditionsIfNeeded(Block basicBlock, OCLBlockVisitor visitor, HashSet<Block> visited, HashMap<Block, Block> pending) {
         if (!basicBlock.isLoopHeader() && basicBlock.getDominator() != null && basicBlock.getDominator().getEndNode() instanceof IfNode) {
