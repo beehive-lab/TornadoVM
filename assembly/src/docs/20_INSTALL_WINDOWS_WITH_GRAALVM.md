@@ -70,21 +70,25 @@ cat > ~/.m2/settings.xml << EOF
 EOF
 ```
 
-7. Create file `mvn` in `<MSYS2>/mingw64/bin` with any textual editor according to the template below:
+7. Create file `mvn` in `<MSYS2>/mingw64/bin` with any text editor (e.g., [Visual Code](https://code.visualstudio.com/download)) with the following content:
 
 ```bash
 #!/usr/bin/env bash
-BASH_FILE=$(where bash)
-SETTINGS=\"${BASH_FILE%\\*\\*\\*}${HOME}/.m2/settings.xml\"
-
-C:/Maven/bin/mvn.cmd --settings ${SETTINGS} "$@"
+C:/<path-to-your-maven-install>/bin/mvn.cmd --settings ${HOME}/.m2/settings.xml "$@"
 ```
 
-You should only change path to Maven executable to the actual location of Maven in your system.
+Example:
+
+```bash
+#!/usr/bin/env bash
+C:/bin/apache-maven-3.8.4-bin/apache-maven-3.8.4/bin/mvn.cmd --settings ${HOME}/.m2/settings.xml "$@"
+```
+
+You only need to change the path to your maven installation in Windows.
 
 #### 2. Download TornadoVM
 
-Clone the latest TornadoVM sources from the GitHub [repository](https://github.com/beehive-lab/TornadoVM)
+Clone the latest TornadoVM source code from the GitHub [repository](https://github.com/beehive-lab/TornadoVM)
 using `<MSYS2>/mingw64.exe`:
 
 ```bash
@@ -144,7 +148,7 @@ export JAVA_HOME="C:/graalvm-ce-java11-22.1.0"
 ## NEXT TWO LINES NECESSARY TO BUILD PTX (NVIDIA CUDA) BACKEND
 ## COMMENT THEM OUT OR JUST IGNORE IF YOU ARE NOT INTERESTED IN PTX BUILD
 ## OTHERWISE UPDATE 'CUDA_PATH' WITH ACTUAL VALUE (REMEMBER OF UNIX_STYLE SLASHES AND SPACES!!!)
-export CUDA_PATH="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.2"
+export CUDA_PATH="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.6"
 export PTX_LDFLAGS=-L\"$CUDA_PATH/lib/x64\"
 
 # LEAVE THE REST OF FILE 'AS IS'
