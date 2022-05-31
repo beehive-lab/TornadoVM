@@ -51,10 +51,12 @@ import org.graalvm.compiler.lir.asm.DataBuilder;
 import org.graalvm.compiler.lir.asm.FrameContext;
 import org.graalvm.compiler.lir.framemap.FrameMap;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
+import org.graalvm.compiler.nodes.ControlSplitNode;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
+import org.graalvm.compiler.nodes.LoopEndNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.cfg.Block;
@@ -89,7 +91,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     HashSet<Block> rescheduledBasicBlocks;
 
     public OCLCompilationResultBuilder(CodeGenProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
-                                       CompilationResult compilationResult) {
+            CompilationResult compilationResult) {
         super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None);
         nonInlinedMethods = new HashSet<>();
     }
@@ -184,25 +186,28 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     }
 
     /**
-     * Checks if the {@link OCLNodeLIRBuilder#emitLoopBegin} has been called right before
-     * {@link OCLNodeLIRBuilder#emitIf}. In other words, that there is no data flow/control flow
-     * between the {@link LoopBeginNode} and the corresponding {@link IfNode} loop condition.
+     * Checks if the {@link OCLNodeLIRBuilder#emitLoopBegin} has been called right
+     * before {@link OCLNodeLIRBuilder#emitIf}. In other words, that there is no
+     * data flow/control flow between the {@link LoopBeginNode} and the
+     * corresponding {@link IfNode} loop condition.
      *
-     * @return true if the {@param loopCondIndex} is right after the LIR instructions of a loop header
-     * ({@param loopPostOpIndex} and {@param loopInitOpIndex}).
+     * @return true if the {@param loopCondIndex} is right after the LIR
+     *         instructions of a loop header ({@param loopPostOpIndex} and
+     *         {@param loopInitOpIndex}).
      */
     private static boolean isLoopConditionRightAfterHeader(int loopCondIndex, int loopPostOpIndex, int loopInitOpIndex) {
         return (loopCondIndex - 1 == loopPostOpIndex) && (loopCondIndex - 2 == loopInitOpIndex);
     }
 
     /**
-     * Checks if there are any LIR instructions between the loop condition and the {@link LoopInitOp} and {@link LoopPostOp}.
-     * If there are no instructions, it is possible to move the loop condition to the loop header.
+     * Checks if there are any LIR instructions between the loop condition and the
+     * {@link LoopInitOp} and {@link LoopPostOp}. If there are no instructions, it
+     * is possible to move the loop condition to the loop header.
      *
      * @return true if there are no instructions.
      */
     private static boolean shouldFormatLoopHeader(List<LIRInstruction> instructions) {
-        int loopInitOpIndex = -1, loopPostOpIndex = -1, loopConditionOpIndex = -1;
+        int loopInitOpIndex = -1,loopPostOpIndex = -1,loopConditionOpIndex = -1;
 
         for (int index = 0, instructionsSize = instructions.size(); index < instructionsSize; index++) {
             LIRInstruction instruction = instructions.get(index);
@@ -397,11 +402,62 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         rescheduledBasicBlocks.add(block);
     }
 
+    private boolean isFalseSuccessorWithLoopEnd(IfNode ifNode, Block basicBlock) {
+        return isCurrentBlockAFalseBranch(ifNode, basicBlock) && basicBlock.getEndNode() instanceof LoopEndNode;
+    }
+
+    private boolean isCurrentBlockAFalseBranch(IfNode ifNode, Block basicBlock) {
+        return ifNode.falseSuccessor() == basicBlock.getBeginNode();
+    }
+
+    private boolean isTrueBranchEndingInLoopExitNode(IfNode ifNode) {
+        return ifNode.trueSuccessor() instanceof LoopExitNode;
+    }
+
+    private boolean isTrueBranchWithEndNodeOrNotControlSplit(Block blockTrueBranch) {
+        return ((blockTrueBranch.getEndNode() instanceof EndNode) || !(blockTrueBranch.getEndNode() instanceof ControlSplitNode));
+    }
+
+    /**
+     * From Graal 22.1.0 the graph traversal was changed. This method reschedules
+     * the current basic block to generate always the true condition before the
+     * false condition only if we have a LoopEndNode node in the false branch, or we
+     * have a LoopExit in the true branch contains a LoopExitNode or it is not a
+     * control Split (due to nested control-flow).
+     *
+     * @param basicBlock
+     * @param visitor
+     * @param visited
+     * @param pending
+     */
+    private void rescheduleTrueBranchConditionsIfNeeded(Block basicBlock, OCLBlockVisitor visitor, HashSet<Block> visited, HashMap<Block, Block> pending) {
+        if (!basicBlock.isLoopHeader() && basicBlock.getDominator() != null && basicBlock.getDominator().getEndNode() instanceof IfNode) {
+            IfNode ifNode = (IfNode) basicBlock.getDominator().getEndNode();
+            Block blockTrueBranch = getBlockTrueBranch(basicBlock);
+            if (isFalseSuccessorWithLoopEnd(ifNode, basicBlock) //
+                    || (isCurrentBlockAFalseBranch(ifNode, basicBlock) //
+                            && isTrueBranchEndingInLoopExitNode(ifNode) //
+                            && isTrueBranchWithEndNodeOrNotControlSplit(blockTrueBranch))) {
+                Block[] successors = basicBlock.getDominator().getSuccessors();
+                for (Block b : successors) {
+                    if (b.getBeginNode() == ifNode.trueSuccessor() && !visited.contains(b)) {
+                        pending.put(basicBlock, b);
+                        rescheduleBasicBlock(basicBlock, visitor, visited, pending);
+                    }
+                }
+            }
+        }
+    }
+
     private void traverseControlFlowGraph(Block basicBlock, OCLBlockVisitor visitor, HashSet<Block> visited, HashMap<Block, Block> pending) {
 
         if (pending.containsKey(basicBlock) && !visited.contains(pending.get(basicBlock))) {
             rescheduleBasicBlock(basicBlock, visitor, visited, pending);
         }
+
+        // New call due to the integration with Graal-IR 22.1.0
+        rescheduleTrueBranchConditionsIfNeeded(basicBlock, visitor, visited, pending);
+
         visitor.enter(basicBlock);
         visited.add(basicBlock);
 
@@ -461,6 +517,16 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         if (rescheduledBasicBlocks == null || (!rescheduledBasicBlocks.contains(basicBlock))) {
             visitor.exit(basicBlock, null);
         }
+    }
+
+    private Block getBlockTrueBranch(Block basicBlock) {
+        IfNode ifNode = (IfNode) basicBlock.getDominator().getEndNode();
+        for (Block b : basicBlock.getDominator().getSuccessors()) {
+            if (ifNode.trueSuccessor() == b.getBeginNode()) {
+                return b;
+            }
+        }
+        return null;
     }
 
     private static boolean isLoopBlock(Block block, Block loopHeader) {
