@@ -39,12 +39,12 @@ Usage:
        --jdk8           : Install TornadoVM with OpenJDK 8
        --jdk11          : Install TornadoVM with OpenJDK 11
        --jdk17          : Install TornadoVM with OpenJDK 17
-       --graal-jdk-11   : Install TornadoVM with GraalVM and JDK 11 (GraalVM 21.3.0)
-       --graal-jdk-17   : Install TornadoVM with GraalVM and JDK 17 (GraalVM 21.3.0)
+       --graal-jdk-11   : Install TornadoVM with GraalVM and JDK 11 (GraalVM 22.1.0)
+       --graal-jdk-17   : Install TornadoVM with GraalVM and JDK 17 (GraalVM 22.1.0)
        --corretto-11    : Install TornadoVM with Corretto JDK 11
        --corretto-17    : Install TornadoVM with Corretto JDK 17
-       --mandrel-11     : Install TornadoVM with Mandrel 21.3.0 (JDK 11)
-       --mandrel-17     : Install TornadoVM with Mandrel 21.3.0 (JDK 17)
+       --mandrel-11     : Install TornadoVM with Mandrel 22.1.0 (JDK 11)
+       --mandrel-17     : Install TornadoVM with Mandrel 22.1.0 (JDK 17)
        --windows-jdk-11 : Install TornadoVM with Windows JDK 11
        --windows-jdk-17 : Install TornadoVM with Windows JDK 17
        --opencl         : Install TornadoVM and build the OpenCL backend

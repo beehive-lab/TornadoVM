@@ -15,7 +15,7 @@
 
 ### 1. Download GraalVM Community Edition 22.1.0
 
-GraalVM 21.3.0 builds are available to download at [https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.1.0](https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.1.0).
+GraalVM 22.1.0 builds are available to download at [https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.1.0](https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.1.0).
 
 The examples below show how to download and extract GraalVM based on JDK 11 and 17 for Linux.
 
