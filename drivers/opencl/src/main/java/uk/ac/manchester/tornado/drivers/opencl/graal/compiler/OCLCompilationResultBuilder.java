@@ -410,7 +410,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         return ifNode.falseSuccessor() == basicBlock.getBeginNode();
     }
 
-    private boolean isTrueBranchEndingInLoopExitNode(IfNode ifNode) {
+    private boolean isTrueBranchALoopExitNode(IfNode ifNode) {
         return ifNode.trueSuccessor() instanceof LoopExitNode;
     }
 
@@ -440,7 +440,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             Block blockTrueBranch = getBlockTrueBranch(basicBlock);
             if (isFalseSuccessorWithLoopEnd(ifNode, basicBlock) //
                     || (isCurrentBlockAFalseBranch(ifNode, basicBlock) //
-                            && isTrueBranchEndingInLoopExitNode(ifNode) //
+                            && isTrueBranchALoopExitNode(ifNode) //
                             && isTrueBranchWithEndNodeOrNotControlSplit(blockTrueBranch))) {
                 Block[] successors = basicBlock.getDominator().getSuccessors();
                 for (Block b : successors) {
