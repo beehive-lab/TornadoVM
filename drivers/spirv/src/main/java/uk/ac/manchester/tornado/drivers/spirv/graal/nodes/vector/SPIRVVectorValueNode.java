@@ -134,7 +134,7 @@ public class SPIRVVectorValueNode extends FloatingNode implements LIRLowerable, 
 
     private Value getParam(NodeLIRBuilderTool gen, LIRGeneratorTool tool, int index) {
         final ValueNode valueNode = values.get(index);
-        return (valueNode == null) ? new ConstantValue(LIRKind.value(spirvKind), spirvKind.getDefaultValue()) : tool.load(gen.operand(valueNode));
+        return (valueNode == null) ? new ConstantValue(LIRKind.value(spirvKind), spirvKind.getDefaultValue()) : tool.emitMove(gen.operand(valueNode));
     }
 
     // THis construct generates the equivalent of the following OpenCL Code:

@@ -25,7 +25,6 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
 import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
-import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 import static org.graalvm.compiler.core.common.GraalOptions.OptFloatingReads;
 import static org.graalvm.compiler.core.common.GraalOptions.ReassociateExpressions;
 
@@ -49,11 +48,11 @@ import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionCheckingEliminatio
 
 /**
  * SPIR-V backend reuses from the OCL the following phases:
- * 
+ *
  * - BoundCheckEliminationPhase
- * 
+ *
  * - TornadoFloatingReadReplacement
- * 
+ *
  * - TornadoPartialLoopUnroll
  */
 public class SPIRVMidTier extends TornadoMidTier {
@@ -61,12 +60,7 @@ public class SPIRVMidTier extends TornadoMidTier {
     public SPIRVMidTier(OptionValues options) {
         appendPhase(new ExceptionCheckingElimination());
 
-        CanonicalizerPhase canonicalizer;
-        if (ImmutableCode.getValue(options)) {
-            canonicalizer = CanonicalizerPhase.createWithoutReadCanonicalization();
-        } else {
-            canonicalizer = CanonicalizerPhase.create();
-        }
+        CanonicalizerPhase canonicalizer = CanonicalizerPhase.create();
 
         appendPhase(canonicalizer);
 

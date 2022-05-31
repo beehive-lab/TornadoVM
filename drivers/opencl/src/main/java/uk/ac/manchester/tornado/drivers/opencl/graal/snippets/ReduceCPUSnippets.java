@@ -360,12 +360,6 @@ public class ReduceCPUSnippets implements Snippets {
         private final SnippetInfo partialReduceMinDoubleSnippet = snippet(ReduceCPUSnippets.class, "partialReduceDoubleMin");
         private final SnippetInfo partialReduceMinDoubleSnippetCarrierValue = snippet(ReduceCPUSnippets.class, "partialReduceDoubleMinCarrierValue");
 
-        // public Templates(OptionValues options, Iterable<DebugHandlersFactory>
-        // debugHandlersFactories, Providers providers, SnippetReflectionProvider
-        // snippetReflection, TargetDescription target) {
-        // super(options, debugHandlersFactories, providers, snippetReflection, target);
-        // }
-
         public Templates(OptionValues options, Providers providers) {
             super(options, providers);
         }

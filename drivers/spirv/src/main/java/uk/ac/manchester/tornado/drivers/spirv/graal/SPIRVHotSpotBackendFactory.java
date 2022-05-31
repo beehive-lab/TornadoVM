@@ -26,8 +26,6 @@ package uk.ac.manchester.tornado.drivers.spirv.graal;
 import static jdk.vm.ci.common.InitTimer.timer;
 import static org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 
-import java.util.Collections;
-
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotStampProvider;
@@ -120,7 +118,7 @@ public class SPIRVHotSpotBackendFactory {
             providers = new SPIRVProviders(metaAccess, codeProvider, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider,
                     metaAccessExtensionProvider, snippetReflection, wordTypes, p.getLoopsDataProvider(), suites);
 
-            lowerer.initialize(options, Collections.singleton(graalDebugHandlersFactory), new DummySnippetFactory(), providers, snippetReflection);
+            lowerer.initialize(options, new DummySnippetFactory(), providers);
         }
 
         try (InitTimer rt = timer("Instantiate SPIRV Backend")) {
@@ -145,7 +143,13 @@ public class SPIRVHotSpotBackendFactory {
         SPIRVGraphBuilderPlugins.registerParametersPlugins(plugins);
         SPIRVGraphBuilderPlugins.registerNewInstancePlugins(plugins);
 
-        StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflectionProvider, invocationPlugins, replacements, false, false, false, loweringProvider);
+        StandardGraphBuilderPlugins.registerInvocationPlugins(snippetReflectionProvider, //
+                invocationPlugins, //
+                replacements, //
+                false, //
+                false, //
+                false, //
+                loweringProvider);
         SPIRVGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
 
         return plugins;

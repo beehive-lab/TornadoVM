@@ -25,7 +25,6 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
 import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
-import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Required;
 
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -54,11 +53,7 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopCanonicalization
 public class SPIRVLowTier extends TornadoLowTier {
 
     private CanonicalizerPhase getCannonicalizer(OptionValues options) {
-        if (ImmutableCode.getValue(options)) {
-            return CanonicalizerPhase.createWithoutReadCanonicalization();
-        } else {
-            return CanonicalizerPhase.create();
-        }
+        return CanonicalizerPhase.create();
     }
 
     public SPIRVLowTier(OptionValues options, TornadoDeviceContext deviceContext, AddressLoweringPhase.AddressLowering addressLowering) {
