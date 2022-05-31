@@ -29,6 +29,7 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUna
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
+import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
@@ -63,7 +64,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
-    public Value emitNegate(Value input) {
+    public Value emitNegate(Value input, boolean setFlags) {
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitNegate input=%s", input);
         return emitUnaryAssign(PTXAssembler.PTXUnaryOp.NEGATE, LIRKind.value(input.getPlatformKind()), input);
     }
@@ -304,7 +305,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
-    public Variable emitVolatileLoad(LIRKind kind, Value address, LIRFrameState state) {
+    public Variable emitOrderedLoad(LIRKind kind, Value address, LIRFrameState state, MemoryOrderMode memoryOrder) {
         unimplemented();
         return null;
     }
@@ -325,7 +326,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
-    public void emitVolatileStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state) {
+    public void emitOrderedStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state, MemoryOrderMode memoryOrder) {
         unimplemented();
     }
 

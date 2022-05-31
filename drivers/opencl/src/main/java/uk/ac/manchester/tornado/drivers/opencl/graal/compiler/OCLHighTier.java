@@ -66,7 +66,9 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeCleanup;
 public class OCLHighTier extends TornadoHighTier {
 
     private CanonicalizerPhase createCanonicalizerPhase(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer) {
-        return CanonicalizerPhase.create();
+        CanonicalizerPhase canonicalizerPhase = CanonicalizerPhase.create();
+        return canonicalizerPhase.copyWithCustomSimplification(customCanonicalizer);
+
     }
 
     public OCLHighTier(OptionValues options, TornadoDeviceContext deviceContext, CanonicalizerPhase.CustomSimplification customCanonicalizer, MetaAccessProvider metaAccessProvider) {

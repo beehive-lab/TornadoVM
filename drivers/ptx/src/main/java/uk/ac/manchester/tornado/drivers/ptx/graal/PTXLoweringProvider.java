@@ -25,14 +25,12 @@ import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCA
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
-import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
-import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.nodes.AbstractDeoptimizeNode;
@@ -140,15 +138,13 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
-    public void initialize(OptionValues options, Iterable<DebugHandlersFactory> debugHandlersFactories, SnippetCounter.Group.Factory factory, Providers providers,
-            SnippetReflectionProvider snippetReflection) {
-        super.initialize(options, debugHandlersFactories, factory, providers, snippetReflection);
-        initializeSnippets(options, debugHandlersFactories, factory, providers, snippetReflection);
+    public void initialize(OptionValues options, SnippetCounter.Group.Factory factory, Providers providers) {
+        super.initialize(options, factory, providers);
+        initializeSnippets(options, providers);
     }
 
-    private void initializeSnippets(OptionValues options, Iterable<DebugHandlersFactory> debugHandlersFactories, SnippetCounter.Group.Factory factory, Providers providers,
-            SnippetReflectionProvider snippetReflection) {
-        this.gpuReduceSnippets = new PTXGPUReduceSnippets.Templates(options, debugHandlersFactories, providers, snippetReflection, target);
+    private void initializeSnippets(OptionValues options, Providers providers) {
+        this.gpuReduceSnippets = new PTXGPUReduceSnippets.Templates(options, providers);
     }
 
     @Override
@@ -209,6 +205,12 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
+    public boolean writesStronglyOrdered() {
+        unimplemented();
+        return false;
+    }
+
+    @Override
     public void lower(Node node, LoweringTool tool) {
         if (node instanceof Invoke) {
             lowerInvoke((Invoke) node, tool, (StructuredGraph) node.graph());
@@ -258,7 +260,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
             NodeInputList<ValueNode> parameters = callTarget.arguments();
             ValueNode receiver = parameters.size() <= 0 ? null : parameters.get(0);
             if (!callTarget.isStatic() && receiver.stamp(NodeView.DEFAULT) instanceof ObjectStamp && !StampTool.isPointerNonNull(receiver)) {
-                ValueNode nonNullReceiver = createNullCheckedValue(receiver, invoke.asNode(), tool);
+                ValueNode nonNullReceiver = createNullCheckedValue(receiver, invoke.asFixedNode(), tool);
                 parameters.set(0, nonNullReceiver);
             }
             JavaType[] signature = callTarget.targetMethod().getSignature().toParameterTypes(callTarget.isStatic() ? null : callTarget.targetMethod().getDeclaringClass());
@@ -500,7 +502,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
     private boolean isLocalIDNode(LoadIndexedNode loadIndexedNode) {
         // Either the node has as input a LocalArray or has a node which will be lowered
         // to a LocalArray
-        Node nd = loadIndexedNode.inputs().first().asNode();
+        Node nd = loadIndexedNode.inputs().first();
         InvokeNode node = nd.inputs().filter(InvokeNode.class).first();
         boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName()) && gpuSnippet;
         return (nd instanceof MarkLocalArray || willLowerToLocalArrayNode);
@@ -509,19 +511,19 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
     private boolean isLocalIDNode(StoreIndexedNode storeIndexed) {
         // Either the node has as input a LocalArray or has a node which will be lowered
         // to a LocalArray
-        Node nd = storeIndexed.inputs().first().asNode();
+        Node nd = storeIndexed.inputs().first();
         InvokeNode node = nd.inputs().filter(InvokeNode.class).first();
         boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName()) && gpuSnippet;
         return (nd instanceof MarkLocalArray || willLowerToLocalArrayNode);
     }
 
     private boolean isPrivateIDNode(StoreIndexedNode storeIndexed) {
-        Node nd = storeIndexed.inputs().first().asNode();
+        Node nd = storeIndexed.inputs().first();
         return (nd instanceof FixedArrayNode);
     }
 
     private boolean isPrivateIDNode(LoadIndexedNode loadIndexedNode) {
-        Node nd = loadIndexedNode.inputs().first().asNode();
+        Node nd = loadIndexedNode.inputs().first();
         return (nd instanceof FixedArrayNode);
     }
 

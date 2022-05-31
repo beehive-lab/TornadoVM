@@ -843,11 +843,7 @@ public class ReduceGPUSnippets implements Snippets {
         private final SnippetInfo partialReduceMinDoubleSnippet = snippet(ReduceGPUSnippets.class, "partialReduceDoubleMin");
         private final SnippetInfo partialReduceMinDoubleSnippetCarrierValue = snippet(ReduceGPUSnippets.class, "partialReduceDoubleMinCarrierValue");
 
-        // public Templates(OptionValues options, Iterable<DebugHandlersFactory>
-        // debugHandlersFactories, Providers providers, SnippetReflectionProvider
-        // snippetReflection, TargetDescription target) {
         public Templates(OptionValues options, Providers providers) {
-            // super(options, debugHandlersFactories, providers, snippetReflection, target);
             super(options, providers);
         }
 

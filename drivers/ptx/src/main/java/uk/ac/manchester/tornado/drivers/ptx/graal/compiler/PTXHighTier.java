@@ -25,7 +25,6 @@
 package uk.ac.manchester.tornado.drivers.ptx.graal.compiler;
 
 import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
-import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 import static org.graalvm.compiler.core.common.GraalOptions.OptConvertDeoptsToGuards;
 import static org.graalvm.compiler.core.common.GraalOptions.PartialEscapeAnalysis;
 import static org.graalvm.compiler.core.phases.HighTier.Options.Inline;
@@ -64,12 +63,7 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeCleanup;
 public class PTXHighTier extends TornadoHighTier {
 
     private CanonicalizerPhase createCanonicalizerPhase(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer) {
-        CanonicalizerPhase canonicalizer;
-        if (ImmutableCode.getValue(options)) {
-            canonicalizer = CanonicalizerPhase.createWithoutReadCanonicalization();
-        } else {
-            canonicalizer = CanonicalizerPhase.create();
-        }
+        CanonicalizerPhase canonicalizer = CanonicalizerPhase.create();
         return canonicalizer.copyWithCustomSimplification(customCanonicalizer);
     }
 

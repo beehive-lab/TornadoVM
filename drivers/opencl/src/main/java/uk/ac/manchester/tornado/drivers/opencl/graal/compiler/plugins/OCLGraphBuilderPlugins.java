@@ -396,12 +396,6 @@ public class OCLGraphBuilderPlugins {
         plugins.register(Debug.class, tprintfPlugin3);
         plugins.register(Debug.class, tprintfPlugin4);
         plugins.register(Debug.class, tprintfPlugin5);
-        // plugins.register(tprintfPlugin2, Debug.class, "tprintf", int.class,
-        // String.class, Object[].class);
-        // plugins.register(tprintfPlugin2, Debug.class, "tprintf", int.class,
-        // int.class, String.class, Object[].class);
-        // plugins.register(tprintfPlugin2, Debug.class, "tprintf", int.class,
-        // int.class, int.class, String.class, Object[].class);
 
         final InvocationPlugin printfPlugin = new InvocationPlugin("printf", String.class, Object[].class) {
 

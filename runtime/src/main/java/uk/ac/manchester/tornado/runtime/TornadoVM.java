@@ -481,6 +481,8 @@ public class TornadoVM extends TornadoLogger {
                 throw new TornadoBailoutRuntimeException("Unable to compile task " + task.getFullName() + "\n" + Arrays.toString(e.getStackTrace()), e);
             } catch (TornadoDeviceFP64NotSupported e) {
                 throw e;
+            } catch (InternalError e) {
+                throw new TornadoBailoutRuntimeException("[Internal Error] Unable to compile task " + task.getFullName() + "\n" + Arrays.toString(e.getStackTrace()));
             }
         }
         return new ExecutionInfo(callWrapper, waitList);

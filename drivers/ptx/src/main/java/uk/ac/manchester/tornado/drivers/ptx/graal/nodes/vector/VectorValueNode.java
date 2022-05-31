@@ -142,7 +142,7 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
 
     private Value getParam(NodeLIRBuilderTool gen, LIRGeneratorTool tool, int index) {
         final ValueNode valueNode = values.get(index);
-        return (valueNode == null) ? new ConstantValue(LIRKind.value(kind), JavaConstant.defaultForKind(kind.getElementKind().asJavaKind())) : tool.load(gen.operand(valueNode));
+        return (valueNode == null) ? new ConstantValue(LIRKind.value(kind), JavaConstant.defaultForKind(kind.getElementKind().asJavaKind())) : tool.emitMove(gen.operand(valueNode));
     }
 
     private void generateVectorAssign(NodeLIRBuilderTool gen, LIRGeneratorTool tool, AllocatableValue result) {

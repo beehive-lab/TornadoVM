@@ -155,26 +155,11 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     @Override
     public void initialize(OptionValues options, SnippetCounter.Group.Factory factory, Providers providers) {
-        // public void initialize(OptionValues options, Iterable<DebugHandlersFactory>
-        // debugHandlersFactories, SnippetCounter.Group.Factory factory, Providers
-        // providers,
-        // SnippetReflectionProvider snippetReflection) {
         super.initialize(options, factory, providers);
-        // initializeSnippets(options, debugHandlersFactories, factory, providers,
-        // snippetReflection);
         initializeSnippets(options, factory, providers);
     }
 
-    // private void initializeSnippets(OptionValues options,
-    // Iterable<DebugHandlersFactory> debugHandlersFactories,
-    // SnippetCounter.Group.Factory factory, Providers providers,
-    // SnippetReflectionProvider snippetReflection) {
-
     private void initializeSnippets(OptionValues options, SnippetCounter.Group.Factory factory, Providers providers) {
-        // this.gpuReduceSnippets = new ReduceGPUSnippets.Templates(options,
-        // debugHandlersFactories, providers, snippetReflection, target);
-        // this.cpuReduceSnippets = new ReduceCPUSnippets.Templates(options,
-        // debugHandlersFactories, providers, snippetReflection, target);
         this.cpuReduceSnippets = new ReduceCPUSnippets.Templates(options, providers);
         this.gpuReduceSnippets = new ReduceGPUSnippets.Templates(options, providers);
     }
