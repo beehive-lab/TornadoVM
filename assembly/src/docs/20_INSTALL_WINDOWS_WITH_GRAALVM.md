@@ -70,7 +70,7 @@ cat > ~/.m2/settings.xml << EOF
 EOF
 ```
 
-7. Create file `mvn` in `<MSYS2>/mingw64/bin` with any text editor (e.g., [Visual Code](https://code.visualstudio.com/download)) with the following content:
+7. Create file `mvn` in `<MSYS2>/mingw64/bin` with any text editor (e.g., [Visual Studio Code](https://code.visualstudio.com/download)) with the following content:
 
 ```bash
 #!/usr/bin/env bash
