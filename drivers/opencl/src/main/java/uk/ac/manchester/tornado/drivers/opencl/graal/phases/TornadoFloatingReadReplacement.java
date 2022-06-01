@@ -437,10 +437,12 @@ public class TornadoFloatingReadReplacement extends Phase {
          *            {@link FloatingNode}. This method removes the redundant
          *            {@link OCLBarrierNode}.
          */
-        private static void replaceRedundantNextOCLBarrierNode(Node nextNode) {
+        private static void replaceRedundantBarrierNode(Node nextNode) {
             nextNode.replaceAtUsages(nextNode.successors().first());
             Node predecessor = nextNode.predecessor();
-            predecessor.replaceFirstSuccessor(nextNode, nextNode.successors().first());
+            Node fixedWithNextNode = nextNode.successors().first();
+            fixedWithNextNode.replaceAtPredecessor(null);
+            predecessor.replaceFirstSuccessor(nextNode, fixedWithNextNode);
         }
 
         @SuppressWarnings("try")
@@ -460,7 +462,7 @@ public class TornadoFloatingReadReplacement extends Phase {
                     FloatingAccessNode floatingNode = accessNode.asFloatingNode();
                     assert floatingNode.getLastLocationAccess() == lastLocationAccess;
                     if (isNextNodeOCLBarrierNode(accessNode)) {
-                        replaceRedundantNextOCLBarrierNode(accessNode.next());
+                        replaceRedundantBarrierNode(accessNode.next());
                     }
                     graph.replaceFixedWithFloating(accessNode, floatingNode);
                 }
