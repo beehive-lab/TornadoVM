@@ -432,12 +432,10 @@ public class OCLGraphBuilderPlugins {
                 while (newArrayNode.hasUsages()) {
                     Node n = newArrayNode.usages().first();
                     // need to remove all nodes from the graph that operate on
-                    // the new array,
-                    // however, we cannot remove all inputs as they
+                    // the new array. However, we cannot remove all inputs as they
                     // may be used by the currently unbuilt part of the graph.
-                    // We also need to
-                    // ensure that we do not leave any gaps inbetween fixed
-                    // nodes
+                    // We also need to ensure that we do not leave any gaps in
+                    // between fixed nodes
                     if (n instanceof FixedWithNextNode) {
                         GraphUtil.unlinkFixedNode((FixedWithNextNode) n);
                     }

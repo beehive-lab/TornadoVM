@@ -62,9 +62,6 @@ public class PrintfNode extends FixedWithNextNode implements LIRLowerable {
                 args[i] = gen.operand(param);
             } else {
                 args[i] = gen.getLIRGeneratorTool().emitMove(gen.operand(param));
-                // args[i] =
-                // gen.getLIRGeneratorTool().emitLoadConstant(LIRKind.value(OCLKind.INT),
-                // param.asConstant());
             }
         }
         gen.getLIRGeneratorTool().append(new ExprStmt(new OCLPrintf(args)));
