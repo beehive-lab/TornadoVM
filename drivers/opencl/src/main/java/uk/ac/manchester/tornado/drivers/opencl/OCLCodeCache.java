@@ -125,8 +125,14 @@ public class OCLCodeCache {
     }
 
     private String resolveFPGAConfigurationFileName() {
-        return (FPGA_CONFIGURATION_FILE != null) ? FPGA_CONFIGURATION_FILE
-                : (new File("").getAbsolutePath() + ((deviceContext.getDevice().getDeviceVendor().toLowerCase().equals("xilinx")) ? "/etc/xilinx-fpga.conf" : "/etc/intel-fpga.conf"));
+        if (FPGA_CONFIGURATION_FILE != null) {
+            return FPGA_CONFIGURATION_FILE;
+        } else {
+            StringBuilder sb = new StringBuilder();
+            sb.append(System.getenv("TORNADO_SDK"));
+            sb.append(deviceContext.getDevice().getDeviceVendor().equalsIgnoreCase("xilinx") ? "/etc/xilinx-fpga.conf" : "/etc/intel-fpga.conf");
+            return sb.toString();
+        }
     }
 
     private void parseFPGAConfigurationFile() {
