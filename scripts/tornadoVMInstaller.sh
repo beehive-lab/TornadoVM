@@ -307,7 +307,7 @@ function setupVariables() {
 
 function installForOpenJDK8() {
     checkPrerequisites
-    dirname=$DIRECTORY_DEPENDENCIES"/TornadoVM-OpenJDK8"
+    dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-OpenJDK8"
     mkdir -p $dirname
     cd $dirname
     downloadOpenJDK8
@@ -319,7 +319,7 @@ function installForOpenJDK8() {
 
 function installForOpenJDK11() {
     checkPrerequisites
-    dirname="TornadoVM-OpenJDK11"
+    dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-OpenJDK11"
     mkdir -p $dirname
     cd $dirname
     downloadOpenJDK11
@@ -343,7 +343,7 @@ function installForOpenJDK17() {
 
 function installForGraalJDK11() {
     checkPrerequisites
-    dirname="TornadoVM-GraalJDK11"
+    dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-GraalJDK11"
     mkdir -p $dirname
     cd $dirname
     downloadGraalVMJDK11
@@ -355,7 +355,7 @@ function installForGraalJDK11() {
 
 function installForGraalJDK17() {
     checkPrerequisites
-    dirname="TornadoVM-GraalJDK17"
+    dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-GraalJDK17"
     mkdir -p $dirname
     cd $dirname
     downloadGraalVMJDK17
@@ -367,7 +367,7 @@ function installForGraalJDK17() {
 
 function installForCorrettoJDK11() {
     checkPrerequisites
-    dirname="TornadoVM-Amazon-Corretto11"
+    dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-Amazon-Corretto11"
     mkdir -p $dirname
     cd $dirname
     downloadCorretto11
@@ -379,7 +379,7 @@ function installForCorrettoJDK11() {
 
 function installForCorrettoJDK17() {
     checkPrerequisites
-    dirname="TornadoVM-Amazon-Corretto17"
+    dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-Amazon-Corretto17"
     mkdir -p $dirname
     cd $dirname
     downloadCorretto17
@@ -391,7 +391,7 @@ function installForCorrettoJDK17() {
 
 function installForMandrelJDK11() {
     checkPrerequisites
-    dirname="TornadoVM-RedHat-Mandrel11"
+    dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-RedHat-Mandrel11"
     mkdir -p $dirname
     cd $dirname
     downloadMandrel11
@@ -403,7 +403,7 @@ function installForMandrelJDK11() {
 
 function installForMandrelJDK17() {
     checkPrerequisites
-    dirname="TornadoVM-RedHat-Mandrel17"
+    dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-RedHat-Mandrel17"
     mkdir -p $dirname
     cd $dirname
     downloadMandrel17
@@ -415,7 +415,7 @@ function installForMandrelJDK17() {
 
 function installForWindowsJDK11() {
     checkPrerequisites
-    dirname="TornadoVM-Windows-JDK11"
+    dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-Windows-JDK11"
     mkdir -p $dirname
     cd $dirname
     downloadWindowsJDK11
@@ -427,7 +427,7 @@ function installForWindowsJDK11() {
 
 function installForWindowsJDK17() {
     checkPrerequisites
-    dirname="TornadoVM-Windows-JDK17"
+    dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-Windows-JDK17"
     mkdir -p $dirname
     cd $dirname
     downloadWindowsJDK17
