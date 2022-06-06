@@ -221,7 +221,47 @@ TornadoVM and how to use it.
 
 ## 7. Academic Publications
 
-Selected publications and citations can be found [here](assembly/src/docs/14_PUBLICATIONS.md).
+
+If you are using **TornadoVM >= 0.2** (which includes the Dynamic Reconfiguration, the initial FPGA support and CPU/GPU
+reductions), please use the following citation:
+
+```bibtex
+@inproceedings{Fumero:DARHH:VEE:2019,
+ author = {Fumero, Juan and Papadimitriou, Michail and Zakkak, Foivos S. and Xekalaki, Maria and Clarkson, James and Kotselidis, Christos},
+ title = {{Dynamic Application Reconfiguration on Heterogeneous Hardware.}},
+ booktitle = {Proceedings of the 15th ACM SIGPLAN/SIGOPS International Conference on Virtual Execution Environments},
+ series = {VEE '19},
+ year = {2019},
+ doi = {10.1145/3313808.3313819},
+ publisher = {Association for Computing Machinery}
+}
+```
+
+If you are using **Tornado 0.1** (Initial release), please use the following citation in your work.
+
+```bibtex
+@inproceedings{Clarkson:2018:EHH:3237009.3237016,
+ author = {Clarkson, James and Fumero, Juan and Papadimitriou, Michail and Zakkak, Foivos S. and Xekalaki, Maria and Kotselidis, Christos and Luj\'{a}n, Mikel},
+ title = {{Exploiting High-performance Heterogeneous Hardware for Java Programs Using Graal}},
+ booktitle = {Proceedings of the 15th International Conference on Managed Languages \& Runtimes},
+ series = {ManLang '18},
+ year = {2018},
+ isbn = {978-1-4503-6424-9},
+ location = {Linz, Austria},
+ pages = {4:1--4:13},
+ articleno = {4},
+ numpages = {13},
+ url = {http://doi.acm.org/10.1145/3237009.3237016},
+ doi = {10.1145/3237009.3237016},
+ acmid = {3237016},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+ keywords = {Java, graal, heterogeneous hardware, openCL, virtual machine},
+}
+
+```
+
+Selected publications can be found [here](assembly/src/docs/14_PUBLICATIONS.md).
 
 ## 8. Acknowledgments
 
