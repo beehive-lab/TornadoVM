@@ -41,7 +41,7 @@ $ clinfo
 
 ## Step 1: Update/Create the FPGA's configuration file
 
-Update the "$TORNADO_SDK/etc/vendor_fpga.conf" file with the necessary information (i.e. fpga platform name (DEVICE_NAME), HLS compiler flags (FLAGS), HLS directory (DIRECTORY_BITSTREAM). TornadoVM will automatically load the user-defined configurations according to the vendor of the underlying FPGA device.  You can also run TornadoVM with your configuration file, by using the `-Dtornado.fpga.conf.file=FILE` flag.
+Update the "$TORNADO_SDK/etc/vendor-fpga.conf" file with the necessary information (i.e. fpga platform name (DEVICE_NAME), HLS compiler flags (FLAGS), HLS directory (DIRECTORY_BITSTREAM). TornadoVM will automatically load the user-defined configurations according to the vendor of the underlying FPGA device.  You can also run TornadoVM with your configuration file, by using the `-Dtornado.fpga.conf.file=FILE` flag.
 
 ### Example of configuration file for Intel Nallatech-A385 FPGA (Intel Arria 10 GT1150):
 
