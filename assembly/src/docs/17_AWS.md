@@ -82,7 +82,7 @@ You can run TornadoVM with your configuration file, by using the `-Dtornado.fpga
 
 The following example uses a custom configuration file (`aws_fpga.conf`) to execute the DFT on the AWS F1 FPGA:
 ```bash
-$ tornado -Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM/$TORNADO_SDK/etc/aws_fpga.conf --threadInfo -Xmx20g -Xms20g --printKernel -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 256 default 1 >> output.log
+$ tornado -Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM/etc/aws_fpga.conf --threadInfo -Xmx20g -Xms20g --printKernel -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 256 default 1 >> output.log
 $ Ctrl-Z (^Z)
 $ bg
 $ disown
@@ -141,13 +141,13 @@ When the state change from `pending` to `available`, the `awsxlcbin` binary code
 If you have logged out, ensure that you run (Steps 2 and 4).
 
 ```bash
-$ tornado -Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM/$TORNADO_SDK/etc/aws_fpga.conf --debug -Xmx20g -Xms20g --printKernel -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 256 default 1 >> output.log
+$ tornado -Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM/etc/aws_fpga.conf --debug -Xmx20g -Xms20g --printKernel -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 256 default 1 >> output.log
 ```
 
 The result is the following:
 
 ```OpenCL
-tornado -Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM-Internal-feat-removeBufferCache/$TORNADO_SDK/etc/aws_fpga.conf --threadInfo -Xmx20g -Xms20g --printKernel -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 256 default 1
+tornado -Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM-Internal-feat-removeBufferCache/etc/aws_fpga.conf --threadInfo -Xmx20g -Xms20g --printKernel -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 256 default 1
 Initialization time:  705795966 ns
 
 __attribute__((reqd_work_group_size(64, 1, 1)))
