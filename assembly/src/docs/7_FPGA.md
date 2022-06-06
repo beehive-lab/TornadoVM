@@ -41,14 +41,14 @@ $ clinfo
 
 ## Step 1: Update/Create the FPGA's configuration file
 
-Update the "etc/vendor_fpga.conf" file with the necessary information (i.e. fpga platform name (DEVICE_NAME), HLS compiler flags (FLAGS), HLS directory (DIRECTORY_BITSTREAM). TornadoVM will automatically load the user-defined configurations according to the vendor of the underlying FPGA device.  You can also run TornadoVM with your configuration file, by using the `-Dtornado.fpga.conf.file=FILE` flag.
+Update the "$TORNADO_SDK/etc/vendor_fpga.conf" file with the necessary information (i.e. fpga platform name (DEVICE_NAME), HLS compiler flags (FLAGS), HLS directory (DIRECTORY_BITSTREAM). TornadoVM will automatically load the user-defined configurations according to the vendor of the underlying FPGA device.  You can also run TornadoVM with your configuration file, by using the `-Dtornado.fpga.conf.file=FILE` flag.
 
 ### Example of configuration file for Intel Nallatech-A385 FPGA (Intel Arria 10 GT1150):
 
 Edit/create the configuration file fo the FPGA:
 
 ```bash
-$ vim etc/intel-fpga.conf
+$ vim $TORNADO_SDK/etc/intel-fpga.conf
 ```
 
 ```conf
@@ -65,7 +65,7 @@ DIRECTORY_BITSTREAM = fpga-source-comp/ # Specify the directory
 ### Example of configuration file for Xilinx KCU1500:
 
 ```bash
-$ vim etc/xilinx-fpga.conf
+$ vim $TORNADO_SDK/etc/xilinx-fpga.conf
 ```
 
 ```conf
@@ -110,7 +110,7 @@ source /opt/xilinx/xrt/setup.sh
 ### Example of configuration file for AWS xilinx_aws-vu9p-f1-04261818_dynamic_5_0:
 
 ```bash
-$ vim etc/xilinx-fpga.conf
+$ vim $TORNADO_SDK/etc/xilinx-fpga.conf
 ```
 
 ```conf
