@@ -53,9 +53,10 @@ except:
 __DEFAULT_MODULES__ = "ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common"
 __PTX_MODULE__ = "tornado.drivers.ptx"
 __OPENCL_MODULE__ = "tornado.drivers.opencl"
+__SPIRV_MODULE__ = "tornado.drivers.spirv"
 
 def appendBackendModules():
-    global __DEFAULT_MODULES__, __PTX_MODULE__, __OPENCL_MODULE__
+    global __DEFAULT_MODULES__, __PTX_MODULE__, __OPENCL_MODULE__, __SPIRV_MODULE__
     availableBackendsFile = TORNADO_SDK + "/etc/tornado.backend"
     with open(availableBackendsFile, "r") as backendsFile:
         backends = backendsFile.read()
@@ -64,6 +65,9 @@ def appendBackendModules():
 
         if "opencl-backend" in backends:
             __DEFAULT_MODULES__ += "," + __OPENCL_MODULE__
+
+        if "spirv-backend" in backends:
+            __DEFAULT_MODULES__ += "," + __SPIRV_MODULE__
 
 __JAVA_VERSION_OUTPUT__ = subprocess.Popen(javaHome + '/bin/java -version 2>&1 ', stdout=subprocess.PIPE, shell=True).communicate()[0].decode('utf-8')
 __IS_GRAALVM_BUILD__ = "GraalVM" in __JAVA_VERSION_OUTPUT__
