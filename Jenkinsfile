@@ -13,8 +13,8 @@ pipeline {
     environment {
         ZULU_11_JAVA_HOME="/opt/jenkins/jdks/zulu11.56.19-ca-jdk11.0.15-linux_x64"
         ZULU_17_JAVA_HOME="/opt/jenkins/jdks/zulu17.34.19-ca-jdk17.0.3-linux_x64"
-        CORRETTO_11_JAVA_HOME="/opt/jenkins/jdks/amazon-corretto-11.0.13.8.1-linux-x64"
-        JDK_17_JAVA_HOME="/opt/jenkins/jdks/jdk-17.0.1+12"
+        CORRETTO_11_JAVA_HOME="/opt/jenkins/jdks/amazon-corretto-11.0.15.9.1-linux-x64"
+        JDK_17_JAVA_HOME="/opt/jenkins/jdks/jdk-17.0.1"
         GRAALVM_11_JAVA_HOME="/opt/jenkins/jdks/graalvm-ce-java11-22.1.0"
         GRAALVM_17_JAVA_HOME="/opt/jenkins/jdks/graalvm-ce-java17-22.1.0"
         TORNADO_ROOT="/var/lib/jenkins/workspace/Tornado-pipeline"
