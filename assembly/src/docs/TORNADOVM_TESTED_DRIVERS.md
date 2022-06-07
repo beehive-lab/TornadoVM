@@ -146,6 +146,7 @@ The following drivers have been tested on Fedora 34:
 
 #### OpenCL drivers
 
+* 510.54   : OK 
 * 495.29.05: OK 
 * 470.63.01: OK
 * 470.57.02: OK
@@ -168,6 +169,7 @@ The following drivers have been tested on Fedora 34:
 
 #### PTX (CUDA) drivers
 
+* 510.54   : OK 
 * 495.29.05: OK 
 * 470.63.01: OK
 * 470.57.02: OK
