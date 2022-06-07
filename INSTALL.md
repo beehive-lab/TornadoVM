@@ -33,9 +33,9 @@ Additionally, this installation type will automatically trigger all dependencies
 Note that GraalVM Community Edition releases based on JDK8 are no longer being built for Mac OSx.
 
 ```bash
-./scripts/tornadovmInstaller.sh 
+$ ./scripts/tornadovmInstaller.sh 
 TornadoVM installer for Linux and OSx
-Usage:
+JDK (select one):
 	--jdk8           : Install TornadoVM with OpenJDK 8
 	--jdk11          : Install TornadoVM with OpenJDK 11
 	--jdk17          : Install TornadoVM with OpenJDK 17
@@ -49,10 +49,12 @@ Usage:
 	--microsoft-jdk-17 : Install TornadoVM with Microsoft JDK 17
 	--zulu-jdk-11      : Install TornadoVM with Azul Zulu JDK 11
 	--zulu-jdk-17      : Install TornadoVM with Azul Zulu JDK 17
-	--opencl         : Install TornadoVM and build the OpenCL backend
-	--ptx            : Install TornadoVM and build the PTX backend
-	--spirv          : Install TornadoVM and build the SPIR-V backend
-	--help           : Print this help       
+TornadoVM Backends:
+       --opencl           : Install TornadoVM and build the OpenCL backend
+       --ptx              : Install TornadoVM and build the PTX backend
+       --spirv            : Install TornadoVM and build the SPIR-V backend
+Help:
+       --help             : Print this help
 ```
 
 **NOTE** Select the desired backend:

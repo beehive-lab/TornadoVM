@@ -205,7 +205,7 @@ public class TornadoOptions {
      * registers. Experimental Feature.
      *
      */
-    public static final boolean OPTIMIZE_LOAD_STORE_SPIRV = getBooleanValue("tornado.spirv.loadstore", FALSE);
+    public static final boolean OPTIMIZE_LOAD_STORE_SPIRV = getBooleanValue("tornado.spirv.loadstore", TRUE);
     /**
      * Use Level Zero Thread Suggestions for the Thread Dispatcher. True by default.
      */

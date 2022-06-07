@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-#  Copyright (c) 2020-2021, APT Group, Department of Computer Science,
+#  Copyright (c) 2020-2022, APT Group, Department of Computer Science,
 #  The University of Manchester.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,63 +21,6 @@ DIRECTORY_DEPENDENCIES="etc/dependencies"
 function getPlatform() {
     platform=$(uname | tr '[:upper:]' '[:lower:]')
     echo "$platform"
-}
-
-function checkJavaVersion() {
-    platform=$(getPlatform)
-    pass=$1
-    if [ -z "$JAVA_HOME" ];
-    then
-	    echo "JAVA_HOME is not set. Use OpenJDK 8 >= 141 <= 1.9"
-            if [[ "$platform" == 'linux' ]]; then
-	    	# shellcheck disable=SC2028
-	    	echo "\t You can use \`ls -l /etc/alternatives/java\` to get the PATHs"
-	    elif [[ "$platform" == 'darwin' ]]; then
-		    echo "\t You can use export JAVA_HOME=\$(/usr/libexec/java_home)"
-	    fi
- 	    pass=0
-    else
- 	    echo "JDK Version: OK"
-    fi
-    return $pass
-}
-
-function checkPrerequisites() {
-    currentver="$(gcc -dumpversion)"
-    requiredver="5.5.0"
-    pass=1
-    # if [ "$(printf '%s\n' "$requiredver" "$currentver" | sort -V | head -n1)" = "$requiredver" ]; then
-    #     echo "GCC Vesion: OK"
-    # else
-    #     echo "Error: GCC Version is less than 5.5.0"
-    #     pass=0
-    # fi
-
-    #$pass=checkJavaVersion($pass)
-
-    if [[ $pass == 0 ]]; then
-        exit
-    fi
-}
-
-# Download OpenJDK with JVMCI support
-function downloadOpenJDK8() {
-    export JDK_BASE=$(pwd)
-    platform=$(getPlatform)
-    if [[ "$platform" == 'linux' ]]; then
-        echo "Downloading JDK8 with JVMCI... ~100MB"
-        wget https://github.com/graalvm/graal-jvmci-8/releases/download/jvmci-21.3-b05/openjdk-8u302+06-jvmci-21.3-b05-linux-amd64.tar.gz
-	    tar xvzf openjdk-8u302+06-jvmci-21.3-b05-linux-amd64.tar.gz
-        export JAVA_HOME=$JDK_BASE/openjdk1.8.0_302-jvmci-21.3-b05
-    elif [[ "$platform" == 'darwin' ]]; then
-        echo "JDK8 with JVMCI for Mac OSx is not supported for Graal 21.3"
-        cd ../ && rm -rf $dirname
-	exit 0
-    else
-        echo "OS platform not supported"
-        cd ../ & rm -rf $dirname
-        exit 0
-    fi
 }
 
 function downloadOpenJDK11() {
@@ -331,20 +274,7 @@ function setupVariables() {
     echo -e "\nTo run TornadoVM, run \`. source.sh\`"
 }
 
-function installForOpenJDK8() {
-    checkPrerequisites
-    dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-OpenJDK8"
-    mkdir -p $dirname
-    cd $dirname
-    downloadOpenJDK8
-    downloadCMake
-    cd -
-    setupTornadoVM jdk-8
-    setupVariables $dirname
-}
-
 function installForOpenJDK11() {
-    checkPrerequisites
     dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-OpenJDK11"
     mkdir -p $dirname
     cd $dirname
@@ -356,7 +286,6 @@ function installForOpenJDK11() {
 }
 
 function installForOpenJDK17() {
-    checkPrerequisites
     dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-OpenJDK17"
     mkdir -p $dirname
     cd $dirname
@@ -368,7 +297,6 @@ function installForOpenJDK17() {
 }
 
 function installForGraalJDK11() {
-    checkPrerequisites
     dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-GraalJDK11"
     mkdir -p $dirname
     cd $dirname
@@ -380,7 +308,6 @@ function installForGraalJDK11() {
 }
 
 function installForGraalJDK17() {
-    checkPrerequisites
     dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-GraalJDK17"
     mkdir -p $dirname
     cd $dirname
@@ -392,7 +319,6 @@ function installForGraalJDK17() {
 }
 
 function installForCorrettoJDK11() {
-    checkPrerequisites
     dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-Amazon-Corretto11"
     mkdir -p $dirname
     cd $dirname
@@ -404,7 +330,6 @@ function installForCorrettoJDK11() {
 }
 
 function installForCorrettoJDK17() {
-    checkPrerequisites
     dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-Amazon-Corretto17"
     mkdir -p $dirname
     cd $dirname
@@ -416,7 +341,6 @@ function installForCorrettoJDK17() {
 }
 
 function installForMandrelJDK11() {
-    checkPrerequisites
     dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-RedHat-Mandrel11"
     mkdir -p $dirname
     cd $dirname
@@ -428,7 +352,6 @@ function installForMandrelJDK11() {
 }
 
 function installForMandrelJDK17() {
-    checkPrerequisites
     dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-RedHat-Mandrel17"
     mkdir -p $dirname
     cd $dirname
@@ -491,7 +414,6 @@ function printHelp() {
     echo "TornadoVM installer for Linux and OSx"
     echo "./script/tornadoVMInstaller.sh <JDK> <BACKENDS>"
     echo "JDK (select one):"
-    echo "       --jdk8             : Install TornadoVM with OpenJDK 8"
     echo "       --jdk11            : Install TornadoVM with OpenJDK 11"
     echo "       --jdk17            : Install TornadoVM with OpenJDK 17"
     echo "       --graal-jdk-11     : Install TornadoVM with GraalVM and JDK 11 (GraalVM 22.1.0)"
@@ -547,10 +469,6 @@ do
   case $key in
   --help)
     printHelp
-    shift
-    ;;
-  --jdk8)
-    installForOpenJDK8
     shift
     ;;
   --jdk11)
