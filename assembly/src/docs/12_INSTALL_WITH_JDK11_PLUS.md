@@ -43,7 +43,7 @@ Example:
 ```bash
  $ wget https://corretto.aws/downloads/latest/amazon-corretto-11-x64-linux-jdk.tar.gz
  $ tar xf amazon-corretto-11-x64-linux-jdk.tar.gz
- $ export JAVA_HOME=$PWD/amazon-corretto-11.0.13.8.1-linux-x64
+ $ export JAVA_HOME=$PWD/amazon-corretto-11.0.15.9.1-linux-x64
 ```
 
 ### 2. Download TornadoVM
