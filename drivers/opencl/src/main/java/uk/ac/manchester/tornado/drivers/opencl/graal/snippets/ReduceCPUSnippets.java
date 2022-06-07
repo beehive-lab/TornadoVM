@@ -24,8 +24,6 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.snippets;
 
 import org.graalvm.compiler.api.replacements.Snippet;
-import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
-import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -37,15 +35,14 @@ import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
 import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
 import org.graalvm.compiler.replacements.Snippets;
 
-import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.drivers.opencl.builtins.OpenCLIntrinsics;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceMulNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 
 /**
  * Graal-Snippets for CPU OpenCL reductions.
@@ -363,8 +360,8 @@ public class ReduceCPUSnippets implements Snippets {
         private final SnippetInfo partialReduceMinDoubleSnippet = snippet(ReduceCPUSnippets.class, "partialReduceDoubleMin");
         private final SnippetInfo partialReduceMinDoubleSnippetCarrierValue = snippet(ReduceCPUSnippets.class, "partialReduceDoubleMinCarrierValue");
 
-        public Templates(OptionValues options, Iterable<DebugHandlersFactory> debugHandlersFactories, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
-            super(options, debugHandlersFactories, providers, snippetReflection, target);
+        public Templates(OptionValues options, Providers providers) {
+            super(options, providers);
         }
 
         private SnippetInfo getSnippetFromOCLBinaryNodeInteger(OCLIntBinaryIntrinsicNode value, ValueNode extra) {

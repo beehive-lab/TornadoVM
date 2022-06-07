@@ -56,7 +56,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntUnaryIntrinsicNode
 
 public class PTXMathPlugins {
 
-    public static final void registerTornadoMathPlugins(final InvocationPlugins plugins) {
+    public static void registerTornadoMathPlugins(final InvocationPlugins plugins) {
         Registration registration = new Registration(plugins, TornadoMath.class);
 
         registerFloatMath1Plugins(registration, float.class, JavaKind.Float);
@@ -85,7 +85,7 @@ public class PTXMathPlugins {
     }
 
     private static void registerFloatMath1Plugins(Registration r, Class<?> type, JavaKind kind) {
-        r.register1("atan", type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("atan", type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(PTXFPUnaryIntrinsicNode.create(value, ATAN, kind)));
@@ -93,7 +93,7 @@ public class PTXMathPlugins {
             }
         });
 
-        r.register1("sqrt", type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("sqrt", type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(PTXFPUnaryIntrinsicNode.create(value, SQRT, kind)));
@@ -101,7 +101,7 @@ public class PTXMathPlugins {
             }
         });
 
-        r.register1("exp", type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("exp", type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(PTXFPUnaryIntrinsicNode.create(value, EXP, kind)));
@@ -109,7 +109,7 @@ public class PTXMathPlugins {
             }
         });
 
-        r.register1("abs", type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("abs", type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(PTXFPUnaryIntrinsicNode.create(value, FABS, kind)));
@@ -117,7 +117,7 @@ public class PTXMathPlugins {
             }
         });
 
-        r.register1("floor", type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("floor", type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(PTXFPUnaryIntrinsicNode.create(value, FLOOR, kind)));
@@ -125,7 +125,7 @@ public class PTXMathPlugins {
             }
         });
 
-        r.register1("log", type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("log", type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(PTXFPUnaryIntrinsicNode.create(value, LOG, kind)));
@@ -133,7 +133,7 @@ public class PTXMathPlugins {
             }
         });
 
-        r.register1("sin", type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("sin", type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(PTXFPUnaryIntrinsicNode.create(value, SIN, kind)));
@@ -141,7 +141,7 @@ public class PTXMathPlugins {
             }
         });
 
-        r.register1("cos", type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("cos", type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(PTXFPUnaryIntrinsicNode.create(value, COS, kind)));
@@ -149,7 +149,7 @@ public class PTXMathPlugins {
             }
         });
 
-        r.register1("tan", type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("tan", type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(PTXFPUnaryIntrinsicNode.create(value, TAN, kind)));
@@ -157,7 +157,7 @@ public class PTXMathPlugins {
             }
         });
 
-        r.register1("tanh", type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("tanh", type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(PTXFPUnaryIntrinsicNode.create(value, TANH, kind)));
@@ -168,7 +168,7 @@ public class PTXMathPlugins {
 
     private static void registerFloatMath2Plugins(Registration r, Class<?> type, JavaKind kind) {
 
-        r.register2("pow", type, type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("pow", type, type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 b.push(kind, b.append(PTXFPBinaryIntrinsicNode.create(x, y, POW, kind)));
@@ -176,7 +176,7 @@ public class PTXMathPlugins {
             }
         });
 
-        r.register2("min", type, type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("min", type, type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 b.push(kind, b.append(PTXFPBinaryIntrinsicNode.create(x, y, FMIN, kind)));
@@ -184,7 +184,7 @@ public class PTXMathPlugins {
             }
         });
 
-        r.register2("max", type, type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("max", type, type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 b.push(kind, b.append(PTXFPBinaryIntrinsicNode.create(x, y, FMAX, kind)));
@@ -198,7 +198,7 @@ public class PTXMathPlugins {
     }
 
     private static void registerIntMath1Plugins(Registration r, Class<?> type, JavaKind kind) {
-        r.register1("abs", type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("abs", type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(PTXIntUnaryIntrinsicNode.create(value, ABS, kind)));
@@ -208,7 +208,7 @@ public class PTXMathPlugins {
     }
 
     private static void registerIntMath2Plugins(Registration r, Class<?> type, JavaKind kind) {
-        r.register2("min", type, type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("min", type, type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 b.push(kind, b.append(PTXIntBinaryIntrinsicNode.create(x, y, MIN, kind)));
@@ -216,7 +216,7 @@ public class PTXMathPlugins {
             }
         });
 
-        r.register2("max", type, type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("max", type, type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 b.push(kind, b.append(PTXIntBinaryIntrinsicNode.create(x, y, MAX, kind)));
@@ -226,7 +226,7 @@ public class PTXMathPlugins {
     }
 
     private static void registerIntMath3Plugins(Registration r, Class<?> type, JavaKind kind) {
-        r.register3("clamp", type, type, type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("clamp", type, type, type) {
 
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y, ValueNode z) {

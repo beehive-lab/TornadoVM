@@ -25,8 +25,6 @@ package uk.ac.manchester.tornado.drivers.ptx.graal;
 
 import static jdk.vm.ci.common.InitTimer.timer;
 
-import java.util.Collections;
-
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotStampProvider;
@@ -113,7 +111,7 @@ public class PTXHotSpotBackendFactory {
             providers = new PTXProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider,
                     metaAccessExtensionProvider, snippetReflection, wordTypes, p.getLoopsDataProvider(), suites);
 
-            lowerer.initialize(options, Collections.singleton(graalDebugHandlersFactory), new DummySnippetFactory(), providers, snippetReflection);
+            lowerer.initialize(options, new DummySnippetFactory(), providers);
 
         }
         try (InitTimer ignored = timer("instantiate backend")) {
@@ -130,7 +128,13 @@ public class PTXHotSpotBackendFactory {
         PTXGraphBuilderPlugins.registerParameterPlugins(plugins);
         PTXGraphBuilderPlugins.registerNewInstancePlugins(plugins);
 
-        StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflectionProvider, invocationPlugins, replacements, false, false, false, loweringProvider);
+        StandardGraphBuilderPlugins.registerInvocationPlugins(snippetReflectionProvider, //
+                invocationPlugins, //
+                replacements, //
+                false, //
+                false, //
+                false, //
+                loweringProvider);
         PTXGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
         return plugins;
     }

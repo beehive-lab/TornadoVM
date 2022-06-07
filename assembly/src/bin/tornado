@@ -89,7 +89,7 @@ function print_all_options() {
   echo -e "\tPrint generated kernel        : -Dtornado.print.kernel=True "
   echo -e "\tPrint kernel debug information: -Dtornado.debug=True "
   echo -e "\tEnable full debug information : -Dtornado.fullDebug=True "
-  echo -e "\tDump compiled graphs into IGV : -Dgraal.Dump=*:5 -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=false "
+  echo -e "\tDump compiled graphs into IGV : -Dgraal.Dump=*:5 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true "
   echo ""
   echo -e "$COLOR_CYAN Define on which device the application should run (by default is 0): $COLOR_NC"
   echo ""
@@ -184,11 +184,11 @@ while [[ $# -gt 0 ]]; do
       shift # past argument
       ;;
   --igv)
-    TORNADO_FLAGS="${TORNADO_FLAGS} -Dgraal.Dump=*:5 -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=false"
+    TORNADO_FLAGS="${TORNADO_FLAGS} -Dgraal.Dump=*:5 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true"
     shift # past argument
     ;;
   --igvLowTier)
-    TORNADO_FLAGS="${TORNADO_FLAGS} -Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=true -Dtornado.debug.lowtier=True "
+    TORNADO_FLAGS="${TORNADO_FLAGS} -Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true -Dtornado.debug.lowtier=True "
     shift
     ;;
   --printKernel)
@@ -283,7 +283,7 @@ else
   PTX_MODULE="tornado.drivers.ptx"
   OPENCL_MODULE="tornado.drivers.opencl"
 
-  if [ "$JAVA_VERSION" = "16.0" ] || [ "$JAVA_VERSION" = "17.0" ]; then
+  if [ "$JAVA_VERSION" = "16.0" ] || [ "$JAVA_VERSION" = "17.0" ] || [ "$JAVA_VERSION" = "18.0" ]; then
   	JAVA_FLAGS="${JAVA_FLAGS} -XX:+UseParallelGC @${COMMON_EXPORTS} "
   else
   	JAVA_FLAGS="${JAVA_FLAGS} -XX:+UseParallelOldGC -XX:-UseBiasedLocking @${COMMON_EXPORTS} "

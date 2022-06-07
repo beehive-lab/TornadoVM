@@ -43,7 +43,7 @@ public class AtomicPlugins {
     private static void registerAtomicPlugins(InvocationPlugins plugins) {
         Registration r = new Registration(plugins, FloatOps.class);
 
-        r.register3("atomicAdd", float[].class, int.class, float.class, new InvocationPlugin() {
+        r.register(new InvocationPlugin("atomicAdd", float[].class, int.class, float.class) {
 
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode value) {

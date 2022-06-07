@@ -109,7 +109,7 @@ public class SPIRVGraphBuilderPlugins {
         registerFPIntrinsics(r);
 
         Registration longRegistration = new Registration(plugins, Long.class);
-        longRegistration.register1("bitCount", Long.TYPE, new InvocationPlugin() {
+        longRegistration.register(new InvocationPlugin("bitCount", Long.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(JavaKind.Int, b.append(SPIRVIntUnaryIntrinsicNode.create(value, SPIRVIntUnaryIntrinsicNode.SPIRVIntOperation.POPCOUNT, JavaKind.Long)));
@@ -118,7 +118,7 @@ public class SPIRVGraphBuilderPlugins {
         });
 
         Registration intRegistration = new Registration(plugins, Integer.class);
-        intRegistration.register1("bitCount", Integer.TYPE, new InvocationPlugin() {
+        intRegistration.register(new InvocationPlugin("bitCount", Integer.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(JavaKind.Int, b.append(SPIRVIntUnaryIntrinsicNode.create(value, SPIRVIntUnaryIntrinsicNode.SPIRVIntOperation.POPCOUNT, JavaKind.Int)));
@@ -136,7 +136,7 @@ public class SPIRVGraphBuilderPlugins {
     }
 
     private static void registerLocalBarrier(Registration r) {
-        r.register1("localBarrier", InvocationPlugin.Receiver.class, new InvocationPlugin() {
+        r.register(new InvocationPlugin("localBarrier", InvocationPlugin.Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 SPIRVBarrierNode localBarrierNode = new SPIRVBarrierNode(SPIRVBarrierNode.SPIRVMemFenceFlags.LOCAL);
@@ -147,7 +147,7 @@ public class SPIRVGraphBuilderPlugins {
     }
 
     private static void registerGlobalBarrier(Registration r) {
-        r.register1("globalBarrier", InvocationPlugin.Receiver.class, new InvocationPlugin() {
+        r.register(new InvocationPlugin("globalBarrier", InvocationPlugin.Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 SPIRVBarrierNode barrierNode = new SPIRVBarrierNode(SPIRVBarrierNode.SPIRVMemFenceFlags.GLOBAL);
@@ -167,7 +167,7 @@ public class SPIRVGraphBuilderPlugins {
     }
 
     private static void registerLocalArray(Registration r, final String method, JavaKind returnedJavaKind, JavaKind elementType) {
-        r.register2(method, InvocationPlugin.Receiver.class, int.class, new InvocationPlugin() {
+        r.register(new InvocationPlugin(method, InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
@@ -179,7 +179,7 @@ public class SPIRVGraphBuilderPlugins {
     }
 
     private static void registerOpenCLOverridesForType(Registration r, Class<?> type, JavaKind kind) {
-        r.register2("min", type, type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("min", type, type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 if (kind.isNumericFloat()) {
@@ -191,7 +191,7 @@ public class SPIRVGraphBuilderPlugins {
             }
         });
 
-        r.register2("max", type, type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("max", type, type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 if (kind.isNumericFloat()) {
@@ -203,7 +203,7 @@ public class SPIRVGraphBuilderPlugins {
             }
         });
 
-        r.register1("abs", type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("abs", type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 if (kind.isNumericFloat()) {
@@ -215,7 +215,7 @@ public class SPIRVGraphBuilderPlugins {
     }
 
     private static void registerFPIntrinsics(Registration r) {
-        r.register2("pow", Double.TYPE, Double.TYPE, new InvocationPlugin() {
+        r.register(new InvocationPlugin("pow", Double.TYPE, Double.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 b.push(JavaKind.Double, b.append(SPIRVFPBinaryIntrinsicNode.create(x, y, POW, JavaKind.Double)));
@@ -223,7 +223,7 @@ public class SPIRVGraphBuilderPlugins {
             }
         });
 
-        r.register1("signum", Float.TYPE, new InvocationPlugin() {
+        r.register(new InvocationPlugin("signum", Float.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(JavaKind.Float, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SIGN, JavaKind.Float)));
@@ -231,7 +231,7 @@ public class SPIRVGraphBuilderPlugins {
             }
         });
 
-        r.register1("signum", Double.TYPE, new InvocationPlugin() {
+        r.register(new InvocationPlugin("signum", Double.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(JavaKind.Double, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SIGN, JavaKind.Double)));
@@ -239,7 +239,7 @@ public class SPIRVGraphBuilderPlugins {
             }
         });
 
-        r.register1("sin", Double.TYPE, new InvocationPlugin() {
+        r.register(new InvocationPlugin("sin", Double.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(JavaKind.Double, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SIN, JavaKind.Double)));
@@ -247,7 +247,7 @@ public class SPIRVGraphBuilderPlugins {
             }
         });
 
-        r.register1("cos", Double.TYPE, new InvocationPlugin() {
+        r.register(new InvocationPlugin("cos", Double.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(JavaKind.Double, b.append(SPIRVFPUnaryIntrinsicNode.create(value, COS, JavaKind.Double)));
@@ -255,7 +255,7 @@ public class SPIRVGraphBuilderPlugins {
             }
         });
 
-        r.register1("tan", Double.TYPE, new InvocationPlugin() {
+        r.register(new InvocationPlugin("tan", Double.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(JavaKind.Double, b.append(SPIRVFPUnaryIntrinsicNode.create(value, TAN, JavaKind.Double)));
@@ -263,7 +263,7 @@ public class SPIRVGraphBuilderPlugins {
             }
         });
 
-        r.register1("tanh", Double.TYPE, new InvocationPlugin() {
+        r.register(new InvocationPlugin("tanh", Double.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(JavaKind.Double, b.append(SPIRVFPUnaryIntrinsicNode.create(value, TANH, JavaKind.Double)));
@@ -271,7 +271,7 @@ public class SPIRVGraphBuilderPlugins {
             }
         });
 
-        r.register1("atan", Double.TYPE, new InvocationPlugin() {
+        r.register(new InvocationPlugin("atan", Double.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(JavaKind.Double, b.append(SPIRVFPUnaryIntrinsicNode.create(value, ATAN, JavaKind.Double)));
@@ -279,7 +279,7 @@ public class SPIRVGraphBuilderPlugins {
             }
         });
 
-        r.register2("atan2", Double.TYPE, Double.TYPE, new InvocationPlugin() {
+        r.register(new InvocationPlugin("atan2", Double.TYPE, Double.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 b.push(JavaKind.Double, b.append(SPIRVFPBinaryIntrinsicNode.create(x, y, ATAN2, JavaKind.Double)));
@@ -287,7 +287,7 @@ public class SPIRVGraphBuilderPlugins {
             }
         });
 
-        r.register1("asin", Double.TYPE, new InvocationPlugin() {
+        r.register(new InvocationPlugin("asin", Double.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x) {
                 b.push(JavaKind.Double, b.append(SPIRVFPUnaryIntrinsicNode.create(x, ASIN, JavaKind.Double)));
@@ -295,7 +295,7 @@ public class SPIRVGraphBuilderPlugins {
             }
         });
 
-        r.register1("acos", Double.TYPE, new InvocationPlugin() {
+        r.register(new InvocationPlugin("acos", Double.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x) {
                 b.push(JavaKind.Double, b.append(SPIRVFPUnaryIntrinsicNode.create(x, ACOS, JavaKind.Double)));
@@ -303,7 +303,7 @@ public class SPIRVGraphBuilderPlugins {
             }
         });
 
-        r.register1("log", Double.TYPE, new InvocationPlugin() {
+        r.register(new InvocationPlugin("log", Double.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(JavaKind.Double, b.append(SPIRVFPUnaryIntrinsicNode.create(value, LOG, JavaKind.Double)));
@@ -311,7 +311,7 @@ public class SPIRVGraphBuilderPlugins {
             }
         });
 
-        r.register1("sqrt", Double.TYPE, new InvocationPlugin() {
+        r.register(new InvocationPlugin("sqrt", Double.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(JavaKind.Double, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SQRT, JavaKind.Double)));
@@ -319,7 +319,7 @@ public class SPIRVGraphBuilderPlugins {
             }
         });
 
-        r.register1("exp", Double.TYPE, new InvocationPlugin() {
+        r.register(new InvocationPlugin("exp", Double.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(JavaKind.Double, b.append(SPIRVFPUnaryIntrinsicNode.create(value, EXP, JavaKind.Double)));
@@ -338,7 +338,7 @@ public class SPIRVGraphBuilderPlugins {
      */
     private static void registerCompilerIntrinsicsPlugins(InvocationPlugins plugins) {
         Registration r = new Registration(plugins, CompilerInternals.class);
-        r.register0("getSlotsAddress", new InvocationPlugin() {
+        r.register(new InvocationPlugin("getSlotsAddress") {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 b.addPush(JavaKind.Object, new SlotsBaseAddressNode());

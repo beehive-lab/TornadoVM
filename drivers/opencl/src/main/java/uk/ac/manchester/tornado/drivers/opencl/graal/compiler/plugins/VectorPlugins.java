@@ -43,12 +43,12 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
+import org.graalvm.compiler.nodes.memory.address.AddressNode;
+import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStampFactory;
@@ -60,8 +60,8 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorDivNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorMulNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreElementProxyNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorSubNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreGlobalMemory;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorSubNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
 
 public final class VectorPlugins {
@@ -157,7 +157,7 @@ public final class VectorPlugins {
 
         final Registration r = new Registration(plugins, declaringClass);
 
-        r.register2("get", Receiver.class, int.class, new InvocationPlugin() {
+        r.register(new InvocationPlugin("get", Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId) {
                 final VectorLoadElementNode loadElement = new VectorLoadElementNode(vectorKind.getElementKind(), receiver.get(), laneId);
@@ -166,7 +166,7 @@ public final class VectorPlugins {
             }
         });
 
-        r.register2("set", Receiver.class, vectorKind.getJavaClass(), new InvocationPlugin() {
+        r.register(new InvocationPlugin("set", Receiver.class, vectorKind.getJavaClass()) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 if (receiver.get() instanceof ParameterNode) {
@@ -179,7 +179,7 @@ public final class VectorPlugins {
             }
         });
 
-        r.register3("set", Receiver.class, int.class, elementType, new InvocationPlugin() {
+        r.register(new InvocationPlugin("set", Receiver.class, int.class, elementType) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode laneId, ValueNode value) {
                 final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(vectorKind.getElementKind(), receiver.get(), laneId, value);
@@ -188,7 +188,7 @@ public final class VectorPlugins {
             }
         });
 
-        r.register2("add", declaringClass, declaringClass, new InvocationPlugin() {
+        r.register(new InvocationPlugin("add", declaringClass, declaringClass) {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
@@ -198,7 +198,7 @@ public final class VectorPlugins {
             }
         });
 
-        r.register2("sub", declaringClass, declaringClass, new InvocationPlugin() {
+        r.register(new InvocationPlugin("sub", declaringClass, declaringClass) {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
@@ -208,7 +208,7 @@ public final class VectorPlugins {
             }
         });
 
-        r.register2("mult", declaringClass, declaringClass, new InvocationPlugin() {
+        r.register(new InvocationPlugin("mult", declaringClass, declaringClass) {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
@@ -218,7 +218,7 @@ public final class VectorPlugins {
             }
         });
 
-        r.register2("div", declaringClass, declaringClass, new InvocationPlugin() {
+        r.register(new InvocationPlugin("div", declaringClass, declaringClass) {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
@@ -228,7 +228,7 @@ public final class VectorPlugins {
             }
         });
 
-        r.register2("loadFromArray", storageType, int.class, new InvocationPlugin() {
+        r.register(new InvocationPlugin("loadFromArray", storageType, int.class) {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
@@ -240,7 +240,7 @@ public final class VectorPlugins {
             }
         });
 
-        r.register3("storeToArray", Receiver.class, storageType, int.class, new InvocationPlugin() {
+        r.register(new InvocationPlugin("storeToArray", Receiver.class, storageType, int.class) {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
                 ValueNode value = receiver.get();
@@ -253,7 +253,7 @@ public final class VectorPlugins {
             }
         });
 
-        r.register1("getArray", Receiver.class, new InvocationPlugin() {
+        r.register(new InvocationPlugin("getArray", Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
@@ -271,7 +271,7 @@ public final class VectorPlugins {
     private static void registerGeometricBIFS(final InvocationPlugins plugins, final OCLKind vectorKind, final Class<?> storageType, final Class<?> elementType) {
         final Class<?> declaringClass = vectorKind.getJavaClass();
         final Registration r = new Registration(plugins, declaringClass);
-        r.register2("dot", declaringClass, declaringClass, new InvocationPlugin() {
+        r.register(new InvocationPlugin("dot", declaringClass, declaringClass) {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode input1, ValueNode input2) {
                 TornadoInternalError.unimplemented();
                 return true;

@@ -346,7 +346,7 @@ public class PTXLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public void emitStrategySwitch(SwitchStrategy strategy, Variable key, LabelRef[] keyTargets, LabelRef defaultTarget) {
+    public void emitStrategySwitch(SwitchStrategy strategy, AllocatableValue key, LabelRef[] keyTargets, LabelRef defaultTarget) {
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitStrategySwitch: strategy=%s key=%s defaultTarget=%s", strategy, key, defaultTarget);
         LIRKind kind = LIRKind.value(PTXKind.PRED);
         Variable predicate = newVariable(kind);
@@ -356,6 +356,16 @@ public class PTXLIRGenerator extends LIRGenerator {
             emitConditionalBranch(keyTargets[i], predicate, false, false);
         }
         append(new PTXControlFlow.Branch(defaultTarget, false, false));
+    }
+
+    @Override
+    protected void emitRangeTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, AllocatableValue key) {
+
+    }
+
+    @Override
+    protected void emitHashTableSwitch(JavaConstant[] keys, LabelRef defaultTarget, LabelRef[] targets, AllocatableValue value, Value hash) {
+
     }
 
     @Override
@@ -371,11 +381,6 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitPrefetchAllocate(Value address) {
-        unimplemented();
-    }
-
-    @Override
-    protected void emitTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, Value key) {
         unimplemented();
     }
 

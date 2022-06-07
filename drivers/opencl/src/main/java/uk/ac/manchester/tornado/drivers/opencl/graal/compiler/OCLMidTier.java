@@ -26,7 +26,6 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
 import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
-import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 import static org.graalvm.compiler.core.common.GraalOptions.OptFloatingReads;
 import static org.graalvm.compiler.core.common.GraalOptions.ReassociateExpressions;
 
@@ -54,12 +53,7 @@ public class OCLMidTier extends TornadoMidTier {
 
         appendPhase(new ExceptionCheckingElimination());
 
-        CanonicalizerPhase canonicalizer;
-        if (ImmutableCode.getValue(options)) {
-            canonicalizer = CanonicalizerPhase.createWithoutReadCanonicalization();
-        } else {
-            canonicalizer = CanonicalizerPhase.create();
-        }
+        CanonicalizerPhase canonicalizer = CanonicalizerPhase.create();
 
         appendPhase(canonicalizer);
 

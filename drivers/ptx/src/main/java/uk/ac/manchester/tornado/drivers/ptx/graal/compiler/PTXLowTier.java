@@ -25,7 +25,6 @@
 package uk.ac.manchester.tornado.drivers.ptx.graal.compiler;
 
 import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
-import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Required;
 
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -55,12 +54,7 @@ public class PTXLowTier extends TornadoLowTier {
 
     public PTXLowTier(OptionValues options, TornadoDeviceContext tornadoDeviceContext, AddressLowering addressLowering) {
         this.tornadoDeviceContext = tornadoDeviceContext;
-        CanonicalizerPhase canonicalizer;
-        if (ImmutableCode.getValue(options)) {
-            canonicalizer = CanonicalizerPhase.createWithoutReadCanonicalization();
-        } else {
-            canonicalizer = CanonicalizerPhase.create();
-        }
+        CanonicalizerPhase canonicalizer = CanonicalizerPhase.create();
 
         appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.LOW_TIER));
 

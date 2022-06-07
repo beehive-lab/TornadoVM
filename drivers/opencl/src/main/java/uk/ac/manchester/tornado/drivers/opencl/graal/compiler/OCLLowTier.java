@@ -26,7 +26,6 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
 import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
-import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Required;
 
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -59,11 +58,7 @@ public class OCLLowTier extends TornadoLowTier {
     TornadoDeviceContext tornadoDeviceContext;
 
     private CanonicalizerPhase getCannonicalizer(OptionValues options) {
-        if (ImmutableCode.getValue(options)) {
-            return CanonicalizerPhase.createWithoutReadCanonicalization();
-        } else {
-            return CanonicalizerPhase.create();
-        }
+        return CanonicalizerPhase.create();
     }
 
     public OCLLowTier(OptionValues options, TornadoDeviceContext tornadoDeviceContext, AddressLowering addressLowering) {

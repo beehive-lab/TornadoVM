@@ -28,13 +28,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -83,14 +77,11 @@ import jdk.vm.ci.meta.ValueKind;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVHeader;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVInstScope;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVModule;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpBitcast;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpCapability;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpConstant;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpDecorate;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpExtInstImport;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpInBoundsPtrAccessChain;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpLabel;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpLoad;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpMemoryModel;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpName;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpReturn;
@@ -111,7 +102,6 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiter
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiteralString;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMemoryAccess;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMemoryModel;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVOptionalOperand;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVSourceLanguage;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVStorageClass;
@@ -575,7 +565,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                 asm.setKernelContextId(idPtr);
             }
         }
-        
+
         asm.setPtrCrossWorkGroupULong(asm.primitives.getPtrToCrossWorkGroupPrimitive(SPIRVKind.OP_TYPE_INT_64));
 
         // --------------------------------------
@@ -767,7 +757,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     private void emitPrologueForMainKernelEntry(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm, ResolvedJavaMethod method, LIR lir, SPIRVModule module) {
         final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
 
-        if (cfg.getStartBlock().getEndNode().predecessor().asNode() instanceof FPGAWorkGroupSizeNode) {
+        if (cfg.getStartBlock().getEndNode().predecessor() instanceof FPGAWorkGroupSizeNode) {
             throw new RuntimeException("FPGA Thread Attributes not supported yet.");
         }
 

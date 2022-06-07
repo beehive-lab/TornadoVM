@@ -25,7 +25,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
 import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
+import org.graalvm.compiler.lir.gen.MoveFactory;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;
@@ -35,7 +35,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVLIRStmt;
 /**
  * Factory class for creating moves
  */
-public class SPIRVMoveFactory implements LIRGeneratorTool.MoveFactory {
+public class SPIRVMoveFactory extends MoveFactory {
 
     @Override
     public boolean canInlineConstant(Constant constant) {

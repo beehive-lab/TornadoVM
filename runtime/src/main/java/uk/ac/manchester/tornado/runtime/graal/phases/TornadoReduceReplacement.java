@@ -28,6 +28,7 @@ import java.lang.annotation.Annotation;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.EndNode;
+import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.MergeNode;
@@ -225,7 +226,8 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
 
         StoreAtomicIndexedNodeExtension storeAtomicIndexedNodeExtension = new StoreAtomicIndexedNodeExtension(startNode);
         graph.addOrUnique(storeAtomicIndexedNodeExtension);
-        final StoreAtomicIndexedNode atomicStoreNode = graph //
+
+        StoreAtomicIndexedNode atomicStoreNode = graph //
                 .addOrUnique(new StoreAtomicIndexedNode(store.array(), store.index(), store.elementKind(), //
                         store.getBoundsCheck(), value, accumulator, inputArray, storeAtomicIndexedNodeExtension));
 
@@ -249,9 +251,12 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
 
         atomicStoreNode.setOptionalOperation(arithmeticNode);
 
-        atomicStoreNode.setNext(store.next());
+        FixedNode next = store.next();
+
         predecessor.replaceFirstSuccessor(store, atomicStoreNode);
         store.replaceAndDelete(atomicStoreNode);
+        atomicStoreNode.setNext(next);
+
     }
 
     private boolean shouldSkip(int index, StructuredGraph graph) {

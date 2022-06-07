@@ -1,4 +1,4 @@
-## Build TornadoVM with Graal 21.3.0 JDK 11/17 on Windows 10 (x64)
+## Build TornadoVM with Graal 22.1.0 JDK 11/17 on Windows 10 (x64)
 
 _**[DISCLAIMER] Please, notice that, although TornadoVM can run on Windows10, it is still experimental.**_
 
@@ -70,21 +70,25 @@ cat > ~/.m2/settings.xml << EOF
 EOF
 ```
 
-7. Create file `mvn` in `<MSYS2>/mingw64/bin` with any textual editor according to the template below:
+7. Create file `mvn` in `<MSYS2>/mingw64/bin` with any text editor (e.g., [Visual Studio Code](https://code.visualstudio.com/download)) with the following content:
 
 ```bash
 #!/usr/bin/env bash
-BASH_FILE=$(where bash)
-SETTINGS=\"${BASH_FILE%\\*\\*\\*}${HOME}/.m2/settings.xml\"
-
-C:/Maven/bin/mvn.cmd --settings ${SETTINGS} "$@"
+C:/<path-to-your-maven-install>/bin/mvn.cmd --settings ${HOME}/.m2/settings.xml "$@"
 ```
 
-You should only change path to Maven executable to the actual location of Maven in your system.
+Example:
+
+```bash
+#!/usr/bin/env bash
+C:/bin/apache-maven-3.8.4-bin/apache-maven-3.8.4/bin/mvn.cmd --settings ${HOME}/.m2/settings.xml "$@"
+```
+
+You only need to change the path to your maven installation in Windows.
 
 #### 2. Download TornadoVM
 
-Clone the latest TornadoVM sources from the GitHub [repository](https://github.com/beehive-lab/TornadoVM)
+Clone the latest TornadoVM source code from the GitHub [repository](https://github.com/beehive-lab/TornadoVM)
 using `<MSYS2>/mingw64.exe`:
 
 ```bash
@@ -95,14 +99,14 @@ cd TornadoVM
 
 We will refer hereafter the directory with TornadoVM sources as `<TornadoVM>`.
 
-#### 3. Download Graal 21.3.0
+#### 3. Download Graal 22.1.0
 
 TornadoVM can run with JDK 11 and 17.
-Visit [GraalVM Community Edition 21.3.0](https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-21.3.0) and
+Visit [GraalVM Community Edition 22.1.0](https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.1.0) and
 download either of the following builds:
 
-- [Download for JDK 11](https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.3.0/graalvm-ce-java11-windows-amd64-21.3.0.zip)
-- [Download for JDK 17](https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.3.0/graalvm-ce-java17-windows-amd64-21.3.0.zip)
+- [Download for JDK 11](https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.1.0/graalvm-ce-java11-windows-amd64-22.1.0.zip)
+- [Download for JDK 17](https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.1.0/graalvm-ce-java17-windows-amd64-22.1.0.zip)
 
 Extract the downloaded file to any directory.
 
@@ -139,12 +143,12 @@ Using any text editor create file `<TornadoVM>/etc/sources.env`  with the follow
 #!/bin/bash
 
 # UPDATE PATH TO ACTUAL LOCATION OF THE JDK OR GRAAL (REMEMBER OF UNIX_STYLE SLASHES AND SPACES!!!)
-export JAVA_HOME="C:/graalvm-ce-java11-21.3.0"
+export JAVA_HOME="C:/graalvm-ce-java11-22.1.0"
 
 ## NEXT TWO LINES NECESSARY TO BUILD PTX (NVIDIA CUDA) BACKEND
 ## COMMENT THEM OUT OR JUST IGNORE IF YOU ARE NOT INTERESTED IN PTX BUILD
 ## OTHERWISE UPDATE 'CUDA_PATH' WITH ACTUAL VALUE (REMEMBER OF UNIX_STYLE SLASHES AND SPACES!!!)
-export CUDA_PATH="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.2"
+export CUDA_PATH="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.6"
 export PTX_LDFLAGS=-L\"$CUDA_PATH/lib/x64\"
 
 # LEAVE THE REST OF FILE 'AS IS'

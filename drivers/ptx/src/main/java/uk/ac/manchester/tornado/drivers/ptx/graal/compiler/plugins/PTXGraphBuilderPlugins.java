@@ -23,21 +23,21 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.compiler.plugins;
 
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.ATAN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMAX;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.FMIN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPBinaryIntrinsicNode.Operation.POW;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.ATAN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.COS;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.EXP;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.FABS;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.LOG;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.SIGN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.SIN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.TAN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.TANH;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNode.Operation.MAX;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNode.Operation.MIN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntUnaryIntrinsicNode.Operation.POPCOUNT;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.TAN;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFPUnaryIntrinsicNode.Operation.TANH;
 
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
@@ -88,7 +88,7 @@ public class PTXGraphBuilderPlugins {
 
     private static void registerTornadoInstrinsicsPlugins(InvocationPlugins plugins) {
 
-        final InvocationPlugin printfPlugin = new InvocationPlugin() {
+        final InvocationPlugin printfPlugin = new InvocationPlugin("printf", String.class, Object[].class) {
 
             @Override
             public boolean defaultHandler(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode... args) {
@@ -140,8 +140,7 @@ public class PTXGraphBuilderPlugins {
             }
         };
 
-        plugins.register(printfPlugin, Debug.class, "printf", String.class, Object[].class);
-
+        plugins.register(Debug.class, printfPlugin);
     }
 
     private static void registerPTXBuiltinPlugins(InvocationPlugins plugins) {
@@ -156,7 +155,7 @@ public class PTXGraphBuilderPlugins {
         registerFPIntrinsics(r, Double.TYPE, JavaKind.Double);
 
         Registration longReg = new Registration(plugins, Long.class);
-        longReg.register1("bitCount", Long.TYPE, new InvocationPlugin() {
+        longReg.register(new InvocationPlugin("bitCount", Long.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(JavaKind.Int, b.append(PTXIntUnaryIntrinsicNode.create(value, POPCOUNT, JavaKind.Long)));
@@ -165,7 +164,7 @@ public class PTXGraphBuilderPlugins {
         });
 
         Registration intReg = new Registration(plugins, Integer.class);
-        intReg.register1("bitCount", Integer.TYPE, new InvocationPlugin() {
+        intReg.register(new InvocationPlugin("bitCount", Integer.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(JavaKind.Int, b.append(PTXIntUnaryIntrinsicNode.create(value, POPCOUNT, JavaKind.Int)));
@@ -175,7 +174,7 @@ public class PTXGraphBuilderPlugins {
     }
 
     private static void registerLocalBarrier(Registration r) {
-        r.register1("localBarrier", InvocationPlugin.Receiver.class, new InvocationPlugin() {
+        r.register(new InvocationPlugin("localBarrier", InvocationPlugin.Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 PTXBarrierNode localBarrierNode = new PTXBarrierNode(0, -1);
@@ -186,7 +185,7 @@ public class PTXGraphBuilderPlugins {
     }
 
     private static void registerGlobalBarrier(Registration r) {
-        r.register1("globalBarrier", InvocationPlugin.Receiver.class, new InvocationPlugin() {
+        r.register(new InvocationPlugin("globalBarrier", InvocationPlugin.Receiver.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 PTXBarrierNode localBarrierNode = new PTXBarrierNode(1, -1);
@@ -197,7 +196,7 @@ public class PTXGraphBuilderPlugins {
     }
 
     private static void registerIntLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
-        r.register2("allocateIntLocalArray", InvocationPlugin.Receiver.class, int.class, new InvocationPlugin() {
+        r.register(new InvocationPlugin("allocateIntLocalArray", InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
@@ -209,7 +208,7 @@ public class PTXGraphBuilderPlugins {
     }
 
     private static void registerLongLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
-        r.register2("allocateLongLocalArray", InvocationPlugin.Receiver.class, int.class, new InvocationPlugin() {
+        r.register(new InvocationPlugin("allocateLongLocalArray", InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
@@ -221,7 +220,7 @@ public class PTXGraphBuilderPlugins {
     }
 
     private static void registerFloatLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
-        r.register2("allocateFloatLocalArray", InvocationPlugin.Receiver.class, int.class, new InvocationPlugin() {
+        r.register(new InvocationPlugin("allocateFloatLocalArray", InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
@@ -233,7 +232,7 @@ public class PTXGraphBuilderPlugins {
     }
 
     private static void registerDoubleLocalArray(Registration r, JavaKind returnedJavaKind, JavaKind elementType) {
-        r.register2("allocateDoubleLocalArray", InvocationPlugin.Receiver.class, int.class, new InvocationPlugin() {
+        r.register(new InvocationPlugin("allocateDoubleLocalArray", InvocationPlugin.Receiver.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode size) {
                 ConstantNode constantNode = new ConstantNode(size.asConstant(), StampFactory.forKind(JavaKind.Int));
@@ -269,7 +268,7 @@ public class PTXGraphBuilderPlugins {
     }
 
     private static void registerFPIntrinsics(Registration r, Class<?> type, JavaKind kind) {
-        r.register2("pow", type, type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("pow", type, type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 b.push(kind, b.append(PTXFPBinaryIntrinsicNode.create(x, y, POW, kind)));
@@ -277,7 +276,7 @@ public class PTXGraphBuilderPlugins {
             }
         });
 
-        r.register1("signum", Float.TYPE, new InvocationPlugin() {
+        r.register(new InvocationPlugin("signum", Float.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(JavaKind.Float, b.append(PTXFPUnaryIntrinsicNode.create(value, SIGN, JavaKind.Float)));
@@ -285,7 +284,7 @@ public class PTXGraphBuilderPlugins {
             }
         });
 
-        r.register1("signum", Double.TYPE, new InvocationPlugin() {
+        r.register(new InvocationPlugin("signum", Double.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(JavaKind.Double, b.append(PTXFPUnaryIntrinsicNode.create(value, SIGN, JavaKind.Double)));
@@ -293,7 +292,7 @@ public class PTXGraphBuilderPlugins {
             }
         });
 
-        r.register1("sin", type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("sin", type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(PTXFPUnaryIntrinsicNode.create(value, SIN, kind)));
@@ -301,7 +300,7 @@ public class PTXGraphBuilderPlugins {
             }
         });
 
-        r.register1("cos", type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("cos", type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(PTXFPUnaryIntrinsicNode.create(value, COS, kind)));
@@ -309,7 +308,7 @@ public class PTXGraphBuilderPlugins {
             }
         });
 
-        r.register1("tan", Double.TYPE, new InvocationPlugin() {
+        r.register(new InvocationPlugin("tan", Double.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(JavaKind.Double, b.append(PTXFPUnaryIntrinsicNode.create(value, TAN, JavaKind.Double)));
@@ -317,7 +316,7 @@ public class PTXGraphBuilderPlugins {
             }
         });
 
-        r.register1("tanh", Double.TYPE, new InvocationPlugin() {
+        r.register(new InvocationPlugin("tanh", Double.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(JavaKind.Double, b.append(PTXFPUnaryIntrinsicNode.create(value, TANH, JavaKind.Double)));
@@ -325,7 +324,7 @@ public class PTXGraphBuilderPlugins {
             }
         });
 
-        r.register1("atan", Double.TYPE, new InvocationPlugin() {
+        r.register(new InvocationPlugin("atan", Double.TYPE) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(JavaKind.Double, b.append(PTXFPUnaryIntrinsicNode.create(value, ATAN, JavaKind.Double)));
@@ -333,7 +332,7 @@ public class PTXGraphBuilderPlugins {
             }
         });
 
-        r.register1("log", type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("log", type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(PTXFPUnaryIntrinsicNode.create(value, LOG, kind)));
@@ -341,7 +340,7 @@ public class PTXGraphBuilderPlugins {
             }
         });
 
-        r.register1("exp", type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("exp", type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(PTXFPUnaryIntrinsicNode.create(value, EXP, kind)));
@@ -351,7 +350,7 @@ public class PTXGraphBuilderPlugins {
     }
 
     private static void registerPTXOverridesForType(Registration r, Class<?> type, JavaKind kind) {
-        r.register2("min", type, type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("min", type, type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 if (kind.isNumericFloat()) {
@@ -363,7 +362,7 @@ public class PTXGraphBuilderPlugins {
             }
         });
 
-        r.register2("max", type, type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("max", type, type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 if (kind.isNumericFloat()) {
@@ -375,7 +374,7 @@ public class PTXGraphBuilderPlugins {
             }
         });
 
-        r.register1("abs", type, new InvocationPlugin() {
+        r.register(new InvocationPlugin("abs", type) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 if (kind.isNumericFloat()) {

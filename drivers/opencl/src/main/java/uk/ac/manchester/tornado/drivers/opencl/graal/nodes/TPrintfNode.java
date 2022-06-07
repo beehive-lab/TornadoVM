@@ -41,7 +41,8 @@ public class TPrintfNode extends FixedWithNextNode implements LIRLowerable {
 
     public static final NodeClass<TPrintfNode> TYPE = NodeClass.create(TPrintfNode.class);
 
-    @Input private NodeInputList<ValueNode> inputs;
+    @Input
+    private NodeInputList<ValueNode> inputs;
 
     public TPrintfNode(ValueNode... values) {
         super(TYPE, StampFactory.forVoid());
@@ -60,7 +61,7 @@ public class TPrintfNode extends FixedWithNextNode implements LIRLowerable {
             if (param.isConstant()) {
                 args[i] = gen.operand(param);
             } else {
-                args[i] = gen.getLIRGeneratorTool().load(gen.operand(param));
+                args[i] = gen.getLIRGeneratorTool().emitMove(gen.operand(param.asNode()));
             }
         }
         gen.getLIRGeneratorTool().append(new ExprStmt(new OCLTPrintf(args)));

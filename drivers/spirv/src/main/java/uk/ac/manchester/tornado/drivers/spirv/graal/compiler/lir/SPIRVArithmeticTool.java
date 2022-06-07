@@ -29,6 +29,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
+import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
@@ -165,7 +166,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
-    public Value emitNegate(Value input) {
+    public Value emitNegate(Value input, boolean setFlags) {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitNegate:  - %s", input);
         final Variable result = getGen().newVariable(LIRKind.combine(input));
         SPIRVUnary.Negate negateValue = new SPIRVUnary.Negate(LIRKind.combine(input), result, input);
@@ -466,7 +467,8 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
-    public Variable emitVolatileLoad(LIRKind kind, Value address, LIRFrameState state) {
+    public Variable emitOrderedLoad(LIRKind kind, Value address, LIRFrameState state, MemoryOrderMode memoryOrder) {
+        unimplemented();
         return null;
     }
 
@@ -538,7 +540,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
-    public void emitVolatileStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state) {
+    public void emitOrderedStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state, MemoryOrderMode memoryOrder) {
 
     }
 

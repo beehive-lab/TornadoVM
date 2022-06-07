@@ -33,7 +33,6 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG_KERNEL_ARGS;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.ENABLE_EXCEPTIONS;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -105,9 +104,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLReferenceMapBui
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
-import uk.ac.manchester.tornado.runtime.directives.CompilerInternals;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
@@ -146,7 +143,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     /**
-     * It allocated the extra internal buffers that are used by this backend (constant and atomic).
+     * It allocated the extra internal buffers that are used by this backend
+     * (constant and atomic).
      */
     @Override
     public void allocateTornadoVMBuffersOnDevice() {
@@ -307,8 +305,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
              * leads to a few issues.) Iris Pro is the only culprit at the moment.
              */
             final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
-            if (cfg.getStartBlock().getEndNode().predecessor().asNode() instanceof FPGAWorkGroupSizeNode) {
-                FPGAWorkGroupSizeNode fpgaNode = (FPGAWorkGroupSizeNode) (cfg.getStartBlock().getEndNode().predecessor().asNode());
+            if (cfg.getStartBlock().getEndNode().predecessor() instanceof FPGAWorkGroupSizeNode) {
+                FPGAWorkGroupSizeNode fpgaNode = (FPGAWorkGroupSizeNode) (cfg.getStartBlock().getEndNode().predecessor());
                 String attribute = fpgaNode.createThreadAttribute();
 
                 asm.emitSymbol(attribute);

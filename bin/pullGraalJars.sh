@@ -23,11 +23,11 @@
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-VERSION="21.3.0"
-COMPILER_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/compiler/compiler/21.3.0/compiler-21.3.0.jar
-COMPILER_MANAGEMENT_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/compiler/compiler-management/21.3.0/compiler-management-21.3.0.jar
-GRAAL_SDK_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/sdk/graal-sdk/21.3.0/graal-sdk-21.3.0.jar
-TRUFFLE_API_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/truffle/truffle-api/21.3.0/truffle-api-21.3.0.jar
+VERSION="22.1.0"
+COMPILER_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/compiler/compiler/${VERSION}/compiler-${VERSION}.jar
+COMPILER_MANAGEMENT_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/compiler/compiler-management/${VERSION}/compiler-management-${VERSION}.jar
+GRAAL_SDK_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/sdk/graal-sdk/${VERSION}/graal-sdk-${VERSION}.jar
+TRUFFLE_API_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/truffle/truffle-api/${VERSION}/truffle-api-${VERSION}.jar
 
 
 if [ ! -d $PWD/graalJars ]; then

@@ -28,14 +28,14 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool.MoveFactory;
+import org.graalvm.compiler.lir.gen.MoveFactory;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 
-public class OCLMoveFactory implements MoveFactory {
+public class OCLMoveFactory extends MoveFactory {
 
     @Override
     public boolean canInlineConstant(Constant jc) {
@@ -60,7 +60,7 @@ public class OCLMoveFactory implements MoveFactory {
     }
 
     @Override
-    public LIRInstruction createLoad(AllocatableValue av, Constant cnstnt) {
+    public LIRInstruction createLoad(AllocatableValue result, Constant input) {
         unimplemented();
         return null;
     }

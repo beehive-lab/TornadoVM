@@ -28,8 +28,6 @@ package uk.ac.manchester.tornado.drivers.opencl.graal;
 import static jdk.vm.ci.common.InitTimer.timer;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
-import java.util.Collections;
-
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotStampProvider;
@@ -128,7 +126,7 @@ public class OCLHotSpotBackendFactory {
             providers = new OCLProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, platformConfigurationProvider,
                     metaAccessExtensionProvider, snippetReflection, wordTypes, p.getLoopsDataProvider(), suites);
 
-            lowerer.initialize(options, Collections.singleton(graalDebugHandlersFactory), new DummySnippetFactory(), providers, snippetReflection);
+            lowerer.initialize(options, new DummySnippetFactory(), providers);
         }
         try (InitTimer rt = timer("instantiate backend")) {
             return new OCLBackend(options, providers, target, codeCache, oclDeviceContextImpl);
@@ -143,7 +141,14 @@ public class OCLHotSpotBackendFactory {
         OCLGraphBuilderPlugins.registerParameterPlugins(plugins);
         OCLGraphBuilderPlugins.registerNewInstancePlugins(plugins);
 
-        StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflectionProvider, invocationPlugins, replacements, false, false, false, loweringProvider);
+        StandardGraphBuilderPlugins.registerInvocationPlugins( //
+                snippetReflectionProvider, //
+                invocationPlugins, //
+                replacements, //
+                false, //
+                false, //
+                false, //
+                loweringProvider);
         OCLGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
         return plugins;
     }

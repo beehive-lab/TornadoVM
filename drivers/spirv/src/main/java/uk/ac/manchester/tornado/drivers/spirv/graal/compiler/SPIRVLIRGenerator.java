@@ -248,6 +248,22 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    public void emitStrategySwitch(SwitchStrategy strategy, AllocatableValue key, LabelRef[] keyTargets, LabelRef defaultTarget) {
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitStrategySwitch: strategy=%s key=%s defaultTarget=%s", strategy, key, defaultTarget);
+        append(new SPIRVControlFlow.SwitchStatement(key, strategy, keyTargets, defaultTarget));
+    }
+
+    @Override
+    protected void emitRangeTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, AllocatableValue key) {
+        unimplemented();
+    }
+
+    @Override
+    protected void emitHashTableSwitch(JavaConstant[] keys, LabelRef defaultTarget, LabelRef[] targets, AllocatableValue value, Value hash) {
+        unimplemented();
+    }
+
+    @Override
     public Variable emitByteSwap(Value operand) {
         unimplemented();
         return null;
@@ -277,17 +293,6 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitSpeculationFence() {
-        unimplemented();
-    }
-
-    @Override
-    public void emitStrategySwitch(SwitchStrategy strategy, Variable key, LabelRef[] keyTargets, LabelRef defaultTarget) {
-        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitStrategySwitch: strategy=%s key=%s defaultTarget=%s", strategy, key, defaultTarget);
-        append(new SPIRVControlFlow.SwitchStatement(key, strategy, keyTargets, defaultTarget));
-    }
-
-    @Override
-    protected void emitTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, Value key) {
         unimplemented();
     }
 

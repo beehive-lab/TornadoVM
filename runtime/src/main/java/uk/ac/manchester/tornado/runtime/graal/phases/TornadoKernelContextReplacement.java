@@ -21,9 +21,13 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+
 import java.util.ArrayList;
 
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.extended.UnboxNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
@@ -41,41 +45,62 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadLocalIdFixedWithNextNo
  * The {@link TornadoKernelContextReplacement} phase is performed during
  * {@link uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier}.
  * The objective is to replace all the FieldNodes of the {@link KernelContext}
- * fields with FloatingNodes that can be lowered to TornadoVM nodes for OpenCL
- * and PTX code emission.
+ * fields with FixedNodes that can be lowered to TornadoVM nodes for OpenCL,
+ * SPIR-V and PTX code emission.
  */
 public class TornadoKernelContextReplacement extends BasePhase<TornadoSketchTierContext> {
 
-    private void replaceKernelContextNode(StructuredGraph graph, ArrayList<Node> nodesToBeRemoved, Node node, Node newNode) {
-        for (Node n : node.successors()) {
+    private void replaceKernelContextNode(StructuredGraph graph, ArrayList<Node> nodesToBeRemoved, LoadFieldNode oldNode, FixedWithNextNode newNode) {
+        for (Node n : oldNode.successors()) {
             for (Node input : n.inputs()) { // This should be NullNode
                 input.safeDelete();
             }
             for (Node usage : n.usages()) { // This should be PiNode
                 usage.safeDelete();
             }
-            n.replaceAtPredecessor(n.successors().first());
+
+            Node fixedWithNextNode = n.successors().first();
+            fixedWithNextNode.replaceAtPredecessor(null);
+            oldNode.replaceFirstSuccessor(n, fixedWithNextNode);
+
             n.safeDelete();
         }
 
-        Node unboxNode = node.successors().first();
+        getDebugContext().dump(DebugContext.BASIC_LEVEL, graph, "After-FIXED REMOVED");
+
+        Node unboxNode = oldNode.next();
+
         if (unboxNode instanceof UnboxNode) {
-            unboxNode.replaceAtUsages(node);
-            node.replaceFirstSuccessor(unboxNode, unboxNode.successors().first());
+
+            unboxNode.replaceAtUsages(oldNode);
+
+            Node fixedWithNextNode = unboxNode.successors().first();
+            fixedWithNextNode.replaceAtPredecessor(null);
+            oldNode.replaceFirstSuccessor(unboxNode, fixedWithNextNode);
+
             unboxNode.safeDelete();
         }
 
+        getDebugContext().dump(DebugContext.BASIC_LEVEL, graph, "After-UNBOXING");
+
         graph.addWithoutUnique(newNode);
-        newNode.replaceFirstSuccessor(null, node.successors().first());
-        node.replaceAtUsages(newNode);
-        node.replaceAtPredecessor(newNode);
-        nodesToBeRemoved.add(node);
+
+        oldNode.replaceAtUsages(newNode);
+
+        oldNode.replaceAtUsages(newNode);
+        oldNode.replaceAtPredecessor(newNode);
+
+        Node fixedWithNextNode = oldNode.successors().first();
+        fixedWithNextNode.replaceAtPredecessor(null);
+        newNode.replaceFirstSuccessor(null, fixedWithNextNode);
+
+        nodesToBeRemoved.add(oldNode);
     }
 
     private void introduceKernelContext(StructuredGraph graph) {
         ArrayList<Node> nodesToBeRemoved = new ArrayList<>();
         graph.getNodes().filter(LoadFieldNode.class).forEach((node) -> {
-            if (node instanceof LoadFieldNode) {
+            if (node != null) {
                 String field = node.field().format("%H.%n");
                 if (field.contains("KernelContext.globalId")) {
                     ThreadIdFixedWithNextNode threadIdNode;
@@ -142,8 +167,6 @@ public class TornadoKernelContextReplacement extends BasePhase<TornadoSketchTier
                     }
 
                     replaceKernelContextNode(graph, nodesToBeRemoved, node, localGroupSizeNode);
-                } else {
-                    return;
                 }
             }
         });
