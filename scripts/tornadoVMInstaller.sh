@@ -80,7 +80,7 @@ function downloadCorretto11() {
     if [[ "$platform" == 'linux' ]]; then
         wget https://corretto.aws/downloads/latest/amazon-corretto-11-x64-linux-jdk.tar.gz
         tar xf amazon-corretto-11-x64-linux-jdk.tar.gz
-        export JAVA_HOME=$PWD/amazon-corretto-11.0.13.8.1-linux-x64/
+        export JAVA_HOME=$PWD/amazon-corretto-11.0.15.9.1-linux-x64
     elif [[ "$platform" == 'darwin' ]]; then
 	wget https://corretto.aws/downloads/latest/amazon-corretto-11-x64-macos-jdk.tar.gz
         tar xf amazon-corretto-11-x64-macos-jdk.tar.gz
@@ -93,7 +93,7 @@ function downloadCorretto17() {
     if [[ "$platform" == 'linux' ]]; then
         wget https://corretto.aws/downloads/latest/amazon-corretto-17-x64-linux-jdk.tar.gz
         tar xf amazon-corretto-17-x64-linux-jdk.tar.gz
-        export JAVA_HOME=$PWD/amazon-corretto-17.0.1.12.1-linux-x64
+        export JAVA_HOME=$PWD/amazon-corretto-17.0.3.6.1-linux-x64
     elif [[ "$platform" == 'darwin' ]]; then
         wget https://corretto.aws/downloads/latest/amazon-corretto-17-x64-macos-jdk.tar.gz
         tar xf amazon-corretto-17-x64-macos-jdk.tar.gz
@@ -127,7 +127,7 @@ function downloadMandrel17() {
     fi
 }
 
-function downloadWindowsJDK11() {
+function downloadMicrosoftJDK11() {
     platform=$(getPlatform)
     if [[ "$platform" == 'linux' ]]; then
         wget https://aka.ms/download-jdk/microsoft-jdk-11.0.13.8.1-linux-x64.tar.gz
@@ -140,7 +140,7 @@ function downloadWindowsJDK11() {
     fi
 }
 
-function downloadWindowsJDK17() {
+function downloadMicrosoftJDK17() {
     platform=$(getPlatform)
     if [[ "$platform" == 'linux' ]]; then
         wget https://aka.ms/download-jdk/microsoft-jdk-17.0.1.12.1-linux-x64.tar.gz
@@ -150,6 +150,32 @@ function downloadWindowsJDK17() {
         wget https://aka.ms/download-jdk/microsoft-jdk-17.0.1.12.1-macOS-x64.tar.gz
         tar xf microsoft-jdk-11.0.13.8.1-macOS-x64.tar.gz
         export JAVA_HOME=$PWD/jdk-11.0.13+8/Contents/Home
+    fi
+}
+
+function downloadZuluJDK11() {
+    platform=$(getPlatform)
+    if [[ "$platform" == 'linux' ]]; then
+        wget https://cdn.azul.com/zulu/bin/zulu11.56.19-ca-jdk11.0.15-linux_x64.tar.gz
+        tar xf zulu11.56.19-ca-jdk11.0.15-linux_x64.tar.gz
+        export JAVA_HOME=$PWD/zulu11.56.19-ca-jdk11.0.15-linux_x64
+    elif [[ "$platform" == 'darwin' ]]; then
+        wget https://cdn.azul.com/zulu/bin/zulu11.56.19-ca-jdk11.0.15-macosx_x64.tar.gz
+        tar xf zulu11.56.19-ca-jdk11.0.15-macosx_x64.tar.gz
+        export JAVA_HOME=$PWD/zulu11.56.19-ca-jdk11.0.15-macosx_x64/zulu-11.jdk/Contents/Home
+    fi
+}
+
+function downloadZuluJDK17() {
+    platform=$(getPlatform)
+    if [[ "$platform" == 'linux' ]]; then
+        wget https://cdn.azul.com/zulu/bin/zulu17.34.19-ca-jdk17.0.3-linux_x64.tar.gz
+        tar xf zulu17.34.19-ca-jdk17.0.3-linux_x64.tar.gz
+        export JAVA_HOME=$PWD/zulu17.34.19-ca-jdk17.0.3-linux_x64
+    elif [[ "$platform" == 'darwin' ]]; then
+        wget https://cdn.azul.com/zulu/bin/zulu17.34.19-ca-jdk17.0.3-macosx_x64.tar.gz
+        tar xf zulu17.34.19-ca-jdk17.0.3-macosx_x64.tar.gz
+        export JAVA_HOME=$PWD/zulu17.34.19-ca-jdk17.0.3-macosx_x64/zulu-17.jdk/Contents/Home
     fi
 }
 
@@ -336,22 +362,48 @@ function installForMandrelJDK17() {
     setupVariables $dirname
 }
 
-function installForWindowsJDK11() {
-    dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-Windows-JDK11"
+function installForMicrosoftJDK11() {
+    checkPrerequisites
+    dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-Microsoft-JDK11"
     mkdir -p $dirname
     cd $dirname
-    downloadWindowsJDK11
+    downloadMicrosoftJDK11
     downloadCMake
     cd -
     setupTornadoVM jdk-11-plus
     setupVariables $dirname
 }
 
-function installForWindowsJDK17() {
-    dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-Windows-JDK17"
+function installForMicrosoftJDK17() {
+    checkPrerequisites
+    dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-Microsoft-JDK17"
     mkdir -p $dirname
     cd $dirname
-    downloadWindowsJDK17
+    downloadMicrosoftJDK17
+    downloadCMake
+    cd -
+    setupTornadoVM jdk-11-plus
+    setupVariables $dirname
+}
+
+function installForZuluJDK11() {
+    checkPrerequisites
+    dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-Zulu-JDK11"
+    mkdir -p $dirname
+    cd $dirname
+    downloadZuluJDK11
+    downloadCMake
+    cd -
+    setupTornadoVM jdk-11-plus
+    setupVariables $dirname
+}
+
+function installForZuluJDK17() {
+    checkPrerequisites
+    dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-Zulu-JDK17"
+    mkdir -p $dirname
+    cd $dirname
+    downloadZuluJDK17
     downloadCMake
     cd -
     setupTornadoVM jdk-11-plus
@@ -370,8 +422,10 @@ function printHelp() {
     echo "       --corretto-17      : Install TornadoVM with Corretto JDK 17"
     echo "       --mandrel-11       : Install TornadoVM with Mandrel 22.1.0 (JDK 11)"
     echo "       --mandrel-17       : Install TornadoVM with Mandrel 22.1.0 (JDK 17)"
-    echo "       --microsoft-jdk-11 : Install TornadoVM with Windows JDK 11"
-    echo "       --microsoft-jdk-17 : Install TornadoVM with Windows JDK 17"
+    echo "       --microsoft-jdk-11 : Install TornadoVM with Microsoft JDK 11"
+    echo "       --microsoft-jdk-17 : Install TornadoVM with Microsoft JDK 17"
+    echo "       --zulu-jdk-11      : Install TornadoVM with Azul Zulu JDK 11"
+    echo "       --zulu-jdk-17      : Install TornadoVM with Azul Zulu JDK 17"
     echo "TornadoVM Backends:"
     echo "       --opencl           : Install TornadoVM and build the OpenCL backend"
     echo "       --ptx              : Install TornadoVM and build the PTX backend"
@@ -449,12 +503,20 @@ do
     installForMandrelJDK17
     shift
     ;;
-  --windows-jdk-11)
-    installForWindowsJDK11
+  --microsoft-jdk-11)
+    installForMicrosoftJDK11
     shift
     ;;
-  --windows-jdk-17)
-    installForWindowsJDK17
+  --microsoft-jdk-17)
+    installForMicrosoftJDK17
+    shift
+    ;;
+  --zulu-jdk-11)
+    installForZuluJDK11
+    shift
+    ;;
+  --zulu-jdk-17)
+    installForZuluJDK17
     shift
     ;;
   --opencl)

@@ -11,9 +11,10 @@ pipeline {
     }
 
     environment {
-        JDK_8_JAVA_HOME="/opt/jenkins/jdks/openjdk1.8.0_302-jvmci-21.3-b05"
-        CORRETTO_11_JAVA_HOME="/opt/jenkins/jdks/amazon-corretto-11.0.13.8.1-linux-x64"
-        JDK_17_JAVA_HOME="/opt/jenkins/jdks/jdk-17.0.1+12"
+        ZULU_11_JAVA_HOME="/opt/jenkins/jdks/zulu11.56.19-ca-jdk11.0.15-linux_x64"
+        ZULU_17_JAVA_HOME="/opt/jenkins/jdks/zulu17.34.19-ca-jdk17.0.3-linux_x64"
+        CORRETTO_11_JAVA_HOME="/opt/jenkins/jdks/amazon-corretto-11.0.15.9.1-linux-x64"
+        JDK_17_JAVA_HOME="/opt/jenkins/jdks/jdk-17.0.1"
         GRAALVM_11_JAVA_HOME="/opt/jenkins/jdks/graalvm-ce-java11-22.1.0"
         GRAALVM_17_JAVA_HOME="/opt/jenkins/jdks/graalvm-ce-java17-22.1.0"
         TORNADO_ROOT="/var/lib/jenkins/workspace/Tornado-pipeline"
@@ -36,28 +37,32 @@ pipeline {
             steps {
                 script {
                     if (params.fullBuild == true) {
-                        runJDK8()
+                        runZuluJDK11()
+                        runZuluJDK17()
                         runJDK17()
                         runGraalVM17()
                         runGraalVM11()
                         runCorrettoJDK11()
                     } else {
                         Random rnd = new Random()
-                        int NO_OF_JDKS = 5
+                        int NO_OF_JDKS = 6
                         switch (rnd.nextInt(NO_OF_JDKS)) {
                             case 0:
-                                runJDK8()
+                                runZuluJDK11()
                                 break
                             case 1:
-                                runCorrettoJDK11()
+                                runZuluJDK17()
                                 break
                             case 2:
-                                runGraalVM11()
+                                runCorrettoJDK11()
                                 break
                             case 3:
-                                runGraalVM17()
+                                runGraalVM11()
                                 break
                             case 4:
+                                runGraalVM17()
+                                break
+                            case 5:
                                 runJDK17()
                         }
                     }
@@ -77,10 +82,19 @@ pipeline {
     }
 }
 
-void runJDK8() {
-    stage('JDK 8') {
-        withEnv(["JAVA_HOME=${JDK_8_JAVA_HOME}"]) {
-            buildAndTest("JDK 8", "jdk-8")
+void runZuluJDK11() {
+    stage('Zulu JDK 11') {
+        withEnv(["JAVA_HOME=${ZULU_11_JAVA_HOME}"]) {
+            buildAndTest("Zulu JDK 11", "jdk-11-plus")
+            buildAndTestRayTracer("Zulu JDK 11")
+        }
+    }
+}
+
+void runZuluJDK17() {
+    stage('Zulu JDK 17') {
+        withEnv(["JAVA_HOME=${ZULU_17_JAVA_HOME}"]) {
+            buildAndTest("Zulu JDK 17", "jdk-11-plus")
         }
     }
 }

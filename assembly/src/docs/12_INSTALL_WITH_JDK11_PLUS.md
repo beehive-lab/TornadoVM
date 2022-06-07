@@ -2,20 +2,20 @@
 
 **Pre-requisites**
 
-  * Maven Version 3.6.3
-  * CMake 3.6 (or newer)
-  * At least one of:   
+* Maven Version 3.6.3
+* CMake 3.6 (or newer)
+* At least one of:
     * OpenCL: GPUs and CPUs >= 1.2, FPGAs >= 1.0
     * CUDA 9.0 +
-  * GCC or clang/LLVM (GCC >= 5.5)
-  * Python (>= 2.7)
+* GCC or clang/LLVM (GCC >= 5.5)
+* Python (>= 2.7)
 
+For Mac OS X users: the OpenCL support for your Apple model can be
+confirmed [here](https://support.apple.com/en-gb/HT202823).
 
-  For Mac OS X users: the OpenCL support for your Apple model can be confirmed [here](https://support.apple.com/en-gb/HT202823).
+###### DISCLAIMER:
 
-  ###### DISCLAIMER:
-  
-  TornadoVM is based on the Graal compiler that depends on JVMCI (Java Virtual Machine Compiler Interface). Different JDKs come with different versions of JVMCI. Therefore, the version of the Graal compiler that TornadoVM uses might not be compatible with the JVMCI version of some JDKs. Below are listed the Java 11+ JDK distributions against which TornadoVM has been tested, but compatibility is not guaranteed.
+TornadoVM is based on the Graal compiler that depends on JVMCI (Java Virtual Machine Compiler Interface). Different JDKs come with different versions of JVMCI. Therefore, the version of the Graal compiler that TornadoVM uses might not be compatible with the JVMCI version of some JDKs. Below are listed the Java 11+ JDK distributions against which TornadoVM has been tested, but compatibility is not guaranteed.
 
   ```bash
   Red Hat Mandrel 11.0.12 (Mandrel 22.1.0.0 Final)
@@ -25,15 +25,17 @@
   OpenJDK 17.0.1
   Microsoft Build of OpenJDK (OpenJDK 11.0.13+8)
   Microsoft Build of OpenJDK (OpenJDK 17.0.1)
+  Azul Zulu OpenJDK (OpenJDK 11.0.15)
+  Azul Zulu OpenJDK (OpenJDK 17.0.3)
   ```
-
 
 ### 1. Download a JDK 11+ distribution
 
 OpenJDK distributions are available to download at [https://adoptium.net/](https://adoptium.net/).<br/>
 Red Hat Mandrel releases are available at [https://github.com/graalvm/mandrel/releases](https://github.com/graalvm/mandrel/releases).<br/>
 Amazon Coretto releases are available at [https://aws.amazon.com/corretto/](https://aws.amazon.com/corretto/).<br/>
-Microsoft OpenJDK releases are available at [https://docs.microsoft.com/en-us/java/openjdk/download](https://docs.microsoft.com/en-us/java/openjdk/download).
+Microsoft OpenJDK releases are available at [https://docs.microsoft.com/en-us/java/openjdk/download](https://docs.microsoft.com/en-us/java/openjdk/download).<br/>
+Azul Zulu OpenJDK releases are available at [https://www.azul.com/downloads](https://www.azul.com/downloads/?package=jdk#download-openjdk).
 
 After downloading and extracting the JDK distribution, point your `JAVA_HOME` variable to the JDK root.
 
@@ -41,7 +43,7 @@ Example:
 ```bash
  $ wget https://corretto.aws/downloads/latest/amazon-corretto-11-x64-linux-jdk.tar.gz
  $ tar xf amazon-corretto-11-x64-linux-jdk.tar.gz
- $ export JAVA_HOME=$PWD/amazon-corretto-11.0.13.8.1-linux-x64
+ $ export JAVA_HOME=$PWD/amazon-corretto-11.0.15.9.1-linux-x64
 ```
 
 ### 2. Download TornadoVM
@@ -71,6 +73,7 @@ This file should be loaded once after opening the command prompt for the setup o
 ```bash
 $ source ./etc/sources.env
 ```
+
 For OSX: the exports above may be added to `~/.profile`
 
 ### 3. Install CMAKE (if cmake < 3.6)
@@ -84,8 +87,9 @@ $ cmake -version
 Otherwise try to install cmake.
 
 For simplicity it might be easier to install cmake in your home directory.
-  * Redhat Enterprise Linux / CentOS use cmake v2.8
-  * We require a newer version so that OpenCL is configured properly.
+
+* Redhat Enterprise Linux / CentOS use cmake v2.8
+* We require a newer version so that OpenCL is configured properly.
 
 ```bash
 $ cd ~/Downloads
