@@ -248,17 +248,6 @@ function setupVariables() {
     echo -e "\nTo run TornadoVM, run \`. source.sh\`"
 }
 
-function installForOpenJDK8() {
-    dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-OpenJDK8"
-    mkdir -p $dirname
-    cd $dirname
-    downloadOpenJDK8
-    downloadCMake
-    cd -
-    setupTornadoVM jdk-8
-    setupVariables $dirname
-}
-
 function installForOpenJDK11() {
     dirname=${DIRECTORY_DEPENDENCIES}"/TornadoVM-OpenJDK11"
     mkdir -p $dirname
