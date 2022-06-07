@@ -40,6 +40,8 @@ import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import org.graalvm.compiler.lir.asm.DataBuilder;
 import org.graalvm.compiler.lir.asm.FrameContext;
 import org.graalvm.compiler.lir.framemap.FrameMap;
+import org.graalvm.compiler.nodes.AbstractBeginNode;
+import org.graalvm.compiler.nodes.AbstractEndNode;
 import org.graalvm.compiler.nodes.ControlSplitNode;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.FixedNode;
@@ -267,11 +269,11 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
     }
 
     private boolean isTrueBranchALoopExitNode(IfNode ifNode) {
-        return ifNode.trueSuccessor() instanceof LoopExitNode;
+        return ifNode.trueSuccessor() instanceof AbstractBeginNode;
     }
 
     private boolean isTrueBranchWithEndNodeOrNotControlSplit(Block blockTrueBranch) {
-        return ((blockTrueBranch.getEndNode() instanceof EndNode) || !(blockTrueBranch.getEndNode() instanceof ControlSplitNode));
+        return ((blockTrueBranch.getEndNode() instanceof AbstractEndNode) || !(blockTrueBranch.getEndNode() instanceof ControlSplitNode));
     }
 
     /**

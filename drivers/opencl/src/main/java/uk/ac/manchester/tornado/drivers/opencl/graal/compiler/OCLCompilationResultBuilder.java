@@ -50,6 +50,8 @@ import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import org.graalvm.compiler.lir.asm.DataBuilder;
 import org.graalvm.compiler.lir.asm.FrameContext;
 import org.graalvm.compiler.lir.framemap.FrameMap;
+import org.graalvm.compiler.nodes.AbstractBeginNode;
+import org.graalvm.compiler.nodes.AbstractEndNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.ControlSplitNode;
 import org.graalvm.compiler.nodes.EndNode;
@@ -411,19 +413,19 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     }
 
     private boolean isTrueBranchALoopExitNode(IfNode ifNode) {
-        return ifNode.trueSuccessor() instanceof LoopExitNode;
+        return ifNode.trueSuccessor() instanceof AbstractBeginNode;
     }
 
     private boolean isTrueBranchWithEndNodeOrNotControlSplit(Block blockTrueBranch) {
-        return ((blockTrueBranch.getEndNode() instanceof EndNode) || !(blockTrueBranch.getEndNode() instanceof ControlSplitNode));
+        return ((blockTrueBranch.getEndNode() instanceof AbstractEndNode) || !(blockTrueBranch.getEndNode() instanceof ControlSplitNode));
     }
 
     /**
      * From Graal 22.1.0 the graph traversal was changed. This method reschedules
      * the current basic block to generate always the true condition before the
      * false condition only if we have a LoopEndNode node in the false branch, or we
-     * have a LoopExit in the true branch contains a LoopExitNode or it is not a
-     * control Split (due to nested control-flow).
+     * have a LoopExit in the true branch contains a {@link LoopExitNode} or it is
+     * not a control Split (due to nested control-flow).
      *
      * @param basicBlock
      *            {@link Block}
