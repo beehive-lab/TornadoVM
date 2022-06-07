@@ -15,10 +15,7 @@ confirmed [here](https://support.apple.com/en-gb/HT202823).
 
 ###### DISCLAIMER:
 
-TornadoVM is based on the Graal compiler that depends on JVMCI (Java Virtual Machine Compiler Interface). Different JDKs
-come with different versions of JVMCI. Therefore, the version of the Graal compiler that TornadoVM uses might not be
-compatible with the JVMCI version of some JDKs. Below are listed the Java 11+ JDK distributions against which TornadoVM
-has been tested, but compatibility is not guaranteed.
+TornadoVM is based on the Graal compiler that depends on JVMCI (Java Virtual Machine Compiler Interface). Different JDKs come with different versions of JVMCI. Therefore, the version of the Graal compiler that TornadoVM uses might not be compatible with the JVMCI version of some JDKs. Below are listed the Java 11+ JDK distributions against which TornadoVM has been tested, but compatibility is not guaranteed.
 
   ```bash
   Red Hat Mandrel 11.0.12 (Mandrel 22.1.0.0 Final)
@@ -35,19 +32,14 @@ has been tested, but compatibility is not guaranteed.
 ### 1. Download a JDK 11+ distribution
 
 OpenJDK distributions are available to download at [https://adoptium.net/](https://adoptium.net/).<br/>
-Red Hat Mandrel releases are available
-at [https://github.com/graalvm/mandrel/releases](https://github.com/graalvm/mandrel/releases).<br/>
+Red Hat Mandrel releases are available at [https://github.com/graalvm/mandrel/releases](https://github.com/graalvm/mandrel/releases).<br/>
 Amazon Coretto releases are available at [https://aws.amazon.com/corretto/](https://aws.amazon.com/corretto/).<br/>
-Microsoft OpenJDK releases are available
-at [https://docs.microsoft.com/en-us/java/openjdk/download](https://docs.microsoft.com/en-us/java/openjdk/download)
-.<br/>
-Azul Zulu OpenJDK releases are available
-at [https://www.azul.com/downloads](https://www.azul.com/downloads/?package=jdk#download-openjdk).
+Microsoft OpenJDK releases are available at [https://docs.microsoft.com/en-us/java/openjdk/download](https://docs.microsoft.com/en-us/java/openjdk/download).<br/>
+Azul Zulu OpenJDK releases are available at [https://www.azul.com/downloads](https://www.azul.com/downloads/?package=jdk#download-openjdk).
 
 After downloading and extracting the JDK distribution, point your `JAVA_HOME` variable to the JDK root.
 
 Example:
-
 ```bash
  $ wget https://corretto.aws/downloads/latest/amazon-corretto-11-x64-linux-jdk.tar.gz
  $ tar xf amazon-corretto-11-x64-linux-jdk.tar.gz
@@ -62,13 +54,11 @@ Example:
 ```
 
 Create/edit your configuration file:
-
 ```bash
 $ vim etc/sources.env
 ```
 
-The first time you need to create the `etc/sources.env` file and add the following code in it **(after updating the
-paths to your correct ones)**:
+The first time you need to create the `etc/sources.env` file and add the following code in it **(after updating the paths to your correct ones)**:
 
 ```bash
 #!/bin/bash
@@ -89,7 +79,6 @@ For OSX: the exports above may be added to `~/.profile`
 ### 3. Install CMAKE (if cmake < 3.6)
 
 #### For Linux:
-
 ```
 $ cmake -version
 ```
@@ -122,17 +111,14 @@ $ export CMAKE_ROOT=/opt/cmake-3.10.1
 #### For OSX:
 
 Install cmake:
-
 ```bash
 $ brew install cmake
 ```
-
 then
 
 ```bash
 export CMAKE_ROOT=/usr/local
 ```
-
 which can be added to `~/.profile`
 
 ### 4. Compile TornadoVM
@@ -150,7 +136,9 @@ $ make jdk-11-plus BACKEND={ptx,opencl}
 
 and done!!
 
+
 ## Running with JDK 11+
+
 
 TornadoVM uses modules:
 
@@ -172,12 +160,12 @@ To run individual tests:
 tornado -Dtornado.unittests.verbose=True -Xmx6g  -m  tornado.unittests/uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner uk.ac.manchester.tornado.unittests.arrays.TestArrays
 ```
 
+
 ## Known issues
 
 ##### For Ubuntu >= 16.04, install the package  `ocl-icd-opencl-dev`
 
-In Ubuntu >= 16.04 CMake can cause the following error:  Could NOT find OpenCL (missing: OpenCL_LIBRARY) (found
-version "2.2"). Then the following package should be installed:
+In Ubuntu >= 16.04 CMake can cause the following error:  Could NOT find OpenCL (missing: OpenCL_LIBRARY) (found version "2.2"). Then the following package should be installed:
 
 ```bash
 $ apt-get install ocl-icd-opencl-dev
