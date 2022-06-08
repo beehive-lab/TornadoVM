@@ -23,7 +23,6 @@
  */
 #include <jni.h>
 
-#define CL_TARGET_OPENCL_VERSION 210
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
 #else
@@ -220,14 +219,18 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_clCreateProgramWithIL
         (JNIEnv *env, jclass clazz, jlong context_id, jbyteArray javaSourceBinaryArray, jlongArray javaSizeArray) {
-    jbyte *source = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(javaSourceBinaryArray, NULL));
-    jlong *lengths = static_cast<jlong *>(env->GetPrimitiveArrayCritical(javaSizeArray, NULL));
-    size_t binarySize = lengths[0];
 
-    cl_int status;
-    cl_program program = clCreateProgramWithIL((cl_context) context_id, (const void *) source, binarySize, &status);
-    LOG_OCL_AND_VALIDATE("clCreateProgramWithIL", status);
-    env->ReleasePrimitiveArrayCritical(javaSourceBinaryArray, source, 0);
-    env->ReleasePrimitiveArrayCritical(javaSizeArray, lengths, 0);
-    return (jlong) program;
+    #if CL_TARGET_OPENCL_VERSION >= 210
+        jbyte *source = static_cast<jbyte *>(env->GetPrimitiveArrayCritical(javaSourceBinaryArray, NULL));
+        jlong *lengths = static_cast<jlong *>(env->GetPrimitiveArrayCritical(javaSizeArray, NULL));
+        size_t binarySize = lengths[0];
+        cl_int status;
+        cl_program program = clCreateProgramWithIL((cl_context) context_id, (const void *) source, binarySize, &status);
+        LOG_OCL_AND_VALIDATE("clCreateProgramWithIL", status);
+        env->ReleasePrimitiveArrayCritical(javaSourceBinaryArray, source, 0);
+        env->ReleasePrimitiveArrayCritical(javaSizeArray, lengths, 0);
+        return (jlong) program;
+    #else
+        return -1;
+    #endif
 }

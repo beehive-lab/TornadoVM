@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -156,13 +157,16 @@ public class OCLContext implements OCLExecutionEnvironment {
     }
 
     public OCLProgram createProgramWithIL(byte[] spirvBinary, long[] lengths, OCLDeviceContext deviceContext) {
-        OCLProgram program = null;
-
+        OCLProgram program;
         try {
-            program = new OCLProgram(clCreateProgramWithIL(contextID, spirvBinary, lengths), deviceContext);
+            long programID = clCreateProgramWithIL(contextID, spirvBinary, lengths);
+            if (programID == -1) {
+                throw new TornadoRuntimeException("OpenCL version <= 2.1. clCreateProgramWithIL is not supported");
+            }
+            program = new OCLProgram(programID, deviceContext);
             programs.add(program);
         } catch (OCLException e) {
-            TornadoLogger.error(e.getMessage());
+            throw new TornadoRuntimeException(e);
         }
 
         return program;
