@@ -28,7 +28,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    
+
 #ifdef __APPLE__
     #include <OpenCL/cl.h>
 #else
