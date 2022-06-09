@@ -186,7 +186,6 @@ public class PrebuiltTest extends TornadoTestBase {
     @Test
     public void testPrebuild04() {
         assertNotBackend(TornadoVMBackendType.PTX);
-        assertNotBackend(TornadoVMBackendType.OPENCL);
 
         TornadoDevice device = checkSPIRVSupport();
 
