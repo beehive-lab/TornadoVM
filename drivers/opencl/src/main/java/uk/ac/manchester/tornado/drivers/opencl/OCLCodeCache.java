@@ -126,11 +126,7 @@ public class OCLCodeCache {
     }
 
     private boolean runOnIntelFPGAWithDocker() {
-        if (System.getenv("DOCKER_FPGA_EMULATION") == null) {
-            return false;
-        } else {
-            return System.getenv("DOCKER_FPGA_EMULATION").equals("1");
-        }
+        return System.getenv("DOCKER_FPGA_EMULATION").equals("1");
     }
 
     private String fetchFPGAConfigurationFile() {
