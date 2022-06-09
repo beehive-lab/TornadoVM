@@ -24,7 +24,6 @@
  *
  */
 
-#define CL_TARGET_OPENCL_VERSION 120
 #include <iostream>
 #include "opencl_time_utils.h"
 #include "ocl_log.h"
