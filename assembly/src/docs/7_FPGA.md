@@ -10,7 +10,7 @@ This [document](17_AWS.md) shows a full guideline for running TornadoVM on Amazo
 ### Pre-requisites
 
 We have currently tested with an Intel Nallatech-A385 FPGA (Intel Arria 10 GT1150) and a Xilinx KCU1500 FPGA card.
-We have also tested it on the AWS EC2 F1 instance with `xilinx_aws-vu9p-f1-04261818_dynamic_5_0 device`.
+We have also tested it on the AWS EC2 F1 instance with `xilinx_aws-vu9p-f1-04261818_dynamic_5_0` device.
 
 * HLS Versions: Intel Quartus 17.1.0 Build 240, Xilinx SDAccel 2018.2, Xilinx SDAccel 2018.3, Xilinx Vitis 2020.2
 * TornadoVM Version: >= 0.9
@@ -42,6 +42,24 @@ $ clinfo
 ## Step 1: Update/Create the FPGA's configuration file
 
 Update the "$TORNADO_SDK/etc/vendor-fpga.conf" file with the necessary information (i.e. fpga platform name (DEVICE_NAME), HLS compiler flags (FLAGS), HLS directory (DIRECTORY_BITSTREAM). TornadoVM will automatically load the user-defined configurations according to the vendor of the underlying FPGA device.  You can also run TornadoVM with your configuration file, by using the `-Dtornado.fpga.conf.file=FILE` flag.
+
+### Example of configuration file for Intel FPGAs (Emulation mode) with the [TornadoVM Docker image](https://github.com/beehive-lab/docker-tornado#intel-integrated-graphics):
+
+Edit/create the configuration file fo the FPGA:
+
+```bash
+$ vim $TORNADO_SDK/etc/intel-docker-fpga.conf
+```
+
+```conf
+# Configure the fields for FPGA compilation & execution
+# [device]
+DEVICE_NAME = fpga_fast_emu
+# [compiler]
+COMPILER = aocl-ioc64
+# [options]
+DIRECTORY_BITSTREAM = fpga-source-comp/ # Specify the directory
+```
 
 ### Example of configuration file for Intel Nallatech-A385 FPGA (Intel Arria 10 GT1150):
 
@@ -176,13 +194,33 @@ tornado \
 
 ### 3. Emulation Mode
 
-Emulation mode can be used for fast-prototying and ensuring program functional correctness before going through the full JIT process (HLS).
+Emulation mode can be used for fast-prototyping and ensuring program functional correctness before going through the full JIT process (HLS).
 
 Before executing the TornadoVM program, the following steps needs to be executed based on the FPGA vendors' toolchain:  
 
 #### A) Emulation of an Intel platform:
 
-- Set the `CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA` env variable to `1`, so as to enable the execution on the emulated device. 
+You can run in Emulation mode either by using a Docker container or locally:
+
+- Using a Docker Image:
+
+If you use a Docker image provided by [Intel OneAPI](https://hub.docker.com/r/intel/oneapi), please set up the following variable:
+```bash 
+$ export DOCKER_FPGA_EMULATION=1
+```
+In case you use the [TornadoVM Docker image](https://github.com/beehive-lab/docker-tornado#intel-integrated-graphics), this variable is configured by default.
+Therefore you can run the following example in which the FPGA device uses the identifier `1:0`.
+
+Example:
+```bash
+./run_intel_openjdk.sh tornado \
+    -Ds0.t0.device=1:0 \
+    -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 default 10
+```
+
+- Local execution:
+
+Set the `CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA` env variable to `1`, so as to enable the execution on the emulated device. 
 ```bash
 $ export CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA=1
 ```
