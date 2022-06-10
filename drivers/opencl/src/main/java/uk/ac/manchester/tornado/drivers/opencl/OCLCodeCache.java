@@ -120,6 +120,10 @@ public class OCLCodeCache {
         }
     }
 
+    private String trimFirstSpaceFromString(String string) {
+        return string.replaceFirst("\\s+", "");
+    }
+
     private boolean tokenStartsAComment(String token) {
         return token.startsWith("#");
     }
@@ -163,6 +167,7 @@ public class OCLCodeCache {
             bufferedReader = new BufferedReader(fileReader);
             String line;
             while ((line = bufferedReader.readLine()) != null) {
+                line = trimFirstSpaceFromString(line);
                 StringTokenizer tokenizer = new StringTokenizer(line, " =");
                 while (tokenizer.hasMoreElements()) {
                     String token = tokenizer.nextToken();
