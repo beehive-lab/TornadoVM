@@ -224,7 +224,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         // Enable Profiler for code generation
         PTXCompilationResultBuilder builder = (PTXCompilationResultBuilder) resultBuilder;
         TaskMetaData taskMetaData = builder.getTaskMetaData();
-        profiler.start(ProfilerType.TASK_CODE_GENERATOR_TIME, taskMetaData.getId());
+        profiler.start(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
 
         PTXCompilationResultBuilder crb = (PTXCompilationResultBuilder) resultBuilder;
         final PTXAssembler asm = crb.getAssembler();
@@ -233,8 +233,8 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         crb.emit(lir);
         emitEpilogue(asm);
 
-        profiler.stop(ProfilerType.TASK_CODE_GENERATOR_TIME, taskMetaData.getId());
-        profiler.sum(ProfilerType.TOTAL_CODE_GENERATOR_TIME, profiler.getTaskTimer(ProfilerType.TASK_CODE_GENERATOR_TIME, taskMetaData.getId()));
+        profiler.stop(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
+        profiler.sum(ProfilerType.TOTAL_CODE_GENERATION_TIME, profiler.getTaskTimer(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId()));
     }
 
     private void emitEpilogue(PTXAssembler asm) {

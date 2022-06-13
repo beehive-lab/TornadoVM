@@ -213,15 +213,15 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     public void emitCode(OCLCompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method, TornadoProfiler profiler) {
         TaskMetaData taskMetaData = crb.getTaskMetaData();
-        profiler.start(ProfilerType.TASK_CODE_GENERATOR_TIME, taskMetaData.getId());
+        profiler.start(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
 
         final OCLAssembler asm = (OCLAssembler) crb.asm;
         emitPrologue(crb, asm, method, lir);
         crb.emit(lir);
         emitEpilogue(asm);
 
-        profiler.stop(ProfilerType.TASK_CODE_GENERATOR_TIME, taskMetaData.getId());
-        profiler.sum(ProfilerType.TOTAL_CODE_GENERATOR_TIME, profiler.getTaskTimer(ProfilerType.TASK_CODE_GENERATOR_TIME, taskMetaData.getId()));
+        profiler.stop(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
+        profiler.sum(ProfilerType.TOTAL_CODE_GENERATION_TIME, profiler.getTaskTimer(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId()));
 
     }
 

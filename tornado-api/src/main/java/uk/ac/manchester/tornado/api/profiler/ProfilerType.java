@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -44,13 +44,13 @@ public enum ProfilerType {
     TASK_COMPILE_DRIVER_TIME("Task-Compile-Driver"),
     TASK_COMPILE_GRAAL_TIME("Task-Compile-Graal"),
 
-    TASK_CODE_GENERATOR_TIME("Task-Code-Generator"),
+    TASK_CODE_GENERATION_TIME("Task-Code-Generation"),
     TASK_KERNEL_TIME("Task-Kernel"),
     TOTAL_BYTE_CODE_GENERATION("Total-Bytecode-Gen"),
     TOTAL_DRIVER_COMPILE_TIME("Total-Driver-Compilation-Time"),
     TOTAL_GRAAL_COMPILE_TIME("Total-Graal-Compilation-Time"),
 
-    TOTAL_CODE_GENERATOR_TIME("Total-Task-Code-Generator-Time"),
+    TOTAL_CODE_GENERATION_TIME("Total-Task-Code-Generation-Time"),
     TOTAL_KERNEL_TIME("Kernel-Time"),
     TOTAL_TASK_SCHEDULE_TIME("TS-Total-Time");
     // @formatter:on

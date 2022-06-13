@@ -293,7 +293,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         // Enable Profiler for code generation
         SPIRVCompilationResultBuilder builder = (SPIRVCompilationResultBuilder) resultBuilder;
         TaskMetaData taskMetaData = builder.getTaskMetaData();
-        profiler.start(ProfilerType.TASK_CODE_GENERATOR_TIME, taskMetaData.getId());
+        profiler.start(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
 
         SPIRVCompilationResultBuilder crb = (SPIRVCompilationResultBuilder) resultBuilder;
         final SPIRVAssembler asm = (SPIRVAssembler) crb.asm;
@@ -327,8 +327,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         // 4. Clean-up
         cleanUp(asm);
 
-        profiler.stop(ProfilerType.TASK_CODE_GENERATOR_TIME, taskMetaData.getId());
-        profiler.sum(ProfilerType.TOTAL_CODE_GENERATOR_TIME, profiler.getTaskTimer(ProfilerType.TASK_CODE_GENERATOR_TIME, taskMetaData.getId()));
+        profiler.stop(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
+        profiler.sum(ProfilerType.TOTAL_CODE_GENERATION_TIME, profiler.getTaskTimer(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId()));
     }
 
     private void cleanPhiTables(SPIRVAssembler asm) {
