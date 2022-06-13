@@ -11,25 +11,29 @@ Example:
 $ tornado --enableProfiler console  -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt 100000
 {
     "s0": {
-        "COPY_OUT_TIME": "36576",
-        "TOTAL_TASK_SCHEDULE_TIME": "104699731",
-        "TOTAL_GRAAL_COMPILE_TIME": "36462460",
-        "TOTAL_KERNEL_TIME": "25600",
-        "DISPATCH_TIME": "61952",
-        "COPY_IN_TIME": "88288",
-        "TOTAL_DRIVER_COMPILE_TIME": "710824",
-        "TOTAL_BYTE_CODE_GENERATION": "7031446",
+        "TOTAL_GRAAL_COMPILE_TIME": "106281743",
+        "TOTAL_BYTE_CODE_GENERATION": "10522795",
+        "TOTAL_CODE_GENERATION_TIME": "16643493",
+        "TOTAL_KERNEL_TIME": "48306",
+        "TOTAL_DISPATCH_DATA_TRANSFERS_TIME": "0",
+        "TOTAL_TASK_SCHEDULE_TIME": "284284370",
+        "COPY_OUT_TIME": "37350",
+        "TOTAL_DRIVER_COMPILE_TIME": "67842031",
+        "COPY_IN_TIME": "59843",
+        "TOTAL_COPY_OUT_SIZE_BYTES": "400024",
+        "TOTAL_COPY_IN_SIZE_BYTES": "1600096",
         "s0.t0": {
-            "DEVICE_ID": "0:2",
-            "DEVICE": "GeForce GTX 1650",
-            "TASK_COPY_OUT_SIZE_BYTES": "8216",
-            "TASK_COPY_IN_SIZE_BYTES": "32892",
-            "TASK_COMPILE_GRAAL_TIME": "36462460",
-            "TASK_COMPILE_DRIVER_TIME": "710824",
-            "TASK_KERNEL_TIME": "25600"
+            "METHOD": "VectorAddInt.vectorAdd",
+            "DEVICE_ID": "0:0",
+            "DEVICE": "Intel(R) UHD Graphics [0x9bc4]",
+            "TASK_COMPILE_GRAAL_TIME": "106281743",
+            "TASK_KERNEL_TIME": "48306",
+            "TASK_CODE_GENERATION_TIME": "16643493",
+            "TASK_COMPILE_DRIVER_TIME": "67842031"
         }
     }
 }
+
 ```
 
 All timers are printed in nanoseconds.
@@ -45,6 +49,7 @@ All timers are printed in nanoseconds.
 * *TOTAL_TASK_SCHEDULE_TIME*: Total execution time. It contains all timers
 * *TOTAL_GRAAL_COMPILE_TIME*: Total compilation with Graal (from Java to OpenCL C / PTX)
 * *TOTAL_DRIVER_COMPILE_TIME*: Total compilation with the driver (once the OpenCL C / PTX code is generated, the time that the driver takes to generate the final binary).
+* *TOTAL_CODE_GENERATION_TIME*: Total code generation time. This value represents the elapsed time from the last Graal compilation phase in the LIR to the target backend code (e.g., OpenCL, PTX or SPIR-V).
 
 
 Then, for each task within a task-schedule, there are usually three timers, one device identifier and two data transfer metrics:
@@ -56,6 +61,7 @@ Then, for each task within a task-schedule, there are usually three timers, one 
 * *TASK_COMPILE_GRAAL_TIME*: time that takes to compile a given task with Graal.
 * *TASK_COMPILE_DRIVER_TIME*: time that takes to compile a given task with the OpenCL/CUDA driver.
 * *TASK_KERNEL_TIME*: kernel execution for the given task (Java method).
+* *TASK_CODE_GENERATION_TIME*: time that takes the code generation from the LIR to the target backend code (e.g., SPIR-V).
 
 
 #### Note
