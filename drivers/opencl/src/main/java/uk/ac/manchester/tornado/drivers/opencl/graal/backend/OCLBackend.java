@@ -48,7 +48,6 @@ import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
 import org.graalvm.compiler.lir.asm.DataBuilder;
 import org.graalvm.compiler.lir.framemap.FrameMap;
 import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
@@ -74,6 +73,8 @@ import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.common.BackendDeopt;
 import uk.ac.manchester.tornado.drivers.common.code.CodeUtil;
@@ -106,6 +107,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -200,8 +202,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     @Override
-    public void emitCode(CompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method) {
-        emitCode((OCLCompilationResultBuilder) crb, lir, method);
+    public void emitCode(CompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method, TornadoProfiler profiler) {
+        emitCode((OCLCompilationResultBuilder) crb, lir, method, profiler);
     }
 
     public EconomicSet<Register> translateToCallerRegisters(EconomicSet<Register> calleeRegisters) {
@@ -209,11 +211,18 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return null;
     }
 
-    public void emitCode(OCLCompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method) {
+    public void emitCode(OCLCompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method, TornadoProfiler profiler) {
+        TaskMetaData taskMetaData = crb.getTaskMetaData();
+        profiler.start(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
+
         final OCLAssembler asm = (OCLAssembler) crb.asm;
         emitPrologue(crb, asm, method, lir);
         crb.emit(lir);
         emitEpilogue(asm);
+
+        profiler.stop(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
+        profiler.sum(ProfilerType.TOTAL_CODE_GENERATION_TIME, profiler.getTaskTimer(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId()));
+
     }
 
     private void emitEpilogue(OCLAssembler asm) {
@@ -397,9 +406,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return ((OCLProviders) getProviders()).getSuitesProvider();
     }
 
-    public OCLCompilationResultBuilder newCompilationResultBuilder(FrameMap frameMap, OCLCompilationResult compilationResult, CompilationResultBuilderFactory factory, boolean isKernel,
-            boolean isParallel) {
-
+    public OCLCompilationResultBuilder newCompilationResultBuilder(FrameMap frameMap, OCLCompilationResult compilationResult, boolean isKernel, boolean isParallel) {
         OCLAssembler asm = createAssembler();
         OCLFrameContext frameContext = new OCLFrameContext();
         DataBuilder dataBuilder = new OCLDataBuilder();
@@ -460,4 +467,5 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         unimplemented("Create compiled code method in OCLBackend not implemented yet.");
         return null;
     }
+
 }

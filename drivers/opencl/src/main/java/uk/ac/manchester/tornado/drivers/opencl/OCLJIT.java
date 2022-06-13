@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
+import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -71,7 +72,7 @@ public class OCLJIT {
 
             TaskMetaData meta = TaskMetaData.create(new ScheduleMetaData("s0"), methodName, method);
 
-            OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolvedMethod, new Object[] {}, meta, (OCLProviders) backend.getProviders(), backend);
+            OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolvedMethod, new Object[] {}, meta, (OCLProviders) backend.getProviders(), backend, new EmptyProfiler());
 
             OCLInstalledCode code = OpenCL.defaultDevice().getDeviceContext().installCode(result);
 

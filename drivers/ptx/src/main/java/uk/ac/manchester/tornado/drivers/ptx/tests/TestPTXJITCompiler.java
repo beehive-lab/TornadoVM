@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -19,7 +19,7 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- * 
+ *
  */
 package uk.ac.manchester.tornado.drivers.ptx.tests;
 
@@ -40,9 +40,10 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompiler;
 import uk.ac.manchester.tornado.drivers.ptx.runtime.PTXTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
@@ -108,7 +109,8 @@ public class TestPTXJITCompiler {
         taskMeta.setDevice(PTX.defaultDevice());
 
         // Compile the PTX code
-        PTXCompilationResult compilationResult = PTXCompiler.compileCodeForDevice(resolvedJavaMethod, new Object[] { a, b, c }, taskMeta, (PTXProviders) ptxBackend.getProviders(), ptxBackend, 0);
+        PTXCompilationResult compilationResult = PTXCompiler.compileCodeForDevice(resolvedJavaMethod, new Object[] { a, b, c }, taskMeta, (PTXProviders) ptxBackend.getProviders(), ptxBackend, 0,
+                new EmptyProfiler());
 
         // Install the PTX Code in the VM
         TornadoInstalledCode ptxCode = tornadoDevice.getDeviceContext().installCode(compilationResult, resolvedJavaMethod.getName());
@@ -131,7 +133,7 @@ public class TestPTXJITCompiler {
         GlobalObjectState stateC = new GlobalObjectState();
         DeviceObjectState objectStateC = stateC.getDeviceState(tornadoDevice);
 
-        tornadoDevice.allocateBulk(new Object[] {a, b, c}, 0, new TornadoDeviceObjectState[] {objectStateA, objectStateB, objectStateC});
+        tornadoDevice.allocateBulk(new Object[] { a, b, c }, 0, new TornadoDeviceObjectState[] { objectStateA, objectStateB, objectStateC });
 
         // Copy-IN A
         tornadoDevice.ensurePresent(a, objectStateA, null, 0, 0);

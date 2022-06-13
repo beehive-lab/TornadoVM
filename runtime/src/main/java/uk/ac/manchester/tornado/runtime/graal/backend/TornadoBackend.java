@@ -38,6 +38,7 @@ import org.graalvm.compiler.phases.util.Providers;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
+import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
 public abstract class TornadoBackend<P extends Providers> extends Backend {
@@ -78,6 +79,6 @@ public abstract class TornadoBackend<P extends Providers> extends Backend {
 
     public abstract LIRGeneratorTool newLIRGenerator(LIRGenerationResult lirGenRes);
 
-    public abstract void emitCode(CompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method);
+    public abstract void emitCode(CompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method, TornadoProfiler profiler);
 
 }

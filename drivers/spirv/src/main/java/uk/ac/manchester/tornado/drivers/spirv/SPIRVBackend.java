@@ -48,7 +48,6 @@ import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
 import org.graalvm.compiler.lir.asm.DataBuilder;
 import org.graalvm.compiler.lir.framemap.FrameMap;
 import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
@@ -108,6 +107,8 @@ import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVStora
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.drivers.common.BackendDeopt;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
@@ -134,6 +135,7 @@ import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVKernelArgs;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -264,8 +266,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         return new SPIRVNodeLIRBuilder(graph, lirGen, new SPIRVNodeMatchRules(lirGen));
     }
 
-    public SPIRVCompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGen, FrameMap frameMap, SPIRVCompilationResult compilationResult, CompilationResultBuilderFactory factory,
-            boolean isKernel, boolean isParallel) {
+    public SPIRVCompilationResultBuilder newCompilationResultBuilder(FrameMap frameMap, SPIRVCompilationResult compilationResult, boolean isKernel, boolean isParallel) {
 
         SPIRVAssembler asm;
         if (compilationResult.getAssembler() == null) {
@@ -287,7 +288,12 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
     }
 
     @Override
-    public void emitCode(CompilationResultBuilder resultBuilder, LIR lir, ResolvedJavaMethod method) {
+    public void emitCode(CompilationResultBuilder resultBuilder, LIR lir, ResolvedJavaMethod method, TornadoProfiler profiler) {
+
+        // Enable Profiler for code generation
+        SPIRVCompilationResultBuilder builder = (SPIRVCompilationResultBuilder) resultBuilder;
+        TaskMetaData taskMetaData = builder.getTaskMetaData();
+        profiler.start(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
 
         SPIRVCompilationResultBuilder crb = (SPIRVCompilationResultBuilder) resultBuilder;
         final SPIRVAssembler asm = (SPIRVAssembler) crb.asm;
@@ -320,6 +326,9 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
 
         // 4. Clean-up
         cleanUp(asm);
+
+        profiler.stop(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
+        profiler.sum(ProfilerType.TOTAL_CODE_GENERATION_TIME, profiler.getTaskTimer(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId()));
     }
 
     private void cleanPhiTables(SPIRVAssembler asm) {

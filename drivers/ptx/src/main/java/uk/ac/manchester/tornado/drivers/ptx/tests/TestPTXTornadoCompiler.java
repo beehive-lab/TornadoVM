@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -19,7 +19,7 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- * 
+ *
  *
  */
 package uk.ac.manchester.tornado.drivers.ptx.tests;
@@ -85,7 +85,8 @@ public class TestPTXTornadoCompiler {
 
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
         PTXBackend backend = tornadoRuntime.getDriver(PTXDriver.class).getDefaultBackend();
-        new PTXCompilationResult("add");
+        TaskMetaData meta = new TaskMetaData(new ScheduleMetaData("s0"), "add", 0);
+        new PTXCompilationResult("add", meta);
 
         byte[] source = PTX_KERNEL.getBytes();
         source = PTXCodeUtil.getCodeWithAttachedPTXHeader(source, backend);

@@ -62,6 +62,8 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.common.BackendDeopt;
 import uk.ac.manchester.tornado.drivers.common.code.CodeUtil;
@@ -88,6 +90,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXVectorSplit;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -203,6 +206,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         PTXFrameContext frameContext = new PTXFrameContext();
         DataBuilder dataBuilder = new PTXDataBuilder();
         PTXCompilationResultBuilder crb = new PTXCompilationResultBuilder(getProviders(), frameMap, asm, dataBuilder, frameContext, options, getDebugContext(), compilationResult);
+        crb.setTaskMetaData(compilationResult.metaData());
         crb.setKernel(isKernel);
         crb.setParallel(isParallel);
         crb.setDeviceContext(deviceContext);
@@ -215,13 +219,22 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     }
 
     @Override
-    public void emitCode(CompilationResultBuilder resultBuilder, LIR lir, ResolvedJavaMethod method) {
+    public void emitCode(CompilationResultBuilder resultBuilder, LIR lir, ResolvedJavaMethod method, TornadoProfiler profiler) {
+
+        // Enable Profiler for code generation
+        PTXCompilationResultBuilder builder = (PTXCompilationResultBuilder) resultBuilder;
+        TaskMetaData taskMetaData = builder.getTaskMetaData();
+        profiler.start(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
+
         PTXCompilationResultBuilder crb = (PTXCompilationResultBuilder) resultBuilder;
         final PTXAssembler asm = crb.getAssembler();
         PTXLIRGenerationResult lirGenRes = crb.getPTXLIRGenerationResult();
         emitPrologue(crb, asm, lirGenRes, method);
         crb.emit(lir);
         emitEpilogue(asm);
+
+        profiler.stop(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
+        profiler.sum(ProfilerType.TOTAL_CODE_GENERATION_TIME, profiler.getTaskTimer(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId()));
     }
 
     private void emitEpilogue(PTXAssembler asm) {
