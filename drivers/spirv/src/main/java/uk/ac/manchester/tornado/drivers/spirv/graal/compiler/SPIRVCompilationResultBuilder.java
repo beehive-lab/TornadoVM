@@ -60,6 +60,7 @@ import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLBlockVisitor;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
 
@@ -69,6 +70,7 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
     private int loops = 0;
     private boolean isParallel;
     private SPIRVDeviceContext deviceContext;
+    private TaskMetaData meta;
 
     public SPIRVCompilationResultBuilder(CodeGenProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
             CompilationResult compilationResult) {
@@ -350,4 +352,9 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
     public void addNonInlinedMethod(ResolvedJavaMethod targetMethod) {
         nonInlinedMethods.add(targetMethod);
     }
+
+    public TaskMetaData getTaskMetaData() {
+        return ((SPIRVCompilationResult) compilationResult).getMeta();
+    }
+
 }

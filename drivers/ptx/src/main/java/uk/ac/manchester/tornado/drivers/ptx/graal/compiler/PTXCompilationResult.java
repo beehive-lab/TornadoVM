@@ -22,22 +22,26 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.compiler;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import org.graalvm.compiler.code.CompilationResult;
-import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.getCodeWithAttachedPTXHeader;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.prependToTargetCode;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.prependToTargetCode;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.getCodeWithAttachedPTXHeader;
+import org.graalvm.compiler.code.CompilationResult;
+
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class PTXCompilationResult extends CompilationResult {
 
     private Set<ResolvedJavaMethod> nonInlinedMethods;
+    private TaskMetaData taskMetaData;
 
-    public PTXCompilationResult(String functionName) {
+    public PTXCompilationResult(String functionName, TaskMetaData meta) {
         super(functionName);
+        this.taskMetaData = meta;
     }
 
     public void setNonInlinedMethods(Set<ResolvedJavaMethod> value) {
@@ -45,7 +49,7 @@ public class PTXCompilationResult extends CompilationResult {
     }
 
     public Set<ResolvedJavaMethod> getNonInlinedMethods() {
-        return (nonInlinedMethods != null) ? nonInlinedMethods: new HashSet<>();
+        return (nonInlinedMethods != null) ? nonInlinedMethods : new HashSet<>();
     }
 
     public void addCompiledMethodCode(byte[] code) {
@@ -56,5 +60,9 @@ public class PTXCompilationResult extends CompilationResult {
     public void addPTXHeader(PTXBackend backend) {
         byte[] newCode = getCodeWithAttachedPTXHeader(getTargetCode(), backend);
         setTargetCode(newCode, newCode.length);
+    }
+
+    public TaskMetaData metaData() {
+        return taskMetaData;
     }
 }

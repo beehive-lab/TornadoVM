@@ -567,12 +567,8 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         this.isParallel = parallel;
     }
 
-    public void setTaskMetaData(TaskMetaData metaData) {
-        this.metaData = metaData;
-    }
-
     public TaskMetaData getTaskMetaData() {
-        return metaData;
+        return ((OCLCompilationResult) compilationResult).getMeta();
     }
 
     public void setDeviceContext(OCLDeviceContextInterface deviceContext) {

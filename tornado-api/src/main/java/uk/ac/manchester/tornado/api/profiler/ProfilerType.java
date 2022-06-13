@@ -43,10 +43,14 @@ public enum ProfilerType {
     TOTAL_COPY_OUT_SIZE_BYTES("CopyOut-Size-(Bytes)"),
     TASK_COMPILE_DRIVER_TIME("Task-Compile-Driver"),
     TASK_COMPILE_GRAAL_TIME("Task-Compile-Graal"),
+
+    TASK_CODE_GENERATOR_TIME("Task-Code-Generator"),
     TASK_KERNEL_TIME("Task-Kernel"),
     TOTAL_BYTE_CODE_GENERATION("Total-Bytecode-Gen"),
     TOTAL_DRIVER_COMPILE_TIME("Total-Driver-Compilation-Time"),
     TOTAL_GRAAL_COMPILE_TIME("Total-Graal-Compilation-Time"),
+
+    TOTAL_CODE_GENERATOR_TIME("Total-Task-Code-Generator-Time"),
     TOTAL_KERNEL_TIME("Kernel-Time"),
     TOTAL_TASK_SCHEDULE_TIME("TS-Total-Time");
     // @formatter:on

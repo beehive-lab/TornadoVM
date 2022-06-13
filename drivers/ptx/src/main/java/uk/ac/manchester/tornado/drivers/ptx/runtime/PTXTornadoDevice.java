@@ -69,8 +69,8 @@ import uk.ac.manchester.tornado.drivers.ptx.mm.PTXObjectWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXShortArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXVectorWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
@@ -172,11 +172,11 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
                 profiler.registerDeviceID(ProfilerType.DEVICE_ID, taskMeta.getId(), taskMeta.getLogicDevice().getDriverIndex() + ":" + taskMeta.getDeviceIndex());
                 profiler.registerDeviceName(ProfilerType.DEVICE, taskMeta.getId(), taskMeta.getLogicDevice().getPhysicalDevice().getDeviceName());
                 profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
-                result = PTXCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
+                result = PTXCompiler.compileSketchForDevice(sketch, executable, providers, getBackend(), executable.getProfiler());
                 profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
                 profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
             } else {
-                result = new PTXCompilationResult(buildKernelName(resolvedMethod.getName(), executable));
+                result = new PTXCompilationResult(buildKernelName(resolvedMethod.getName(), executable), taskMeta);
             }
 
             profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
