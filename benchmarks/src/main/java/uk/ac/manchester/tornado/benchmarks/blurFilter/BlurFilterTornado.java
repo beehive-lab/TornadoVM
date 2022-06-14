@@ -75,11 +75,11 @@ public class BlurFilterTornado extends BenchmarkDriver {
             }
         }
 
-        ts = new TaskSchedule("blur") //
+        ts = new TaskSchedule("benchmark") //
                 .streamIn(redChannel, greenChannel, blueChannel) //
-                .task("red", ComputeKernels::channelConvolution, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
-                .task("green", ComputeKernels::channelConvolution, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
-                .task("blue", ComputeKernels::channelConvolution, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
+                .task("blurRed", ComputeKernels::channelConvolution, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
+                .task("blurGreen", ComputeKernels::channelConvolution, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
+                .task("blurBlue", ComputeKernels::channelConvolution, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
                 .streamOut(redFilter, greenFilter, blueFilter) //
                 .useDefaultThreadScheduler(true);
     }
