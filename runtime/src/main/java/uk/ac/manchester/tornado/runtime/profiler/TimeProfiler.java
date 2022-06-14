@@ -33,9 +33,9 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 public class TimeProfiler implements TornadoProfiler {
 
     /**
-     * Use this dummy field because {@link #addValueToMetric} needs a task name. However, sync operations operate on
-     * task schedules, not on tasks.
-     * TODO remove this field when the {@link TimeProfiler} is refactored. Related to issue #94.
+     * Use this dummy field because {@link #addValueToMetric} needs a task name.
+     * However, sync operations operate on task schedules, not on tasks. TODO remove
+     * this field when the {@link TimeProfiler} is refactored. Related to issue #94.
      */
     public static String NO_TASK_NAME = "noTask";
 
@@ -45,6 +45,8 @@ public class TimeProfiler implements TornadoProfiler {
     private HashMap<String, HashMap<ProfilerType, String>> taskDeviceIdentifiers;
     private HashMap<String, HashMap<ProfilerType, String>> taskMethodNames;
 
+    private HashMap<String, HashMap<ProfilerType, String>> taskBackends;
+
     private StringBuffer indent;
 
     public TimeProfiler() {
@@ -53,6 +55,7 @@ public class TimeProfiler implements TornadoProfiler {
         taskDeviceIdentifiers = new HashMap<>();
         taskMethodNames = new HashMap<>();
         taskThroughputMetrics = new HashMap<>();
+        taskBackends = new HashMap<>();
         indent = new StringBuffer("");
     }
 
@@ -94,22 +97,33 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
-    public void registerDeviceName(ProfilerType type, String taskName, String deviceInfo) {
+    public void registerDeviceName(String taskName, String deviceInfo) {
         if (!taskDeviceIdentifiers.containsKey(taskName)) {
             taskDeviceIdentifiers.put(taskName, new HashMap<>());
         }
         HashMap<ProfilerType, String> profilerType = taskDeviceIdentifiers.get(taskName);
-        profilerType.put(type, deviceInfo);
+        profilerType.put(ProfilerType.DEVICE, deviceInfo);
         taskDeviceIdentifiers.put(taskName, profilerType);
     }
 
     @Override
-    public void registerDeviceID(ProfilerType type, String taskName, String deviceID) {
+    public void registerBackend(String taskName, String backend) {
+        if (!taskBackends.containsKey(taskName)) {
+            taskBackends.put(taskName, new HashMap<>());
+        }
+        HashMap<ProfilerType, String> profilerType = taskBackends.get(taskName);
+
+        profilerType.put(ProfilerType.BACKEND, backend);
+        taskBackends.put(taskName, profilerType);
+    }
+
+    @Override
+    public void registerDeviceID(String taskName, String deviceID) {
         if (!taskDeviceIdentifiers.containsKey(taskName)) {
             taskDeviceIdentifiers.put(taskName, new HashMap<>());
         }
         HashMap<ProfilerType, String> profilerType = taskDeviceIdentifiers.get(taskName);
-        profilerType.put(type, deviceID);
+        profilerType.put(ProfilerType.DEVICE_ID, deviceID);
         taskDeviceIdentifiers.put(taskName, profilerType);
     }
 
@@ -208,6 +222,7 @@ public class TimeProfiler implements TornadoProfiler {
             if (TornadoOptions.LOG_IP) {
                 json.append(indent.toString() + "\"" + "IP" + "\"" + ": " + "\"" + RuntimeUtilities.getTornadoInstanceIP() + "\",\n");
             }
+            json.append(indent.toString() + "\"" + ProfilerType.BACKEND + "\"" + ": " + "\"" + taskBackends.get(p).get(ProfilerType.BACKEND) + "\",\n");
             json.append(indent.toString() + "\"" + ProfilerType.METHOD + "\"" + ": " + "\"" + taskMethodNames.get(p).get(ProfilerType.METHOD) + "\",\n");
             json.append(indent.toString() + "\"" + ProfilerType.DEVICE_ID + "\"" + ": " + "\"" + taskDeviceIdentifiers.get(p).get(ProfilerType.DEVICE_ID) + "\",\n");
             json.append(indent.toString() + "\"" + ProfilerType.DEVICE + "\"" + ": " + "\"" + taskDeviceIdentifiers.get(p).get(ProfilerType.DEVICE) + "\",\n");

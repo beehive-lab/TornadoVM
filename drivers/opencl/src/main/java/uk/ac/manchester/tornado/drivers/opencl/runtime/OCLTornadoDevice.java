@@ -235,8 +235,9 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             OCLProviders providers = (OCLProviders) getBackend().getProviders();
             TornadoProfiler profiler = task.getProfiler();
             // profiler
-            profiler.registerDeviceID(ProfilerType.DEVICE_ID, taskMeta.getId(), taskMeta.getLogicDevice().getDriverIndex() + ":" + taskMeta.getDeviceIndex());
-            profiler.registerDeviceName(ProfilerType.DEVICE, taskMeta.getId(), taskMeta.getLogicDevice().getPhysicalDevice().getDeviceName());
+            profiler.registerBackend(taskMeta.getId(), taskMeta.getLogicDevice().getTornadoVMBackend().name());
+            profiler.registerDeviceID(taskMeta.getId(), taskMeta.getLogicDevice().getDriverIndex() + ":" + taskMeta.getDeviceIndex());
+            profiler.registerDeviceName(taskMeta.getId(), taskMeta.getLogicDevice().getPhysicalDevice().getDeviceName());
             profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
             final OCLCompilationResult result = OCLCompiler.compileSketchForDevice(sketch, executable, providers, getBackend(), executable.getProfiler());
 

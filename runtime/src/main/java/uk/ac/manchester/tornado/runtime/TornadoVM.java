@@ -428,8 +428,8 @@ public class TornadoVM extends TornadoLogger {
     private void profilerUpdateForPreCompiledTask(SchedulableTask task) {
         if (task instanceof PrebuiltTask && timeProfiler instanceof TimeProfiler) {
             PrebuiltTask prebuiltTask = (PrebuiltTask) task;
-            timeProfiler.registerDeviceID(ProfilerType.DEVICE_ID, task.getId(), prebuiltTask.meta().getLogicDevice().getDriverIndex() + ":" + prebuiltTask.meta().getDeviceIndex());
-            timeProfiler.registerDeviceName(ProfilerType.DEVICE, task.getId(), prebuiltTask.meta().getLogicDevice().getPhysicalDevice().getDeviceName());
+            timeProfiler.registerDeviceID(task.getId(), prebuiltTask.meta().getLogicDevice().getDriverIndex() + ":" + prebuiltTask.meta().getDeviceIndex());
+            timeProfiler.registerDeviceName(task.getId(), prebuiltTask.meta().getLogicDevice().getPhysicalDevice().getDeviceName());
         }
     }
 

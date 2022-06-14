@@ -45,12 +45,17 @@ public class EmptyProfiler implements TornadoProfiler {
     }
 
     @Override
-    public void registerDeviceName(ProfilerType type, String taskName, String deviceInfo) {
+    public void registerDeviceName(String taskName, String deviceInfo) {
 
     }
 
     @Override
-    public void registerDeviceID(ProfilerType type, String taskName, String deviceID) {
+    public void registerBackend(String taskName, String backend) {
+
+    }
+
+    @Override
+    public void registerDeviceID(String taskName, String deviceID) {
     }
 
     @Override

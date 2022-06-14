@@ -11,28 +11,31 @@ Example:
 $ tornado --enableProfiler console  -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt 100000
 {
     "s0": {
-        "TOTAL_GRAAL_COMPILE_TIME": "106281743",
-        "TOTAL_BYTE_CODE_GENERATION": "10522795",
-        "TOTAL_CODE_GENERATION_TIME": "16643493",
-        "TOTAL_KERNEL_TIME": "48306",
+        "TOTAL_BYTE_CODE_GENERATION": "10465146",
+        "COPY_OUT_TIME": "24153",
+        "COPY_IN_TIME": "72044",
+        "TOTAL_DRIVER_COMPILE_TIME": "63298322",
         "TOTAL_DISPATCH_DATA_TRANSFERS_TIME": "0",
-        "TOTAL_TASK_SCHEDULE_TIME": "284284370",
-        "COPY_OUT_TIME": "37350",
-        "TOTAL_DRIVER_COMPILE_TIME": "67842031",
-        "COPY_IN_TIME": "59843",
+        "TOTAL_CODE_GENERATION_TIME": "16564279",
+        "TOTAL_TASK_SCHEDULE_TIME": "285317518",
+        "TOTAL_GRAAL_COMPILE_TIME": "109520628",
+        "TOTAL_KERNEL_TIME": "47974",
         "TOTAL_COPY_OUT_SIZE_BYTES": "400024",
         "TOTAL_COPY_IN_SIZE_BYTES": "1600096",
         "s0.t0": {
+            "BACKEND": "SPIRV",
             "METHOD": "VectorAddInt.vectorAdd",
             "DEVICE_ID": "0:0",
             "DEVICE": "Intel(R) UHD Graphics [0x9bc4]",
-            "TASK_COMPILE_GRAAL_TIME": "106281743",
-            "TASK_KERNEL_TIME": "48306",
-            "TASK_CODE_GENERATION_TIME": "16643493",
-            "TASK_COMPILE_DRIVER_TIME": "67842031"
+            "TASK_COMPILE_GRAAL_TIME": "109520628",
+            "TASK_CODE_GENERATION_TIME": "16564279",
+            "TASK_COMPILE_DRIVER_TIME": "63298322",
+            "TASK_KERNEL_TIME": "47974"
         }
     }
 }
+
+
 
 ```
 
@@ -54,6 +57,7 @@ All timers are printed in nanoseconds.
 
 Then, for each task within a task-schedule, there are usually three timers, one device identifier and two data transfer metrics:
 
+* *BACKEND*: TornadoVM backend selected for the method execution on the target device. It could be either `SPIRV`, `PTX` or `OpenCL`. 
 * *DEVICE_ID*: platform and device ID index.
 * *DEVICE*: device name as provided by the OpenCL driver.
 * *TASK_COPY_IN_SIZE_BYTES*: size in bytes of total bytes copied-in for a given task.
@@ -181,9 +185,9 @@ Example:
 
 ```bash
 $ tornado -Dtornado.feature.extraction=True -m tornado.examples/uk.ac.manchester.tornado.examples.compute.NBody 1024 1
-$ cat tornado-features.json
 {
     "nBody": {
+        "BACKEND" : "PTX",
         "DEVICE_ID": "0:2",
         "DEVICE": "GeForce GTX 1650",
         "Global Memory Loads":  "15",
