@@ -32,8 +32,8 @@ public class RenderTrackTornado extends BenchmarkDriver {
                 input.set(i, j, new Float3(i, j, value));
             }
         }
-        ts = new TaskSchedule("s0")//
-                .task("t0", ComputeKernels::renderTrack, output, input) //
+        ts = new TaskSchedule("benchmark")//
+                .task("renderTrack", ComputeKernels::renderTrack, output, input) //
                 .streamOut(output);
         ts.warmup();
     }

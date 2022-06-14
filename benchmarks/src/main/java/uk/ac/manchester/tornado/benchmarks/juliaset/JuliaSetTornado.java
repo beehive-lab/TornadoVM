@@ -41,8 +41,8 @@ public class JuliaSetTornado extends BenchmarkDriver {
         hue = new float[size * size];
         brightness = new float[size * size];
 
-        ts = new TaskSchedule("s0") //
-                .task("t0", GraphicsKernels::juliaSetTornado, size, hue, brightness) //
+        ts = new TaskSchedule("benchmark") //
+                .task("juliaSet", GraphicsKernels::juliaSetTornado, size, hue, brightness) //
                 .streamOut(hue, brightness);
         ts.warmup();
     }
