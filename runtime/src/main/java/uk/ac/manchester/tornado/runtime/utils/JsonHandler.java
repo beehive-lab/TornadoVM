@@ -27,6 +27,9 @@ package uk.ac.manchester.tornado.runtime.utils;
 import java.util.Map;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
@@ -57,6 +60,8 @@ public class JsonHandler {
         if (TornadoOptions.LOG_IP) {
             json.append(indent.toString() + "\"" + IP + "\"" + ": " + "\"" + RuntimeUtilities.getTornadoInstanceIP() + END_LINE);
         }
+        TornadoVMBackendType backendType = TornadoRuntime.getTornadoRuntime().getDriver(device.getDriverIndex()).getBackendType();
+        json.append(indent.toString() + "\"" + ProfilerType.BACKEND + "\" : \"" + backendType + END_LINE);
         json.append(indent.toString() + "\"" + DEVICE_ID + SEPARATOR + device.getDriverIndex() + ":" + device.getDevicePlatform() + END_LINE);
         json.append(indent.toString() + "\"" + DEVICE + SEPARATOR + device.getDeviceName() + END_LINE);
         for (String s : entry.keySet()) {

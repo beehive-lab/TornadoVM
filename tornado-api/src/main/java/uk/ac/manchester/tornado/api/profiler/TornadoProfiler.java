@@ -31,9 +31,11 @@ public interface TornadoProfiler {
 
     void start(ProfilerType type, String taskName);
 
-    void registerDeviceName(ProfilerType type, String taskName, String deviceInfo);
+    void registerDeviceName(String taskName, String deviceInfo);
 
-    void registerDeviceID(ProfilerType type, String taskName, String deviceID);
+    void registerBackend(String taskName, String backend);
+
+    void registerDeviceID(String taskName, String deviceID);
 
     void registerMethodHandle(ProfilerType type, String taskName, String methodName);
 
