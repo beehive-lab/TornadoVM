@@ -1,5 +1,6 @@
 {
   "TestVirtualDeviceFeatureExtraction.maxReduction": {
+    "BACKEND": "OPENCL",
     "Device ID":  "0:0",
     "Device":  "testDevice",
     "Global Memory Loads":  "1",
@@ -33,6 +34,7 @@
 
 {
   "ReduceFactory.rMax": {
+    "BACKEND": "OPENCL",
     "Device ID":  "0:0",
     "Device":  "testDevice",
     "Global Memory Loads":  "9",
