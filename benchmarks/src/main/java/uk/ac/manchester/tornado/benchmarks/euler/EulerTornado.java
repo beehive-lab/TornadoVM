@@ -55,7 +55,7 @@ public class EulerTornado extends BenchmarkDriver {
         outputE = new long[size];
         ts = new TaskSchedule("benchmark") //
                 .streamIn(input) //
-                .task("s0", ComputeKernels::euler, size, input, outputA, outputB, outputC, outputD, outputE) //
+                .task("euler", ComputeKernels::euler, size, input, outputA, outputB, outputC, outputD, outputE) //
                 .streamOut(outputA, outputB, outputC, outputD, outputE);
     }
 
