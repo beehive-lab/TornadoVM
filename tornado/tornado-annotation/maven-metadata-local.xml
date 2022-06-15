@@ -3,7 +3,7 @@
   <groupId>tornado</groupId>
   <artifactId>tornado-annotation</artifactId>
   <versioning>
-    <release>0.13</release>
+    <release>0.14</release>
     <versions>
       <version>0.5</version>
       <version>0.6</version>
@@ -14,7 +14,8 @@
       <version>0.11</version>
       <version>0.12</version>
       <version>0.13</version>
+      <version>0.14</version>
     </versions>
-    <lastUpdated>20220321103413</lastUpdated>
+    <lastUpdated>20220615093747</lastUpdated>
   </versioning>
 </metadata>
