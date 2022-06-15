@@ -2,6 +2,41 @@
 
 This file summarizes the new features and major changes for each *TornadoVM* version.
 
+---
+
+## TornadoVM 0.14
+
+15/06/2022
+
+### New Features
+- New device memory management for addressing the memory allocation limitations of OpenCL and enabling pinned memory of device buffers. 
+    - The execution of task-schedules will still automatically allocate/deallocate memory every time a task-schedule is executed, unless lock/unlock functions are invoked explicitly at the task-schedule level. 
+    - One heap per device has been replaced with a device buffer per input variable.
+    - A new API call has been added for releasing memory: `unlockObjectFromMemory`
+    - A new API call has been added for locking objects to the device: `lockObjectInMemory` This requires the user to release memory by invoking `unlockObjectFromMemory` at the task-schedule level.
+- Enhanced Live Task migration by supporting multi-backend execution (PTX <-> OpenCL <-> SPIR-V).
+
+### Compatibility/Integration
+- Integration with the Graal 22.1.0 JIT Compiler
+- JDK 8 deprecated 
+- Azul Zulu JDK supported 
+- OpenCL 2.1 as a default target for the OpenCL Backend
+- Single Docker Image for Intel XPU platforms, including the SPIR-V backend (using the Intel Integrated Graphics), and OpenCL (using the Intel Integrated Graphics, Intel CPU and Intel FPGA in emulation mode). Image: https://github.com/beehive-lab/docker-tornado#intel-integrated-graphics 
+
+### Improvements/Bug Fixes
+- `SIGNUM` Math Function included for all three backends.
+- SPIR-V optimizer enabled by default (3x reduce in binary size).
+- Extended Memory Mode enabled for the SPIR-V Backend via Level Zero. 
+- Phi instructions fixed for the SPIR-V Backend.
+- SPIR-V Vector Select instructions fixed.
+- Duplicated IDs for Non-Inlined SPIR-V Functions fixed.
+- Refactoring of the TornadoVM Math Library.
+- FPGA Configuration files fixed.
+- Bitwise operations for OpenCL fixed.
+- Code Generation Times and Backend information are included in the profiling info. 
+
+---
+
 ## TornadoVM 0.13
 
 21/03/2022
@@ -33,7 +68,7 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
         - https://github.com/beehive-lab/TornadoVM/pull/177 
 - Dependencies for Math3 and Lang3 updated
 
-
+---
 
 ## TornadoVM 0.12
 
@@ -53,6 +88,8 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
     - Copy in when having multiple reductions fixed
     - TornadoVM profiler fixed for multiple context switching (device switching)
 - Pretty printer for device information
+
+---
 
 ## TornadoVM 0.11
 
@@ -77,6 +114,8 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
     - Codegen for sequential kernels fixed
     - Function parameters with non-inlined method calls fixed
 
+---
+
 ## TornadoVM 0.10
 
 29/06/2021
@@ -96,6 +135,8 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 - TornadoVM profiler enhanced for including data transfers for the stack-frame and kernel dispatch time
 - Initial support for 2D Arrays added
 - Several bug fixes and stability support for the OpenCL and PTX backends
+
+---
 
 ## TornadoVM 0.9
 
@@ -121,6 +162,8 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 - Pre-compiled tasks for Xilinx/Intel FPGAs fixed
 - Slambench fixed when compiling for PTX and OpenCL backends
 - Several bug fixes for the runtime, JIT compiler and data management.
+
+---
 
 ## TornadoVM 0.8
 
@@ -163,6 +206,8 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 - Documentation improved
 - Bug fixes for code generation, numeric promotion, basic block traversal, Xilinx FPGA compilation.
 
+---
+
 ## TornadoVM 0.7
 
 22/06/2020
@@ -189,6 +234,8 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 * Documentation improved
 * Several bug fixes
 
+---
+
 ## TornadoVM 0.6
 
 21/02/2020
@@ -205,6 +252,8 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 * Bug fixes for ternary conditions, reductions and code generator
 * Documentation improved
 
+---
+
 ## TornadoVM 0.5
 
 16/12/2019
@@ -219,6 +268,8 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 * TornadoVM driver OpenCL initialization and OpenCL code cache improved
 * Refactoring of the FPGA execution modes (full JIT and emulation modes improved).
 
+---
+
 ## TornadoVM 0.4
 
 14/10/2019
@@ -232,6 +283,8 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 * Automatic reductions composition (map-reduce) within the same task-schedule
 * Bug related to a memory leak when running on GPUs solved
 * Bug fixes and stability improvements
+
+---
 
 ## TornadoVM 0.3
 
@@ -248,6 +301,8 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 * Reductions support enhanced and fully automated on GPUs and CPUs.
 * Initial support for reductions on FPGAs.
 * Initial API for profiling tasks integrated.
+
+---
 
 ## TornadoVM 0.2
 
@@ -266,6 +321,8 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 * Added support for Java reductions:
     * Compiler specializations for CPU and GPU reductions
 * Performance and stability fixes
+
+---
 
 ## Tornado 0.1.0
 
