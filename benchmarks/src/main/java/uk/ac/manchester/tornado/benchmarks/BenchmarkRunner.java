@@ -1,24 +1,26 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 package uk.ac.manchester.tornado.benchmarks;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import uk.ac.manchester.tornado.api.TornadoDriver;
@@ -91,24 +93,24 @@ public abstract class BenchmarkRunner {
     }
 
     private void benchmarkAll(String id, double refElapsed, double refElapsedMedian, double refFirstIteration) {
-        final Set<Integer> blacklistedDrivers = new HashSet<>();
-        final Set<Integer> blacklistedDevices = new HashSet<>();
 
-        findBlacklisted(blacklistedDrivers, "tornado.blacklist.drivers");
+        final Map<Integer, Set<Integer>> blacklistedDevices = new HashMap<>();
+
+        // Specify in <backendIndex:deviceIndex>
         findBlacklisted(blacklistedDevices, "tornado.blacklist.devices");
 
         final int numDrivers = TornadoRuntime.getTornadoRuntime().getNumDrivers();
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
-            if (blacklistedDrivers.contains(driverIndex)) {
-                continue;
-            }
 
             final TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
             final int numDevices = driver.getDeviceCount();
 
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
-                if (blacklistedDevices.contains(deviceIndex)) {
-                    continue;
+                if (blacklistedDevices.containsKey(driverIndex)) {
+                    Set<Integer> setIgnoredDevices = blacklistedDevices.get(driverIndex);
+                    if (setIgnoredDevices.contains(deviceIndex)) {
+                        continue;
+                    }
                 }
 
                 TornadoDevice tornadoDevice = driver.getDevice(deviceIndex);
@@ -195,16 +197,25 @@ public abstract class BenchmarkRunner {
 
     }
 
-    private void findBlacklisted(Set<Integer> blacklist, String property) {
+    private void findBlacklisted(Map<Integer, Set<Integer>> blacklist, String property) {
         final String values = System.getProperty(property, "");
         if (values.isEmpty()) {
             return;
         }
 
-        final String[] ids = values.split(",");
-        for (String id : ids) {
-            int value = Integer.parseInt(id);
-            blacklist.add(value);
+        final String[] tuple2BackendDevice = values.split(",");
+        for (String t2 : tuple2BackendDevice) {
+            String[] deviceIdentifier = t2.split(":");
+            int backendIndex = Integer.parseInt(deviceIdentifier[0]);
+            int deviceIndex = Integer.parseInt(deviceIdentifier[1]);
+            Set<Integer> set;
+            if (blacklist.containsKey(backendIndex)) {
+                set = blacklist.get(backendIndex);
+            } else {
+                set = new HashSet<>();
+            }
+            set.add(deviceIndex);
+            blacklist.put(backendIndex, set);
         }
     }
 

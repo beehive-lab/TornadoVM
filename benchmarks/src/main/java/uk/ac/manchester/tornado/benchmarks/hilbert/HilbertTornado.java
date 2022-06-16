@@ -36,7 +36,7 @@ public class HilbertTornado extends BenchmarkDriver {
     public void setUp() {
         hilbertMatrix = new float[size * size];
         // @formatter:off
-        ts = new TaskSchedule("s0")
+        ts = new TaskSchedule("benchmark")
                 .task("t0", ComputeKernels::hilbertComputation, hilbertMatrix, size, size)
                 .streamOut(hilbertMatrix);
         // @formatter:on
