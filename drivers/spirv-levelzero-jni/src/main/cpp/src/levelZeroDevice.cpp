@@ -74,7 +74,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     env->SetIntField(javaDeviceProperties, field, device_properties.coreClockRate);
 
     field = env->GetFieldID(descriptionClass, "maxMemAllocSize", "J");
-    env->SetIntField(javaDeviceProperties, field, device_properties.maxMemAllocSize);
+    env->SetLongField(javaDeviceProperties, field, device_properties.maxMemAllocSize);
 
     field = env->GetFieldID(descriptionClass, "maxHardwareContexts", "I");
     env->SetIntField(javaDeviceProperties, field, device_properties.maxHardwareContexts);
@@ -485,13 +485,13 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
             env->SetLongField(javaMemoryProperty, field, reinterpret_cast<jlong>(queueProperties[i].pNext));
 
             field = env->GetFieldID(descriptionClass, "flags", "I");
-            env->SetLongField(javaMemoryProperty, field, queueProperties[i].flags);
+            env->SetIntField(javaMemoryProperty, field, queueProperties[i].flags);
 
             field = env->GetFieldID(descriptionClass, "maxMemoryFillPatternSize", "I");
-            env->SetLongField(javaMemoryProperty, field, queueProperties[i].maxMemoryFillPatternSize);
+            env->SetIntField(javaMemoryProperty, field, queueProperties[i].maxMemoryFillPatternSize);
 
             field = env->GetFieldID(descriptionClass, "numQueues", "I");
-            env->SetLongField(javaMemoryProperty, field, queueProperties[i].numQueues);
+            env->SetIntField(javaMemoryProperty, field, queueProperties[i].numQueues);
         }
     } else {
         arrayContent[0] = numQueueGroups;
