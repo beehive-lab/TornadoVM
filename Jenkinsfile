@@ -54,7 +54,7 @@ pipeline {
                                 runZuluJDK17()
                                 break
                             case 2:
-                                runCorrettoJDK11()
+                                runJDK17()
                                 break
                             case 3:
                                 runGraalVM11()
@@ -63,7 +63,7 @@ pipeline {
                                 runGraalVM17()
                                 break
                             case 5:
-                                runJDK17()
+                                runCorrettoJDK11()
                         }
                     }
                 }
@@ -86,7 +86,6 @@ void runZuluJDK11() {
     stage('Zulu JDK 11') {
         withEnv(["JAVA_HOME=${ZULU_11_JAVA_HOME}"]) {
             buildAndTest("Zulu JDK 11", "jdk-11-plus")
-            buildAndTestRayTracer("Zulu JDK 11")
         }
     }
 }
