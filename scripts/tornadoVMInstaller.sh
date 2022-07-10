@@ -18,6 +18,10 @@
 
 DIRECTORY_DEPENDENCIES="etc/dependencies"
 
+aria2c -v &&function wget() {
+		aria2c -Z -c -{j,s,x}\ 15  --file-allocation=none $@  
+		}
+
 function getPlatform() {
     platform=$(uname | tr '[:upper:]' '[:lower:]')
     echo "$platform"
