@@ -23,13 +23,12 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.mm;
 
-import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
-import uk.ac.manchester.tornado.runtime.common.KernelArgs;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 
 public class PTXKernelArgs extends PTXByteBuffer implements KernelArgs {
 
@@ -37,7 +36,7 @@ public class PTXKernelArgs extends PTXByteBuffer implements KernelArgs {
     private final ArrayList<CallArgument> callArguments;
 
     public PTXKernelArgs(long address, int numArgs, PTXDeviceContext deviceContext) {
-        super(address,RESERVED_SLOTS << 3, 0, deviceContext);
+        super(address, RESERVED_SLOTS << 3, 0, deviceContext);
         this.callArguments = new ArrayList<>(numArgs);
 
         buffer.clear();
@@ -45,6 +44,9 @@ public class PTXKernelArgs extends PTXByteBuffer implements KernelArgs {
 
     @Override
     public void addCallArgument(Object value, boolean isReferenceType) {
+        // inspect
+        // < argsIndex : size >
+        // < totalSize >
         callArguments.add(new CallArgument(value, isReferenceType));
     }
 
@@ -56,6 +58,45 @@ public class PTXKernelArgs extends PTXByteBuffer implements KernelArgs {
     @Override
     public List<CallArgument> getCallArguments() {
         return callArguments;
+    }
+
+    public int getArgumentsTotalSizeInBytes() {
+        int size = 0;
+        for (CallArgument argument : callArguments) {
+            if (argument.isReferenceType()) {
+                size += 8; // Reference is 8 bytes
+            } else {
+                Class<?> klass = argument.getValue().getClass();
+                if (klass == Integer.class) {
+                    size += 4;
+                } else if (klass == Float.class) {
+                    size += 4;
+                } else if (klass == Short.class) {
+                    size += 2;
+                } else if (klass == Double.class) {
+                    size += 8;
+                } else if (klass == Long.class) {
+                    size += 8;
+                } else if (klass == Byte.class) {
+                    size += 1;
+                } else if (klass == int.class) {
+                    size += 4;
+                } else if (klass == float.class) {
+                    size += 4;
+                } else if (klass == short.class) {
+                    size += 2;
+                } else if (klass == double.class) {
+                    size += 8;
+                } else if (klass == long.class) {
+                    size += 8;
+                } else if (klass == byte.class) {
+                    size += 1;
+                } else if (klass == char.class) {
+                    size += 1;
+                }
+            }
+        }
+        return size;
     }
 
     @Override

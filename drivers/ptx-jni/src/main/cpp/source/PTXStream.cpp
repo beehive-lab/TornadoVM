@@ -577,6 +577,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 
     size_t arg_buffer_size = env->GetArrayLength(args);
     char arg_buffer[arg_buffer_size];
+    std::cout << "ARG SIZE: " << arg_buffer_size << std::endl;
     env->GetByteArrayRegion(args, 0, arg_buffer_size, reinterpret_cast<jbyte *>(arg_buffer));
 
     void *arg_config[] = {

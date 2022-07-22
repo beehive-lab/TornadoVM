@@ -198,7 +198,7 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
         wasReset = true;
     }
 
-    public int enqueueKernelLaunch(PTXModule module, KernelArgs callWrapper, TaskMetaData taskMeta, long batchThreads) {
+    public int enqueueKernelLaunch(PTXModule module, KernelArgs kernelArgs, TaskMetaData taskMeta, long batchThreads) {
         int[] blockDimension = { 1, 1, 1 };
         int[] gridDimension = { 1, 1, 1 };
         if (taskMeta.isWorkerGridAvailable()) {
@@ -223,34 +223,66 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
             blockDimension = scheduler.calculateBlockDimension(module, taskMeta);
             gridDimension = scheduler.calculateGridDimension(module, taskMeta, blockDimension);
         }
-        int kernelLaunchEvent = stream.enqueueKernelLaunch(module, taskMeta, writePTXKernelContextOnDevice((PTXKernelArgs) callWrapper, taskMeta), gridDimension, blockDimension);
+
+        int kernelLaunchEvent = stream.enqueueKernelLaunch(module, taskMeta, writePTXKernelContextOnDevice((PTXKernelArgs) kernelArgs, taskMeta), gridDimension, blockDimension);
         updateProfiler(kernelLaunchEvent, taskMeta);
         return kernelLaunchEvent;
     }
 
-    private byte[] writePTXKernelContextOnDevice(PTXKernelArgs callWrapper, TaskMetaData meta) {
-        ByteBuffer args = ByteBuffer.allocate(Long.BYTES + callWrapper.getCallArguments().size() * Long.BYTES);
+    private byte[] writePTXKernelContextOnDevice(PTXKernelArgs ptxKernelArgs, TaskMetaData meta) {
+        int capacity = Long.BYTES + ptxKernelArgs.getArgumentsTotalSizeInBytes();
+        ByteBuffer args = ByteBuffer.allocate(capacity);
         args.order(getByteOrder());
 
         // Kernel context pointer
-        int kernelContextWriteEventId = callWrapper.enqueueWrite();
-        updateProfilerKernelContextWrite(kernelContextWriteEventId, meta, callWrapper);
-        long address = callWrapper.toAbsoluteAddress();
+        int kernelContextWriteEventId = ptxKernelArgs.enqueueWrite();
+        updateProfilerKernelContextWrite(kernelContextWriteEventId, meta, ptxKernelArgs);
+        long address = ptxKernelArgs.toAbsoluteAddress();
         args.putLong(address);
 
         // Parameters
-        for (int argIndex = 0; argIndex < callWrapper.getCallArguments().size(); argIndex++) {
-            KernelArgs.CallArgument arg = callWrapper.getCallArguments().get(argIndex);
+        for (int argIndex = 0; argIndex < ptxKernelArgs.getCallArguments().size(); argIndex++) {
+            KernelArgs.CallArgument arg = ptxKernelArgs.getCallArguments().get(argIndex);
             if (arg.getValue() instanceof KernelArgs.KernelContextArgument) {
                 continue;
             }
-            if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
-                args.putLong(((Number) arg.getValue()).longValue());
+            Class<?> klass = arg.getValue().getClass();
+            if (isBoxedPrimitive(arg.getValue())) {
+                // Boxed Values
+                if (klass == Integer.class) {
+                    args.putInt(((Number) arg.getValue()).intValue());
+                } else if (klass == Float.class) {
+                    args.putFloat(((Number) arg.getValue()).floatValue());
+                } else if (klass == Short.class) {
+                    args.putShort(((Number) arg.getValue()).shortValue());
+                } else if (klass == Double.class) {
+                    args.putDouble(((Number) arg.getValue()).doubleValue());
+                } else if (klass == Long.class) {
+                    args.putLong(((Number) arg.getValue()).longValue());
+                } else if (klass == Byte.class) {
+                    args.put(((Number) arg.getValue()).byteValue());
+                }
+            } else if (arg.getValue().getClass().isPrimitive()) {
+                // Primitive values
+                if (klass == int.class) {
+                    args.putInt(((Number) arg.getValue()).intValue());
+                } else if (klass == float.class) {
+                    args.putFloat(((Number) arg.getValue()).floatValue());
+                } else if (klass == short.class) {
+                    args.putShort(((Number) arg.getValue()).shortValue());
+                } else if (klass == double.class) {
+                    args.putDouble(((Number) arg.getValue()).doubleValue());
+                } else if (klass == long.class) {
+                    args.putLong(((Number) arg.getValue()).longValue());
+                } else if (klass == byte.class) {
+                    args.put(((Number) arg.getValue()).byteValue());
+                } else if (klass == char.class) {
+                    args.put(((Number) arg.getValue()).byteValue());
+                }
             } else {
                 shouldNotReachHere();
             }
         }
-
         return args.array();
     }
 
