@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -39,7 +39,8 @@ public abstract class OCLKernelScheduler {
     protected double min;
     protected double max;
 
-    public static final String WARNING_FPGA_THREAD_LOCAL = "[TornadoVM OCL] Warning: TornadoVM changed the user-defined local size to: " + Arrays.toString(OCLFPGAScheduler.DEFAULT_LOCAL_WORK_SIZE) + ".";
+    public static final String WARNING_FPGA_THREAD_LOCAL = "[TornadoVM OCL] Warning: TornadoVM changed the user-defined local size to: " + Arrays.toString(OCLFPGAScheduler.DEFAULT_LOCAL_WORK_SIZE)
+            + ".";
 
     public static final String WARNING_THREAD_LOCAL = "[TornadoVM OCL] Warning: TornadoVM changed the user-defined local size to null. Now, the OpenCL driver will select the best configuration.";
 
@@ -89,7 +90,7 @@ public abstract class OCLKernelScheduler {
      * not fit, it sets the local work group to null, so the OpenCL driver chooses a
      * default value. In this case, the threads configured in the local work sizes
      * depends on each OpenCL driver.
-     * 
+     *
      * @param meta
      *            TaskMetaData.
      */
