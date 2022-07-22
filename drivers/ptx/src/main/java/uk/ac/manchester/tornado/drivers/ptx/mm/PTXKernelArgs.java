@@ -44,9 +44,6 @@ public class PTXKernelArgs extends PTXByteBuffer implements KernelArgs {
 
     @Override
     public void addCallArgument(Object value, boolean isReferenceType) {
-        // inspect
-        // < argsIndex : size >
-        // < totalSize >
         callArguments.add(new CallArgument(value, isReferenceType));
     }
 

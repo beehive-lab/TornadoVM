@@ -74,7 +74,7 @@ public class PTXArchitecture extends Architecture {
 
         KERNEL_CONTEXT = new PTXParam(PTXAssemblerConstants.KERNEL_CONTEXT_NAME, 8, wordKind);
 
-        abiRegisters = new PTXParam[] {KERNEL_CONTEXT};
+        abiRegisters = new PTXParam[] { KERNEL_CONTEXT };
     }
 
     @Override
@@ -179,7 +179,7 @@ public class PTXArchitecture extends Architecture {
         @Override
         public String getDeclaration() {
             if (alignment != 0) {
-                return String.format(".param .align %d .%s %s", alignment, getLirKind().toString(), name);
+                return String.format(".param .%s .ptr .global .align %s %s", getLirKind().toString(), alignment, name);
             } else {
                 return String.format(".param .%s %s", getLirKind().toString(), name);
             }

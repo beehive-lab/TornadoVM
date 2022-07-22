@@ -566,7 +566,8 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
         jbyteArray stream_wrapper,
         jbyteArray args) {
 
-    CUevent beforeEvent, afterEvent;
+    CUevent beforeEvent;
+    CUevent afterEvent;
     CUmodule native_module;
     array_to_module(env, &native_module, module);
 
@@ -577,7 +578,6 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 
     size_t arg_buffer_size = env->GetArrayLength(args);
     char arg_buffer[arg_buffer_size];
-    std::cout << "ARG SIZE: " << arg_buffer_size << std::endl;
     env->GetByteArrayRegion(args, 0, arg_buffer_size, reinterpret_cast<jbyte *>(arg_buffer));
 
     void *arg_config[] = {
@@ -596,11 +596,11 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
             (unsigned int) gridDimX,  (unsigned int) gridDimY,  (unsigned int) gridDimZ,
             (unsigned int) blockDimX, (unsigned int) blockDimY, (unsigned int) blockDimZ,
             (unsigned int) sharedMemBytes, stream,
-            NULL,
+            0,
             arg_config);
     LOG_PTX_AND_VALIDATE("cuLaunchKernel", result);
-    record_event(&afterEvent, &stream);
 
+    record_event(&afterEvent, &stream);
     env->ReleaseStringUTFChars(function_name, native_function_name);
     return wrapper_from_events(env, &beforeEvent, &afterEvent);
 }

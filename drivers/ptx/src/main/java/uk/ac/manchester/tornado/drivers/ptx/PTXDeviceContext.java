@@ -24,8 +24,8 @@
 package uk.ac.manchester.tornado.drivers.ptx;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.utils.TornadoUtilities.isBoxedPrimitive;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitive;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -230,7 +230,7 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
     }
 
     private byte[] writePTXKernelContextOnDevice(PTXKernelArgs ptxKernelArgs, TaskMetaData meta) {
-        int capacity = Long.BYTES + ptxKernelArgs.getArgumentsTotalSizeInBytes();
+        int capacity = Long.BYTES + ptxKernelArgs.getCallArguments().size() * Long.BYTES;
         ByteBuffer args = ByteBuffer.allocate(capacity);
         args.order(getByteOrder());
 
@@ -245,44 +245,13 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
             KernelArgs.CallArgument arg = ptxKernelArgs.getCallArguments().get(argIndex);
             if (arg.getValue() instanceof KernelArgs.KernelContextArgument) {
                 continue;
-            }
-            Class<?> klass = arg.getValue().getClass();
-            if (isBoxedPrimitive(arg.getValue())) {
-                // Boxed Values
-                if (klass == Integer.class) {
-                    args.putInt(((Number) arg.getValue()).intValue());
-                } else if (klass == Float.class) {
-                    args.putFloat(((Number) arg.getValue()).floatValue());
-                } else if (klass == Short.class) {
-                    args.putShort(((Number) arg.getValue()).shortValue());
-                } else if (klass == Double.class) {
-                    args.putDouble(((Number) arg.getValue()).doubleValue());
-                } else if (klass == Long.class) {
-                    args.putLong(((Number) arg.getValue()).longValue());
-                } else if (klass == Byte.class) {
-                    args.put(((Number) arg.getValue()).byteValue());
-                }
-            } else if (arg.getValue().getClass().isPrimitive()) {
-                // Primitive values
-                if (klass == int.class) {
-                    args.putInt(((Number) arg.getValue()).intValue());
-                } else if (klass == float.class) {
-                    args.putFloat(((Number) arg.getValue()).floatValue());
-                } else if (klass == short.class) {
-                    args.putShort(((Number) arg.getValue()).shortValue());
-                } else if (klass == double.class) {
-                    args.putDouble(((Number) arg.getValue()).doubleValue());
-                } else if (klass == long.class) {
-                    args.putLong(((Number) arg.getValue()).longValue());
-                } else if (klass == byte.class) {
-                    args.put(((Number) arg.getValue()).byteValue());
-                } else if (klass == char.class) {
-                    args.put(((Number) arg.getValue()).byteValue());
-                }
+            } else if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
+                args.putLong(((Number) arg.getValue()).longValue());
             } else {
                 shouldNotReachHere();
             }
         }
+
         return args.array();
     }
 
