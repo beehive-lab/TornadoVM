@@ -112,7 +112,81 @@ public class TestIO extends TornadoTestBase {
             s0.execute();
         }
 
-        s0.unlockObjectsFromMemory(arrayA, arrayB);
+        s0.unlockObjectsFromMemory(arrayA, arrayB, arrayC);
+
+        for (int i = 0; i < N; i++) {
+            assertEquals(2 * i, arrayC[i], 0.0f);
+        }
+    }
+
+    @Test
+    public void testLockObjectsInMemoryWithUpdateReference01() {
+        final int N = 128;
+
+        float[] arrayA = new float[N];
+        float[] arrayB = new float[N];
+        float[] arrayB2 = new float[N];
+        float[] arrayC = new float[N];
+
+        IntStream.range(0, N).parallel().forEach(idx -> {
+            arrayA[idx] = idx;
+            arrayB[idx] = 2 * idx;
+            arrayB2[idx] = idx;
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        assertNotNull(s0);
+
+        s0.lockObjectsInMemory(arrayA, arrayB, arrayB2, arrayC);
+        s0.streamIn(arrayA, arrayB);
+        s0.task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC);
+        s0.streamOut(arrayC);
+
+        for (int i = 0; i < 4; i++) {
+            s0.updateReference(arrayB, arrayB2);
+            s0.execute();
+            s0.updateReference(arrayB2, arrayB);
+        }
+
+        s0.unlockObjectsFromMemory(arrayA, arrayB, arrayC);
+
+        for (int i = 0; i < N; i++) {
+            assertEquals(2 * i, arrayC[i], 0.0f);
+        }
+    }
+
+    @Test
+    public void testLockObjectsInMemoryWithUpdateReference02() {
+        final int N = 128;
+
+        float[] arrayA = new float[N];
+        float[] arrayB = new float[N];
+        float[] arrayC = new float[N];
+
+        IntStream.range(0, N).parallel().forEach(idx -> {
+            arrayA[idx] = idx;
+            arrayB[idx] = 2 * idx;
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        assertNotNull(s0);
+
+        s0.lockObjectsInMemory(arrayA, arrayB, arrayC);
+        s0.streamIn(arrayA, arrayB);
+        s0.task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC);
+        s0.streamOut(arrayC);
+
+        for (int i = 0; i < 4; i++) {
+            float[] arrayB2 = new float[N];
+            IntStream.range(0, N).parallel().forEach(idx -> {
+                arrayB2[idx] = idx;
+            });
+            s0.updateReference(arrayB, arrayB2);
+            s0.execute();
+            s0.updateReference(arrayB2, arrayB);
+        }
+
+        s0.unlockObjectsFromMemory(arrayA, arrayB, arrayC);
 
         for (int i = 0; i < N; i++) {
             assertEquals(2 * i, arrayC[i], 0.0f);
