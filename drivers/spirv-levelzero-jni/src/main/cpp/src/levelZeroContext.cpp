@@ -558,7 +558,6 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     jfieldID buildFlagsField = env->GetFieldID(javaModuleDescClass, "pBuildFlags", "Ljava/lang/String;");
     jstring objectString = static_cast<jstring>(env->GetObjectField(javaModuleDesc, buildFlagsField));
     const char* buildFlags = env->GetStringUTFChars(objectString, 0);
-
     const char* fileName = env->GetStringUTFChars(pathToBinary, 0);
     std::string f(fileName);
 
@@ -611,6 +610,9 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
         jclass javaBuildLogClass = env->GetObjectClass(javaBuildLog);
         jfieldID fieldPtrLog = env->GetFieldID(javaBuildLogClass, "ptrZeBuildLogHandle", "J");
         env->SetLongField(javaBuildLog, fieldPtrLog, reinterpret_cast<jlong>(buildLog));
+
+        env->ReleaseStringUTFChars(objectString, buildFlags);
+        env->ReleaseStringUTFChars(pathToBinary, fileName);
 
         file.close();
         return result;

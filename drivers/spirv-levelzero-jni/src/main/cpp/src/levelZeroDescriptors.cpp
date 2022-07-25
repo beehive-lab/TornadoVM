@@ -210,6 +210,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_ZeR
     ulong ptrToStruct = reinterpret_cast<ulong>(descriptor);
     jfieldID fieldSelfPTr = env->GetFieldID(classDescriptor, "selfPtr", "J");
     env->SetLongField(thisObject, fieldSelfPTr, ptrToStruct);
+    env->ReleaseStringUTFChars(javaString, pKernelName);
 }
 
 /*
