@@ -15,7 +15,6 @@
  * limitations under the License.
  *
  */
-
 package uk.ac.manchester.tornado.unittests.prebuilt;
 
 import static org.junit.Assert.assertEquals;
