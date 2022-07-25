@@ -22,7 +22,7 @@ In Linux and Mac OSx, TornadoVM can be installed automatically with the [install
 ```bash
 $ ./scripts/tornadovmInstaller.sh 
 TornadoVM installer for Linux and OSx
-./script/tornadoVMInstaller.sh <JDK> <BACKENDS>
+./scripts/tornadoVMInstaller.sh <JDK> <BACKENDS>
 JDK (select one):
        --jdk11            : Install TornadoVM with OpenJDK 11
        --jdk17            : Install TornadoVM with OpenJDK 17
