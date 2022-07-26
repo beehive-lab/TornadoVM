@@ -265,7 +265,8 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
                     final AllocatableValue param = incomingArguments.getArgument(i);
                     PTXKind kind = (PTXKind) param.getPlatformKind();
                     asm.emit(", ");
-                    asm.emit(".param .align 8 .%s %s", kind.toString(), locals[i].getName());
+                    asm.emit(".param .align 8 .u64 %s", locals[i].getName());
+                    // asm.emit(".param .%s %s", kind.toString(), locals[i].getName());
                 } else {
                     // Skip the kernel context object
                     if (locals[i].getType().toJavaName().equals(KernelContext.class.getName())) {
@@ -276,7 +277,9 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
                         continue;
                     }
                     asm.emit(", ");
-                    asm.emit(".param .align 8 .u64 %s", locals[i].getName());
+                    final AllocatableValue param = incomingArguments.getArgument(i);
+                    PTXKind kind = (PTXKind) param.getPlatformKind();
+                    asm.emit(".param .u64 .ptr .global .align %s %s", kind.getSizeInBytes(), locals[i].getName());
                 }
             } else {
                 final AllocatableValue param = incomingArguments.getArgument(i);

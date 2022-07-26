@@ -566,7 +566,8 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
         jbyteArray stream_wrapper,
         jbyteArray args) {
 
-    CUevent beforeEvent, afterEvent;
+    CUevent beforeEvent;
+    CUevent afterEvent;
     CUmodule native_module;
     array_to_module(env, &native_module, module);
 
@@ -598,8 +599,8 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
             NULL,
             arg_config);
     LOG_PTX_AND_VALIDATE("cuLaunchKernel", result);
-    record_event(&afterEvent, &stream);
 
+    record_event(&afterEvent, &stream);
     env->ReleaseStringUTFChars(function_name, native_function_name);
     return wrapper_from_events(env, &beforeEvent, &afterEvent);
 }

@@ -30,7 +30,7 @@ extern "C" {
 #endif
 
 CUresult record_events_create(CUevent* beforeEvent, CUevent* afterEvent);
-CUresult record_event(CUevent* beforeEvent, CUstream* stream);
+CUresult record_event(CUevent* event, CUstream* stream);
 
 #ifdef __cplusplus
 }

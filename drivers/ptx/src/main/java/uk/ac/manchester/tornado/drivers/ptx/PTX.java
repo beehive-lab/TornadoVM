@@ -30,8 +30,8 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.drivers.ptx.runtime.PTXTornadoDevice;
-import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
@@ -58,7 +58,7 @@ public class PTX {
         });
     }
 
-    private native static long cuInit();
+    private static native long cuInit();
 
     private static void initialise() {
         if (initialised) {

@@ -23,13 +23,12 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.mm;
 
-import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
-import uk.ac.manchester.tornado.runtime.common.KernelArgs;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 
 public class PTXKernelArgs extends PTXByteBuffer implements KernelArgs {
 
@@ -37,7 +36,7 @@ public class PTXKernelArgs extends PTXByteBuffer implements KernelArgs {
     private final ArrayList<CallArgument> callArguments;
 
     public PTXKernelArgs(long address, int numArgs, PTXDeviceContext deviceContext) {
-        super(address,RESERVED_SLOTS << 3, 0, deviceContext);
+        super(address, RESERVED_SLOTS << 3, 0, deviceContext);
         this.callArguments = new ArrayList<>(numArgs);
 
         buffer.clear();

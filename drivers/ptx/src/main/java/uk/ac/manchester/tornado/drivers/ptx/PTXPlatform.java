@@ -41,7 +41,7 @@ public class PTXPlatform extends TornadoLogger {
         }
     }
 
-    public native static int cuDeviceGetCount();
+    public static native int cuDeviceGetCount();
 
     public void cleanup() {
         for (PTXDevice device : devices) {
