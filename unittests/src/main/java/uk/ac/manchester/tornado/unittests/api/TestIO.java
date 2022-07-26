@@ -38,6 +38,13 @@ public class TestIO extends TornadoTestBase {
         return array;
     }
 
+    /**
+     * This test case uses the forceCopyIn method of the
+     * {@link uk.ac.manchester.tornado.api.TaskSchedule} API to pass input data to a
+     * targeted device.
+     * 
+     * This method is used to copy data once and reuse it in the next invocations.
+     */
     @Test
     public void testForceCopyIn() {
         final int N = 128;
@@ -62,6 +69,14 @@ public class TestIO extends TornadoTestBase {
         }
     }
 
+    /**
+     * This test case uses the streamIn method of the
+     * {@link uk.ac.manchester.tornado.api.TaskSchedule} API to pass input data to a
+     * targeted device.
+     * 
+     * This method is used to stream data every time a method is launched for
+     * execution.
+     */
     @Test
     public void testStreamIn() {
         final int N = 128;
@@ -86,6 +101,16 @@ public class TestIO extends TornadoTestBase {
         }
     }
 
+    /**
+     * This test case uses the streamIn method of the
+     * {@link uk.ac.manchester.tornado.api.TaskSchedule} API to pass input data to a
+     * targeted device.
+     * 
+     * Additionally, the lockObjectsInMemory method is used to pin buffers used for
+     * streaming data to a device. Buffers used for locked arguments will be created
+     * and allocated once and will be reused in the next invocations. The pinned
+     * buffers are released by the unlockObjectsFromMemory method.
+     */
     @Test
     public void testLockObjectsInMemory() {
         final int N = 128;
@@ -113,6 +138,21 @@ public class TestIO extends TornadoTestBase {
         }
     }
 
+    /**
+     * This test case uses the streamIn method of the
+     * {@link uk.ac.manchester.tornado.api.TaskSchedule} API to pass input data to a
+     * targeted device.
+     *
+     * Additionally, the lockObjectsInMemory method is used to pin buffers used for
+     * streaming data to a device. Buffers used for locked arguments will be created
+     * and allocated once and will be reused in the next invocations. The pinned
+     * buffers are released by the unlockObjectsFromMemory method.
+     * 
+     * In this test case, arrayB2 is used to update the reference of the arrayB
+     * parameter of the vectorAddFloat task. As arrayB is created once and reused by
+     * the updateReference method, the buffer for this object is created and
+     * allocated once, and it is reused in the next invocations.
+     */
     @Test
     public void testLockObjectsInMemoryWithUpdateReference01() {
         final int N = 128;
@@ -147,6 +187,21 @@ public class TestIO extends TornadoTestBase {
         }
     }
 
+    /**
+     * This test case uses the streamIn method of the
+     * {@link uk.ac.manchester.tornado.api.TaskSchedule} API to pass input data to a
+     * targeted device.
+     *
+     * Additionally, the lockObjectsInMemory method is used to pin buffers used for
+     * streaming data to a device. Buffers used for locked arguments will be created
+     * and allocated once and will be reused in the next invocations. The pinned
+     * buffers are released by the unlockObjectsFromMemory method.
+     *
+     * In this test case, arrayB2 is used to update the reference of the arrayB
+     * parameter of the vectorAddFloat task. As arrayB is created every time that
+     * the TaskSchedule is executed, a new buffer is created and allocated every
+     * time.
+     */
     @Test
     public void testLockObjectsInMemoryWithUpdateReference02() {
         final int N = 128;
