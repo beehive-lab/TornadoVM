@@ -270,6 +270,8 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
                 } else {
                     // Skip the kernel context object
                     if (locals[i].getType().toJavaName().equals(KernelContext.class.getName())) {
+                        asm.emit(", ");
+                        asm.emit(".param .u64 .ptr .global .align 8 %s", PTXAssemblerConstants.KERNEL_CONTEXT_NAME + "__");
                         continue;
                     }
                     // Skip atomic integers
