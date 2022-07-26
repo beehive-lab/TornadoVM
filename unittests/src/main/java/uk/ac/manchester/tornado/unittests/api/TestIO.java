@@ -39,7 +39,7 @@ public class TestIO extends TornadoTestBase {
     }
 
     @Test
-    public void testCopyIn() {
+    public void testForceCopyIn() {
         final int N = 128;
 
         float[] arrayA = createAndInitializeArray(N);
