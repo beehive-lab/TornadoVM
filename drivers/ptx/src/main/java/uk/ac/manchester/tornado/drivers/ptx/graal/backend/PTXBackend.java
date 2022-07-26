@@ -263,7 +263,6 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
             if (isKernel) {
                 if (locals[i].getType().getJavaKind().isPrimitive()) {
                     final AllocatableValue param = incomingArguments.getArgument(i);
-                    PTXKind kind = (PTXKind) param.getPlatformKind();
                     asm.emit(", ");
                     asm.emit(".param .align 8 .u64 %s", locals[i].getName());
                 } else {
