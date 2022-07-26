@@ -38,7 +38,20 @@ public class PTXAssemblerConstants {
     public static final String TEST_NOTANUMBER = "testp.notanumber";
     public static final String TEST_NORMAL = "testp.normal";
     public static final String TEST_SUBNORMAL = "testp.subnormal";
+
+    /**
+     * This name is used to represent the mandatory argument for the kernel context.
+     * This buffer stores the thread size information in the case of using a Grid.
+     */
     public static final String KERNEL_CONTEXT_NAME = "kernel_context";
+
+    /**
+     * This name represents the argument for the PTX kernel when developers make use
+     * of the TornadoVM {@link uk.ac.manchester.tornado.api.KernelContext} API. The
+     * name is just a symbolic representation of the parameter, and it is not
+     * intended to be used inside the kernel.
+     */
+    public static final String KERNEL_CONTEXT_ARGUMENT_NAME = "context_unused";
     public static final String GLOBAL_MEM_MODIFIER = "global";
     public static final String PARAM_MEM_MODIFIER = "param";
     public static final String SHARED_MEM_MODIFIER = "shared";

@@ -244,6 +244,7 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
         for (int argIndex = 0; argIndex < ptxKernelArgs.getCallArguments().size(); argIndex++) {
             KernelArgs.CallArgument arg = ptxKernelArgs.getCallArguments().get(argIndex);
             if (arg.getValue() instanceof KernelArgs.KernelContextArgument) {
+                args.putLong(address);
                 continue;
             } else if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
                 args.putLong(((Number) arg.getValue()).longValue());
