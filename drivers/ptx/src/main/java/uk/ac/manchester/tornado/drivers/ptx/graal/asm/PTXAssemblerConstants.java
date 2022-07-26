@@ -38,9 +38,9 @@ public class PTXAssemblerConstants {
     public static final String TEST_NOTANUMBER = "testp.notanumber";
     public static final String TEST_NORMAL = "testp.normal";
     public static final String TEST_SUBNORMAL = "testp.subnormal";
-    public static final String KERNEL_CONTEXT_NAME = "kernel_context__";
+    public static final String KERNEL_CONTEXT_NAME = "kernel_context";
 
-    public static final String KERNEL_CONTEXT_ARGUMENT_NAME = "kernel_context";
+    public static final String KERNEL_CONTEXT_ARGUMENT_NAME = "context_unused";
     public static final String GLOBAL_MEM_MODIFIER = "global";
     public static final String PARAM_MEM_MODIFIER = "param";
     public static final String SHARED_MEM_MODIFIER = "shared";
