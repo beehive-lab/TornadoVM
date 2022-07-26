@@ -50,64 +50,64 @@ public class PTXStream extends TornadoLogger {
     }
 
     //@formatter:off
-    private native static byte[][] writeArrayDtoH(long address, long length, byte[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayDtoH(long address, long length, byte[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayDtoH(long address, long length, short[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayDtoH(long address, long length, short[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayDtoH(long address, long length, char[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayDtoH(long address, long length, char[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayDtoH(long address, long length, int[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayDtoH(long address, long length, int[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayDtoH(long address, long length, long[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayDtoH(long address, long length, long[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayDtoH(long address, long length, float[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayDtoH(long address, long length, float[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayDtoH(long address, long length, double[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayDtoH(long address, long length, double[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayDtoHAsync(long address, long length, byte[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayDtoHAsync(long address, long length, byte[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayDtoHAsync(long address, long length, short[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayDtoHAsync(long address, long length, short[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayDtoHAsync(long address, long length, char[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayDtoHAsync(long address, long length, char[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayDtoHAsync(long address, long length, int[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayDtoHAsync(long address, long length, int[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayDtoHAsync(long address, long length, long[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayDtoHAsync(long address, long length, long[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayDtoHAsync(long address, long length, float[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayDtoHAsync(long address, long length, float[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayDtoHAsync(long address, long length, double[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayDtoHAsync(long address, long length, double[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayHtoD(long address, long length, byte[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoD(long address, long length, byte[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayHtoD(long address, long length, short[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoD(long address, long length, short[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayHtoD(long address, long length, char[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoD(long address, long length, char[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayHtoD(long address, long length, int[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoD(long address, long length, int[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayHtoD(long address, long length, long[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoD(long address, long length, long[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayHtoD(long address, long length, float[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoD(long address, long length, float[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayHtoD(long address, long length, double[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoD(long address, long length, double[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayHtoDAsync(long address, long length, byte[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoDAsync(long address, long length, byte[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayHtoDAsync(long address, long length, short[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoDAsync(long address, long length, short[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayHtoDAsync(long address, long length, char[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoDAsync(long address, long length, char[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayHtoDAsync(long address, long length, int[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoDAsync(long address, long length, int[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayHtoDAsync(long address, long length, long[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoDAsync(long address, long length, long[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayHtoDAsync(long address, long length, float[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoDAsync(long address, long length, float[] array, long hostOffset, byte[] streamWrapper);
 
-    private native static byte[][] writeArrayHtoDAsync(long address, long length, double[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoDAsync(long address, long length, double[] array, long hostOffset, byte[] streamWrapper);
     //@formatter:on
 
-    private native static byte[][] cuLaunchKernel(byte[] module, String name, int gridDimX, int gridDimY, int gridDimZ, int blockDimX, int blockDimY, int blockDimZ, long sharedMemBytes, byte[] stream,
+    private static native byte[][] cuLaunchKernel(byte[] module, String name, int gridDimX, int gridDimY, int gridDimZ, int blockDimX, int blockDimY, int blockDimZ, long sharedMemBytes, byte[] stream,
             byte[] args);
 
     /**
@@ -116,13 +116,13 @@ public class PTXStream extends TornadoLogger {
      * cuStreamCreateWithPriority method will always be the greatest value returned
      * by cuCtxGetStreamPriorityRange.
      */
-    private native static byte[] cuCreateStream();
+    private static native byte[] cuCreateStream();
 
-    private native static long cuDestroyStream(byte[] streamWrapper);
+    private static native long cuDestroyStream(byte[] streamWrapper);
 
-    private native static long cuStreamSynchronize(byte[] streamWrapper);
+    private static native long cuStreamSynchronize(byte[] streamWrapper);
 
-    private native static byte[][] cuEventCreateAndRecord(boolean isProfilingEnabled, byte[] streamWrapper);
+    private static native byte[][] cuEventCreateAndRecord(boolean isProfilingEnabled, byte[] streamWrapper);
 
     private int registerEvent(EventDescriptor descriptorId) {
         return ptxEventPool.registerEvent(cuEventCreateAndRecord(TornadoOptions.isProfilerEnabled(), streamPool), descriptorId);

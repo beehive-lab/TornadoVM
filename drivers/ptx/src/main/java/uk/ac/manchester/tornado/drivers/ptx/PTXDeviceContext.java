@@ -24,8 +24,8 @@
 package uk.ac.manchester.tornado.drivers.ptx;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.utils.TornadoUtilities.isBoxedPrimitive;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitive;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -198,7 +198,7 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
         wasReset = true;
     }
 
-    public int enqueueKernelLaunch(PTXModule module, KernelArgs callWrapper, TaskMetaData taskMeta, long batchThreads) {
+    public int enqueueKernelLaunch(PTXModule module, KernelArgs kernelArgs, TaskMetaData taskMeta, long batchThreads) {
         int[] blockDimension = { 1, 1, 1 };
         int[] gridDimension = { 1, 1, 1 };
         if (taskMeta.isWorkerGridAvailable()) {
@@ -223,28 +223,30 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
             blockDimension = scheduler.calculateBlockDimension(module, taskMeta);
             gridDimension = scheduler.calculateGridDimension(module, taskMeta, blockDimension);
         }
-        int kernelLaunchEvent = stream.enqueueKernelLaunch(module, taskMeta, writePTXKernelContextOnDevice((PTXKernelArgs) callWrapper, taskMeta), gridDimension, blockDimension);
+
+        int kernelLaunchEvent = stream.enqueueKernelLaunch(module, taskMeta, writePTXKernelContextOnDevice((PTXKernelArgs) kernelArgs, taskMeta), gridDimension, blockDimension);
         updateProfiler(kernelLaunchEvent, taskMeta);
         return kernelLaunchEvent;
     }
 
-    private byte[] writePTXKernelContextOnDevice(PTXKernelArgs callWrapper, TaskMetaData meta) {
-        ByteBuffer args = ByteBuffer.allocate(Long.BYTES + callWrapper.getCallArguments().size() * Long.BYTES);
+    private byte[] writePTXKernelContextOnDevice(PTXKernelArgs ptxKernelArgs, TaskMetaData meta) {
+        int capacity = Long.BYTES + ptxKernelArgs.getCallArguments().size() * Long.BYTES;
+        ByteBuffer args = ByteBuffer.allocate(capacity);
         args.order(getByteOrder());
 
         // Kernel context pointer
-        int kernelContextWriteEventId = callWrapper.enqueueWrite();
-        updateProfilerKernelContextWrite(kernelContextWriteEventId, meta, callWrapper);
-        long address = callWrapper.toAbsoluteAddress();
+        int kernelContextWriteEventId = ptxKernelArgs.enqueueWrite();
+        updateProfilerKernelContextWrite(kernelContextWriteEventId, meta, ptxKernelArgs);
+        long address = ptxKernelArgs.toAbsoluteAddress();
         args.putLong(address);
 
         // Parameters
-        for (int argIndex = 0; argIndex < callWrapper.getCallArguments().size(); argIndex++) {
-            KernelArgs.CallArgument arg = callWrapper.getCallArguments().get(argIndex);
+        for (int argIndex = 0; argIndex < ptxKernelArgs.getCallArguments().size(); argIndex++) {
+            KernelArgs.CallArgument arg = ptxKernelArgs.getCallArguments().get(argIndex);
             if (arg.getValue() instanceof KernelArgs.KernelContextArgument) {
+                args.putLong(address);
                 continue;
-            }
-            if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
+            } else if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
                 args.putLong(((Number) arg.getValue()).longValue());
             } else {
                 shouldNotReachHere();

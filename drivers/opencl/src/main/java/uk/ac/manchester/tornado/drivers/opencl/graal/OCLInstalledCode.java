@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2018, 2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -298,6 +298,11 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     private int submitSequential(final TaskMetaData meta) {
         final int task;
         debugInfo(meta);
+
+        if (meta.isThreadInfoEnabled()) {
+            meta.printThreadDims();
+        }
+
         if ((meta.getGlobalWork() == null) || (meta.getGlobalWork().length == 0)) {
             // Sequential kernel execution
             task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);

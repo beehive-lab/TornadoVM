@@ -28,14 +28,14 @@
 
 CUresult record_events_create(CUevent* beforeEvent, CUevent* afterEvent) {
     CUresult result = cuEventCreate(beforeEvent, CU_EVENT_DEFAULT);
-    LOG_PTX_AND_VALIDATE("cuEventCreate", result);
+    LOG_PTX_AND_VALIDATE("cuEventCreate (beforeEvent)", result);
     result = cuEventCreate(afterEvent, CU_EVENT_DEFAULT);
-    LOG_PTX_AND_VALIDATE("cuEventCreate", result);
+    LOG_PTX_AND_VALIDATE("cuEventCreate (afterEvent)", result);
     return result;
 }
 
-CUresult record_event(CUevent* beforeEvent, CUstream* stream) {
-    CUresult result = cuEventRecord(*beforeEvent, *stream);
+CUresult record_event(CUevent* event, CUstream* stream) {
+    CUresult result = cuEventRecord(*event, *stream);
     LOG_PTX_AND_VALIDATE("cuEventRecord", result);
     return result;
 }

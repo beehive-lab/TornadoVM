@@ -412,7 +412,7 @@ function installForZuluJDK17() {
 
 function printHelp() {
     echo "TornadoVM installer for Linux and OSx"
-    echo "./script/tornadoVMInstaller.sh <JDK> <BACKENDS>"
+    echo "./scripts/tornadoVMInstaller.sh <JDK> <BACKENDS>"
     echo "JDK (select one):"
     echo "       --jdk11            : Install TornadoVM with OpenJDK 11"
     echo "       --jdk17            : Install TornadoVM with OpenJDK 17"
