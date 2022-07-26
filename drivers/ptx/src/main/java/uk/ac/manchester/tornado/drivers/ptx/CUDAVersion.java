@@ -36,6 +36,8 @@ public class CUDAVersion {
             new CUDAVersion(10010, new CUDAComputeCapability(6, 4)), //
             new CUDAVersion(10020, new CUDAComputeCapability(6, 5)), //
             new CUDAVersion(11000, new CUDAComputeCapability(7, 0)), //
+            new CUDAVersion(11060, new CUDAComputeCapability(7, 6)), //
+            new CUDAVersion(11070, new CUDAComputeCapability(7, 6)), //
     };
 
     private final int sdkVersion;

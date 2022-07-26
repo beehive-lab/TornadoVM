@@ -57,6 +57,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_c
     cl_int status = clBuildProgram((cl_program) program_id, (cl_uint) numDevices, (cl_device_id*) devices, options, NULL, NULL);
     LOG_OCL_AND_VALIDATE("clBuildProgram", status);
     env->ReleasePrimitiveArrayCritical(array1, devices, 0);
+    env->ReleaseStringUTFChars(str, options);
 }
 
 /*
@@ -106,6 +107,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_
     cl_int status;
     cl_kernel kernel = clCreateKernel((cl_program) program_id, kernel_name, &status);
     LOG_OCL_AND_VALIDATE("clCreateKernel", status);
+    env->ReleaseStringUTFChars(str, kernel_name);
     return (jlong) kernel;
 }
 

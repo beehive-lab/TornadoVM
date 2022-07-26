@@ -97,5 +97,6 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
     env->SetLongField(javaKernelDesc, field, (jlong) kernelDesc.pNext);
     env->SetLongField(javaKernelDesc, fieldKernelDescPtr, reinterpret_cast<jlong>(&kernelDesc));
 
+    env->ReleaseStringUTFChars(javaStringName, kernelName);
     return result;
 }
