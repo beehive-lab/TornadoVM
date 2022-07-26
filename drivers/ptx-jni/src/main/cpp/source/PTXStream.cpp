@@ -596,7 +596,7 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
             (unsigned int) gridDimX,  (unsigned int) gridDimY,  (unsigned int) gridDimZ,
             (unsigned int) blockDimX, (unsigned int) blockDimY, (unsigned int) blockDimZ,
             (unsigned int) sharedMemBytes, stream,
-            0,
+            NULL,
             arg_config);
     LOG_PTX_AND_VALIDATE("cuLaunchKernel", result);
 

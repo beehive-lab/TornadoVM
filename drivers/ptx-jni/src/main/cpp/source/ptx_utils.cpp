@@ -29,9 +29,6 @@
 CUresult record_events_create(CUevent* beforeEvent, CUevent* afterEvent) {
     CUresult result = cuEventCreate(beforeEvent, CU_EVENT_DEFAULT);
     LOG_PTX_AND_VALIDATE("cuEventCreate (beforeEvent)", result);
-    if (result == CUDA_ERROR_OUT_OF_MEMORY) {
-
-    }
     result = cuEventCreate(afterEvent, CU_EVENT_DEFAULT);
     LOG_PTX_AND_VALIDATE("cuEventCreate (afterEvent)", result);
     return result;

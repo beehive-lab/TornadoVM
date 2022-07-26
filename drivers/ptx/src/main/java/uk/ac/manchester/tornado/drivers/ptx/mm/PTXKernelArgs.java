@@ -57,45 +57,6 @@ public class PTXKernelArgs extends PTXByteBuffer implements KernelArgs {
         return callArguments;
     }
 
-    public int getArgumentsTotalSizeInBytes() {
-        int size = 0;
-        for (CallArgument argument : callArguments) {
-            if (argument.isReferenceType()) {
-                size += 8; // Reference is 8 bytes
-            } else {
-                Class<?> klass = argument.getValue().getClass();
-                if (klass == Integer.class) {
-                    size += 4;
-                } else if (klass == Float.class) {
-                    size += 4;
-                } else if (klass == Short.class) {
-                    size += 2;
-                } else if (klass == Double.class) {
-                    size += 8;
-                } else if (klass == Long.class) {
-                    size += 8;
-                } else if (klass == Byte.class) {
-                    size += 1;
-                } else if (klass == int.class) {
-                    size += 4;
-                } else if (klass == float.class) {
-                    size += 4;
-                } else if (klass == short.class) {
-                    size += 2;
-                } else if (klass == double.class) {
-                    size += 8;
-                } else if (klass == long.class) {
-                    size += 8;
-                } else if (klass == byte.class) {
-                    size += 1;
-                } else if (klass == char.class) {
-                    size += 1;
-                }
-            }
-        }
-        return size;
-    }
-
     @Override
     public void write() {
         super.write();
