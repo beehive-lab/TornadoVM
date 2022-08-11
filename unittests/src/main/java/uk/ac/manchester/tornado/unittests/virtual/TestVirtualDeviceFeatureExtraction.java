@@ -27,7 +27,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -68,7 +68,7 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
         Arrays.fill(result, Float.MIN_VALUE);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(input)
                 .task("t0", TestVirtualDeviceFeatureExtraction::maxReduction, input, result)
                 .streamOut(result)

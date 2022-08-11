@@ -24,7 +24,7 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -89,7 +89,7 @@ public class Types extends TornadoTestBase {
         Random r = new Random(System.nanoTime());
         IntStream.range(0, input.length).forEach(x -> input[x] = (byte) r.nextInt(127));
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .streamIn(input) //
                 .task("t0", Types::b2b, input, output) //
                 .streamOut(output) //
@@ -111,7 +111,7 @@ public class Types extends TornadoTestBase {
         Random r = new Random(System.nanoTime());
         IntStream.range(0, input.length).forEach(x -> input[x] = (byte) r.nextInt(127));
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .streamIn(input) //
                 .task("t0", Types::b2b, input, output) //
                 .streamOut(output) //
@@ -133,7 +133,7 @@ public class Types extends TornadoTestBase {
         Random r = new Random(System.nanoTime());
         IntStream.range(0, input.length).forEach(x -> input[x] = (byte) r.nextInt(127));
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .streamIn(input) //
                 .task("t0", Types::b2i, input, output) //
                 .streamOut(output) //
@@ -155,7 +155,7 @@ public class Types extends TornadoTestBase {
         Random r = new Random(System.nanoTime());
         IntStream.range(0, input.length).forEach(x -> input[x] = (byte) r.nextInt(127));
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .streamIn(input) //
                 .task("t0", Types::b2s, input, output) //
                 .streamOut(output) //
@@ -177,7 +177,7 @@ public class Types extends TornadoTestBase {
         Random r = new Random(System.nanoTime());
         IntStream.range(0, input.length).forEach(x -> input[x] = (byte) r.nextInt(127));
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .streamIn(input) //
                 .task("t0", Types::b2l, input, output) //
                 .streamOut(output) //
@@ -198,7 +198,7 @@ public class Types extends TornadoTestBase {
         Random r = new Random(System.nanoTime());
         IntStream.range(0, input.length).forEach(x -> input[x] = r.nextInt());
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .streamIn(input) //
                 .task("t0", Types::i2l, input, output) //
                 .streamOut(output) //
@@ -220,7 +220,7 @@ public class Types extends TornadoTestBase {
         Random r = new Random(System.nanoTime());
         IntStream.range(0, input.length).forEach(x -> input[x] = (short) r.nextInt(256));
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .streamIn(input) //
                 .task("t0", Types::s2i, input, output) //
                 .streamOut(output) //
@@ -242,7 +242,7 @@ public class Types extends TornadoTestBase {
         Random r = new Random(System.nanoTime());
         IntStream.range(0, input.length).forEach(x -> input[x] = r.nextFloat());
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .streamIn(input) //
                 .task("t0", Types::f2d, input, output) //
                 .streamOut(output) //
@@ -264,7 +264,7 @@ public class Types extends TornadoTestBase {
         Random r = new Random(System.nanoTime());
         IntStream.range(0, input.length).forEach(x -> input[x] = r.nextInt());
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .streamIn(input) //
                 .task("t0", Types::i2d, input, output) //
                 .streamOut(output) //

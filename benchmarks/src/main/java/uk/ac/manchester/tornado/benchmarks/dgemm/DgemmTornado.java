@@ -22,7 +22,7 @@ import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.dgemm;
 
 import java.util.Random;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -60,13 +60,13 @@ public class DgemmTornado extends BenchmarkDriver {
             b[i] = random.nextFloat();
         }
 
-        ts = new TaskSchedule("benchmark");
+        taskGraph = new TaskGraph("benchmark");
         if (!USE_PREBUILT) {
 
-            ts.streamIn(a, b) //
+            taskGraph.streamIn(a, b) //
                     .task("dgemm", LinearAlgebraArrays::dgemm, m, n, n, a, b, c) //
                     .streamOut(c);
-            ts.warmup();
+            taskGraph.warmup();
         } else {
             String filePath = "/tmp/mxmDouble.spv";
             TornadoDevice device = null;
@@ -79,7 +79,7 @@ public class DgemmTornado extends BenchmarkDriver {
             }
 
             // @formatter:off
-            ts.prebuiltTask("t0",
+            taskGraph.prebuiltTask("t0",
                             "dgemm",
                             filePath,
                             new Object[]{m, n, n, a, b, c},
@@ -93,20 +93,20 @@ public class DgemmTornado extends BenchmarkDriver {
 
     @Override
     public void tearDown() {
-        ts.dumpProfiles();
+        taskGraph.dumpProfiles();
 
         a = null;
         b = null;
         c = null;
 
-        ts.getDevice().reset();
+        taskGraph.getDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        ts.mapAllTo(device);
-        ts.execute();
+        taskGraph.mapAllTo(device);
+        taskGraph.execute();
     }
 
     @Override
@@ -115,7 +115,7 @@ public class DgemmTornado extends BenchmarkDriver {
         final double[] result = new double[m * n];
 
         benchmarkMethod(device);
-        ts.clearProfiles();
+        taskGraph.clearProfiles();
 
         dgemm(m, n, m, a, b, result);
 

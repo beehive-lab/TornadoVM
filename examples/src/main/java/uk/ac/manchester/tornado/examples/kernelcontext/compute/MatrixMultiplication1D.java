@@ -22,7 +22,7 @@ import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 
@@ -86,7 +86,7 @@ public class MatrixMultiplication1D {
         workerGrid.setLocalWork(((size <= 1024) ? size : size / 2), 1, 1);
 
         //@formatter:off
-        TaskSchedule t = new TaskSchedule("s0") //
+        TaskGraph t = new TaskGraph("s0") //
                 .task("t0", MatrixMultiplication1D::matrixMultiplication, context, matrixA, matrixB, matrixC, size) //
                 .streamOut(matrixC);
         //@formatter:on

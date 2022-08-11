@@ -18,18 +18,18 @@
 
 package uk.ac.manchester.tornado.examples.bufet;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+
 /**
- * 
+ *
  * Description: Jave version-2 of the Boosting the Unbiased Functional
  * Enrichment Analysis (BUFET) application. This version has been accelerated
  * with TornadoVM API.
@@ -39,22 +39,22 @@ import java.util.Random;
  * the unbiased miRNA functional enrichment analysis using bitsets. BMC
  * Bioinformatics volume 18, page 399, doi 10.1186/s12859-017-1812-8, 2017.
  * https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-017-1812-8
- * 
+ *
  * C++ github repo: git clone https://github.com/diwis/BUFET.git
- * 
+ *
  * ---------------TornadoVM-enable version of bufetApp------------------
- * 
+ *
  * Command-line arguments format:
- * 
+ *
  * tornado uk.ac.manchester.tornado.examples.bufet.BufetTornadoBigIndex
  * miRanda_dataset.csv "\\n|\|" annotation_dataset.csv "\\n|\|" miRNA-5.txt
  * output_file.txt
- * 
+ *
  * Download and unzip input data-set:
  * http://carolina.imis.athena-innovation.gr/bufet/reproduction_files.zip
- * 
+ *
  * tornado uk.ac.manchester.tornado.examples.bufet.BufetTornadoBigIndex help
- * 
+ *
  */
 
 public class BufetTornadoBigIndex {
@@ -311,17 +311,17 @@ public class BufetTornadoBigIndex {
         for (int i = 0; i < chunks; i++) {
 
             System.out.println("Generate the miRNAs target groups for chunk " + i);
-            TaskSchedule s0 = new TaskSchedule("x" + i);
-            s0.task("t0", BufetTornadoBigIndex::getRandomTargetGroup, onlyGeneVector, randID, map_all_split, chunkElements, bounds, randNum);
-            s0.streamOut(map_all_split);
+            TaskGraph taskGraph = new TaskGraph("x" + i);
+            taskGraph.task("t0", BufetTornadoBigIndex::getRandomTargetGroup, onlyGeneVector, randID, map_all_split, chunkElements, bounds, randNum);
+            taskGraph.streamOut(map_all_split);
 
             System.out.println("Count ones in each miRNA target group.");
-            s0.task("t1", BufetTornadoBigIndex::calculateCounts, map_all_split, countOnes, bounds);
-            s0.streamOut(countOnes);
+            taskGraph.task("t1", BufetTornadoBigIndex::calculateCounts, map_all_split, countOnes, bounds);
+            taskGraph.streamOut(countOnes);
 
             for (int z = 0; z < warming_up_iterations; z++) {
                 start = System.nanoTime();
-                s0.execute();
+                taskGraph.execute();
                 stop = System.nanoTime();
             }
 

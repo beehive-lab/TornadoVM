@@ -17,6 +17,11 @@
  */
 package uk.ac.manchester.tornado.benchmarks.nbody;
 
+import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.nBody;
+
+import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -34,13 +39,9 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
-
-import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
-
-import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.nBody;
 
 public class JMHNBody {
     @State(Scope.Thread)
@@ -52,7 +53,7 @@ public class JMHNBody {
         float[] velSeq;
         private float[] posSeq;
 
-        private TaskSchedule ts;
+        private TaskGraph taskGraph;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -79,10 +80,10 @@ public class JMHNBody {
                 System.arraycopy(auxVelocityZero, 0, velSeq, 0, auxVelocityZero.length);
             }
 
-            ts = new TaskSchedule("benchmark") //
+            taskGraph = new TaskGraph("benchmark") //
                     .streamIn(velSeq, posSeq) //
                     .task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
-            ts.warmup();
+            taskGraph.warmup();
         }
     }
 
@@ -103,7 +104,7 @@ public class JMHNBody {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void nbodyTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskSchedule t = state.ts;
+        TaskGraph t = state.taskGraph;
         t.execute();
         blackhole.consume(t);
     }

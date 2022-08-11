@@ -23,7 +23,7 @@ import java.util.stream.IntStream;
 import org.junit.Assert;
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -41,7 +41,7 @@ public class Inlining extends TornadoTestBase {
         byte[] result = new byte[4];
         byte[] input = new byte[] { 127, 127, 127, 127, 1, 1, 1, 1 };
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .streamIn(result, input, elements) //
                 .task("t0", Inlining::bitwiseOr, result, input, elements) //
                 .streamOut(result) //
@@ -106,8 +106,8 @@ public class Inlining extends TornadoTestBase {
             rgbBytes[i] = (byte) r.nextInt();
         });
 
-        TaskSchedule ts = new TaskSchedule("foo");
-        ts.streamIn(rgbBytes) //
+        TaskGraph taskGraph = new TaskGraph("foo");
+        taskGraph.streamIn(rgbBytes) //
                 .task("grey", Inlining::rgbToGreyKernel, rgbBytes, greyInts)//
                 .streamOut(greyInts) //
                 .execute();
@@ -126,13 +126,12 @@ public class Inlining extends TornadoTestBase {
         int[] rgbBytes = new int[size * 3];
         int[] greyInts = new int[size];
         int[] seq = new int[size];
-        Random r = new Random();
         IntStream.range(0, rgbBytes.length).forEach(i -> {
             rgbBytes[i] = 1;
         });
 
-        TaskSchedule ts = new TaskSchedule("foo");
-        ts.streamIn(rgbBytes) //
+        TaskGraph taskGraph = new TaskGraph("foo");
+        taskGraph.streamIn(rgbBytes) //
                 .task("grey", Inlining::rgbToGreyKernelInt, rgbBytes, greyInts)//
                 .streamOut(greyInts) //
                 .execute();
@@ -156,8 +155,8 @@ public class Inlining extends TornadoTestBase {
             rgbBytes[i] = (byte) -10;
         });
 
-        TaskSchedule ts = new TaskSchedule("s0");
-        ts.streamIn(rgbBytes) //
+        TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.streamIn(rgbBytes) //
                 .task("t0", Inlining::rgbToGreyKernelSmall, rgbBytes, greyInts)//
                 .streamOut(greyInts) //
                 .execute();
@@ -178,8 +177,8 @@ public class Inlining extends TornadoTestBase {
             rgbBytes[i] = (byte) -10;
         });
 
-        TaskSchedule ts = new TaskSchedule("s0");
-        ts.streamIn(rgbBytes) //
+        TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.streamIn(rgbBytes) //
                 .task("t0", Inlining::b2i, rgbBytes, greyInts)//
                 .streamOut(greyInts) //
                 .execute();

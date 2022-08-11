@@ -19,7 +19,7 @@ package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 
@@ -190,14 +190,14 @@ public class Euler {
         // [Optional] Set the global work group
         workerGrid.setGlobalWork(size, size, 1);
 
-        TaskSchedule ts = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("s0", Euler::solveTornadoVM, context, size, input, outputA, outputB, outputC, outputD, outputE) //
                 .streamOut(outputA, outputB, outputC, outputD, outputE);
 
         // Sequential
         for (int i = 0; i < ITERATIONS; i++) {
             long start = System.nanoTime();
-            ts.execute(gridScheduler);
+            taskGraph.execute(gridScheduler);
             long end = System.nanoTime();
             System.out.println("Parallel: " + (end - start));
         }

@@ -23,7 +23,7 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestLong extends TornadoTestBase {
@@ -38,7 +38,7 @@ public class TestLong extends TornadoTestBase {
             expected[i] = 50;
         }
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::testLongsCopy, a) //
                 .streamOut(a) //
                 .execute(); //
@@ -63,7 +63,7 @@ public class TestLong extends TornadoTestBase {
             expected[i] = b[i] + c[i];
         }
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorSumLongCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //

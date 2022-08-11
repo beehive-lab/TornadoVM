@@ -18,15 +18,16 @@
 
 package uk.ac.manchester.tornado.unittests.bitsets;
 
-import org.apache.lucene.util.LongBitSet;
-import org.junit.Test;
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Random;
 
-import static org.junit.Assert.assertEquals;
+import org.apache.lucene.util.LongBitSet;
+import org.junit.Test;
+
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * Test accelerating the Lucene library.
@@ -59,10 +60,10 @@ public class BitSetTests extends TornadoTestBase {
             bBits[i] = rand.nextLong();
         }
 
-        TaskSchedule ts = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", BitSetTests::intersectionCount, numWords, a, b, result) //
                 .streamOut(result);
-        ts.execute();
+        taskGraph.execute();
 
         intersectionCount(numWords, a, b, seq);
 

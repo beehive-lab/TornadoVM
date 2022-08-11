@@ -1,24 +1,26 @@
 /*
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.unittests.virtualization;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -27,7 +29,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeCI;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -102,7 +104,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
     /**
      * Test to change execution from one device to another (migration).
-     * 
+     *
      * @throws Exception
      */
     @Test
@@ -115,16 +117,16 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
         int initValue = 0;
 
-        TaskSchedule s0 = new TaskSchedule("s0");
+        TaskGraph taskGraph = new TaskGraph("s0");
         for (int i = 0; i < numKernels; i++) {
-            s0.task("t" + i, TestsVirtualLayer::accumulator, data, 1);
+            taskGraph.task("t" + i, TestsVirtualLayer::accumulator, data, 1);
         }
-        s0.streamOut(data);
+        taskGraph.streamOut(data);
 
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
 
-        s0.mapAllTo(driver.getDevice(0));
-        s0.execute();
+        taskGraph.mapAllTo(driver.getDevice(0));
+        taskGraph.execute();
 
         for (int i = 0; i < numElements; i++) {
             assertEquals((initValue + numKernels), data[i]);
@@ -132,8 +134,8 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
         initValue += numKernels;
 
-        s0.mapAllTo(driver.getDevice(1));
-        s0.execute();
+        taskGraph.mapAllTo(driver.getDevice(1));
+        taskGraph.execute();
 
         for (int i = 0; i < numElements; i++) {
             assertEquals((initValue + numKernels), data[i]);
@@ -153,20 +155,20 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
         IntStream.range(0, numElements).parallel().forEach(i -> x[i] = 450);
 
-        TaskSchedule s0 = new TaskSchedule("s0");
+        TaskGraph taskGraph = new TaskGraph("s0");
 
-        s0.task("t0", TestsVirtualLayer::saxpy, alpha, x, y).streamOut(y);
-        s0.streamOut(y);
+        taskGraph.task("t0", TestsVirtualLayer::saxpy, alpha, x, y).streamOut(y);
+        taskGraph.streamOut(y);
 
-        s0.mapAllTo(driver.getDevice(0));
-        s0.execute();
+        taskGraph.mapAllTo(driver.getDevice(0));
+        taskGraph.execute();
 
         for (int i = 0; i < numElements; i++) {
             assertEquals((alpha * 450), y[i], 0.001f);
         }
 
-        s0.mapAllTo(driver.getDevice(1));
-        s0.execute();
+        taskGraph.mapAllTo(driver.getDevice(1));
+        taskGraph.execute();
 
         for (int i = 0; i < numElements; i++) {
             assertEquals((alpha * 450), y[i], 0.001f);
@@ -185,21 +187,21 @@ public class TestsVirtualLayer extends TornadoTestBase {
         int[] data = new int[N];
         Arrays.fill(data, 100);
 
-        TaskSchedule s0 = new TaskSchedule("s0");
+        TaskGraph taskGraph = new TaskGraph("s0");
 
         // This test only is executed once (the first task)
 
         // Assign task to device 0
-        s0.setDevice(driver.getDevice(0));
-        s0.task("t0", TestsVirtualLayer::testA, data, 1);
-        s0.streamOut(data);
-        s0.execute();
+        taskGraph.setDevice(driver.getDevice(0));
+        taskGraph.task("t0", TestsVirtualLayer::testA, data, 1);
+        taskGraph.streamOut(data);
+        taskGraph.execute();
 
         // Assign another task to device 1
-        s0.setDevice(driver.getDevice(1));
-        s0.task("t1", TestsVirtualLayer::testA, data, 10);
-        s0.streamOut(data);
-        s0.execute();
+        taskGraph.setDevice(driver.getDevice(1));
+        taskGraph.task("t1", TestsVirtualLayer::testA, data, 10);
+        taskGraph.streamOut(data);
+        taskGraph.execute();
     }
 
     /**
@@ -216,13 +218,13 @@ public class TestsVirtualLayer extends TornadoTestBase {
         int[] data = new int[N];
         Arrays.fill(data, 100);
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        s0.setDevice(driver.getDevice(0));
-        s0.task("t0", TestsVirtualLayer::testA, data, 1);
-        s0.setDevice(driver.getDevice(1));
-        s0.task("t1", TestsVirtualLayer::testA, data, 10);
-        s0.streamOut(data);
-        s0.execute();
+        TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.setDevice(driver.getDevice(0));
+        taskGraph.task("t0", TestsVirtualLayer::testA, data, 1);
+        taskGraph.setDevice(driver.getDevice(1));
+        taskGraph.task("t1", TestsVirtualLayer::testA, data, 10);
+        taskGraph.streamOut(data);
+        taskGraph.execute();
 
         for (int i = 0; i < N; i++) {
             assertEquals(111, data[i]);
@@ -233,7 +235,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
      * Tasks within the same task schedules are always executed on the same device.
      * Currently, it is not possible to change device for a single tasks in a group
      * of tasks.
-     * 
+     *
      */
     @Test
     public void testVirtualLayer03() {
@@ -246,12 +248,12 @@ public class TestsVirtualLayer extends TornadoTestBase {
         Arrays.fill(dataA, 100);
         Arrays.fill(dataB, 200);
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        s0.task("t0", TestsVirtualLayer::testA, dataA, 1);
-        s0.task("t1", TestsVirtualLayer::testA, dataB, 10);
-        s0.streamOut(dataA);
-        s0.streamOut(dataB);
-        s0.execute();
+        TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.task("t0", TestsVirtualLayer::testA, dataA, 1);
+        taskGraph.task("t1", TestsVirtualLayer::testA, dataB, 10);
+        taskGraph.streamOut(dataA);
+        taskGraph.streamOut(dataB);
+        taskGraph.execute();
 
         for (int i = 0; i < N; i++) {
             assertEquals(101, dataA[i]);
@@ -262,7 +264,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
     /**
      * It creates one task scheduler and one task. Then it executes the same task in
      * different devices.
-     * 
+     *
      * The task is just one instance for all the devices. The loop iterates over the
      * devices under the same Tornado Driver and executes the task.
      */
@@ -282,7 +284,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
             String taskScheduleName = "s" + driverIndex;
 
-            TaskSchedule s0 = new TaskSchedule(taskScheduleName);
+            TaskGraph taskGraph = new TaskGraph(taskScheduleName);
             driver = getTornadoRuntime().getDriver(driverIndex);
 
             final int numDevices = driver.getDeviceCount();
@@ -294,7 +296,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
             // across devices.
 
             //@formatter:off
-            s0.task(taskName, TestsVirtualLayer::testA, data, 1)
+            taskGraph.task(taskName, TestsVirtualLayer::testA, data, 1)
               .streamOut(data);
             //@formatter:on
 
@@ -304,8 +306,8 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
                 // XXX: the set property should be optional.
                 // Tornado.setProperty(propertyDevice, value);
-                s0.setDevice(driver.getDevice(deviceIndex));
-                s0.execute();
+                taskGraph.setDevice(driver.getDevice(deviceIndex));
+                taskGraph.execute();
             }
         }
 
@@ -333,19 +335,19 @@ public class TestsVirtualLayer extends TornadoTestBase {
             assertFalse("The current driver has less than 2 devices", true);
         }
 
-        TaskSchedule s0 = new TaskSchedule("s0");
+        TaskGraph taskGraph = new TaskGraph("s0");
         TornadoRuntime.setProperty("s0.t0.device", "0:0");
         // s0.setDevice(tornadoDriver.getDevice(1)); /// XXX: fix this call
-        s0.task("t0", TestsVirtualLayer::testA, dataA, 1);
-        s0.streamOut(dataA);
-        s0.execute();
+        taskGraph.task("t0", TestsVirtualLayer::testA, dataA, 1);
+        taskGraph.streamOut(dataA);
+        taskGraph.execute();
 
-        TaskSchedule s1 = new TaskSchedule("s1");
+        TaskGraph taskGraph1 = new TaskGraph("s1");
         TornadoRuntime.setProperty("s1.t1.device", "0:1");
         // s1.setDevice(tornadoDriver.getDevice(0));
-        s1.task("t1", TestsVirtualLayer::testA, dataB, 1);
-        s1.streamOut(dataB);
-        s1.execute();
+        taskGraph1.task("t1", TestsVirtualLayer::testA, dataB, 1);
+        taskGraph1.streamOut(dataB);
+        taskGraph1.execute();
 
         for (int i = 0; i < N; i++) {
             assertEquals(dataA[i], dataB[i]);

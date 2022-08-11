@@ -24,12 +24,12 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * Run:
- * 
+ *
  * <code>
  *     tornado-test.py -V -f uk.ac.manchester.tornado.unittests.foundation.TestIf
  * </code>
@@ -45,7 +45,7 @@ public class TestIf extends TornadoTestBase {
         Arrays.fill(a, 0);
         Arrays.fill(expectedResult, 50);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::testIfInt, a) //
                 .streamOut(a) //
                 .execute(); //
@@ -62,7 +62,7 @@ public class TestIf extends TornadoTestBase {
         Arrays.fill(a, 0);
         Arrays.fill(expectedResult, 50);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::testIfInt2, a) //
                 .streamOut(a) //
                 .execute(); //
@@ -79,7 +79,7 @@ public class TestIf extends TornadoTestBase {
         Arrays.fill(a, -1);
         Arrays.fill(expectedResult, 100);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::testIfInt3, a) //
                 .streamOut(a) //
                 .execute(); //
@@ -96,7 +96,7 @@ public class TestIf extends TornadoTestBase {
         Arrays.fill(a, -1);
         Arrays.fill(expectedResult, 100);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::testIfInt4, a) //
                 .streamOut(a) //
                 .execute(); //
@@ -113,7 +113,7 @@ public class TestIf extends TornadoTestBase {
         Arrays.fill(a, 0);
         Arrays.fill(expectedResult, 50);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::testIfInt5, a) //
                 .streamOut(a) //
                 .execute(); //
@@ -130,7 +130,7 @@ public class TestIf extends TornadoTestBase {
         Arrays.fill(a, 0);
         Arrays.fill(expectedResult, 100);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::testIfInt6, a) //
                 .streamOut(a) //
                 .execute(); //

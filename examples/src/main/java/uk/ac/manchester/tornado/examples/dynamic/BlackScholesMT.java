@@ -21,7 +21,7 @@ package uk.ac.manchester.tornado.examples.dynamic;
 import java.util.Random;
 
 import uk.ac.manchester.tornado.api.Policy;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
@@ -50,10 +50,10 @@ public class BlackScholesMT {
             final float r = R_LOWER_LIMIT * rand + R_UPPER_LIMIT * (1.0f - rand);
             final float v = SIGMA_LOWER_LIMIT * rand + SIGMA_UPPER_LIMIT * (1.0f - rand);
 
-            float d1 = (float) ((float) (TornadoMath.log(S / K) + ((r + (v * v / 2)) * T)) / v * TornadoMath.sqrt(T));
-            float d2 = (float) ((float) d1 - (v * TornadoMath.sqrt(T)));
-            callResult[idx] = (float) (S * cnd(d1) - K * TornadoMath.exp(T * (-1) * r) * cnd(d2));
-            putResult[idx] = (float) (K * TornadoMath.exp(T * -r) * cnd(-d2) - S * cnd(-d1));
+            float d1 = ((TornadoMath.log(S / K) + ((r + (v * v / 2)) * T)) / v * TornadoMath.sqrt(T));
+            float d2 = (d1 - (v * TornadoMath.sqrt(T)));
+            callResult[idx] = (S * cnd(d1) - K * TornadoMath.exp(T * (-1) * r) * cnd(d2));
+            putResult[idx] = (K * TornadoMath.exp(T * -r) * cnd(-d2) - S * cnd(-d1));
         }
     }
 
@@ -63,7 +63,7 @@ public class BlackScholesMT {
             final int current = i;
             int lowBound = current * balk;
             int upperBound = (current + 1) * balk;
-            if(current==threads-1) {
+            if (current == threads - 1) {
                 upperBound = callResult.length;
             }
             int finalUpperBound = upperBound;
@@ -142,7 +142,7 @@ public class BlackScholesMT {
         float[] putPrice = new float[size];
         float[] seqCall = new float[size];
         float[] seqPut = new float[size];
-        TaskSchedule graph = new TaskSchedule("s0");
+        TaskGraph graph = new TaskGraph("s0");
         long start,end;
 
         for (int i = 0; i < size; i++) {

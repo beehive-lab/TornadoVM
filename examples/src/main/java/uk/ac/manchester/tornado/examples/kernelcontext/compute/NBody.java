@@ -22,7 +22,7 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.profiler.ChromeEventTracer;
@@ -171,7 +171,7 @@ public class NBody {
         workerGrid.setLocalWork(1024, 1, 1);
 
         // @formatter:off
-        final TaskSchedule t0 = new TaskSchedule("s0")
+        final TaskGraph t0 = new TaskGraph("s0")
                 .task("t0", NBody::nBody, context, numBodies, posTornadoVM, velTornadoVM).streamOut(posTornadoVM, velTornadoVM);
         // @formatter:on
 

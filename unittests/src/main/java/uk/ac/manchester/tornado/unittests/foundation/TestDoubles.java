@@ -23,7 +23,7 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestDoubles extends TornadoTestBase {
@@ -33,7 +33,7 @@ public class TestDoubles extends TornadoTestBase {
         final int numElements = 256;
         double[] a = new double[numElements];
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::testDoublesCopy, a) //
                 .streamOut(a) //
                 .execute(); //
@@ -57,7 +57,7 @@ public class TestDoubles extends TornadoTestBase {
             expected[i] = b[i] + c[i];
         }
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorAddDoubleCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
@@ -83,7 +83,7 @@ public class TestDoubles extends TornadoTestBase {
             expected[i] = b[i] - c[i];
         }
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorSubDoubleCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
@@ -108,7 +108,7 @@ public class TestDoubles extends TornadoTestBase {
             expected[i] = b[i] * c[i];
         }
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorMulDoubleCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
@@ -133,7 +133,7 @@ public class TestDoubles extends TornadoTestBase {
             expected[i] = b[i] / c[i];
         }
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorDivDoubleCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //

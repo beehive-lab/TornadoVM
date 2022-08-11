@@ -1,19 +1,19 @@
 /*
  * Copyright (c) 2020, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 package uk.ac.manchester.tornado.examples.compute;
 
@@ -30,7 +30,7 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -38,17 +38,17 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 /**
  * It applies a Blur filter to an input image. Algorithm taken from CUDA course
  * CS344 in Udacity.
- * 
+ *
  * Example borrowed from the Marawacc parallel programming framework with the
  * permission from the author.
- * 
- * 
+ *
+ *
  * How to run?
- * 
+ *
  * <code>
- * $ tornado uk.ac.manchester.tornado.examples.compute.BlurFilter 
+ * $ tornado uk.ac.manchester.tornado.examples.compute.BlurFilter
  * </code>
- * 
+ *
  *
  */
 public class BlurFilter {
@@ -159,7 +159,7 @@ public class BlurFilter {
             long start = System.nanoTime();
             TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
 
-            TaskSchedule parallelFilter = new TaskSchedule("blur") //
+            TaskGraph parallelFilter = new TaskGraph("blur") //
                     .task("red", BlurFilterImage::compute, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
                     .task("green", BlurFilterImage::compute, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
                     .task("blue", BlurFilterImage::compute, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //

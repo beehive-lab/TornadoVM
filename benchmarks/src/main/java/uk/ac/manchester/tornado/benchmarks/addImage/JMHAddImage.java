@@ -17,6 +17,10 @@
  */
 package uk.ac.manchester.tornado.benchmarks.addImage;
 
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -34,15 +38,11 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
-import uk.ac.manchester.tornado.benchmarks.dft.JMHDFT;
-
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
 public class JMHAddImage {
 
@@ -51,7 +51,7 @@ public class JMHAddImage {
 
         int numElementsX = Integer.parseInt(System.getProperty("x", "2048"));
         int numElementsY = Integer.parseInt(System.getProperty("y", "2048"));
-        TaskSchedule ts;
+        TaskGraph taskGraph;
 
         ImageFloat4 a;
         ImageFloat4 b;
@@ -74,11 +74,11 @@ public class JMHAddImage {
                     b.set(i, j, new Float4(rb));
                 }
             }
-            ts = new TaskSchedule("benchmark") //
+            taskGraph = new TaskGraph("benchmark") //
                     .streamIn(a, b) //
                     .task("addImage", GraphicsKernels::addImage, a, b, c) //
                     .streamOut(c);
-            ts.warmup();
+            taskGraph.warmup();
         }
     }
 
@@ -99,7 +99,7 @@ public class JMHAddImage {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void addImageTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskSchedule t = state.ts;
+        TaskGraph t = state.taskGraph;
         t.execute();
         blackhole.consume(t);
     }

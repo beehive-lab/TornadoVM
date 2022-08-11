@@ -2,7 +2,7 @@ package uk.ac.manchester.tornado.examples.spirv;
 
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -13,16 +13,16 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  * <code>
  * tornado --printBytecodes --debug -Dtornado.spirv.levelzero.memoryAlloc.shared=True uk.ac.manchester.tornado.examples.spirv.TestPrecompiledSPIRV2
  * </code>
- * 
+ *
  * OpenCL kernel (see below)
- * 
+ *
  * How to generate SPIRV?
- * 
+ *
  * <code>
  *     $ ~/bin/scripts/spirv-util.sh pre2
  *     $ cp pre2.spv /tmp/
  * </code>
- * 
+ *
  */
 
 // @formatter:off
@@ -84,7 +84,7 @@ public class TestPrecompiledSPIRV2 {
         String filePath = "/tmp/pre2.spv";
 
         // @formatter:off
-        TaskSchedule ts = new TaskSchedule("s0")
+        TaskGraph taskGraph = new TaskGraph("s0")
                 .streamIn(a, b, c)
                 .prebuiltTask("t0",
                         "sum",
@@ -95,7 +95,7 @@ public class TestPrecompiledSPIRV2 {
                         new int[] { numElements, 1, 1 })
                 .streamOut(a);
         // @formatter:on
-        ts.execute();
+        taskGraph.execute();
 
         if (PRINT) {
             System.out.println("a: " + Arrays.toString(a));

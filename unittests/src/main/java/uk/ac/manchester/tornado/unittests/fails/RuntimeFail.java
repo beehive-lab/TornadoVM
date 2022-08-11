@@ -21,7 +21,7 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -43,9 +43,9 @@ public class RuntimeFail extends TornadoTestBase {
     /**
      * This test sets the same task-name for two different tasks. This triggers an
      * error and TornadoVM exits execution.
-     * 
+     *
      * How to run?
-     * 
+     *
      * <code>
      *     tornado-test.py -V -pk --debug uk.ac.manchester.tornado.unittests.fails.RuntimeFail#test01
      * </code>
@@ -59,11 +59,11 @@ public class RuntimeFail extends TornadoTestBase {
         Arrays.fill(x, 2.0f);
         Arrays.fill(y, 8.0f);
 
-        TaskSchedule ts = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", RuntimeFail::vectorAdd, x, y, z) //
                 .task("t0", RuntimeFail::square, z) //
                 .streamOut(z);
-        ts.execute();
+        taskGraph.execute();
     }
 
 }

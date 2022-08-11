@@ -18,11 +18,11 @@
 
 package uk.ac.manchester.tornado.examples;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.annotations.Parallel;
-
 import java.util.Random;
 import java.util.stream.IntStream;
+
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class MultipleTasks {
 
@@ -53,7 +53,7 @@ public class MultipleTasks {
         IntStream.range(0, numElements).parallel().forEach(i -> x[i] = r.nextFloat());
 
         // @formatter:off
-        TaskSchedule ts = new TaskSchedule("example")
+        TaskGraph taskGraph = new TaskGraph("example")
                 .streamIn(x)
                 .task("foo", MultipleTasks::foo, x, y)
                 .task("bar", MultipleTasks::bar, y)
@@ -61,7 +61,7 @@ public class MultipleTasks {
         //@formatter:on
 
         for (int i = 0; i < 100; i++) {
-            ts.execute();
+            taskGraph.execute();
         }
 
     }

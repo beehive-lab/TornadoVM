@@ -24,7 +24,7 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.TestHello;
@@ -64,32 +64,32 @@ public class TestProfiler extends TornadoTestBase {
         System.setProperty("tornado.profiler", "True");
 
         // @formatter:off
-        TaskSchedule ts = new TaskSchedule("s0")
+        TaskGraph taskGraph = new TaskGraph("s0")
                 .task("t0", TestHello::add, a, b, c)
                 .streamOut(c);
         // @formatter:on
 
-        ts.execute();
+        taskGraph.execute();
 
         int driverIndex = TornadoRuntime.getTornadoRuntime().getDefaultDevice().getDriverIndex();
 
-        assertTrue(ts.getTotalTime() > 0);
-        assertTrue(ts.getTornadoCompilerTime() > 0);
-        assertTrue(ts.getCompileTime() > 0);
-        assertTrue(ts.getDataTransfersTime() >= 0);
-        assertTrue(ts.getReadTime() >= 0);
-        assertTrue(ts.getWriteTime() >= 0);
+        assertTrue(taskGraph.getTotalTime() > 0);
+        assertTrue(taskGraph.getTornadoCompilerTime() > 0);
+        assertTrue(taskGraph.getCompileTime() > 0);
+        assertTrue(taskGraph.getDataTransfersTime() >= 0);
+        assertTrue(taskGraph.getReadTime() >= 0);
+        assertTrue(taskGraph.getWriteTime() >= 0);
         // We do not support dispatch timers for the PTX and SPIRV backends
         if (!isBackendPTXOrSPIRV(driverIndex)) {
-            assertTrue(ts.getDataTransferDispatchTime() > 0);
-            assertTrue(ts.getKernelDispatchTime() > 0);
+            assertTrue(taskGraph.getDataTransferDispatchTime() > 0);
+            assertTrue(taskGraph.getKernelDispatchTime() > 0);
         }
-        assertTrue(ts.getDeviceReadTime() >= 0);
-        assertTrue(ts.getDeviceWriteTime() >= 0);
-        assertTrue(ts.getDeviceKernelTime() > 0);
+        assertTrue(taskGraph.getDeviceReadTime() >= 0);
+        assertTrue(taskGraph.getDeviceWriteTime() >= 0);
+        assertTrue(taskGraph.getDeviceKernelTime() > 0);
 
-        assertEquals(ts.getWriteTime() + ts.getReadTime(), ts.getDataTransfersTime());
-        assertEquals(ts.getTornadoCompilerTime() + ts.getDriverInstallTime(), ts.getCompileTime());
+        assertEquals(taskGraph.getWriteTime() + taskGraph.getReadTime(), taskGraph.getDataTransfersTime());
+        assertEquals(taskGraph.getTornadoCompilerTime() + taskGraph.getDriverInstallTime(), taskGraph.getCompileTime());
 
         // Disable profiler
         System.setProperty("tornado.profiler", "False");
@@ -109,24 +109,24 @@ public class TestProfiler extends TornadoTestBase {
         System.setProperty("tornado.profiler", "False");
 
         // @formatter:off
-        TaskSchedule ts = new TaskSchedule("s0")
+        TaskGraph taskGraph = new TaskGraph("s0")
                 .task("t0", TestHello::add, a, b, c)
                 .streamOut(c);
         // @formatter:on
 
-        ts.execute();
+        taskGraph.execute();
 
-        assertEquals(ts.getTotalTime(), 0);
-        assertEquals(ts.getTornadoCompilerTime(), 0);
-        assertEquals(ts.getCompileTime(), 0);
-        assertEquals(ts.getDataTransfersTime(), 0);
-        assertEquals(ts.getReadTime(), 0);
-        assertEquals(ts.getWriteTime(), 0);
-        assertEquals(ts.getDataTransferDispatchTime(), 0);
-        assertEquals(ts.getKernelDispatchTime(), 0);
-        assertEquals(ts.getDeviceReadTime(), 0);
-        assertEquals(ts.getDeviceWriteTime(), 0);
-        assertEquals(ts.getDeviceKernelTime(), 0);
-        assertEquals(ts.getDeviceKernelTime(), 0);
+        assertEquals(taskGraph.getTotalTime(), 0);
+        assertEquals(taskGraph.getTornadoCompilerTime(), 0);
+        assertEquals(taskGraph.getCompileTime(), 0);
+        assertEquals(taskGraph.getDataTransfersTime(), 0);
+        assertEquals(taskGraph.getReadTime(), 0);
+        assertEquals(taskGraph.getWriteTime(), 0);
+        assertEquals(taskGraph.getDataTransferDispatchTime(), 0);
+        assertEquals(taskGraph.getKernelDispatchTime(), 0);
+        assertEquals(taskGraph.getDeviceReadTime(), 0);
+        assertEquals(taskGraph.getDeviceWriteTime(), 0);
+        assertEquals(taskGraph.getDeviceKernelTime(), 0);
+        assertEquals(taskGraph.getDeviceKernelTime(), 0);
     }
 }

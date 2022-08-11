@@ -39,7 +39,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
@@ -67,7 +67,7 @@ class ReduceTaskSchedule {
     private static AtomicInteger counterName = new AtomicInteger(0);
     private static AtomicInteger counterSeqName = new AtomicInteger(0);
 
-    private String idTaskSchedule;
+    private String idTaskGraph;
     private ArrayList<TaskPackage> taskPackages;
     private ArrayList<Object> streamOutObjects;
     private ArrayList<Object> streamInObjects;
@@ -77,7 +77,7 @@ class ReduceTaskSchedule {
     private ArrayList<HybridThreadMeta> hybridThreadMetas;
     private HashMap<Object, Object> neutralElementsNew = new HashMap<>();
     private HashMap<Object, Object> neutralElementsOriginal = new HashMap<>();
-    private TaskSchedule rewrittenTaskSchedule;
+    private TaskGraph rewrittenTaskGraph;
     private HashMap<Object, LinkedList<Integer>> reduceOperandTable;
     private CachedGraph<?> sketchGraph;
     private boolean hybridMode;
@@ -86,7 +86,7 @@ class ReduceTaskSchedule {
 
     ReduceTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects, CachedGraph<?> graph) {
         this.taskPackages = taskPackages;
-        this.idTaskSchedule = taskScheduleID;
+        this.idTaskGraph = taskScheduleID;
         this.streamInObjects = streamInObjects;
         this.streamOutObjects = streamOutObjects;
         this.sketchGraph = graph;
@@ -150,8 +150,8 @@ class ReduceTaskSchedule {
         return value;
     }
 
-    private static void inspectBinariesFPGA(String taskScheduleName, String tsName, String taskName, boolean sequential) {
-        String idTaskName = tsName + "." + taskName;
+    private static void inspectBinariesFPGA(String taskScheduleName, String graphName, String taskName, boolean sequential) {
+        String idTaskGraph = graphName + "." + taskName;
         StringBuilder originalBinaries = TornadoOptions.FPGA_BINARIES;
         if (originalBinaries != null) {
             String[] binaries = originalBinaries.toString().split(",");
@@ -167,8 +167,8 @@ class ReduceTaskSchedule {
 
             for (int i = 0; i < binaries.length; i += 2) {
                 String givenTaskName = binaries[i + 1].split(".device")[0];
-                if (givenTaskName.equals(idTaskName)) {
-                    int[] info = MetaDataUtils.resolveDriverDeviceIndexes(MetaDataUtils.getProperty(idTaskName + ".device"));
+                if (givenTaskName.equals(idTaskGraph)) {
+                    int[] info = MetaDataUtils.resolveDriverDeviceIndexes(MetaDataUtils.getProperty(idTaskGraph + ".device"));
                     int deviceNumber = info[1];
 
                     if (!sequential) {
@@ -186,11 +186,11 @@ class ReduceTaskSchedule {
         return TornadoOptions.FPGA_BINARIES != null;
     }
 
-    private int[] changeDriverAndDeviceIfNeeded(String taskScheduleName, String tsName, String taskName) {
-        String idTaskName = tsName + "." + taskName;
-        boolean isDeviceDefined = MetaDataUtils.getProperty(idTaskName + ".device") != null;
+    private int[] changeDriverAndDeviceIfNeeded(String taskScheduleName, String graphName, String taskName) {
+        String idTaskGraph = graphName + "." + taskName;
+        boolean isDeviceDefined = MetaDataUtils.getProperty(idTaskGraph + ".device") != null;
         if (isDeviceDefined) {
-            int[] info = MetaDataUtils.resolveDriverDeviceIndexes(MetaDataUtils.getProperty(idTaskName + ".device"));
+            int[] info = MetaDataUtils.resolveDriverDeviceIndexes(MetaDataUtils.getProperty(idTaskGraph + ".device"));
             int driverNumber = info[0];
             int deviceNumber = info[1];
             TornadoRuntime.setProperty(taskScheduleName + "." + taskName + ".device", driverNumber + ":" + deviceNumber);
@@ -323,7 +323,7 @@ class ReduceTaskSchedule {
                 streamInObjects.add(reduceArray.getValue());
             }
 
-            TornadoTaskSchedule.performStreamInThread(rewrittenTaskSchedule, streamInObjects);
+            TornadoTaskSchedule.performStreamInThread(rewrittenTaskGraph, streamInObjects);
 
             for (int i = 0; i < streamOutObjects.size(); i++) {
                 if (originalReduceVariables.containsKey(streamOutObjects.get(i))) {
@@ -371,16 +371,16 @@ class ReduceTaskSchedule {
      *
      * @param metaReduceTable
      *            Metadata to create all new tasks for the reductions dynamically.
-     * @return {@link TaskSchedule} with the new reduction
+     * @return {@link TaskGraph} with the new reduction
      */
-    TaskSchedule scheduleWithReduction(MetaReduceCodeAnalysis metaReduceTable) {
+    TaskGraph scheduleWithReduction(MetaReduceCodeAnalysis metaReduceTable) {
 
         assert metaReduceTable != null;
 
         HashMap<Integer, MetaReduceTasks> tableReduce = metaReduceTable.getTable();
 
         String taskScheduleReduceName = TASK_SCHEDULE_PREFIX + counterName.get();
-        String tsName = idTaskSchedule;
+        String graphName = idTaskGraph;
 
         HashMap<Integer, ArrayList<Object>> streamReduceTable = new HashMap<>();
         ArrayList<Integer> sizesReductionArray = new ArrayList<>();
@@ -404,12 +404,12 @@ class ReduceTaskSchedule {
 
             ArrayList<Object> streamReduceList = new ArrayList<>();
 
-            int[] driverAndDevice = changeDriverAndDeviceIfNeeded(taskScheduleReduceName, tsName, taskPackage.getId());
+            int[] driverAndDevice = changeDriverAndDeviceIfNeeded(taskScheduleReduceName, graphName, taskPackage.getId());
             if (driverAndDevice != null) {
                 driverToRun = driverAndDevice[0];
                 deviceToRun = driverAndDevice[1];
             }
-            inspectBinariesFPGA(taskScheduleReduceName, tsName, taskPackage.getId(), false);
+            inspectBinariesFPGA(taskScheduleReduceName, graphName, taskPackage.getId(), false);
 
             if (tableReduce.containsKey(taskNumber)) {
 
@@ -487,7 +487,7 @@ class ReduceTaskSchedule {
             }
         }
 
-        rewrittenTaskSchedule = new TaskSchedule(taskScheduleReduceName);
+        rewrittenTaskGraph = new TaskGraph(taskScheduleReduceName);
         updateStreamInOutVariables(metaReduceTable.getTable());
 
         // Compose Task Schedule
@@ -514,12 +514,12 @@ class ReduceTaskSchedule {
                 for (int i = 0; i < taskPackages.get(taskNumber).getTaskParameters().length - 1; i++) {
                     Object parameterToMethod = taskPackages.get(taskNumber).getTaskParameters()[i + 1];
                     if (reduceOperandTable.containsKey(parameterToMethod) && (reduceOperandTable.get(parameterToMethod).size() > 1)) {
-                        rewrittenTaskSchedule.forceCopyIn(parameterToMethod);
+                        rewrittenTaskGraph.forceCopyIn(parameterToMethod);
                     }
                 }
             }
 
-            rewrittenTaskSchedule.addTask(taskPackages.get(taskNumber));
+            rewrittenTaskGraph.addTask(taskPackages.get(taskNumber));
 
             // Add extra task with the final reduction
             if (tableReduce.containsKey(taskNumber)) {
@@ -541,22 +541,22 @@ class ReduceTaskSchedule {
                     int sizeReduceArray = sizesReductionArray.get(i);
                     for (REDUCE_OPERATION operation : operations) {
                         final String newTaskSequentialName = SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName.get();
-                        String fullName = rewrittenTaskSchedule.getTaskScheduleName() + "." + newTaskSequentialName;
+                        String fullName = rewrittenTaskGraph.getTaskScheduleName() + "." + newTaskSequentialName;
                         TornadoRuntime.setProperty(fullName + ".device", driverToRun + ":" + deviceToRun);
-                        inspectBinariesFPGA(taskScheduleReduceName, tsName, taskPackage.getId(), true);
+                        inspectBinariesFPGA(taskScheduleReduceName, graphName, taskPackage.getId(), true);
 
                         switch (operation) {
                             case ADD:
-                                ReduceFactory.handleAdd(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
+                                ReduceFactory.handleAdd(newArray, rewrittenTaskGraph, sizeReduceArray, newTaskSequentialName);
                                 break;
                             case MUL:
-                                ReduceFactory.handleMul(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
+                                ReduceFactory.handleMul(newArray, rewrittenTaskGraph, sizeReduceArray, newTaskSequentialName);
                                 break;
                             case MAX:
-                                ReduceFactory.handleMax(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
+                                ReduceFactory.handleMax(newArray, rewrittenTaskGraph, sizeReduceArray, newTaskSequentialName);
                                 break;
                             case MIN:
-                                ReduceFactory.handleMin(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
+                                ReduceFactory.handleMin(newArray, rewrittenTaskGraph, sizeReduceArray, newTaskSequentialName);
                                 break;
                             default:
                                 throw new TornadoRuntimeException("[ERROR] Reduce operation not supported yet.");
@@ -573,10 +573,10 @@ class ReduceTaskSchedule {
                 }
             }
         }
-        TornadoTaskSchedule.performStreamOutThreads(rewrittenTaskSchedule, streamOutObjects);
+        TornadoTaskSchedule.performStreamOutThreads(rewrittenTaskGraph, streamOutObjects);
         executeExpression();
         counterName.incrementAndGet();
-        return rewrittenTaskSchedule;
+        return rewrittenTaskGraph;
     }
 
     void executeExpression() {
@@ -589,7 +589,7 @@ class ReduceTaskSchedule {
             }
             threadSequentialExecution.stream().forEach(Thread::start);
         }
-        rewrittenTaskSchedule.execute();
+        rewrittenTaskGraph.execute();
         updateOutputArrays();
     }
 

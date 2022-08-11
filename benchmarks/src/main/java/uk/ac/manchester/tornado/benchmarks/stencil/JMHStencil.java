@@ -17,6 +17,13 @@
  */
 package uk.ac.manchester.tornado.benchmarks.stencil;
 
+import static uk.ac.manchester.tornado.benchmarks.stencil.Stencil.copy;
+import static uk.ac.manchester.tornado.benchmarks.stencil.Stencil.stencil3d;
+
+import java.util.Arrays;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -34,14 +41,8 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
-import uk.ac.manchester.tornado.api.TaskSchedule;
 
-import java.util.Arrays;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-
-import static uk.ac.manchester.tornado.benchmarks.stencil.Stencil.copy;
-import static uk.ac.manchester.tornado.benchmarks.stencil.Stencil.stencil3d;
+import uk.ac.manchester.tornado.api.TaskGraph;
 
 public class JMHStencil {
     @State(Scope.Thread)
@@ -55,7 +56,7 @@ public class JMHStencil {
         private float[] a1;
         private float[] ainit;
 
-        private TaskSchedule ts;
+        private TaskGraph taskGraph;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -76,13 +77,13 @@ public class JMHStencil {
                 }
             }
             copy(sz, ainit, a0);
-            ts = new TaskSchedule("benchmark") //
+            taskGraph = new TaskGraph("benchmark") //
                     .streamIn(a0, a1) //
                     .task("stencil", Stencil::stencil3d, n, sz, a0, a1, FAC) //
                     .task("copy", Stencil::copy, sz, a1, a0) //
                     .streamOut(a0);
-            ts.getTask("stencil");
-            ts.warmup();
+            taskGraph.getTask("stencil");
+            taskGraph.warmup();
         }
     }
 
@@ -104,7 +105,7 @@ public class JMHStencil {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void stencilTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskSchedule t = state.ts;
+        TaskGraph t = state.taskGraph;
         t.execute();
         blackhole.consume(t);
     }

@@ -1,32 +1,32 @@
 /*
  * Copyright (c) 2013-2018, APT Group, School of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.examples.fpga;
 
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 /**
  * Initialize an FPGA kernel. It performs a copy-in and copy-out of the same
  * array to check device buffers and offset within Tornado.
- * 
+ *
  * <p>
  * In the pre-compiled mode:
  * <p>
@@ -41,36 +41,36 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
  * In Full JIT Mode (debug):
  * <p>
  * <code>
- * env CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA=1 tornado  
- * -Ds0.t0.device=0:1 
- * -Dtornado.assembler.removeloops=true 
- * -Dtornado.opencl.accelerator.fpga=true 
- * -Dtornado.fpga.emulation=true  
- * -Dtornado.fpga.flags=v,report  
- * -Dtornado.opencl.userelative=True 
+ * env CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA=1 tornado
+ * -Ds0.t0.device=0:1
+ * -Dtornado.assembler.removeloops=true
+ * -Dtornado.opencl.accelerator.fpga=true
+ * -Dtornado.fpga.emulation=true
+ * -Dtornado.fpga.flags=v,report
+ * -Dtornado.opencl.userelative=True
  * -Dtornado.print.kernel=True
  *  uk.ac.manchester.tornado.examples.fpga.InitFPGA
  * </code>
  * </p>
  * </p>
- * 
+ *
  * <p>
  * In Full JIT Mode:
  * <p>
  * <code>
- * tornado  
- * -Ds0.t0.device=0:1 
- * -Dtornado.assembler.removeloops=true 
- * -Dtornado.opencl.accelerator.fpga=true   
- * -Dtornado.fpga.flags=v,report  
- * -Dtornado.opencl.userelative=True 
+ * tornado
+ * -Ds0.t0.device=0:1
+ * -Dtornado.assembler.removeloops=true
+ * -Dtornado.opencl.accelerator.fpga=true
+ * -Dtornado.fpga.flags=v,report
+ * -Dtornado.opencl.userelative=True
  * -Dtornado.print.kernel=True
  *  uk.ac.manchester.tornado.examples.fpga.InitFPGA
  * </code>
  * </p>
  * </p>
- * 
- * 
+ *
+ *
  */
 public class InitFPGA {
 
@@ -87,7 +87,7 @@ public class InitFPGA {
         Arrays.fill(x, 10);
 
         // @formatter:off
-        TaskSchedule s0 = new TaskSchedule("s0")
+        TaskGraph s0 = new TaskGraph("s0")
                 .streamIn(x)
                 .task("t0", InitFPGA::init, x)
                 .streamOut(x);

@@ -25,7 +25,7 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -65,12 +65,12 @@ public class TestLoopTransformations extends TornadoTestBase {
         TornadoRuntime.setProperty("tornado.experimental.partial.unroll", "True");
 
         //@formatter:off
-        TaskSchedule t = new TaskSchedule("s0")
+        TaskGraph taskGraph = new TaskGraph("s0")
                 .task("t0", TestLoopTransformations::matrixVectorMultiplication, matrixA, matrixB, matrixC, size)
                 .streamOut(matrixC);
         //@formatter:on
 
-        t.execute();
+        taskGraph.execute();
 
         matrixVectorMultiplication(matrixA, matrixB, resultSeq, size);
         for (int i = 0; i < size; i++) {
@@ -110,7 +110,7 @@ public class TestLoopTransformations extends TornadoTestBase {
             }
         }
 
-        TaskSchedule t = new TaskSchedule("s0") //
+        TaskGraph t = new TaskGraph("s0") //
                 .task("t0", TestLoopTransformations::matrixVectorMultiplication, matrixA, matrixB, matrixC, size) //
                 .streamOut(matrixC); //
 
@@ -147,10 +147,10 @@ public class TestLoopTransformations extends TornadoTestBase {
             matrixB[idx] = r.nextFloat();
         });
 
-        TaskSchedule t = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestLoopTransformations::matrixTranspose, matrixA, matrixB, N) //
                 .streamOut(matrixB); //
-        t.execute();
+        taskGraph.execute();
 
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {

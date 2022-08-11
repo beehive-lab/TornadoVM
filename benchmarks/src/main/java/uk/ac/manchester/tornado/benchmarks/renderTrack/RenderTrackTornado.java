@@ -2,7 +2,7 @@ package uk.ac.manchester.tornado.benchmarks.renderTrack;
 
 import java.util.Random;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
@@ -32,18 +32,18 @@ public class RenderTrackTornado extends BenchmarkDriver {
                 input.set(i, j, new Float3(i, j, value));
             }
         }
-        ts = new TaskSchedule("benchmark")//
+        taskGraph = new TaskGraph("benchmark")//
                 .task("renderTrack", ComputeKernels::renderTrack, output, input) //
                 .streamOut(output);
-        ts.warmup();
+        taskGraph.warmup();
     }
 
     @Override
     public void tearDown() {
-        ts.dumpProfiles();
+        taskGraph.dumpProfiles();
         input = null;
         output = null;
-        ts.getDevice().reset();
+        taskGraph.getDevice().reset();
         super.tearDown();
     }
 
@@ -72,7 +72,7 @@ public class RenderTrackTornado extends BenchmarkDriver {
                 inputValidation.set(i, j, new Float3(i, j, value));
             }
         }
-        TaskSchedule s0 = new TaskSchedule("s0")//
+        TaskGraph s0 = new TaskGraph("s0")//
                 .task("t0", ComputeKernels::renderTrack, outputTornado, inputValidation) //
                 .streamOut(outputTornado);
         s0.mapAllTo(device);
@@ -83,7 +83,7 @@ public class RenderTrackTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        ts.mapAllTo(device);
-        ts.execute();
+        taskGraph.mapAllTo(device);
+        taskGraph.execute();
     }
 }

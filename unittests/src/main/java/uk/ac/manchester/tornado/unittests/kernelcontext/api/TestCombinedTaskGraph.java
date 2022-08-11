@@ -25,7 +25,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -37,18 +37,18 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * features or adhere to the original TornadoVM annotations
  * {@link uk.ac.manchester.tornado.api.annotations.Parallel} or
  * {@link uk.ac.manchester.tornado.api.annotations.Reduce}.
- * 
+ *
  * The following tests implement a single TaskSchedule that has three
  * consecutive tasks: t0: Vector Addition, t1: Vector Multiplication and t2:
  * Vector Subtraction.
  */
-public class TestCombinedTaskSchedule extends TornadoTestBase {
+public class TestCombinedTaskGraph extends TornadoTestBase {
 
     /**
      * Method that performs the vector addition of two arrays and stores the result
      * in a third array. This method uses the
      * {@link uk.ac.manchester.tornado.api.annotations.Parallel} annotation.
-     * 
+     *
      * @param a
      *            input array
      * @param b
@@ -165,16 +165,16 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
         WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler("s01.t0", worker);
 
-        TaskSchedule s01 = new TaskSchedule("s01") //
+        TaskGraph taskGraph = new TaskGraph("s01") //
                 .streamIn(a, b) //
-                .task("t0", TestCombinedTaskSchedule::vectorAddV1, a, b, cTornado) //
-                .task("t1", TestCombinedTaskSchedule::vectorMulV1, cTornado, b, cTornado) //
-                .task("t2", TestCombinedTaskSchedule::vectorSubV1, cTornado, b, cTornado) //
+                .task("t0", TestCombinedTaskGraph::vectorAddV1, a, b, cTornado) //
+                .task("t1", TestCombinedTaskGraph::vectorMulV1, cTornado, b, cTornado) //
+                .task("t2", TestCombinedTaskGraph::vectorSubV1, cTornado, b, cTornado) //
                 .streamOut(cTornado);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(size, 1, 1);
-        s01.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         vectorAddV1(a, b, cJava);
         vectorMulV1(cJava, b, cJava);
@@ -208,13 +208,13 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
         gridScheduler.setWorkerGrid("s02.t2", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s02 = new TaskSchedule("s02") //
+        TaskGraph taskGraph = new TaskGraph("s02") //
                 .streamIn(a, b) //
-                .task("t0", TestCombinedTaskSchedule::vectorAddV2, context, a, b, cTornado) //
-                .task("t1", TestCombinedTaskSchedule::vectorMulV2, context, cTornado, b, cTornado) //
-                .task("t2", TestCombinedTaskSchedule::vectorSubV2, context, cTornado, b, cTornado) //
+                .task("t0", TestCombinedTaskGraph::vectorAddV2, context, a, b, cTornado) //
+                .task("t1", TestCombinedTaskGraph::vectorMulV2, context, cTornado, b, cTornado) //
+                .task("t2", TestCombinedTaskGraph::vectorSubV2, context, cTornado, b, cTornado) //
                 .streamOut(cTornado);
-        s02.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         vectorAddV1(a, b, cJava);
         vectorMulV1(cJava, b, cJava);
@@ -247,13 +247,13 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
         gridScheduler.setWorkerGrid("s03.t2", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s03 = new TaskSchedule("s03") //
+        TaskGraph taskGraph = new TaskGraph("s03") //
                 .streamIn(a, b) //
-                .task("t0", TestCombinedTaskSchedule::vectorAddV1, a, b, cTornado) //
-                .task("t1", TestCombinedTaskSchedule::vectorMulV2, context, cTornado, b, cTornado) //
-                .task("t2", TestCombinedTaskSchedule::vectorSubV2, context, cTornado, b, cTornado) //
+                .task("t0", TestCombinedTaskGraph::vectorAddV1, a, b, cTornado) //
+                .task("t1", TestCombinedTaskGraph::vectorMulV2, context, cTornado, b, cTornado) //
+                .task("t2", TestCombinedTaskGraph::vectorSubV2, context, cTornado, b, cTornado) //
                 .streamOut(cTornado);
-        s03.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         vectorAddV1(a, b, cJava);
         vectorMulV1(cJava, b, cJava);
@@ -286,13 +286,13 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
         gridScheduler.setWorkerGrid("s04.t1", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s04 = new TaskSchedule("s04") //
+        TaskGraph taskGraph = new TaskGraph("s04") //
                 .streamIn(a, b) //
-                .task("t0", TestCombinedTaskSchedule::vectorAddV2, context, a, b, cTornado) //
-                .task("t1", TestCombinedTaskSchedule::vectorMulV2, context, cTornado, b, cTornado) //
-                .task("t2", TestCombinedTaskSchedule::vectorSubV1, cTornado, b, cTornado) //
+                .task("t0", TestCombinedTaskGraph::vectorAddV2, context, a, b, cTornado) //
+                .task("t1", TestCombinedTaskGraph::vectorMulV2, context, cTornado, b, cTornado) //
+                .task("t2", TestCombinedTaskGraph::vectorSubV1, cTornado, b, cTornado) //
                 .streamOut(cTornado);
-        s04.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         vectorAddV1(a, b, cJava);
         vectorMulV1(cJava, b, cJava);
@@ -326,18 +326,19 @@ public class TestCombinedTaskSchedule extends TornadoTestBase {
         gridScheduler.setWorkerGrid("s05.t1", workerT1);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s05 = new TaskSchedule("s05") //
+        TaskGraph taskGraph = new TaskGraph("s05") //
                 .streamIn(a, b) //
-                .task("t0", TestCombinedTaskSchedule::vectorAddV2, context, a, b, cTornado) //
-                .task("t1", TestCombinedTaskSchedule::vectorMulV2, context, cTornado, b, cTornado) //
-                .task("t2", TestCombinedTaskSchedule::vectorSubV1, cTornado, b, cTornado) //
+                .task("t0", TestCombinedTaskGraph::vectorAddV2, context, a, b, cTornado) //
+                .task("t1", TestCombinedTaskGraph::vectorMulV2, context, cTornado, b, cTornado) //
+                .task("t2", TestCombinedTaskGraph::vectorSubV1, cTornado, b, cTornado) //
                 .streamOut(cTornado);
+
         // Change the dimension of the Grids
         workerT0.setGlobalWork(size, 1, 1);
         workerT0.setLocalWork(size / 2, 1, 1);
         workerT1.setGlobalWork(size, 1, 1);
         workerT1.setLocalWorkToNull();
-        s05.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         vectorAddV1(a, b, cJava);
         vectorMulV1(cJava, b, cJava);

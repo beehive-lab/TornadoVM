@@ -17,6 +17,9 @@
  */
 package uk.ac.manchester.tornado.benchmarks.blurFilter;
 
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -34,11 +37,9 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 public class JMHBlurFilter {
 
@@ -54,7 +55,7 @@ public class JMHBlurFilter {
         int[] greenFilter;
         int[] blueFilter;
         float[] filter;
-        TaskSchedule ts;
+        TaskGraph taskGraph;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -88,14 +89,14 @@ public class JMHBlurFilter {
                 }
             }
 
-            ts = new TaskSchedule("blur") //
+            taskGraph = new TaskGraph("blur") //
                     .streamIn(redChannel, greenChannel, blueChannel) //
                     .task("red", ComputeKernels::channelConvolution, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
                     .task("green", ComputeKernels::channelConvolution, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
                     .task("blue", ComputeKernels::channelConvolution, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
                     .streamOut(redFilter, greenFilter, blueFilter) //
                     .useDefaultThreadScheduler(true);
-            ts.warmup();
+            taskGraph.warmup();
         }
     }
 
@@ -118,7 +119,7 @@ public class JMHBlurFilter {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void blurFilterTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskSchedule t = state.ts;
+        TaskGraph t = state.taskGraph;
         t.execute();
         blackhole.consume(t);
     }

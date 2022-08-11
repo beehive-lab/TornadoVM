@@ -19,15 +19,16 @@ package uk.ac.manchester.tornado.unittests.tasks;
 
 import static junit.framework.TestCase.assertEquals;
 
+import java.util.Random;
+import java.util.stream.IntStream;
+
 import org.junit.Assert;
 import org.junit.Test;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import java.util.Random;
-import java.util.stream.IntStream;
 
 /**
  * Tests TornadoVM compilation under different scenarios, when not performing
@@ -175,7 +176,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
         });
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(a, b)
                 .task("t0", TestMultipleFunctions::vectorAddInteger, a, b, c)
                 .streamOut(c)
@@ -202,7 +203,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
         });
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(a, b)
                 .task("t0", TestMultipleFunctions::vectorAddInteger2, a, b, c)
                 .streamOut(c)
@@ -229,7 +230,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
         });
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(a, b)
                 .task("t0", TestMultipleFunctions::vectorAddInteger3, a, b, c)
                 .streamOut(c)
@@ -256,7 +257,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
         });
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(a, b)
                 .task("t0", TestMultipleFunctions::vectorAddInteger4, a, b, c)
                 .streamOut(c)
@@ -283,7 +284,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
         });
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(a, b)
                 .task("t0", TestMultipleFunctions::vectorAddFloats, a, b, c)
                 .streamOut(c)
@@ -309,7 +310,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
         Float4 c = new Float4();
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(a, b)
                 .task("t0", TestMultipleFunctions::vectorTypes, a, b, c)
                 .streamOut(c)
@@ -372,9 +373,9 @@ public class TestMultipleFunctions extends TornadoTestBase {
 
         TestMultipleFunctions testTaskAccesses = new TestMultipleFunctions();
 
-        TaskSchedule ts = new TaskSchedule("s0").task("t0", testTaskAccesses::caller1, testArrays.calleeReadTor, testArrays.ignoreParam1, testArrays.callerReadCalleeWriteTor, testArrays.ignoreParam2,
+        TaskGraph taskGraph = new TaskGraph("s0").task("t0", testTaskAccesses::caller1, testArrays.calleeReadTor, testArrays.ignoreParam1, testArrays.callerReadCalleeWriteTor, testArrays.ignoreParam2,
                 testArrays.callerReadTor, testArrays.callerWriteTor).streamOut(testArrays.callerReadCalleeWriteTor, testArrays.callerWriteTor);
-        ts.execute();
+        taskGraph.execute();
 
         Assert.assertArrayEquals(testArrays.calleeReadSeq, testArrays.calleeReadTor);
         Assert.assertArrayEquals(testArrays.callerReadCalleeWriteSeq, testArrays.callerReadCalleeWriteTor);
@@ -396,12 +397,12 @@ public class TestMultipleFunctions extends TornadoTestBase {
 
         TestMultipleFunctions testTaskAccesses = new TestMultipleFunctions();
 
-        TaskSchedule ts = new TaskSchedule("s0")
+        TaskGraph taskGraph = new TaskGraph("s0")
                 .task("t0", testTaskAccesses::caller1, testArrays.calleeReadTor, testArrays.ignoreParam1, testArrays.callerReadCalleeWriteTor, testArrays.ignoreParam2, testArrays.callerReadTor,
                         testArrays.callerWriteTor)
                 .task("t1", testTaskAccesses::caller2, testArrays.callerReadTor, testArrays.calleeReadTor)
                 .streamOut(testArrays.callerReadCalleeWriteTor, testArrays.callerWriteTor, testArrays.callerReadTor);
-        ts.execute();
+        taskGraph.execute();
 
         Assert.assertArrayEquals(testArrays.calleeReadSeq, testArrays.calleeReadTor);
         Assert.assertArrayEquals(testArrays.callerReadCalleeWriteSeq, testArrays.callerReadCalleeWriteTor);
@@ -424,12 +425,12 @@ public class TestMultipleFunctions extends TornadoTestBase {
 
         TestMultipleFunctions testTaskAccesses = new TestMultipleFunctions();
 
-        TaskSchedule ts = new TaskSchedule("s0")
+        TaskGraph taskGraph = new TaskGraph("s0")
                 .task("t0", testTaskAccesses::caller1, arrays.calleeReadTor, arrays.ignoreParam1, arrays.callerReadCalleeWriteTor, arrays.ignoreParam2, arrays.callerReadTor, arrays.callerWriteTor)
                 .task("t1", testTaskAccesses::caller2, arrays.callerReadTor, arrays.calleeReadTor)
                 .task("t2", testTaskAccesses::caller3, arrays.callerReadWriteTor, arrays.calleeReadTor, arrays.callee1WriteTor, arrays.callerReadCalleeWriteTor, arrays.callee2ReadTor)
                 .streamOut(arrays.callerReadCalleeWriteTor, arrays.callerWriteTor, arrays.callerReadTor, arrays.callerReadWriteTor, arrays.callee1WriteTor, arrays.callerReadCalleeWriteTor);
-        ts.execute();
+        taskGraph.execute();
 
         Assert.assertArrayEquals(arrays.calleeReadSeq, arrays.calleeReadTor);
         Assert.assertArrayEquals(arrays.callerReadCalleeWriteSeq, arrays.callerReadCalleeWriteTor);
@@ -467,11 +468,11 @@ public class TestMultipleFunctions extends TornadoTestBase {
     @Test
     public void testNoDoubleCompilation() {
         int[] arr = new int[] { 0 };
-        TaskSchedule ts = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestMultipleFunctions::functionA, arr)//
                 .streamOut(arr);
 
-        ts.execute();
+        taskGraph.execute();
 
         Assert.assertEquals(-1, arr[0]);
     }

@@ -25,7 +25,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
@@ -78,14 +78,14 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .streamIn(input, localSize) //
                 .task("t0", TestReductionsFloatsKernelContext::floatReductionAddGlobalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final SUM
         float finalSum = 0;
@@ -128,14 +128,14 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .streamIn(input, localSize) //
                 .task("t0", TestReductionsFloatsKernelContext::floatReductionAddLocalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final SUM
         float finalSum = 0;
@@ -184,14 +184,14 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .streamIn(input, localSize) //
                 .task("t0", TestReductionsFloatsKernelContext::floatReductionMaxGlobalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final SUM
         float finalSum = 0;
@@ -234,14 +234,14 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .streamIn(input, localSize) //
                 .task("t0", TestReductionsFloatsKernelContext::floatReductionMaxLocalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final SUM
         float finalSum = 0;
@@ -290,14 +290,14 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .streamIn(input, localSize) //
                 .task("t0", TestReductionsFloatsKernelContext::floatReductionMinGlobalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final SUM
         float finalSum = 0;
@@ -340,14 +340,14 @@ public class TestReductionsFloatsKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .streamIn(input, localSize) //
                 .task("t0", TestReductionsFloatsKernelContext::floatReductionMinLocalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final SUM
         float finalSum = 0;

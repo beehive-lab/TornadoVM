@@ -26,7 +26,7 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
@@ -53,7 +53,7 @@ public class TestReductionsLong extends TornadoTestBase {
         });
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(input)
                 .task("t0", TestReductionsLong::reductionAnnotation, input, result)
                 .streamOut(result)
@@ -85,7 +85,7 @@ public class TestReductionsLong extends TornadoTestBase {
         Arrays.fill(result, neutral);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(input)
                 .task("t0", TestReductionsLong::multReductionAnnotation, input, result)
                 .streamOut(result)
@@ -119,7 +119,7 @@ public class TestReductionsLong extends TornadoTestBase {
         Arrays.fill(result, Long.MIN_VALUE);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(input)
                 .task("t0", TestReductionsLong::maxReductionAnnotation, input, result)
                 .streamOut(result)
@@ -149,7 +149,7 @@ public class TestReductionsLong extends TornadoTestBase {
         Arrays.fill(result, Integer.MAX_VALUE);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .task("t0", TestReductionsLong::minReductionAnnotation, input, result)
                 .streamOut(result)
                 .execute();
@@ -179,7 +179,7 @@ public class TestReductionsLong extends TornadoTestBase {
         long neutral = Long.MIN_VALUE;
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(input)
                 .task("t0", TestReductionsLong::maxReductionAnnotation2, input, result)
                 .streamOut(result)
@@ -207,7 +207,7 @@ public class TestReductionsLong extends TornadoTestBase {
         });
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(input)
                 .task("t0", TestReductionsLong::minReductionAnnotation2, input, result)
                 .streamOut(result)

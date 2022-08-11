@@ -1,19 +1,19 @@
 /*
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 package uk.ac.manchester.tornado.benchmarks.stencil;
 
@@ -24,7 +24,7 @@ import static uk.ac.manchester.tornado.benchmarks.stencil.Stencil.stencil3d;
 import java.util.Arrays;
 import java.util.Random;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
@@ -60,17 +60,17 @@ public class StencilTornado extends BenchmarkDriver {
             }
         }
         copy(sz, ainit, a0);
-        ts = new TaskSchedule("benchmark") //
+        taskGraph = new TaskGraph("benchmark") //
                 .streamIn(a0, a1) //
                 .task("stencil", Stencil::stencil3d, n, sz, a0, a1, FAC) //
                 .task("copy", Stencil::copy, sz, a1, a0) //
                 .streamOut(a0);
-        ts.warmup();
+        taskGraph.warmup();
     }
 
     @Override
     public void tearDown() {
-        ts.dumpProfiles();
+        taskGraph.dumpProfiles();
         a0 = null;
         a1 = null;
         ainit = null;
@@ -79,7 +79,7 @@ public class StencilTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        ts.mapAllTo(device).execute();
+        taskGraph.mapAllTo(device).execute();
     }
 
     @Override
@@ -93,7 +93,7 @@ public class StencilTornado extends BenchmarkDriver {
             benchmarkMethod(device);
         }
         barrier();
-        ts.clearProfiles();
+        taskGraph.clearProfiles();
 
         for (int i = 0; i < iterations; i++) {
             stencil3d(n, sz, b0, b1, FAC);
@@ -106,7 +106,7 @@ public class StencilTornado extends BenchmarkDriver {
 
     @Override
     protected void barrier() {
-        ts.syncObjects();
+        taskGraph.syncObjects();
     }
 
     public void printSummary() {

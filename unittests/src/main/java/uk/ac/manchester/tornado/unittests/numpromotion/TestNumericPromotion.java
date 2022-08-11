@@ -22,7 +22,7 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -138,7 +138,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] input = new byte[] { 127, 127, 127, 127, 1, 1, 1, 1 };
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(result, input, elements)
                 .task("t0", TestNumericPromotion::bitwiseOr, result, input, elements)
                 .streamOut(result)
@@ -160,7 +160,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] input = new byte[] { 127, 127, 127, 127, 1, 1, 1, 1 };
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(result, input, elements)
                 .task("t0", TestNumericPromotion::bitwiseAnd, result, input, elements)
                 .streamOut(result)
@@ -182,7 +182,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] input = new byte[] { 127, 127, 127, 127, 1, 1, 1, 1 };
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(result, input, elements)
                 .task("t0", TestNumericPromotion::bitwiseXor, result, input, elements)
                 .streamOut(result)
@@ -205,7 +205,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] input = new byte[] { 0, 0, 127, -127, 1, -1, 1, 1 };
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(input)
                 .task("t0", TestNumericPromotion::bitwiseNot, result, input)
                 .streamOut(result)
@@ -227,7 +227,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] input = new byte[] { 125, 125, 125, 125, 1, 1, 1, 1 };
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(result, input, elements)
                 .task("t0", TestNumericPromotion::addition, result, input, elements)
                 .streamOut(result)
@@ -249,7 +249,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] input = new byte[] { 125, 125, 125, 125, 1, 1, 1, 1 };
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(result, input, elements)
                 .task("t0", TestNumericPromotion::subtraction, result, input, elements)
                 .streamOut(result)
@@ -271,7 +271,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] input = new byte[] { 125, 125, 125, 125, 1, 1, 1, 1 };
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(result, input, elements)
                 .task("t0", TestNumericPromotion::multiplication, result, input, elements)
                 .streamOut(result)
@@ -293,7 +293,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] input = new byte[] { 2, 2, 2, 2, 1, 1, 1, 1 };
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(result, input, elements)
                 .task("t0", TestNumericPromotion::division, result, input, elements)
                 .streamOut(result)
@@ -315,7 +315,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] input = new byte[] { 2, 2, 2, 2, 1, 1, 1, 1 };
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(result, input, elements)
                 .task("t0", TestNumericPromotion::signedLeftShift, result, input, elements)
                 .streamOut(result)
@@ -337,7 +337,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] input = new byte[] { 2, 2, 2, 2, 1, 1, 1, 1 };
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(result, input, elements)
                 .task("t0", TestNumericPromotion::signedRightShift, result, input, elements)
                 .streamOut(result)
@@ -359,7 +359,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] input = new byte[] { 2, 2, 2, 2, 1, 1, 1, 1 };
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(result, input, elements)
                 .task("t0", TestNumericPromotion::unsignedRightShift, result, input, elements)
                 .streamOut(result)

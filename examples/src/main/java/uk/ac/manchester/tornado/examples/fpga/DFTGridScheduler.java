@@ -19,7 +19,7 @@
 package uk.ac.manchester.tornado.examples.fpga;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -79,7 +79,7 @@ public class DFTGridScheduler {
 
         long end,start;
 
-        TaskSchedule graph;
+        TaskGraph graph;
         float[] inReal;
         float[] inImag;
         float[] outReal;
@@ -105,7 +105,7 @@ public class DFTGridScheduler {
         worker.setLocalWork(size / 4, 1, 1);
 
         long startInit = System.nanoTime();
-        graph = new TaskSchedule("s0");
+        graph = new TaskGraph("s0");
         graph.task("t0", DFTGridScheduler::computeDft, inReal, inImag, outReal, outImag, inputSize).streamOut(outReal, outImag);
         long stopInit = System.nanoTime();
 

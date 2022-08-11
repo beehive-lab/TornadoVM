@@ -17,18 +17,19 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.reductions;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.stream.IntStream;
+
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import java.util.stream.IntStream;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * The unit-tests in this class implement reduce-operations such as add, max,
@@ -36,13 +37,13 @@ import static org.junit.Assert.assertEquals;
  * functional operation of some {@link KernelContext} features, such as global
  * thread identifiers, local thread identifiers, the local group size of the
  * associated WorkerGrid, barriers and allocation of local memory.
- * 
+ *
  * How to run?
- * 
+ *
  * <code>
  *     tornado-test.py -V uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsDoublesKernelContext
  * </code>
- * 
+ *
  */
 public class TestReductionsDoublesKernelContext extends TornadoTestBase {
 
@@ -99,13 +100,13 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         // Create a KernelContext with its own worker
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .streamIn(input, localSize) //
                 .task("t0", TestReductionsDoublesKernelContext::doubleReductionAddGlobalMemory, context, input, reduce) //
                 .streamOut(reduce);
 
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final Reduction
         double finalSum = 0;
@@ -117,7 +118,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
 
     /**
      * Parallel reduction in TornadoVM using Local Memory
-     * 
+     *
      * @param context
      *            {@link KernelContext}
      * @param a
@@ -173,14 +174,14 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .streamIn(input, localSize) //
                 .task("t0", TestReductionsDoublesKernelContext::doubleReductionAddLocalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final SUM
         double finalSum = 0;
@@ -229,14 +230,14 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .streamIn(input, localSize) //
                 .task("t0", TestReductionsDoublesKernelContext::doubleReductionMaxGlobalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final SUM
         double finalSum = 0;
@@ -279,14 +280,14 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .streamIn(input, localSize) //
                 .task("t0", TestReductionsDoublesKernelContext::doubleReductionMaxLocalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final SUM
         double finalSum = 0;
@@ -335,14 +336,14 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .streamIn(input, localSize) //
                 .task("t0", TestReductionsDoublesKernelContext::doubleReductionMinGlobalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final SUM
         double finalSum = 0;
@@ -385,14 +386,14 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .streamIn(input, localSize) //
                 .task("t0", TestReductionsDoublesKernelContext::doubleReductionMinLocalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final SUM
         double finalSum = 0;

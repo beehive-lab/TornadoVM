@@ -25,7 +25,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
@@ -75,17 +75,17 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         long sequential = computeAddSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
+        GridScheduler gridScheduler = new GridScheduler("taskGraph.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("taskGraph") //
                 .streamIn(input, localSize) //
                 .task("t0", TestReductionsLongKernelContext::longReductionAddGlobalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final SUM
         long finalSum = 0;
@@ -126,17 +126,17 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler();
-        gridScheduler.setWorkerGrid("s0.t0", worker);
+        gridScheduler.setWorkerGrid("taskGraph.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("taskGraph") //
                 .streamIn(input, localSize) //
                 .task("t0", TestReductionsLongKernelContext::longReductionAddLocalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final SUM
         long finalSum = 0;
@@ -182,17 +182,17 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         long sequential = computeMaxSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
+        GridScheduler gridScheduler = new GridScheduler("taskGraph.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("taskGraph") //
                 .streamIn(input, localSize) //
                 .task("t0", TestReductionsLongKernelContext::longReductionMaxGlobalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final SUM
         long finalSum = 0;
@@ -232,17 +232,17 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         long sequential = computeMaxSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
+        GridScheduler gridScheduler = new GridScheduler("taskGraph.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("taskGraph") //
                 .streamIn(input, localSize) //
                 .task("t0", TestReductionsLongKernelContext::longReductionMaxLocalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final SUM
         long finalSum = 0;
@@ -288,17 +288,17 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         long sequential = computeMinSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
+        GridScheduler gridScheduler = new GridScheduler("taskGraph.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("taskGraph") //
                 .streamIn(input, localSize) //
                 .task("t0", TestReductionsLongKernelContext::longReductionMinGlobalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final SUM
         long finalSum = 0;
@@ -338,17 +338,17 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         long sequential = computeMinSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
-        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
+        GridScheduler gridScheduler = new GridScheduler("taskGraph.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("taskGraph") //
                 .streamIn(input, localSize) //
                 .task("t0", TestReductionsLongKernelContext::longReductionMinLocalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final SUM
         long finalSum = 0;

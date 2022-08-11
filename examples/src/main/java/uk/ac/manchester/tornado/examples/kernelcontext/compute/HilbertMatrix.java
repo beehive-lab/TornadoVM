@@ -20,7 +20,7 @@ package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 
@@ -56,7 +56,7 @@ public class HilbertMatrix {
         // [Optional] Set the local work group
         workerGrid.setLocalWork(32, 32, 1);
         // @formatter:off
-        TaskSchedule s0 = new TaskSchedule("s0")
+        TaskGraph s0 = new TaskGraph("s0")
                 .task("t0", HilbertMatrix::hilberComputation, context,  output, NROWS, NCOLS)
                 .streamOut(output);
         // @formatter:on

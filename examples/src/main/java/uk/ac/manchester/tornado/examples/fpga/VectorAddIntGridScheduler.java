@@ -20,7 +20,7 @@ package uk.ac.manchester.tornado.examples.fpga;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -57,7 +57,7 @@ public class VectorAddIntGridScheduler {
         workerGrid.setLocalWork(size / 2, 1, 1);
 
         //@formatter:off
-        TaskSchedule graph = new TaskSchedule("s0")
+        TaskGraph graph = new TaskGraph("s0")
                 .task("t0", VectorAddIntGridScheduler::vectorAdd, a, b, c)
                 .streamOut(c);
         //@formatter:on

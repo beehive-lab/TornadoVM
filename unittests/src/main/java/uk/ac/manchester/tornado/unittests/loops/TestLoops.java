@@ -25,7 +25,7 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
@@ -44,7 +44,7 @@ public class TestLoops extends TornadoTestBase {
         final int size = 256;
         int[] a = new int[size];
         Arrays.fill(a, 1);
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestLoops::forConstant01, a, size) //
                 .streamOut(a) //
                 .execute();
@@ -64,7 +64,7 @@ public class TestLoops extends TornadoTestBase {
         final int size = 256;
         int[] a = new int[size];
         Arrays.fill(a, 1);
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestLoops::forConstant02, a, (size - 1)) //
                 .streamOut(a) //
                 .execute();
@@ -84,7 +84,7 @@ public class TestLoops extends TornadoTestBase {
         int size = 256;
         int[] a = new int[size];
         Arrays.fill(a, 1);
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestLoops::forConstant03, a, size) //
                 .streamOut(a) //
                 .execute();
@@ -105,7 +105,7 @@ public class TestLoops extends TornadoTestBase {
     public void testForConstant04() {
         int size = 255;
         Matrix2DFloat m = new Matrix2DFloat(size, size);
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestLoops::forConstant04, m, (size - 1)) //
                 .streamOut(m) //
                 .execute();
@@ -128,7 +128,7 @@ public class TestLoops extends TornadoTestBase {
     public void testForConstant05() {
         int size = 256;
         Matrix2DFloat m = new Matrix2DFloat(size, size);
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestLoops::forConstant05, m, size) //
                 .streamOut(m) //
                 .execute();
@@ -152,7 +152,7 @@ public class TestLoops extends TornadoTestBase {
         int m = 256;
         int n = 64;
         Matrix2DFloat m2 = new Matrix2DFloat(m, n);
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestLoops::forConstant06, m2, (m - 1), (n - 1)) //
                 .streamOut(m2) //
                 .execute();
@@ -178,14 +178,14 @@ public class TestLoops extends TornadoTestBase {
         Arrays.fill(a, 1);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .task("t0", TestLoops::forLoopOneD, a)
                 .streamOut(a)
                 .execute();
         //@formatter:on
 
-        for (int i = 0; i < a.length; i++) {
-            assertEquals(10, a[i]);
+        for (int j : a) {
+            assertEquals(10, j);
         }
     }
 
@@ -204,7 +204,7 @@ public class TestLoops extends TornadoTestBase {
         Arrays.fill(a, 75);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .task("t0", TestLoops::steppedLoop, a, size)
                 .streamOut(a)
                 .execute();
@@ -231,7 +231,7 @@ public class TestLoops extends TornadoTestBase {
         Arrays.fill(a, 75);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .task("t0", TestLoops::steppedLoop2, a, size)
                 .streamOut(a)
                 .execute();
@@ -258,7 +258,7 @@ public class TestLoops extends TornadoTestBase {
         Arrays.fill(a, 75);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .task("t0", TestLoops::steppedLoop3, a, size)
                 .streamOut(a)
                 .execute();
@@ -283,7 +283,7 @@ public class TestLoops extends TornadoTestBase {
         Arrays.fill(a, 75);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .task("t0", TestLoops::steppedLoop4, a, size)
                 .streamOut(a)
                 .execute();
@@ -311,7 +311,7 @@ public class TestLoops extends TornadoTestBase {
         Arrays.fill(a, 75);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .task("t0", TestLoops::steppedLoop5, a, size)
                 .streamOut(a)
                 .execute();
@@ -339,7 +339,7 @@ public class TestLoops extends TornadoTestBase {
         Arrays.fill(a, 75);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .task("t0", TestLoops::steppedLoop7, a, size)
                 .streamOut(a)
                 .execute();
@@ -367,7 +367,7 @@ public class TestLoops extends TornadoTestBase {
         Arrays.fill(a, 75);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .task("t0", TestLoops::steppedLoop10, a, size)
                 .streamOut(a)
                 .execute();
@@ -400,7 +400,7 @@ public class TestLoops extends TornadoTestBase {
         Arrays.fill(a, 1);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(a)
                 .task("t0", TestLoops::conditionalInLoop, a)
                 .streamOut(a)
@@ -433,7 +433,7 @@ public class TestLoops extends TornadoTestBase {
         Arrays.fill(a, 1);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(a)
                 .task("t0", TestLoops::conditionalInLoop2, a)
                 .streamOut(a)
@@ -470,7 +470,7 @@ public class TestLoops extends TornadoTestBase {
         Arrays.fill(a, 0);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .task("t0", TestLoops::conditionalIfElseLoop, a)
                 .streamOut(a)
                 .execute();
@@ -502,7 +502,7 @@ public class TestLoops extends TornadoTestBase {
         int[][] a = new int[size][size];
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .task("t0", TestLoops::twoDLoop, a)
                 .streamOut(a)
                 .execute();
@@ -531,7 +531,7 @@ public class TestLoops extends TornadoTestBase {
         Arrays.fill(a, 1);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .task("t0", TestLoops::nestedForLoopOneDArray, a, size)
                 .streamOut(a)
                 .execute();
@@ -563,7 +563,7 @@ public class TestLoops extends TornadoTestBase {
         }
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .task("t0", TestLoops::nestedForLoopTwoDArray, a, size)
                 .streamOut(a)
                 .execute();
@@ -607,7 +607,7 @@ public class TestLoops extends TornadoTestBase {
         Arrays.fill(a, 1);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(a)
                 .task("t0", TestLoops::controlFlowBreak, a)
                 .streamOut(a)
@@ -633,7 +633,7 @@ public class TestLoops extends TornadoTestBase {
         a[2] = 2;
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .task("t0", TestLoops::controlFlowBreak2, a)
                 .streamOut(a)
                 .execute();
@@ -664,7 +664,7 @@ public class TestLoops extends TornadoTestBase {
         Arrays.fill(foo, 50);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .task("t0", TestLoops::controlFlowContinue, foo)
                 .streamOut(foo)
                 .execute();
@@ -695,7 +695,7 @@ public class TestLoops extends TornadoTestBase {
         Arrays.fill(a, 1);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .task("t0", TestLoops::nested2ParallelLoops, a, size)
                 .streamOut(a)
                 .execute();
@@ -726,7 +726,7 @@ public class TestLoops extends TornadoTestBase {
         Arrays.fill(a, 1);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .task("t0", TestLoops::whileLoop, a, size)
                 .streamOut(a)
                 .execute();
@@ -759,7 +759,7 @@ public class TestLoops extends TornadoTestBase {
         Arrays.fill(a, 1);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .task("t0", TestLoops::dowWhileLoop, a, size)
                 .streamOut(a)
                 .execute();
@@ -794,7 +794,7 @@ public class TestLoops extends TornadoTestBase {
         Arrays.fill(c, 0);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .task("t0", TestLoops::forEach, a, c, size)
                 .streamOut(c)
                 .execute();
@@ -819,7 +819,7 @@ public class TestLoops extends TornadoTestBase {
 
         Arrays.fill(a, 1);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestLoops::reverseLoop, a) //
                 .streamOut(a) //
                 .execute(); //
@@ -869,9 +869,11 @@ public class TestLoops extends TornadoTestBase {
 
         inTor[0] = inSeq[0] = size / 4 - 1;
 
-        TaskSchedule ts = new TaskSchedule("s0").task("t0", TestLoops::testSingleThreadLoopCond, inTor, outTor).streamOut(inTor, outTor);
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .task("t0", TestLoops::testSingleThreadLoopCond, inTor, outTor) //
+                .streamOut(inTor, outTor);
 
-        ts.execute();
+        taskGraph.execute();
 
         testSingleThreadLoopCond(inSeq, outSeq);
 
@@ -910,11 +912,11 @@ public class TestLoops extends TornadoTestBase {
 
         inTor[0] = inSeq[0] = size / 4 - 1;
 
-        TaskSchedule ts = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestLoops::testMultipleThreadLoopCond, inTor, outTor) //
                 .streamOut(inTor, outTor); //
 
-        ts.execute();
+        taskGraph.execute();
 
         testMultipleThreadLoopCond(inSeq, outSeq);
 

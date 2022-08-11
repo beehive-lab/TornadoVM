@@ -2,14 +2,14 @@ package uk.ac.manchester.tornado.examples.spirv;
 
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 
 /**
  * Test used for generating OpenCL kernel. Note, the lookupBuffer address kernel
  * is pre-compiled.
- * 
+ *
  * How to run?
- * 
+ *
  * <code>
  *    tornado --debug -Dtornado.recover.bailout=False -Ds0.t0.device=0:0 --printKernel uk.ac.manchester.tornado.examples.spirv.TestSPIRV 4
  * </code>
@@ -20,7 +20,7 @@ public class TestSPIRV {
         final int numElements = 256;
         int[] a = new int[numElements];
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::copyTestZero, a) //
                 .streamOut(a) //
                 .execute(); //
@@ -37,7 +37,7 @@ public class TestSPIRV {
         final int numElements = 256;
         int[] a = new int[numElements];
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::copyTest, a) //
                 .streamOut(a) //
                 .execute(); //
@@ -65,7 +65,7 @@ public class TestSPIRV {
 
         Arrays.fill(b, 100);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::copyTest2, a, b) //
                 .streamOut(a) //
                 .execute(); //
@@ -94,7 +94,7 @@ public class TestSPIRV {
 
         Arrays.fill(b, 100);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::compute, a, b) //
                 .streamOut(a) //
                 .execute(); //
@@ -124,7 +124,7 @@ public class TestSPIRV {
         Arrays.fill(b, 100);
         Arrays.fill(c, 200);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorAddCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
@@ -155,7 +155,7 @@ public class TestSPIRV {
         Arrays.fill(b, 100);
         Arrays.fill(c, 5);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorMul, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
@@ -185,7 +185,7 @@ public class TestSPIRV {
         Arrays.fill(b, 100);
         Arrays.fill(c, 75);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorSub, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
@@ -215,7 +215,7 @@ public class TestSPIRV {
         Arrays.fill(b, 512);
         Arrays.fill(c, 2);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorDiv, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
@@ -246,7 +246,7 @@ public class TestSPIRV {
             b[i] = i;
         }
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorSquare, a, b) //
                 .streamOut(a) //
                 .execute(); //
@@ -278,7 +278,7 @@ public class TestSPIRV {
             c[i] = i;
         }
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::saxpy, c, a, b, 2) //
                 .streamOut(c) //
                 .execute(); //
@@ -303,13 +303,13 @@ public class TestSPIRV {
         final int numElements = 512;
         int[] a = new int[numElements];
 
-        TaskSchedule ts = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .streamIn(a) //
                 .task("t0", TestKernels::addValue, a) //
                 .streamOut(a); //
 
         for (int i = 0; i < 10; i++) {
-            ts.execute();
+            taskGraph.execute();
         }
 
         System.out.println("a: " + Arrays.toString(a));
@@ -331,7 +331,7 @@ public class TestSPIRV {
         final int numElements = 256;
         float[] a = new float[numElements];
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::testFloatCopy, a) //
                 .streamOut(a) //
                 .execute(); //
@@ -353,7 +353,7 @@ public class TestSPIRV {
         Arrays.fill(b, 100);
         Arrays.fill(c, 200);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorAddFloatCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
@@ -383,7 +383,7 @@ public class TestSPIRV {
         Arrays.fill(b, 100);
         Arrays.fill(c, 200);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorAddDoubleCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
@@ -413,7 +413,7 @@ public class TestSPIRV {
         Arrays.fill(b, 200);
         Arrays.fill(c, 100);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorSubFloatCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
@@ -443,7 +443,7 @@ public class TestSPIRV {
         Arrays.fill(b, 100.0f);
         Arrays.fill(c, 5.0f);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorMulFloatCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
@@ -473,7 +473,7 @@ public class TestSPIRV {
         Arrays.fill(b, 100.0f);
         Arrays.fill(c, 5.0f);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorDivFloatCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
@@ -497,7 +497,7 @@ public class TestSPIRV {
         final int numElements = 256;
         double[] a = new double[numElements];
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::testDoublesCopy, a) //
                 .streamOut(a) //
                 .execute(); //
@@ -519,7 +519,7 @@ public class TestSPIRV {
         Arrays.fill(b, 2.2);
         Arrays.fill(c, 3.5);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorSubDoubleCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
@@ -549,7 +549,7 @@ public class TestSPIRV {
         Arrays.fill(b, 2.2);
         Arrays.fill(c, 3.5);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorMulDoubleCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
@@ -579,7 +579,7 @@ public class TestSPIRV {
         Arrays.fill(b, 10.2);
         Arrays.fill(c, 2.0);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorDivDoubleCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
@@ -603,7 +603,7 @@ public class TestSPIRV {
         final int numElements = 256;
         long[] a = new long[numElements];
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::testLongsCopy, a) //
                 .streamOut(a) //
                 .execute(); //
@@ -631,7 +631,7 @@ public class TestSPIRV {
 
         Arrays.fill(b, Integer.MAX_VALUE);
         Arrays.fill(c, 1);
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorSumLongCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
@@ -659,7 +659,7 @@ public class TestSPIRV {
 
         Arrays.fill(b, (short) 1);
         Arrays.fill(c, (short) 3);
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorSumShortCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //

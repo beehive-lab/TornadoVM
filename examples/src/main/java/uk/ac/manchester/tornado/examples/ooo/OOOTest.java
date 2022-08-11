@@ -1,26 +1,26 @@
 /*
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.examples.ooo;
 
 import java.util.Random;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class OOOTest {
@@ -50,7 +50,7 @@ public class OOOTest {
         System.out.printf("using %d maxtricies\n", numArrays);
 
         final Random random = new Random();
-        TaskSchedule graph = new TaskSchedule("example");
+        TaskGraph graph = new TaskGraph("example");
         for (int ii = 0; ii < numArrays; ii++) {
             int n = sizes[ii % sizes.length];
             float[] a = new float[n * n];

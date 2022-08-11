@@ -17,6 +17,10 @@
  */
 package uk.ac.manchester.tornado.benchmarks.montecarlo;
 
+import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.monteCarlo;
+
+import java.util.concurrent.TimeUnit;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -34,12 +38,9 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
-
-import java.util.concurrent.TimeUnit;
-
-import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.monteCarlo;
 
 public class JMHMontecarlo {
     @State(Scope.Thread)
@@ -47,15 +48,15 @@ public class JMHMontecarlo {
 
         private int size = Integer.parseInt(System.getProperty("x", "8192"));
         private float[] output;
-        private TaskSchedule ts;
+        private TaskGraph taskGraph;
 
         @Setup(Level.Trial)
         public void doSetup() {
             output = new float[size];
-            ts = new TaskSchedule("benchmark") //
+            taskGraph = new TaskGraph("benchmark") //
                     .task("montecarlo", ComputeKernels::monteCarlo, output, size) //
                     .streamOut(output);
-            ts.warmup();
+            taskGraph.warmup();
         }
     }
 
@@ -76,7 +77,7 @@ public class JMHMontecarlo {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void montecarloTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskSchedule t = state.ts;
+        TaskGraph t = state.taskGraph;
         t.execute();
         blackhole.consume(t);
     }

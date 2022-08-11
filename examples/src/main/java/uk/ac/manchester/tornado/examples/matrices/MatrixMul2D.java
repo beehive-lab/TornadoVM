@@ -1,6 +1,6 @@
 package uk.ac.manchester.tornado.examples.matrices;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
@@ -72,7 +72,7 @@ public class MatrixMul2D {
             }
         }
 
-        TaskSchedule cudaTask = new TaskSchedule("cuda_s0") //
+        TaskGraph cudaTask = new TaskGraph("cuda_s0") //
                 .task("t0", MatrixMul2D::matrixMultiplication, matrixA, matrixB, matrixCCUDA, size) //
                 .streamOut(matrixCCUDA); //
 
@@ -96,7 +96,7 @@ public class MatrixMul2D {
             execTimesCUDA[i] = stop - start;
         }
 
-        TaskSchedule oclTask = new TaskSchedule("ocl_s0") //
+        TaskGraph oclTask = new TaskGraph("ocl_s0") //
                 .task("t0", MatrixMul2D::matrixMultiplication, matrixA, matrixB, matrixCOCL, size) //
                 .streamOut(matrixCOCL); //
 

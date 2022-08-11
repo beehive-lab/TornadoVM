@@ -19,7 +19,7 @@ package uk.ac.manchester.tornado.examples.stencils;
 
 import java.util.Random;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 /**
@@ -56,7 +56,7 @@ public class Convolution2D {
         c12 = -0.3f;  c22 = +0.6f;  c32 = -0.9f;
         c13 = +0.4f;  c23 = +0.7f;  c33 = +0.10f;
         // @formatter:off
-        
+
         for (int i = 1; i < nx - 1; i++) {
             for (int j = 1; j < ny - 1; j++) {
                 b[i * nx + j] = c11 * a[(i - 1) * nx + (j - 1)] + c21 * a[(i - 1) * nx + (j + 0)] + c31 * a[(i - 1) * nx + (j + 1)] + c12 * a[(i + 0) * nx + (j - 1)] + c22 * a[(i + 0) * nx + (j + 0)]
@@ -109,7 +109,7 @@ public class Convolution2D {
         }
 
         // @formatter:off
-        final TaskSchedule graph = new TaskSchedule("s0")
+        final TaskGraph graph = new TaskGraph("s0")
                 .task("t0", Convolution2D::run2DConvolutionTornado, size, size,a,b)
                 .streamOut(b);
         // @formatter:on

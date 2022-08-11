@@ -23,7 +23,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
@@ -32,7 +32,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * How to execute:
- * 
+ *
  * <code>
  *     tornado-test.py --threadInfo --printKernel --fast -V uk.ac.manchester.tornado.unittests.kernelcontext.api.KernelContextWorkGroupTests
  * </code>
@@ -51,8 +51,12 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         grid.setWorkerGrid("s0.t0", worker);
 
         int[] data = new int[16];
-        TaskSchedule ts = new TaskSchedule("s0").task("t0", KernelContextWorkGroupTests::apiTestGlobalGroupSizeX, context, data).streamOut(data);
-        ts.execute(grid);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .task("t0", KernelContextWorkGroupTests::apiTestGlobalGroupSizeX, context, data) //
+                .streamOut(data);
+
+        taskGraph.execute(grid);
         assertEquals(16, data[0]);
     }
 
@@ -68,8 +72,11 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         grid.setWorkerGrid("s0.t0", worker);
 
         int[] data = new int[16];
-        TaskSchedule ts = new TaskSchedule("s0").task("t0", KernelContextWorkGroupTests::apiTestGlobalGroupSizeY, context, data).streamOut(data);
-        ts.execute(grid);
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .task("t0", KernelContextWorkGroupTests::apiTestGlobalGroupSizeY, context, data) //
+                .streamOut(data);
+
+        taskGraph.execute(grid);
         assertEquals(8, data[0]);
     }
 
@@ -85,8 +92,10 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         grid.setWorkerGrid("s0.t0", worker);
 
         int[] data = new int[16];
-        TaskSchedule ts = new TaskSchedule("s0").task("t0", KernelContextWorkGroupTests::apiTestGlobalGroupSizeZ, context, data).streamOut(data);
-        ts.execute(grid);
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .task("t0", KernelContextWorkGroupTests::apiTestGlobalGroupSizeZ, context, data)//
+                .streamOut(data);
+        taskGraph.execute(grid);
         assertEquals(4, data[0]);
     }
 
@@ -103,8 +112,11 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         grid.setWorkerGrid("s0.t0", worker);
 
         int[] data = new int[1024];
-        TaskSchedule ts = new TaskSchedule("s0").task("t0", KernelContextWorkGroupTests::apiTestLocalGroupSizeX, context, data).streamOut(data);
-        ts.execute(grid);
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .task("t0", KernelContextWorkGroupTests::apiTestLocalGroupSizeX, context, data) //
+                .streamOut(data);
+
+        taskGraph.execute(grid);
         assertEquals(worker.getLocalWork()[0], data[0]);
     }
 
@@ -121,8 +133,11 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         grid.setWorkerGrid("s0.t0", worker);
 
         int[] data = new int[1024];
-        TaskSchedule ts = new TaskSchedule("s0").task("t0", KernelContextWorkGroupTests::apiTestLocalGroupSizeY, context, data).streamOut(data);
-        ts.execute(grid);
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .task("t0", KernelContextWorkGroupTests::apiTestLocalGroupSizeY, context, data) //
+                .streamOut(data);
+
+        taskGraph.execute(grid);
         assertEquals(worker.getLocalWork()[1], data[0]);
     }
 
@@ -139,8 +154,11 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         grid.setWorkerGrid("s0.t0", worker);
 
         int[] data = new int[1024];
-        TaskSchedule ts = new TaskSchedule("s0").task("t0", KernelContextWorkGroupTests::apiTestLocalGroupSizeZ, context, data).streamOut(data);
-        ts.execute(grid);
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .task("t0", KernelContextWorkGroupTests::apiTestLocalGroupSizeZ, context, data) //
+                .streamOut(data);
+
+        taskGraph.execute(grid);
         assertEquals(worker.getLocalWork()[2], data[0]);
     }
 }

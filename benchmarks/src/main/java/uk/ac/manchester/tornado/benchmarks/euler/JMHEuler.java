@@ -17,6 +17,8 @@
  */
 package uk.ac.manchester.tornado.benchmarks.euler;
 
+import java.util.concurrent.TimeUnit;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -34,10 +36,9 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
-import java.util.concurrent.TimeUnit;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 public class JMHEuler {
 
@@ -51,7 +52,7 @@ public class JMHEuler {
         long[] outputC;
         long[] outputD;
         long[] outputE;
-        private TaskSchedule ts;
+        private TaskGraph taskGraph;
 
         private long[] init(int size) {
             long[] input = new long[size];
@@ -69,11 +70,11 @@ public class JMHEuler {
             outputC = new long[size];
             outputD = new long[size];
             outputE = new long[size];
-            ts = new TaskSchedule("s0") //
+            taskGraph = new TaskGraph("s0") //
                     .streamIn(input) //
                     .task("s0", ComputeKernels::euler, size, input, outputA, outputB, outputC, outputD, outputE) //
                     .streamOut(outputA, outputB, outputC, outputD, outputE);
-            ts.warmup();
+            taskGraph.warmup();
         }
     }
 
@@ -94,7 +95,7 @@ public class JMHEuler {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void eulerTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskSchedule t = state.ts;
+        TaskGraph t = state.taskGraph;
         t.execute();
         blackhole.consume(t);
     }

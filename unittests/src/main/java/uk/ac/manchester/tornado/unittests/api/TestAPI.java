@@ -25,7 +25,7 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.unittests.arrays.TestArrays;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -41,15 +41,15 @@ public class TestAPI extends TornadoTestBase {
             data[idx] = size;
         });
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        assertNotNull(s0);
+        TaskGraph taskGraph = new TaskGraph("s0");
+        assertNotNull(taskGraph);
 
-        s0.lockObjectInMemory(data);
+        taskGraph.lockObjectInMemory(data);
 
-        s0.task("t0", TestArrays::addAccumulator, data, 1).execute();
-        s0.syncObject(data);
+        taskGraph.task("t0", TestArrays::addAccumulator, data, 1).execute();
+        taskGraph.syncObject(data);
 
-        s0.unlockObjectFromMemory(data);
+        taskGraph.unlockObjectFromMemory(data);
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data[i]);
@@ -67,16 +67,16 @@ public class TestAPI extends TornadoTestBase {
             data[idx] = size;
         });
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        assertNotNull(s0);
+        TaskGraph tg = new TaskGraph("s0");
+        assertNotNull(tg);
 
-        s0.lockObjectInMemory(data);
+        tg.lockObjectInMemory(data);
 
-        s0.task("t0", TestArrays::addAccumulator, data, 1);
-        s0.execute();
-        s0.syncObjects(data);
+        tg.task("t0", TestArrays::addAccumulator, data, 1);
+        tg.execute();
+        tg.syncObjects(data);
 
-        s0.unlockObjectFromMemory(data);
+        tg.unlockObjectFromMemory(data);
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data[i]);
@@ -94,17 +94,17 @@ public class TestAPI extends TornadoTestBase {
             data[idx] = size;
         });
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        assertNotNull(s0);
+        TaskGraph taskGraph = new TaskGraph("s0");
+        assertNotNull(taskGraph);
 
-        s0.lockObjectInMemory(data);
+        taskGraph.lockObjectInMemory(data);
 
-        s0.task("t0", TestArrays::addAccumulator, data, 1);
-        s0.streamOut(data);
-        s0.warmup();
-        s0.execute();
+        taskGraph.task("t0", TestArrays::addAccumulator, data, 1);
+        taskGraph.streamOut(data);
+        taskGraph.warmup();
+        taskGraph.execute();
 
-        s0.unlockObjectFromMemory(data);
+        taskGraph.unlockObjectFromMemory(data);
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data[i]);

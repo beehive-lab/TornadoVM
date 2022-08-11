@@ -19,7 +19,7 @@ package uk.ac.manchester.tornado.examples.fpga;
 
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -55,7 +55,7 @@ public class VectorAddIntPrebuilt {
         filePath += "fpga_vadd.cl";
 
         // @formatter:off
-        TaskSchedule schedule = new TaskSchedule("s0")
+        TaskGraph schedule = new TaskGraph("s0")
                 .prebuiltTask("t0",
                         "vectorAdd",
                         filePath,

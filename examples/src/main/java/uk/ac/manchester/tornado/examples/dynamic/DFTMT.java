@@ -19,7 +19,7 @@
 package uk.ac.manchester.tornado.examples.dynamic;
 
 import uk.ac.manchester.tornado.api.Policy;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
@@ -110,7 +110,7 @@ public class DFTMT {
 
         long end,start;
 
-        TaskSchedule graph;
+        TaskGraph graph;
         float[] inReal;
         float[] inImag;
         float[] outReal;
@@ -130,7 +130,7 @@ public class DFTMT {
             inImag[i] = 1 / (float) (i + 2);
         }
 
-        graph = new TaskSchedule("s0");
+        graph = new TaskGraph("s0");
         if (executionType.equals("multi") || executionType.equals("sequential")) {
             ;
         } else {

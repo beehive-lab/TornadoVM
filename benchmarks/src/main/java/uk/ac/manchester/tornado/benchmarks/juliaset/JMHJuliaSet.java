@@ -37,7 +37,7 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
 public class JMHJuliaSet {
@@ -48,18 +48,18 @@ public class JMHJuliaSet {
         int size = Integer.parseInt(System.getProperty("x", "8192"));
         float[] hue;
         float[] brightness;
-        TaskSchedule ts;
+        TaskGraph taskGraph;
 
         @Setup(Level.Trial)
         public void doSetup() {
             hue = new float[size * size];
             brightness = new float[size * size];
 
-            ts = new TaskSchedule("benchmark") //
+            taskGraph = new TaskGraph("benchmark") //
                     .streamIn(hue, brightness) //
                     .task("juliaset", GraphicsKernels::juliaSetTornado, size, hue, brightness) //
                     .streamOut(hue, brightness);
-            ts.warmup();
+            taskGraph.warmup();
         }
     }
 
@@ -80,7 +80,7 @@ public class JMHJuliaSet {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void juliaSetTornado(JMHJuliaSet.BenchmarkSetup state, Blackhole blackhole) {
-        TaskSchedule t = state.ts;
+        TaskGraph t = state.taskGraph;
         t.execute();
         blackhole.consume(t);
     }

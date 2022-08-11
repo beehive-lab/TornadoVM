@@ -24,7 +24,7 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -37,7 +37,7 @@ public class TestIntegers extends TornadoTestBase {
         final int numElements = 256;
         int[] a = new int[numElements];
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::copyTestZero, a) //
                 .streamOut(a) //
                 .execute(); //
@@ -53,7 +53,7 @@ public class TestIntegers extends TornadoTestBase {
         int[] expectedResult = new int[numElements];
         Arrays.fill(expectedResult, 50);
 
-        new TaskSchedule("s1") //
+        new TaskGraph("s1") //
                 .streamIn(a) //
                 .task("t1", TestKernels::copyTest, a) //
                 .streamOut(a) //
@@ -70,7 +70,7 @@ public class TestIntegers extends TornadoTestBase {
 
         Arrays.fill(b, 100);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::copyTest2, a, b) //
                 .streamOut(a) //
                 .execute(); //
@@ -88,7 +88,7 @@ public class TestIntegers extends TornadoTestBase {
         int[] expectedResult = new int[numElements];
         Arrays.fill(expectedResult, 150);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::compute, a, b) //
                 .streamOut(a) //
                 .execute(); //
@@ -109,7 +109,7 @@ public class TestIntegers extends TornadoTestBase {
         Arrays.fill(expectedResultA, 100);
         Arrays.fill(expectedResultB, 500);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::init, a, b) //
                 .streamOut(a, b) //
                 .execute(); //

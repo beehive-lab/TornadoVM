@@ -1,19 +1,19 @@
 /*
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.examples.compression;
@@ -25,14 +25,12 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class HuffmanTornadoDecoder {
 
-    public static final int GPU_INDEX = 0;
-    public static final int FPGA_INDEX = 1;
     public static final int MAX_DEVICES = 2;
 
     private static void decodeTornadoKernel(byte[] input, int[] frequencies, int[] data, int[] left, int[] right, int[] output) {
@@ -59,26 +57,26 @@ public class HuffmanTornadoDecoder {
 
     /**
      * A)
-     * 
+     *
      * x0.t0.device=0:0 : GPU
-     * 
+     *
      * x0.t1.device=0:1 : FPGA
-     * 
-     * 
+     *
+     *
      * How to run:
-     * 
+     *
      * <p>
      * <code>
-     * $ tornado  --debug -Dtornado.precompiled.binary=kernel/lookupBufferAddress,x0.t1.device=0:1 uk.ac.manchester.tornado.examples.compression.HuffmanTornadoDecoder 
+     * $ tornado  --debug -Dtornado.precompiled.binary=kernel/lookupBufferAddress,x0.t1.device=0:1 uk.ac.manchester.tornado.examples.compression.HuffmanTornadoDecoder
      * </code>
      * </p>
-     * 
-     * 
-     * 
+     *
+     *
+     *
      */
     public void engineExploration(KernelPackage kernelPackage) {
 
-        ArrayList<TaskSchedule> tasks = new ArrayList<>();
+        ArrayList<TaskGraph> tasks = new ArrayList<>();
         HashMap<String, String> tasksLocation = new HashMap<>();
         ArrayList<String> tasksKey = new ArrayList<>();
 
@@ -88,11 +86,11 @@ public class HuffmanTornadoDecoder {
             String taskID = "x0.t" + i + ".device";
             String location = "0:" + i;
 
-            TaskSchedule s0 = new TaskSchedule("x0");
-            s0.task("t" + i, HuffmanTornadoDecoder::decodeTornadoKernel, kernelPackage.input, kernelPackage.frequencies, kernelPackage.data, kernelPackage.left, kernelPackage.right,
+            TaskGraph taskGraph = new TaskGraph("x0");
+            taskGraph.task("t" + i, HuffmanTornadoDecoder::decodeTornadoKernel, kernelPackage.input, kernelPackage.frequencies, kernelPackage.data, kernelPackage.left, kernelPackage.right,
                     kernelPackage.output);
-            s0.streamOut(kernelPackage);
-            tasks.add(s0);
+            taskGraph.streamOut(kernelPackage);
+            tasks.add(taskGraph);
             tasksLocation.put(taskID, location);
             tasksKey.add(taskID);
         }
@@ -101,7 +99,7 @@ public class HuffmanTornadoDecoder {
 
         // Tasks Execution
         for (int i = 0; i < tasks.size(); i++) {
-            TaskSchedule t0 = tasks.get(i);
+            TaskGraph t0 = tasks.get(i);
             String key = tasksKey.get(i);
             String locX = tasksLocation.get(key);
             System.out.println(key + "=" + locX);

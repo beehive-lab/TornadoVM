@@ -20,7 +20,7 @@ package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 
@@ -91,7 +91,7 @@ public class Montecarlo {
         // [Optional] Set the local work group to be 1024, 1, 1
         workerGrid.setLocalWork(1024, 1, 1);
 
-        TaskSchedule t0 = new TaskSchedule("s0").task("t0", Montecarlo::computeMontecarlo, context, output, size).streamOut(output);
+        TaskGraph t0 = new TaskGraph("s0").task("t0", Montecarlo::computeMontecarlo, context, output, size).streamOut(output);
 
         long start = System.nanoTime();
         t0.execute(gridScheduler);

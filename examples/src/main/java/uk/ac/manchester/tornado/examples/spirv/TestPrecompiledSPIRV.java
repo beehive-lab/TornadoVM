@@ -2,7 +2,7 @@ package uk.ac.manchester.tornado.examples.spirv;
 
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -13,15 +13,15 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  * <code>
  * tornado --printBytecodes --debug -Dtornado.spirv.levelzero.memoryAlloc.shared=True uk.ac.manchester.tornado.examples.spirv.TestPrecompiledSPIRV
  * </code>
- * 
+ *
  * Running this kernel:
- * 
+ *
  * <code>
  *  __kernel void copyTest(__global uchar *_heap_base, ulong _frame_base)
  * {
- * ulong ul_0, ul_6; 
- * long l_4, l_5, l_3; 
- * int i_1, i_2, i_7, i_8; 
+ * ulong ul_0, ul_6;
+ * long l_4, l_5, l_3;
+ * int i_1, i_2, i_7, i_8;
  *
  * __global ulong *_frame = (__global ulong *) &_heap_base[_frame_base];
  *
@@ -46,14 +46,14 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  * return;
  * }  //  kernel
  * </code>
- * 
+ *
  * How to generate SPIRV?
- * 
+ *
  * <code>
  *     $ ~/bin/scripts/spirv-util.sh precompiled
  *     $ cp precompiled.spv /tmp/testCopy.spv
  * </code>
- * 
+ *
  */
 public class TestPrecompiledSPIRV {
 
@@ -69,7 +69,7 @@ public class TestPrecompiledSPIRV {
         String filePath = "/tmp/testCopy.spv";
 
         // @formatter:off
-        TaskSchedule ts = new TaskSchedule("s0")
+        TaskGraph taskGraph = new TaskGraph("s0")
                 .streamIn(a)
                 .prebuiltTask("t0",
                         "copyTest",
@@ -80,7 +80,7 @@ public class TestPrecompiledSPIRV {
                         new int[] { numElements, 1, 1 })
                 .streamOut(a);
         // @formatter:on
-        ts.execute();
+        taskGraph.execute();
 
         if (PRINT) {
             System.out.println("a: " + Arrays.toString(a));

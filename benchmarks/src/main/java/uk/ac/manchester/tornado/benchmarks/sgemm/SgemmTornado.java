@@ -23,7 +23,7 @@ import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.sgemm;
 import java.util.Random;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -73,12 +73,12 @@ public class SgemmTornado extends BenchmarkDriver {
             grid.setWorkerGrid("benchmark.sgemm", worker);
         }
 
-        ts = new TaskSchedule("benchmark");
+        taskGraph = new TaskGraph("benchmark");
         if (!USE_PREBUILT) {
-            ts.streamIn(a, b);
-            ts.task("sgemm", LinearAlgebraArrays::sgemm, m, n, n, a, b, c);
-            ts.streamOut(c);
-            ts.warmup();
+            taskGraph.streamIn(a, b);
+            taskGraph.task("sgemm", LinearAlgebraArrays::sgemm, m, n, n, a, b, c);
+            taskGraph.streamOut(c);
+            taskGraph.warmup();
         } else {
             String filePath = "/tmp/mxmFloat.spv";
 
@@ -92,7 +92,7 @@ public class SgemmTornado extends BenchmarkDriver {
             }
 
             // @formatter:off
-            ts.prebuiltTask("t0",
+            taskGraph.prebuiltTask("t0",
             "sgemm",
                 filePath,
                 new Object[]{m, n, n, a, b, c},
@@ -106,23 +106,23 @@ public class SgemmTornado extends BenchmarkDriver {
 
     @Override
     public void tearDown() {
-        ts.dumpProfiles();
+        taskGraph.dumpProfiles();
 
         a = null;
         b = null;
         c = null;
 
-        ts.getDevice().reset();
+        taskGraph.getDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        ts.mapAllTo(device);
+        taskGraph.mapAllTo(device);
         if (grid == null) {
-            ts.execute();
+            taskGraph.execute();
         } else {
-            ts.execute(grid);
+            taskGraph.execute(grid);
         }
     }
 
@@ -133,8 +133,8 @@ public class SgemmTornado extends BenchmarkDriver {
         boolean val = true;
 
         benchmarkMethod(device);
-        ts.syncObjects(c);
-        ts.clearProfiles();
+        taskGraph.syncObjects(c);
+        taskGraph.clearProfiles();
 
         sgemm(m, n, m, a, b, result);
 

@@ -17,6 +17,8 @@
  */
 package uk.ac.manchester.tornado.benchmarks.hilbert;
 
+import java.util.concurrent.TimeUnit;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -34,10 +36,9 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
-import java.util.concurrent.TimeUnit;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 public class JMHHilbert {
 
@@ -45,17 +46,17 @@ public class JMHHilbert {
     public static class BenchmarkSetup {
         private int size = Integer.parseInt(System.getProperty("x", "4096"));
         private float[] hilbertMatrix;
-        private TaskSchedule ts;
+        private TaskGraph taskGraph;
 
         @Setup(Level.Trial)
         public void doSetup() {
             hilbertMatrix = new float[size * size];
             // @formatter:off
-            ts = new TaskSchedule("s0")
+            taskGraph = new TaskGraph("s0")
                     .task("t0", ComputeKernels::hilbertComputation, hilbertMatrix, size, size)
                     .streamOut(hilbertMatrix);
             // @formatter:on
-            ts.warmup();
+            taskGraph.warmup();
         }
     }
 
@@ -76,7 +77,7 @@ public class JMHHilbert {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void hilbertTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskSchedule t = state.ts;
+        TaskGraph t = state.taskGraph;
         t.execute();
         blackhole.consume(t);
     }

@@ -17,15 +17,15 @@
  */
 package uk.ac.manchester.tornado.examples.compute;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 /**
  * Original version from Introduction to Computer Science by Princeton
  * University: https://introcs.cs.princeton.edu/java/14array/Euler.java.html
- * 
+ *
  * Adapted to TornadoVM
- * 
+ *
  */
 
 /*
@@ -55,7 +55,7 @@ public class Euler {
     /**
      * Initial version running with TornadoVM. It can be further optimized by
      * supporting break statements within loops.
-     * 
+     *
      * @param size
      *            input size
      * @param five
@@ -132,14 +132,14 @@ public class Euler {
         long[] outputD = new long[size];
         long[] outputE = new long[size];
 
-        TaskSchedule ts = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("s0", Euler::solve, size, input, outputA, outputB, outputC, outputD, outputE) //
                 .streamOut(outputA, outputB, outputC, outputD, outputE);
 
         // Sequential
         for (int i = 0; i < ITERATIONS; i++) {
             long start = System.nanoTime();
-            ts.execute();
+            taskGraph.execute();
             long end = System.nanoTime();
             System.out.println("Parallel: " + (end - start));
         }

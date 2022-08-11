@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.examples.stencils;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 /**
@@ -36,15 +36,15 @@ public class GSeidel2D {
             for (int i = 1; i < (size - 2); i++) {
                 for (int j = 1; j < (size - 2); j++) {
                     //@formatter:off
-                    a[i * size + j] = (float) ((a[(i - 1) * size + (j - 1)] 
-                                                + a[(i - 1) * size + j] 
-                                                + a[(i - 1 ) * size + (j + 1)] 
-                                                + a[i * size + (j - 1)] 
-                                                + a[i * size + j] 
-                                                + a[i * size + (j + 1)] 
-                                                + a[(i + 1) * size + (j - 1)] 
-                                                + a[(i + 1) * size + j] 
-                                                + a[(i + 1) * size + (j + 1)]) 
+                    a[i * size + j] = (float) ((a[(i - 1) * size + (j - 1)]
+                                                + a[(i - 1) * size + j]
+                                                + a[(i - 1 ) * size + (j + 1)]
+                                                + a[i * size + (j - 1)]
+                                                + a[i * size + j]
+                                                + a[i * size + (j + 1)]
+                                                + a[(i + 1) * size + (j - 1)]
+                                                + a[(i + 1) * size + j]
+                                                + a[(i + 1) * size + (j + 1)])
                                                 / 9.0);
                     //@formatter:on
                 }
@@ -113,7 +113,7 @@ public class GSeidel2D {
         }
 
         // @formatter:off
-        final TaskSchedule graph = new TaskSchedule("s0")
+        final TaskGraph graph = new TaskGraph("s0")
                 .streamIn(a, size)
                 .task("t0", GSeidel2D::run2DseidelTornado, a, size)
                 .streamOut(a);

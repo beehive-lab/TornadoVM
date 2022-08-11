@@ -14,20 +14,20 @@ In this example, we will run the `vectorAdd` method on a heterogeneous device. T
 
 As you can see in the example below, the accelerated `vectorAdd` method performs a double vector addition. Furthermore, it does not differ at all from a vanilla sequential Java implementation of the method. The only difference is the addition of the `@Parallel` annotation that instructs TornadoVM that the loop has to be computed in parallel (i.e. using the global identifier in OpenCL).
 
-The `testVectorAddition` method prepares the input data and creates a TornadoVM `task`. TornadoVM `tasks` cannot execute directly; instead they must be part of a `TaskSchedule`. This is a design choice allowing a number of optimizations, such as task pipelining and parallelism, to be performed. Furthermore, `TaskSchedules` define which parameters are copied in and out from a device.
+The `testVectorAddition` method prepares the input data and creates a TornadoVM `task`. TornadoVM `tasks` cannot execute directly; instead they must be part of a `TaskGraph`. This is a design choice allowing a number of optimizations, such as task pipelining and parallelism, to be performed. Furthermore, `TaskGraphs` define which parameters are copied in and out from a device.
 
 Once the method `execute` is invoked, TornadoVM builds the data dependency graph, compiles the referenced Java method to OpenCL C/PTX, and executes the generated application on the available OpenCL/CUDA device.
-
 
 ```java
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class VectorAddFloat {
 
- private static void vectorAdd(float[] a, float[] b, float[] c) {
+    private static void vectorAdd(float[] a, float[] b, float[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
             c[i] = a[i] + b[i];
         }
@@ -45,12 +45,12 @@ public class VectorAddFloat {
         Arrays.fill(b, 20f);
 
         //@formatter:off
-        TaskSchedule task = new TaskSchedule("s0")
+        TaskGraph taskGraph = new TaskGraph("s0")
                 .task("t0", VectorAddFloat::vectorAdd, a, b, c)
-        .streamOut(c);
+                .streamOut(c);
         //@formatter:on
 
-        task.execute();
+        taskGraph.execute();
         vectorAdd(a, b, result);
         boolean wrongResult = false;
         for (int i = 0; i < c.length; i++) {
@@ -125,7 +125,7 @@ In order to run your code on a device of your choice you can issue:
 $ tornado -Ds0.device=0:1 --debug examples/TestTornado
 ```
 
-This will run TaskSchedule (s0) on the device 1 (Intel HD Graphics).
+This will run TaskGraph (s0) on the device 1 (Intel HD Graphics).
 Similarly, you can execute the code on the rest of the devices.
 
 
@@ -282,9 +282,10 @@ The following Java snippet shows the data preparation, task definition, and invo
 
         // Step 1: vertices initialisation
         initializeVertices(numNodes, vertices, rootNode);
-        TaskSchedule s0 = new TaskSchedule("s0");
-        s0.task("t0", BFS::initializeVertices, numNodes, vertices, rootNode);
-        s0.streamOut(vertices).execute();
+        TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.task("t0", BFS::initializeVertices, numNodes, vertices, rootNode);
+        taskGraph.streamOut(vertices)
+                 .execute();
 
         modify = new int[] { 1 };
         Arrays.fill(modify, 1);
@@ -293,12 +294,12 @@ The following Java snippet shows the data preparation, task definition, and invo
 
         TornadoDevice device = TornadoRuntime.getTornadoRuntime()
 					      .getDefaultDevice();
-        TaskSchedule s1 = new TaskSchedule("s1");
-        s1.streamIn(vertices, adjacencyMatrix, modify,currentDepth)
+        TaskGraph taskGraph1 = new TaskGraph("s1");
+        taskGraph1.streamIn(vertices, adjacencyMatrix, modify,currentDepth)
 					.mapAllTo(device);
-        s1.task("t1", BFS::runBFS, vertices, adjacencyMatrix,
+        taskGraph1.task("t1", BFS::runBFS, vertices, adjacencyMatrix,
 			numNodes, modify, currentDepth);
-        s1.streamOut(vertices, modify);
+        taskGraph1.streamOut(vertices, modify);
 
         boolean done = false;
 
@@ -307,7 +308,7 @@ The following Java snippet shows the data preparation, task definition, and invo
             boolean allDone = true;
             System.out.println("Current Depth: " + currentDepth[0]);
             //runBFS(vertices, adjacencyMatrix, numNodes, modify, currentDepth);
-            s1.execute();
+            taskGraph1.execute();
             currentDepth[0]++;
             for(int i = 0; i < modify.length; i++) {
                 if (modify[i] == 0) {
@@ -332,7 +333,7 @@ The following Java snippet shows the data preparation, task definition, and invo
 ## 6. Resizing input data at runtime
 
 TornadoVM supports dynamic recompilation of expressions when the input data is resized.
-To do so, TornadoVM exposes an API call (`taskSchedule.updateReference`).
+To do so, TornadoVM exposes an API call (`taskGraph.updateReference`).
 The re-compilation invalidates the code installed in the code cache and installs a new one with the upcoming data size.
 
 
@@ -348,38 +349,38 @@ The API call `updateReference` updates all the references to the new data. Addit
     float[] a = createArray(1024);
     float[] b = createArray(1024);
 
-    TaskSchedule ts = new TaskSchedule("s0") //
+    TaskGraph taskGraph = new TaskGraph("s0") //
             .streamIn(a) //
             .task("t0", Resize::resize02, a, b) //
             .streamOut(b); //
-    ts.execute();
+    taskGraph.execute();
 
     // Resize data
     float[] c = createArray(512);
     float[] d = createArray(512);
 
     // Update multiple references
-    ts.updateReference(a, c);
-    ts.updateReference(b, d);
+    taskGraph.updateReference(a, c);
+    taskGraph.updateReference(b, d);
 
-    ts.execute();
+    taskGraph.execute();
 ```
 
 Multiple updates are also possible:
 
 ```java
-ts.updateReference(a, b);
-ts.updateReference(c, d);
-ts.updateReference(e, f);
+taskGraph.updateReference(a, b);
+taskGraph.updateReference(c, d);
+taskGraph.updateReference(e, f);
 ```
-## 7. Execute a TaskSchedule with multiple tasks on multiple devices
+## 7. Execute a TaskGraph with multiple tasks on multiple devices
 
-TornadoVM allows users to specify different targeted devices on TaskSchedules with multiple tasks.
+TornadoVM allows users to specify different targeted devices on TaskGraphs with multiple tasks.
 If the tasks are not independent, then TornadoVM overrides user preferences, and schedules all tasks on the default device.
 
-The following example showcases an example of a TaskSchedule with three independent tasks.
+The following example showcases an example of a TaskGraph with three independent tasks.
 ```java
-TaskSchedule parallelFilter = new TaskSchedule("blur") //
+TaskGraph parallelFilter = new TaskGraph("blur") //
             .task("red", BlurFilterImage::compute, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
             .task("green", BlurFilterImage::compute, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
             .task("blue", BlurFilterImage::compute, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
@@ -388,7 +389,7 @@ TaskSchedule parallelFilter = new TaskSchedule("blur") //
 parallelFilter.execute();
 ```
 
-For each task (red, blue and green) of the TaskSchedule (blur) the device can be specified as in:
+For each task (red, blue and green) of the TaskGraph (blur) the device can be specified as in:
 ```bash
 tornado -Dblur.red.device=0:0 -Dblur.green.device=0:1 -Dblur.blue.device=0:2 -m tornado.examples/uk.ac.manchester.tornado.examples.compute.BlurFilter
 ```

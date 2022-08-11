@@ -20,7 +20,7 @@ package uk.ac.manchester.tornado.examples.matrices;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class MatrixVectorMultiplication {
@@ -64,7 +64,7 @@ public class MatrixVectorMultiplication {
         });
 
         //@formatter:off
-        TaskSchedule t = new TaskSchedule("s0")
+        TaskGraph t = new TaskGraph("s0")
                 .task("t0", MatrixVectorMultiplication::matrixVectorMultiplication, matrixA, matrixB, matrixC, size)
                 .streamOut(matrixC);
         //@formatter:on

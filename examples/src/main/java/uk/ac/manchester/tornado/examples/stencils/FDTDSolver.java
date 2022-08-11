@@ -20,7 +20,7 @@ package uk.ac.manchester.tornado.examples.stencils;
 
 import java.util.LinkedList;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 /**
@@ -158,7 +158,7 @@ public class FDTDSolver {
             start = System.nanoTime();
             for (int step = 0; step < steps; step++) {
                 //@formatter:off
-                TaskSchedule graph = new TaskSchedule("s0")
+                TaskGraph graph = new TaskGraph("s0")
                         .task("t0", FDTDSolver::kernelOne, size, size, fict, ey, hz, step)
                         .task("t1", FDTDSolver::kernelTwo, size, size, ex, hz)
                         .task("t2", FDTDSolver::kernelThree, size, size, ex, hz, ey);

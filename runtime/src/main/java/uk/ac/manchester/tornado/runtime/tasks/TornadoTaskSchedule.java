@@ -60,7 +60,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.AbstractTaskGraph;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.Policy;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -141,7 +141,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private static final CompileInfo NOT_COMPILE_UPDATE = new CompileInfo(false, false);
     private static final Pattern PATTERN_BATCH = Pattern.compile("(\\d+)(MB|mg|gb|GB)");
 
-    private static ConcurrentHashMap<Integer, TaskSchedule> globalTaskScheduleIndex = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<Integer, TaskGraph> globalTaskScheduleIndex = new ConcurrentHashMap<>();
     private static int baseGlobalIndex = 0;
     private static AtomicInteger offsetGlobalIndex = new AtomicInteger(0);
     MetaReduceCodeAnalysis analysisTaskSchedule;
@@ -162,7 +162,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private ConcurrentHashMap<Policy, Integer> policyTimeTable = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerOutputs = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerInputs = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<Integer, TaskSchedule> taskScheduleIndex = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, TaskGraph> taskScheduleIndex = new ConcurrentHashMap<>();
     private StringBuilder bufferLogProfiler = new StringBuilder();
     private CachedGraph<?> graph;
     /**
@@ -199,7 +199,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         vmTable = new HashMap<>();
     }
 
-    static void performStreamInThread(TaskSchedule task, ArrayList<Object> inputObjects) {
+    static void performStreamInThread(TaskGraph task, ArrayList<Object> inputObjects) {
         int numObjectsCopyIn = inputObjects.size();
         switch (numObjectsCopyIn) {
             case 0:
@@ -262,7 +262,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    static void performStreamOutThreads(TaskSchedule task, ArrayList<Object> outputArrays) {
+    static void performStreamOutThreads(TaskGraph task, ArrayList<Object> outputArrays) {
         int numObjectsCopyOut = outputArrays.size();
         switch (numObjectsCopyOut) {
             case 0:
@@ -1235,7 +1235,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             final int taskScheduleNumber = i;
             threads[i] = new Thread(() -> {
                 String newTaskScheduleName = TASK_SCHEDULE_PREFIX + taskScheduleNumber;
-                TaskSchedule task = new TaskSchedule(newTaskScheduleName);
+                TaskGraph task = new TaskGraph(newTaskScheduleName);
 
                 Thread.currentThread().setName("Thread-DEV: " + TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(taskScheduleNumber).getPhysicalDevice().getDeviceName());
 
@@ -1330,10 +1330,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private TaskSchedule taskRecompilation(int deviceWinnerIndex) {
+    private TaskGraph taskRecompilation(int deviceWinnerIndex) {
         // Force re-compilation in device <deviceWinnerIndex>
         String newTaskScheduleName = TASK_SCHEDULE_PREFIX + deviceWinnerIndex;
-        TaskSchedule taskToCompile = new TaskSchedule(newTaskScheduleName);
+        TaskGraph taskToCompile = new TaskGraph(newTaskScheduleName);
         performStreamInThread(taskToCompile, streamInObjects);
         for (TaskPackage taskPackage : taskPackages) {
             String taskID = taskPackage.getId();
@@ -1351,7 +1351,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         if (TornadoOptions.DEBUG_POLICY) {
             System.out.println("Running in parallel device: " + deviceWinnerIndex);
         }
-        TaskSchedule task = taskScheduleIndex.get(deviceWinnerIndex);
+        TaskGraph task = taskScheduleIndex.get(deviceWinnerIndex);
         if (task == null) {
             if (USE_GLOBAL_TASK_CACHE) {
                 // This is only if compilation is not using Partial Evaluation
@@ -1443,7 +1443,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         // Running sequentially for all the devices
         for (int taskNumber = 0; taskNumber < numDevices; taskNumber++) {
             String newTaskScheduleName = TASK_SCHEDULE_PREFIX + taskNumber;
-            TaskSchedule task = new TaskSchedule(newTaskScheduleName);
+            TaskGraph task = new TaskGraph(newTaskScheduleName);
 
             long start = timer.time();
             performStreamInThread(task, streamInObjects);

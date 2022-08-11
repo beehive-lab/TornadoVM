@@ -6,7 +6,7 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /*
@@ -33,7 +33,7 @@ public class TestFloats extends TornadoTestBase {
         final int numElements = 256;
         float[] a = new float[numElements];
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::testFloatCopy, a) //
                 .streamOut(a) //
                 .execute(); //
@@ -56,7 +56,7 @@ public class TestFloats extends TornadoTestBase {
             expected[i] = b[i] + c[i];
         }
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorAddFloatCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
@@ -81,7 +81,7 @@ public class TestFloats extends TornadoTestBase {
             expected[i] = b[i] - c[i];
         }
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorSubFloatCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
@@ -108,7 +108,7 @@ public class TestFloats extends TornadoTestBase {
             expected[i] = b[i] * c[i];
         }
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorMulFloatCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
@@ -134,7 +134,7 @@ public class TestFloats extends TornadoTestBase {
             expected[i] = b[i] / c[i];
         }
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorDivFloatCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //

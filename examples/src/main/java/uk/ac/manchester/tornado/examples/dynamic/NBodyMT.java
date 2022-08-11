@@ -21,7 +21,7 @@ package uk.ac.manchester.tornado.examples.dynamic;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.Policy;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
@@ -182,7 +182,7 @@ public class NBodyMT {
 
         System.out.println("Version running: " + executionType + " ! ");
 
-        final TaskSchedule graph = new TaskSchedule("s0");
+        final TaskGraph graph = new TaskGraph("s0");
         if (executionType.equals("multi") || executionType.equals("sequential")) {
             ;
         } else {

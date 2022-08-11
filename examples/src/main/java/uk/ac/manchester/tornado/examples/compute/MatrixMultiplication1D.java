@@ -1,26 +1,26 @@
 /*
  * Copyright (c) 2013-2021, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 package uk.ac.manchester.tornado.examples.compute;
 
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 
@@ -60,18 +60,18 @@ public class MatrixMultiplication1D {
             matrixB[idx] = r.nextFloat();
         });
 
-        TaskSchedule t = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", MatrixMultiplication1D::matrixMultiplication, matrixA, matrixB, matrixC, size) //
                 .streamOut(matrixC); //
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
-            t.execute();
+            taskGraph.execute();
         }
 
         // 2. Run parallel on the GPU with Tornado
         long start = System.currentTimeMillis();
-        t.execute();
+        taskGraph.execute();
         long end = System.currentTimeMillis();
 
         // Run sequential
@@ -96,7 +96,7 @@ public class MatrixMultiplication1D {
         String formatGPUFGlops = String.format("%.2f", gpuGigaFlops);
         String formatCPUFGlops = String.format("%.2f", cpuGigaFlops);
 
-        TornadoDeviceType deviceType = t.getDevice().getDeviceType();
+        TornadoDeviceType deviceType = taskGraph.getDevice().getDeviceType();
 
         // @formatter:off
         String buffer = "\tSingle Threaded CPU Execution: " + formatCPUFGlops + " GFlops, Total time = " + (endSequential - startSequential) + " ms" +

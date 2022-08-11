@@ -19,7 +19,7 @@
 package uk.ac.manchester.tornado.examples.dynamic;
 
 import uk.ac.manchester.tornado.api.Policy;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
@@ -78,7 +78,7 @@ public class DFTDynamic {
 
         long end,start;
 
-        TaskSchedule graph;
+        TaskGraph graph;
         float[] inReal;
         float[] inImag;
         float[] outReal;
@@ -99,7 +99,7 @@ public class DFTDynamic {
         }
 
         long startInit = System.nanoTime();
-        graph = new TaskSchedule("s0");
+        graph = new TaskGraph("s0");
         graph.task("t0", DFTDynamic::computeDft, inReal, inImag, outReal, outImag, inputSize).streamOut(outReal, outImag);
         long stopInit = System.nanoTime();
 

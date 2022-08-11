@@ -1,26 +1,26 @@
 /*
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 package uk.ac.manchester.tornado.benchmarks.rotatevector;
 
 import static uk.ac.manchester.tornado.api.collections.types.FloatOps.findMaxULP;
 import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.rotateVector;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
@@ -54,27 +54,27 @@ public class RotateTornado extends BenchmarkDriver {
             input.set(i, value);
         }
 
-        ts = new TaskSchedule("benchmark");
-        ts.streamIn(input);
-        ts.task("rotateVector", GraphicsKernels::rotateVector, output, m, input);
-        ts.streamOut(output);
-        ts.warmup();
+        taskGraph = new TaskGraph("benchmark");
+        taskGraph.streamIn(input);
+        taskGraph.task("rotateVector", GraphicsKernels::rotateVector, output, m, input);
+        taskGraph.streamOut(output);
+        taskGraph.warmup();
     }
 
     @Override
     public void tearDown() {
-        ts.dumpProfiles();
+        taskGraph.dumpProfiles();
         input = null;
         output = null;
         m = null;
-        ts.getDevice().reset();
+        taskGraph.getDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        ts.mapAllTo(device);
-        ts.execute();
+        taskGraph.mapAllTo(device);
+        taskGraph.execute();
     }
 
     @Override
@@ -83,8 +83,8 @@ public class RotateTornado extends BenchmarkDriver {
         final VectorFloat3 result = new VectorFloat3(numElements);
 
         benchmarkMethod(device);
-        ts.syncObjects(output);
-        ts.clearProfiles();
+        taskGraph.syncObjects(output);
+        taskGraph.clearProfiles();
 
         rotateVector(result, m, input);
 

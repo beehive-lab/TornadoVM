@@ -1,19 +1,19 @@
 /*
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 package uk.ac.manchester.tornado.benchmarks.sgemv;
 
@@ -22,7 +22,7 @@ import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.sgemv;
 
 import java.util.Random;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
@@ -57,29 +57,29 @@ public class SgemvTornado extends BenchmarkDriver {
             x[i] = random.nextFloat();
         }
 
-        ts = new TaskSchedule("benchmark") //
+        taskGraph = new TaskGraph("benchmark") //
                 .streamIn(a, x) //
                 .task("sgemv", LinearAlgebraArrays::sgemv, m, n, a, x, y) //
                 .streamOut(y);
-        ts.warmup();
+        taskGraph.warmup();
     }
 
     @Override
     public void tearDown() {
-        ts.dumpProfiles();
+        taskGraph.dumpProfiles();
 
         a = null;
         x = null;
         y = null;
 
-        ts.getDevice().reset();
+        taskGraph.getDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        ts.mapAllTo(device);
-        ts.execute();
+        taskGraph.mapAllTo(device);
+        taskGraph.execute();
     }
 
     @Override
@@ -88,8 +88,8 @@ public class SgemvTornado extends BenchmarkDriver {
         final float[] result = new float[n];
 
         benchmarkMethod(device);
-        ts.syncObjects(y);
-        ts.clearProfiles();
+        taskGraph.syncObjects(y);
+        taskGraph.clearProfiles();
 
         sgemv(m, n, a, x, result);
 

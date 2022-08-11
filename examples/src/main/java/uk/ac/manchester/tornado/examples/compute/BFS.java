@@ -1,19 +1,19 @@
 /*
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.examples.compute;
@@ -22,7 +22,7 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 /**
  * Parallel Implementation of the BFS: this is based on the Marawacc compiler
  * framework.
- * 
+ *
  * @author Juan Fumero
  *
  */
@@ -176,9 +176,9 @@ public class BFS {
 
         // Step 1: vertices initialisation
         initializeVertices(numNodes, vertices, rootNode);
-        TaskSchedule s0 = new TaskSchedule("s0");
-        s0.task("t0", BFS::initializeVertices, numNodes, vertices, rootNode);
-        s0.streamOut(vertices).execute();
+        TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.task("t0", BFS::initializeVertices, numNodes, vertices, rootNode);
+        taskGraph.streamOut(vertices).execute();
 
         // initialization of Java vertices
         initializeVertices(numNodes, verticesJava, rootNode);
@@ -192,10 +192,10 @@ public class BFS {
         currentDepth = new int[] { 0 };
 
         TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
-        TaskSchedule s1 = new TaskSchedule("s1");
-        s1.streamIn(vertices, adjacencyMatrix, modify, currentDepth).mapAllTo(device);
-        s1.task("t1", BFS::runBFS, vertices, adjacencyMatrix, numNodes, modify, currentDepth);
-        s1.streamOut(vertices, modify);
+        TaskGraph taskGraph1 = new TaskGraph("s1");
+        taskGraph1.streamIn(vertices, adjacencyMatrix, modify, currentDepth).mapAllTo(device);
+        taskGraph1.task("t1", BFS::runBFS, vertices, adjacencyMatrix, numNodes, modify, currentDepth);
+        taskGraph1.streamOut(vertices, modify);
 
         boolean done = false;
 
@@ -204,7 +204,7 @@ public class BFS {
             boolean allDone = true;
             System.out.println("Current Depth: " + currentDepth[0]);
             runBFS(verticesJava, adjacencyMatrix, numNodes, modifyJava, currentDepth);
-            s1.execute();
+            taskGraph1.execute();
             currentDepth[0]++;
 
             if (VALIDATION && !(validModifyResults = checkModify(modify, modifyJava))) {

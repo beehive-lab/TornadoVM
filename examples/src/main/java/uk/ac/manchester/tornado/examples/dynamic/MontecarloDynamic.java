@@ -19,7 +19,7 @@
 package uk.ac.manchester.tornado.examples.dynamic;
 
 import uk.ac.manchester.tornado.api.Policy;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
@@ -62,7 +62,7 @@ public class MontecarloDynamic {
 
         long startInit = System.nanoTime();
         // @formatter:off
-        TaskSchedule s0 = new TaskSchedule("s0")
+        TaskGraph s0 = new TaskGraph("s0")
                 .task("t0", MontecarloDynamic::computeMontecarlo, output)
                 .streamOut(output);
         // @formatter:on

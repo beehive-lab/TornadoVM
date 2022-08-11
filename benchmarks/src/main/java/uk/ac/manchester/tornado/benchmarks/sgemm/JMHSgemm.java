@@ -17,6 +17,11 @@
  */
 package uk.ac.manchester.tornado.benchmarks.sgemm;
 
+import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.sgemm;
+
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -34,13 +39,9 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
-
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-
-import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.sgemm;
 
 public class JMHSgemm {
 
@@ -51,7 +52,7 @@ public class JMHSgemm {
         private float[] a;
         private float[] b;
         private float[] c;
-        TaskSchedule ts;
+        TaskGraph taskGraph;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -70,11 +71,11 @@ public class JMHSgemm {
                 b[i] = random.nextFloat();
             }
 
-            ts = new TaskSchedule("benchmark") //
+            taskGraph = new TaskGraph("benchmark") //
                     .streamIn(a, b) //
                     .task("sgemm", LinearAlgebraArrays::sgemm, m, n, n, a, b, c) //
                     .streamOut(c);
-            ts.warmup();
+            taskGraph.warmup();
 
         }
     }
@@ -96,7 +97,7 @@ public class JMHSgemm {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void sgemmTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskSchedule t = state.ts;
+        TaskGraph t = state.taskGraph;
         t.execute();
         blackhole.consume(t);
     }

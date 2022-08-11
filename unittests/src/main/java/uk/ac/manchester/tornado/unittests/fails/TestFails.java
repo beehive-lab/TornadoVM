@@ -18,15 +18,11 @@
 
 package uk.ac.manchester.tornado.unittests.fails;
 
-import java.util.Arrays;
-
-import org.junit.Ignore;
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -61,16 +57,16 @@ public class TestFails extends TornadoTestBase {
         float[] x = new float[100];
         float[] y = new float[100];
 
-        TaskSchedule ts = new TaskSchedule("s0").streamIn(x).task("s0", (a, b) -> {
+        TaskGraph taskGraph = new TaskGraph("s0").streamIn(x).task("s0", (a, b) -> {
             for (int i = 0; i < 100; i++) {
 
             }
         }, x, y).streamOut(y);
 
         // How to provoke the failure
-        ts.warmup();
+        taskGraph.warmup();
         reset();
-        ts.execute();
+        taskGraph.execute();
     }
 
     private static void kernel(float[] a, float[] b) {
@@ -88,14 +84,14 @@ public class TestFails extends TornadoTestBase {
         float[] y = new float[100];
 
         // @formatter:off
-        TaskSchedule ts = new TaskSchedule("s0")
+        TaskGraph taskGraph = new TaskGraph("s0")
                 .streamIn(x)
                 .task("s0", TestFails::kernel, x, y)
                 .streamOut(y);
         // @formatter:on
 
         // How to provoke the failure
-        ts.execute();
+        taskGraph.execute();
     }
 
 }

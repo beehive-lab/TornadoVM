@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.benchmarks.euler;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
@@ -53,7 +53,7 @@ public class EulerTornado extends BenchmarkDriver {
         outputC = new long[size];
         outputD = new long[size];
         outputE = new long[size];
-        ts = new TaskSchedule("benchmark") //
+        taskGraph = new TaskGraph("benchmark") //
                 .streamIn(input) //
                 .task("euler", ComputeKernels::euler, size, input, outputA, outputB, outputC, outputD, outputE) //
                 .streamOut(outputA, outputB, outputC, outputD, outputE);
@@ -85,11 +85,11 @@ public class EulerTornado extends BenchmarkDriver {
     }
 
     private void runParallel(int size, long[] input, long[] outputA, long[] outputB, long[] outputC, long[] outputD, long[] outputE, TornadoDevice device) {
-        TaskSchedule ts = new TaskSchedule("s0") //
+        TaskGraph graph = new TaskGraph("s0") //
                 .task("s0", ComputeKernels::euler, size, input, outputA, outputB, outputC, outputD, outputE) //
                 .streamOut(outputA, outputB, outputC, outputD, outputE);
-        ts.mapAllTo(device);
-        ts.execute();
+        graph.mapAllTo(device);
+        graph.execute();
     }
 
     @Override
@@ -133,7 +133,7 @@ public class EulerTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        ts.mapAllTo(device);
-        ts.execute();
+        taskGraph.mapAllTo(device);
+        taskGraph.execute();
     }
 }

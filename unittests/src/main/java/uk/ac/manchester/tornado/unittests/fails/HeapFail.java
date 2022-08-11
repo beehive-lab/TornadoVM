@@ -18,12 +18,13 @@
 
 package uk.ac.manchester.tornado.unittests.fails;
 
+import java.util.Arrays;
+
 import org.junit.Test;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
-
-import java.util.Arrays;
 
 public class HeapFail {
 
@@ -55,11 +56,11 @@ public class HeapFail {
         Arrays.fill(x, 2.0f);
 
         // @formatter:off
-        TaskSchedule ts = new TaskSchedule("s0")
+        TaskGraph taskGraph = new TaskGraph("s0")
                 .streamIn(x)
                 .task("s0",HeapFail::validKernel,x,y)
                 .streamOut(y);
         // @formatter:on
-        ts.execute();
+        taskGraph.execute();
     }
 }

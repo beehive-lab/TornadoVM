@@ -17,6 +17,10 @@
  */
 package uk.ac.manchester.tornado.benchmarks.saxpy;
 
+import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.saxpy;
+
+import java.util.concurrent.TimeUnit;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -34,14 +38,9 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
+
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
-import uk.ac.manchester.tornado.benchmarks.dft.JMHDFT;
-
-import java.util.concurrent.TimeUnit;
-
-import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.saxpy;
 
 public class JMHSaxpy {
     @State(Scope.Thread)
@@ -52,7 +51,7 @@ public class JMHSaxpy {
         private float[] y;
         private final float alpha = 2f;
 
-        private TaskSchedule ts;
+        private TaskGraph taskGraph;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -63,11 +62,11 @@ public class JMHSaxpy {
                 x[i] = i;
             }
 
-            ts = new TaskSchedule("benchmark") //
+            taskGraph = new TaskGraph("benchmark") //
                     .streamIn(x) //
                     .task("saxpy", LinearAlgebraArrays::saxpy, alpha, x, y) //
                     .streamOut(y);
-            ts.warmup();
+            taskGraph.warmup();
         }
     }
 
@@ -88,7 +87,7 @@ public class JMHSaxpy {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void saxpyTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskSchedule t = state.ts;
+        TaskGraph t = state.taskGraph;
         t.execute();
         blackhole.consume(t);
     }

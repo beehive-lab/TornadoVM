@@ -17,6 +17,8 @@
  */
 package uk.ac.manchester.tornado.benchmarks.blackscholes;
 
+import java.util.concurrent.TimeUnit;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -34,11 +36,9 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
-import uk.ac.manchester.tornado.benchmarks.dft.JMHDFT;
 
-import java.util.concurrent.TimeUnit;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 public class JMHBlackScholes {
 
@@ -49,7 +49,7 @@ public class JMHBlackScholes {
         float[] randArray;
         float[] call;
         float[] put;
-        TaskSchedule ts;
+        TaskGraph taskGraph;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -61,11 +61,11 @@ public class JMHBlackScholes {
                 randArray[i] = (i * 1.0f) / size;
             }
 
-            ts = new TaskSchedule("benchmark") //
+            taskGraph = new TaskGraph("benchmark") //
                     .task("t0", ComputeKernels::blackscholes, randArray, put, call) //
                     .streamOut(put, call);
 
-            ts.warmup();
+            taskGraph.warmup();
         }
     }
 
@@ -86,7 +86,7 @@ public class JMHBlackScholes {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void blachcholesTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskSchedule t = state.ts;
+        TaskGraph t = state.taskGraph;
         t.execute();
         blackhole.consume(t);
     }

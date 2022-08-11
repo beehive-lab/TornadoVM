@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.benchmarks.hilbert;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
@@ -36,18 +36,18 @@ public class HilbertTornado extends BenchmarkDriver {
     public void setUp() {
         hilbertMatrix = new float[size * size];
         // @formatter:off
-        ts = new TaskSchedule("benchmark")
+        taskGraph = new TaskGraph("benchmark")
                 .task("t0", ComputeKernels::hilbertComputation, hilbertMatrix, size, size)
                 .streamOut(hilbertMatrix);
         // @formatter:on
-        ts.warmup();
+        taskGraph.warmup();
     }
 
     @Override
     public void tearDown() {
-        ts.dumpProfiles();
+        taskGraph.dumpProfiles();
         hilbertMatrix = null;
-        ts.getDevice().reset();
+        taskGraph.getDevice().reset();
         super.tearDown();
     }
 
@@ -56,7 +56,7 @@ public class HilbertTornado extends BenchmarkDriver {
         boolean val = true;
         float[] testData = new float[size * size];
         // @formatter:off
-        TaskSchedule check = new TaskSchedule("s0")
+        TaskGraph check = new TaskGraph("s0")
                 .task("t0", ComputeKernels::hilbertComputation, testData, size, size)
                 .streamOut(testData);
         // @formatter:on
@@ -77,7 +77,7 @@ public class HilbertTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        ts.mapAllTo(device);
-        ts.execute();
+        taskGraph.mapAllTo(device);
+        taskGraph.execute();
     }
 }

@@ -23,12 +23,12 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * Run:
- * 
+ *
  * <code>
  *     tornado-test.py -V uk.ac.manchester.tornado.unittests.foundation.TestShorts
  * </code>
@@ -48,7 +48,7 @@ public class TestShorts extends TornadoTestBase {
         short[] expectedResult = new short[numElements];
         Arrays.fill(expectedResult, (short) 4);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorSumShortCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //

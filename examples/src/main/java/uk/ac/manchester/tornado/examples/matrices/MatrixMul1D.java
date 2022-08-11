@@ -1,6 +1,6 @@
 package uk.ac.manchester.tornado.examples.matrices;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -44,7 +44,7 @@ public class MatrixMul1D {
             matrixB[idx] = 3.5f;
         });
 
-        TaskSchedule scheduleCUDA = new TaskSchedule("cuda_old_api").task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixCCUDA, N).streamOut(matrixCCUDA);
+        TaskGraph scheduleCUDA = new TaskGraph("cuda_old_api").task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixCCUDA, N).streamOut(matrixCCUDA);
 
         TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
@@ -72,7 +72,7 @@ public class MatrixMul1D {
         else
             throw new Exception("Could not get average execution time");
 
-        TaskSchedule scheduleOCL = new TaskSchedule("ocl_old_api").task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixCOCL, N).streamOut(matrixCOCL);
+        TaskGraph scheduleOCL = new TaskGraph("ocl_old_api").task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixCOCL, N).streamOut(matrixCOCL);
 
         // Get the same device but running the OCL backend
         TornadoDriver oclDriver = TornadoRuntime.getTornadoRuntime().getDriver(1);

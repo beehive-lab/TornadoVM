@@ -17,6 +17,10 @@
  */
 package uk.ac.manchester.tornado.benchmarks.rotatevector;
 
+import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.rotateVector;
+
+import java.util.concurrent.TimeUnit;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -34,15 +38,12 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
-
-import java.util.concurrent.TimeUnit;
-
-import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.rotateVector;
 
 public class JMHRotateVector {
     @State(Scope.Thread)
@@ -52,7 +53,7 @@ public class JMHRotateVector {
         private VectorFloat3 input;
         private VectorFloat3 output;
         private Matrix4x4Float m;
-        private TaskSchedule ts;
+        private TaskGraph taskGraph;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -67,11 +68,11 @@ public class JMHRotateVector {
                 input.set(i, value);
             }
 
-            ts = new TaskSchedule("benchmark") //
+            taskGraph = new TaskGraph("benchmark") //
                     .streamIn(input) //
                     .task("rotateVector", GraphicsKernels::rotateVector, output, m, input) //
                     .streamOut(output);
-            ts.warmup();
+            taskGraph.warmup();
         }
     }
 
@@ -92,7 +93,7 @@ public class JMHRotateVector {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void rotateVectorTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskSchedule t = state.ts;
+        TaskGraph t = state.taskGraph;
         t.execute();
         blackhole.consume(t);
     }

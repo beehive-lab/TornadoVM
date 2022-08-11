@@ -17,6 +17,12 @@
  */
 package uk.ac.manchester.tornado.benchmarks.convolveimage;
 
+import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createFilter;
+import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createImage;
+import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.convolveImage;
+
+import java.util.concurrent.TimeUnit;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -34,16 +40,10 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
-import uk.ac.manchester.tornado.benchmarks.dft.JMHDFT;
-
-import java.util.concurrent.TimeUnit;
-
-import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createFilter;
-import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createImage;
-import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.convolveImage;
 
 public class JMHConvolveImage {
 
@@ -57,8 +57,7 @@ public class JMHConvolveImage {
         ImageFloat input;
         ImageFloat output;
         ImageFloat filter;
-
-        private TaskSchedule ts;
+        private TaskGraph taskGraph;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -69,10 +68,10 @@ public class JMHConvolveImage {
             createImage(input);
             createFilter(filter);
 
-            ts = new TaskSchedule("benchmark") //
+            taskGraph = new TaskGraph("benchmark") //
                     .streamIn(input).task("convolveImage", GraphicsKernels::convolveImage, input, filter, output) //
                     .streamOut(output);
-            ts.warmup();
+            taskGraph.warmup();
         }
     }
 
@@ -93,7 +92,7 @@ public class JMHConvolveImage {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void convolveImageArrayTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskSchedule t = state.ts;
+        TaskGraph t = state.taskGraph;
         t.execute();
         blackhole.consume(t);
     }

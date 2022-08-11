@@ -26,7 +26,7 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -116,16 +116,16 @@ public class TestArrays extends TornadoTestBase {
             data[idx] = idx;
         });
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        assertNotNull(s0);
+        TaskGraph taskGraph = new TaskGraph("s0");
+        assertNotNull(taskGraph);
 
         for (int i = 0; i < numKernels; i++) {
-            s0.task("t" + i, TestArrays::addAccumulator, data, 1);
+            taskGraph.task("t" + i, TestArrays::addAccumulator, data, 1);
         }
 
-        s0.streamOut(data).warmup();
+        taskGraph.streamOut(data).warmup();
 
-        s0.execute();
+        taskGraph.execute();
 
         for (int i = 0; i < N; i++) {
             assertEquals(i + numKernels, data[i]);
@@ -137,12 +137,12 @@ public class TestArrays extends TornadoTestBase {
         final int N = 128;
         byte[] data = new byte[N];
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        assertNotNull(s0);
+        TaskGraph taskGraph = new TaskGraph("s0");
+        assertNotNull(taskGraph);
 
-        s0.task("t0", TestArrays::initializeSequentialByte, data);
-        s0.streamOut(data).warmup();
-        s0.execute();
+        taskGraph.task("t0", TestArrays::initializeSequentialByte, data);
+        taskGraph.streamOut(data).warmup();
+        taskGraph.execute();
 
         for (int i = 0; i < N; i++) {
             assertEquals((byte) 21, data[i]);
@@ -154,12 +154,12 @@ public class TestArrays extends TornadoTestBase {
         final int N = 128;
         int[] data = new int[N];
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        assertNotNull(s0);
+        TaskGraph taskGraph = new TaskGraph("s0");
+        assertNotNull(taskGraph);
 
-        s0.task("t0", TestArrays::initializeSequential, data);
-        s0.streamOut(data).warmup();
-        s0.execute();
+        taskGraph.task("t0", TestArrays::initializeSequential, data);
+        taskGraph.streamOut(data).warmup();
+        taskGraph.execute();
 
         for (int i = 0; i < N; i++) {
             assertEquals(1, data[i], 0.0001);
@@ -171,12 +171,12 @@ public class TestArrays extends TornadoTestBase {
         final int N = 128;
         int[] data = new int[N];
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        assertNotNull(s0);
+        TaskGraph taskGraph = new TaskGraph("s0");
+        assertNotNull(taskGraph);
 
-        s0.task("t0", TestArrays::initializeToOneParallel, data);
-        s0.streamOut(data).warmup();
-        s0.execute();
+        taskGraph.task("t0", TestArrays::initializeToOneParallel, data);
+        taskGraph.streamOut(data).warmup();
+        taskGraph.execute();
 
         for (int i = 0; i < N; i++) {
             assertEquals(1, data[i], 0.0001);
@@ -195,14 +195,14 @@ public class TestArrays extends TornadoTestBase {
             data[idx] = idx;
         });
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        assertNotNull(s0);
+        TaskGraph taskGraph = new TaskGraph("s0");
+        assertNotNull(taskGraph);
 
         for (int i = 0; i < numKernels; i++) {
-            s0.task("t" + i, TestArrays::addAccumulator, data, 1);
+            taskGraph.task("t" + i, TestArrays::addAccumulator, data, 1);
         }
 
-        s0.streamOut(data).execute();
+        taskGraph.streamOut(data).execute();
 
         for (int i = 0; i < N; i++) {
             assertEquals(i + numKernels, data[i], 0.0001);
@@ -222,7 +222,7 @@ public class TestArrays extends TornadoTestBase {
         });
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
             .streamIn(a, b)
             .task("t0", TestArrays::vectorAddDouble, a, b, c)
             .streamOut(c)
@@ -246,7 +246,7 @@ public class TestArrays extends TornadoTestBase {
             b[i] = (float) Math.random();
         });
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .streamIn(a, b) //
                 .task("t0", TestArrays::vectorAddFloat, a, b, c) //
                 .streamOut(c) //
@@ -271,7 +271,7 @@ public class TestArrays extends TornadoTestBase {
         });
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
             .streamIn(a, b)
             .task("t0", TestArrays::vectorAddInteger, a, b, c)
             .streamOut(c)
@@ -296,7 +296,7 @@ public class TestArrays extends TornadoTestBase {
         });
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
             .streamIn(a, b)
             .task("t0", TestArrays::vectorAddLong, a, b, c)
             .streamOut(c)
@@ -321,7 +321,7 @@ public class TestArrays extends TornadoTestBase {
         });
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
             .streamIn(a, b)
             .task("t0", TestArrays::vectorAddShort, a, b, c)
             .streamOut(c)
@@ -346,7 +346,7 @@ public class TestArrays extends TornadoTestBase {
         });
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
             .streamIn(a, b)
             .task("t0", TestArrays::vectorChars, a, b, c)
             .streamOut(c)
@@ -371,7 +371,7 @@ public class TestArrays extends TornadoTestBase {
         });
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .streamIn(a, b)
                 .task("t0", TestArrays::vectorAddByte, a, b, c)
                 .streamOut(c)
@@ -403,7 +403,7 @@ public class TestArrays extends TornadoTestBase {
         int[] b = new int[] { 15, 10, 6, 0, -11, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
             .streamIn(a, b)
             .task("t0", TestArrays::addChars, a, b)
             .streamOut(a)

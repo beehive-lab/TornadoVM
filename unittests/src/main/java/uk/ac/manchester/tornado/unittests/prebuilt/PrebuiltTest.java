@@ -26,7 +26,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -69,7 +69,7 @@ public class PrebuiltTest extends TornadoTestBase {
         }
 
         // @formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
             .prebuiltTask("t0",
                         "add",
                         filePath,
@@ -118,7 +118,7 @@ public class PrebuiltTest extends TornadoTestBase {
         }
 
         // @formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .prebuiltTask("t0",
                         "add",
                         filePath,
@@ -160,7 +160,7 @@ public class PrebuiltTest extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         // @formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .prebuiltTask("t0",
                         "floatReductionAddLocalMemory",
                         filePath,
@@ -207,7 +207,7 @@ public class PrebuiltTest extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         // @formatter:off
-        new TaskSchedule("a")
+        new TaskGraph("a")
                 .prebuiltTask("b",
                         "intReductionAddGlobalMemory",
                         filePath,

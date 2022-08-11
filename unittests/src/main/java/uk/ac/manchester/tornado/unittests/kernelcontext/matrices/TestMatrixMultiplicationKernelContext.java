@@ -26,7 +26,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
@@ -84,11 +84,11 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .streamIn(a, b) //
                 .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication1D, context, a, b, cTornado, size) //
                 .streamOut(cTornado);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         matrixMultiplicationJava(a, b, cJava, size);
 
@@ -127,11 +127,11 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         gridScheduler.setWorkerGrid("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .streamIn(a, b) //
                 .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication2D01, context, a, b, cTornado, size) //
                 .streamOut(cTornado);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         matrixMultiplicationJava(a, b, cJava, size);
 
@@ -195,12 +195,12 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         gridScheduler.setWorkerGrid("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .streamIn(a, b) //
                 .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication2D02, context, a, b, cTornado, size) //
                 .streamOut(cTornado);
         worker.setLocalWork(TS, TS, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         matrixMultiplicationJava(a, b, cJava, size);
 

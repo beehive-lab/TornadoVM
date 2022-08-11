@@ -23,7 +23,7 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestLinearAlgebra extends TornadoTestBase {
@@ -41,7 +41,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
         int[] expectedResult = new int[numElements];
         Arrays.fill(expectedResult, 300);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorAddCompute, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
@@ -63,7 +63,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
         int[] expectedResult = new int[numElements];
         Arrays.fill(expectedResult, 500);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorMul, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
@@ -85,7 +85,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
         int[] expectedResult = new int[numElements];
         Arrays.fill(expectedResult, 25);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorSub, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
@@ -106,7 +106,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
         int[] expectedResult = new int[numElements];
         Arrays.fill(expectedResult, 256);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorDiv, a, b, c) //
                 .streamOut(a) //
                 .execute(); //
@@ -128,7 +128,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
             expectedResult[i] = i * i;
         }
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorSquare, a, b) //
                 .streamOut(a) //
                 .execute(); //
@@ -152,7 +152,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
             expectedResult[i] = 2 * i + i;
         }
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::saxpy, a, b, c, 2) //
                 .streamOut(a) //
                 .execute(); //

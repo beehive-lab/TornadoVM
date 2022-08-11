@@ -25,7 +25,7 @@ import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -201,7 +201,7 @@ public class BFS {
 
         // Step 1: vertices initialisation
         initializeVertices(numNodes, vertices, rootNode);
-        TaskSchedule s0 = new TaskSchedule("s0");
+        TaskGraph s0 = new TaskGraph("s0");
         s0.task("t0", BFS::initializeVertices, numNodes, vertices, rootNode);
         s0.streamOut(vertices).execute();
 
@@ -223,7 +223,7 @@ public class BFS {
         workerGrid.setGlobalWork(numNodes, numNodes, 1);
 
         TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
-        TaskSchedule s1 = new TaskSchedule("s1");
+        TaskGraph s1 = new TaskGraph("s1");
         s1.streamIn(vertices, adjacencyMatrix, modify, currentDepth).mapAllTo(device);
         s1.task("t1", BFS::runBFS, context, vertices, adjacencyMatrix, numNodes, modify, currentDepth);
         s1.streamOut(vertices, modify);

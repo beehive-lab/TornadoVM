@@ -28,7 +28,7 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoVM_Intrinsics;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -164,7 +164,7 @@ public class TestAtomics extends TornadoTestBase {
         Arrays.fill(a, 1);
         Arrays.fill(b, 1);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic03, a) //
                 .streamOut(a) //
                 .execute();
@@ -184,13 +184,13 @@ public class TestAtomics extends TornadoTestBase {
         int[] a = new int[size];
         Arrays.fill(a, 1);
 
-        TaskSchedule ts = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic04, a) //
                 .streamOut(a); //
 
-        ts.execute();
+        taskGraph.execute();
 
-        if (!ts.isFinished()) {
+        if (!taskGraph.isFinished()) {
             assertTrue(false);
         }
 
@@ -211,19 +211,19 @@ public class TestAtomics extends TornadoTestBase {
         int[] a = new int[size];
         Arrays.fill(a, 1);
 
-        TaskSchedule ts = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic04Get, a) //
                 .streamOut(a); //
 
-        ts.execute();
+        taskGraph.execute();
 
-        if (!ts.isFinished()) {
+        if (!taskGraph.isFinished()) {
             assertTrue(false);
         }
 
         // On GPUs and FPGAs, threads within the same work-group run in parallel.
         // Increments will be performed atomically when using TornadoAtomicInteger.
-        // However the order is not guaranteed. For this test, we need to check that
+        // However, the order is not guaranteed. For this test, we need to check that
         // there are not repeated values in the output array.
         boolean repeated = isValueRepeated(a);
         assertTrue(!repeated);
@@ -253,7 +253,7 @@ public class TestAtomics extends TornadoTestBase {
         String tornadoSDK = System.getenv("TORNADO_SDK");
 
         // @formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .prebuiltTask("t0",
                         "add",
                         tornadoSDK + "/examples/generated/atomics.cl",
@@ -282,14 +282,14 @@ public class TestAtomics extends TornadoTestBase {
         Arrays.fill(a, 1);
         Arrays.fill(b, 1);
 
-        TaskSchedule ts = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .streamIn(a, b) //
                 .task("t0", TestAtomics::atomic06, a, b) //
                 .streamOut(a, b); //
 
-        ts.execute();
+        taskGraph.execute();
 
-        if (!ts.isFinished()) {
+        if (!taskGraph.isFinished()) {
             assertTrue(false);
         }
 
@@ -308,13 +308,13 @@ public class TestAtomics extends TornadoTestBase {
         int[] a = new int[size];
         Arrays.fill(a, 1);
 
-        TaskSchedule ts = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic07, a) //
                 .streamOut(a); //
 
-        ts.execute();
+        taskGraph.execute();
 
-        if (!ts.isFinished()) {
+        if (!taskGraph.isFinished()) {
             assertTrue(false);
         }
         boolean repeated = isValueRepeated(a);
@@ -330,13 +330,13 @@ public class TestAtomics extends TornadoTestBase {
         int[] a = new int[size];
         Arrays.fill(a, 1);
 
-        TaskSchedule ts = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic08, a) //
                 .streamOut(a); //
 
-        ts.execute();
+        taskGraph.execute();
 
-        if (!ts.isFinished()) {
+        if (!taskGraph.isFinished()) {
             assertTrue(false);
         }
         boolean repeated = isValueRepeated(a);
@@ -370,7 +370,7 @@ public class TestAtomics extends TornadoTestBase {
 
         AtomicInteger ai = new AtomicInteger(initialValue);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .streamIn(a, ai) //
                 .task("t0", TestAtomics::atomic09, a, ai) //
                 .streamOut(a, ai) //
@@ -397,7 +397,7 @@ public class TestAtomics extends TornadoTestBase {
         AtomicInteger ai = new AtomicInteger(initialValue);
 
         // We force a COPY_IN instead of STREAM_IN
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic09, a, ai) //
                 .streamOut(a, ai) //
                 .execute();
@@ -423,8 +423,8 @@ public class TestAtomics extends TornadoTestBase {
         AtomicInteger ai = new AtomicInteger(initialValue);
 
         // We force a COPY_IN instead of STREAM_IN
-        // Also, the atomic uses COPY_OUT non blocking call
-        new TaskSchedule("s0") //
+        // Also, the atomic uses COPY_OUT non-blocking call
+        new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic09, a, ai) //
                 .streamOut(ai, a) //
                 .execute();
@@ -452,7 +452,7 @@ public class TestAtomics extends TornadoTestBase {
         AtomicInteger ai = new AtomicInteger(initialValueA);
         AtomicInteger bi = new AtomicInteger(initialValueB);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic10, a, ai, bi) //
                 .streamOut(ai, a, bi) //
                 .execute();
@@ -481,7 +481,7 @@ public class TestAtomics extends TornadoTestBase {
         final int initialValueA = 311;
         AtomicInteger ai = new AtomicInteger(initialValueA);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic13, a, ai) //
                 .streamOut(ai, a) //
                 .execute();
@@ -508,7 +508,7 @@ public class TestAtomics extends TornadoTestBase {
         AtomicInteger ai = new AtomicInteger(initialValueA);
         AtomicInteger bi = new AtomicInteger(initialValueB);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic14, a, ai, bi) //
                 .streamOut(ai, a, bi) //
                 .execute();
@@ -533,7 +533,7 @@ public class TestAtomics extends TornadoTestBase {
         final int initialValueA = 311;
         AtomicInteger ai = new AtomicInteger(initialValueA);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic15, a, ai) //
                 .streamOut(ai, a) //
                 .execute();
@@ -558,14 +558,14 @@ public class TestAtomics extends TornadoTestBase {
         final int initialValueA = 311;
         AtomicInteger ai = new AtomicInteger(initialValueA);
 
-        TaskSchedule ts = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .streamIn(ai) //
                 .task("t0", TestAtomics::atomic16, a, ai) //
                 .streamOut(ai, a);
 
         final int iterations = 50;
         IntStream.range(0, iterations).forEach(i -> {
-            ts.execute();
+            taskGraph.execute();
         });
 
         int lastValue = ai.get();

@@ -23,7 +23,7 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -44,7 +44,7 @@ public class TestParallelDimensions extends TornadoTestBase {
         Arrays.fill(a, 1);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .task("t0", TestParallelDimensions::forLoopOneD, a)
                 .streamOut(a)
                 .execute();
@@ -72,7 +72,7 @@ public class TestParallelDimensions extends TornadoTestBase {
         Arrays.fill(a, 1);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .task("t0", TestParallelDimensions::forLoop2D, a, size)
                 .streamOut(a)
                 .execute();
@@ -103,7 +103,7 @@ public class TestParallelDimensions extends TornadoTestBase {
         Arrays.fill(a, 1);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .task("t0", TestParallelDimensions::forLoop3D, a, size)
                 .streamOut(a)
                 .execute();
@@ -140,7 +140,7 @@ public class TestParallelDimensions extends TornadoTestBase {
         Arrays.fill(b, 110);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
                 .task("t0", TestParallelDimensions::forLoop3DMap, a, b, size)
                 .streamOut(a)
                 .execute();

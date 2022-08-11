@@ -20,7 +20,7 @@ package uk.ac.manchester.tornado.examples.compute;
 import java.util.Random;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -31,7 +31,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
  * How to run?
  *
  * <code>
- *     $ tornado --threadInfo  -Ds0.t0.device=0:0 -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D 
+ *     $ tornado --threadInfo  -Ds0.t0.device=0:0 -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D
  * </code>
  */
 public class MatrixMultiplication2D {
@@ -84,7 +84,7 @@ public class MatrixMultiplication2D {
         workerGrid.setLocalWork(16, 16, 1);
 
         //@formatter:off
-        TaskSchedule t = new TaskSchedule("s0")
+        TaskGraph taskGraph = new TaskGraph("s0")
                 .lockObjectsInMemory(matrixA, matrixB, matrixC)   // lock these objects
                 .task("t0", MatrixMultiplication2D::matrixMultiplication, matrixA, matrixB, matrixC, size)
                 .streamOut(matrixC);
@@ -92,12 +92,12 @@ public class MatrixMultiplication2D {
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
-            t.execute(gridScheduler);
+            taskGraph.execute(gridScheduler);
         }
 
         // 2. Run parallel on the GPU with Tornado
         long start = System.currentTimeMillis();
-        t.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
         long end = System.currentTimeMillis();
 
         // Run sequential
@@ -122,7 +122,7 @@ public class MatrixMultiplication2D {
         String formatGPUFGlops = String.format("%.2f", gpuGigaFlops);
         String formatCPUFGlops = String.format("%.2f", cpuGigaFlops);
 
-        TornadoDeviceType deviceType = t.getDevice().getDeviceType();
+        TornadoDeviceType deviceType = taskGraph.getDevice().getDeviceType();
         System.out.println("\tSingle Threaded CPU Execution: " + formatCPUFGlops + " GFlops, Total time = " + (endSequential - startSequential) + " ms");
         System.out.println("\tTornadoVM Execution on " + deviceType + " (Accelerated): " + formatGPUFGlops + " GFlops, Total Time = " + (end - start) + " ms");
         System.out.println("\tSpeedup: " + speedup + "x");

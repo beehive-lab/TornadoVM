@@ -32,7 +32,7 @@ import javax.swing.JFrame;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 
@@ -148,7 +148,7 @@ public class Mandelbrot {
                 // [Optional] Set the local work group
                 workerGrid.setLocalWork(32, 32, 1);
 
-                TaskSchedule s0 = new TaskSchedule("s0");
+                TaskGraph s0 = new TaskGraph("s0");
 
                 s0.task("t0", MandelbrotImage::mandelbrotTornado, context, SIZE, result);
                 s0.streamOut(result).execute(gridScheduler);

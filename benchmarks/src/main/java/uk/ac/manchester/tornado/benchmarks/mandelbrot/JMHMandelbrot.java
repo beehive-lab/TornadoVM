@@ -17,6 +17,8 @@
  */
 package uk.ac.manchester.tornado.benchmarks.mandelbrot;
 
+import java.util.concurrent.TimeUnit;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -34,10 +36,9 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
-import java.util.concurrent.TimeUnit;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 public class JMHMandelbrot {
 
@@ -46,15 +47,15 @@ public class JMHMandelbrot {
 
         private int size = Integer.parseInt(System.getProperty("x", "512"));
         short[] output;
-        private TaskSchedule ts;
+        private TaskGraph taskGraph;
 
         @Setup(Level.Trial)
         public void doSetup() {
             output = new short[size * size];
-            ts = new TaskSchedule("benchmark") //
+            taskGraph = new TaskGraph("benchmark") //
                     .task("t0", ComputeKernels::mandelbrot, size, output) //
                     .streamOut(output);
-            ts.warmup();
+            taskGraph.warmup();
         }
     }
 
@@ -75,7 +76,7 @@ public class JMHMandelbrot {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void mandelbrotTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskSchedule t = state.ts;
+        TaskGraph t = state.taskGraph;
         t.execute();
         blackhole.consume(t);
     }

@@ -25,7 +25,7 @@ import java.util.stream.IntStream;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -36,11 +36,11 @@ import uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes;
 
 /**
  * How to run?
- * 
+ *
  * <code>
- * tornado-test.py -V --debug uk.ac.manchester.tornado.unittests.grid.TestGrid 
+ * tornado-test.py -V --debug uk.ac.manchester.tornado.unittests.grid.TestGrid
  * </code>
- * 
+ *
  */
 public class TestGrid extends TornadoTestBase {
 
@@ -69,7 +69,7 @@ public class TestGrid extends TornadoTestBase {
             b[i] = (float) Math.random();
         });
 
-        TaskSchedule ts = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .streamIn(a, b) //
                 .task("t0", TestArrays::vectorAddFloat, a, b, c) //
                 .streamOut(c); //
@@ -77,11 +77,11 @@ public class TestGrid extends TornadoTestBase {
         // Set the Grid with 4096 threads
         WorkerGrid1D worker = new WorkerGrid1D(4096);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
-        ts.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Change the Grid
         worker.setGlobalWork(512, 1, 1);
-        ts.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         for (int i = 0; i < 512; i++) {
             assertEquals(a[i] + b[i], c[i], 0.01f);
@@ -101,17 +101,17 @@ public class TestGrid extends TornadoTestBase {
             b[i] = (float) Math.random();
         });
 
-        TaskSchedule ts = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .streamIn(a, b) //
                 .task("t1", TestGrid::matrixMultiplication, a, b, c, numElements) //
                 .streamOut(c); //
 
         WorkerGrid2D worker = new WorkerGrid2D(numElements, numElements);
         GridScheduler gridScheduler = new GridScheduler("s0.t1", worker);
-        ts.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         worker.setLocalWork(32, 32, 1);
-        ts.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         matrixMultiplication(a, b, seq, numElements);
 
@@ -133,13 +133,13 @@ public class TestGrid extends TornadoTestBase {
         }
         Matrix2DInt matrixA = new Matrix2DInt(a);
         Matrix2DInt matrixB = new Matrix2DInt(X, Y);
-        TaskSchedule ts = new TaskSchedule("foo") //
+        TaskGraph taskGraph = new TaskGraph("foo") //
                 .task("bar", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
                 .streamOut(matrixB);
 
         WorkerGrid2D worker = new WorkerGrid2D(X, Y);
         GridScheduler gridScheduler = new GridScheduler("foo.bar", worker);
-        ts.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         for (int i = 0; i < X; i++) {
             for (int j = 0; j < Y; j++) {
@@ -168,7 +168,7 @@ public class TestGrid extends TornadoTestBase {
             b[i] = (float) Math.random();
         });
 
-        TaskSchedule ts = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .streamIn(a, b) //
                 .task("t0", TestArrays::vectorAddFloat, a, b, c) //
                 .task("t1", TestArrays::vectorAddFloat, a, b, c) //
@@ -178,11 +178,11 @@ public class TestGrid extends TornadoTestBase {
         WorkerGrid1D worker = new WorkerGrid1D(4096);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         gridScheduler.setWorkerGrid("s0.t1", worker); // share the same worker
-        ts.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Change the Grid
         worker.setGlobalWork(512, 1, 1);
-        ts.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         for (int i = 0; i < 512; i++) {
             assertEquals(a[i] + b[i], c[i], 0.01f);
@@ -202,7 +202,7 @@ public class TestGrid extends TornadoTestBase {
             matrixB[idx] = 3.5f;
         });
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("mxm", TestGrid::matrixMultiplication, matrixA, matrixB, matrixC, N) //
                 .streamOut(matrixC);
 
@@ -211,6 +211,6 @@ public class TestGrid extends TornadoTestBase {
         worker.setGlobalWork(N, N, 1);
         worker.setLocalWork(256, 256, 1);
 
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
     }
 }

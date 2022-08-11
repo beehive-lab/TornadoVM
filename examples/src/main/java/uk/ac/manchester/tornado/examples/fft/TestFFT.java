@@ -19,13 +19,13 @@ package uk.ac.manchester.tornado.examples.fft;
 
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 
 /**
  * Example of FFT provided by Nikos Foutris.
- * 
+ *
  * How to run:
- * 
+ *
  * <code>
  *     tornado uk.ac.manchester.tornado.examples.fft.TestFFT
  * </code>
@@ -98,7 +98,7 @@ public class TestFFT {
         int dummyFac = 2;
         int[] seq = new int[] { input[0], input[1] };
 
-        TaskSchedule s0 = new TaskSchedule("x0");
+        TaskGraph s0 = new TaskGraph("x0");
         s0.task("t0", TestFFT::nesting, input, dim, factors, size, dummyFac, dimArr);
         s0.streamOut(input);
         s0.execute();

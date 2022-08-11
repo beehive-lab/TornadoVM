@@ -27,7 +27,7 @@ import java.util.stream.IntStream;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
@@ -135,12 +135,12 @@ public class TestNewArrays extends TornadoTestBase {
         Arrays.fill(b, 20);
 
         //@formatter:off
-        TaskSchedule schedule = new TaskSchedule("s0")
+        TaskGraph taskGraph = new TaskGraph("s0")
                 .streamIn(a, b)
                 .task("t0", TestNewArrays::vectorAdd, a, b, c)
                 .streamOut(c);
         //@formatter:on
-        schedule.execute();
+        taskGraph.execute();
         vectorAdd(a, b, sequentialResult);
 
         for (int i = 0; i < size; i++) {
@@ -161,12 +161,12 @@ public class TestNewArrays extends TornadoTestBase {
         Arrays.fill(b, 20);
 
         //@formatter:off
-        TaskSchedule schedule = new TaskSchedule("s0")
+        TaskGraph taskGraph = new TaskGraph("s0")
                 .streamIn(a, b)
                 .task("t0", TestNewArrays::vectorAddComplexConditions, a, b, c)
                 .streamOut(c);
         //@formatter:on
-        schedule.execute();
+        taskGraph.execute();
         vectorAddComplexConditions(a, b, sequentialResult);
 
         for (int i = 0; i < size; i++) {
@@ -185,12 +185,12 @@ public class TestNewArrays extends TornadoTestBase {
             dataSeq[i] = data[i];
         });
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        assertNotNull(s0);
+        TaskGraph taskGraph = new TaskGraph("s0");
+        assertNotNull(taskGraph);
 
-        s0.task("t0", TestNewArrays::initializeToOne, data);
-        s0.streamOut(data);
-        s0.execute();
+        taskGraph.task("t0", TestNewArrays::initializeToOne, data);
+        taskGraph.streamOut(data);
+        taskGraph.execute();
 
         initializeToOne(dataSeq);
 
@@ -210,12 +210,12 @@ public class TestNewArrays extends TornadoTestBase {
             dataSeq[i] = data[i];
         });
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        assertNotNull(s0);
+        TaskGraph taskGraph = new TaskGraph("s0");
+        assertNotNull(taskGraph);
 
-        s0.task("t0", TestNewArrays::initializeToOneParallelScope, data);
-        s0.streamOut(data);
-        s0.execute();
+        taskGraph.task("t0", TestNewArrays::initializeToOneParallelScope, data);
+        taskGraph.streamOut(data);
+        taskGraph.execute();
 
         initializeToOneParallelScope(dataSeq);
 
@@ -235,12 +235,12 @@ public class TestNewArrays extends TornadoTestBase {
             dataSeq[i] = data[i];
         });
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        assertNotNull(s0);
+        TaskGraph taskGraph = new TaskGraph("s0");
+        assertNotNull(taskGraph);
 
-        s0.task("t0", TestNewArrays::initializeToOneParallelScopeComplex, data);
-        s0.streamOut(data);
-        s0.execute();
+        taskGraph.task("t0", TestNewArrays::initializeToOneParallelScopeComplex, data);
+        taskGraph.streamOut(data);
+        taskGraph.execute();
 
         initializeToOneParallelScopeComplex(dataSeq);
 
@@ -260,12 +260,12 @@ public class TestNewArrays extends TornadoTestBase {
             dataSeq[i] = data[i];
         });
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        assertNotNull(s0);
+        TaskGraph taskGraph = new TaskGraph("s0");
+        assertNotNull(taskGraph);
 
-        s0.task("t0", TestNewArrays::initializeToOneParallel, data);
-        s0.streamOut(data);
-        s0.execute();
+        taskGraph.task("t0", TestNewArrays::initializeToOneParallel, data);
+        taskGraph.streamOut(data);
+        taskGraph.execute();
 
         initializeToOneParallel(dataSeq);
 
@@ -286,12 +286,12 @@ public class TestNewArrays extends TornadoTestBase {
             input[i] = r.nextFloat();
         });
 
-        TaskSchedule task = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .streamIn(input) //
                 .task("t0", TestNewArrays::reductionAddFloats, input, result) //
                 .streamOut(result); //
 
-        task.execute();
+        taskGraph.execute();
 
         float[] sequential = new float[1];
         reductionAddFloats(input, sequential);
