@@ -43,6 +43,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
 public class JMHRotateImage {
@@ -71,7 +72,7 @@ public class JMHRotateImage {
             }
 
             taskGraph = new TaskGraph("benchmark") //
-                    .streamIn(input) //
+                    .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
                     .task("rotateImage", GraphicsKernels::rotateImage, output, m, input) //
                     .streamOut(output);
             taskGraph.warmup();

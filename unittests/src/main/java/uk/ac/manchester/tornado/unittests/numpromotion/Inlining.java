@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -42,7 +43,7 @@ public class Inlining extends TornadoTestBase {
         byte[] input = new byte[] { 127, 127, 127, 127, 1, 1, 1, 1 };
 
         new TaskGraph("s0") //
-                .streamIn(result, input, elements) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, result, input, elements) //
                 .task("t0", Inlining::bitwiseOr, result, input, elements) //
                 .streamOut(result) //
                 .execute();
@@ -107,7 +108,7 @@ public class Inlining extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("foo");
-        taskGraph.streamIn(rgbBytes) //
+        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, rgbBytes) //
                 .task("grey", Inlining::rgbToGreyKernel, rgbBytes, greyInts)//
                 .streamOut(greyInts) //
                 .execute();
@@ -131,7 +132,7 @@ public class Inlining extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("foo");
-        taskGraph.streamIn(rgbBytes) //
+        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, rgbBytes) //
                 .task("grey", Inlining::rgbToGreyKernelInt, rgbBytes, greyInts)//
                 .streamOut(greyInts) //
                 .execute();
@@ -156,7 +157,7 @@ public class Inlining extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.streamIn(rgbBytes) //
+        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, rgbBytes) //
                 .task("t0", Inlining::rgbToGreyKernelSmall, rgbBytes, greyInts)//
                 .streamOut(greyInts) //
                 .execute();
@@ -178,7 +179,7 @@ public class Inlining extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.streamIn(rgbBytes) //
+        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, rgbBytes) //
                 .task("t0", Inlining::b2i, rgbBytes, greyInts)//
                 .streamOut(greyInts) //
                 .execute();

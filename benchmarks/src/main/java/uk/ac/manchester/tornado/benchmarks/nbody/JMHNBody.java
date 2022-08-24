@@ -41,6 +41,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 public class JMHNBody {
@@ -81,7 +82,7 @@ public class JMHNBody {
             }
 
             taskGraph = new TaskGraph("benchmark") //
-                    .streamIn(velSeq, posSeq) //
+                    .copyIn(DataTransferMode.EVERY_EXECUTION, velSeq, posSeq) //
                     .task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
             taskGraph.warmup();
         }

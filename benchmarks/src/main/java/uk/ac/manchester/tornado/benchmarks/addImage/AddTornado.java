@@ -25,6 +25,7 @@ import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
@@ -64,7 +65,7 @@ public class AddTornado extends BenchmarkDriver {
     public void setUp() {
         initData();
         taskGraph = new TaskGraph("benchmark") //
-                .streamIn(a, b) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("addImage", GraphicsKernels::addImage, a, b, c) //
                 .streamOut(c);
         taskGraph.warmup();

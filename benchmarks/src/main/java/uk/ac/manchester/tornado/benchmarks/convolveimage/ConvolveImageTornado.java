@@ -24,6 +24,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
@@ -55,7 +56,7 @@ public class ConvolveImageTornado extends BenchmarkDriver {
         createFilter(filter);
 
         taskGraph = new TaskGraph("benchmark");
-        taskGraph.streamIn(input);
+        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, input);
         taskGraph.task("convolveImage", GraphicsKernels::convolveImage, input, filter, output);
         taskGraph.streamOut(output);
         taskGraph.warmup();

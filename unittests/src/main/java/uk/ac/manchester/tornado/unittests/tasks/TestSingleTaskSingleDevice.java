@@ -27,6 +27,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -58,7 +59,7 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .streamIn(a, b)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
             .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)
             .streamOut(c)
             .execute();
@@ -88,7 +89,7 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
         taskGraph.setDevice(driver.getDevice(deviceNumber));
 
         //@formatter:off
-        taskGraph.streamIn(a, b)
+        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
             .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)
             .streamOut(c)
             .execute();
@@ -123,7 +124,7 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
         taskGraph.setDevice(driver.getDevice(deviceNumber));
 
         //@formatter:off
-		taskGraph.streamIn(a, b)
+		taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
 		  .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)
 		  .streamOut(c)
 		  .execute();

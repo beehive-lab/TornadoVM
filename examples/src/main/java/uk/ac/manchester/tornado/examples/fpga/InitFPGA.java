@@ -22,6 +22,7 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Initialize an FPGA kernel. It performs a copy-in and copy-out of the same
@@ -88,7 +89,7 @@ public class InitFPGA {
 
         // @formatter:off
         TaskGraph s0 = new TaskGraph("s0")
-                .streamIn(x)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, x)
                 .task("t0", InitFPGA::init, x)
                 .streamOut(x);
         // @formatter:on

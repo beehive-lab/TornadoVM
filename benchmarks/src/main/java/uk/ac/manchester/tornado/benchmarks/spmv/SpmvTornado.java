@@ -23,6 +23,7 @@ import static uk.ac.manchester.tornado.benchmarks.spmv.Benchmark.initData;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 import uk.ac.manchester.tornado.matrix.SparseMatrixUtils.CSRMatrix;
@@ -45,7 +46,7 @@ public class SpmvTornado extends BenchmarkDriver {
         y = new float[matrix.size];
         initData(v);
         taskGraph = new TaskGraph("benchmark") //
-                .streamIn(matrix.vals, matrix.cols, matrix.rows, v, y) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, matrix.vals, matrix.cols, matrix.rows, v, y) //
                 .task("spmv", LinearAlgebraArrays::spmv, matrix.vals, matrix.cols, matrix.rows, v, matrix.size, y) //
                 .streamOut(y);
         taskGraph.warmup();

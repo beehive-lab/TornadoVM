@@ -58,6 +58,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Base interface of the Tornado API. It exposes the set of operations within a
@@ -560,14 +561,7 @@ public interface TornadoAPI {
 
     TornadoAPI mapAllTo(TornadoDevice device);
 
-    /**
-     * Open a stream channel between the host and the target device.
-     *
-     * @param objects
-     *            list of input objects to be streamed.
-     * @return link to the {@TornadoAPI} to allow function composition.
-     */
-    TornadoAPI streamIn(Object... objects);
+    TornadoAPI copyIn(DataTransferMode mode, Object... objects);
 
     TornadoAPI forceCopyIn(Object... objects);
 
@@ -646,16 +640,18 @@ public interface TornadoAPI {
     void clearProfiles();
 
     /**
-     * Locks this object on the device memory. If a {@link TaskGraph} is executed multiple times, then
-     * this object will be copied in only for the first execution.
+     * Locks this object on the device memory. If a {@link TaskGraph} is executed
+     * multiple times, then this object will be copied in only for the first
+     * execution.
      */
     TornadoAPI lockObjectInMemory(Object object);
 
     TornadoAPI lockObjectsInMemory(Object... objects);
 
     /**
-     * Unlocks this object from the device memory. The object must have been previously locked in order to unlock it.
-     * Once the object has been unlocked, it will be copied in on every subsequent execution of the {@link TaskGraph}.
+     * Unlocks this object from the device memory. The object must have been
+     * previously locked in order to unlock it. Once the object has been unlocked,
+     * it will be copied in on every subsequent execution of the {@link TaskGraph}.
      */
     TornadoAPI unlockObjectFromMemory(Object object);
 

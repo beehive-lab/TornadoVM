@@ -41,6 +41,7 @@ import uk.ac.manchester.tornado.api.collections.types.Byte3;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -540,7 +541,7 @@ public class ComputeTests extends TornadoTestBase {
         IntStream.range(0, size).forEach(i -> input[i] = random.nextFloat());
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(input) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", ComputeTests::blackScholesKernel, input, callPrice, putPrice) //
                 .streamOut(callPrice, putPrice);
 
@@ -626,7 +627,7 @@ public class ComputeTests extends TornadoTestBase {
         long[] outputE = new long[size];
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(input) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("s0", ComputeTests::euler, size, input, outputA, outputB, outputC, outputD, outputE) //
                 .streamOut(outputA, outputB, outputC, outputD, outputE);
         taskGraph.execute();

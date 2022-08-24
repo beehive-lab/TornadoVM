@@ -22,6 +22,7 @@ import java.util.Random;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -76,7 +77,7 @@ public class BlurFilterTornado extends BenchmarkDriver {
         }
 
         taskGraph = new TaskGraph("benchmark") //
-                .streamIn(redChannel, greenChannel, blueChannel) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, redChannel, greenChannel, blueChannel) //
                 .task("blurRed", ComputeKernels::channelConvolution, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
                 .task("blurGreen", ComputeKernels::channelConvolution, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
                 .task("blurBlue", ComputeKernels::channelConvolution, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
@@ -135,7 +136,7 @@ public class BlurFilterTornado extends BenchmarkDriver {
         }
 
         TaskGraph parallelFilter = new TaskGraph("blur") //
-                .streamIn(redChannel, greenChannel, blueChannel) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, redChannel, greenChannel, blueChannel) //
                 .task("red", ComputeKernels::channelConvolution, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
                 .task("green", ComputeKernels::channelConvolution, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
                 .task("blue", ComputeKernels::channelConvolution, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //

@@ -30,6 +30,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -85,7 +86,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(a, b) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication1D, context, a, b, cTornado, size) //
                 .streamOut(cTornado);
         taskGraph.execute(gridScheduler);
@@ -128,7 +129,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(a, b) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication2D01, context, a, b, cTornado, size) //
                 .streamOut(cTornado);
         taskGraph.execute(gridScheduler);
@@ -196,7 +197,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(a, b) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication2D02, context, a, b, cTornado, size) //
                 .streamOut(cTornado);
         worker.setLocalWork(TS, TS, 1);

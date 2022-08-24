@@ -28,6 +28,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -129,7 +130,7 @@ public class TestHello extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .streamIn(a)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, a)
             .task("t0", t::compute, a, b)
             .streamOut(b)
             .execute();

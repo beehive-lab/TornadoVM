@@ -44,6 +44,7 @@ import org.openjdk.jmh.runner.options.TimeValue;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
 public class JMHDotVector {
@@ -72,7 +73,7 @@ public class JMHDotVector {
                 b.set(i, new Float3(rb));
             }
             taskGraph = new TaskGraph("benchmark")//
-                    .streamIn(a, b) //
+                    .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
                     .task("dotVector", GraphicsKernels::dotVector, a, b, c) //
                     .streamOut(c);
             taskGraph.warmup();

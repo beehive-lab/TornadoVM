@@ -25,6 +25,7 @@ import java.util.Random;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
@@ -63,7 +64,7 @@ public class DgemmTornado extends BenchmarkDriver {
         taskGraph = new TaskGraph("benchmark");
         if (!USE_PREBUILT) {
 
-            taskGraph.streamIn(a, b) //
+            taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
                     .task("dgemm", LinearAlgebraArrays::dgemm, m, n, n, a, b, c) //
                     .streamOut(c);
             taskGraph.warmup();

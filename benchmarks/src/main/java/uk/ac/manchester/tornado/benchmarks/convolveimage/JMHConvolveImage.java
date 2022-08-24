@@ -43,6 +43,7 @@ import org.openjdk.jmh.runner.options.TimeValue;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
 public class JMHConvolveImage {
@@ -69,7 +70,7 @@ public class JMHConvolveImage {
             createFilter(filter);
 
             taskGraph = new TaskGraph("benchmark") //
-                    .streamIn(input).task("convolveImage", GraphicsKernels::convolveImage, input, filter, output) //
+                    .copyIn(DataTransferMode.EVERY_EXECUTION, input).task("convolveImage", GraphicsKernels::convolveImage, input, filter, output) //
                     .streamOut(output);
             taskGraph.warmup();
         }

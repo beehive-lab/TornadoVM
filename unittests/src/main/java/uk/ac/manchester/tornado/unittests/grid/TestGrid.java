@@ -30,6 +30,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DInt;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.arrays.TestArrays;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes;
@@ -70,7 +71,7 @@ public class TestGrid extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(a, b) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestArrays::vectorAddFloat, a, b, c) //
                 .streamOut(c); //
 
@@ -102,7 +103,7 @@ public class TestGrid extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(a, b) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t1", TestGrid::matrixMultiplication, a, b, c, numElements) //
                 .streamOut(c); //
 
@@ -169,7 +170,7 @@ public class TestGrid extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(a, b) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestArrays::vectorAddFloat, a, b, c) //
                 .task("t1", TestArrays::vectorAddFloat, a, b, c) //
                 .streamOut(c); //

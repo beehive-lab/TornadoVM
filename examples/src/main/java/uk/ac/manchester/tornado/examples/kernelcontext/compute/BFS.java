@@ -30,6 +30,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 /**
@@ -224,7 +225,7 @@ public class BFS {
 
         TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
         TaskGraph s1 = new TaskGraph("s1");
-        s1.streamIn(vertices, adjacencyMatrix, modify, currentDepth).mapAllTo(device);
+        s1.copyIn(DataTransferMode.EVERY_EXECUTION, vertices, adjacencyMatrix, modify, currentDepth).mapAllTo(device);
         s1.task("t1", BFS::runBFS, context, vertices, adjacencyMatrix, numNodes, modify, currentDepth);
         s1.streamOut(vertices, modify);
 

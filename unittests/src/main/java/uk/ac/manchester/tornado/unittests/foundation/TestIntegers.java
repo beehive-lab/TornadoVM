@@ -25,6 +25,7 @@ import java.util.Arrays;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -54,7 +55,7 @@ public class TestIntegers extends TornadoTestBase {
         Arrays.fill(expectedResult, 50);
 
         new TaskGraph("s1") //
-                .streamIn(a) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t1", TestKernels::copyTest, a) //
                 .streamOut(a) //
                 .execute(); //

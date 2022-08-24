@@ -24,11 +24,12 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- * Testing Tornado with multiple tasks in the same device. The
- * {@link TaskGraph} contains more than one task.
+ * Testing Tornado with multiple tasks in the same device. The {@link TaskGraph}
+ * contains more than one task.
  *
  */
 public class TestMultipleTasksSingleDevice extends TornadoTestBase {
@@ -65,7 +66,7 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-		    .streamIn(a, b)
+		    .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
 		    .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)
 		    .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)
 		    .streamOut(a)
@@ -85,7 +86,7 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .streamIn(a, b)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
             .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)
             .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)
             .task("t3", TestMultipleTasksSingleDevice::task2Saxpy, a, a, b, 12)
@@ -108,7 +109,7 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .streamIn(a, b)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
             .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)
             .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)
             .task("t2", TestMultipleTasksSingleDevice::task0Initialization, b)
@@ -132,7 +133,7 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .streamIn(a, b)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
             .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)
             .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)
             .task("t2", TestMultipleTasksSingleDevice::task0Initialization, b)

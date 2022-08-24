@@ -18,7 +18,9 @@
 
 package uk.ac.manchester.tornado.examples.dynamic;
 
-import java.awt.*;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -26,10 +28,11 @@ import java.io.File;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
-import javax.swing.*;
+import javax.swing.JFrame;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Program taken from the Marawacc parallel programming framework with the
@@ -114,7 +117,7 @@ public class GrayscaleMT {
 
             if (tornadoTask == null) {
                 tornadoTask = new TaskGraph("s0");
-                tornadoTask.streamIn(imageRGB).task("t0", LoadImage::compute1D, imageRGB, w, s).streamOut(imageRGB);
+                tornadoTask.copyIn(DataTransferMode.EVERY_EXECUTION, imageRGB).task("t0", LoadImage::compute1D, imageRGB, w, s).streamOut(imageRGB);
 
             }
             long taskStart = System.nanoTime();
@@ -188,7 +191,7 @@ public class GrayscaleMT {
                 final int current = idx;
                 int lowBound = current * balk;
                 int upperBound = (current + 1) * balk;
-                if(current==maxThreadCount-1) {
+                if (current == maxThreadCount - 1) {
                     upperBound = imageRGB.length;
                 }
                 int finalUpperBound = upperBound;

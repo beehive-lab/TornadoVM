@@ -21,6 +21,7 @@ import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -52,7 +53,7 @@ public class DFTTornado extends BenchmarkDriver {
     public void setUp() {
         initData();
         taskGraph = new TaskGraph("benchmark") //
-                .streamIn(inReal, inImag) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, inReal, inImag) //
                 .task("t0", ComputeKernels::computeDFT, inReal, inImag, outReal, outImag) //
                 .streamOut(outReal, outImag);
         taskGraph.warmup();

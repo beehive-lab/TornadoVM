@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -166,7 +167,7 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s01.t0", worker);
 
         TaskGraph taskGraph = new TaskGraph("s01") //
-                .streamIn(a, b) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestCombinedTaskGraph::vectorAddV1, a, b, cTornado) //
                 .task("t1", TestCombinedTaskGraph::vectorMulV1, cTornado, b, cTornado) //
                 .task("t2", TestCombinedTaskGraph::vectorSubV1, cTornado, b, cTornado) //
@@ -209,7 +210,7 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s02") //
-                .streamIn(a, b) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestCombinedTaskGraph::vectorAddV2, context, a, b, cTornado) //
                 .task("t1", TestCombinedTaskGraph::vectorMulV2, context, cTornado, b, cTornado) //
                 .task("t2", TestCombinedTaskGraph::vectorSubV2, context, cTornado, b, cTornado) //
@@ -248,7 +249,7 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s03") //
-                .streamIn(a, b) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestCombinedTaskGraph::vectorAddV1, a, b, cTornado) //
                 .task("t1", TestCombinedTaskGraph::vectorMulV2, context, cTornado, b, cTornado) //
                 .task("t2", TestCombinedTaskGraph::vectorSubV2, context, cTornado, b, cTornado) //
@@ -287,7 +288,7 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s04") //
-                .streamIn(a, b) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestCombinedTaskGraph::vectorAddV2, context, a, b, cTornado) //
                 .task("t1", TestCombinedTaskGraph::vectorMulV2, context, cTornado, b, cTornado) //
                 .task("t2", TestCombinedTaskGraph::vectorSubV1, cTornado, b, cTornado) //
@@ -327,7 +328,7 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s05") //
-                .streamIn(a, b) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestCombinedTaskGraph::vectorAddV2, context, a, b, cTornado) //
                 .task("t1", TestCombinedTaskGraph::vectorMulV2, context, cTornado, b, cTornado) //
                 .task("t2", TestCombinedTaskGraph::vectorSubV1, cTornado, b, cTornado) //

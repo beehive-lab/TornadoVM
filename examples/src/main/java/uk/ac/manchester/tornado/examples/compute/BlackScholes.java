@@ -23,6 +23,7 @@ import java.util.Random;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * BlackScholes implementation adapted from AMD-OpenCL examples and Marawacc
@@ -107,7 +108,7 @@ public class BlackScholes {
         }
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(input) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", BlackScholes::blackScholesKernel, input, callPrice, putPrice) //
                 .streamOut(callPrice, putPrice);
 

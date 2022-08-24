@@ -38,6 +38,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 public class JMHEuler {
@@ -71,7 +72,7 @@ public class JMHEuler {
             outputD = new long[size];
             outputE = new long[size];
             taskGraph = new TaskGraph("s0") //
-                    .streamIn(input) //
+                    .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
                     .task("s0", ComputeKernels::euler, size, input, outputA, outputB, outputC, outputD, outputE) //
                     .streamOut(outputA, outputB, outputC, outputD, outputE);
             taskGraph.warmup();

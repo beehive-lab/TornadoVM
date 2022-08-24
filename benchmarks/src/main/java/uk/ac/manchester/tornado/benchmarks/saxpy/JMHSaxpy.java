@@ -40,6 +40,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
 public class JMHSaxpy {
@@ -63,7 +64,7 @@ public class JMHSaxpy {
             }
 
             taskGraph = new TaskGraph("benchmark") //
-                    .streamIn(x) //
+                    .copyIn(DataTransferMode.EVERY_EXECUTION, x) //
                     .task("saxpy", LinearAlgebraArrays::saxpy, alpha, x, y) //
                     .streamOut(y);
             taskGraph.warmup();

@@ -33,6 +33,7 @@ import uk.ac.manchester.tornado.api.TornadoVM_Intrinsics;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
@@ -283,7 +284,7 @@ public class TestAtomics extends TornadoTestBase {
         Arrays.fill(b, 1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(a, b) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestAtomics::atomic06, a, b) //
                 .streamOut(a, b); //
 
@@ -371,7 +372,7 @@ public class TestAtomics extends TornadoTestBase {
         AtomicInteger ai = new AtomicInteger(initialValue);
 
         new TaskGraph("s0") //
-                .streamIn(a, ai) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, ai) //
                 .task("t0", TestAtomics::atomic09, a, ai) //
                 .streamOut(a, ai) //
                 .execute();
@@ -559,7 +560,7 @@ public class TestAtomics extends TornadoTestBase {
         AtomicInteger ai = new AtomicInteger(initialValueA);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(ai) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, ai) //
                 .task("t0", TestAtomics::atomic16, a, ai) //
                 .streamOut(ai, a);
 

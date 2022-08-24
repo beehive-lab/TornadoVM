@@ -63,6 +63,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
 import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
@@ -266,7 +267,7 @@ public class TaskGraph implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public TaskGraph streamIn(Object... objects) {
+    public TaskGraph copyIn(DataTransferMode mode, Object... objects) {
         taskScheduleImpl.streamInInner(objects);
         return this;
     }

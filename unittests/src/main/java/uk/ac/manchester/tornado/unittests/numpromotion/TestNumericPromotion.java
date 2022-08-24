@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -139,7 +140,7 @@ public class TestNumericPromotion extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(result, input, elements)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, result, input, elements)
                 .task("t0", TestNumericPromotion::bitwiseOr, result, input, elements)
                 .streamOut(result)
                 .execute();
@@ -161,7 +162,7 @@ public class TestNumericPromotion extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(result, input, elements)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, result, input, elements)
                 .task("t0", TestNumericPromotion::bitwiseAnd, result, input, elements)
                 .streamOut(result)
                 .execute();
@@ -183,7 +184,7 @@ public class TestNumericPromotion extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(result, input, elements)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, result, input, elements)
                 .task("t0", TestNumericPromotion::bitwiseXor, result, input, elements)
                 .streamOut(result)
                 .execute();
@@ -206,7 +207,7 @@ public class TestNumericPromotion extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(input)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input)
                 .task("t0", TestNumericPromotion::bitwiseNot, result, input)
                 .streamOut(result)
                 .execute();
@@ -228,7 +229,7 @@ public class TestNumericPromotion extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(result, input, elements)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, result, input, elements)
                 .task("t0", TestNumericPromotion::addition, result, input, elements)
                 .streamOut(result)
                 .execute();
@@ -250,7 +251,7 @@ public class TestNumericPromotion extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(result, input, elements)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, result, input, elements)
                 .task("t0", TestNumericPromotion::subtraction, result, input, elements)
                 .streamOut(result)
                 .execute();
@@ -272,7 +273,7 @@ public class TestNumericPromotion extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(result, input, elements)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, result, input, elements)
                 .task("t0", TestNumericPromotion::multiplication, result, input, elements)
                 .streamOut(result)
                 .execute();
@@ -294,7 +295,7 @@ public class TestNumericPromotion extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(result, input, elements)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, result, input, elements)
                 .task("t0", TestNumericPromotion::division, result, input, elements)
                 .streamOut(result)
                 .execute();
@@ -316,7 +317,7 @@ public class TestNumericPromotion extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(result, input, elements)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, result, input, elements)
                 .task("t0", TestNumericPromotion::signedLeftShift, result, input, elements)
                 .streamOut(result)
                 .execute();
@@ -338,7 +339,7 @@ public class TestNumericPromotion extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(result, input, elements)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, result, input, elements)
                 .task("t0", TestNumericPromotion::signedRightShift, result, input, elements)
                 .streamOut(result)
                 .execute();
@@ -360,7 +361,7 @@ public class TestNumericPromotion extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(result, input, elements)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, result, input, elements)
                 .task("t0", TestNumericPromotion::unsignedRightShift, result, input, elements)
                 .streamOut(result)
                 .execute();

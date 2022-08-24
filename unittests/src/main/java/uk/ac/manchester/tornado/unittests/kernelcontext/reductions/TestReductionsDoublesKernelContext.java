@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -101,7 +102,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(input, localSize) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input, localSize) //
                 .task("t0", TestReductionsDoublesKernelContext::doubleReductionAddGlobalMemory, context, input, reduce) //
                 .streamOut(reduce);
 
@@ -175,7 +176,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(input, localSize) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input, localSize) //
                 .task("t0", TestReductionsDoublesKernelContext::doubleReductionAddLocalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
@@ -231,7 +232,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(input, localSize) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input, localSize) //
                 .task("t0", TestReductionsDoublesKernelContext::doubleReductionMaxGlobalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
@@ -281,7 +282,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(input, localSize) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input, localSize) //
                 .task("t0", TestReductionsDoublesKernelContext::doubleReductionMaxLocalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
@@ -337,7 +338,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(input, localSize) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input, localSize) //
                 .task("t0", TestReductionsDoublesKernelContext::doubleReductionMinGlobalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid
@@ -387,7 +388,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(input, localSize) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input, localSize) //
                 .task("t0", TestReductionsDoublesKernelContext::doubleReductionMinLocalMemory, context, input, reduce) //
                 .streamOut(reduce);
         // Change the Grid

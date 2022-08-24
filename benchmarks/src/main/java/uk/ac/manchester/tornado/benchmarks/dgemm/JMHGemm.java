@@ -41,6 +41,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
 public class JMHGemm {
@@ -71,7 +72,7 @@ public class JMHGemm {
             }
 
             taskGraph = new TaskGraph("benchmark")//
-                    .streamIn(a, b) //
+                    .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
                     .task("dgemm", LinearAlgebraArrays::dgemm, m, n, n, a, b, c) //
                     .streamOut(c);
             taskGraph.warmup();

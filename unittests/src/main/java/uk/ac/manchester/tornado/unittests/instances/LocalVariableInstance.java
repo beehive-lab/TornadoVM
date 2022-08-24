@@ -24,6 +24,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Execute:
@@ -95,7 +96,7 @@ public class LocalVariableInstance {
 
         // @formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-                .streamIn(in)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, in)
                 .task("t0", msk::map, in, out)
                 .streamOut(out);
         // @formatter:on

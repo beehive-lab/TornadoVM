@@ -28,6 +28,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -401,7 +402,7 @@ public class TestLoops extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(a)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a)
                 .task("t0", TestLoops::conditionalInLoop, a)
                 .streamOut(a)
                 .execute();
@@ -434,7 +435,7 @@ public class TestLoops extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(a)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a)
                 .task("t0", TestLoops::conditionalInLoop2, a)
                 .streamOut(a)
                 .execute();
@@ -608,7 +609,7 @@ public class TestLoops extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(a)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a)
                 .task("t0", TestLoops::controlFlowBreak, a)
                 .streamOut(a)
                 .execute();

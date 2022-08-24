@@ -5,6 +5,7 @@ import java.util.Arrays;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 /**
@@ -70,7 +71,7 @@ public class TestPrecompiledSPIRV {
 
         // @formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-                .streamIn(a)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a)
                 .prebuiltTask("t0",
                         "copyTest",
                         filePath,

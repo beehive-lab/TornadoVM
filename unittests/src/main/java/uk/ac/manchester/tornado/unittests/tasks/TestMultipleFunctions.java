@@ -28,6 +28,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -177,7 +178,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(a, b)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
                 .task("t0", TestMultipleFunctions::vectorAddInteger, a, b, c)
                 .streamOut(c)
                 .execute();
@@ -204,7 +205,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(a, b)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
                 .task("t0", TestMultipleFunctions::vectorAddInteger2, a, b, c)
                 .streamOut(c)
                 .execute();
@@ -231,7 +232,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(a, b)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
                 .task("t0", TestMultipleFunctions::vectorAddInteger3, a, b, c)
                 .streamOut(c)
                 .execute();
@@ -258,7 +259,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(a, b)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
                 .task("t0", TestMultipleFunctions::vectorAddInteger4, a, b, c)
                 .streamOut(c)
                 .execute();
@@ -285,7 +286,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(a, b)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
                 .task("t0", TestMultipleFunctions::vectorAddFloats, a, b, c)
                 .streamOut(c)
                 .execute();
@@ -311,7 +312,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(a, b)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
                 .task("t0", TestMultipleFunctions::vectorTypes, a, b, c)
                 .streamOut(c)
                 .execute();

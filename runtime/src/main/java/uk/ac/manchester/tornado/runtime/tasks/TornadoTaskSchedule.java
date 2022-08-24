@@ -83,6 +83,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
@@ -95,7 +96,6 @@ import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
-
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
@@ -199,62 +199,63 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         vmTable = new HashMap<>();
     }
 
-    static void performStreamInThread(TaskGraph task, ArrayList<Object> inputObjects) {
+    static void performStreamInThread(TaskGraph task, ArrayList<Object> inputObjects, DataTransferMode mode) {
         int numObjectsCopyIn = inputObjects.size();
         switch (numObjectsCopyIn) {
             case 0:
                 break;
             case 1:
-                task.streamIn(inputObjects.get(0));
+                task.copyIn(mode, inputObjects.get(0));
                 break;
             case 2:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1));
+                task.copyIn(mode, inputObjects.get(0), inputObjects.get(1));
                 break;
             case 3:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2));
+                task.copyIn(mode, inputObjects.get(0), inputObjects.get(1), inputObjects.get(2));
                 break;
             case 4:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3));
+                task.copyIn(mode, inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3));
                 break;
             case 5:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4));
+                task.copyIn(mode, inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4));
                 break;
             case 6:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5));
+                task.copyIn(mode, inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5));
                 break;
             case 7:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6));
+                task.copyIn(mode, inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6));
                 break;
             case 8:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7));
+                task.copyIn(mode, inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6),
+                        inputObjects.get(7));
                 break;
             case 9:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
-                        inputObjects.get(8));
+                task.copyIn(mode, inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6),
+                        inputObjects.get(7), inputObjects.get(8));
                 break;
             case 10:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
-                        inputObjects.get(8), inputObjects.get(9));
+                task.copyIn(mode, inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6),
+                        inputObjects.get(7), inputObjects.get(8), inputObjects.get(9));
                 break;
             case 11:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
-                        inputObjects.get(8), inputObjects.get(9), inputObjects.get(10));
+                task.copyIn(mode, inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6),
+                        inputObjects.get(7), inputObjects.get(8), inputObjects.get(9), inputObjects.get(10));
                 break;
             case 12:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
-                        inputObjects.get(8), inputObjects.get(9), inputObjects.get(10), inputObjects.get(11));
+                task.copyIn(mode, inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6),
+                        inputObjects.get(7), inputObjects.get(8), inputObjects.get(9), inputObjects.get(10), inputObjects.get(11));
                 break;
             case 13:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
-                        inputObjects.get(8), inputObjects.get(9), inputObjects.get(10), inputObjects.get(11), inputObjects.get(12));
+                task.copyIn(mode, inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6),
+                        inputObjects.get(7), inputObjects.get(8), inputObjects.get(9), inputObjects.get(10), inputObjects.get(11), inputObjects.get(12));
                 break;
             case 14:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
-                        inputObjects.get(8), inputObjects.get(9), inputObjects.get(10), inputObjects.get(11), inputObjects.get(12), inputObjects.get(13));
+                task.copyIn(mode, inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6),
+                        inputObjects.get(7), inputObjects.get(8), inputObjects.get(9), inputObjects.get(10), inputObjects.get(11), inputObjects.get(12), inputObjects.get(13));
                 break;
             case 15:
-                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
-                        inputObjects.get(8), inputObjects.get(9), inputObjects.get(10), inputObjects.get(11), inputObjects.get(12), inputObjects.get(13), inputObjects.get(14));
+                task.copyIn(mode, inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6),
+                        inputObjects.get(7), inputObjects.get(8), inputObjects.get(9), inputObjects.get(10), inputObjects.get(11), inputObjects.get(12), inputObjects.get(13), inputObjects.get(14));
                 break;
             default:
                 System.out.println("COPY-IN Not supported yet: " + numObjectsCopyIn);
@@ -1240,7 +1241,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 Thread.currentThread().setName("Thread-DEV: " + TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(taskScheduleNumber).getPhysicalDevice().getDeviceName());
 
                 long start = timer.time();
-                performStreamInThread(task, streamInObjects);
+                performStreamInThread(task, streamInObjects, DataTransferMode.EVERY_EXECUTION);
                 for (int k = 0; k < taskPackages.size(); k++) {
                     String taskID = taskPackages.get(k).getId();
                     TornadoRuntime.setProperty(newTaskScheduleName + "." + taskID + ".device", "0:" + taskScheduleNumber);
@@ -1334,7 +1335,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         // Force re-compilation in device <deviceWinnerIndex>
         String newTaskScheduleName = TASK_SCHEDULE_PREFIX + deviceWinnerIndex;
         TaskGraph taskToCompile = new TaskGraph(newTaskScheduleName);
-        performStreamInThread(taskToCompile, streamInObjects);
+        performStreamInThread(taskToCompile, streamInObjects, DataTransferMode.EVERY_EXECUTION);
         for (TaskPackage taskPackage : taskPackages) {
             String taskID = taskPackage.getId();
             TornadoRuntime.setProperty(newTaskScheduleName + "." + taskID + ".device", "0:" + deviceWinnerIndex);
@@ -1446,7 +1447,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             TaskGraph task = new TaskGraph(newTaskScheduleName);
 
             long start = timer.time();
-            performStreamInThread(task, streamInObjects);
+            performStreamInThread(task, streamInObjects, DataTransferMode.EVERY_EXECUTION);
 
             boolean ignoreTask = false;
             for (int k = 0; k < taskPackages.size(); k++) {

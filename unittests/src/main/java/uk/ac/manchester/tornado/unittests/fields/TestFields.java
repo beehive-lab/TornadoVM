@@ -28,6 +28,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -189,7 +190,7 @@ public class TestFields extends TornadoTestBase {
         final A a = new A(b);
 
         TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.streamIn(a);
+        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, a);
         taskGraph.task("t0", TestFields::setField, a, 77f);
         taskGraph.streamOut(a);
         taskGraph.execute();
@@ -213,7 +214,7 @@ public class TestFields extends TornadoTestBase {
         final A a = new A(b);
 
         TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.streamIn(a);
+        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, a);
         taskGraph.task("t0", TestFields::setNestedField, a, 77f);
         taskGraph.streamOut(a);
         taskGraph.execute();
@@ -234,7 +235,7 @@ public class TestFields extends TornadoTestBase {
         Arrays.fill(b.someArray, 2);
 
         TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.streamIn(a);
+        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, a);
         taskGraph.task("t0", TestFields::setNestedArray, a, indexes);
         taskGraph.streamOut(a);
         taskGraph.execute();

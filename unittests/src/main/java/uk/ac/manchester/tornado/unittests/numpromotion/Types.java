@@ -26,6 +26,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -90,7 +91,7 @@ public class Types extends TornadoTestBase {
         IntStream.range(0, input.length).forEach(x -> input[x] = (byte) r.nextInt(127));
 
         new TaskGraph("s0") //
-                .streamIn(input) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", Types::b2b, input, output) //
                 .streamOut(output) //
                 .execute();
@@ -112,7 +113,7 @@ public class Types extends TornadoTestBase {
         IntStream.range(0, input.length).forEach(x -> input[x] = (byte) r.nextInt(127));
 
         new TaskGraph("s0") //
-                .streamIn(input) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", Types::b2b, input, output) //
                 .streamOut(output) //
                 .execute();
@@ -134,7 +135,7 @@ public class Types extends TornadoTestBase {
         IntStream.range(0, input.length).forEach(x -> input[x] = (byte) r.nextInt(127));
 
         new TaskGraph("s0") //
-                .streamIn(input) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", Types::b2i, input, output) //
                 .streamOut(output) //
                 .execute();
@@ -156,7 +157,7 @@ public class Types extends TornadoTestBase {
         IntStream.range(0, input.length).forEach(x -> input[x] = (byte) r.nextInt(127));
 
         new TaskGraph("s0") //
-                .streamIn(input) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", Types::b2s, input, output) //
                 .streamOut(output) //
                 .execute();
@@ -178,7 +179,7 @@ public class Types extends TornadoTestBase {
         IntStream.range(0, input.length).forEach(x -> input[x] = (byte) r.nextInt(127));
 
         new TaskGraph("s0") //
-                .streamIn(input) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", Types::b2l, input, output) //
                 .streamOut(output) //
                 .execute();
@@ -199,7 +200,7 @@ public class Types extends TornadoTestBase {
         IntStream.range(0, input.length).forEach(x -> input[x] = r.nextInt());
 
         new TaskGraph("s0") //
-                .streamIn(input) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", Types::i2l, input, output) //
                 .streamOut(output) //
                 .execute();
@@ -221,7 +222,7 @@ public class Types extends TornadoTestBase {
         IntStream.range(0, input.length).forEach(x -> input[x] = (short) r.nextInt(256));
 
         new TaskGraph("s0") //
-                .streamIn(input) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", Types::s2i, input, output) //
                 .streamOut(output) //
                 .execute();
@@ -243,7 +244,7 @@ public class Types extends TornadoTestBase {
         IntStream.range(0, input.length).forEach(x -> input[x] = r.nextFloat());
 
         new TaskGraph("s0") //
-                .streamIn(input) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", Types::f2d, input, output) //
                 .streamOut(output) //
                 .execute();
@@ -265,7 +266,7 @@ public class Types extends TornadoTestBase {
         IntStream.range(0, input.length).forEach(x -> input[x] = r.nextInt());
 
         new TaskGraph("s0") //
-                .streamIn(input) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", Types::i2d, input, output) //
                 .streamOut(output) //
                 .execute();

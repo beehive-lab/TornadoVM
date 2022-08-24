@@ -30,6 +30,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class Resize extends TornadoTestBase {
@@ -59,7 +60,7 @@ public class Resize extends TornadoTestBase {
         float[] a = createArray(256);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(a) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize01, a) //
                 .streamOut(a); //
 
@@ -81,7 +82,7 @@ public class Resize extends TornadoTestBase {
         float[] a = createArray(256);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(a) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize01, a) //
                 .streamOut(a); //
         taskGraph.execute();
@@ -113,7 +114,7 @@ public class Resize extends TornadoTestBase {
         float[] b = createArray(1024);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(a) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize02, a, b) //
                 .streamOut(b); //
         taskGraph.execute();
@@ -139,7 +140,7 @@ public class Resize extends TornadoTestBase {
         float[] b = createArray(256);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(a) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize02, a, b) //
                 .streamOut(b); //
         taskGraph.execute();
@@ -172,7 +173,7 @@ public class Resize extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(a) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize02, a, b) //
                 .streamOut(b); //
         taskGraph.execute(gridScheduler);

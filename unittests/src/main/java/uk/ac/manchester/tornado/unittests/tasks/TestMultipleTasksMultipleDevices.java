@@ -26,6 +26,7 @@ import java.util.stream.IntStream;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 /**
@@ -97,7 +98,7 @@ public class TestMultipleTasksMultipleDevices {
         }
 
         TaskGraph taskGraph = new TaskGraph("s0")//
-                .streamIn(a, b)//
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)//
                 .task("t0", TestMultipleTasksSingleDevice::task0Initialization, b) //
                 .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12) //
                 .task("t2", TestMultipleTasksSingleDevice::task2Saxpy, c, c, d, 12) //

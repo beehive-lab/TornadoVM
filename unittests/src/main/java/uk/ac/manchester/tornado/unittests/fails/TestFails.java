@@ -23,6 +23,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -57,11 +58,13 @@ public class TestFails extends TornadoTestBase {
         float[] x = new float[100];
         float[] y = new float[100];
 
-        TaskGraph taskGraph = new TaskGraph("s0").streamIn(x).task("s0", (a, b) -> {
-            for (int i = 0; i < 100; i++) {
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, x) //
+                .task("s0", (a, b) -> {
+                    for (int i = 0; i < 100; i++) {
 
-            }
-        }, x, y).streamOut(y);
+                    }
+                }, x, y).streamOut(y);
 
         // How to provoke the failure
         taskGraph.warmup();
@@ -85,7 +88,7 @@ public class TestFails extends TornadoTestBase {
 
         // @formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-                .streamIn(x)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, x)
                 .task("s0", TestFails::kernel, x, y)
                 .streamOut(y);
         // @formatter:on

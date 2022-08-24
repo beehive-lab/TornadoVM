@@ -27,6 +27,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestTemporaryValues extends TornadoTestBase {
@@ -60,7 +61,7 @@ public class TestTemporaryValues extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(aTornado, bTornado) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, aTornado, bTornado) //
                 .task("t0", TestTemporaryValues::computeWithTemporaryValues, aTornado, bTornado, cTornado) //
                 .streamOut(aTornado, bTornado, cTornado);
 

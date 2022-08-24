@@ -28,6 +28,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestArrays extends TornadoTestBase {
@@ -223,7 +224,7 @@ public class TestArrays extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .streamIn(a, b)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
             .task("t0", TestArrays::vectorAddDouble, a, b, c)
             .streamOut(c)
             .execute();
@@ -247,7 +248,7 @@ public class TestArrays extends TornadoTestBase {
         });
 
         new TaskGraph("s0") //
-                .streamIn(a, b) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestArrays::vectorAddFloat, a, b, c) //
                 .streamOut(c) //
                 .execute(); //
@@ -272,7 +273,7 @@ public class TestArrays extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .streamIn(a, b)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
             .task("t0", TestArrays::vectorAddInteger, a, b, c)
             .streamOut(c)
             .execute();
@@ -297,7 +298,7 @@ public class TestArrays extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .streamIn(a, b)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
             .task("t0", TestArrays::vectorAddLong, a, b, c)
             .streamOut(c)
             .execute();
@@ -322,7 +323,7 @@ public class TestArrays extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .streamIn(a, b)
+            .copyIn(DataTransferMode.EVERY_EXECUTION,a, b)
             .task("t0", TestArrays::vectorAddShort, a, b, c)
             .streamOut(c)
             .execute();
@@ -347,7 +348,7 @@ public class TestArrays extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .streamIn(a, b)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
             .task("t0", TestArrays::vectorChars, a, b, c)
             .streamOut(c)
             .execute();
@@ -372,7 +373,7 @@ public class TestArrays extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(a, b)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
                 .task("t0", TestArrays::vectorAddByte, a, b, c)
                 .streamOut(c)
                 .execute();
@@ -404,7 +405,7 @@ public class TestArrays extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .streamIn(a, b)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
             .task("t0", TestArrays::addChars, a, b)
             .streamOut(a)
             .execute();

@@ -42,6 +42,7 @@ import jdk.vm.ci.code.InvalidInstalledCodeException;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -323,7 +324,7 @@ class ReduceTaskSchedule {
                 streamInObjects.add(reduceArray.getValue());
             }
 
-            TornadoTaskSchedule.performStreamInThread(rewrittenTaskGraph, streamInObjects);
+            TornadoTaskSchedule.performStreamInThread(rewrittenTaskGraph, streamInObjects, DataTransferMode.EVERY_EXECUTION);
 
             for (int i = 0; i < streamOutObjects.size(); i++) {
                 if (originalReduceVariables.containsKey(streamOutObjects.get(i))) {

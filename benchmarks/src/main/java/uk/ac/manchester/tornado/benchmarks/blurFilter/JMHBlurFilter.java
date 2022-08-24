@@ -39,6 +39,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 public class JMHBlurFilter {
@@ -90,7 +91,7 @@ public class JMHBlurFilter {
             }
 
             taskGraph = new TaskGraph("blur") //
-                    .streamIn(redChannel, greenChannel, blueChannel) //
+                    .copyIn(DataTransferMode.EVERY_EXECUTION, redChannel, greenChannel, blueChannel) //
                     .task("red", ComputeKernels::channelConvolution, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
                     .task("green", ComputeKernels::channelConvolution, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
                     .task("blue", ComputeKernels::channelConvolution, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //

@@ -21,6 +21,7 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 public class VectorAddInt {
 
@@ -43,7 +44,7 @@ public class VectorAddInt {
 
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-                .streamIn(a, b)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
                 .task("t0", VectorAddInt::vectorAdd, a, b, c)
                 .streamOut(c);
         //@formatter:on

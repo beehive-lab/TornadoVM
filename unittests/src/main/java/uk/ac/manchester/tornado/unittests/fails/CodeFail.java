@@ -26,6 +26,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -117,7 +118,7 @@ public class CodeFail extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(input) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", CodeFail::zoo, input, result1, result2) //
                 .streamOut(result1, result2); //
 

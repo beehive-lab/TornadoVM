@@ -43,6 +43,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 public class JMHStencil {
     @State(Scope.Thread)
@@ -78,7 +79,7 @@ public class JMHStencil {
             }
             copy(sz, ainit, a0);
             taskGraph = new TaskGraph("benchmark") //
-                    .streamIn(a0, a1) //
+                    .copyIn(DataTransferMode.EVERY_EXECUTION, a0, a1) //
                     .task("stencil", Stencil::stencil3d, n, sz, a0, a1, FAC) //
                     .task("copy", Stencil::copy, sz, a1, a0) //
                     .streamOut(a0);

@@ -42,6 +42,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
 public class JMHConvolveArray {
@@ -67,7 +68,7 @@ public class JMHConvolveArray {
             createFilter(filter, filterSize, filterSize);
 
             taskGraph = new TaskGraph("benchmark") //
-                    .streamIn(input) //
+                    .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
                     .task("convolveImageArray", GraphicsKernels::convolveImageArray, input, filter, output, imageSizeX, imageSizeY, filterSize, filterSize) //
                     .streamOut(output);
             taskGraph.warmup();

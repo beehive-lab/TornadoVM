@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.examples.stencils;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Gauss-Seidel 2D stencil computation. This version has been adapted from the
@@ -114,7 +115,7 @@ public class GSeidel2D {
 
         // @formatter:off
         final TaskGraph graph = new TaskGraph("s0")
-                .streamIn(a, size)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, size)
                 .task("t0", GSeidel2D::run2DseidelTornado, a, size)
                 .streamOut(a);
         // @formatter:on

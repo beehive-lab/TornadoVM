@@ -26,6 +26,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestFlatMap extends TornadoTestBase {
@@ -55,7 +56,7 @@ public class TestFlatMap extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(input) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestFlatMap::computeFlatMap, input, output, SIZE) //
                 .streamOut(output);
         taskGraph.execute();

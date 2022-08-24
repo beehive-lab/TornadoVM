@@ -3,6 +3,7 @@ package uk.ac.manchester.tornado.examples.spirv;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Test used for generating OpenCL kernel. Note, the lookupBuffer address kernel
@@ -304,7 +305,7 @@ public class TestSPIRV {
         int[] a = new int[numElements];
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(a) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestKernels::addValue, a) //
                 .streamOut(a); //
 

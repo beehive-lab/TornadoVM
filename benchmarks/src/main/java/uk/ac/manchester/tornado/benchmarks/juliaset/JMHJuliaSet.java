@@ -38,6 +38,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
 public class JMHJuliaSet {
@@ -56,7 +57,7 @@ public class JMHJuliaSet {
             brightness = new float[size * size];
 
             taskGraph = new TaskGraph("benchmark") //
-                    .streamIn(hue, brightness) //
+                    .copyIn(DataTransferMode.EVERY_EXECUTION, hue, brightness) //
                     .task("juliaset", GraphicsKernels::juliaSetTornado, size, hue, brightness) //
                     .streamOut(hue, brightness);
             taskGraph.warmup();

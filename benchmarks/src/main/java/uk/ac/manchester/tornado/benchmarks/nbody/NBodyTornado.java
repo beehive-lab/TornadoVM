@@ -25,6 +25,7 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -66,7 +67,7 @@ public class NBodyTornado extends BenchmarkDriver {
         }
 
         taskGraph = new TaskGraph("benchmark");
-        taskGraph.streamIn(velSeq, posSeq) //
+        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, velSeq, posSeq) //
                 .task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
         taskGraph.warmup();
     }

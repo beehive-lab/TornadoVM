@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestReductionsIntegers extends TornadoTestBase {
@@ -210,7 +211,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .streamIn(input)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsIntegers::reductionAnnotation, input, result)
             .streamOut(result)
             .execute();
@@ -237,7 +238,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(input)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input)
                 .task("t0", TestReductionsIntegers::reductionAnnotationLarge, input, result)
                 .streamOut(result)
                 .execute();
@@ -261,7 +262,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
 		new TaskGraph("s0")
-			.streamIn(input)
+			.copyIn(DataTransferMode.EVERY_EXECUTION, input)
 			.task("t0", TestReductionsIntegers::reductionAnnotation2, input, result)
 			.streamOut(result)
 			.execute();
@@ -284,7 +285,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         });
 
         new TaskGraph("s0") //
-                .streamIn(input) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestReductionsIntegers::reductionAnnotationConstant, input, result) //
                 .streamOut(result) //
                 .execute(); //
@@ -307,7 +308,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .streamIn(input)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsIntegers::multReductionAnnotation, input, result)
             .streamOut(result)
             .execute();
@@ -336,7 +337,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .streamIn(input)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsIntegers::maxReductionAnnotation, input, result, neutral)
             .streamOut(result)
             .execute();
@@ -383,7 +384,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .streamIn(input)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsIntegers::reductionSequentialSmall, input, result)
             .streamOut(result)
             .execute();
@@ -407,7 +408,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .streamIn(input)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsIntegers::reduction01, input, result)
             .streamOut(result)
             .execute();
@@ -433,7 +434,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .streamIn(a, b, c)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, a, b, c)
             .task("t0", TestReductionsIntegers::map01, a, b, c)
             .task("t1", TestReductionsIntegers::reduce01, c, result)
             .streamOut(result)
@@ -460,7 +461,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .streamIn(a, b)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
             .task("t0", TestReductionsIntegers::map02, a, b)
             .task("t1", TestReductionsIntegers::reduce02, b, result)
             .streamOut(result)
@@ -494,7 +495,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .streamIn(a, b, c)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, a, b, c)
             .task("t0", TestReductionsIntegers::mapReduce01, a, b, c, result)
             .streamOut(result)
             .execute();
@@ -519,7 +520,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
 	    new TaskGraph("s0")
-	         .streamIn(a)
+	         .copyIn(DataTransferMode.EVERY_EXECUTION, a)
 	         .task("t0", TestReductionsIntegers::mapReduce2, a, b, result)
 	         .streamOut(result)
 	         .execute();
@@ -542,7 +543,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-            .streamIn(input)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsIntegers::reductionAddInts2, input, result)
             .streamOut(result);
         //@formatter:on
@@ -569,7 +570,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-            .streamIn(inputA, inputB)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, inputA, inputB)
             .task("t0", TestReductionsIntegers::reductionAddInts3, inputA, inputB, result)
             .streamOut(result);
         //@formatter:on
@@ -595,7 +596,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(input)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input)
                 .task("t0", TestReductionsIntegers::maxReductionAnnotation2, input, result, neutral)
                 .streamOut(result)
                 .execute();
@@ -620,7 +621,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .streamIn(input)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input)
                 .task("t0", TestReductionsIntegers::minReductionAnnotation2, input, result, Integer.MAX_VALUE)
                 .streamOut(result)
                 .execute();

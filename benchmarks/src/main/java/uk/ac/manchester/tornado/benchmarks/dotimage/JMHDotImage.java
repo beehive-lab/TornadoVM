@@ -45,6 +45,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
 public class JMHDotImage {
@@ -75,7 +76,7 @@ public class JMHDotImage {
                 }
             }
             taskGraph = new TaskGraph("benchmark") //
-                    .streamIn(a, b) //
+                    .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
                     .task("dotVector", GraphicsKernels::dotImage, a, b, c) //
                     .streamOut(c);
             taskGraph.warmup();

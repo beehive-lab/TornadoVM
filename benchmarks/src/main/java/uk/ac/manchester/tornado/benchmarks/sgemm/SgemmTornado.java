@@ -28,6 +28,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
@@ -75,7 +76,7 @@ public class SgemmTornado extends BenchmarkDriver {
 
         taskGraph = new TaskGraph("benchmark");
         if (!USE_PREBUILT) {
-            taskGraph.streamIn(a, b);
+            taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, a, b);
             taskGraph.task("sgemm", LinearAlgebraArrays::sgemm, m, n, n, a, b, c);
             taskGraph.streamOut(c);
             taskGraph.warmup();

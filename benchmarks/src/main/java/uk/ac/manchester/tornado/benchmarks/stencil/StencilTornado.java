@@ -26,6 +26,7 @@ import java.util.Random;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class StencilTornado extends BenchmarkDriver {
@@ -61,7 +62,7 @@ public class StencilTornado extends BenchmarkDriver {
         }
         copy(sz, ainit, a0);
         taskGraph = new TaskGraph("benchmark") //
-                .streamIn(a0, a1) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a0, a1) //
                 .task("stencil", Stencil::stencil3d, n, sz, a0, a1, FAC) //
                 .task("copy", Stencil::copy, sz, a1, a0) //
                 .streamOut(a0);

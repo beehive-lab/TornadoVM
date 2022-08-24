@@ -25,6 +25,7 @@ import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
@@ -55,7 +56,7 @@ public class RotateTornado extends BenchmarkDriver {
         }
 
         taskGraph = new TaskGraph("benchmark");
-        taskGraph.streamIn(input);
+        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, input);
         taskGraph.task("rotateVector", GraphicsKernels::rotateVector, output, m, input);
         taskGraph.streamOut(output);
         taskGraph.warmup();

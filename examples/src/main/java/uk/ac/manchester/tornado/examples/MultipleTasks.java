@@ -23,6 +23,7 @@ import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 public class MultipleTasks {
 
@@ -54,7 +55,7 @@ public class MultipleTasks {
 
         // @formatter:off
         TaskGraph taskGraph = new TaskGraph("example")
-                .streamIn(x)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, x)
                 .task("foo", MultipleTasks::foo, x, y)
                 .task("bar", MultipleTasks::bar, y)
                 .streamOut(y);

@@ -22,6 +22,7 @@ import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.saxpy;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
@@ -49,7 +50,7 @@ public class SaxpyTornado extends BenchmarkDriver {
         }
 
         taskGraph = new TaskGraph("benchmark");
-        taskGraph.streamIn(x);
+        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, x);
         taskGraph.task("saxpy", LinearAlgebraArrays::saxpy, alpha, x, y);
         taskGraph.streamOut(y);
         taskGraph.warmup();

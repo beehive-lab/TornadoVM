@@ -24,6 +24,7 @@ import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 public class ReductionsGlobalMemory {
 
@@ -73,8 +74,8 @@ public class ReductionsGlobalMemory {
         gridScheduler.setWorkerGrid("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskGraph s0 = new TaskGraph("s0").streamIn(input).task("t0", ReductionsGlobalMemory::reduction, input, reduce, context).task("t1", ReductionsGlobalMemory::rAdd, reduce, size)
-                .streamOut(reduce);
+        TaskGraph s0 = new TaskGraph("s0").copyIn(DataTransferMode.EVERY_EXECUTION, input).task("t0", ReductionsGlobalMemory::reduction, input, reduce, context)
+                .task("t1", ReductionsGlobalMemory::rAdd, reduce, size).streamOut(reduce);
         s0.execute(gridScheduler);
 
         // Final SUM

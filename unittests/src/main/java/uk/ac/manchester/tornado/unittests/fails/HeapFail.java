@@ -24,6 +24,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 
 public class HeapFail {
@@ -57,7 +58,7 @@ public class HeapFail {
 
         // @formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-                .streamIn(x)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, x)
                 .task("s0",HeapFail::validKernel,x,y)
                 .streamOut(y);
         // @formatter:on

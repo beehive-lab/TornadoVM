@@ -24,7 +24,10 @@ import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.annotations.Reduce;;
+import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+
+;
 
 public class ReductionMaxFloats {
 
@@ -46,7 +49,7 @@ public class ReductionMaxFloats {
 
         //@formatter:off
         TaskGraph task = new TaskGraph("s0")
-            .streamIn(input)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", ReductionMaxFloats::reductionMaxFloats, input, result, Float.MIN_VALUE)
             .streamOut(result);
         //@formatter:on

@@ -32,6 +32,7 @@ import javax.swing.JFrame;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Program taken from the Marawacc parallel programming framework with the
@@ -130,7 +131,7 @@ public class BlackAndWhiteTransform {
 
                 if (taskGraph == null) {
                     taskGraph = new TaskGraph("s0");
-                    taskGraph.streamIn(imageRGB).task("t0", LoadImage::compute, imageRGB, w, s).streamOut(imageRGB);
+                    taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, imageRGB).task("t0", LoadImage::compute, imageRGB, w, s).streamOut(imageRGB);
 
                 }
 

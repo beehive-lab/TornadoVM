@@ -24,6 +24,7 @@ import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 public class ReductionsLocalMemory {
 
@@ -76,7 +77,7 @@ public class ReductionsLocalMemory {
         gridScheduler.setWorkerGrid("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskGraph s0 = new TaskGraph("s0").streamIn(input, localSize).task("t0", ReductionsLocalMemory::reductionLocal, input, reduce, localSize, context)
+        TaskGraph s0 = new TaskGraph("s0").copyIn(DataTransferMode.EVERY_EXECUTION, input, localSize).task("t0", ReductionsLocalMemory::reductionLocal, input, reduce, localSize, context)
                 .task("t1", ReductionsLocalMemory::rAdd, reduce, (size / localSize)).streamOut(reduce);
         // Change the Grid
         worker.setLocalWork(localSize, 1, 1);

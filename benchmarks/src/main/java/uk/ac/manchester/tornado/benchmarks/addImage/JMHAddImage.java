@@ -42,6 +42,7 @@ import org.openjdk.jmh.runner.options.TimeValue;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
 public class JMHAddImage {
@@ -75,7 +76,7 @@ public class JMHAddImage {
                 }
             }
             taskGraph = new TaskGraph("benchmark") //
-                    .streamIn(a, b) //
+                    .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
                     .task("addImage", GraphicsKernels::addImage, a, b, c) //
                     .streamOut(c);
             taskGraph.warmup();

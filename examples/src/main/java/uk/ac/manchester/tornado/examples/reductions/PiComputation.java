@@ -25,6 +25,7 @@ import java.util.stream.IntStream;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 public class PiComputation {
 
@@ -42,7 +43,7 @@ public class PiComputation {
 
         //@formatter:off
         TaskGraph task = new TaskGraph("s0")
-            .streamIn(input)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", PiComputation::computePi, input, result)
             .streamOut(result);
         //@formatter:on

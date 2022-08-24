@@ -24,6 +24,7 @@ import java.util.Arrays;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class MultipleRuns extends TornadoTestBase {
@@ -40,7 +41,7 @@ public class MultipleRuns extends TornadoTestBase {
         Arrays.fill(expectedResult, iterations * 50);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(a) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestKernels::addValue, a) //
                 .streamOut(a); //
 

@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.benchmarks.euler;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -54,7 +55,7 @@ public class EulerTornado extends BenchmarkDriver {
         outputD = new long[size];
         outputE = new long[size];
         taskGraph = new TaskGraph("benchmark") //
-                .streamIn(input) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("euler", ComputeKernels::euler, size, input, outputA, outputB, outputC, outputD, outputE) //
                 .streamOut(outputA, outputB, outputC, outputD, outputE);
     }

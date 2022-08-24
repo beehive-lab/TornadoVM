@@ -27,6 +27,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class InstanceReduction extends TornadoTestBase {
@@ -62,7 +63,7 @@ public class InstanceReduction extends TornadoTestBase {
 
         // @formatter:off
         new TaskGraph("ts")
-                .streamIn(input)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input)
                 .task("reduce", rd::reduce, input, result)
                 .streamOut(result)
                 .execute();

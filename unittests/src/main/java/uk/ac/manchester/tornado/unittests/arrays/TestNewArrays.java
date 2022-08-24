@@ -30,6 +30,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -136,7 +137,7 @@ public class TestNewArrays extends TornadoTestBase {
 
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-                .streamIn(a, b)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
                 .task("t0", TestNewArrays::vectorAdd, a, b, c)
                 .streamOut(c);
         //@formatter:on
@@ -162,7 +163,7 @@ public class TestNewArrays extends TornadoTestBase {
 
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-                .streamIn(a, b)
+                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
                 .task("t0", TestNewArrays::vectorAddComplexConditions, a, b, c)
                 .streamOut(c);
         //@formatter:on
@@ -287,7 +288,7 @@ public class TestNewArrays extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .streamIn(input) //
+                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestNewArrays::reductionAddFloats, input, result) //
                 .streamOut(result); //
 

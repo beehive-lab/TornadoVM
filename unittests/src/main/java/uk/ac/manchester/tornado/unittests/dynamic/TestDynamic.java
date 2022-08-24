@@ -26,6 +26,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestDynamic extends TornadoTestBase {
@@ -113,7 +114,7 @@ public class TestDynamic extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .streamIn(a)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, a)
             .task("t0", TestDynamic::saxpy, 2.0f, a, b)
             .streamOut(b)
             .executeWithProfilerSequential(Policy.PERFORMANCE);
@@ -137,7 +138,7 @@ public class TestDynamic extends TornadoTestBase {
 
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("ts")
-            .streamIn(a)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, a)
             .task("task", TestDynamic::compute2, a, b)
             .streamOut(b);
         //@formatter:on
@@ -169,7 +170,7 @@ public class TestDynamic extends TornadoTestBase {
 
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("pp")
-            .streamIn(a)
+            .copyIn(DataTransferMode.EVERY_EXECUTION, a)
             .task("t0", TestDynamic::compute, a, b)
             .task("t1", TestDynamic::compute2, b, b)
             .streamOut(b);

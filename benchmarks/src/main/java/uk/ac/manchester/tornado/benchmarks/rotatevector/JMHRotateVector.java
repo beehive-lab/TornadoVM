@@ -43,6 +43,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
 public class JMHRotateVector {
@@ -69,7 +70,7 @@ public class JMHRotateVector {
             }
 
             taskGraph = new TaskGraph("benchmark") //
-                    .streamIn(input) //
+                    .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
                     .task("rotateVector", GraphicsKernels::rotateVector, output, m, input) //
                     .streamOut(output);
             taskGraph.warmup();
