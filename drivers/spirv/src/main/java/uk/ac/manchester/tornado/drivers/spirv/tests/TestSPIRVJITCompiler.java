@@ -141,8 +141,6 @@ public class TestSPIRVJITCompiler {
         ScheduleMetaData scheduleMetaData = new ScheduleMetaData("s0");
         // Create a compilable task
         CompilableTask executable = new CompilableTask(scheduleMetaData, "t0", methodToCompile, a, b, c);
-
-        //TaskMetaData taskMeta = TaskMetaData.create(scheduleMetaData, methodToCompile.getName(), methodToCompile);
         TaskMetaData taskMeta = executable.meta();
         taskMeta.setDevice(device);
 
@@ -153,7 +151,6 @@ public class TestSPIRVJITCompiler {
         TornadoSuitesProvider suites = getSuitesProvider(0);
         Sketch sketch = buildSketchForJavaMethod(resolvedJavaMethod, taskMeta, providers, suites);
 
-
         // 2. Function f: Sketch -> SPIR-V Compiled Code
         //SPIRVCompiler.compileSketchForDevice()
         SPIRVCompilationResult spirvCompilationResult = SPIRVCompiler.compileSketchForDevice(sketch, executable, (SPIRVProviders) spirvBackend.getProviders(), spirvBackend, new EmptyProfiler());
@@ -161,8 +158,6 @@ public class TestSPIRVJITCompiler {
         // 3. Install the SPIR-V code into the VM
         SPIRVDevice spirvDevice = (SPIRVDevice) device.getDeviceContext().getDevice();
         SPIRVInstalledCode spirvInstalledCode = (SPIRVInstalledCode) spirvDevice.getDeviceContext().installBinary(spirvCompilationResult);
-
-        System.out.println("TASK META: " + taskMeta.getDims());
 
         return new MetaCompilation(taskMeta, spirvInstalledCode);
     }
