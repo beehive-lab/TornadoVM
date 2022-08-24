@@ -23,22 +23,50 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.tests;
 
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
+
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.HashMap;
+
+import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions;
+import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVDevice;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDriver;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVProviders;
+import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult;
+import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompiler;
+import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
+import uk.ac.manchester.tornado.runtime.domain.DomainTree;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
+import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
+import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
+import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
+import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
+import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
+import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 /**
  * Testing the SPIRV JIT Compiler and integration with the TornadoVM SPIRV
  * Runtime.
+ *
+ * How to run?
+ *
+ * <code>
+ *     $ tornado uk.ac.manchester.tornado.drivers.spirv.tests.TestSPIRVJITCompiler
+ * </code>
  */
 public class TestSPIRVJITCompiler {
 
@@ -62,9 +90,9 @@ public class TestSPIRVJITCompiler {
         TaskMetaData taskMeta;
         SPIRVInstalledCode spirvCode;
 
-        public MetaCompilation(TaskMetaData taskMeta, SPIRVInstalledCode openCLCode) {
+        public MetaCompilation(TaskMetaData taskMeta, SPIRVInstalledCode installedCode) {
             this.taskMeta = taskMeta;
-            this.spirvCode = openCLCode;
+            this.spirvCode = installedCode;
         }
 
         public TaskMetaData getTaskMeta() {
@@ -74,6 +102,21 @@ public class TestSPIRVJITCompiler {
         public SPIRVInstalledCode getSpirvCode() {
             return spirvCode;
         }
+    }
+
+    public Providers getProviders(int driverIndex) {
+        return getTornadoRuntime().getDriver(driverIndex).getProviders();
+    }
+
+    public TornadoSuitesProvider getSuitesProvider(int driverIndex) {
+        return getTornadoRuntime().getDriver(driverIndex).getSuitesProvider();
+    }
+
+    public Sketch buildSketchForJavaMethod(ResolvedJavaMethod resolvedJavaMethod, TaskMetaData taskMetaData, Providers providers, TornadoSuitesProvider suites) {
+        new SketchRequest(resolvedJavaMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex())//
+                .run();
+        Sketch lookup = TornadoSketcher.lookup(resolvedJavaMethod, taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex());
+        return lookup;
     }
 
     public MetaCompilation compileMethod(Class<?> klass, String methodName, int[] a, int[] b, double[] c) {
@@ -95,16 +138,69 @@ public class TestSPIRVJITCompiler {
         System.out.println("Selecting Device: " + device.getPhysicalDevice().getDeviceName());
 
         // Create a new task for TornadoVM
-        TaskMetaData taskMeta = TaskMetaData.create(new ScheduleMetaData("s0"), methodToCompile.getName(), methodToCompile);
+        ScheduleMetaData scheduleMetaData = new ScheduleMetaData("s0");
+        // Create a compilable task
+        CompilableTask executable = new CompilableTask(scheduleMetaData, "t0", methodToCompile, a, b, c);
+
+        //TaskMetaData taskMeta = TaskMetaData.create(scheduleMetaData, methodToCompile.getName(), methodToCompile);
+        TaskMetaData taskMeta = executable.meta();
         taskMeta.setDevice(device);
 
-        // FIXME <TODO> <COMPLETE>
-        // XXX: Compile the SPIRV Code
+        // 1. Build Common Compiler Phase (Sketcher)
+        // FIXME Possible renaming of the Sketcher
+        // 1.1 Utility to build a sketcher and insert into the HashMap for fast LookUps
+        Providers providers = getProviders(0);
+        TornadoSuitesProvider suites = getSuitesProvider(0);
+        Sketch sketch = buildSketchForJavaMethod(resolvedJavaMethod, taskMeta, providers, suites);
 
-        // Install the SPIRV code into the VM
 
-        return new MetaCompilation(taskMeta, null);
+        // 2. Function f: Sketch -> SPIR-V Compiled Code
+        //SPIRVCompiler.compileSketchForDevice()
+        SPIRVCompilationResult spirvCompilationResult = SPIRVCompiler.compileSketchForDevice(sketch, executable, (SPIRVProviders) spirvBackend.getProviders(), spirvBackend, new EmptyProfiler());
+
+        // 3. Install the SPIR-V code into the VM
+        SPIRVDevice spirvDevice = (SPIRVDevice) device.getDeviceContext().getDevice();
+        SPIRVInstalledCode spirvInstalledCode = (SPIRVInstalledCode) spirvDevice.getDeviceContext().installBinary(spirvCompilationResult);
+
+        System.out.println("TASK META: " + taskMeta.getDims());
+
+        return new MetaCompilation(taskMeta, spirvInstalledCode);
     }
+
+    public void run(SPIRVTornadoDevice spirvTornadoDevice, SPIRVInstalledCode installedCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
+        // First we allocate, A, B and C
+        GlobalObjectState stateA = new GlobalObjectState();
+        DeviceObjectState objectStateA = stateA.getDeviceState(spirvTornadoDevice);
+
+        GlobalObjectState stateB = new GlobalObjectState();
+        DeviceObjectState objectStateB = stateB.getDeviceState(spirvTornadoDevice);
+
+        GlobalObjectState stateC = new GlobalObjectState();
+        DeviceObjectState objectStateC = stateC.getDeviceState(spirvTornadoDevice);
+
+        spirvTornadoDevice.allocateBulk(new Object[] { a, b, c }, 0, new TornadoDeviceObjectState[] { objectStateA, objectStateB, objectStateC });
+
+        // Copy-IN A
+        spirvTornadoDevice.ensurePresent(a, objectStateA, null, 0, 0);
+        // Copy-IN B
+        spirvTornadoDevice.ensurePresent(b, objectStateB, null, 0, 0);
+
+        // Create call wrapper
+        KernelArgs callWrapper = spirvTornadoDevice.createCallWrapper(3);
+
+        callWrapper.setKernelContext(new HashMap<>());
+
+        callWrapper.addCallArgument(objectStateA.getObjectBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateB.getObjectBuffer().toBuffer(), true);
+        callWrapper.addCallArgument(objectStateC.getObjectBuffer().toBuffer(), true);
+
+        // Run the code
+        installedCode.launchWithoutDependencies(callWrapper, null, taskMeta, 0);
+
+        // Obtain the result
+        spirvTornadoDevice.streamOutBlocking(c, 0, objectStateC, null);
+    }
+
 
     public void test() {
 
@@ -117,9 +213,27 @@ public class TestSPIRVJITCompiler {
         Arrays.fill(a, -10);
         Arrays.fill(b, 10);
 
+        // Obtain the SPIR-V binary from the Java method
         MetaCompilation compileMethod = compileMethod(TestSPIRVJITCompiler.class, "methodToCompile", a, b, c);
 
-        // FIXME <TODO> <COMPLETE>
+        TornadoDevice device = TornadoCoreRuntime.getTornadoRuntime().getDriver(SPIRVDriver.class).getDefaultDevice();
+
+        run((SPIRVTornadoDevice) device, compileMethod.getSpirvCode(), compileMethod.getTaskMeta(), a, b, c);
+
+        boolean correct = true;
+        for (int i = 0; i < c.length; i++) {
+            double seq = 0.12 * a[i] * b[i];
+            if (Math.abs(c[i] - seq) > 0.01) {
+                System.err.println(i + " Fault result = " + seq + " " + c[i]);
+                correct = false;
+                break;
+            }
+        }
+        if (!correct) {
+            System.out.println(" ................ [FAIL]");
+        } else {
+            System.out.println(" ................ [PASS]");
+        }
 
     }
 
