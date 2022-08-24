@@ -775,14 +775,22 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @Override
-    public void streamInInner(Object... objects) {
+    public void streamInInner(DataTransferMode mode, Object... objects) {
         for (Object object : objects) {
             if (object == null) {
                 warn("null object passed into streamIn() in schedule %s", executionContext.getId());
                 continue;
             }
-            streamInObjects.add(object);
-            executionContext.getObjectState(object).setStreamIn(true);
+
+            // Only add the object is the streamIn list if the data transfer mode is set to
+            // EVERY_EXECUTION
+            if (mode == DataTransferMode.EVERY_EXECUTION) {
+                streamInObjects.add(object);
+                executionContext.getObjectState(object).setStreamIn(true);
+            } else {
+                // Add to COPY-ONLY list
+                System.out.println("[DEBUG] Object should be added in the  copy-only list: " + object);
+            }
         }
     }
 
