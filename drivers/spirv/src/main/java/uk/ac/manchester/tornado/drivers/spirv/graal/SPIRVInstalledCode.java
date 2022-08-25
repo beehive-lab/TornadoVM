@@ -55,12 +55,12 @@ public abstract class SPIRVInstalledCode extends InstalledCode implements Tornad
         return this.deviceContext;
     }
 
-
     /**
-     * Gets the installed SPIR-V binary code and invokes the disassembler. It stores the result
-     * in the same path with the asm extension.
+     * Gets the installed SPIR-V binary code and invokes the disassembler. It stores
+     * the result in the same path with the asm extension.
+     * 
      * @param pathToFile
-     *      Path of the input SPIR-V Binary code
+     *            Path of the input SPIR-V Binary code
      * @return String of the whole disassembled SPIR-V module
      * @throws IOException
      */
@@ -103,7 +103,7 @@ public abstract class SPIRVInstalledCode extends InstalledCode implements Tornad
     public String getGeneratedSourceCode() {
         if (spirvModule instanceof SPIRVLevelZeroModule) {
             SPIRVLevelZeroModule module = (SPIRVLevelZeroModule) spirvModule;
-            String spirvFile =  module.getPathToSPIRVBinary();
+            String spirvFile = module.getPathToSPIRVBinary();
             try {
                 return getDisassembledCode(spirvFile);
             } catch (FileNotFoundException e) {

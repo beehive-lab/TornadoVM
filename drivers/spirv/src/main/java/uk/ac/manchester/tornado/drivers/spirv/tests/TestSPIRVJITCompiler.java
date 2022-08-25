@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -154,7 +154,6 @@ public class TestSPIRVJITCompiler {
         // Transfer the result from the device to the host (this is a blocking call)
         spirvTornadoDevice.streamOutBlocking(c, 0, objectStateC, null);
     }
-
 
     public void test() {
 
