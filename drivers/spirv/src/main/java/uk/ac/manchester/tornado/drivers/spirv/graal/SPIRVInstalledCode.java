@@ -23,7 +23,12 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintStream;
 
 import jdk.vm.ci.code.InstalledCode;
 import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVTool;
