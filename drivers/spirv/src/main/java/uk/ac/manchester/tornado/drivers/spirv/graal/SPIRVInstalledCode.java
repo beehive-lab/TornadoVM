@@ -23,8 +23,21 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintStream;
+
 import jdk.vm.ci.code.InstalledCode;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVTool;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.disassembler.Disassembler;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.disassembler.SPIRVDisassemblerOptions;
+import uk.ac.manchester.spirvbeehivetoolkit.lib.disassembler.SPVFileReader;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
+import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroModule;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVModule;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 
@@ -48,12 +61,63 @@ public abstract class SPIRVInstalledCode extends InstalledCode implements Tornad
     }
 
     /**
+     * Gets the installed SPIR-V binary code and invokes the disassembler. It stores
+     * the result in the same path with the asm extension.
+     * 
+     * @param pathToFile
+     *            Path of the input SPIR-V Binary code
+     * @return String of the whole disassembled SPIR-V module
+     * @throws IOException
+     */
+    private String getDisassembledCode(String pathToFile) throws IOException {
+        PrintStream pr = new PrintStream(pathToFile + ".asm");
+        SPVFileReader reader = null;
+        try {
+            reader = new SPVFileReader(pathToFile);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        SPIRVDisassemblerOptions disassemblerOptions = new SPIRVDisassemblerOptions(true, true, false, true, false);
+        SPIRVTool spirvTool = new Disassembler(reader, pr, disassemblerOptions);
+        try {
+            spirvTool.run();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        pr.close();
+        File file = new File(pathToFile + ".asm");
+        BufferedReader br = new BufferedReader(new FileReader(file));
+        String line;
+        StringBuffer sb = new StringBuffer();
+        final String EOL = System.getProperty("line.separator");
+        while ((line = br.readLine()) != null) {
+            sb.append(line + EOL);
+        }
+        br.close();
+        return sb.toString();
+    }
+
+    /**
      * The SPIR-V backend generates a binary, not source code. This method is not
      * applicable for this backend.
      *
      * @return String.
      */
     public String getGeneratedSourceCode() {
-        return " NOT IMPLEMENTED YET";
+        if (spirvModule instanceof SPIRVLevelZeroModule) {
+            SPIRVLevelZeroModule module = (SPIRVLevelZeroModule) spirvModule;
+            String spirvFile = module.getPathToSPIRVBinary();
+            try {
+                return getDisassembledCode(spirvFile);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            throw new TornadoRuntimeException("Not implemented yet");
+        }
     }
 }

@@ -23,18 +23,20 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.tests;
 
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVCodeCache;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVContext;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroCodeCache;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVPlatform;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVProxy;
+import uk.ac.manchester.tornado.drivers.spirv.*;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
+/**
+ * How to test?
+ *
+ * <code>
+ *     $ tornado uk.ac.manchester.tornado.drivers.spirv.tests.TestSPIRVTornadoCompiler
+ * </code>
+ */
 public class TestSPIRVTornadoCompiler {
 
     public static void main(String[] args) {
@@ -48,9 +50,10 @@ public class TestSPIRVTornadoCompiler {
         TaskMetaData task = new TaskMetaData(scheduleMetaData, "saxpy");
         new SPIRVCompilationResult("saxpy", "saxpy", task);
 
-        // byte[] binary = ...
-        byte[] binary = new byte[100];
-        SPIRVInstalledCode code = codeCache.installSPIRVBinary(task, "saxpy", "saxpy", binary);
+        String tornadoSDK = System.getenv("TORNADO_SDK");
+        String pathToSPIRVBinaryFile = tornadoSDK + "/examples/generated/add.spv";
+
+        SPIRVInstalledCode code = codeCache.installSPIRVBinary(task, "add", "add", pathToSPIRVBinaryFile);
         String generatedCode = code.getGeneratedSourceCode();
 
         if (TornadoOptions.PRINT_SOURCE) {
