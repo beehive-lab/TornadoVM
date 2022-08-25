@@ -32,10 +32,13 @@ public class SPIRVLevelZeroModule implements SPIRVModule {
     private LevelZeroKernel kernel;
     private String entryPoint;
 
-    public SPIRVLevelZeroModule(LevelZeroModule levelZeroModule, LevelZeroKernel kernel, String entryPoint) {
+    private String pathToSPIRVBinary;
+
+    public SPIRVLevelZeroModule(LevelZeroModule levelZeroModule, LevelZeroKernel kernel, String entryPoint, String pathToSPIRVBinary) {
         this.levelZeroModule = levelZeroModule;
         this.kernel = kernel;
         this.entryPoint = entryPoint;
+        this.pathToSPIRVBinary = pathToSPIRVBinary;
     }
 
     public LevelZeroModule getLevelZeroModule() {
@@ -48,6 +51,10 @@ public class SPIRVLevelZeroModule implements SPIRVModule {
 
     public String getEntryPoint() {
         return entryPoint;
+    }
+
+    public String getPathToSPIRVBinary() {
+        return pathToSPIRVBinary;
     }
 
 }
