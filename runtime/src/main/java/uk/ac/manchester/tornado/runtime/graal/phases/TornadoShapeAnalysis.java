@@ -135,7 +135,6 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
         }
         Collections.sort(ranges);
 
-        System.out.println("SHAPE ANALYSIS: " + dimensions + " ranges: " + ranges.size());
         setDomainTree(dimensions, ranges, context);
 
     }

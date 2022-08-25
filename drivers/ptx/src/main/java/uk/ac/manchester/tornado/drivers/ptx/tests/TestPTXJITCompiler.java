@@ -31,6 +31,8 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.drivers.common.CompilerUtil;
+import uk.ac.manchester.tornado.drivers.common.MetaCompilation;
 import uk.ac.manchester.tornado.drivers.ptx.PTX;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDriver;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXInstalledCode;
@@ -61,39 +63,10 @@ public class TestPTXJITCompiler {
         }
     }
 
-    private Method getMethodForName(Class<?> klass, String nameMethod) {
-        Method method = null;
-        for (Method m : klass.getMethods()) {
-            if (m.getName().equals(nameMethod)) {
-                method = m;
-            }
-        }
-        return method;
-    }
-
-    public static class MetaCompilation {
-        TaskMetaData taskMeta;
-        PTXInstalledCode ptxCode;
-
-        public MetaCompilation(TaskMetaData taskMeta, PTXInstalledCode ptxCode) {
-            this.taskMeta = taskMeta;
-            this.ptxCode = ptxCode;
-        }
-
-        public TaskMetaData getTaskMeta() {
-            return taskMeta;
-        }
-
-        public PTXInstalledCode getPtxCode() {
-            return ptxCode;
-        }
-
-    }
-
     public MetaCompilation compileMethod(Class<?> klass, String methodName, PTXTornadoDevice tornadoDevice, int[] a, int[] b, double[] c) {
 
         // Get the method object to be compiled
-        Method methodToCompile = getMethodForName(klass, methodName);
+        Method methodToCompile = CompilerUtil.getMethodForName(klass, methodName);
 
         // Get Tornado Runtime
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
@@ -172,10 +145,10 @@ public class TestPTXJITCompiler {
         MetaCompilation compileMethod = compileMethod(TestPTXJITCompiler.class, "methodToCompile", tornadoDevice, a, b, c);
 
         // Check with all internal APIs
-        run(tornadoDevice, compileMethod.ptxCode, compileMethod.taskMeta, a, b, c);
+        run(tornadoDevice, (PTXInstalledCode) compileMethod.getInstalledCode(), compileMethod.getTaskMeta(), a, b, c);
 
         // Check with PTX API
-        runWithPTXAPI(tornadoDevice, compileMethod.ptxCode, compileMethod.taskMeta, a, b, c);
+        runWithPTXAPI(tornadoDevice, (PTXInstalledCode) compileMethod.getInstalledCode(), compileMethod.getTaskMeta(), a, b, c);
 
         boolean correct = true;
         for (int i = 0; i < c.length; i++) {

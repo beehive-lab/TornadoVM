@@ -23,8 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.tests;
 
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
-
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,8 +32,9 @@ import org.graalvm.compiler.phases.util.Providers;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.drivers.common.CompilerUtil;
+import uk.ac.manchester.tornado.drivers.common.MetaCompilation;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDevice;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDriver;
@@ -47,7 +46,6 @@ import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.KernelArgs;
-import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
@@ -76,42 +74,6 @@ public class TestSPIRVJITCompiler {
         }
     }
 
-    private Method getMethodForName(Class<?> klass, String nameMethod) {
-        Method method = null;
-        for (Method m : klass.getMethods()) {
-            if (m.getName().equals(nameMethod)) {
-                method = m;
-            }
-        }
-        return method;
-    }
-
-    public static class MetaCompilation {
-        TaskMetaData taskMeta;
-        SPIRVInstalledCode spirvCode;
-
-        public MetaCompilation(TaskMetaData taskMeta, SPIRVInstalledCode installedCode) {
-            this.taskMeta = taskMeta;
-            this.spirvCode = installedCode;
-        }
-
-        public TaskMetaData getTaskMeta() {
-            return taskMeta;
-        }
-
-        public SPIRVInstalledCode getSpirvCode() {
-            return spirvCode;
-        }
-    }
-
-    public Providers getProviders(int driverIndex) {
-        return getTornadoRuntime().getDriver(driverIndex).getProviders();
-    }
-
-    public TornadoSuitesProvider getSuitesProvider(int driverIndex) {
-        return getTornadoRuntime().getDriver(driverIndex).getSuitesProvider();
-    }
-
     public Sketch buildSketchForJavaMethod(ResolvedJavaMethod resolvedJavaMethod, TaskMetaData taskMetaData, Providers providers, TornadoSuitesProvider suites) {
         new SketchRequest(resolvedJavaMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex())//
                 .run();
@@ -122,7 +84,7 @@ public class TestSPIRVJITCompiler {
     public MetaCompilation compileMethod(Class<?> klass, String methodName, int[] a, int[] b, double[] c) {
 
         // Get the method object to be compiled
-        Method methodToCompile = getMethodForName(klass, methodName);
+        Method methodToCompile = CompilerUtil.getMethodForName(klass, methodName);
 
         // Get Tornado Runtime
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
@@ -133,9 +95,8 @@ public class TestSPIRVJITCompiler {
         // Get the backend from TornadoVM
         SPIRVBackend spirvBackend = tornadoRuntime.getDriver(SPIRVDriver.class).getDefaultBackend();
 
+        // Obtain the SPIR-V device
         TornadoDevice device = tornadoRuntime.getDriver(SPIRVDriver.class).getDefaultDevice();
-
-        System.out.println("Selecting Device: " + device.getPhysicalDevice().getDeviceName());
 
         // Create a new task for TornadoVM
         ScheduleMetaData scheduleMetaData = new ScheduleMetaData("s0");
@@ -145,14 +106,12 @@ public class TestSPIRVJITCompiler {
         taskMeta.setDevice(device);
 
         // 1. Build Common Compiler Phase (Sketcher)
-        // FIXME Possible renaming of the Sketcher
-        // 1.1 Utility to build a sketcher and insert into the HashMap for fast LookUps
-        Providers providers = getProviders(0);
-        TornadoSuitesProvider suites = getSuitesProvider(0);
+        // Utility to build a sketcher and insert into the HashMap for fast LookUps
+        Providers providers = spirvBackend.getProviders();
+        TornadoSuitesProvider suites = spirvBackend.getTornadoSuites();
         Sketch sketch = buildSketchForJavaMethod(resolvedJavaMethod, taskMeta, providers, suites);
 
         // 2. Function f: Sketch -> SPIR-V Compiled Code
-        //SPIRVCompiler.compileSketchForDevice()
         SPIRVCompilationResult spirvCompilationResult = SPIRVCompiler.compileSketchForDevice(sketch, executable, (SPIRVProviders) spirvBackend.getProviders(), spirvBackend, new EmptyProfiler());
 
         // 3. Install the SPIR-V code into the VM
@@ -180,19 +139,19 @@ public class TestSPIRVJITCompiler {
         // Copy-IN B
         spirvTornadoDevice.ensurePresent(b, objectStateB, null, 0, 0);
 
-        // Create call wrapper
+        // Create call stack wrapper for SPIR-V with 3 arguments
         KernelArgs callWrapper = spirvTornadoDevice.createCallWrapper(3);
-
         callWrapper.setKernelContext(new HashMap<>());
 
+        // Add kernel arguments to the SPIR-V Call Stack
         callWrapper.addCallArgument(objectStateA.getObjectBuffer().toBuffer(), true);
         callWrapper.addCallArgument(objectStateB.getObjectBuffer().toBuffer(), true);
         callWrapper.addCallArgument(objectStateC.getObjectBuffer().toBuffer(), true);
 
-        // Run the code
+        // Launch the generated kernel
         installedCode.launchWithoutDependencies(callWrapper, null, taskMeta, 0);
 
-        // Obtain the result
+        // Transfer the result from the device to the host (this is a blocking call)
         spirvTornadoDevice.streamOutBlocking(c, 0, objectStateC, null);
     }
 
@@ -213,7 +172,7 @@ public class TestSPIRVJITCompiler {
 
         TornadoDevice device = TornadoCoreRuntime.getTornadoRuntime().getDriver(SPIRVDriver.class).getDefaultDevice();
 
-        run((SPIRVTornadoDevice) device, compileMethod.getSpirvCode(), compileMethod.getTaskMeta(), a, b, c);
+        run((SPIRVTornadoDevice) device, (SPIRVInstalledCode) compileMethod.getInstalledCode(), compileMethod.getTaskMeta(), a, b, c);
 
         boolean correct = true;
         for (int i = 0; i < c.length; i++) {
@@ -229,12 +188,10 @@ public class TestSPIRVJITCompiler {
         } else {
             System.out.println(" ................ [PASS]");
         }
-
     }
 
     public static void main(String[] args) {
         System.out.print("Running Native: uk.ac.manchester.tornado.drivers.spirv.tests.TestSPIRVJITCompiler");
         new TestSPIRVJITCompiler().test();
     }
-
 }

@@ -33,6 +33,8 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.drivers.common.CompilerUtil;
+import uk.ac.manchester.tornado.drivers.common.MetaCompilation;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
 import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
@@ -62,39 +64,10 @@ public class TestOpenCLJITCompiler {
         }
     }
 
-    private Method getMethodForName(Class<?> klass, String nameMethod) {
-        Method method = null;
-        for (Method m : klass.getMethods()) {
-            if (m.getName().equals(nameMethod)) {
-                method = m;
-            }
-        }
-        return method;
-    }
-
-    public static class MetaCompilation {
-        TaskMetaData taskMeta;
-        OCLInstalledCode openCLCode;
-
-        public MetaCompilation(TaskMetaData taskMeta, OCLInstalledCode openCLCode) {
-            this.taskMeta = taskMeta;
-            this.openCLCode = openCLCode;
-        }
-
-        public TaskMetaData getTaskMeta() {
-            return taskMeta;
-        }
-
-        public OCLInstalledCode getOpenCLCode() {
-            return openCLCode;
-        }
-
-    }
-
     public MetaCompilation compileMethod(Class<?> klass, String methodName, OCLTornadoDevice tornadoDevice, int[] a, int[] b, double[] c) {
 
         // Get the method object to be compiled
-        Method methodToCompile = getMethodForName(klass, methodName);
+        Method methodToCompile = CompilerUtil.getMethodForName(klass, methodName);
 
         // Get Tornado Runtime
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
@@ -174,10 +147,10 @@ public class TestOpenCLJITCompiler {
         MetaCompilation compileMethod = compileMethod(TestOpenCLJITCompiler.class, "methodToCompile", tornadoDevice, a, b, c);
 
         // Check with all internal APIs
-        run(tornadoDevice, compileMethod.openCLCode, compileMethod.taskMeta, a, b, c);
+        run(tornadoDevice, (OCLInstalledCode) compileMethod.getInstalledCode(), compileMethod.getTaskMeta(), a, b, c);
 
         // Check with OpenCL API
-        runWithOpenCLAPI(tornadoDevice, compileMethod.openCLCode, compileMethod.taskMeta, a, b, c);
+        runWithOpenCLAPI(tornadoDevice, (OCLInstalledCode) compileMethod.getInstalledCode(), compileMethod.getTaskMeta(), a, b, c);
 
         boolean correct = true;
         for (int i = 0; i < c.length; i++) {
