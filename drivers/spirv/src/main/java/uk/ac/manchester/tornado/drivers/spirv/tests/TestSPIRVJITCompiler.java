@@ -49,8 +49,6 @@ import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
-import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
-import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
@@ -72,13 +70,6 @@ public class TestSPIRVJITCompiler {
         for (@Parallel int i = 0; i < c.length; i++) {
             c[i] = 0.12 * a[i] * b[i];
         }
-    }
-
-    public Sketch buildSketchForJavaMethod(ResolvedJavaMethod resolvedJavaMethod, TaskMetaData taskMetaData, Providers providers, TornadoSuitesProvider suites) {
-        new SketchRequest(resolvedJavaMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex())//
-                .run();
-        Sketch lookup = TornadoSketcher.lookup(resolvedJavaMethod, taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex());
-        return lookup;
     }
 
     public MetaCompilation compileMethod(Class<?> klass, String methodName, Object... parameters) {
@@ -109,7 +100,7 @@ public class TestSPIRVJITCompiler {
         // Utility to build a sketcher and insert into the HashMap for fast LookUps
         Providers providers = spirvBackend.getProviders();
         TornadoSuitesProvider suites = spirvBackend.getTornadoSuites();
-        Sketch sketch = buildSketchForJavaMethod(resolvedJavaMethod, taskMeta, providers, suites);
+        Sketch sketch = CompilerUtil.buildSketchForJavaMethod(resolvedJavaMethod, taskMeta, providers, suites);
 
         // 2. Function f: Sketch -> SPIR-V Compiled Code
         SPIRVCompilationResult spirvCompilationResult = SPIRVCompiler.compileSketchForDevice(sketch, compilableTask, (SPIRVProviders) spirvBackend.getProviders(), spirvBackend, new EmptyProfiler());

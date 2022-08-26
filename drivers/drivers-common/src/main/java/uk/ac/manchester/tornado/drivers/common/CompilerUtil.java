@@ -43,6 +43,15 @@ package uk.ac.manchester.tornado.drivers.common;
 
 import java.lang.reflect.Method;
 
+import org.graalvm.compiler.phases.util.Providers;
+
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
+import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
+import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
+import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+
 public class CompilerUtil {
 
     public static Method getMethodForName(Class<?> klass, String nameMethod) {
@@ -53,5 +62,11 @@ public class CompilerUtil {
             }
         }
         return method;
+    }
+
+    public static Sketch buildSketchForJavaMethod(ResolvedJavaMethod resolvedJavaMethod, TaskMetaData taskMetaData, Providers providers, TornadoSuitesProvider suites) {
+        new SketchRequest(resolvedJavaMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex())//
+                .run();
+        return TornadoSketcher.lookup(resolvedJavaMethod, taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex());
     }
 }
