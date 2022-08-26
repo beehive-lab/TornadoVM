@@ -81,7 +81,7 @@ public class TestSPIRVJITCompiler {
         return lookup;
     }
 
-    public MetaCompilation compileMethod(Class<?> klass, String methodName, int[] a, int[] b, double[] c) {
+    public MetaCompilation compileMethod(Class<?> klass, String methodName, Object... parameters) {
 
         // Get the method object to be compiled
         Method methodToCompile = CompilerUtil.getMethodForName(klass, methodName);
@@ -101,8 +101,8 @@ public class TestSPIRVJITCompiler {
         // Create a new task for TornadoVM
         ScheduleMetaData scheduleMetaData = new ScheduleMetaData("s0");
         // Create a compilable task
-        CompilableTask executable = new CompilableTask(scheduleMetaData, "t0", methodToCompile, a, b, c);
-        TaskMetaData taskMeta = executable.meta();
+        CompilableTask compilableTask = new CompilableTask(scheduleMetaData, "t0", methodToCompile, parameters);
+        TaskMetaData taskMeta = compilableTask.meta();
         taskMeta.setDevice(device);
 
         // 1. Build Common Compiler Phase (Sketcher)
@@ -112,7 +112,7 @@ public class TestSPIRVJITCompiler {
         Sketch sketch = buildSketchForJavaMethod(resolvedJavaMethod, taskMeta, providers, suites);
 
         // 2. Function f: Sketch -> SPIR-V Compiled Code
-        SPIRVCompilationResult spirvCompilationResult = SPIRVCompiler.compileSketchForDevice(sketch, executable, (SPIRVProviders) spirvBackend.getProviders(), spirvBackend, new EmptyProfiler());
+        SPIRVCompilationResult spirvCompilationResult = SPIRVCompiler.compileSketchForDevice(sketch, compilableTask, (SPIRVProviders) spirvBackend.getProviders(), spirvBackend, new EmptyProfiler());
 
         // 3. Install the SPIR-V code into the VM
         SPIRVDevice spirvDevice = (SPIRVDevice) device.getDeviceContext().getDevice();
