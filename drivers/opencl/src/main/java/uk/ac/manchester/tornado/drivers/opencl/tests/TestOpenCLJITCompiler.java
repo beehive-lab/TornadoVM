@@ -64,7 +64,7 @@ public class TestOpenCLJITCompiler {
         }
     }
 
-    public MetaCompilation compileMethod(Class<?> klass, String methodName, OCLTornadoDevice tornadoDevice, int[] a, int[] b, double[] c) {
+    public MetaCompilation compileMethod(Class<?> klass, String methodName, OCLTornadoDevice tornadoDevice, Object... parameters) {
 
         // Get the method object to be compiled
         Method methodToCompile = CompilerUtil.getMethodForName(klass, methodName);
@@ -83,7 +83,7 @@ public class TestOpenCLJITCompiler {
         taskMeta.setDevice(OpenCL.defaultDevice());
 
         // Compile the code for OpenCL
-        OCLCompilationResult compilationResult = OCLCompiler.compileCodeForDevice(resolvedJavaMethod, new Object[] { a, b, c }, taskMeta, (OCLProviders) openCLBackend.getProviders(), openCLBackend,
+        OCLCompilationResult compilationResult = OCLCompiler.compileCodeForDevice(resolvedJavaMethod, parameters, taskMeta, (OCLProviders) openCLBackend.getProviders(), openCLBackend,
                 new EmptyProfiler());
 
         // Install the OpenCL Code in the VM

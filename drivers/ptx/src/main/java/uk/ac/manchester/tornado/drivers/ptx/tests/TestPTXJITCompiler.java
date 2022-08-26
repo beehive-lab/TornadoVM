@@ -63,7 +63,7 @@ public class TestPTXJITCompiler {
         }
     }
 
-    public MetaCompilation compileMethod(Class<?> klass, String methodName, PTXTornadoDevice tornadoDevice, int[] a, int[] b, double[] c) {
+    public MetaCompilation compileMethod(Class<?> klass, String methodName, PTXTornadoDevice tornadoDevice, Object... parameters) {
 
         // Get the method object to be compiled
         Method methodToCompile = CompilerUtil.getMethodForName(klass, methodName);
@@ -82,7 +82,7 @@ public class TestPTXJITCompiler {
         taskMeta.setDevice(PTX.defaultDevice());
 
         // Compile the PTX code
-        PTXCompilationResult compilationResult = PTXCompiler.compileCodeForDevice(resolvedJavaMethod, new Object[] { a, b, c }, taskMeta, (PTXProviders) ptxBackend.getProviders(), ptxBackend, 0,
+        PTXCompilationResult compilationResult = PTXCompiler.compileCodeForDevice(resolvedJavaMethod, parameters, taskMeta, (PTXProviders) ptxBackend.getProviders(), ptxBackend, 0,
                 new EmptyProfiler());
 
         // Install the PTX Code in the VM
