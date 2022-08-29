@@ -24,13 +24,13 @@ A clear and concise description of what you expected to happen.
 
 ### Computing system setup (please complete the following information):
  - OS: [e.g. Ubuntu 20]
- - OpenCL Version 
- - PTX Version (if applicable)
- - Level Zero & SPIRV Versions (if applicable)
+ - OpenCL and Driver versions
+ - If applicable, PTX and CUDA Driver versions
+ - If applicable, Level Zero & SPIR-V Versions 
  - TornadoVM commit id
 
 ### Additional context
 
-If applicable, add any other context about the problem here.
+Add any other context about the problem here.
 
 ---------------------------------------------------------------------
