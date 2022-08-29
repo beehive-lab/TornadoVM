@@ -27,9 +27,12 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import org.graalvm.compiler.phases.util.Providers;
+
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.drivers.common.CompilerUtil;
 import uk.ac.manchester.tornado.drivers.common.MetaCompilation;
@@ -45,7 +48,10 @@ import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
+import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
+import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
@@ -77,13 +83,23 @@ public class TestPTXJITCompiler {
         // Get the backend from TornadoVM
         PTXBackend ptxBackend = tornadoRuntime.getDriver(PTXDriver.class).getDefaultBackend();
 
-        // Create a new task for Tornado
-        TaskMetaData taskMeta = TaskMetaData.create(new ScheduleMetaData("S0"), methodToCompile.getName(), methodToCompile);
-        taskMeta.setDevice(PTX.defaultDevice());
+        TornadoDevice device = tornadoRuntime.getDriver(PTXDriver.class).getDefaultDevice();
+
+        // Create a new task for TornadoVM
+        ScheduleMetaData scheduleMetaData = new ScheduleMetaData("s0");
+        // Create a compilable task
+        CompilableTask compilableTask = new CompilableTask(scheduleMetaData, "t0", methodToCompile, parameters);
+        TaskMetaData taskMeta = compilableTask.meta();
+        taskMeta.setDevice(device);
+
+        // 1. Build Common Compiler Phase (Sketcher)
+        // Utility to build a sketcher and insert into the HashMap for fast LookUps
+        Providers providers = ptxBackend.getProviders();
+        TornadoSuitesProvider suites = ptxBackend.getTornadoSuites();
+        Sketch sketch = CompilerUtil.buildSketchForJavaMethod(resolvedJavaMethod, taskMeta, providers, suites);
 
         // Compile the PTX code
-        PTXCompilationResult compilationResult = PTXCompiler.compileCodeForDevice(resolvedJavaMethod, parameters, taskMeta, (PTXProviders) ptxBackend.getProviders(), ptxBackend, 0,
-                new EmptyProfiler());
+        PTXCompilationResult compilationResult = PTXCompiler.compileSketchForDevice(sketch, compilableTask, (PTXProviders) providers, ptxBackend, new EmptyProfiler());
 
         // Install the PTX Code in the VM
         TornadoInstalledCode ptxCode = tornadoDevice.getDeviceContext().installCode(compilationResult, resolvedJavaMethod.getName());

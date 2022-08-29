@@ -29,9 +29,12 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import org.graalvm.compiler.phases.util.Providers;
+
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.drivers.common.CompilerUtil;
 import uk.ac.manchester.tornado.drivers.common.MetaCompilation;
@@ -46,7 +49,10 @@ import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.KernelArgs;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
+import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
+import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
@@ -78,13 +84,23 @@ public class TestOpenCLJITCompiler {
         // Get the backend from TornadoVM
         OCLBackend openCLBackend = tornadoRuntime.getDriver(OCLDriver.class).getDefaultBackend();
 
-        // Create a new task for Tornado
-        TaskMetaData taskMeta = TaskMetaData.create(new ScheduleMetaData("S0"), methodToCompile.getName(), methodToCompile);
-        taskMeta.setDevice(OpenCL.defaultDevice());
+        // Get the default OpenCL device
+        TornadoDevice device = tornadoRuntime.getDriver(OCLDriver.class).getDefaultDevice();
 
-        // Compile the code for OpenCL
-        OCLCompilationResult compilationResult = OCLCompiler.compileCodeForDevice(resolvedJavaMethod, parameters, taskMeta, (OCLProviders) openCLBackend.getProviders(), openCLBackend,
-                new EmptyProfiler());
+        // Create a new task for TornadoVM
+        ScheduleMetaData scheduleMetaData = new ScheduleMetaData("s0");
+        // Create a compilable task
+        CompilableTask compilableTask = new CompilableTask(scheduleMetaData, "t0", methodToCompile, parameters);
+        TaskMetaData taskMeta = compilableTask.meta();
+        taskMeta.setDevice(device);
+
+        // 1. Build Common Compiler Phase (Sketcher)
+        // Utility to build a sketcher and insert into the HashMap for fast LookUps
+        Providers providers = openCLBackend.getProviders();
+        TornadoSuitesProvider suites = openCLBackend.getTornadoSuites();
+        Sketch sketch = CompilerUtil.buildSketchForJavaMethod(resolvedJavaMethod, taskMeta, providers, suites);
+
+        OCLCompilationResult compilationResult = OCLCompiler.compileSketchForDevice(sketch, compilableTask, (OCLProviders) providers, openCLBackend, new EmptyProfiler());
 
         // Install the OpenCL Code in the VM
         OCLInstalledCode openCLCode = tornadoDevice.getDeviceContext().installCode(compilationResult);
