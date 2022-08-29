@@ -504,5 +504,4 @@ public class SPIRVCompiler {
             return SPIRVCompiler.compile(this);
         }
     }
-
 }
