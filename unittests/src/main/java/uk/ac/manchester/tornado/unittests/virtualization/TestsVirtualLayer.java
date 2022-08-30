@@ -1,24 +1,26 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.unittests.virtualization;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -29,7 +31,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoDriver;
-import uk.ac.manchester.tornado.api.TornadoRuntimeCI;
+import uk.ac.manchester.tornado.api.TornadoRuntimeInterface;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -61,7 +63,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         }
     }
 
-    public static TornadoRuntimeCI getTornadoRuntime() {
+    public static TornadoRuntimeInterface getTornadoRuntime() {
         return TornadoRuntime.getTornadoRuntime();
     }
 
@@ -102,7 +104,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
     /**
      * Test to change execution from one device to another (migration).
-     * 
+     *
      * @throws Exception
      */
     @Test
@@ -233,7 +235,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
      * Tasks within the same task schedules are always executed on the same device.
      * Currently, it is not possible to change device for a single tasks in a group
      * of tasks.
-     * 
+     *
      */
     @Test
     public void testVirtualLayer03() {
@@ -262,7 +264,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
     /**
      * It creates one task scheduler and one task. Then it executes the same task in
      * different devices.
-     * 
+     *
      * The task is just one instance for all the devices. The loop iterates over the
      * devices under the same Tornado Driver and executes the task.
      */
