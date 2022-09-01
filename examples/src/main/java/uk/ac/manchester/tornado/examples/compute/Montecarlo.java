@@ -56,7 +56,7 @@ public class Montecarlo {
         float[] output = new float[size];
         float[] seq = new float[size];
 
-        TaskGraph taskGraph = new TaskGraph("s0").task("taskGraph", Montecarlo::computeMontecarlo, output, size).streamOut(output);
+        TaskGraph taskGraph = new TaskGraph("s0").task("taskGraph", Montecarlo::computeMontecarlo, output, size).transferToHost(output);
 
         long start = System.nanoTime();
         taskGraph.execute();

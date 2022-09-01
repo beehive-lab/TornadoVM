@@ -120,7 +120,7 @@ public class Jacobi2D {
         final TaskGraph graph = new TaskGraph("s0")
                 .task("t0", Jacobi2D::kernelOne, a, b, size)
                 .task("t1", Jacobi2D::kernelTwo, a, b, size)
-                .streamOut(a);
+                .transferToHost(a);
         // @formatter:on
 
         for (int i = 0; i < iterations; i++) {

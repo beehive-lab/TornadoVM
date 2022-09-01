@@ -34,7 +34,7 @@ public class RenderTrackTornado extends BenchmarkDriver {
         }
         taskGraph = new TaskGraph("benchmark")//
                 .task("renderTrack", ComputeKernels::renderTrack, output, input) //
-                .streamOut(output);
+                .transferToHost(output);
         taskGraph.warmup();
     }
 
@@ -74,7 +74,7 @@ public class RenderTrackTornado extends BenchmarkDriver {
         }
         TaskGraph s0 = new TaskGraph("s0")//
                 .task("t0", ComputeKernels::renderTrack, outputTornado, inputValidation) //
-                .streamOut(outputTornado);
+                .transferToHost(outputTornado);
         s0.mapAllTo(device);
         s0.execute();
 

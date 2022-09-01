@@ -86,7 +86,7 @@ public class MatrixAddition2D {
         //@formatter:off
         TaskGraph t = new TaskGraph("s0")
                 .task("t0", MatrixAddition2D::matrixAddition, matrixA, matrixB, matrixC, size)
-                .streamOut(matrixC);
+                .transferToHost(matrixC);
         //@formatter:on
 
         // 1. Warm up Tornado
@@ -117,7 +117,7 @@ public class MatrixAddition2D {
         //@formatter:off
         TaskGraph t1 = new TaskGraph("s1")
                 .task("t1", MatrixAddition2D::matrixAddition, matrixAV, matrixBV, matrixCV, (size* 2))
-                .streamOut(matrixCV);
+                .transferToHost(matrixCV);
         //@formatter:on
 
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {

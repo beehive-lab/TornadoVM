@@ -71,9 +71,9 @@ public class TestGrid extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestArrays::vectorAddFloat, a, b, c) //
-                .streamOut(c); //
+                .transferToHost(c); //
 
         // Set the Grid with 4096 threads
         WorkerGrid1D worker = new WorkerGrid1D(4096);
@@ -103,9 +103,9 @@ public class TestGrid extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t1", TestGrid::matrixMultiplication, a, b, c, numElements) //
-                .streamOut(c); //
+                .transferToHost(c); //
 
         WorkerGrid2D worker = new WorkerGrid2D(numElements, numElements);
         GridScheduler gridScheduler = new GridScheduler("s0.t1", worker);
@@ -136,7 +136,7 @@ public class TestGrid extends TornadoTestBase {
         Matrix2DInt matrixB = new Matrix2DInt(X, Y);
         TaskGraph taskGraph = new TaskGraph("foo") //
                 .task("bar", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
-                .streamOut(matrixB);
+                .transferToHost(matrixB);
 
         WorkerGrid2D worker = new WorkerGrid2D(X, Y);
         GridScheduler gridScheduler = new GridScheduler("foo.bar", worker);
@@ -170,10 +170,10 @@ public class TestGrid extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestArrays::vectorAddFloat, a, b, c) //
                 .task("t1", TestArrays::vectorAddFloat, a, b, c) //
-                .streamOut(c); //
+                .transferToHost(c); //
 
         // Set the Grid with 4096 threads
         WorkerGrid1D worker = new WorkerGrid1D(4096);
@@ -205,7 +205,7 @@ public class TestGrid extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("mxm", TestGrid::matrixMultiplication, matrixA, matrixB, matrixC, N) //
-                .streamOut(matrixC);
+                .transferToHost(matrixC);
 
         WorkerGrid2D worker = new WorkerGrid2D(N, N);
         GridScheduler gridScheduler = new GridScheduler("s0.mxm", worker);

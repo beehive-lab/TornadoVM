@@ -163,7 +163,7 @@ public class BlurFilter {
                     .task("red", BlurFilterImage::compute, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
                     .task("green", BlurFilterImage::compute, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
                     .task("blue", BlurFilterImage::compute, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
-                    .streamOut(redFilter, greenFilter, blueFilter) //
+                    .transferToHost(redFilter, greenFilter, blueFilter) //
                     .useDefaultThreadScheduler(true);
 
             parallelFilter.mapAllTo(device);

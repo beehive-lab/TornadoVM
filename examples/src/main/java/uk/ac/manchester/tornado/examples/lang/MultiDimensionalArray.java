@@ -37,7 +37,7 @@ public class MultiDimensionalArray {
         int m = 8;
         int[][] values = new int[n][m];
 
-        TaskGraph s0 = new TaskGraph("s0").task("t0", MultiDimensionalArray::fill, values).streamOut(new Object[] { values });
+        TaskGraph s0 = new TaskGraph("s0").task("t0", MultiDimensionalArray::fill, values).transferToHost(new Object[] { values });
 
         s0.warmup();
 

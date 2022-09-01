@@ -100,7 +100,7 @@ public class TestFFT {
 
         TaskGraph s0 = new TaskGraph("x0");
         s0.task("t0", TestFFT::nesting, input, dim, factors, size, dummyFac, dimArr);
-        s0.streamOut(input);
+        s0.transferToHost(input);
         s0.execute();
 
         nesting(seq, dim, factors, size, dummyFac, dimArr);

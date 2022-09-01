@@ -56,9 +56,9 @@ public class TestFlatMap extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestFlatMap::computeFlatMap, input, output, SIZE) //
-                .streamOut(output);
+                .transferToHost(output);
         taskGraph.execute();
 
         computeFlatMap(input, seq, SIZE);

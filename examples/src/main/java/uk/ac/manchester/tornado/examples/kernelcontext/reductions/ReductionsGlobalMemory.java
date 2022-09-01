@@ -74,8 +74,8 @@ public class ReductionsGlobalMemory {
         gridScheduler.setWorkerGrid("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskGraph s0 = new TaskGraph("s0").copyIn(DataTransferMode.EVERY_EXECUTION, input).task("t0", ReductionsGlobalMemory::reduction, input, reduce, context)
-                .task("t1", ReductionsGlobalMemory::rAdd, reduce, size).streamOut(reduce);
+        TaskGraph s0 = new TaskGraph("s0").transferToDevice(DataTransferMode.EVERY_EXECUTION, input).task("t0", ReductionsGlobalMemory::reduction, input, reduce, context)
+                .task("t1", ReductionsGlobalMemory::rAdd, reduce, size).transferToHost(reduce);
         s0.execute(gridScheduler);
 
         // Final SUM

@@ -67,9 +67,9 @@ public class JMHDFT {
             }
 
             taskGraph = new TaskGraph("benchmark") //
-                    .copyIn(DataTransferMode.EVERY_EXECUTION, inReal, inImag) //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, inReal, inImag) //
                     .task("t0", ComputeKernels::computeDFT, inReal, inImag, outReal, outImag) //
-                    .streamOut(outReal, outImag);
+                    .transferToHost(outReal, outImag);
             taskGraph.warmup();
         }
     }

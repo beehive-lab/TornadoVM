@@ -91,7 +91,7 @@ public class Montecarlo {
         // [Optional] Set the local work group to be 1024, 1, 1
         workerGrid.setLocalWork(1024, 1, 1);
 
-        TaskGraph t0 = new TaskGraph("s0").task("t0", Montecarlo::computeMontecarlo, context, output, size).streamOut(output);
+        TaskGraph t0 = new TaskGraph("s0").task("t0", Montecarlo::computeMontecarlo, context, output, size).transferToHost(output);
 
         long start = System.nanoTime();
         t0.execute(gridScheduler);

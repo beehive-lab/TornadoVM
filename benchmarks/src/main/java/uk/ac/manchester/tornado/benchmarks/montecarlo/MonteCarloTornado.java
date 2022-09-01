@@ -41,7 +41,7 @@ public class MonteCarloTornado extends BenchmarkDriver {
         output = new float[size];
         taskGraph = new TaskGraph("benchmark") //
                 .task("montecarlo", ComputeKernels::monteCarlo, output, size) //
-                .streamOut(output);
+                .transferToHost(output);
         taskGraph.warmup();
     }
 

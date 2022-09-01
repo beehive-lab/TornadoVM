@@ -55,9 +55,9 @@ public class EulerTornado extends BenchmarkDriver {
         outputD = new long[size];
         outputE = new long[size];
         taskGraph = new TaskGraph("benchmark") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("euler", ComputeKernels::euler, size, input, outputA, outputB, outputC, outputD, outputE) //
-                .streamOut(outputA, outputB, outputC, outputD, outputE);
+                .transferToHost(outputA, outputB, outputC, outputD, outputE);
     }
 
     @Override
@@ -88,7 +88,7 @@ public class EulerTornado extends BenchmarkDriver {
     private void runParallel(int size, long[] input, long[] outputA, long[] outputB, long[] outputC, long[] outputD, long[] outputE, TornadoDevice device) {
         TaskGraph graph = new TaskGraph("s0") //
                 .task("s0", ComputeKernels::euler, size, input, outputA, outputB, outputC, outputD, outputE) //
-                .streamOut(outputA, outputB, outputC, outputD, outputE);
+                .transferToHost(outputA, outputB, outputC, outputD, outputE);
         graph.mapAllTo(device);
         graph.execute();
     }

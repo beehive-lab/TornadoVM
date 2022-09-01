@@ -83,7 +83,7 @@ public class SaxpyMT {
             ;
         } else {
             long startInit = System.nanoTime();
-            graph.task("t0", SaxpyMT::saxpy, alpha, x, y, b).streamOut(y);
+            graph.task("t0", SaxpyMT::saxpy, alpha, x, y, b).transferToHost(y);
             long stopInit = System.nanoTime();
             System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
         }

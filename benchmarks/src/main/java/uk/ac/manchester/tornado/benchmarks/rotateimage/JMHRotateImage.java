@@ -72,9 +72,9 @@ public class JMHRotateImage {
             }
 
             taskGraph = new TaskGraph("benchmark") //
-                    .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                     .task("rotateImage", GraphicsKernels::rotateImage, output, m, input) //
-                    .streamOut(output);
+                    .transferToHost(output);
             taskGraph.warmup();
         }
     }

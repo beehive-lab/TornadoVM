@@ -60,7 +60,7 @@ public class TestDynamic extends TornadoTestBase {
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
             .task("t0", TestDynamic::compute, a, b)
-            .streamOut(b);
+            .transferToHost(b);
         //@formatter:on
 
         // Run first time to obtain the best performance device
@@ -87,7 +87,7 @@ public class TestDynamic extends TornadoTestBase {
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("ss0")
             .task("tt0", TestDynamic::compute, a, b)
-            .streamOut(b);
+            .transferToHost(b);
         //@formatter:on
 
         // Run first time to obtain the best performance device
@@ -114,9 +114,9 @@ public class TestDynamic extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, a)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a)
             .task("t0", TestDynamic::saxpy, 2.0f, a, b)
-            .streamOut(b)
+            .transferToHost(b)
             .executeWithProfilerSequential(Policy.PERFORMANCE);
         //@formatter:on
 
@@ -138,9 +138,9 @@ public class TestDynamic extends TornadoTestBase {
 
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("ts")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, a)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a)
             .task("task", TestDynamic::compute2, a, b)
-            .streamOut(b);
+            .transferToHost(b);
         //@formatter:on
 
         // Run first time to obtain the best performance device
@@ -170,10 +170,10 @@ public class TestDynamic extends TornadoTestBase {
 
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("pp")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, a)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a)
             .task("t0", TestDynamic::compute, a, b)
             .task("t1", TestDynamic::compute2, b, b)
-            .streamOut(b);
+            .transferToHost(b);
         //@formatter:on
 
         // Run first time to obtain the best performance device
@@ -200,7 +200,7 @@ public class TestDynamic extends TornadoTestBase {
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
             .task("t0", TestDynamic::compute, a, b)
-            .streamOut(b);
+            .transferToHost(b);
         //@formatter:on
 
         // Run first time to obtain the best performance device

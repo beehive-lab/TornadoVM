@@ -60,9 +60,9 @@ public class Resize extends TornadoTestBase {
         float[] a = createArray(256);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize01, a) //
-                .streamOut(a); //
+                .transferToHost(a); //
 
         taskGraph.execute();
         // Resize data
@@ -82,9 +82,9 @@ public class Resize extends TornadoTestBase {
         float[] a = createArray(256);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize01, a) //
-                .streamOut(a); //
+                .transferToHost(a); //
         taskGraph.execute();
 
         // Resize data
@@ -114,9 +114,9 @@ public class Resize extends TornadoTestBase {
         float[] b = createArray(1024);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize02, a, b) //
-                .streamOut(b); //
+                .transferToHost(b); //
         taskGraph.execute();
 
         // Resize data
@@ -140,9 +140,9 @@ public class Resize extends TornadoTestBase {
         float[] b = createArray(256);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize02, a, b) //
-                .streamOut(b); //
+                .transferToHost(b); //
         taskGraph.execute();
 
         float[] aux = createArray(256);
@@ -173,9 +173,9 @@ public class Resize extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize02, a, b) //
-                .streamOut(b); //
+                .transferToHost(b); //
         taskGraph.execute(gridScheduler);
 
         float[] aux = createArray(256);
@@ -208,7 +208,7 @@ public class Resize extends TornadoTestBase {
         // Do not stream in 'a'
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", Resize::resize02, a, b) //
-                .streamOut(b); //
+                .transferToHost(b); //
         taskGraph.execute(gridScheduler);
 
         float[] aux = createArray(256);

@@ -86,7 +86,7 @@ public class RenderTrack {
             }
         }
 
-        TaskGraph tataskGraphk = new TaskGraph("s0").task("t0", RenderTrack::renderTrack, outputTornadoVM, input).streamOut(outputTornadoVM);
+        TaskGraph tataskGraphk = new TaskGraph("s0").task("t0", RenderTrack::renderTrack, outputTornadoVM, input).transferToHost(outputTornadoVM);
         ArrayList<Long> timers = new ArrayList<>();
         tataskGraphk.warmup();
         for (int i = 0; i < 10; i++) {

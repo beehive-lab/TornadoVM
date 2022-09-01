@@ -87,7 +87,7 @@ public class TestHello extends TornadoTestBase {
         // @formatter:off
 		new TaskGraph("s0")
 		    .task("t0", TestHello::add, a, b, c)
-		    .streamOut(c)
+		    .transferToHost(c)
 		    .execute();
 		// @formatter:on
 
@@ -109,7 +109,7 @@ public class TestHello extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
             .task("t0", t::compute, a, b)
-            .streamOut(b)
+            .transferToHost(b)
             .execute();
         //@formatter:on
 
@@ -130,9 +130,9 @@ public class TestHello extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, a)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a)
             .task("t0", t::compute, a, b)
-            .streamOut(b)
+            .transferToHost(b)
             .execute();
         //@formatter:on
 
@@ -151,7 +151,7 @@ public class TestHello extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
             .task("t0", TestHello::compute, a)
-            .streamOut(a)
+            .transferToHost(a)
             .execute();
         //@formatter:on
 

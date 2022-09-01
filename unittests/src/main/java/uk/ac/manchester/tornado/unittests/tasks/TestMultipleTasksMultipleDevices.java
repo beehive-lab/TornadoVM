@@ -63,7 +63,7 @@ public class TestMultipleTasksMultipleDevices {
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .task("t0", TestMultipleTasksSingleDevice::task0Initialization, b) //
                 .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12) //
-                .streamOut(a, b); //
+                .transferToHost(a, b); //
 
         taskGraph.execute();
 
@@ -98,11 +98,11 @@ public class TestMultipleTasksMultipleDevices {
         }
 
         TaskGraph taskGraph = new TaskGraph("s0")//
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
                 .task("t0", TestMultipleTasksSingleDevice::task0Initialization, b) //
                 .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12) //
                 .task("t2", TestMultipleTasksSingleDevice::task2Saxpy, c, c, d, 12) //
-                .streamOut(a, b, d); //
+                .transferToHost(a, b, d); //
 
         taskGraph.execute();
 

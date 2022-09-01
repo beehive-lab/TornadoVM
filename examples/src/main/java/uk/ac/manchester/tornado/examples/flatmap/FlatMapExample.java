@@ -55,9 +55,9 @@ public class FlatMapExample {
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", FlatMapExample::computeFlatMap, input, output, SIZE) //
-                .streamOut(output);
+                .transferToHost(output);
         taskGraph.execute();
 
         for (int i = 0; i < SIZE; i++) {

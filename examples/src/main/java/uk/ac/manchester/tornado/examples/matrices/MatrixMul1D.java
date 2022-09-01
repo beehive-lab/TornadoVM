@@ -44,7 +44,7 @@ public class MatrixMul1D {
             matrixB[idx] = 3.5f;
         });
 
-        TaskGraph scheduleCUDA = new TaskGraph("cuda_old_api").task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixCCUDA, N).streamOut(matrixCCUDA);
+        TaskGraph scheduleCUDA = new TaskGraph("cuda_old_api").task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixCCUDA, N).transferToHost(matrixCCUDA);
 
         TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
@@ -72,7 +72,7 @@ public class MatrixMul1D {
         else
             throw new Exception("Could not get average execution time");
 
-        TaskGraph scheduleOCL = new TaskGraph("ocl_old_api").task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixCOCL, N).streamOut(matrixCOCL);
+        TaskGraph scheduleOCL = new TaskGraph("ocl_old_api").task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixCOCL, N).transferToHost(matrixCOCL);
 
         // Get the same device but running the OCL backend
         TornadoDriver oclDriver = TornadoRuntime.getTornadoRuntime().getDriver(1);

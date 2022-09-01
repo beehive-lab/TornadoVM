@@ -74,7 +74,7 @@ public class MatrixMul2D {
 
         TaskGraph cudaTask = new TaskGraph("cuda_s0") //
                 .task("t0", MatrixMul2D::matrixMultiplication, matrixA, matrixB, matrixCCUDA, size) //
-                .streamOut(matrixCCUDA); //
+                .transferToHost(matrixCCUDA); //
 
         TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
@@ -98,7 +98,7 @@ public class MatrixMul2D {
 
         TaskGraph oclTask = new TaskGraph("ocl_s0") //
                 .task("t0", MatrixMul2D::matrixMultiplication, matrixA, matrixB, matrixCOCL, size) //
-                .streamOut(matrixCOCL); //
+                .transferToHost(matrixCOCL); //
 
         TornadoDriver oclDriver = TornadoRuntime.getTornadoRuntime().getDriver(1);
         TornadoDevice oclDevice = null;

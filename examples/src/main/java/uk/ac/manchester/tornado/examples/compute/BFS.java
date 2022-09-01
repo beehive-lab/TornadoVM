@@ -179,7 +179,7 @@ public class BFS {
         initializeVertices(numNodes, vertices, rootNode);
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.task("t0", BFS::initializeVertices, numNodes, vertices, rootNode);
-        taskGraph.streamOut(vertices).execute();
+        taskGraph.transferToHost(vertices).execute();
 
         // initialization of Java vertices
         initializeVertices(numNodes, verticesJava, rootNode);
@@ -194,11 +194,11 @@ public class BFS {
 
         TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
         TaskGraph taskGraph1 = new TaskGraph("s1") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, vertices, adjacencyMatrix, modify, currentDepth) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, vertices, adjacencyMatrix, modify, currentDepth) //
                 .mapAllTo(device);
 
         taskGraph1.task("t1", BFS::runBFS, vertices, adjacencyMatrix, numNodes, modify, currentDepth);
-        taskGraph1.streamOut(vertices, modify);
+        taskGraph1.transferToHost(vertices, modify);
 
         boolean done = false;
 

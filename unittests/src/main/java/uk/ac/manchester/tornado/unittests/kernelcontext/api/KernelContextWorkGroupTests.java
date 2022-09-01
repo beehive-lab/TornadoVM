@@ -54,7 +54,7 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", KernelContextWorkGroupTests::apiTestGlobalGroupSizeX, context, data) //
-                .streamOut(data);
+                .transferToHost(data);
 
         taskGraph.execute(grid);
         assertEquals(16, data[0]);
@@ -74,7 +74,7 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         int[] data = new int[16];
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", KernelContextWorkGroupTests::apiTestGlobalGroupSizeY, context, data) //
-                .streamOut(data);
+                .transferToHost(data);
 
         taskGraph.execute(grid);
         assertEquals(8, data[0]);
@@ -94,7 +94,7 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         int[] data = new int[16];
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", KernelContextWorkGroupTests::apiTestGlobalGroupSizeZ, context, data)//
-                .streamOut(data);
+                .transferToHost(data);
         taskGraph.execute(grid);
         assertEquals(4, data[0]);
     }
@@ -114,7 +114,7 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         int[] data = new int[1024];
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", KernelContextWorkGroupTests::apiTestLocalGroupSizeX, context, data) //
-                .streamOut(data);
+                .transferToHost(data);
 
         taskGraph.execute(grid);
         assertEquals(worker.getLocalWork()[0], data[0]);
@@ -135,7 +135,7 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         int[] data = new int[1024];
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", KernelContextWorkGroupTests::apiTestLocalGroupSizeY, context, data) //
-                .streamOut(data);
+                .transferToHost(data);
 
         taskGraph.execute(grid);
         assertEquals(worker.getLocalWork()[1], data[0]);
@@ -156,7 +156,7 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         int[] data = new int[1024];
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", KernelContextWorkGroupTests::apiTestLocalGroupSizeZ, context, data) //
-                .streamOut(data);
+                .transferToHost(data);
 
         taskGraph.execute(grid);
         assertEquals(worker.getLocalWork()[2], data[0]);

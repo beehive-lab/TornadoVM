@@ -77,8 +77,8 @@ public class ReductionsLocalMemory {
         gridScheduler.setWorkerGrid("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskGraph s0 = new TaskGraph("s0").copyIn(DataTransferMode.EVERY_EXECUTION, input, localSize).task("t0", ReductionsLocalMemory::reductionLocal, input, reduce, localSize, context)
-                .task("t1", ReductionsLocalMemory::rAdd, reduce, (size / localSize)).streamOut(reduce);
+        TaskGraph s0 = new TaskGraph("s0").transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize).task("t0", ReductionsLocalMemory::reductionLocal, input, reduce, localSize, context)
+                .task("t1", ReductionsLocalMemory::rAdd, reduce, (size / localSize)).transferToHost(reduce);
         // Change the Grid
         worker.setLocalWork(localSize, 1, 1);
         s0.execute(gridScheduler);

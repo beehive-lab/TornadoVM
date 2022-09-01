@@ -60,7 +60,7 @@ public class TestIO extends TornadoTestBase {
 
         s0.forceCopyIn(arrayA, arrayB);
         s0.task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC);
-        s0.streamOut(arrayC);
+        s0.transferToHost(arrayC);
 
         for (int i = 0; i < 4; i++) {
             s0.execute();
@@ -90,9 +90,9 @@ public class TestIO extends TornadoTestBase {
         TaskGraph s0 = new TaskGraph("s0");
         assertNotNull(s0);
 
-        s0.copyIn(DataTransferMode.EVERY_EXECUTION, arrayA, arrayB);
+        s0.transferToDevice(DataTransferMode.EVERY_EXECUTION, arrayA, arrayB);
         s0.task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC);
-        s0.streamOut(arrayC);
+        s0.transferToHost(arrayC);
 
         for (int i = 0; i < 4; i++) {
             s0.execute();
@@ -125,9 +125,9 @@ public class TestIO extends TornadoTestBase {
         assertNotNull(s0);
 
         s0.lockObjectsInMemory(arrayA, arrayB, arrayC);
-        s0.copyIn(DataTransferMode.EVERY_EXECUTION, arrayA, arrayB);
+        s0.transferToDevice(DataTransferMode.EVERY_EXECUTION, arrayA, arrayB);
         s0.task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC);
-        s0.streamOut(arrayC);
+        s0.transferToHost(arrayC);
 
         for (int i = 0; i < 4; i++) {
             s0.execute();
@@ -172,9 +172,9 @@ public class TestIO extends TornadoTestBase {
         assertNotNull(s0);
 
         s0.lockObjectsInMemory(arrayA, arrayB, arrayB2, arrayC);
-        s0.copyIn(DataTransferMode.EVERY_EXECUTION, arrayA, arrayB);
+        s0.transferToDevice(DataTransferMode.EVERY_EXECUTION, arrayA, arrayB);
         s0.task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC);
-        s0.streamOut(arrayC);
+        s0.transferToHost(arrayC);
 
         for (int i = 0; i < 4; i++) {
             s0.updateReference(arrayB, arrayB2);
@@ -220,9 +220,9 @@ public class TestIO extends TornadoTestBase {
         assertNotNull(s0);
 
         s0.lockObjectsInMemory(arrayA, arrayB, arrayC);
-        s0.copyIn(DataTransferMode.EVERY_EXECUTION, arrayA, arrayB);
+        s0.transferToDevice(DataTransferMode.EVERY_EXECUTION, arrayA, arrayB);
         s0.task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC);
-        s0.streamOut(arrayC);
+        s0.transferToHost(arrayC);
 
         for (int i = 0; i < 4; i++) {
             float[] arrayB2 = createAndInitializeArray(N);

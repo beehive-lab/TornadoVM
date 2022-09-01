@@ -71,7 +71,7 @@ public class TestCase extends TornadoTestBase {
         // @formatter:off
         TaskGraph taskGraph = new TaskGraph("foo")
                 .task("bar", TestCase::KMeansCalculateCentroids, cache_dqsize, cache_dstart, cache_dqid, cache_dqtfidf, cache_kmeans, doc_group, sizes)
-                .streamOut(cache_dstart);
+                .transferToHost(cache_dstart);
         // @formatter:on
         taskGraph.warmup();
         taskGraph.execute();

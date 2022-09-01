@@ -23,7 +23,7 @@ public class TestSPIRV {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::copyTestZero, a) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));
@@ -40,7 +40,7 @@ public class TestSPIRV {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::copyTest, a) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));
@@ -68,7 +68,7 @@ public class TestSPIRV {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::copyTest2, a, b) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));
@@ -97,7 +97,7 @@ public class TestSPIRV {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::compute, a, b) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));
@@ -127,7 +127,7 @@ public class TestSPIRV {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorAddCompute, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));
@@ -158,7 +158,7 @@ public class TestSPIRV {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorMul, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));
@@ -188,7 +188,7 @@ public class TestSPIRV {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorSub, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));
@@ -218,7 +218,7 @@ public class TestSPIRV {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorDiv, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));
@@ -249,7 +249,7 @@ public class TestSPIRV {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorSquare, a, b) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));
@@ -281,7 +281,7 @@ public class TestSPIRV {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::saxpy, c, a, b, 2) //
-                .streamOut(c) //
+                .transferToHost(c) //
                 .execute(); //
 
         System.out.println("c: " + Arrays.toString(c));
@@ -305,9 +305,9 @@ public class TestSPIRV {
         int[] a = new int[numElements];
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestKernels::addValue, a) //
-                .streamOut(a); //
+                .transferToHost(a); //
 
         for (int i = 0; i < 10; i++) {
             taskGraph.execute();
@@ -334,7 +334,7 @@ public class TestSPIRV {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::testFloatCopy, a) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));
@@ -356,7 +356,7 @@ public class TestSPIRV {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorAddFloatCompute, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));
@@ -386,7 +386,7 @@ public class TestSPIRV {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorAddDoubleCompute, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));
@@ -416,7 +416,7 @@ public class TestSPIRV {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorSubFloatCompute, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));
@@ -446,7 +446,7 @@ public class TestSPIRV {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorMulFloatCompute, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));
@@ -476,7 +476,7 @@ public class TestSPIRV {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorDivFloatCompute, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));
@@ -500,7 +500,7 @@ public class TestSPIRV {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::testDoublesCopy, a) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));
@@ -522,7 +522,7 @@ public class TestSPIRV {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorSubDoubleCompute, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));
@@ -552,7 +552,7 @@ public class TestSPIRV {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorMulDoubleCompute, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));
@@ -582,7 +582,7 @@ public class TestSPIRV {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorDivDoubleCompute, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));
@@ -606,7 +606,7 @@ public class TestSPIRV {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::testLongsCopy, a) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));
@@ -634,7 +634,7 @@ public class TestSPIRV {
         Arrays.fill(c, 1);
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorSumLongCompute, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));
@@ -662,7 +662,7 @@ public class TestSPIRV {
         Arrays.fill(c, (short) 3);
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorSumShortCompute, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));

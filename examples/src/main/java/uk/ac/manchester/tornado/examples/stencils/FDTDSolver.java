@@ -163,7 +163,7 @@ public class FDTDSolver {
                         .task("t1", FDTDSolver::kernelTwo, size, size, ex, hz)
                         .task("t2", FDTDSolver::kernelThree, size, size, ex, hz, ey);
                 //@formatter:on
-                graph.streamOut(hz);
+                graph.transferToHost(hz);
                 graph.execute();
                 graph.clearProfiles();
             }

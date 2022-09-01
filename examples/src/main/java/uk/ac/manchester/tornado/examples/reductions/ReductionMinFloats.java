@@ -47,9 +47,9 @@ public class ReductionMinFloats {
 
         //@formatter:off
         TaskGraph task = new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", ReductionMinFloats::reductionMaxFloats, input, result, Float.MAX_VALUE)
-            .streamOut(result);
+            .transferToHost(result);
         //@formatter:on
 
         ArrayList<Long> timers = new ArrayList<>();

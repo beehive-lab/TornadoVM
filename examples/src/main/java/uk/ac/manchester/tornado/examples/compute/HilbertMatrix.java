@@ -41,7 +41,7 @@ public class HilbertMatrix {
         // @formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
                 .task("t0", HilbertMatrix::hilberComputation, output, NROWS, NCOLS)
-                .streamOut(output);
+                .transferToHost(output);
         // @formatter:on
 
         taskGraph.execute();

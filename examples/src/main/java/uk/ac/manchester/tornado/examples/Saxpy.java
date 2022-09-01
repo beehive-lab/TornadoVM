@@ -46,7 +46,7 @@ public class Saxpy {
 
         IntStream.range(0, numElements).parallel().forEach(i -> x[i] = 450);
 
-        TaskGraph s0 = new TaskGraph("s0").task("t0", Saxpy::saxpy, alpha, x, y).streamOut(y);
+        TaskGraph s0 = new TaskGraph("s0").task("t0", Saxpy::saxpy, alpha, x, y).transferToHost(y);
 
         s0.executeWithProfilerSequentialGlobal(Policy.PERFORMANCE);
 
@@ -57,7 +57,7 @@ public class Saxpy {
 
         IntStream.range(0, numElements).parallel().forEach(i -> a[i] = 450);
 
-        TaskGraph s1 = new TaskGraph("s1").task("t0", Saxpy::saxpy, alpha, a, b).streamOut(a);
+        TaskGraph s1 = new TaskGraph("s1").task("t0", Saxpy::saxpy, alpha, a, b).transferToHost(a);
 
         s1.executeWithProfilerSequentialGlobal(Policy.PERFORMANCE);
 

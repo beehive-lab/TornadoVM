@@ -40,7 +40,7 @@ public class VectorTest {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", VectorTest::test, value, value, results)
-                .streamOut(results)
+                .transferToHost(results)
                 .execute();
         //@formatter:on
 

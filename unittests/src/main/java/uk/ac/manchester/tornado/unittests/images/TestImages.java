@@ -56,7 +56,7 @@ public class TestImages extends TornadoTestBase {
         final ImageFloat image = new ImageFloat(M, N);
         image.fill(100f);
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", image::fill, 1f).streamOut(image);
+        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", image::fill, 1f).transferToHost(image);
 
         taskGraph.execute();
 
@@ -79,7 +79,7 @@ public class TestImages extends TornadoTestBase {
         final ImageFloat image = new ImageFloat(M, N);
         image.fill(100f);
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", image::fill, 1f).streamOut(image);
+        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", image::fill, 1f).transferToHost(image);
 
         taskGraph.execute();
 
@@ -102,7 +102,7 @@ public class TestImages extends TornadoTestBase {
         final ImageFloat image = new ImageFloat(M, N);
         image.fill(100f);
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", image::fill, 1f).streamOut(image);
+        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", image::fill, 1f).transferToHost(image);
 
         taskGraph.execute();
 
@@ -136,7 +136,7 @@ public class TestImages extends TornadoTestBase {
         final ImageFloat imageB = new ImageFloat(M, N);
         imageA.fill(100f);
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t1", TestImages::taskWithImages, imageA, imageB).streamOut(imageB);
+        final TaskGraph taskGraph = new TaskGraph("s0").task("t1", TestImages::taskWithImages, imageA, imageB).transferToHost(imageB);
         taskGraph.execute();
 
         for (int i = 0; i < M; i++) {
@@ -161,7 +161,7 @@ public class TestImages extends TornadoTestBase {
         imageA.fill(100f);
         imageB.fill(-1f);
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t1", TestImages::taskWithImages, imageA, imageB).streamOut(imageB);
+        final TaskGraph taskGraph = new TaskGraph("s0").task("t1", TestImages::taskWithImages, imageA, imageB).transferToHost(imageB);
         taskGraph.execute();
 
         for (int i = 0; i < M; i++) {
@@ -186,7 +186,7 @@ public class TestImages extends TornadoTestBase {
         imageA.fill(100f);
         imageB.fill(-1f);
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t1", TestImages::taskWithImages, imageA, imageB).streamOut(imageB);
+        final TaskGraph taskGraph = new TaskGraph("s0").task("t1", TestImages::taskWithImages, imageA, imageB).transferToHost(imageB);
         taskGraph.execute();
 
         for (int i = 0; i < M; i++) {
@@ -240,7 +240,7 @@ public class TestImages extends TornadoTestBase {
             }
         }
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestImages::taskWithImagesFloat3, imageA, imageB).streamOut(imageB);
+        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestImages::taskWithImagesFloat3, imageA, imageB).transferToHost(imageB);
         taskGraph.execute();
 
         for (int i = 0; i < M; i++) {
@@ -270,7 +270,7 @@ public class TestImages extends TornadoTestBase {
             }
         }
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestImages::taskWithImagesFloat3, imageA, imageB).streamOut(imageB);
+        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestImages::taskWithImagesFloat3, imageA, imageB).transferToHost(imageB);
         taskGraph.execute();
 
         for (int i = 0; i < M; i++) {
@@ -300,7 +300,7 @@ public class TestImages extends TornadoTestBase {
             }
         }
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestImages::taskWithImagesFloat4, imageA, imageB).streamOut(imageB);
+        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestImages::taskWithImagesFloat4, imageA, imageB).transferToHost(imageB);
         taskGraph.execute();
 
         for (int i = 0; i < M; i++) {
@@ -331,7 +331,7 @@ public class TestImages extends TornadoTestBase {
             }
         }
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestImages::taskWithImagesFloat4, imageA, imageB).streamOut(imageB);
+        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestImages::taskWithImagesFloat4, imageA, imageB).transferToHost(imageB);
         taskGraph.execute();
 
         for (int i = 0; i < M; i++) {
@@ -362,7 +362,7 @@ public class TestImages extends TornadoTestBase {
             }
         }
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestImages::taskWithImagesFloat8, imageA, imageB).streamOut(imageB);
+        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestImages::taskWithImagesFloat8, imageA, imageB).transferToHost(imageB);
         taskGraph.execute();
 
         for (int i = 0; i < M; i++) {
@@ -417,7 +417,7 @@ public class TestImages extends TornadoTestBase {
 
         final TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestImages::taskWithImagesByte3, imageA, imageB) //
-                .streamOut(imageB);
+                .transferToHost(imageB);
 
         taskGraph.execute();
 
@@ -448,7 +448,7 @@ public class TestImages extends TornadoTestBase {
             }
         }
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestImages::taskWithImagesByte3, imageA, imageB).streamOut(imageB);
+        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestImages::taskWithImagesByte3, imageA, imageB).transferToHost(imageB);
         taskGraph.execute();
 
         for (int i = 0; i < M; i++) {
@@ -478,7 +478,7 @@ public class TestImages extends TornadoTestBase {
             }
         }
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestImages::taskWithImagesByte4, imageA, imageB).streamOut(imageB);
+        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestImages::taskWithImagesByte4, imageA, imageB).transferToHost(imageB);
         taskGraph.execute();
 
         for (int i = 0; i < M; i++) {
@@ -510,7 +510,7 @@ public class TestImages extends TornadoTestBase {
         }
 
         final TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestImages::taskWithImagesByte4, imageA, imageB).streamOut(imageB);
+        taskGraph.task("t0", TestImages::taskWithImagesByte4, imageA, imageB).transferToHost(imageB);
         taskGraph.execute();
 
         for (int i = 0; i < M; i++) {

@@ -58,7 +58,7 @@ public class VectorAddTest {
         //@formatter:off
         TaskGraph s0 = new TaskGraph("s0")
                 .task("t0", VectorAddTest::test, a, b, results)
-                .streamOut(results);
+                .transferToHost(results);
         //@formatter:on
         s0.execute();
 

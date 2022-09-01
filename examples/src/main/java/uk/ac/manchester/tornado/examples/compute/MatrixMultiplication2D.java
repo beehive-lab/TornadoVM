@@ -87,7 +87,7 @@ public class MatrixMultiplication2D {
         TaskGraph taskGraph = new TaskGraph("s0")
                 .lockObjectsInMemory(matrixA, matrixB, matrixC)   // lock these objects
                 .task("t0", MatrixMultiplication2D::matrixMultiplication, matrixA, matrixB, matrixC, size)
-                .streamOut(matrixC);
+                .transferToHost(matrixC);
         //@formatter:on
 
         // 1. Warm up Tornado

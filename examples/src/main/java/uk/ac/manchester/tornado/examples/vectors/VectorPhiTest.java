@@ -41,7 +41,7 @@ public class VectorPhiTest {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", VectorPhiTest::test, input, results)
-                .streamOut(results)
+                .transferToHost(results)
                 .execute();
         //@formatter:on
 

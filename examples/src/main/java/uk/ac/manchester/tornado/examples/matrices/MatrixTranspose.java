@@ -63,7 +63,7 @@ public class MatrixTranspose {
         //@formatter:off
         TaskGraph t = new TaskGraph("s0")
                 .task("t0", MatrixTranspose::matrixTranspose, matrixA, matrixB, size)
-                .streamOut(matrixB);
+                .transferToHost(matrixB);
         //@formatter:on
 
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {

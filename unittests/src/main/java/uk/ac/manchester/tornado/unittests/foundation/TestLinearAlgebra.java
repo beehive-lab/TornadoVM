@@ -43,7 +43,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorAddCompute, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         assertArrayEquals(expectedResult, a);
@@ -65,7 +65,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorMul, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         assertArrayEquals(expectedResult, a);
@@ -87,7 +87,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorSub, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         assertArrayEquals(expectedResult, a);
@@ -108,7 +108,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorDiv, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         assertArrayEquals(expectedResult, a);
@@ -130,7 +130,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorSquare, a, b) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         assertArrayEquals(expectedResult, a);
@@ -154,7 +154,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::saxpy, a, b, c, 2) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         assertArrayEquals(expectedResult, a);

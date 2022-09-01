@@ -65,7 +65,7 @@ public class SGEMMFPGA {
             b[i] = 1;
         }
 
-        TaskGraph t0 = new TaskGraph("s0").task("t0", SGEMMFPGA::sgemm, a, b, c, dims).streamOut(c);
+        TaskGraph t0 = new TaskGraph("s0").task("t0", SGEMMFPGA::sgemm, a, b, c, dims).transferToHost(c);
 
         t0.warmup();
 

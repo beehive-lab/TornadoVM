@@ -117,7 +117,7 @@ public class GrayscaleMT {
 
             if (tornadoTask == null) {
                 tornadoTask = new TaskGraph("s0");
-                tornadoTask.copyIn(DataTransferMode.EVERY_EXECUTION, imageRGB).task("t0", LoadImage::compute1D, imageRGB, w, s).streamOut(imageRGB);
+                tornadoTask.transferToDevice(DataTransferMode.EVERY_EXECUTION, imageRGB).task("t0", LoadImage::compute1D, imageRGB, w, s).transferToHost(imageRGB);
 
             }
             long taskStart = System.nanoTime();

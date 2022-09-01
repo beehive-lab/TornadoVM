@@ -108,9 +108,9 @@ public class BlackScholes {
         }
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", BlackScholes::blackScholesKernel, input, callPrice, putPrice) //
-                .streamOut(callPrice, putPrice);
+                .transferToHost(callPrice, putPrice);
 
         for (int i = 0; i < WARM_UP_ITERATIONS; i++) {
             taskGraph.execute();

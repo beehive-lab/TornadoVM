@@ -58,7 +58,7 @@ public class ResizeImage {
             }
         }
 
-        final TaskGraph schedule = new TaskGraph("s0").task("t0", ResizeImage::resize, image2, image1, 2).streamOut(image2);
+        final TaskGraph schedule = new TaskGraph("s0").task("t0", ResizeImage::resize, image2, image1, 2).transferToHost(image2);
 
         schedule.warmup();
 

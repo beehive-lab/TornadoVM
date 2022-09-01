@@ -65,7 +65,7 @@ public class TestResizeImage extends TornadoTestBase {
             }
         }
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestResizeImage::resize, image2, image1, 2).streamOut(image2);
+        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestResizeImage::resize, image2, image1, 2).transferToHost(image2);
 
         taskGraph.warmup();
 

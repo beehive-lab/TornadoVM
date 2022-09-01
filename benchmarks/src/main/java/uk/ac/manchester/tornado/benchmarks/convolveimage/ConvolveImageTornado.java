@@ -56,9 +56,9 @@ public class ConvolveImageTornado extends BenchmarkDriver {
         createFilter(filter);
 
         taskGraph = new TaskGraph("benchmark");
-        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, input);
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, input);
         taskGraph.task("convolveImage", GraphicsKernels::convolveImage, input, filter, output);
-        taskGraph.streamOut(output);
+        taskGraph.transferToHost(output);
         taskGraph.warmup();
     }
 

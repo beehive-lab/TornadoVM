@@ -54,7 +54,7 @@ public class JMHHilbert {
             // @formatter:off
             taskGraph = new TaskGraph("s0")
                     .task("t0", ComputeKernels::hilbertComputation, hilbertMatrix, size, size)
-                    .streamOut(hilbertMatrix);
+                    .transferToHost(hilbertMatrix);
             // @formatter:on
             taskGraph.warmup();
         }

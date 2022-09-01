@@ -44,7 +44,7 @@ public class ArrayAccInt {
         for (int i = 0; i < numKernels; i++) {
             taskGraph.task("t" + i, ArrayAccInt::acc, a, 1);
         }
-        taskGraph.streamOut(a)
+        taskGraph.transferToHost(a)
                 .execute();
         taskGraph.dumpEvents();
         //@formatter:on

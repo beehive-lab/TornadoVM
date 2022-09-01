@@ -190,9 +190,9 @@ public class TestFields extends TornadoTestBase {
         final A a = new A(b);
 
         TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, a);
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a);
         taskGraph.task("t0", TestFields::setField, a, 77f);
-        taskGraph.streamOut(a);
+        taskGraph.transferToHost(a);
         taskGraph.execute();
 
         assertEquals(77, a.someOtherField, 0.01f);
@@ -214,9 +214,9 @@ public class TestFields extends TornadoTestBase {
         final A a = new A(b);
 
         TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, a);
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a);
         taskGraph.task("t0", TestFields::setNestedField, a, 77f);
-        taskGraph.streamOut(a);
+        taskGraph.transferToHost(a);
         taskGraph.execute();
 
         assertEquals(77, a.b.someField, 0.01f);
@@ -235,9 +235,9 @@ public class TestFields extends TornadoTestBase {
         Arrays.fill(b.someArray, 2);
 
         TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, a);
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a);
         taskGraph.task("t0", TestFields::setNestedArray, a, indexes);
-        taskGraph.streamOut(a);
+        taskGraph.transferToHost(a);
         taskGraph.execute();
 
         for (int i = 0; i < b.someArray.length; i++) {

@@ -67,7 +67,7 @@ public class JMHRenderTrack {
             }
             taskGraph = new TaskGraph("s0")//
                     .task("t0", ComputeKernels::renderTrack, output, input) //
-                    .streamOut(output);
+                    .transferToHost(output);
             taskGraph.warmup();
         }
     }

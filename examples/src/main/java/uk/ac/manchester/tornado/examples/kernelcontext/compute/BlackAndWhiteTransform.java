@@ -143,7 +143,7 @@ public class BlackAndWhiteTransform {
                     KernelContext context = new KernelContext();
 
                     tornadoTask = new TaskGraph("s0");
-                    tornadoTask.copyIn(DataTransferMode.EVERY_EXECUTION, imageRGB).task("t0", LoadImage::compute2D, context, imageRGB, w, s).streamOut(imageRGB);
+                    tornadoTask.transferToDevice(DataTransferMode.EVERY_EXECUTION, imageRGB).task("t0", LoadImage::compute2D, context, imageRGB, w, s).transferToHost(imageRGB);
 
                 }
                 // [Optional] Set the global work group

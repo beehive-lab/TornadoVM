@@ -49,7 +49,7 @@ public class BlackScholesTornado extends BenchmarkDriver {
 
         taskGraph = new TaskGraph("benchmark") //
                 .task("t0", ComputeKernels::blackscholes, randArray, put, call) //
-                .streamOut(put, call);
+                .transferToHost(put, call);
 
         taskGraph.warmup();
     }

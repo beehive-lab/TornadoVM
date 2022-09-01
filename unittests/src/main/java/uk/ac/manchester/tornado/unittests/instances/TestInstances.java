@@ -44,7 +44,7 @@ public class TestInstances extends TornadoTestBase {
         // @formatter:off
         new TaskGraph("s0")
             .task("t0", f::compute, array, 2.1)
-            .streamOut(array)
+            .transferToHost(array)
             .execute();
         // @formatter:on
 
@@ -66,7 +66,7 @@ public class TestInstances extends TornadoTestBase {
         // @formatter:off
         new TaskGraph("s0")
             .task("t0", this::compute, array, 2.1)
-            .streamOut(array)
+            .transferToHost(array)
             .execute();
         // @formatter:on
 

@@ -63,7 +63,7 @@ public class InterfaceExample {
         int[] b = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         int[] c = new int[8];
 
-        TaskGraph s0 = new TaskGraph("s0").task("t0", InterfaceExample::run, ops, a, b, c).streamOut(c);
+        TaskGraph s0 = new TaskGraph("s0").task("t0", InterfaceExample::run, ops, a, b, c).transferToHost(c);
         s0.warmup();
         s0.execute();
 

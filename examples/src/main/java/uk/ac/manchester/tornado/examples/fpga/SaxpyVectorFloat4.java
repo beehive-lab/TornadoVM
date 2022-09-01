@@ -54,7 +54,7 @@ public class SaxpyVectorFloat4 {
         // @formatter:off
         TaskGraph s0 = new TaskGraph("s0")
                 .task("t0", SaxpyVectorFloat4::saxpy, alpha, vectorA, vectorB, vectorC)
-                .streamOut(vectorB);
+                .transferToHost(vectorB);
         // @formatter:on
 
         for (int idx = 0; idx < 10; idx++) {

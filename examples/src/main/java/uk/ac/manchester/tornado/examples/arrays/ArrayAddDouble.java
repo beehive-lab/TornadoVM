@@ -45,7 +45,7 @@ public class ArrayAddDouble {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", ArrayAddDouble::add, a, b, c)
-                .streamOut(c)
+                .transferToHost(c)
                 .execute();
         //@formatter:on
 

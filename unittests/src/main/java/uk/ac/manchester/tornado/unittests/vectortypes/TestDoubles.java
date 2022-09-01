@@ -57,7 +57,7 @@ public class TestDoubles extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
             .task("t0", TestDoubles::addDouble2, a, b, output)
-            .streamOut(output)
+            .transferToHost(output)
             .execute();
         //@formatter:on
 
@@ -82,7 +82,7 @@ public class TestDoubles extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
             .task("t0", TestDoubles::addDouble3, a, b, output)
-            .streamOut(output)
+            .transferToHost(output)
             .execute();
         //@formatter:on
 
@@ -107,7 +107,7 @@ public class TestDoubles extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
             .task("t0", TestDoubles::addDouble4, a, b, output)
-            .streamOut(output)
+            .transferToHost(output)
             .execute();
         //@formatter:on
 
@@ -132,7 +132,7 @@ public class TestDoubles extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
             .task("t0", TestDoubles::addDouble8, a, b, output)
-            .streamOut(output)
+            .transferToHost(output)
             .execute();
         //@formatter:on
 
@@ -163,7 +163,7 @@ public class TestDoubles extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
             .task("t0", TestDoubles::addDouble, a, b, output)
-            .streamOut(output)
+            .transferToHost(output)
             .execute();
         //@formatter:on
 
@@ -212,7 +212,7 @@ public class TestDoubles extends TornadoTestBase {
         new TaskGraph("s0")
             .task("t0-MAP", TestDoubles::dotProductFunctionMap, a, b, outputMap)
             .task("t1-REDUCE", TestDoubles::dotProductFunctionReduce, outputMap, outputReduce)
-            .streamOut(outputReduce)
+            .transferToHost(outputReduce)
             .execute();
         //@formatter:on
 
@@ -241,7 +241,7 @@ public class TestDoubles extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestDoubles::addVectorDouble2, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -274,7 +274,7 @@ public class TestDoubles extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestDoubles::addVectorDouble3, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -308,7 +308,7 @@ public class TestDoubles extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestDoubles::addVectorDouble4, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -346,7 +346,7 @@ public class TestDoubles extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.task("t0", TestDoubles::testPrivateVectorDouble2, tornadoOutput);
-        taskGraph.streamOut(tornadoOutput);
+        taskGraph.transferToHost(tornadoOutput);
         taskGraph.execute();
 
         testPrivateVectorDouble2(sequentialOutput);
@@ -382,7 +382,7 @@ public class TestDoubles extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.task("t0", TestDoubles::testPrivateVectorDouble4, tornadoOutput);
-        taskGraph.streamOut(tornadoOutput);
+        taskGraph.transferToHost(tornadoOutput);
         taskGraph.execute();
 
         testPrivateVectorDouble4(sequentialOutput);
@@ -420,7 +420,7 @@ public class TestDoubles extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.task("t0", TestDoubles::testPrivateVectorDouble8, tornadoOutput);
-        taskGraph.streamOut(tornadoOutput);
+        taskGraph.transferToHost(tornadoOutput);
         taskGraph.execute();
 
         testPrivateVectorDouble8(sequentialOutput);

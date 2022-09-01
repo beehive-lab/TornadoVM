@@ -46,7 +46,7 @@ public class MigratingArrayAccInt {
         for (int i = 0; i < numKernels; i++) {
             taskGraph.task("t" + i, MigratingArrayAccInt::acc, a, 1);
         }
-        taskGraph.streamOut(a);
+        taskGraph.transferToHost(a);
         //@formatter:on
 
         TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);

@@ -110,7 +110,7 @@ public class BlackScholesDynamic {
         }
 
         long startInit = System.nanoTime();
-        taskGraph.task("t0", BlackScholesDynamic::blackScholesKernel, input, callPrice, putPrice).streamOut(callPrice, putPrice);
+        taskGraph.task("t0", BlackScholesDynamic::blackScholesKernel, input, callPrice, putPrice).transferToHost(callPrice, putPrice);
         long stopInit = System.nanoTime();
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 

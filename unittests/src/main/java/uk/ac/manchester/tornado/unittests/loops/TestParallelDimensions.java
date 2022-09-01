@@ -46,7 +46,7 @@ public class TestParallelDimensions extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestParallelDimensions::forLoopOneD, a)
-                .streamOut(a)
+                .transferToHost(a)
                 .execute();
         //@formatter:on
 
@@ -74,7 +74,7 @@ public class TestParallelDimensions extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestParallelDimensions::forLoop2D, a, size)
-                .streamOut(a)
+                .transferToHost(a)
                 .execute();
         //@formatter:on
 
@@ -105,7 +105,7 @@ public class TestParallelDimensions extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestParallelDimensions::forLoop3D, a, size)
-                .streamOut(a)
+                .transferToHost(a)
                 .execute();
         //@formatter:on
 
@@ -142,7 +142,7 @@ public class TestParallelDimensions extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestParallelDimensions::forLoop3DMap, a, b, size)
-                .streamOut(a)
+                .transferToHost(a)
                 .execute();
         //@formatter:on
 

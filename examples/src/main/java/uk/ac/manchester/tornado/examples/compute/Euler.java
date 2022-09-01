@@ -134,7 +134,7 @@ public class Euler {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("s0", Euler::solve, size, input, outputA, outputB, outputC, outputD, outputE) //
-                .streamOut(outputA, outputB, outputC, outputD, outputE);
+                .transferToHost(outputA, outputB, outputC, outputD, outputE);
 
         // Sequential
         for (int i = 0; i < ITERATIONS; i++) {

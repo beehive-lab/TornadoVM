@@ -60,9 +60,9 @@ public class RotateTornado extends BenchmarkDriver {
         }
 
         taskGraph = new TaskGraph("benchmark");
-        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, input);
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, input);
         taskGraph.task("rotateImage", GraphicsKernels::rotateImage, output, m, input);
-        taskGraph.streamOut(output);
+        taskGraph.transferToHost(output);
         taskGraph.warmup();
     }
 

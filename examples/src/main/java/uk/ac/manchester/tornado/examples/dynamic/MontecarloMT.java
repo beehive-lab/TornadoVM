@@ -106,7 +106,7 @@ public class MontecarloMT {
         // @formatter:off
         TaskGraph s0 = new TaskGraph("s0")
                 .task("t0", MontecarloMT::computeMontecarlo, output)
-                .streamOut(output);
+                .transferToHost(output);
         // @formatter:on
         long stopInit = System.nanoTime();
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");

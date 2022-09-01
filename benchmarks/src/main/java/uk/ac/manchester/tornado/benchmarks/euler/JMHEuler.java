@@ -72,9 +72,9 @@ public class JMHEuler {
             outputD = new long[size];
             outputE = new long[size];
             taskGraph = new TaskGraph("s0") //
-                    .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                     .task("s0", ComputeKernels::euler, size, input, outputA, outputB, outputC, outputD, outputE) //
-                    .streamOut(outputA, outputB, outputC, outputD, outputE);
+                    .transferToHost(outputA, outputB, outputC, outputD, outputE);
             taskGraph.warmup();
         }
     }

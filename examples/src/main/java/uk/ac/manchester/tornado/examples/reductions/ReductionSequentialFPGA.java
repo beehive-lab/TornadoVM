@@ -48,7 +48,7 @@ public class ReductionSequentialFPGA {
         //@formatter:off
         TaskGraph task = new TaskGraph("s0")
             .task("t0", ReductionSequentialFPGA::reductionAddFloats, input, result)
-            .streamOut(result);
+            .transferToHost(result);
         //@formatter:on
 
         ArrayList<Long> timers = new ArrayList<>();

@@ -59,12 +59,12 @@ public class TestFails extends TornadoTestBase {
         float[] y = new float[100];
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, x) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
                 .task("s0", (a, b) -> {
                     for (int i = 0; i < 100; i++) {
 
                     }
-                }, x, y).streamOut(y);
+                }, x, y).transferToHost(y);
 
         // How to provoke the failure
         taskGraph.warmup();
@@ -88,9 +88,9 @@ public class TestFails extends TornadoTestBase {
 
         // @formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, x)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x)
                 .task("s0", TestFails::kernel, x, y)
-                .streamOut(y);
+                .transferToHost(y);
         // @formatter:on
 
         // How to provoke the failure

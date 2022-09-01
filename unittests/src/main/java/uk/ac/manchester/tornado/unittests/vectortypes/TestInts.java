@@ -55,7 +55,7 @@ public class TestInts extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
             .task("t0", TestInts::addInt2, a, b, output)
-            .streamOut(output)
+            .transferToHost(output)
             .execute();
         //@formatter:on
 
@@ -80,7 +80,7 @@ public class TestInts extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
             .task("t0", TestInts::addInt3, a, b, output)
-            .streamOut(output)
+            .transferToHost(output)
             .execute();
         //@formatter:on
 
@@ -105,7 +105,7 @@ public class TestInts extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestInts::addInt8, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -130,7 +130,7 @@ public class TestInts extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
             .task("t0", TestInts::addInt4, a, b, output)
-            .streamOut(output)
+            .transferToHost(output)
             .execute();
         //@formatter:on
 
@@ -162,7 +162,7 @@ public class TestInts extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
             .task("t0", TestInts::addIntVectors, a, b, output)
-            .streamOut(output)
+            .transferToHost(output)
             .execute();
         //@formatter:on
 
@@ -212,7 +212,7 @@ public class TestInts extends TornadoTestBase {
         new TaskGraph("s0")
             .task("t0-MAP", TestInts::dotProductFunctionMap, a, b, outputMap)
             .task("t1-REDUCE", TestInts::dotProductFunctionReduce, outputMap, outputReduce)
-            .streamOut(outputReduce)
+            .transferToHost(outputReduce)
             .execute();
         //@formatter:on
 
@@ -241,7 +241,7 @@ public class TestInts extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestInts::addVectorInt2, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -274,7 +274,7 @@ public class TestInts extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestInts::subVectorInt2, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -307,7 +307,7 @@ public class TestInts extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestInts::divVectorInt2, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -340,7 +340,7 @@ public class TestInts extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestInts::addVectorInt3, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -374,7 +374,7 @@ public class TestInts extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestInts::subVectorInt3, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -408,7 +408,7 @@ public class TestInts extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestInts::divVectorInt3, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -442,7 +442,7 @@ public class TestInts extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestInts::addVectorInt4, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -477,7 +477,7 @@ public class TestInts extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestInts::subVectorInt4, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -512,7 +512,7 @@ public class TestInts extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestInts::divVectorInt4, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -547,7 +547,7 @@ public class TestInts extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestInts::addVectorInt8, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -586,7 +586,7 @@ public class TestInts extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestInts::subVectorInt8, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -625,7 +625,7 @@ public class TestInts extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestInts::divVectorInt8, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -667,7 +667,7 @@ public class TestInts extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.task("t0", TestInts::testPrivateVectorInt2, tornadoOutput);
-        taskGraph.streamOut(tornadoOutput);
+        taskGraph.transferToHost(tornadoOutput);
         taskGraph.execute();
 
         testPrivateVectorInt2(sequentialOutput);
@@ -703,7 +703,7 @@ public class TestInts extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.task("t0", TestInts::testPrivateVectorInt4, tornadoOutput);
-        taskGraph.streamOut(tornadoOutput);
+        taskGraph.transferToHost(tornadoOutput);
         taskGraph.execute();
 
         testPrivateVectorInt4(sequentialOutput);
@@ -741,7 +741,7 @@ public class TestInts extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.task("t0", TestInts::testPrivateVectorInt8, tornadoOutput);
-        taskGraph.streamOut(tornadoOutput);
+        taskGraph.transferToHost(tornadoOutput);
         taskGraph.execute();
 
         testPrivateVectorInt8(sequentialOutput);

@@ -62,10 +62,10 @@ public class StencilTornado extends BenchmarkDriver {
         }
         copy(sz, ainit, a0);
         taskGraph = new TaskGraph("benchmark") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a0, a1) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a0, a1) //
                 .task("stencil", Stencil::stencil3d, n, sz, a0, a1, FAC) //
                 .task("copy", Stencil::copy, sz, a1, a0) //
-                .streamOut(a0);
+                .transferToHost(a0);
         taskGraph.warmup();
     }
 

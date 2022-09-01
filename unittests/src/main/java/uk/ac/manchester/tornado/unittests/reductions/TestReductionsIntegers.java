@@ -211,9 +211,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsIntegers::reductionAnnotation, input, result)
-            .streamOut(result)
+            .transferToHost(result)
             .execute();
         //@formatter:on
 
@@ -238,9 +238,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
                 .task("t0", TestReductionsIntegers::reductionAnnotationLarge, input, result)
-                .streamOut(result)
+                .transferToHost(result)
                 .execute();
         //@formatter:on
 
@@ -262,9 +262,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
 		new TaskGraph("s0")
-			.copyIn(DataTransferMode.EVERY_EXECUTION, input)
+			.transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
 			.task("t0", TestReductionsIntegers::reductionAnnotation2, input, result)
-			.streamOut(result)
+			.transferToHost(result)
 			.execute();
 		//@formatter:on
 
@@ -285,9 +285,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
         });
 
         new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestReductionsIntegers::reductionAnnotationConstant, input, result) //
-                .streamOut(result) //
+                .transferToHost(result) //
                 .execute(); //
 
         int[] sequential = new int[1];
@@ -308,9 +308,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsIntegers::multReductionAnnotation, input, result)
-            .streamOut(result)
+            .transferToHost(result)
             .execute();
         //@formatter:on
 
@@ -337,9 +337,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsIntegers::maxReductionAnnotation, input, result, neutral)
-            .streamOut(result)
+            .transferToHost(result)
             .execute();
         //@formatter:on
 
@@ -362,7 +362,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
             .task("t0", TestReductionsIntegers::minReductionAnnotation, input, result)
-            .streamOut(result)
+            .transferToHost(result)
             .execute();
         //@formatter:on
 
@@ -384,9 +384,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsIntegers::reductionSequentialSmall, input, result)
-            .streamOut(result)
+            .transferToHost(result)
             .execute();
         //@formatter:on
 
@@ -408,9 +408,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsIntegers::reduction01, input, result)
-            .streamOut(result)
+            .transferToHost(result)
             .execute();
         //@formatter:on
 
@@ -434,10 +434,10 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, a, b, c)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c)
             .task("t0", TestReductionsIntegers::map01, a, b, c)
             .task("t1", TestReductionsIntegers::reduce01, c, result)
-            .streamOut(result)
+            .transferToHost(result)
             .execute();
         //@formatter:on
 
@@ -461,10 +461,10 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
             .task("t0", TestReductionsIntegers::map02, a, b)
             .task("t1", TestReductionsIntegers::reduce02, b, result)
-            .streamOut(result)
+            .transferToHost(result)
             .execute();
         //@formatter:on
 
@@ -495,9 +495,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, a, b, c)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c)
             .task("t0", TestReductionsIntegers::mapReduce01, a, b, c, result)
-            .streamOut(result)
+            .transferToHost(result)
             .execute();
         //@formatter:on
 
@@ -520,9 +520,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
 	    new TaskGraph("s0")
-	         .copyIn(DataTransferMode.EVERY_EXECUTION, a)
+	         .transferToDevice(DataTransferMode.EVERY_EXECUTION, a)
 	         .task("t0", TestReductionsIntegers::mapReduce2, a, b, result)
-	         .streamOut(result)
+	         .transferToHost(result)
 	         .execute();
 	    //@formatter:on
 
@@ -543,9 +543,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsIntegers::reductionAddInts2, input, result)
-            .streamOut(result);
+            .transferToHost(result);
         //@formatter:on
 
         taskGraph.execute();
@@ -570,9 +570,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, inputA, inputB)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, inputA, inputB)
             .task("t0", TestReductionsIntegers::reductionAddInts3, inputA, inputB, result)
-            .streamOut(result);
+            .transferToHost(result);
         //@formatter:on
 
         taskGraph.execute();
@@ -596,9 +596,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
                 .task("t0", TestReductionsIntegers::maxReductionAnnotation2, input, result, neutral)
-                .streamOut(result)
+                .transferToHost(result)
                 .execute();
         //@formatter:on
 
@@ -621,9 +621,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
                 .task("t0", TestReductionsIntegers::minReductionAnnotation2, input, result, Integer.MAX_VALUE)
-                .streamOut(result)
+                .transferToHost(result)
                 .execute();
         //@formatter:on
 

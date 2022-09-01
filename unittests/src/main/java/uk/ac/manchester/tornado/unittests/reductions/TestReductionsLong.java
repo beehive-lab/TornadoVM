@@ -55,9 +55,9 @@ public class TestReductionsLong extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
                 .task("t0", TestReductionsLong::reductionAnnotation, input, result)
-                .streamOut(result)
+                .transferToHost(result)
                 .execute();
         //@formatter:on
 
@@ -87,9 +87,9 @@ public class TestReductionsLong extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
                 .task("t0", TestReductionsLong::multReductionAnnotation, input, result)
-                .streamOut(result)
+                .transferToHost(result)
                 .execute();
         //@formatter:on
 
@@ -121,9 +121,9 @@ public class TestReductionsLong extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
                 .task("t0", TestReductionsLong::maxReductionAnnotation, input, result)
-                .streamOut(result)
+                .transferToHost(result)
                 .execute();
         //@formatter:on
 
@@ -152,7 +152,7 @@ public class TestReductionsLong extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestReductionsLong::minReductionAnnotation, input, result)
-                .streamOut(result)
+                .transferToHost(result)
                 .execute();
         //@formatter:on
 
@@ -181,9 +181,9 @@ public class TestReductionsLong extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
                 .task("t0", TestReductionsLong::maxReductionAnnotation2, input, result)
-                .streamOut(result)
+                .transferToHost(result)
                 .execute();
         //@formatter:on
 
@@ -209,9 +209,9 @@ public class TestReductionsLong extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
                 .task("t0", TestReductionsLong::minReductionAnnotation2, input, result)
-                .streamOut(result)
+                .transferToHost(result)
                 .execute();
         //@formatter:on
 

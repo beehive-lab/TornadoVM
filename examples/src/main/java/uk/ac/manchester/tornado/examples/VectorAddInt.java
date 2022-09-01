@@ -44,9 +44,9 @@ public class VectorAddInt {
 
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
                 .task("t0", VectorAddInt::vectorAdd, a, b, c)
-                .streamOut(c);
+                .transferToHost(c);
         //@formatter:on
 
         boolean wrongResult;

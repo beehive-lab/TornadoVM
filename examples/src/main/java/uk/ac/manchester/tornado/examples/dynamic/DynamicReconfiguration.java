@@ -44,7 +44,7 @@ public class DynamicReconfiguration {
         //@formatter:off
         new TaskGraph("s0")
             .task("t0", DynamicReconfiguration::saxpy, 2.0f, a, b)
-            .streamOut(b)
+            .transferToHost(b)
             .executeWithProfiler(Policy.PERFORMANCE);
         //@formatter:on
     }

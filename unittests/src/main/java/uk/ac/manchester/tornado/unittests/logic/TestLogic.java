@@ -76,7 +76,7 @@ public class TestLogic extends TornadoTestBase {
 
         // @formatter:off
         taskGraph.task("t0", TestLogic::logic01, data, output)
-          .streamOut(output);
+          .transferToHost(output);
         // @formatter:on
         taskGraph.execute();
 
@@ -101,7 +101,7 @@ public class TestLogic extends TornadoTestBase {
 
         // @formatter:off
         taskGraph.task("t0", TestLogic::logic02, data, output)
-          .streamOut(output);
+          .transferToHost(output);
         // @formatter:on
         taskGraph.execute();
 
@@ -125,7 +125,7 @@ public class TestLogic extends TornadoTestBase {
 
         // @formatter:off
         taskGraph.task("t0", TestLogic::logic03, data, output)
-                .streamOut(output);
+                .transferToHost(output);
         // @formatter:on
         taskGraph.execute();
 
@@ -149,7 +149,7 @@ public class TestLogic extends TornadoTestBase {
 
         // @formatter:off
         taskGraph.task("t0", TestLogic::logic04, data, output)
-          .streamOut(output);
+          .transferToHost(output);
         // @formatter:on
         taskGraph.execute();
 

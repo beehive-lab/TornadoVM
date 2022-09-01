@@ -76,9 +76,9 @@ public class SgemmTornado extends BenchmarkDriver {
 
         taskGraph = new TaskGraph("benchmark");
         if (!USE_PREBUILT) {
-            taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, a, b);
+            taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b);
             taskGraph.task("sgemm", LinearAlgebraArrays::sgemm, m, n, n, a, b, c);
-            taskGraph.streamOut(c);
+            taskGraph.transferToHost(c);
             taskGraph.warmup();
         } else {
             String filePath = "/tmp/mxmFloat.spv";
@@ -100,7 +100,7 @@ public class SgemmTornado extends BenchmarkDriver {
                 new Access[]{Access.READ, Access.READ,Access.READ,Access.READ, Access.READ, Access.WRITE},
                 device,
                 new int[]{ n, n })
-                .streamOut(c);
+                .transferToHost(c);
             // @formatter:on
         }
     }

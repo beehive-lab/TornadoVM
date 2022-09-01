@@ -170,7 +170,7 @@ public class RenderTrackMT {
         }
 
         long startInit = System.nanoTime();
-        TaskGraph s0 = new TaskGraph("s0").task("t0", RenderTrackMT::renderTrack, output, input).streamOut(output);
+        TaskGraph s0 = new TaskGraph("s0").task("t0", RenderTrackMT::renderTrack, output, input).transferToHost(output);
         long stopInit = System.nanoTime();
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 

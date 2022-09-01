@@ -313,11 +313,11 @@ public class BufetTornadoBigIndex {
             System.out.println("Generate the miRNAs target groups for chunk " + i);
             TaskGraph taskGraph = new TaskGraph("x" + i);
             taskGraph.task("t0", BufetTornadoBigIndex::getRandomTargetGroup, onlyGeneVector, randID, map_all_split, chunkElements, bounds, randNum);
-            taskGraph.streamOut(map_all_split);
+            taskGraph.transferToHost(map_all_split);
 
             System.out.println("Count ones in each miRNA target group.");
             taskGraph.task("t1", BufetTornadoBigIndex::calculateCounts, map_all_split, countOnes, bounds);
-            taskGraph.streamOut(countOnes);
+            taskGraph.transferToHost(countOnes);
 
             for (int z = 0; z < warming_up_iterations; z++) {
                 start = System.nanoTime();

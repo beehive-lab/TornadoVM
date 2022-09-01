@@ -156,7 +156,7 @@ public class BlackScholesMT {
             ;
         } else {
             long startInit = System.nanoTime();
-            graph.task("t0", BlackScholesMT::blackScholesKernel, input, callPrice, putPrice).streamOut(callPrice, putPrice);
+            graph.task("t0", BlackScholesMT::blackScholesKernel, input, callPrice, putPrice).transferToHost(callPrice, putPrice);
             long stopInit = System.nanoTime();
             System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
         }

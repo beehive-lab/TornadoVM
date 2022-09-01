@@ -43,9 +43,9 @@ public class Inlining extends TornadoTestBase {
         byte[] input = new byte[] { 127, 127, 127, 127, 1, 1, 1, 1 };
 
         new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, result, input, elements) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements) //
                 .task("t0", Inlining::bitwiseOr, result, input, elements) //
-                .streamOut(result) //
+                .transferToHost(result) //
                 .execute();
     }
 
@@ -108,9 +108,9 @@ public class Inlining extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("foo");
-        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, rgbBytes) //
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, rgbBytes) //
                 .task("grey", Inlining::rgbToGreyKernel, rgbBytes, greyInts)//
-                .streamOut(greyInts) //
+                .transferToHost(greyInts) //
                 .execute();
 
         rgbToGreyKernel(rgbBytes, seq);
@@ -132,9 +132,9 @@ public class Inlining extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("foo");
-        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, rgbBytes) //
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, rgbBytes) //
                 .task("grey", Inlining::rgbToGreyKernelInt, rgbBytes, greyInts)//
-                .streamOut(greyInts) //
+                .transferToHost(greyInts) //
                 .execute();
 
         rgbToGreyKernelInt(rgbBytes, seq);
@@ -157,9 +157,9 @@ public class Inlining extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, rgbBytes) //
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, rgbBytes) //
                 .task("t0", Inlining::rgbToGreyKernelSmall, rgbBytes, greyInts)//
-                .streamOut(greyInts) //
+                .transferToHost(greyInts) //
                 .execute();
 
         rgbToGreyKernelSmall(rgbBytes, seq);
@@ -179,9 +179,9 @@ public class Inlining extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, rgbBytes) //
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, rgbBytes) //
                 .task("t0", Inlining::b2i, rgbBytes, greyInts)//
-                .streamOut(greyInts) //
+                .transferToHost(greyInts) //
                 .execute();
 
         b2i(rgbBytes, seq);

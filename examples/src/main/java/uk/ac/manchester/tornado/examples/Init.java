@@ -60,7 +60,7 @@ public class Init {
         System.out.println("Maximum alloc device memory: " + mb + " (MB)");
 
         TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", Init::compute, array).streamOut((Object) array);
+        taskGraph.task("t0", Init::compute, array).transferToHost((Object) array);
         taskGraph.execute();
 
         if (CHECK) {

@@ -70,8 +70,8 @@ public class JMHConvolveImage {
             createFilter(filter);
 
             taskGraph = new TaskGraph("benchmark") //
-                    .copyIn(DataTransferMode.EVERY_EXECUTION, input).task("convolveImage", GraphicsKernels::convolveImage, input, filter, output) //
-                    .streamOut(output);
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, input).task("convolveImage", GraphicsKernels::convolveImage, input, filter, output) //
+                    .transferToHost(output);
             taskGraph.warmup();
         }
     }

@@ -63,9 +63,9 @@ public class MultipleReductions extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", MultipleReductions::test, input, result1, result2) //
-                .streamOut(result1, result2); //
+                .transferToHost(result1, result2); //
 
         taskGraph.execute();
     }

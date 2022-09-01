@@ -45,7 +45,7 @@ public class ArrayAddLong {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", ArrayAddLong::add, a, b, c)
-                .streamOut(c)
+                .transferToHost(c)
                 .execute();
         //@formatter:on
 

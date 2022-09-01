@@ -50,7 +50,7 @@ public class ArrayMultiplyAdd {
          */
         TaskGraph taskGraph = new TaskGraph("s0").task("t0", SimpleMath::vectorMultiply, a, b, c) //
                 .task("t1", SimpleMath::vectorAdd, c, b, d) //
-                .streamOut(d);
+                .transferToHost(d);
 
         taskGraph.execute();
         taskGraph.dumpTimes();

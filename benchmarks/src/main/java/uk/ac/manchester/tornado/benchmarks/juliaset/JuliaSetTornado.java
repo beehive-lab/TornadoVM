@@ -43,7 +43,7 @@ public class JuliaSetTornado extends BenchmarkDriver {
 
         taskGraph = new TaskGraph("benchmark") //
                 .task("juliaSet", GraphicsKernels::juliaSetTornado, size, hue, brightness) //
-                .streamOut(hue, brightness);
+                .transferToHost(hue, brightness);
         taskGraph.warmup();
     }
 

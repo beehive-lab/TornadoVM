@@ -66,7 +66,7 @@ public class TestProfiler extends TornadoTestBase {
         // @formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
                 .task("t0", TestHello::add, a, b, c)
-                .streamOut(c);
+                .transferToHost(c);
         // @formatter:on
 
         taskGraph.execute();
@@ -111,7 +111,7 @@ public class TestProfiler extends TornadoTestBase {
         // @formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
                 .task("t0", TestHello::add, a, b, c)
-                .streamOut(c);
+                .transferToHost(c);
         // @formatter:on
 
         taskGraph.execute();

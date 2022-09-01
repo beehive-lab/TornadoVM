@@ -54,7 +54,7 @@ public class JMHMandelbrot {
             output = new short[size * size];
             taskGraph = new TaskGraph("benchmark") //
                     .task("t0", ComputeKernels::mandelbrot, size, output) //
-                    .streamOut(output);
+                    .transferToHost(output);
             taskGraph.warmup();
         }
     }

@@ -40,7 +40,7 @@ public class TestLong extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::testLongsCopy, a) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         for (int i = 0; i < numElements; i++) {
@@ -65,7 +65,7 @@ public class TestLong extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorSumLongCompute, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         for (int i = 0; i < numElements; i++) {

@@ -72,9 +72,9 @@ public class JMHSgemV {
             }
 
             taskGraph = new TaskGraph("benchmark") //
-                    .copyIn(DataTransferMode.EVERY_EXECUTION, a, x) //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, x) //
                     .task("sgemv", LinearAlgebraArrays::sgemv, m, n, a, x, y) //
-                    .streamOut(y);
+                    .transferToHost(y);
             taskGraph.warmup();
         }
     }

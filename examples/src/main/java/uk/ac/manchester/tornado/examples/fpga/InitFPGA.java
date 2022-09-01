@@ -89,9 +89,9 @@ public class InitFPGA {
 
         // @formatter:off
         TaskGraph s0 = new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, x)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x)
                 .task("t0", InitFPGA::init, x)
-                .streamOut(x);
+                .transferToHost(x);
         // @formatter:on
 
         s0.execute();

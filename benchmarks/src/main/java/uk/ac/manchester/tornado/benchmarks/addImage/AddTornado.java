@@ -65,9 +65,9 @@ public class AddTornado extends BenchmarkDriver {
     public void setUp() {
         initData();
         taskGraph = new TaskGraph("benchmark") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("addImage", GraphicsKernels::addImage, a, b, c) //
-                .streamOut(c);
+                .transferToHost(c);
         taskGraph.warmup();
     }
 

@@ -123,7 +123,7 @@ public class MatrixMultiplication2DV2 {
         //@formatter:off
         TaskGraph t = new TaskGraph("s0") //
                 .task("t0", MatrixMultiplication2DV2::matrixMultiplication, context, matrixA, matrixB, matrixC, size) //
-                .streamOut(matrixC);
+                .transferToHost(matrixC);
         //@formatter:on
 
         // 1. Warm up Tornado

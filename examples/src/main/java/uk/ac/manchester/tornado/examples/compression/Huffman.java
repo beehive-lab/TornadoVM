@@ -115,7 +115,7 @@ public class Huffman {
         // @formatter:off
         new TaskGraph("s0")
               .task("t0", Huffman::decodeTornadoKernel, input, frequencies, data, left, right, message)
-              .streamOut(message)
+              .transferToHost(message)
               .execute();
         // @formatter:on
 

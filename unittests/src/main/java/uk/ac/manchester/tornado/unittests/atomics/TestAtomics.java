@@ -167,7 +167,7 @@ public class TestAtomics extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic03, a) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute();
 
         atomic03(b);
@@ -187,7 +187,7 @@ public class TestAtomics extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic04, a) //
-                .streamOut(a); //
+                .transferToHost(a); //
 
         taskGraph.execute();
 
@@ -214,7 +214,7 @@ public class TestAtomics extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic04Get, a) //
-                .streamOut(a); //
+                .transferToHost(a); //
 
         taskGraph.execute();
 
@@ -264,7 +264,7 @@ public class TestAtomics extends TornadoTestBase {
                         new int[] { 32 },
                         new int[]{155}     // Atomics - Initial Value
                         )
-                .streamOut(a)
+                .transferToHost(a)
                 .execute();
         // @formatter:on
 
@@ -284,9 +284,9 @@ public class TestAtomics extends TornadoTestBase {
         Arrays.fill(b, 1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestAtomics::atomic06, a, b) //
-                .streamOut(a, b); //
+                .transferToHost(a, b); //
 
         taskGraph.execute();
 
@@ -311,7 +311,7 @@ public class TestAtomics extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic07, a) //
-                .streamOut(a); //
+                .transferToHost(a); //
 
         taskGraph.execute();
 
@@ -333,7 +333,7 @@ public class TestAtomics extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic08, a) //
-                .streamOut(a); //
+                .transferToHost(a); //
 
         taskGraph.execute();
 
@@ -372,9 +372,9 @@ public class TestAtomics extends TornadoTestBase {
         AtomicInteger ai = new AtomicInteger(initialValue);
 
         new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a, ai) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, ai) //
                 .task("t0", TestAtomics::atomic09, a, ai) //
-                .streamOut(a, ai) //
+                .transferToHost(a, ai) //
                 .execute();
 
         boolean repeated = isValueRepeated(a);
@@ -400,7 +400,7 @@ public class TestAtomics extends TornadoTestBase {
         // We force a COPY_IN instead of STREAM_IN
         new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic09, a, ai) //
-                .streamOut(a, ai) //
+                .transferToHost(a, ai) //
                 .execute();
 
         boolean repeated = isValueRepeated(a);
@@ -427,7 +427,7 @@ public class TestAtomics extends TornadoTestBase {
         // Also, the atomic uses COPY_OUT non-blocking call
         new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic09, a, ai) //
-                .streamOut(ai, a) //
+                .transferToHost(ai, a) //
                 .execute();
 
         boolean repeated = isValueRepeated(a);
@@ -455,7 +455,7 @@ public class TestAtomics extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic10, a, ai, bi) //
-                .streamOut(ai, a, bi) //
+                .transferToHost(ai, a, bi) //
                 .execute();
 
         boolean repeated = isValueRepeated(a);
@@ -484,7 +484,7 @@ public class TestAtomics extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic13, a, ai) //
-                .streamOut(ai, a) //
+                .transferToHost(ai, a) //
                 .execute();
 
         boolean repeated = isValueRepeated(a);
@@ -511,7 +511,7 @@ public class TestAtomics extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic14, a, ai, bi) //
-                .streamOut(ai, a, bi) //
+                .transferToHost(ai, a, bi) //
                 .execute();
 
         int lastValue = ai.get();
@@ -536,7 +536,7 @@ public class TestAtomics extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic15, a, ai) //
-                .streamOut(ai, a) //
+                .transferToHost(ai, a) //
                 .execute();
 
         int lastValue = ai.get();
@@ -560,9 +560,9 @@ public class TestAtomics extends TornadoTestBase {
         AtomicInteger ai = new AtomicInteger(initialValueA);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, ai) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, ai) //
                 .task("t0", TestAtomics::atomic16, a, ai) //
-                .streamOut(ai, a);
+                .transferToHost(ai, a);
 
         final int iterations = 50;
         IntStream.range(0, iterations).forEach(i -> {

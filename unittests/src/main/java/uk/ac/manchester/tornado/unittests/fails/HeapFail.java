@@ -58,9 +58,9 @@ public class HeapFail {
 
         // @formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, x)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x)
                 .task("s0",HeapFail::validKernel,x,y)
-                .streamOut(y);
+                .transferToHost(y);
         // @formatter:on
         taskGraph.execute();
     }

@@ -77,7 +77,7 @@ public class InitBatchPreBuilt {
                         new Access[] { Access.READ, Access.WRITE },
                         defaultDevice,
                         new int[] { 25000000 })  // Number of elements in 100MB
-            .streamOut(arrayB)
+            .transferToHost(arrayB)
             .execute();
         // @formatter:on
 

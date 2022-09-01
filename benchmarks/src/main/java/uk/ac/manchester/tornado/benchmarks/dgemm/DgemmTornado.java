@@ -64,9 +64,9 @@ public class DgemmTornado extends BenchmarkDriver {
         taskGraph = new TaskGraph("benchmark");
         if (!USE_PREBUILT) {
 
-            taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
+            taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                     .task("dgemm", LinearAlgebraArrays::dgemm, m, n, n, a, b, c) //
-                    .streamOut(c);
+                    .transferToHost(c);
             taskGraph.warmup();
         } else {
             String filePath = "/tmp/mxmDouble.spv";
@@ -87,7 +87,7 @@ public class DgemmTornado extends BenchmarkDriver {
                             new Access[]{Access.READ, Access.READ, Access.READ, Access.READ, Access.READ, Access.WRITE},
                             device,
                             new int[]{n, n})
-                    .streamOut(c);
+                    .transferToHost(c);
             // @formatter:on
         }
     }

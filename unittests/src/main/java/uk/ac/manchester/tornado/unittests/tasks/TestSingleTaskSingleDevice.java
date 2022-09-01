@@ -59,9 +59,9 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
             .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)
-            .streamOut(c)
+            .transferToHost(c)
             .execute();
         //@formatter:on
 
@@ -89,9 +89,9 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
         taskGraph.setDevice(driver.getDevice(deviceNumber));
 
         //@formatter:off
-        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
             .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)
-            .streamOut(c)
+            .transferToHost(c)
             .execute();
         //@formatter:on
 
@@ -124,9 +124,9 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
         taskGraph.setDevice(driver.getDevice(deviceNumber));
 
         //@formatter:off
-		taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
+		taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
 		  .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)
-		  .streamOut(c)
+		  .transferToHost(c)
 		  .execute();
 	    //@formatter:on
 

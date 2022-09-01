@@ -64,9 +64,9 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         //@formatter:off
 		TaskGraph taskGraph = new TaskGraph("s0")
-			.copyIn(DataTransferMode.EVERY_EXECUTION, input)
+			.transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
 			.task("t0", TestReductionsFloats::reductionAddFloats, input, result)
-			.streamOut(result);
+			.transferToHost(result);
 		//@formatter:on
 
         taskGraph.execute();
@@ -99,9 +99,9 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
                 .task("t0", TestReductionsFloats::reductionAddFloatsConstant, input, result)
-                .streamOut(result);
+                .transferToHost(result);
         //@formatter:on
 
         taskGraph.execute();
@@ -133,9 +133,9 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
                 .task("t0", TestReductionsFloats::reductionAddFloatsLarge, input, result)
-                .streamOut(result);
+                .transferToHost(result);
         //@formatter:on
 
         taskGraph.execute();
@@ -182,9 +182,9 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsFloats::reductionAddFloats3, input, result)
-            .streamOut(result);
+            .transferToHost(result);
         //@formatter:on
 
         taskGraph.execute();
@@ -210,9 +210,9 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, inputA, inputB)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, inputA, inputB)
             .task("t0", TestReductionsFloats::reductionAddFloats4, inputA, inputB, result)
-            .streamOut(result);
+            .transferToHost(result);
         //@formatter:on
 
         taskGraph.execute();
@@ -253,10 +253,10 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
             .task("tSum", TestReductionsFloats::computeSum, input, result)
             .task("tAverage", TestReductionsFloats::computeAvg, input.length, result)
-            .streamOut(result);
+            .transferToHost(result);
         //@formatter:on
 
         taskGraph.execute();
@@ -286,9 +286,9 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsFloats::multiplyFloats, input, result)
-            .streamOut(result)
+            .transferToHost(result)
             .execute();
         //@formatter:on
 
@@ -322,9 +322,9 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsFloats::reductionAddFloatsConditionally, input, result)
-            .streamOut(result);
+            .transferToHost(result);
         //@formatter:on
 
         taskGraph.execute();
@@ -358,7 +358,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
             .task("t0", TestReductionsFloats::computePi, input, result)
-            .streamOut(result)
+            .transferToHost(result)
             .execute();
         //@formatter:on
 
@@ -385,9 +385,9 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsFloats::maxReductionAnnotation, input, result)
-            .streamOut(result)
+            .transferToHost(result)
             .execute();
         //@formatter:on
 
@@ -415,9 +415,9 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
                 .task("t0", TestReductionsFloats::maxReductionAnnotation2, input, result)
-                .streamOut(result)
+                .transferToHost(result)
                 .execute();
         //@formatter:on
 
@@ -447,9 +447,9 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsFloats::minReductionAnnotation, input, result, Float.MAX_VALUE)
-            .streamOut(result)
+            .transferToHost(result)
             .execute();
         //@formatter:on
 
@@ -479,9 +479,9 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
                 .task("t0", TestReductionsFloats::minReductionAnnotation2, input, result, Float.MAX_VALUE)
-                .streamOut(result)
+                .transferToHost(result)
                 .execute();
         //@formatter:on
 

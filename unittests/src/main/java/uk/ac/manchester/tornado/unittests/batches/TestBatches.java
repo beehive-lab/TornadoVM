@@ -96,7 +96,7 @@ public class TestBatches extends TornadoTestBase {
         // @formatter:off
         taskGraph.batch("100MB")   // Slots of 100 MB
                 .task("t0", TestBatches::compute, arrayA, arrayB)
-                .streamOut((Object) arrayB)
+                .transferToHost((Object) arrayB)
                 .execute();
         // @formatter:on
 
@@ -127,7 +127,7 @@ public class TestBatches extends TornadoTestBase {
         // @formatter:off
         taskGraph.batch("300MB")   // Slots of 300 MB
                 .task("t0", TestBatches::compute, arrayA, arrayB)
-                .streamOut((Object) arrayB)
+                .transferToHost((Object) arrayB)
                 .execute();
         // @formatter:on
 
@@ -156,7 +156,7 @@ public class TestBatches extends TornadoTestBase {
         // @formatter:off
         taskGraph.batch("512MB")   // Slots of 512 MB
                 .task("t0", TestBatches::compute, arrayA)
-                .streamOut((Object) arrayA)
+                .transferToHost((Object) arrayA)
                 .execute();
         // @formatter:on
 
@@ -190,7 +190,7 @@ public class TestBatches extends TornadoTestBase {
         // @formatter:off
         taskGraph.batch("50MB")   // Process Slots of 50 MB
                 .task("t0", TestBatches::compute, arrayA, arrayB, arrayC)
-                .streamOut((Object) arrayC)
+                .transferToHost((Object) arrayC)
                 .execute();
         // @formatter:on
 
@@ -224,7 +224,7 @@ public class TestBatches extends TornadoTestBase {
         // @formatter:off
         taskGraph.batch("50MB")   // Process Slots of 50 MB
                 .task("t0", TestBatches::compute, arrayA, arrayB, arrayC)
-                .streamOut((Object) arrayC)
+                .transferToHost((Object) arrayC)
                 .execute();
         // @formatter:on
 
@@ -259,7 +259,7 @@ public class TestBatches extends TornadoTestBase {
         // @formatter:off
         taskGraph.batch("50MB")   // Process Slots of 50 MB
                 .task("t0", TestBatches::compute, arrayA, arrayB, arrayC)
-                .streamOut((Object) arrayC)
+                .transferToHost((Object) arrayC)
                 .execute();
         // @formatter:on
 
@@ -292,7 +292,7 @@ public class TestBatches extends TornadoTestBase {
         // @formatter:off
         taskGraph.batch("50MB")   // Process Slots of 50 MB
                 .task("t0", TestBatches::compute, arrayA, arrayB, arrayC)
-                .streamOut((Object) arrayC)
+                .transferToHost((Object) arrayC)
                 .execute();
         // @formatter:on
 
@@ -326,7 +326,7 @@ public class TestBatches extends TornadoTestBase {
         // @formatter:off
         taskGraph.batch("50MB")   // Process Slots of 50 MB
                 .task("t0", TestBatches::compute, arrayA, arrayB, arrayC)
-                .streamOut((Object) arrayC)
+                .transferToHost((Object) arrayC)
                 .execute();
         // @formatter:on
 

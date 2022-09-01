@@ -129,7 +129,7 @@ public class RenderTrack {
         // [Optional] Set the local work group
         workerGrid.setLocalWork(32, 32, 1);
 
-        TaskGraph task = new TaskGraph("s0").task("t0", RenderTrack::renderTrack, context, outputTornadoVM, input).streamOut(outputTornadoVM);
+        TaskGraph task = new TaskGraph("s0").task("t0", RenderTrack::renderTrack, context, outputTornadoVM, input).transferToHost(outputTornadoVM);
         ArrayList<Long> timers = new ArrayList<>();
         // task.warmup();
         for (int i = 0; i < 10; i++) {

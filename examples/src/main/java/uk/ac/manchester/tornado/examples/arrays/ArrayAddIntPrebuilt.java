@@ -58,7 +58,7 @@ public class ArrayAddIntPrebuilt {
                         new Access[] { Access.READ, Access.READ, Access.WRITE },
                         device,
                         new int[] { numElements })
-                .streamOut(c)
+                .transferToHost(c)
                 .execute();
         // @formatter:on
 

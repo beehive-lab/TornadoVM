@@ -68,9 +68,9 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
                 .task("t0", TestVirtualDeviceKernel::maxReduction, input, result)
-                .streamOut(result)
+                .transferToHost(result)
                 .execute();
         //@formatter:on
 

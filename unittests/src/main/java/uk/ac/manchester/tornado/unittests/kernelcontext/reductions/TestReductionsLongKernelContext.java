@@ -80,9 +80,9 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input, localSize) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize) //
                 .task("t0", TestReductionsLongKernelContext::longReductionAddGlobalMemory, context, input, reduce) //
-                .streamOut(reduce);
+                .transferToHost(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
@@ -131,9 +131,9 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input, localSize) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize) //
                 .task("t0", TestReductionsLongKernelContext::longReductionAddLocalMemory, context, input, reduce) //
-                .streamOut(reduce);
+                .transferToHost(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
@@ -187,9 +187,9 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input, localSize) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize) //
                 .task("t0", TestReductionsLongKernelContext::longReductionMaxGlobalMemory, context, input, reduce) //
-                .streamOut(reduce);
+                .transferToHost(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
@@ -237,9 +237,9 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input, localSize) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize) //
                 .task("t0", TestReductionsLongKernelContext::longReductionMaxLocalMemory, context, input, reduce) //
-                .streamOut(reduce);
+                .transferToHost(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
@@ -293,9 +293,9 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input, localSize) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize) //
                 .task("t0", TestReductionsLongKernelContext::longReductionMinGlobalMemory, context, input, reduce) //
-                .streamOut(reduce);
+                .transferToHost(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
@@ -343,9 +343,9 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input, localSize) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize) //
                 .task("t0", TestReductionsLongKernelContext::longReductionMinLocalMemory, context, input, reduce) //
-                .streamOut(reduce);
+                .transferToHost(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);

@@ -49,9 +49,9 @@ public class ReductionAddFloats {
 
         //@formatter:off
         TaskGraph task = new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", ReductionAddFloats::reductionAddFloats, input, result)
-            .streamOut(result);
+            .transferToHost(result);
         //@formatter:on
 
         ArrayList<Long> timers = new ArrayList<>();

@@ -51,7 +51,7 @@ public class TestLambdas extends TornadoTestBase {
                     z[i] = x[i] + y[i];
                 }
             }, a, b, c)
-            .streamOut(c)
+            .transferToHost(c)
             .execute();
         //@formatter:on
 
@@ -82,7 +82,7 @@ public class TestLambdas extends TornadoTestBase {
                     z[i] = x[i] * y[i];
                 }
             }, a, b, c)
-            .streamOut(c)
+            .transferToHost(c)
             .execute();
         //@formatter:on
 
@@ -113,7 +113,7 @@ public class TestLambdas extends TornadoTestBase {
                         z[i] = x[i] * y[i];
                     }
                 }, a, b, c)
-                .streamOut(c)
+                .transferToHost(c)
                 .execute();
         //@formatter:on
 

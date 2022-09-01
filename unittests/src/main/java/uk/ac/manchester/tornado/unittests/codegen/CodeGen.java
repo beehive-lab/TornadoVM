@@ -105,7 +105,7 @@ public class CodeGen extends TornadoTestBase {
         IntStream.range(0, imageHeight * imageHeight).forEach(x -> grayIntegralImage[x] = x);
 
         taskGraph.task("bar", CodeGen::cascadeKernel, grayIntegralImage, imageWidth, imageHeight, resultsXY) //
-                .streamOut(resultsXY);
+                .transferToHost(resultsXY);
 
         taskGraph.execute();
     }
@@ -158,7 +158,7 @@ public class CodeGen extends TornadoTestBase {
 
         new TaskGraph("break") //
                 .task("task", CodeGen::breakStatement, a) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         assertArrayEquals(serial, a);

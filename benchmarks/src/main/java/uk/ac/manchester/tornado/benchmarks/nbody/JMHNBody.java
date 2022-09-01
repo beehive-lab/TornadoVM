@@ -82,7 +82,7 @@ public class JMHNBody {
             }
 
             taskGraph = new TaskGraph("benchmark") //
-                    .copyIn(DataTransferMode.EVERY_EXECUTION, velSeq, posSeq) //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, velSeq, posSeq) //
                     .task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
             taskGraph.warmup();
         }

@@ -111,7 +111,7 @@ public class Convolution2D {
         // @formatter:off
         final TaskGraph graph = new TaskGraph("s0")
                 .task("t0", Convolution2D::run2DConvolutionTornado, size, size,a,b)
-                .streamOut(b);
+                .transferToHost(b);
         // @formatter:on
 
         for (int i = 0; i < iterations; i++) {

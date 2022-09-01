@@ -121,7 +121,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         for (int i = 0; i < numKernels; i++) {
             taskGraph.task("t" + i, TestsVirtualLayer::accumulator, data, 1);
         }
-        taskGraph.streamOut(data);
+        taskGraph.transferToHost(data);
 
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
 
@@ -157,8 +157,8 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0");
 
-        taskGraph.task("t0", TestsVirtualLayer::saxpy, alpha, x, y).streamOut(y);
-        taskGraph.streamOut(y);
+        taskGraph.task("t0", TestsVirtualLayer::saxpy, alpha, x, y).transferToHost(y);
+        taskGraph.transferToHost(y);
 
         taskGraph.mapAllTo(driver.getDevice(0));
         taskGraph.execute();
@@ -194,13 +194,13 @@ public class TestsVirtualLayer extends TornadoTestBase {
         // Assign task to device 0
         taskGraph.setDevice(driver.getDevice(0));
         taskGraph.task("t0", TestsVirtualLayer::testA, data, 1);
-        taskGraph.streamOut(data);
+        taskGraph.transferToHost(data);
         taskGraph.execute();
 
         // Assign another task to device 1
         taskGraph.setDevice(driver.getDevice(1));
         taskGraph.task("t1", TestsVirtualLayer::testA, data, 10);
-        taskGraph.streamOut(data);
+        taskGraph.transferToHost(data);
         taskGraph.execute();
     }
 
@@ -223,7 +223,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         taskGraph.task("t0", TestsVirtualLayer::testA, data, 1);
         taskGraph.setDevice(driver.getDevice(1));
         taskGraph.task("t1", TestsVirtualLayer::testA, data, 10);
-        taskGraph.streamOut(data);
+        taskGraph.transferToHost(data);
         taskGraph.execute();
 
         for (int i = 0; i < N; i++) {
@@ -251,8 +251,8 @@ public class TestsVirtualLayer extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.task("t0", TestsVirtualLayer::testA, dataA, 1);
         taskGraph.task("t1", TestsVirtualLayer::testA, dataB, 10);
-        taskGraph.streamOut(dataA);
-        taskGraph.streamOut(dataB);
+        taskGraph.transferToHost(dataA);
+        taskGraph.transferToHost(dataB);
         taskGraph.execute();
 
         for (int i = 0; i < N; i++) {
@@ -297,7 +297,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
             //@formatter:off
             taskGraph.task(taskName, TestsVirtualLayer::testA, data, 1)
-              .streamOut(data);
+              .transferToHost(data);
             //@formatter:on
 
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
@@ -339,14 +339,14 @@ public class TestsVirtualLayer extends TornadoTestBase {
         TornadoRuntime.setProperty("s0.t0.device", "0:0");
         // s0.setDevice(tornadoDriver.getDevice(1)); /// XXX: fix this call
         taskGraph.task("t0", TestsVirtualLayer::testA, dataA, 1);
-        taskGraph.streamOut(dataA);
+        taskGraph.transferToHost(dataA);
         taskGraph.execute();
 
         TaskGraph taskGraph1 = new TaskGraph("s1");
         TornadoRuntime.setProperty("s1.t1.device", "0:1");
         // s1.setDevice(tornadoDriver.getDevice(0));
         taskGraph1.task("t1", TestsVirtualLayer::testA, dataB, 1);
-        taskGraph1.streamOut(dataB);
+        taskGraph1.transferToHost(dataB);
         taskGraph1.execute();
 
         for (int i = 0; i < N; i++) {

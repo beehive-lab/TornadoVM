@@ -57,9 +57,9 @@ public class JMHJuliaSet {
             brightness = new float[size * size];
 
             taskGraph = new TaskGraph("benchmark") //
-                    .copyIn(DataTransferMode.EVERY_EXECUTION, hue, brightness) //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, hue, brightness) //
                     .task("juliaset", GraphicsKernels::juliaSetTornado, size, hue, brightness) //
-                    .streamOut(hue, brightness);
+                    .transferToHost(hue, brightness);
             taskGraph.warmup();
         }
     }

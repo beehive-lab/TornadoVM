@@ -71,7 +71,7 @@ public class EJMLMatrixMult {
         CommonOps_DDRM.fill(c, 0);
 
         // CommonOps_DDRM.mult(a, b, c);
-        TaskGraph s0 = new TaskGraph("s0").task("mult", MatrixMatrixMult_DDRM::mult_small, a, b, c).streamOut(c);
+        TaskGraph s0 = new TaskGraph("s0").task("mult", MatrixMatrixMult_DDRM::mult_small, a, b, c).transferToHost(c);
 
         s0.execute();
 

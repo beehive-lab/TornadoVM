@@ -267,8 +267,8 @@ public class TaskGraph implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public TaskGraph copyIn(DataTransferMode mode, Object... objects) {
-        taskScheduleImpl.streamInInner(mode, objects);
+    public TaskGraph transferToDevice(DataTransferMode mode, Object... objects) {
+        taskScheduleImpl.transferToDevice(mode, objects);
         return this;
     }
 
@@ -279,8 +279,8 @@ public class TaskGraph implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public TaskGraph streamOut(Object... objects) {
-        taskScheduleImpl.streamOutInner(objects);
+    public TaskGraph transferToHost(Object... objects) {
+        taskScheduleImpl.transferToHost(objects);
         return this;
     }
 

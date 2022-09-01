@@ -167,11 +167,11 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s01.t0", worker);
 
         TaskGraph taskGraph = new TaskGraph("s01") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestCombinedTaskGraph::vectorAddV1, a, b, cTornado) //
                 .task("t1", TestCombinedTaskGraph::vectorMulV1, cTornado, b, cTornado) //
                 .task("t2", TestCombinedTaskGraph::vectorSubV1, cTornado, b, cTornado) //
-                .streamOut(cTornado);
+                .transferToHost(cTornado);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(size, 1, 1);
@@ -210,11 +210,11 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s02") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestCombinedTaskGraph::vectorAddV2, context, a, b, cTornado) //
                 .task("t1", TestCombinedTaskGraph::vectorMulV2, context, cTornado, b, cTornado) //
                 .task("t2", TestCombinedTaskGraph::vectorSubV2, context, cTornado, b, cTornado) //
-                .streamOut(cTornado);
+                .transferToHost(cTornado);
         taskGraph.execute(gridScheduler);
 
         vectorAddV1(a, b, cJava);
@@ -249,11 +249,11 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s03") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestCombinedTaskGraph::vectorAddV1, a, b, cTornado) //
                 .task("t1", TestCombinedTaskGraph::vectorMulV2, context, cTornado, b, cTornado) //
                 .task("t2", TestCombinedTaskGraph::vectorSubV2, context, cTornado, b, cTornado) //
-                .streamOut(cTornado);
+                .transferToHost(cTornado);
         taskGraph.execute(gridScheduler);
 
         vectorAddV1(a, b, cJava);
@@ -288,11 +288,11 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s04") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestCombinedTaskGraph::vectorAddV2, context, a, b, cTornado) //
                 .task("t1", TestCombinedTaskGraph::vectorMulV2, context, cTornado, b, cTornado) //
                 .task("t2", TestCombinedTaskGraph::vectorSubV1, cTornado, b, cTornado) //
-                .streamOut(cTornado);
+                .transferToHost(cTornado);
         taskGraph.execute(gridScheduler);
 
         vectorAddV1(a, b, cJava);
@@ -328,11 +328,11 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s05") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestCombinedTaskGraph::vectorAddV2, context, a, b, cTornado) //
                 .task("t1", TestCombinedTaskGraph::vectorMulV2, context, cTornado, b, cTornado) //
                 .task("t2", TestCombinedTaskGraph::vectorSubV1, cTornado, b, cTornado) //
-                .streamOut(cTornado);
+                .transferToHost(cTornado);
 
         // Change the dimension of the Grids
         workerT0.setGlobalWork(size, 1, 1);

@@ -145,7 +145,7 @@ public class MatrixMul2DLocalMemory {
 
         WorkerGrid workerCUDAOld = new WorkerGrid2D(N, N);
         GridScheduler gridSchedulerCUDAOld = new GridScheduler("cuda_old_api.t0", workerCUDAOld);
-        TaskGraph scheduleCUDA = new TaskGraph("cuda_old_api").task("t0", MatrixMul2DLocalMemory::matrixMultiplication, matrixA, matrixB, matrixCCUDA, N).streamOut(matrixCCUDA);
+        TaskGraph scheduleCUDA = new TaskGraph("cuda_old_api").task("t0", MatrixMul2DLocalMemory::matrixMultiplication, matrixA, matrixB, matrixCCUDA, N).transferToHost(matrixCCUDA);
 
         TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
@@ -178,7 +178,7 @@ public class MatrixMul2DLocalMemory {
         WorkerGrid workerOpenCLOld = new WorkerGrid2D(N, N);
         GridScheduler gridSchedulerOpenCLOld = new GridScheduler("ocl_old_api.t0", workerOpenCLOld);
 
-        TaskGraph scheduleOCL = new TaskGraph("ocl_old_api").task("t0", MatrixMul2DLocalMemory::matrixMultiplication, matrixA, matrixB, matrixCOCL, N).streamOut(matrixCOCL);
+        TaskGraph scheduleOCL = new TaskGraph("ocl_old_api").task("t0", MatrixMul2DLocalMemory::matrixMultiplication, matrixA, matrixB, matrixCOCL, N).transferToHost(matrixCOCL);
 
         // Get the same device but running the OCL backend
         TornadoDriver oclDriver = TornadoRuntime.getTornadoRuntime().getDriver(1);
@@ -225,7 +225,7 @@ public class MatrixMul2DLocalMemory {
 
         TaskGraph oclNewApiTask = new TaskGraph("ocl_advanced_api") //
                 .task("t0", MatrixMul2DLocalMemory::matrixMultiplicationLocalMemory, context, matrixA, matrixB, matrixCOCLNewApi, N) //
-                .streamOut(matrixCOCLNewApi); //
+                .transferToHost(matrixCOCLNewApi); //
         // Change the Grid
         workerOpenCLNew.setGlobalWork(N, N, 1); // TS / WPT
         workerOpenCLNew.setLocalWork(local_x, local_y, 1);
@@ -260,7 +260,7 @@ public class MatrixMul2DLocalMemory {
 
         TaskGraph cudaNewApiTask = new TaskGraph("cuda_advanced_api") //
                 .task("t0", MatrixMul2DLocalMemory::matrixMultiplicationLocalMemory, contextCUDA, matrixA, matrixB, matrixCCUDANewApi, N) //
-                .streamOut(matrixCCUDANewApi); //
+                .transferToHost(matrixCCUDANewApi); //
         // Change the Grid
         workerCudaNew.setGlobalWork(N, N, 1);
         workerCudaNew.setLocalWork(local_x, local_y, 1);

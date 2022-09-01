@@ -58,9 +58,9 @@ public class MyCompute {
 
         if (taskGraph == null) {
             taskGraph = new TaskGraph("s0") //
-                    .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)//
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
                     .task("t0", MyCompute::mxm, a, b, c, N)//
-                    .streamOut(c);//
+                    .transferToHost(c);//
         }
 
         taskGraph.execute();

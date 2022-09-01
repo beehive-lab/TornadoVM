@@ -67,7 +67,7 @@ public class TestLoopTransformations extends TornadoTestBase {
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
                 .task("t0", TestLoopTransformations::matrixVectorMultiplication, matrixA, matrixB, matrixC, size)
-                .streamOut(matrixC);
+                .transferToHost(matrixC);
         //@formatter:on
 
         taskGraph.execute();
@@ -112,7 +112,7 @@ public class TestLoopTransformations extends TornadoTestBase {
 
         TaskGraph t = new TaskGraph("s0") //
                 .task("t0", TestLoopTransformations::matrixVectorMultiplication, matrixA, matrixB, matrixC, size) //
-                .streamOut(matrixC); //
+                .transferToHost(matrixC); //
 
         t.execute();
 
@@ -149,7 +149,7 @@ public class TestLoopTransformations extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestLoopTransformations::matrixTranspose, matrixA, matrixB, N) //
-                .streamOut(matrixB); //
+                .transferToHost(matrixB); //
         taskGraph.execute();
 
         for (int i = 0; i < N; i++) {

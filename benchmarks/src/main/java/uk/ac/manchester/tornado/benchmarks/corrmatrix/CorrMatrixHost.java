@@ -199,8 +199,8 @@ public class CorrMatrixHost {
         final long[] subMatrixB = new long[NUM_SUB_ROWS * matrixB_numLongs];
         final int[] subResultMatrix = new int[NUM_SUB_ROWS * NUM_SUB_ROWS];
 
-        final TaskGraph s0 = new TaskGraph("benchmark").copyIn(DataTransferMode.EVERY_EXECUTION, subMatrixA, subMatrixB)
-                .task("corrmatrix", CorrMatrixKernel::run, subMatrixA, NUM_SUB_ROWS, subMatrixB, NUM_SUB_ROWS, matrixA_numLongs, subResultMatrix).streamOut(subResultMatrix);
+        final TaskGraph s0 = new TaskGraph("benchmark").transferToDevice(DataTransferMode.EVERY_EXECUTION, subMatrixA, subMatrixB)
+                .task("corrmatrix", CorrMatrixKernel::run, subMatrixA, NUM_SUB_ROWS, subMatrixB, NUM_SUB_ROWS, matrixA_numLongs, subResultMatrix).transferToHost(subResultMatrix);
 
         try {
             for (int a = 0; a < numSubBlocksA; a++) {

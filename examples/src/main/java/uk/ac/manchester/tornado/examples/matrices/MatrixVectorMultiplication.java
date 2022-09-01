@@ -66,7 +66,7 @@ public class MatrixVectorMultiplication {
         //@formatter:off
         TaskGraph t = new TaskGraph("s0")
                 .task("t0", MatrixVectorMultiplication::matrixVectorMultiplication, matrixA, matrixB, matrixC, size)
-                .streamOut(matrixC);
+                .transferToHost(matrixC);
         //@formatter:on
 
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {

@@ -35,7 +35,7 @@ public class TestDoubles extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::testDoublesCopy, a) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         assertEquals(a[0], 50.0, 0.01);
@@ -59,7 +59,7 @@ public class TestDoubles extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorAddDoubleCompute, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         for (int i = 0; i < numElements; i++) {
@@ -85,7 +85,7 @@ public class TestDoubles extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorSubDoubleCompute, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         for (int i = 0; i < numElements; i++) {
@@ -110,7 +110,7 @@ public class TestDoubles extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorMulDoubleCompute, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         for (int i = 0; i < numElements; i++) {
@@ -135,7 +135,7 @@ public class TestDoubles extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorDivDoubleCompute, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         for (int i = 0; i < numElements; i++) {

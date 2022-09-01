@@ -63,9 +63,9 @@ public class InstanceReduction extends TornadoTestBase {
 
         // @formatter:off
         new TaskGraph("ts")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
                 .task("reduce", rd::reduce, input, result)
-                .streamOut(result)
+                .transferToHost(result)
                 .execute();
         // @formatter:on
 

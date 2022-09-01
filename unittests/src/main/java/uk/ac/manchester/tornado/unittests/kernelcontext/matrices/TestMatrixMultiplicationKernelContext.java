@@ -86,9 +86,9 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication1D, context, a, b, cTornado, size) //
-                .streamOut(cTornado);
+                .transferToHost(cTornado);
         taskGraph.execute(gridScheduler);
 
         matrixMultiplicationJava(a, b, cJava, size);
@@ -129,9 +129,9 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication2D01, context, a, b, cTornado, size) //
-                .streamOut(cTornado);
+                .transferToHost(cTornado);
         taskGraph.execute(gridScheduler);
 
         matrixMultiplicationJava(a, b, cJava, size);
@@ -197,9 +197,9 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication2D02, context, a, b, cTornado, size) //
-                .streamOut(cTornado);
+                .transferToHost(cTornado);
         worker.setLocalWork(TS, TS, 1);
         taskGraph.execute(gridScheduler);
 

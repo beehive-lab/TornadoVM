@@ -71,7 +71,7 @@ public class TestPrecompiledSPIRV {
 
         // @formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a)
                 .prebuiltTask("t0",
                         "copyTest",
                         filePath,
@@ -79,7 +79,7 @@ public class TestPrecompiledSPIRV {
                         new Access[] { Access.WRITE },
                         defaultDevice,
                         new int[] { numElements, 1, 1 })
-                .streamOut(a);
+                .transferToHost(a);
         // @formatter:on
         taskGraph.execute();
 

@@ -49,7 +49,7 @@ public class TestLambdas extends TornadoTestBase {
                   x[i] = y[i] * y[i];
               }
             }, a, b)
-            .streamOut(a)
+            .transferToHost(a)
             .execute();
         //@formatter:on
 

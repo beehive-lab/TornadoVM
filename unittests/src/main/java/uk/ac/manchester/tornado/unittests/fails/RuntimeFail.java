@@ -62,7 +62,7 @@ public class RuntimeFail extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", RuntimeFail::vectorAdd, x, y, z) //
                 .task("t0", RuntimeFail::square, z) //
-                .streamOut(z);
+                .transferToHost(z);
         taskGraph.execute();
     }
 

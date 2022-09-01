@@ -58,7 +58,7 @@ public class DynamicDispatch {
         Arrays.fill(a, 1);
         Arrays.fill(b, 2);
 
-        TaskGraph s0 = new TaskGraph("s0").task("t0", DynamicDispatch::applyOp, new AddOp(), a, b, c).streamOut(c);
+        TaskGraph s0 = new TaskGraph("s0").task("t0", DynamicDispatch::applyOp, new AddOp(), a, b, c).transferToHost(c);
 
         s0.warmup();
         s0.execute();

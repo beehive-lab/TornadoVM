@@ -51,7 +51,7 @@ public class DeviceMemoryTest {
 
         final int[] data = new int[numWords];
 
-        final TaskGraph schedule = new TaskGraph("s0").copyIn(DataTransferMode.EVERY_EXECUTION, data).task("t0", DeviceMemoryTest::fill, data).streamOut(data);
+        final TaskGraph schedule = new TaskGraph("s0").transferToDevice(DataTransferMode.EVERY_EXECUTION, data).task("t0", DeviceMemoryTest::fill, data).transferToHost(data);
 
         schedule.warmup();
 

@@ -124,7 +124,7 @@ public class TestArrays extends TornadoTestBase {
             taskGraph.task("t" + i, TestArrays::addAccumulator, data, 1);
         }
 
-        taskGraph.streamOut(data).warmup();
+        taskGraph.transferToHost(data).warmup();
 
         taskGraph.execute();
 
@@ -142,7 +142,7 @@ public class TestArrays extends TornadoTestBase {
         assertNotNull(taskGraph);
 
         taskGraph.task("t0", TestArrays::initializeSequentialByte, data);
-        taskGraph.streamOut(data).warmup();
+        taskGraph.transferToHost(data).warmup();
         taskGraph.execute();
 
         for (int i = 0; i < N; i++) {
@@ -159,7 +159,7 @@ public class TestArrays extends TornadoTestBase {
         assertNotNull(taskGraph);
 
         taskGraph.task("t0", TestArrays::initializeSequential, data);
-        taskGraph.streamOut(data).warmup();
+        taskGraph.transferToHost(data).warmup();
         taskGraph.execute();
 
         for (int i = 0; i < N; i++) {
@@ -176,7 +176,7 @@ public class TestArrays extends TornadoTestBase {
         assertNotNull(taskGraph);
 
         taskGraph.task("t0", TestArrays::initializeToOneParallel, data);
-        taskGraph.streamOut(data).warmup();
+        taskGraph.transferToHost(data).warmup();
         taskGraph.execute();
 
         for (int i = 0; i < N; i++) {
@@ -203,7 +203,7 @@ public class TestArrays extends TornadoTestBase {
             taskGraph.task("t" + i, TestArrays::addAccumulator, data, 1);
         }
 
-        taskGraph.streamOut(data).execute();
+        taskGraph.transferToHost(data).execute();
 
         for (int i = 0; i < N; i++) {
             assertEquals(i + numKernels, data[i], 0.0001);
@@ -224,9 +224,9 @@ public class TestArrays extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
             .task("t0", TestArrays::vectorAddDouble, a, b, c)
-            .streamOut(c)
+            .transferToHost(c)
             .execute();
         //@formatter:on
 
@@ -248,9 +248,9 @@ public class TestArrays extends TornadoTestBase {
         });
 
         new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestArrays::vectorAddFloat, a, b, c) //
-                .streamOut(c) //
+                .transferToHost(c) //
                 .execute(); //
 
         for (int i = 0; i < c.length; i++) {
@@ -273,9 +273,9 @@ public class TestArrays extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
             .task("t0", TestArrays::vectorAddInteger, a, b, c)
-            .streamOut(c)
+            .transferToHost(c)
             .execute();
         //@formatter:on
 
@@ -298,9 +298,9 @@ public class TestArrays extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
             .task("t0", TestArrays::vectorAddLong, a, b, c)
-            .streamOut(c)
+            .transferToHost(c)
             .execute();
         //@formatter:on
 
@@ -323,9 +323,9 @@ public class TestArrays extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION,a, b)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION,a, b)
             .task("t0", TestArrays::vectorAddShort, a, b, c)
-            .streamOut(c)
+            .transferToHost(c)
             .execute();
         //@formatter:on
 
@@ -348,9 +348,9 @@ public class TestArrays extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
             .task("t0", TestArrays::vectorChars, a, b, c)
-            .streamOut(c)
+            .transferToHost(c)
             .execute();
         //@formatter:on
 
@@ -373,9 +373,9 @@ public class TestArrays extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
                 .task("t0", TestArrays::vectorAddByte, a, b, c)
-                .streamOut(c)
+                .transferToHost(c)
                 .execute();
         //@formatter:on
 
@@ -405,9 +405,9 @@ public class TestArrays extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
             .task("t0", TestArrays::addChars, a, b)
-            .streamOut(a)
+            .transferToHost(a)
             .execute();
         //@formatter:on
 

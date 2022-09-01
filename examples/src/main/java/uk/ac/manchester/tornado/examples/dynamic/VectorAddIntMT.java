@@ -94,7 +94,7 @@ public class VectorAddIntMT {
             ;
         } else {
             long startInit = System.nanoTime();
-            graph.task("t0", VectorAddIntMT::vectorAdd, a, b, result).streamOut(result);
+            graph.task("t0", VectorAddIntMT::vectorAdd, a, b, result).transferToHost(result);
             long stopInit = System.nanoTime();
             System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
         }

@@ -187,7 +187,7 @@ public class NBodyMT {
             ;
         } else {
             long startInit = System.nanoTime();
-            graph.task("t0", NBodyMT::nBody, numBodies, positions, velocity, delT, espSqr, inputSize).streamOut(positions, velocity);
+            graph.task("t0", NBodyMT::nBody, numBodies, positions, velocity, delT, espSqr, inputSize).transferToHost(positions, velocity);
             long stopInit = System.nanoTime();
             System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
         }

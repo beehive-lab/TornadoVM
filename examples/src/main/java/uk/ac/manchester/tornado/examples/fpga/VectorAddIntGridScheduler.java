@@ -59,7 +59,7 @@ public class VectorAddIntGridScheduler {
         //@formatter:off
         TaskGraph graph = new TaskGraph("s0")
                 .task("t0", VectorAddIntGridScheduler::vectorAdd, a, b, c)
-                .streamOut(c);
+                .transferToHost(c);
         //@formatter:on
 
         for (int idx = 0; idx < 10; idx++) {

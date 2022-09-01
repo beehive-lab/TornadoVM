@@ -191,7 +191,7 @@ public class TestConditionals extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestConditionals::ifStatement, a) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         assertEquals(10, a[0]);
@@ -205,7 +205,7 @@ public class TestConditionals extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestConditionals::ifElseStatement, a) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         assertEquals(10, a[0]);
@@ -228,7 +228,7 @@ public class TestConditionals extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestConditionals::nestedIfElseStatement, a) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         assertArrayEquals(serial, a);
@@ -244,7 +244,7 @@ public class TestConditionals extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestConditionals::switchStatement, a) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         assertEquals(10, a[0]);
@@ -260,7 +260,7 @@ public class TestConditionals extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestConditionals::switchStatement, a) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         assertEquals(20, a[0]);
@@ -276,7 +276,7 @@ public class TestConditionals extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestConditionals::switchStatement2, a) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         assertEquals(10, a[0]);
@@ -292,7 +292,7 @@ public class TestConditionals extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestConditionals::switchStatement3, a) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         for (int value : a) {
@@ -310,7 +310,7 @@ public class TestConditionals extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestConditionals::switchStatement4, a) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute();//
 
         for (int value : a) {
@@ -327,7 +327,7 @@ public class TestConditionals extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestConditionals::switchStatement5, a) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute();//
 
         for (int value : a) {
@@ -346,7 +346,7 @@ public class TestConditionals extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestConditionals::ternaryCondition, a)
-                .streamOut(a)
+                .transferToHost(a)
                 .execute();
         // @formatter:on
 
@@ -367,7 +367,7 @@ public class TestConditionals extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestConditionals::ternaryComplexCondition, a, b) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         for (int value : a) {
@@ -386,7 +386,7 @@ public class TestConditionals extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestConditionals::ternaryComplexCondition2, a, b) //
-                .streamOut(a).execute(); //
+                .transferToHost(a).execute(); //
 
         for (int value : a) {
             assertEquals(50, value);
@@ -402,7 +402,7 @@ public class TestConditionals extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestConditionals::switchStatement6, a) //
-                .streamOut(a).execute(); //
+                .transferToHost(a).execute(); //
 
         for (int value : a) {
             assertEquals(30, value);
@@ -418,7 +418,7 @@ public class TestConditionals extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestConditionals::switchStatement6, a) //
-                .streamOut(a).execute(); //
+                .transferToHost(a).execute(); //
 
         for (int value : a) {
             assertEquals(10, value);
@@ -434,7 +434,7 @@ public class TestConditionals extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestConditionals::switchStatement6, a) //
-                .streamOut(a).execute(); //
+                .transferToHost(a).execute(); //
 
         for (int value : a) {
             assertEquals(10, value);
@@ -453,7 +453,7 @@ public class TestConditionals extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0");
 
         // @formatter:off
-        taskGraph.task("t0", TestConditionals::integerTestMove, output, N).streamOut(output);
+        taskGraph.task("t0", TestConditionals::integerTestMove, output, N).transferToHost(output);
         // @formatter:on
         taskGraph.execute();
 

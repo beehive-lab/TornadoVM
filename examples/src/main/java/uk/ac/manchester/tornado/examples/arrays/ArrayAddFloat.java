@@ -59,7 +59,7 @@ public class ArrayAddFloat {
         //@formatter:off
         final TaskGraph taskGraph = new TaskGraph("s0")
                 .task("t0", SimpleMath::vectorAdd, a, b, c)
-                .streamOut(c);
+                .transferToHost(c);
         //@formatter:on
 
         long start = System.nanoTime();

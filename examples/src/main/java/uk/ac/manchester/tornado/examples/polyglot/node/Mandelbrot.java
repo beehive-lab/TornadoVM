@@ -99,7 +99,7 @@ public class Mandelbrot {
 
         new TaskGraph("s0")
             .task("t0", Mandelbrot::mandelbrot, SIZE, result)
-            .streamOut(result)
+            .transferToHost(result)
             .execute();
 
         writeFile(result, SIZE);

@@ -73,7 +73,7 @@ public class InitBatchSmall {
         // @formatter:off
         taskGraph.batch("200MB")
           .task("t0", InitBatchSmall::compute, arrayA, arrayB)
-          .streamOut((Object) arrayB);
+          .transferToHost((Object) arrayB);
         // @formatter:on
         taskGraph.execute();
 

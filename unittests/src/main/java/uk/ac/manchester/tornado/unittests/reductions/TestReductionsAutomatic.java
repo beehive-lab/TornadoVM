@@ -55,9 +55,9 @@ public class TestReductionsAutomatic extends TornadoTestBase {
 
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsAutomatic::test, input, result)
-            .streamOut(result);
+            .transferToHost(result);
         //@formatter:on
 
         taskGraph.execute();
@@ -81,9 +81,9 @@ public class TestReductionsAutomatic extends TornadoTestBase {
 
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-            .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsAutomatic::testFloat, input, result)
-            .streamOut(result);
+            .transferToHost(result);
         //@formatter:on
 
         taskGraph.execute();
@@ -131,9 +131,9 @@ public class TestReductionsAutomatic extends TornadoTestBase {
 
         //@formatter:off
             TaskGraph taskGraph = new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
                 .task("t0", TestReductionsAutomatic::testDouble, input, result)
-                .streamOut(result);
+                .transferToHost(result);
             //@formatter:on
 
         taskGraph.execute();

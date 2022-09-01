@@ -172,7 +172,7 @@ public class NBody {
 
         // @formatter:off
         final TaskGraph t0 = new TaskGraph("s0")
-                .task("t0", NBody::nBody, context, numBodies, posTornadoVM, velTornadoVM).streamOut(posTornadoVM, velTornadoVM);
+                .task("t0", NBody::nBody, context, numBodies, posTornadoVM, velTornadoVM).transferToHost(posTornadoVM, velTornadoVM);
         // @formatter:on
 
         resultsIterations = new StringBuffer();

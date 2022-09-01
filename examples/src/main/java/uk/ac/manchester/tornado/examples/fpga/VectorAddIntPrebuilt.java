@@ -63,7 +63,7 @@ public class VectorAddIntPrebuilt {
                         new Access[] { Access.READ, Access.READ, Access.WRITE, Access.READ },
                         defaultDevice,
                         new int[] { size })
-                .streamOut(c);
+                .transferToHost(c);
         // @formatter:on
 
         long startSequential = 0;

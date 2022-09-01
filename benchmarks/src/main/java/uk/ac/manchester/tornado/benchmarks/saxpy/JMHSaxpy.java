@@ -64,9 +64,9 @@ public class JMHSaxpy {
             }
 
             taskGraph = new TaskGraph("benchmark") //
-                    .copyIn(DataTransferMode.EVERY_EXECUTION, x) //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
                     .task("saxpy", LinearAlgebraArrays::saxpy, alpha, x, y) //
-                    .streamOut(y);
+                    .transferToHost(y);
             taskGraph.warmup();
         }
     }

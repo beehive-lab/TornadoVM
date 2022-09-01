@@ -91,11 +91,11 @@ public class JMHBlurFilter {
             }
 
             taskGraph = new TaskGraph("blur") //
-                    .copyIn(DataTransferMode.EVERY_EXECUTION, redChannel, greenChannel, blueChannel) //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, redChannel, greenChannel, blueChannel) //
                     .task("red", ComputeKernels::channelConvolution, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
                     .task("green", ComputeKernels::channelConvolution, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
                     .task("blue", ComputeKernels::channelConvolution, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
-                    .streamOut(redFilter, greenFilter, blueFilter) //
+                    .transferToHost(redFilter, greenFilter, blueFilter) //
                     .useDefaultThreadScheduler(true);
             taskGraph.warmup();
         }

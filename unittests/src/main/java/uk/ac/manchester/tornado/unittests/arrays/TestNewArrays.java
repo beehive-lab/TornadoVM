@@ -137,9 +137,9 @@ public class TestNewArrays extends TornadoTestBase {
 
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
                 .task("t0", TestNewArrays::vectorAdd, a, b, c)
-                .streamOut(c);
+                .transferToHost(c);
         //@formatter:on
         taskGraph.execute();
         vectorAdd(a, b, sequentialResult);
@@ -163,9 +163,9 @@ public class TestNewArrays extends TornadoTestBase {
 
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
                 .task("t0", TestNewArrays::vectorAddComplexConditions, a, b, c)
-                .streamOut(c);
+                .transferToHost(c);
         //@formatter:on
         taskGraph.execute();
         vectorAddComplexConditions(a, b, sequentialResult);
@@ -190,7 +190,7 @@ public class TestNewArrays extends TornadoTestBase {
         assertNotNull(taskGraph);
 
         taskGraph.task("t0", TestNewArrays::initializeToOne, data);
-        taskGraph.streamOut(data);
+        taskGraph.transferToHost(data);
         taskGraph.execute();
 
         initializeToOne(dataSeq);
@@ -215,7 +215,7 @@ public class TestNewArrays extends TornadoTestBase {
         assertNotNull(taskGraph);
 
         taskGraph.task("t0", TestNewArrays::initializeToOneParallelScope, data);
-        taskGraph.streamOut(data);
+        taskGraph.transferToHost(data);
         taskGraph.execute();
 
         initializeToOneParallelScope(dataSeq);
@@ -240,7 +240,7 @@ public class TestNewArrays extends TornadoTestBase {
         assertNotNull(taskGraph);
 
         taskGraph.task("t0", TestNewArrays::initializeToOneParallelScopeComplex, data);
-        taskGraph.streamOut(data);
+        taskGraph.transferToHost(data);
         taskGraph.execute();
 
         initializeToOneParallelScopeComplex(dataSeq);
@@ -265,7 +265,7 @@ public class TestNewArrays extends TornadoTestBase {
         assertNotNull(taskGraph);
 
         taskGraph.task("t0", TestNewArrays::initializeToOneParallel, data);
-        taskGraph.streamOut(data);
+        taskGraph.transferToHost(data);
         taskGraph.execute();
 
         initializeToOneParallel(dataSeq);
@@ -288,9 +288,9 @@ public class TestNewArrays extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestNewArrays::reductionAddFloats, input, result) //
-                .streamOut(result); //
+                .transferToHost(result); //
 
         taskGraph.execute();
 

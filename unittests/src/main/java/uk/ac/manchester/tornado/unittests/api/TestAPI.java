@@ -100,7 +100,7 @@ public class TestAPI extends TornadoTestBase {
         taskGraph.lockObjectInMemory(data);
 
         taskGraph.task("t0", TestArrays::addAccumulator, data, 1);
-        taskGraph.streamOut(data);
+        taskGraph.transferToHost(data);
         taskGraph.warmup();
         taskGraph.execute();
 

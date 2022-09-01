@@ -45,7 +45,7 @@ public class ArrayAddInt {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", ArrayAddInt::add, a, b, c)
-                .streamOut(c)
+                .transferToHost(c)
                 .execute();
         //@formatter:on
 

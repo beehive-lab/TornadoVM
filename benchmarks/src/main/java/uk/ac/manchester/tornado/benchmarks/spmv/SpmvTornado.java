@@ -46,9 +46,9 @@ public class SpmvTornado extends BenchmarkDriver {
         y = new float[matrix.size];
         initData(v);
         taskGraph = new TaskGraph("benchmark") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, matrix.vals, matrix.cols, matrix.rows, v, y) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrix.vals, matrix.cols, matrix.rows, v, y) //
                 .task("spmv", LinearAlgebraArrays::spmv, matrix.vals, matrix.cols, matrix.rows, v, matrix.size, y) //
-                .streamOut(y);
+                .transferToHost(y);
         taskGraph.warmup();
     }
 

@@ -140,7 +140,7 @@ public class Mandelbrot {
                 TaskGraph taskGraph = new TaskGraph("s0");
 
                 taskGraph.task("t0", MandelbrotImage::mandelbrotTornado, SIZE, result);
-                taskGraph.streamOut(result).execute();
+                taskGraph.transferToHost(result).execute();
                 this.image = writeFile(result, SIZE);
             }
             // draw the image

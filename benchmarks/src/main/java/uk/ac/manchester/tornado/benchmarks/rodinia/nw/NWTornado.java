@@ -196,7 +196,7 @@ public class NWTornado {
         TaskGraph s0 = new TaskGraph("s0").task("init-ref", NWTornado::initialiseReference, max_rows, max_cols, input_itemsets, referrence, blosum62)
                 .task("init-input1", NWTornado::initialiseInput, max_rows, max_cols, penalty, input_itemsets).task("init-input2", NWTornado::initialiseInput, max_cols, 1, penalty, input_itemsets)
                 .task("topleft", NWTornado::processTopLeft, max_rows, max_cols, penalty, input_itemsets, referrence)
-                .task("bottomright", NWTornado::processBottomRight, max_rows, max_cols, penalty, input_itemsets, referrence).streamOut(input_itemsets, referrence);
+                .task("bottomright", NWTornado::processBottomRight, max_rows, max_cols, penalty, input_itemsets, referrence).transferToHost(input_itemsets, referrence);
 
         s0.warmup();
 

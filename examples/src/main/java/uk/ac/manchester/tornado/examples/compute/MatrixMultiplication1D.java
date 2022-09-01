@@ -62,7 +62,7 @@ public class MatrixMultiplication1D {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", MatrixMultiplication1D::matrixMultiplication, matrixA, matrixB, matrixC, size) //
-                .streamOut(matrixC); //
+                .transferToHost(matrixC); //
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {

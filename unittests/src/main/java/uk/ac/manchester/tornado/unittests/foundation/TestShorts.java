@@ -50,7 +50,7 @@ public class TestShorts extends TornadoTestBase {
 
         new TaskGraph("s0") //
                 .task("t0", TestKernels::vectorSumShortCompute, a, b, c) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         assertArrayEquals(expectedResult, a);

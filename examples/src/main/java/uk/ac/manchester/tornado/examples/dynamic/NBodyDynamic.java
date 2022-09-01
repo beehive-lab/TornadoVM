@@ -131,7 +131,7 @@ public class NBodyDynamic {
         // @formatter:off
         final TaskGraph s0 = new TaskGraph("s0")
                 .task("t0", NBodyDynamic::nBody, numBodies, positions, velocity, delT, espSqr, inputSize)
-                .streamOut(positions, velocity);
+                .transferToHost(positions, velocity);
         // @formatter:on
         long stopInit = System.nanoTime();
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");

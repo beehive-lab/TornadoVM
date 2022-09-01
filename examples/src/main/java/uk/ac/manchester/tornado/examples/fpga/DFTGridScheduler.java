@@ -106,7 +106,7 @@ public class DFTGridScheduler {
 
         long startInit = System.nanoTime();
         graph = new TaskGraph("s0");
-        graph.task("t0", DFTGridScheduler::computeDft, inReal, inImag, outReal, outImag, inputSize).streamOut(outReal, outImag);
+        graph.task("t0", DFTGridScheduler::computeDft, inReal, inImag, outReal, outImag, inputSize).transferToHost(outReal, outImag);
         long stopInit = System.nanoTime();
 
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");

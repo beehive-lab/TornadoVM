@@ -38,7 +38,7 @@ public class HilbertTornado extends BenchmarkDriver {
         // @formatter:off
         taskGraph = new TaskGraph("benchmark")
                 .task("t0", ComputeKernels::hilbertComputation, hilbertMatrix, size, size)
-                .streamOut(hilbertMatrix);
+                .transferToHost(hilbertMatrix);
         // @formatter:on
         taskGraph.warmup();
     }
@@ -58,7 +58,7 @@ public class HilbertTornado extends BenchmarkDriver {
         // @formatter:off
         TaskGraph check = new TaskGraph("s0")
                 .task("t0", ComputeKernels::hilbertComputation, testData, size, size)
-                .streamOut(testData);
+                .transferToHost(testData);
         // @formatter:on
         check.mapAllTo(device);
         check.execute();

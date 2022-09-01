@@ -41,7 +41,7 @@ public class ArrayAddFloatOS {
         //@formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
                 .task("t0", SimpleMath::vectorAdd, a, b, c)
-                .streamOut(c);
+                .transferToHost(c);
         //@formatter:on
 
         if (useTornado && warmup) {

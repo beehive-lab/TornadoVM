@@ -61,9 +61,9 @@ public class DotTornado extends BenchmarkDriver {
         }
 
         taskGraph = new TaskGraph("benchmark");
-        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, a, b);
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b);
         taskGraph.task("dotVector", GraphicsKernels::dotVector, a, b, c);
-        taskGraph.streamOut(c);
+        taskGraph.transferToHost(c);
         taskGraph.warmup();
     }
 

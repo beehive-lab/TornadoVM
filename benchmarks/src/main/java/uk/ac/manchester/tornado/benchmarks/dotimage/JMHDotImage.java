@@ -76,9 +76,9 @@ public class JMHDotImage {
                 }
             }
             taskGraph = new TaskGraph("benchmark") //
-                    .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                     .task("dotVector", GraphicsKernels::dotImage, a, b, c) //
-                    .streamOut(c);
+                    .transferToHost(c);
             taskGraph.warmup();
         }
     }

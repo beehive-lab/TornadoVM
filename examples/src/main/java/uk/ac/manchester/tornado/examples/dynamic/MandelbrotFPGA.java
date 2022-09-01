@@ -194,7 +194,7 @@ public class MandelbrotFPGA {
                 TaskGraph s0 = new TaskGraph("s0");
 
                 s0.task("t0", MandelbrotImage::mandelbrotTornado, sizes, result);
-                s0.streamOut(result);
+                s0.transferToHost(result);
                 s0.execute();
                 // s0.executeWithProfilerSequential(Policy.PERFORMANCE);
                 this.image = writeFile(result, sizes);
@@ -258,7 +258,7 @@ public class MandelbrotFPGA {
             TaskGraph graph = new TaskGraph("s0");
             long end,start;
 
-            graph.task("t0", MandelbrotFPGA::mandelbrotTornado, sizes, result).streamOut(result);
+            graph.task("t0", MandelbrotFPGA::mandelbrotTornado, sizes, result).transferToHost(result);
 
             for (int i = 0; i < iterations; i++) {
                 switch (executionType) {

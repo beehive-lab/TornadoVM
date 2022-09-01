@@ -34,7 +34,7 @@ public class CountedLoopEx {
 
         final int[] a = new int[8];
 
-        TaskGraph s0 = new TaskGraph("s0").task("t0", CountedLoopEx::one, a).streamOut(a);
+        TaskGraph s0 = new TaskGraph("s0").task("t0", CountedLoopEx::one, a).transferToHost(a);
 
         s0.warmup();
         s0.execute();

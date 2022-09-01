@@ -131,7 +131,7 @@ public class BlackAndWhiteTransform {
 
                 if (taskGraph == null) {
                     taskGraph = new TaskGraph("s0");
-                    taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, imageRGB).task("t0", LoadImage::compute, imageRGB, w, s).streamOut(imageRGB);
+                    taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, imageRGB).task("t0", LoadImage::compute, imageRGB, w, s).transferToHost(imageRGB);
 
                 }
 

@@ -135,7 +135,7 @@ public class DFTMT {
             ;
         } else {
             long startInit = System.nanoTime();
-            graph.task("t0", DFTMT::computeDft, inReal, inImag, outReal, outImag, inputSize).streamOut(outReal, outImag);
+            graph.task("t0", DFTMT::computeDft, inReal, inImag, outReal, outImag, inputSize).transferToHost(outReal, outImag);
             long stopInit = System.nanoTime();
             System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
         }

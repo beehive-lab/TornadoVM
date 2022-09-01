@@ -96,9 +96,9 @@ public class LocalVariableInstance {
 
         // @formatter:off
         TaskGraph taskGraph = new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, in)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, in)
                 .task("t0", msk::map, in, out)
-                .streamOut(out);
+                .transferToHost(out);
         // @formatter:on
 
         taskGraph.execute();

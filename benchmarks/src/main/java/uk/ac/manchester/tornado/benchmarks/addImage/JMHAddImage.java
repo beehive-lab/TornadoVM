@@ -76,9 +76,9 @@ public class JMHAddImage {
                 }
             }
             taskGraph = new TaskGraph("benchmark") //
-                    .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                     .task("addImage", GraphicsKernels::addImage, a, b, c) //
-                    .streamOut(c);
+                    .transferToHost(c);
             taskGraph.warmup();
         }
     }

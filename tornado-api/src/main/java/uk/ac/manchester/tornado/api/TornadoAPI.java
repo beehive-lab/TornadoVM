@@ -561,7 +561,7 @@ public interface TornadoAPI {
 
     TornadoAPI mapAllTo(TornadoDevice device);
 
-    TornadoAPI copyIn(DataTransferMode mode, Object... objects);
+    TornadoAPI transferToDevice(DataTransferMode mode, Object... objects);
 
     TornadoAPI forceCopyIn(Object... objects);
 
@@ -572,7 +572,7 @@ public interface TornadoAPI {
      *            list of input objects to be streamed.
      * @return link to the {@TornadoAPI} to allow function composition.
      */
-    TornadoAPI streamOut(Object... objects);
+    TornadoAPI transferToHost(Object... objects);
 
     /**
      * Internal call to run the task-schedule

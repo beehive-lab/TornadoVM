@@ -41,7 +41,7 @@ public class VectorSwizzleTest {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", VectorSwizzleTest::test, value, results)
-                .streamOut(results)
+                .transferToHost(results)
                 .execute();
         //@formatter:on
 

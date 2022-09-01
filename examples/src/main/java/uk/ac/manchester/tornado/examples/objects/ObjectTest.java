@@ -53,7 +53,7 @@ public class ObjectTest {
          * Next we insert the task into a task graph and specify that we want
          * the value of c updated on completion.
          */
-        final TaskGraph schedule = new TaskGraph("s0").task("t0", ObjectTest::add, a, b, c).streamOut(c);
+        final TaskGraph schedule = new TaskGraph("s0").task("t0", ObjectTest::add, a, b, c).transferToHost(c);
 
         /*
          * Calculate a (3) + b (2) = c (5)

@@ -56,7 +56,7 @@ public class SaxpyDynamic {
         }
 
         long startInit = System.nanoTime();
-        TaskGraph s0 = new TaskGraph("s0").task("t0", SaxpyDynamic::saxpy, alpha, x, y, b).streamOut(y);
+        TaskGraph s0 = new TaskGraph("s0").task("t0", SaxpyDynamic::saxpy, alpha, x, y, b).transferToHost(y);
         long stopInit = System.nanoTime();
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 

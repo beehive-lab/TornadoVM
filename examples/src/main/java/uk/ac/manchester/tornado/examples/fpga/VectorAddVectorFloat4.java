@@ -45,7 +45,7 @@ public class VectorAddVectorFloat4 {
         yy.fill(0);
         bb.fill(20);
 
-        TaskGraph s0 = new TaskGraph("s0").task("t0", VectorAddVectorFloat4::saxpy, xx, yy, bb).streamOut(yy);
+        TaskGraph s0 = new TaskGraph("s0").task("t0", VectorAddVectorFloat4::saxpy, xx, yy, bb).transferToHost(yy);
 
         for (int idx = 0; idx < 10; idx++) {
             s0.execute();

@@ -63,7 +63,7 @@ public class JMHBlackScholes {
 
             taskGraph = new TaskGraph("benchmark") //
                     .task("t0", ComputeKernels::blackscholes, randArray, put, call) //
-                    .streamOut(put, call);
+                    .transferToHost(put, call);
 
             taskGraph.warmup();
         }

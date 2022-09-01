@@ -50,9 +50,9 @@ public class SaxpyTornado extends BenchmarkDriver {
         }
 
         taskGraph = new TaskGraph("benchmark");
-        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, x);
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, x);
         taskGraph.task("saxpy", LinearAlgebraArrays::saxpy, alpha, x, y);
-        taskGraph.streamOut(y);
+        taskGraph.transferToHost(y);
         taskGraph.warmup();
     }
 

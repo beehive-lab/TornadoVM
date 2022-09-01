@@ -61,9 +61,9 @@ public class TestTemporaryValues extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, aTornado, bTornado) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, aTornado, bTornado) //
                 .task("t0", TestTemporaryValues::computeWithTemporaryValues, aTornado, bTornado, cTornado) //
-                .streamOut(aTornado, bTornado, cTornado);
+                .transferToHost(aTornado, bTornado, cTornado);
 
         taskGraph.execute();
 

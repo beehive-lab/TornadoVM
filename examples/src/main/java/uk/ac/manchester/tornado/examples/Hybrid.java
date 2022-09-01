@@ -113,14 +113,14 @@ public class Hybrid {
                 TornadoRuntime.setProperty("x" + i + ".t" + j + ".device", "0:" + DEVICE_INDEXES[i]);
                 System.out.println("x" + i + ".t" + j + ".device" + "0:" + DEVICE_INDEXES[i]);
                 s0.task("t" + j, Hybrid::saxpy, kernelPackage.alpha, kernelPackage.x, kernelPackage.y);
-                s0.streamOut(kernelPackage.z);
+                s0.transferToHost(kernelPackage.z);
                 s0.execute();
 
                 TaskGraph s1 = new TaskGraph("v" + i);
                 TornadoRuntime.setProperty("v" + i + ".t" + j + ".device", "0:" + DEVICE_INDEXES[j]);
                 System.out.println("v" + i + ".t" + j + ".device" + "0:" + DEVICE_INDEXES[j]);
                 s1.task("t" + j, Hybrid::vectorAddition, kernelPackage.x, kernelPackage.y, kernelPackage.z);
-                s1.streamOut(kernelPackage.z);
+                s1.transferToHost(kernelPackage.z);
                 s1.execute();
             }
         }
@@ -142,7 +142,7 @@ public class Hybrid {
                 String taskID = "x" + i + ".t" + j + ".device";
                 String location = "0:" + i;
                 s0.task("t" + j, Hybrid::saxpy, kernelPackage.alpha, kernelPackage.x, kernelPackage.y);
-                s0.streamOut(kernelPackage.z);
+                s0.transferToHost(kernelPackage.z);
                 tasks.add(s0);
                 tasksLocation.put(taskID, location);
                 tasksKey.add(taskID);
@@ -152,7 +152,7 @@ public class Hybrid {
                 taskID = "v" + i + ".t" + j + ".device";
                 location = "0:" + j;
                 s1.task("t" + j, Hybrid::vectorAddition, kernelPackage.x, kernelPackage.y, kernelPackage.z);
-                s1.streamOut(kernelPackage.z);
+                s1.transferToHost(kernelPackage.z);
 
                 tasks.add(s1);
                 tasksLocation.put(taskID, location);
@@ -199,7 +199,7 @@ public class Hybrid {
                 String taskID = "x" + i + ".t" + j + ".device";
                 String location = "0:" + DEVICE_INDEXES[i];
                 s0.task("t" + j, Hybrid::saxpy, kernelPackage.alpha, kernelPackage.x, kernelPackage.y);
-                s0.streamOut(kernelPackage.z);
+                s0.transferToHost(kernelPackage.z);
                 tasks.add(s0);
                 tasksLocation.put(taskID, location);
                 tasksKey.add(taskID);
@@ -209,7 +209,7 @@ public class Hybrid {
                 taskID = "v" + i + ".t" + j + ".device";
                 location = "0:" + DEVICE_INDEXES[j];
                 s1.task("t" + j, Hybrid::vectorAddition, kernelPackage.x, kernelPackage.y, kernelPackage.z);
-                s1.streamOut(kernelPackage.z);
+                s1.transferToHost(kernelPackage.z);
 
                 tasks.add(s1);
                 tasksLocation.put(taskID, location);

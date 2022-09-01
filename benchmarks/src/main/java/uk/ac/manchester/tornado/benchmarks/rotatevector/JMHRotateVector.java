@@ -70,9 +70,9 @@ public class JMHRotateVector {
             }
 
             taskGraph = new TaskGraph("benchmark") //
-                    .copyIn(DataTransferMode.EVERY_EXECUTION, input) //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                     .task("rotateVector", GraphicsKernels::rotateVector, output, m, input) //
-                    .streamOut(output);
+                    .transferToHost(output);
             taskGraph.warmup();
         }
     }

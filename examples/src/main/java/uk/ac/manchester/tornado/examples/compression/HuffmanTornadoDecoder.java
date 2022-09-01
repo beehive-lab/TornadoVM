@@ -89,7 +89,7 @@ public class HuffmanTornadoDecoder {
             TaskGraph taskGraph = new TaskGraph("x0");
             taskGraph.task("t" + i, HuffmanTornadoDecoder::decodeTornadoKernel, kernelPackage.input, kernelPackage.frequencies, kernelPackage.data, kernelPackage.left, kernelPackage.right,
                     kernelPackage.output);
-            taskGraph.streamOut(kernelPackage);
+            taskGraph.transferToHost(kernelPackage);
             tasks.add(taskGraph);
             tasksLocation.put(taskID, location);
             tasksKey.add(taskID);

@@ -67,7 +67,7 @@ public class NBodyTornado extends BenchmarkDriver {
         }
 
         taskGraph = new TaskGraph("benchmark");
-        taskGraph.copyIn(DataTransferMode.EVERY_EXECUTION, velSeq, posSeq) //
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, velSeq, posSeq) //
                 .task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
         taskGraph.warmup();
     }

@@ -62,7 +62,7 @@ public class BitSetTests extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", BitSetTests::intersectionCount, numWords, a, b, result) //
-                .streamOut(result);
+                .transferToHost(result);
         taskGraph.execute();
 
         intersectionCount(numWords, a, b, seq);

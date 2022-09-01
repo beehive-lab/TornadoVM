@@ -55,10 +55,10 @@ public class MultipleTasks {
 
         // @formatter:off
         TaskGraph taskGraph = new TaskGraph("example")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, x)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x)
                 .task("foo", MultipleTasks::foo, x, y)
                 .task("bar", MultipleTasks::bar, y)
-                .streamOut(y);
+                .transferToHost(y);
         //@formatter:on
 
         for (int i = 0; i < 100; i++) {

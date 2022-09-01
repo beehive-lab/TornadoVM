@@ -73,9 +73,9 @@ public class JMHDotVector {
                 b.set(i, new Float3(rb));
             }
             taskGraph = new TaskGraph("benchmark")//
-                    .copyIn(DataTransferMode.EVERY_EXECUTION, a, b) //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                     .task("dotVector", GraphicsKernels::dotVector, a, b, c) //
-                    .streamOut(c);
+                    .transferToHost(c);
             taskGraph.warmup();
         }
     }

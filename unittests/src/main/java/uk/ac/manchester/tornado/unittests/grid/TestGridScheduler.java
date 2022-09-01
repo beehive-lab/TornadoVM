@@ -71,10 +71,10 @@ public class TestGridScheduler {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b, size) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, size) //
                 .task("t0", TestGridScheduler::vectorAddFloat, a, b, tornadoC) //
                 .task("t1", TestGridScheduler::reduceAdd, tornadoC, size) //
-                .streamOut(tornadoC);
+                .transferToHost(tornadoC);
 
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
@@ -101,9 +101,9 @@ public class TestGridScheduler {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
 
         TaskGraph s0 = new TaskGraph("s0") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a, b, size) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, size) //
                 .task("t0", TestGridScheduler::vectorAddFloat, a, b, tornadoC) //
-                .streamOut(tornadoC);
+                .transferToHost(tornadoC);
 
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
@@ -111,9 +111,9 @@ public class TestGridScheduler {
         s0.execute(gridScheduler);
 
         TaskGraph s1 = new TaskGraph("s1") //
-                .copyIn(DataTransferMode.EVERY_EXECUTION, tornadoC, size) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, tornadoC, size) //
                 .task("t0", TestGridScheduler::reduceAdd, tornadoC, size) //
-                .streamOut(tornadoC);
+                .transferToHost(tornadoC);
         s1.execute();
         // Final SUM
         float finalSum = tornadoC[0];

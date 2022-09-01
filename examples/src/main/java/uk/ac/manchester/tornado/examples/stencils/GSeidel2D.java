@@ -115,9 +115,9 @@ public class GSeidel2D {
 
         // @formatter:off
         final TaskGraph graph = new TaskGraph("s0")
-                .copyIn(DataTransferMode.EVERY_EXECUTION, a, size)
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, size)
                 .task("t0", GSeidel2D::run2DseidelTornado, a, size)
-                .streamOut(a);
+                .transferToHost(a);
         // @formatter:on
 
         for (int i = 0; i < iterations; i++) {

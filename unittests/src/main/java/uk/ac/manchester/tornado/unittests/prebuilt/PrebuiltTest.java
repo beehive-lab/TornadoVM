@@ -77,7 +77,7 @@ public class PrebuiltTest extends TornadoTestBase {
                         new Access[] { Access.READ, Access.READ, Access.WRITE },
                         defaultDevice,
                         new int[] { numElements })
-            .streamOut(c)
+            .transferToHost(c)
             .execute();
         // @formatter:on
 
@@ -126,7 +126,7 @@ public class PrebuiltTest extends TornadoTestBase {
                         new Access[] { Access.READ, Access.READ, Access.WRITE },
                         defaultDevice,
                         new int[] { numElements })
-                .streamOut(c)
+                .transferToHost(c)
                 .execute();
         // @formatter:on
 
@@ -168,7 +168,7 @@ public class PrebuiltTest extends TornadoTestBase {
                         new Access[]{Access.READ, Access.READ, Access.WRITE},
                         device,
                         new int[]{size})
-                .streamOut(reduce)
+                .transferToHost(reduce)
                 .execute(gridScheduler);
         // @formatter:on
 
@@ -215,7 +215,7 @@ public class PrebuiltTest extends TornadoTestBase {
                         new Access[]{Access.READ, Access.READ, Access.WRITE},
                         device,
                         new int[]{size})
-                .streamOut(reduce)
+                .transferToHost(reduce)
                 .execute(gridScheduler);
         // @formatter:on
 

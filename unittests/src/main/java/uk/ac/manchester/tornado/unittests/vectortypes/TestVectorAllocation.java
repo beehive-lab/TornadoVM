@@ -61,7 +61,7 @@ public class TestVectorAllocation extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
             .task("t0", TestVectorAllocation::testVectorAlloc, a, output)
-            .streamOut(output)
+            .transferToHost(output)
             .execute();
         //@formatter:on
 
@@ -98,7 +98,7 @@ public class TestVectorAllocation extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestVectorAllocation::testVectorAlloc2, a, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -139,7 +139,7 @@ public class TestVectorAllocation extends TornadoTestBase {
         //@formatter:off
         new TaskGraph("s0")
                 .task("t0", TestVectorAllocation::testVectorAlloc3, a, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
