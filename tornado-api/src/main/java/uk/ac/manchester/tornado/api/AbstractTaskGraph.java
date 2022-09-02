@@ -85,7 +85,7 @@ public interface AbstractTaskGraph extends ProfileInterface {
 
     void transferToDevice(DataTransferMode mode, Object... objects);
 
-    void forceStreamInInner(Object... objects);
+    void forceTransferToDevice(Object... objects);
 
     void transferToHost(Object... objects);
 

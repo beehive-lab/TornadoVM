@@ -274,7 +274,7 @@ public class TaskGraph implements TornadoAPI, ProfileInterface {
 
     @Override
     public TornadoAPI forceCopyIn(Object... objects) {
-        taskScheduleImpl.forceStreamInInner(objects);
+        taskScheduleImpl.forceTransferToDevice(objects);
         return this;
     }
 

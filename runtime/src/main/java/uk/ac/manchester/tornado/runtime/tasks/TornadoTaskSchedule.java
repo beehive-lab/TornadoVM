@@ -796,7 +796,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @Override
-    public void forceStreamInInner(Object... objects) {
+    public void forceTransferToDevice(Object... objects) {
         for (Object object : objects) {
             if (object == null) {
                 warn("null object passed into streamIn() in schedule %s", executionContext.getId());
