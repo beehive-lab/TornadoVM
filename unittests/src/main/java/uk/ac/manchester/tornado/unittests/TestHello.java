@@ -96,6 +96,13 @@ public class TestHello extends TornadoTestBase {
         }
     }
 
+    /**
+     * How to test:
+     *
+     * <code>
+     *     $  tornado-test.py -V -J"-Dtornado.print.bytecodes=True" uk.ac.manchester.tornado.unittests.TestHello#testSimpleCompute
+     * </code>
+     */
     @Test
     public void testSimpleCompute() {
         int numElements = 256;
@@ -106,12 +113,11 @@ public class TestHello extends TornadoTestBase {
 
         TestHello t = new TestHello();
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .task("t0", t::compute, a, b)
-            .transferToHost(b)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", t::compute, a, b) //
+                .transferToHost(b) //
+                .execute(); //
 
         for (int i = 0; i < b.length; i++) {
             assertEquals(a[i] * 2, b[i]);

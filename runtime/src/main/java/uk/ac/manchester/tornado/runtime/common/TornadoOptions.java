@@ -203,7 +203,6 @@ public class TornadoOptions {
     /**
      * It optimizes loads and stores for the SPIRV backend. It uses less virtual
      * registers. Experimental Feature.
-     *
      */
     public static final boolean OPTIMIZE_LOAD_STORE_SPIRV = getBooleanValue("tornado.spirv.loadstore", TRUE);
     /**
@@ -221,6 +220,11 @@ public class TornadoOptions {
      * Backend. It is enabled by default.
      */
     public static final boolean LEVEL_ZERO_EXTENDED_MEMORY_MODE = getBooleanValue("tornado.spirv.levelzero.extended.memory", TRUE);
+
+    /**
+     * Check I/O parameters for every task within a task-graph.
+     */
+    public static final boolean FORCE_CHECK_PARAMETERS = getBooleanValue("tornado.check.parameters", TRUE);
 
     /**
      * Option to load FPGA pre-compiled binaries.

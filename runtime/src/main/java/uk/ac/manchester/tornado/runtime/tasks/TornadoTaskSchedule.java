@@ -89,6 +89,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDynamicReconfigurationException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -159,6 +160,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private ArrayList<TaskPackage> taskPackages = new ArrayList<>();
     private ArrayList<Object> streamOutObjects = new ArrayList<>();
     private ArrayList<Object> streamInObjects = new ArrayList<>();
+
+    private HashSet<Object> argumentsLookUp = new HashSet<>();
     private ConcurrentHashMap<Policy, Integer> policyTimeTable = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerOutputs = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerInputs = new ConcurrentHashMap<>();
@@ -790,8 +793,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 executionContext.getObjectState(object).setStreamIn(true);
             } else {
                 // Add to COPY-ONLY list
-                System.out.println("[DEBUG] Object should be added in the  copy-only list: " + object);
+                executionContext.getObjectState(object).setStreamIn(false);
             }
+            System.out.println("Inserting param: " + object);
+            argumentsLookUp.add(object);
         }
     }
 
@@ -816,6 +821,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             }
             streamOutObjects.add(object);
             executionContext.getObjectState(object).setStreamOut(true);
+            argumentsLookUp.add(object);
         }
     }
 
@@ -1032,8 +1038,30 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         isFinished = true;
     }
 
+    private boolean checkAllArgumentsPerTask() {
+        for (TaskPackage task : taskPackages) {
+            Object[] taskParameters = task.getTaskParameters();
+            int parameterNumber = 1;
+            // Note: the first parameter is a lambda expression
+            for (int i = 1; i < (taskParameters.length - 1); i++) {
+                Object parameter = taskParameters[i];
+                System.out.println("Searching param: " + parameter);
+                if (!argumentsLookUp.contains(parameter)) {
+                    throw new TornadoTaskRuntimeException("Parameter: " + parameterNumber + " from task: " + task.getId() + " not specified neither in transferToDevice nor transferToHost functions");
+                }
+                parameterNumber++;
+            }
+        }
+        return true;
+    }
+
     @Override
     public AbstractTaskGraph schedule() {
+
+        // check parameter list
+        if (TornadoOptions.FORCE_CHECK_PARAMETERS) {
+            checkAllArgumentsPerTask();
+        }
 
         if (bailout) {
             if (!TornadoOptions.RECOVER_BAILOUT) {
