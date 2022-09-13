@@ -346,7 +346,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @Override
-    public void updateReference(Object oldRef, Object newRef) {
+    public void updateParameter(Object oldRef, Object newRef) {
         // 1. Update from the streamIn list of objects
         updateReference(oldRef, newRef, streamInObjects);
 

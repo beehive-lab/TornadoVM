@@ -494,8 +494,9 @@ public class TaskGraph implements TornadoAPI, ProfileInterface {
      * @param newRef
      */
     @Override
-    public void updateReference(Object oldRef, Object newRef) {
-        taskScheduleImpl.updateReference(oldRef, newRef);
+    public TaskGraph updateParameter(Object oldRef, Object newRef) {
+        taskScheduleImpl.updateParameter(oldRef, newRef);
+        return this;
     }
 
     @Override

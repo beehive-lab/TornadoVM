@@ -69,7 +69,7 @@ public class Resize extends TornadoTestBase {
         float[] b = createArray(512);
 
         // Update old reference for a new reference
-        taskGraph.updateReference(a, b);
+        taskGraph.updateParameter(a, b);
         taskGraph.execute();
 
         for (float v : b) {
@@ -91,7 +91,7 @@ public class Resize extends TornadoTestBase {
         float[] b = createArray(512);
 
         // Update old reference for a new reference
-        taskGraph.updateReference(a, b);
+        taskGraph.updateParameter(a, b);
 
         taskGraph.execute();
         taskGraph.execute();
@@ -100,7 +100,7 @@ public class Resize extends TornadoTestBase {
 
         // Update old reference for a new reference
         float[] c = createArray(2048);
-        taskGraph.updateReference(b, c);
+        taskGraph.updateParameter(b, c);
         taskGraph.execute();
 
         for (float v : c) {
@@ -124,8 +124,8 @@ public class Resize extends TornadoTestBase {
         float[] d = createArray(512);
 
         // Update multiple references
-        taskGraph.updateReference(a, c);
-        taskGraph.updateReference(b, d);
+        taskGraph.updateParameter(a, c);
+        taskGraph.updateParameter(b, d);
 
         taskGraph.execute();
 
@@ -148,15 +148,15 @@ public class Resize extends TornadoTestBase {
         float[] aux = createArray(256);
 
         // Interchange
-        taskGraph.updateReference(b, aux);
-        taskGraph.updateReference(a, b);
-        taskGraph.updateReference(aux, a);
+        taskGraph.updateParameter(b, aux);
+        taskGraph.updateParameter(a, b);
+        taskGraph.updateParameter(aux, a);
         taskGraph.execute();
 
         // Interchange again
-        taskGraph.updateReference(b, aux);
-        taskGraph.updateReference(a, b);
-        taskGraph.updateReference(aux, a);
+        taskGraph.updateParameter(b, aux);
+        taskGraph.updateParameter(a, b);
+        taskGraph.updateParameter(aux, a);
         taskGraph.execute();
 
         for (float v : b) {
@@ -181,15 +181,15 @@ public class Resize extends TornadoTestBase {
         float[] aux = createArray(256);
 
         // Interchange
-        taskGraph.updateReference(b, aux);
-        taskGraph.updateReference(a, b);
-        taskGraph.updateReference(aux, a);
+        taskGraph.updateParameter(b, aux);
+        taskGraph.updateParameter(a, b);
+        taskGraph.updateParameter(aux, a);
         taskGraph.execute(gridScheduler);
 
         // Interchange again
-        taskGraph.updateReference(b, aux);
-        taskGraph.updateReference(a, b);
-        taskGraph.updateReference(aux, a);
+        taskGraph.updateParameter(b, aux);
+        taskGraph.updateParameter(a, b);
+        taskGraph.updateParameter(aux, a);
         taskGraph.execute(gridScheduler);
 
         for (float v : b) {
@@ -216,7 +216,7 @@ public class Resize extends TornadoTestBase {
 
         // Update copy in variable 'a'. It should invalidate the buffer state on the
         // device and copy in the 'aux' array.
-        taskGraph.updateReference(a, aux);
+        taskGraph.updateParameter(a, aux);
         taskGraph.execute(gridScheduler);
 
         for (float v : b) {
