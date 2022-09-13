@@ -58,7 +58,6 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
-import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Base interface of the Tornado API. It exposes the set of operations within a
@@ -561,7 +560,7 @@ public interface TornadoAPI {
 
     TornadoAPI mapAllTo(TornadoDevice device);
 
-    TornadoAPI transferToDevice(DataTransferMode mode, Object... objects);
+    TornadoAPI transferToDevice(final int mode, Object... objects);
 
     TornadoAPI forceCopyIn(Object... objects);
 

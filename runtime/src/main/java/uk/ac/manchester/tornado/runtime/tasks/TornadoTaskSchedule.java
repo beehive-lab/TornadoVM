@@ -202,7 +202,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         vmTable = new HashMap<>();
     }
 
-    static void performStreamInThread(TaskGraph task, ArrayList<Object> inputObjects, DataTransferMode mode) {
+    static void performStreamInThread(TaskGraph task, ArrayList<Object> inputObjects, final int mode) {
         int numObjectsCopyIn = inputObjects.size();
         switch (numObjectsCopyIn) {
             case 0:
@@ -779,7 +779,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @Override
-    public void transferToDevice(DataTransferMode mode, Object... objects) {
+    public void transferToDevice(final int mode, Object... objects) {
         for (Object object : objects) {
             if (object == null) {
                 warn("null object passed into streamIn() in schedule %s", executionContext.getId());
