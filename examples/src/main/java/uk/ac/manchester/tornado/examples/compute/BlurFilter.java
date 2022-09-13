@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,13 +30,8 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
-import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.WorkerGrid;
-import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 /**
  * It applies a Blur filter to an input image. Algorithm taken from CUDA course
@@ -160,10 +155,6 @@ public class BlurFilter {
             }
 
             long start = System.nanoTime();
-            WorkerGrid workerGrid = new WorkerGrid2D(w, h);
-            GridScheduler gridScheduler = new GridScheduler("blur.red", workerGrid);
-            gridScheduler.setWorkerGrid("blur.green", workerGrid);
-            gridScheduler.setWorkerGrid("blur.blue", workerGrid);
             TaskSchedule parallelFilter = new TaskSchedule("blur") //
                     .task("red", BlurFilterImage::compute, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
                     .task("green", BlurFilterImage::compute, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
@@ -171,9 +162,7 @@ public class BlurFilter {
                     .streamOut(redFilter, greenFilter, blueFilter) //
                     .useDefaultThreadScheduler(true);
 
-            workerGrid.setGlobalWork(w, h, 1);
-            workerGrid.setLocalWorkToNull();
-            parallelFilter.execute(gridScheduler);
+            parallelFilter.execute();
 
             // now recombine into the output image - Alpha is 255 for no
             // transparency
