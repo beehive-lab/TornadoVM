@@ -352,10 +352,6 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
             }
         }
         gpuReduceSnippets.lower(storeIndexed, threadID, tool);
-
-        // We append this phase to move floating reads close to their actual usage and
-        // set the FixedAccessNode::lastLocationAccess
-        // snippetReadReplacementPhase.apply(graph);
     }
 
     private void lowerAtomicStoreIndexedNode(StoreAtomicIndexedNode storeIndexed) {

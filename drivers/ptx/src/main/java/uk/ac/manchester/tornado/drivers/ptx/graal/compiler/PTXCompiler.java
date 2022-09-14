@@ -177,18 +177,9 @@ public class PTXCompiler {
 
             LIR lir = null;
             try (DebugContext.Scope s = getDebugContext().scope("ComputeLinearScanOrder", lir)) {
-
                 CodeEmissionOrder<?> blockOrder = r.backend.newBlockOrder(blocks.length, startBlock);
                 AbstractBlockBase<?>[] linearScanOrder = LinearScanOrder.computeLinearScanOrder(blocks.length, startBlock);
                 lir = new LIR(schedule.getCFG(), linearScanOrder, r.graph.getOptions(), r.graph.getDebug());
-
-                // codeEmittingOrder = ComputeBlockOrder.computeCodeEmittingOrder(blocks.length,
-                // startBlock);
-                // linearScanOrder = ComputeBlockOrder.computeLinearScanOrder(blocks.length,
-                // startBlock);
-                // lir = new LIR(schedule.getCFG(), linearScanOrder, codeEmittingOrder, options,
-                // getDebugContext());
-
                 getDebugContext().dump(DebugContext.INFO_LEVEL, lir, "After linear scan order");
             } catch (Throwable e) {
                 throw getDebugContext().handle(e);
