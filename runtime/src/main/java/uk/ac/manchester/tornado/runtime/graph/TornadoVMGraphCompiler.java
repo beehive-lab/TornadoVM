@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -64,7 +64,7 @@ public class TornadoVMGraphCompiler {
 
     /**
      * Generate TornadoVM byte-code from a Tornado Task Graph.
-     * 
+     *
      * @param graph
      *            TornadoVM execution Graph.
      * @param context
@@ -208,7 +208,7 @@ public class TornadoVMGraphCompiler {
     /**
      * It replaces the last STREAM_OUT for STREAM_OUT_BLOCKING byte-code. Otherwise,
      * it adds a barrier
-     * 
+     *
      * @param result
      * @param numDepLists
      */
@@ -226,7 +226,7 @@ public class TornadoVMGraphCompiler {
 
     private static void printIvs(StructuredGraph graph) {
         final LoopsData data = new TornadoLoopsData(graph);
-        data.detectedCountedLoops();
+        data.detectCountedLoops();
 
         final List<LoopEx> loops = data.outerFirst();
 

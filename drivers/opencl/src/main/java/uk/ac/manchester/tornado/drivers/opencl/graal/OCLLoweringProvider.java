@@ -230,6 +230,11 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         return false;
     }
 
+    @Override
+    public boolean divisionOverflowIsJVMSCompliant() {
+        return false;
+    }
+
     private void lowerReduceSnippets(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
         StructuredGraph graph = storeIndexed.graph();
         ValueNode startIndexNode = storeIndexed.getStartNode();

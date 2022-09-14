@@ -34,12 +34,11 @@ import org.graalvm.compiler.loop.phases.ConvertDeoptimizeToGuardPhase;
 import org.graalvm.compiler.loop.phases.LoopFullUnrollPhase;
 import org.graalvm.compiler.nodes.loop.DefaultLoopPolicies;
 import org.graalvm.compiler.nodes.loop.LoopPolicies;
-import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
+import org.graalvm.compiler.phases.common.HighTierLoweringPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
-import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
@@ -100,7 +99,7 @@ public class SPIRVHighTier extends TornadoHighTier {
         appendPhase(new TornadoValueTypeCleanup());
 
         if (OptConvertDeoptsToGuards.getValue(options)) {
-            appendPhase(new ConvertDeoptimizeToGuardPhase());
+            appendPhase(new ConvertDeoptimizeToGuardPhase(canonicalizer));
         }
 
         appendPhase(new TornadoShapeAnalysis());
@@ -114,12 +113,12 @@ public class SPIRVHighTier extends TornadoHighTier {
         }
 
         appendPhase(canonicalizer);
-        appendPhase(new RemoveValueProxyPhase());
+        appendPhase(new RemoveValueProxyPhase(canonicalizer));
         appendPhase(canonicalizer);
         appendPhase(new DeadCodeEliminationPhase(Optional));
 
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
-        appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER));
+        appendPhase(new HighTierLoweringPhase(canonicalizer));
 
         appendPhase(new TornadoSPIRVIntrinsicsReplacements(metaAccessProvider));
 

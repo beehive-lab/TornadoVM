@@ -46,4 +46,9 @@ public class TornadoMetaAccessExtensionProvider implements MetaAccessExtensionPr
     public boolean isGuaranteedSafepoint(ResolvedJavaMethod method, boolean isDirect) {
         return false;
     }
+
+    @Override
+    public boolean canVirtualize(ResolvedJavaType instanceType) {
+        return true;
+    }
 }

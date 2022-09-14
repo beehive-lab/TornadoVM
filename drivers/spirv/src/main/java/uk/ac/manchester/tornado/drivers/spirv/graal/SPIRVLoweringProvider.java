@@ -416,6 +416,11 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
+    public boolean divisionOverflowIsJVMSCompliant() {
+        return false;
+    }
+
+    @Override
     protected void lowerArrayLengthNode(ArrayLengthNode arrayLengthNode, LoweringTool tool) {
         StructuredGraph graph = arrayLengthNode.graph();
         ValueNode array = arrayLengthNode.array();

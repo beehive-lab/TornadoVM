@@ -28,14 +28,12 @@ import static org.graalvm.compiler.core.common.GraalOptions.ConditionalEliminati
 import static org.graalvm.compiler.core.common.GraalOptions.OptFloatingReads;
 import static org.graalvm.compiler.core.common.GraalOptions.ReassociateExpressions;
 
-import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.FrameStateAssignmentPhase;
 import org.graalvm.compiler.phases.common.GuardLoweringPhase;
-import org.graalvm.compiler.phases.common.IncrementalCanonicalizerPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
-import org.graalvm.compiler.phases.common.LoweringPhase;
+import org.graalvm.compiler.phases.common.MidTierLoweringPhase;
 import org.graalvm.compiler.phases.common.ReassociationPhase;
 import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 
@@ -68,10 +66,12 @@ public class SPIRVMidTier extends TornadoMidTier {
         appendPhase(new ExceptionCheckingElimination());
 
         if (OptFloatingReads.getValue(options)) {
-            appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new TornadoFloatingReadReplacement()));
+            // appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new
+            // TornadoFloatingReadReplacement()));
+            appendPhase(new TornadoFloatingReadReplacement());
         }
 
-        appendPhase(new RemoveValueProxyPhase());
+        appendPhase(new RemoveValueProxyPhase(canonicalizer));
 
         appendPhase(canonicalizer);
 
@@ -87,7 +87,7 @@ public class SPIRVMidTier extends TornadoMidTier {
             appendPhase(new TornadoPartialLoopUnroll());
         }
 
-        appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.MID_TIER));
+        appendPhase(new MidTierLoweringPhase(canonicalizer));
 
         appendPhase(new FrameStateAssignmentPhase());
 

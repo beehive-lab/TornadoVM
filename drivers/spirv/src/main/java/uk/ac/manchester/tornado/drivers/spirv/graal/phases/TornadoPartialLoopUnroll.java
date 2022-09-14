@@ -68,7 +68,7 @@ public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
         CanonicalizerPhase canonicalizer = CanonicalizerPhase.create();
 
         canonicalizer.apply(graph, context);
-        dataCounted.detectedCountedLoops();
+        dataCounted.detectCountedLoops();
         for (LoopEx loop : dataCounted.countedLoops()) {
             int loopBound = loop.counted().getLimit().asJavaConstant().asInt();
             if (isPowerOfTwo(loopBound) && (loopBound < LOOP_BOUND_UPPER_LIMIT)) {

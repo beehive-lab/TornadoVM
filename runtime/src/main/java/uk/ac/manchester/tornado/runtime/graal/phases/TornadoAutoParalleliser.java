@@ -69,7 +69,7 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
     private void autoParallelise(StructuredGraph graph) {
         if (graph.hasLoops()) {
             final LoopsData data = new TornadoLoopsData(graph);
-            data.detectedCountedLoops();
+            data.detectCountedLoops();
 
             final List<LoopEx> loops = data.outerFirst();
 

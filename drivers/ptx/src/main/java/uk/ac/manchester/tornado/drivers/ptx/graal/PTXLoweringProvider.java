@@ -211,6 +211,11 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
+    public boolean divisionOverflowIsJVMSCompliant() {
+        return false;
+    }
+
+    @Override
     public void lower(Node node, LoweringTool tool) {
         if (node instanceof Invoke) {
             lowerInvoke((Invoke) node, tool, (StructuredGraph) node.graph());
