@@ -103,7 +103,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.calc.DivNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoFloatingReadReplacement;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceCPUSnippets;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
@@ -125,8 +124,6 @@ import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
  * TornadoVM Mid-IR).
  */
 public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
-
-    private static final TornadoFloatingReadReplacement snippetReadReplacementPhase = new TornadoFloatingReadReplacement(true, true);
 
     private static final boolean USE_ATOMICS = false;
     private static boolean gpuSnippet = false;
@@ -275,10 +272,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         } else {
             gpuReduceSnippets.lower(storeIndexed, threadID, oclGlobalSize, tool);
         }
-
-        // We append this phase to move floating reads close to their actual usage and
-        // set FixedAccessNode::lastLocationAccess
-        snippetReadReplacementPhase.apply(graph);
     }
 
     private void lowerStoreAtomicsReduction(Node node, LoweringTool tool) {

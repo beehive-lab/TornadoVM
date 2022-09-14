@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -59,9 +59,7 @@ public class OCLMidTier extends TornadoMidTier {
         appendPhase(new ExceptionCheckingElimination());
 
         if (OptFloatingReads.getValue(options)) {
-            // appendPhase(new IncrementalCanonicalizerPhase(canonicalizer, new
-            // TornadoFloatingReadReplacement()));
-            appendPhase(new TornadoFloatingReadReplacement());
+            appendPhase(new TornadoFloatingReadReplacement(canonicalizer));
         }
 
         appendPhase(new RemoveValueProxyPhase(canonicalizer));
