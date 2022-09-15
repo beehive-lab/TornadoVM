@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,10 +22,7 @@ import static uk.ac.manchester.tornado.api.profiler.ChromeEventTracer.enqueueTas
 
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.WorkerGrid;
-import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class NBody {
@@ -139,11 +136,6 @@ public class NBody {
         long timeSequential = (end - start);
 
         System.out.println(resultsIterations.toString());
-        WorkerGrid workerGrid = new WorkerGrid1D(numBodies);
-        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
-        workerGrid.setGlobalWork(numBodies, 1, 1);
-        // [Optional] Set the local work group
-        workerGrid.setLocalWork(256, 1, 1);
 
         // @formatter:off
             final TaskSchedule t0 = new TaskSchedule("s0")
@@ -155,7 +147,7 @@ public class NBody {
         for (int i = 0; i < iterations; i++) {
             // System.gc();
             start = System.nanoTime();
-            t0.execute(gridScheduler);
+            t0.execute();
             end = System.nanoTime();
             enqueueTaskIfEnabled("nbody accelerated", start, end);
             resultsIterations.append("\tTornado execution time of iteration " + i + " is: " + (end - start) + " ns");

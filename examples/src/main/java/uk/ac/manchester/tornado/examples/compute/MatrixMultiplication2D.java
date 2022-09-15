@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,10 +19,7 @@ package uk.ac.manchester.tornado.examples.compute;
 
 import java.util.Random;
 
-import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.WorkerGrid;
-import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
@@ -76,13 +73,6 @@ public class MatrixMultiplication2D {
             }
         }
 
-        WorkerGrid workerGrid = new WorkerGrid2D(size, size);
-        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
-        // [Optional] Set the global work size
-        workerGrid.setGlobalWork(size, size, 1);
-        // [Optional] Set the local work group to be 16x16
-        workerGrid.setLocalWork(16, 16, 1);
-
         //@formatter:off
         TaskSchedule t = new TaskSchedule("s0")
                 .lockObjectsInMemory(matrixA, matrixB, matrixC)   // lock these objects
@@ -92,12 +82,12 @@ public class MatrixMultiplication2D {
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
-            t.execute(gridScheduler);
+            t.execute();
         }
 
         // 2. Run parallel on the GPU with Tornado
         long start = System.currentTimeMillis();
-        t.execute(gridScheduler);
+        t.execute();
         long end = System.currentTimeMillis();
 
         // Run sequential
