@@ -5,7 +5,7 @@
 # This file is part of Tornado: A heterogeneous programming framework:
 # https://github.com/beehive-lab/tornadovm
 #
-# Copyright (c) 2013-2021, APT Group, Department of Computer Science,
+# Copyright (c) 2013-2022, APT Group, Department of Computer Science,
 # The University of Manchester. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -30,7 +30,6 @@ import re
 import subprocess
 import sys
 import time
-
 
 class TestEntry:
     def __init__(self, testName, testMethods=None, testParameters=None):
@@ -171,7 +170,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 ]
 
 # ################################################################################################################
-## Options
+## Default options and flags
 # ################################################################################################################
 __MAIN_TORNADO_TEST_RUNNER_MODULE__ = " tornado.unittests/"
 __MAIN_TORNADO_TEST_RUNNER__        = "uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
@@ -185,12 +184,13 @@ __THREAD_INFO__                     = "-Dtornado.threadInfo=True "
 __PRINT_EXECUTION_TIMER__           = "-Dtornado.debug.executionTime=True "
 __GC__                              = "-Xmx6g "
 __BASE_OPTIONS__                    = "-Dtornado.recover.bailout=False "
+__VERBOSE_OPTION__                  = "-Dtornado.unittests.verbose="
 # ################################################################################################################
 
 TORNADO_CMD = "tornado "
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "0.13_24032022"
+__VERSION__ = "0.14_14092022"
 
 JDK_8_VERSION = "1.8"
 try:
@@ -200,7 +200,6 @@ except:
     sys.exit(-1)
 
 __TEST_NOT_PASSED__ = False
-
 
 class Colors:
     RED = "\033[1;31m"
@@ -217,15 +216,12 @@ def composeAllOptions(args):
         the Tornado VM. New options should be concatenated in this method.
     """
 
-    verbose = "-Dtornado.unittests.verbose="
-    options = verbose
+    options = __GC__ + __BASE_OPTIONS__
 
     if (args.verbose):
-        options = options + "True "
+        options = __VERBOSE_OPTION__ + "True "
     else:
-        options = options + "False "
-
-    options = options + __GC__ + __BASE_OPTIONS__
+        options = __VERBOSE_OPTION__ + "False "
 
     if (args.dumpIGVLastTier):
         options = options + __IGV_LAST_PHASE__
