@@ -219,6 +219,19 @@ function downloadCMake() {
     fi
 }
 
+function downloadMaven() {
+    platform=$(getPlatform)
+    if [[ "$platform" == 'linux' ]]; then
+        wget https://dlcdn.apache.org/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz
+        tar xvzf apache-maven-3.8.6-bin.tar.gz 
+        export MAVENPATH=`pwd`/apache-maven-3.8.6/bin 
+        export PATH=`pwd`/apache-maven-3.8.6/bin:$PATH
+    else 
+        echo "OS platform not supported"
+        exit 0
+    fi
+}
+
 function resolveBackends() {
     if [ $opencl ]; then
         b="${b}opencl,"
