@@ -104,7 +104,7 @@ function downloadCorretto17() {
 function downloadMandrel11() {
     platform=$(getPlatform)
     if [[ "$platform" == 'linux' ]]; then
-        wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java11-linux-amd64-22.2.0.tar.gz
+        wget https://github.com/graalvm/mandrel/releases/download/mandrel-22.2.0.0-Final/mandrel-java11-linux-amd64-22.2.0.0-Final.tar.gz
         tar xf mandrel-java11-linux-amd64-22.2.0.0-Final.tar.gz
         export JAVA_HOME=$PWD/mandrel-java11-22.2.0.0-Final
     elif [[ "$platform" == 'darwin' ]]; then
@@ -117,7 +117,7 @@ function downloadMandrel11() {
 function downloadMandrel17() {
     platform=$(getPlatform)
     if [[ "$platform" == 'linux' ]]; then
-        wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java17-linux-amd64-22.2.0.tar.gz
+        wget https://github.com/graalvm/mandrel/releases/download/mandrel-22.2.0.0-Final/mandrel-java17-linux-amd64-22.2.0.0-Final.tar.gz
         tar xf mandrel-java17-linux-amd64-22.2.0.0-Final.tar.gz
         export JAVA_HOME=$PWD/mandrel-java17-22.2.0.0-Final
     elif [[ "$platform" == 'darwin' ]]; then
