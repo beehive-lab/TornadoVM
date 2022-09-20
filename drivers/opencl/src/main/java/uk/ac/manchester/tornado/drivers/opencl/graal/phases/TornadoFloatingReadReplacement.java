@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -17,7 +17,6 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
@@ -68,12 +67,14 @@ import org.graalvm.compiler.nodes.memory.MemoryMap;
 import org.graalvm.compiler.nodes.memory.MemoryMapNode;
 import org.graalvm.compiler.nodes.memory.MemoryPhiNode;
 import org.graalvm.compiler.nodes.memory.MultiMemoryKill;
-import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.SingleMemoryKill;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
+import org.graalvm.compiler.nodes.spi.CoreProviders;
 import org.graalvm.compiler.nodes.util.GraphUtil;
-import org.graalvm.compiler.phases.Phase;
+import org.graalvm.compiler.phases.common.CanonicalizerPhase;
+import org.graalvm.compiler.phases.common.FloatingReadPhase;
+import org.graalvm.compiler.phases.common.PostRunCanonicalizationPhase;
 import org.graalvm.compiler.phases.common.util.EconomicSetNodeEventListener;
 import org.graalvm.compiler.phases.graph.ReentrantNodeIterator;
 import org.graalvm.word.LocationIdentity;
@@ -93,16 +94,15 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadElem
  *
  * {@link org.graalvm.compiler.phases.common.FloatingReadPhase}
  */
-public class TornadoFloatingReadReplacement extends Phase {
+public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase<CoreProviders> {
 
-    private final boolean createFloatingReads;
     private final boolean createMemoryMapNodes;
 
     public static class MemoryMapImpl implements MemoryMap {
 
         private final EconomicMap<LocationIdentity, MemoryKill> lastMemorySnapshot;
 
-        public MemoryMapImpl(MemoryMapImpl memoryMap) {
+        public MemoryMapImpl(TornadoFloatingReadReplacement.MemoryMapImpl memoryMap) {
             lastMemorySnapshot = EconomicMap.create(Equivalence.DEFAULT, memoryMap.lastMemorySnapshot);
         }
 
@@ -140,21 +140,18 @@ public class TornadoFloatingReadReplacement extends Phase {
         }
     }
 
-    public TornadoFloatingReadReplacement() {
-        this(true, false);
+    public TornadoFloatingReadReplacement(CanonicalizerPhase canonicalizer) {
+        this(false, canonicalizer);
     }
 
     /**
-     * @param createFloatingReads
-     *            specifies whether {@link FloatableAccessNode}s like
-     *            {@link ReadNode} should be converted into floating nodes (e.g.,
-     *            {@link FloatingReadNode}s) where possible
      * @param createMemoryMapNodes
      *            a {@link MemoryMapNode} will be created for each return if this is
-     *            true
+     *            true.
+     * @param canonicalizer
      */
-    public TornadoFloatingReadReplacement(boolean createFloatingReads, boolean createMemoryMapNodes) {
-        this.createFloatingReads = createFloatingReads;
+    public TornadoFloatingReadReplacement(boolean createMemoryMapNodes, CanonicalizerPhase canonicalizer) {
+        super(canonicalizer);
         this.createMemoryMapNodes = createMemoryMapNodes;
     }
 
@@ -186,13 +183,14 @@ public class TornadoFloatingReadReplacement extends Phase {
     }
 
     protected void processNode(FixedNode node, EconomicSet<LocationIdentity> currentState) {
-        if (node instanceof SingleMemoryKill) {
+        if (MemoryKill.isSingleMemoryKill(node)) {
             processIdentity(currentState, ((SingleMemoryKill) node).getKilledLocationIdentity());
-        } else if (node instanceof MultiMemoryKill) {
+        } else if (MemoryKill.isMemoryKill(node)) {
             for (LocationIdentity identity : ((MultiMemoryKill) node).getKilledLocationIdentities()) {
                 processIdentity(currentState, identity);
             }
         }
+
     }
 
     private static void processIdentity(EconomicSet<LocationIdentity> currentState, LocationIdentity identity) {
@@ -231,7 +229,7 @@ public class TornadoFloatingReadReplacement extends Phase {
 
     @Override
     @SuppressWarnings("try")
-    protected void run(StructuredGraph graph) {
+    protected void run(StructuredGraph graph, CoreProviders context) {
         EconomicSet<ValueNode> initMemory = EconomicSet.create(Equivalence.IDENTITY);
 
         EconomicMap<LoopBeginNode, EconomicSet<LocationIdentity>> modifiedInLoops = null;
@@ -246,7 +244,8 @@ public class TornadoFloatingReadReplacement extends Phase {
 
         EconomicSetNodeEventListener listener = new EconomicSetNodeEventListener(EnumSet.of(NODE_ADDED, ZERO_USAGES));
         try (Graph.NodeEventScope nes = graph.trackNodeEvents(listener)) {
-            ReentrantNodeIterator.apply(new FloatingReadClosure(modifiedInLoops, createFloatingReads, createMemoryMapNodes, initMemory), graph.start(), new MemoryMapImpl(graph.start()));
+            ReentrantNodeIterator.apply(new FloatingReadPhase.FloatingReadClosure(modifiedInLoops, true, createMemoryMapNodes, initMemory), graph.start(),
+                    new FloatingReadPhase.MemoryMapImpl(graph.start()));
         }
 
         for (Node n : removeExternallyUsedNodes(listener.getNodes())) {
@@ -255,14 +254,10 @@ public class TornadoFloatingReadReplacement extends Phase {
                 GraphUtil.killWithUnusedFloatingInputs(n);
             }
         }
-        if (createFloatingReads) {
-            // assert graph.isBeforeStage(StructuredGraph.StageFlag.FLOATING_READS);
-            graph.setAfterStage(StructuredGraph.StageFlag.FLOATING_READS);
-        }
     }
 
-    public static MemoryMapImpl mergeMemoryMaps(AbstractMergeNode merge, List<? extends MemoryMap> states) {
-        MemoryMapImpl newState = new MemoryMapImpl();
+    public static FloatingReadPhase.MemoryMapImpl mergeMemoryMaps(AbstractMergeNode merge, List<? extends MemoryMap> states) {
+        FloatingReadPhase.MemoryMapImpl newState = new FloatingReadPhase.MemoryMapImpl();
 
         EconomicSet<LocationIdentity> keys = EconomicSet.create(Equivalence.DEFAULT);
         for (MemoryMap other : states) {
@@ -303,10 +298,6 @@ public class TornadoFloatingReadReplacement extends Phase {
 
     }
 
-    public static boolean nodeOfMemoryType(Node node) {
-        return !(node instanceof OCLBarrierNode) || !(node instanceof MemoryKill) || (node instanceof SingleMemoryKill ^ node instanceof MultiMemoryKill);
-    }
-
     private static boolean checkNoImmutableLocations(EconomicSet<LocationIdentity> keys) {
         keys.forEach(t -> {
             assert t.isMutable();
@@ -314,7 +305,7 @@ public class TornadoFloatingReadReplacement extends Phase {
         return true;
     }
 
-    public static class FloatingReadClosure extends ReentrantNodeIterator.NodeIteratorClosure<MemoryMapImpl> {
+    public static class FloatingReadClosure extends ReentrantNodeIterator.NodeIteratorClosure<FloatingReadPhase.MemoryMapImpl> {
 
         private final EconomicMap<LoopBeginNode, EconomicSet<LocationIdentity>> modifiedInLoops;
         private boolean createFloatingReads;
@@ -330,7 +321,7 @@ public class TornadoFloatingReadReplacement extends Phase {
         }
 
         @Override
-        protected MemoryMapImpl processNode(FixedNode node, MemoryMapImpl state) {
+        protected FloatingReadPhase.MemoryMapImpl processNode(FixedNode node, FloatingReadPhase.MemoryMapImpl state) {
 
             if (node instanceof LoopExitNode) {
                 final LoopExitNode loopExitNode = (LoopExitNode) node;
@@ -352,12 +343,14 @@ public class TornadoFloatingReadReplacement extends Phase {
             if (createFloatingReads && node instanceof FloatableAccessNode) {
                 processFloatable((FloatableAccessNode) node, state);
             }
-            if (node instanceof SingleMemoryKill) {
+            if (MemoryKill.isSingleMemoryKill(node)) {
+                assert !MemoryKill.isMultiMemoryKill(node) : "Node cannot be single and multi kill concurrently " + node;
                 processCheckpoint((SingleMemoryKill) node, state);
-            } else if (node instanceof MultiMemoryKill) {
+            } else if (MemoryKill.isMultiMemoryKill(node)) {
                 processCheckpoint((MultiMemoryKill) node, state);
+            } else {
+                assert !MemoryKill.isMemoryKill(node) : "Node must be single or multi kill " + node;
             }
-            // assert nodeOfMemoryType(node) : node;
 
             if (createMemoryMapNodes && node instanceof MemoryMapControlSinkNode) {
                 ((MemoryMapControlSinkNode) node).setMemoryMap(node.graph().unique(new MemoryMapNode(state.getMap())));
@@ -369,7 +362,7 @@ public class TornadoFloatingReadReplacement extends Phase {
          * Improve the memory graph by re-wiring all usages of a
          * {@link MemoryAnchorNode} to the real last access location.
          */
-        private static void processAnchor(MemoryAnchorNode anchor, MemoryMapImpl state) {
+        private static void processAnchor(MemoryAnchorNode anchor, FloatingReadPhase.MemoryMapImpl state) {
             for (Node node : anchor.usages().snapshot()) {
                 if (node instanceof MemoryAccess) {
                     MemoryAccess access = (MemoryAccess) node;
@@ -386,25 +379,25 @@ public class TornadoFloatingReadReplacement extends Phase {
             }
         }
 
-        private static void processAccess(MemoryAccess access, MemoryMapImpl state) {
+        private static void processAccess(MemoryAccess access, FloatingReadPhase.MemoryMapImpl state) {
             LocationIdentity locationIdentity = access.getLocationIdentity();
-            if (!locationIdentity.equals(LocationIdentity.any())) {
+            if (!locationIdentity.equals(LocationIdentity.any()) && locationIdentity.isMutable()) {
                 MemoryKill lastLocationAccess = state.getLastLocationAccess(locationIdentity);
                 access.setLastLocationAccess(lastLocationAccess);
             }
         }
 
-        private void processCheckpoint(SingleMemoryKill checkpoint, MemoryMapImpl state) {
+        private void processCheckpoint(SingleMemoryKill checkpoint, FloatingReadPhase.MemoryMapImpl state) {
             processIdentity(checkpoint.getKilledLocationIdentity(), checkpoint, state);
         }
 
-        private void processCheckpoint(MultiMemoryKill checkpoint, MemoryMapImpl state) {
+        private void processCheckpoint(MultiMemoryKill checkpoint, FloatingReadPhase.MemoryMapImpl state) {
             for (LocationIdentity identity : checkpoint.getKilledLocationIdentities()) {
                 processIdentity(identity, checkpoint, state);
             }
         }
 
-        private void processIdentity(LocationIdentity identity, MemoryKill checkpoint, MemoryMapImpl state) {
+        private void processIdentity(LocationIdentity identity, MemoryKill checkpoint, FloatingReadPhase.MemoryMapImpl state) {
             if (identity.isAny()) {
                 state.getMap().clear();
             }
@@ -446,7 +439,7 @@ public class TornadoFloatingReadReplacement extends Phase {
         }
 
         @SuppressWarnings("try")
-        private void processFloatable(FloatableAccessNode accessNode, MemoryMapImpl state) {
+        private void processFloatable(FloatableAccessNode accessNode, FloatingReadPhase.MemoryMapImpl state) {
             StructuredGraph graph = accessNode.graph();
             LocationIdentity locationIdentity = accessNode.getLocationIdentity();
 
@@ -485,17 +478,17 @@ public class TornadoFloatingReadReplacement extends Phase {
         }
 
         @Override
-        protected MemoryMapImpl merge(AbstractMergeNode merge, List<MemoryMapImpl> states) {
+        protected FloatingReadPhase.MemoryMapImpl merge(AbstractMergeNode merge, List<FloatingReadPhase.MemoryMapImpl> states) {
             return mergeMemoryMaps(merge, states);
         }
 
         @Override
-        protected MemoryMapImpl afterSplit(AbstractBeginNode node, MemoryMapImpl oldState) {
-            return new MemoryMapImpl(oldState);
+        protected FloatingReadPhase.MemoryMapImpl afterSplit(AbstractBeginNode node, FloatingReadPhase.MemoryMapImpl oldState) {
+            return new FloatingReadPhase.MemoryMapImpl(oldState);
         }
 
         @Override
-        protected EconomicMap<LoopExitNode, MemoryMapImpl> processLoop(LoopBeginNode loop, MemoryMapImpl initialState) {
+        protected EconomicMap<LoopExitNode, FloatingReadPhase.MemoryMapImpl> processLoop(LoopBeginNode loop, FloatingReadPhase.MemoryMapImpl initialState) {
             EconomicSet<LocationIdentity> modifiedLocations = modifiedInLoops.get(loop);
             EconomicMap<LocationIdentity, MemoryPhiNode> phis = EconomicMap.create(Equivalence.DEFAULT);
             if (modifiedLocations.contains(LocationIdentity.any())) {
@@ -509,9 +502,9 @@ public class TornadoFloatingReadReplacement extends Phase {
             }
             initialState.getMap().putAll(phis);
 
-            ReentrantNodeIterator.LoopInfo<MemoryMapImpl> loopInfo = ReentrantNodeIterator.processLoop(this, loop, initialState);
+            ReentrantNodeIterator.LoopInfo<FloatingReadPhase.MemoryMapImpl> loopInfo = ReentrantNodeIterator.processLoop(this, loop, initialState);
 
-            UnmodifiableMapCursor<LoopEndNode, MemoryMapImpl> endStateCursor = loopInfo.endStates.getEntries();
+            UnmodifiableMapCursor<LoopEndNode, FloatingReadPhase.MemoryMapImpl> endStateCursor = loopInfo.endStates.getEntries();
             while (endStateCursor.advance()) {
                 int endIndex = loop.phiPredecessorIndex(endStateCursor.getKey());
                 UnmodifiableMapCursor<LocationIdentity, MemoryPhiNode> phiCursor = phis.getEntries();
@@ -524,7 +517,7 @@ public class TornadoFloatingReadReplacement extends Phase {
             return loopInfo.exitStates;
         }
 
-        private static void createMemoryPhi(LoopBeginNode loop, MemoryMapImpl initialState, EconomicMap<LocationIdentity, MemoryPhiNode> phis, LocationIdentity location) {
+        private static void createMemoryPhi(LoopBeginNode loop, FloatingReadPhase.MemoryMapImpl initialState, EconomicMap<LocationIdentity, MemoryPhiNode> phis, LocationIdentity location) {
             MemoryPhiNode phi = loop.graph().addWithoutUnique(new MemoryPhiNode(loop, location));
             phi.addInput(ValueNodeUtil.asNode(initialState.getLastLocationAccess(location)));
             phis.put(location, phi);

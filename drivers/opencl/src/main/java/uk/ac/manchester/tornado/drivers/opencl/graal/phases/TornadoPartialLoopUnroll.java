@@ -40,7 +40,7 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
  * Applies partial unroll on counted loops of more than 128 elements. By default
  * the unroll factor is set to 2 except if the user explicitly passes a
  * different value power of two.
- * 
+ *
  * @see org.graalvm.compiler.loop.phases.LoopTransformations
  */
 
@@ -72,7 +72,7 @@ public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
         CanonicalizerPhase canonicalizer = CanonicalizerPhase.create();
 
         canonicalizer.apply(graph, context);
-        dataCounted.detectedCountedLoops();
+        dataCounted.detectCountedLoops();
         for (LoopEx loop : dataCounted.countedLoops()) {
             int loopBound = loop.counted().getLimit().asJavaConstant().asInt();
             if (isPowerOfTwo(loopBound) && (loopBound < LOOP_BOUND_UPPER_LIMIT)) {

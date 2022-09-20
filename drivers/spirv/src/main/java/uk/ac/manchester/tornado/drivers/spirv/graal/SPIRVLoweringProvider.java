@@ -96,7 +96,6 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.GroupIdNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalThreadSizeNode;
-import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoFloatingReadReplacement;
 import uk.ac.manchester.tornado.drivers.spirv.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
@@ -115,7 +114,6 @@ import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
  */
 public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
 
-    private static final TornadoFloatingReadReplacement snippetReadReplacementPhase = new TornadoFloatingReadReplacement(true, true);
     private static boolean gpuSnippet = false;
     private ConstantReflectionProvider constantReflectionProvider;
     private TornadoVMConfig vmConfig;
@@ -237,9 +235,6 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
             gpuReduceSnippets.lower(storeIndexed, threadID, spirvGlobalSize, tool);
         }
 
-        // We append this phase to move floating reads close to their actual usage and
-        // set FixedAccessNode::lastLocationAccess
-        snippetReadReplacementPhase.apply(graph);
     }
 
     private void lowerStoreAtomicsReduction(Node node, LoweringTool tool) {
@@ -412,6 +407,11 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
     @Override
     public boolean writesStronglyOrdered() {
         unimplemented("SPIRVLoweringProvider::writesStronglyOrdered unimplemented");
+        return false;
+    }
+
+    @Override
+    public boolean divisionOverflowIsJVMSCompliant() {
         return false;
     }
 

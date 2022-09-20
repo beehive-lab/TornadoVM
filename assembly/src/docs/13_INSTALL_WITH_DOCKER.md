@@ -1,6 +1,6 @@
 # Using Docker with TornadoVM
 
-_We have tested our docker images for CentOS >= 7.4 and Ubuntu >= 16.04._ We currently have docker images for NVIDIA GPUs, and Intel Integrated GPUs, Intel CPUs and Intel FPGAs using OpenJDK 11, 17 and GraalVM 22.1.0:
+_We have tested our docker images for CentOS >= 7.4 and Ubuntu >= 16.04._ We currently have docker images for NVIDIA GPUs, and Intel Integrated GPUs, Intel CPUs and Intel FPGAs using OpenJDK 11, 17 and GraalVM 22.2.0:
 
 * TornadoVM docker images for **NVIDIA GPUs**
 * TornadoVM docker images for **Intel Integrated Graphics, Intel FPGAs, and Intel CPUs**

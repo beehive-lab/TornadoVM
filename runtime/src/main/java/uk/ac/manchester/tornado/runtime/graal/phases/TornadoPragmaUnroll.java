@@ -93,7 +93,7 @@ public class TornadoPragmaUnroll extends BasePhase<CoreProviders> {
             do {
                 peeled = false;
                 final LoopsData dataCounted = new TornadoLoopsData(graph);
-                dataCounted.detectedCountedLoops();
+                dataCounted.detectCountedLoops();
                 for (LoopEx loop : dataCounted.countedLoops()) {
                     if (shouldFullUnroll(graph.getOptions(), loop)) {
                         getDebugContext().log("FullUnroll %s", loop);
