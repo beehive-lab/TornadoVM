@@ -486,16 +486,16 @@ public class TaskGraph implements TornadoAPI, ProfileInterface {
      * Arrays can be of different sizes.
      *
      * If a {@link GridScheduler} is not passed in the {@link #execute()} method,
-     * then it will also trigger recompilation. Otherwise TornadoVM will not
+     * then it will also trigger recompilation. Otherwise, TornadoVM will not
      * recompile the code, since the first compilation was generic.
      *
      *
-     * @param oldRef
-     * @param newRef
+     * @param oldParameter
+     * @param newParameter
      */
     @Override
-    public TaskGraph updateParameter(Object oldRef, Object newRef) {
-        taskScheduleImpl.updateParameter(oldRef, newRef);
+    public TaskGraph replaceParameter(Object oldParameter, Object newParameter) {
+        taskScheduleImpl.replaceParameter(oldParameter, newParameter);
         return this;
     }
 

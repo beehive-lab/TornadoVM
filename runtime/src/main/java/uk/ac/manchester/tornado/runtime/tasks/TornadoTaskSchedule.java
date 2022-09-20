@@ -346,17 +346,17 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @Override
-    public void updateParameter(Object oldRef, Object newRef) {
+    public void replaceParameter(Object oldParameter, Object newParameter) {
         // 1. Update from the streamIn list of objects
-        updateReference(oldRef, newRef, streamInObjects);
+        updateReference(oldParameter, newParameter, streamInObjects);
 
         // 2. Update from the stream out list of objects
-        updateReference(oldRef, newRef, streamOutObjects);
+        updateReference(oldParameter, newParameter, streamOutObjects);
 
         // 3. Update from graphContext and replace the object state.
         // Otherwise, if the object is copied in (via COPY_IN), we might think the
         // object is already on the device heap.
-        executionContext.replaceObjectState(oldRef, newRef);
+        executionContext.replaceObjectState(oldParameter, newParameter);
 
         // 4. Update the global states array in the vm.
         if (vm != null) {
@@ -372,8 +372,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         for (TaskPackage tp : taskPackages) {
             Object[] params = tp.getTaskParameters();
             for (int k = 1; k < params.length; k++) {
-                if (params[k].equals(oldRef)) {
-                    params[k] = newRef;
+                if (params[k].equals(oldParameter)) {
+                    params[k] = newParameter;
                 }
             }
         }

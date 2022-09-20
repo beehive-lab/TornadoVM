@@ -674,7 +674,7 @@ public interface TornadoAPI {
 
     TaskGraph useDefaultThreadScheduler(boolean use);
 
-    TaskGraph updateParameter(Object oldRef, Object newRef);
+    TaskGraph replaceParameter(Object oldRef, Object newRef);
 
     boolean isFinished();
 }

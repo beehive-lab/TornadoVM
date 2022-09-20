@@ -177,9 +177,9 @@ public class TestIO extends TornadoTestBase {
         s0.transferToHost(arrayC);
 
         for (int i = 0; i < 4; i++) {
-            s0.updateParameter(arrayB, arrayB2);
+            s0.replaceParameter(arrayB, arrayB2);
             s0.execute();
-            s0.updateParameter(arrayB2, arrayB);
+            s0.replaceParameter(arrayB2, arrayB);
         }
 
         s0.unlockObjectsFromMemory(arrayA, arrayB, arrayC);
@@ -226,9 +226,9 @@ public class TestIO extends TornadoTestBase {
 
         for (int i = 0; i < 4; i++) {
             float[] arrayB2 = createAndInitializeArray(N);
-            s0.updateParameter(arrayB, arrayB2);
+            s0.replaceParameter(arrayB, arrayB2);
             s0.execute();
-            s0.updateParameter(arrayB2, arrayB);
+            s0.replaceParameter(arrayB2, arrayB);
         }
 
         s0.unlockObjectsFromMemory(arrayA, arrayB, arrayC);

@@ -130,7 +130,7 @@ public interface AbstractTaskGraph extends ProfileInterface {
 
     String getTaskScheduleName();
 
-    void updateParameter(Object oldRef, Object newRef);
+    void replaceParameter(Object oldParameter, Object newParameter);
 
     void useDefaultThreadScheduler(boolean use);
 
