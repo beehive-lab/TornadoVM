@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -146,7 +146,8 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
 
     /**
      * @param createMemoryMapNodes
-     *            a {@link MemoryMapNode} will be created for each return if this
+     *            a {@link MemoryMapNode} will be created for each return if this is
+     *            true.
      * @param canonicalizer
      */
     public TornadoFloatingReadReplacement(boolean createMemoryMapNodes, CanonicalizerPhase canonicalizer) {

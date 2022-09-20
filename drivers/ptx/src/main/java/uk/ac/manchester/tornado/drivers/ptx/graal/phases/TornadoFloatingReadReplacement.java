@@ -146,7 +146,8 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
 
     /**
      * @param createMemoryMapNodes
-     *            a {@link MemoryMapNode} will be created for each return if this
+     *            a {@link MemoryMapNode} will be created for each return if this is
+     *            true.
      * @param canonicalizer
      */
     public TornadoFloatingReadReplacement(boolean createMemoryMapNodes, CanonicalizerPhase canonicalizer) {
