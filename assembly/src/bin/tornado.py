@@ -23,7 +23,7 @@
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-from subprocess import Popen, PIPE
+from subprocess import PIPE
 import os
 import subprocess
 import shlex
@@ -95,32 +95,27 @@ class TornadoVMRunnerTool():
             sys.exit(0)
 
         self.java_command = self.java_home + "/bin/java"
-        self.java_version = self.getJavaVersion()
+        self.java_version, self.isGraalVM = self.getJavaVersion()
         self.checkCompatibilityWithTornadoVM()
         self.platform = sys.platform
         self.listOfBackends = self.getInstalledBackends(False)
-        self.isGraalVM = self.isGraalVM()
 
     def getJavaVersion(self):
         versionCommand = subprocess.Popen(shlex.split(self.java_command + " -version"), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = versionCommand.communicate()
-        match = re.search(r"version \"\d+", str(stderr))
-        if (match != None):
-            version = match.group(0).split("\"")
+        matchJVMVersion = re.search(r"version \"\d+", str(stderr))
+        matchGraal = re.search(r"GraalVM", str(stderr))
+        graalEnabled = False
+        if (matchGraal != None):
+            graalEnabled = True
+
+        if (matchJVMVersion != None):
+            version = matchJVMVersion.group(0).split("\"")
             version = int(version[1]) 
-            return version
+            return version, graalEnabled
         else:
             print("[ERROR] JDK Version not found")
             sys.exit(0)
-
-    def isGraalVM(self):
-        versionCommand = subprocess.Popen(shlex.split(self.java_command + " -version"), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = versionCommand.communicate()
-        match = re.search(r"GraalVM", str(stderr))
-        if (match != None):
-            return True
-        else:
-            return False
 
     def checkCompatibilityWithTornadoVM(self):
         if (self.java_version == 9 or self.java_version == 10):
@@ -144,13 +139,13 @@ class TornadoVMRunnerTool():
             lines = tornadoBackendFile.read().splitlines()
             for line in lines:
                 if "tornado.backends" in line:
-                    backends = line.replace("tornado.backends=", "").replace("-backend", "")
+                    backends = line.split("=")[1]
                     backends = backends.split(",")
-                    for b in backends:
-                        if (verbose):
+                    listBackends = backends
+                    if (verbose):
+                        for b in backends:
+                            b = b.replace("-backend", "")
                             print("\t - " + b)
-                        listBackends.append(b)
-    
         return listBackends
 
     def printVersion(self):
@@ -232,13 +227,13 @@ class TornadoVMRunnerTool():
 
             javaFlags = javaFlags + " @" + common + " "
 
-            if ("opencl" in self.listOfBackends):
+            if ("opencl-backend" in self.listOfBackends):
                 javaFlags = javaFlags + "@" + opencl + " "
                 tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-            if ("spirv" in self.listOfBackends):
+            if ("spirv-backend" in self.listOfBackends):
                 javaFlags = javaFlags + "@" + opencl + " @" + spirv + " "
                 tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-            if ("ptx" in self.listOfBackends):
+            if ("ptx-backend" in self.listOfBackends):
                 javaFlags = javaFlags + "@" + ptx + " "
                 tornadoAddModules = tornadoAddModules + "," + __PTX_MODULE__
 
@@ -278,7 +273,7 @@ class TornadoVMRunnerTool():
             command = javaFlags + " -m " + str(args.module_application) + " " + params
         else:       
             command = javaFlags + " " + str(args.application) + " " + params
-
+            
         ## Execute the command
         os.system(command)
        
