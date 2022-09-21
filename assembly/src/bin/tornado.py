@@ -31,19 +31,18 @@ import sys
 import re
 import argparse
 
-
 # ########################################################
 # FLAGS FOR TORNADOVM
 # ########################################################
-__TORNADOVM_DEBUG__ = "-Dtornado.debug=True "
-__TORNADOVM_THREAD_INFO__ = "-Dtornado.threadInfo=True "
-__TORNADOVM_IGV__         = "-Dgraal.Dump=*:5 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true "
-__TORNADOVM__IGV_LOW_TIER = "-Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true -Dtornado.debug.lowtier=True "
-__TORNADOVM_PRINT_KERNEL__ = "-Dtornado.print.kernel=True "
-__TORNADOVM_PRINT_BC__  = "-Dtornado.print.bytecodes=True"
-__TORNADOVM_DUMP_PROFILER__ = "-Dtornado.profiler=True -Dtornado.log.profiler=True -Dtornado.profiler.dump.dir="
-__TORNADOVM_ENABLE_PROFILER_SILENT__ = "-Dtornado.profiler=True -Dtornado.log.profiler=True "
-__TORNADOVM_ENABLE_PROFILER_CONSOLE__ = "-Dtornado.profiler=True "
+__TORNADOVM_DEBUG__                     = "-Dtornado.debug=True "
+__TORNADOVM_THREAD_INFO__               = "-Dtornado.threadInfo=True "
+__TORNADOVM_IGV__                       = "-Dgraal.Dump=*:5 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true "
+__TORNADOVM__IGV_LOW_TIER               = "-Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true -Dtornado.debug.lowtier=True "
+__TORNADOVM_PRINT_KERNEL__              = "-Dtornado.print.kernel=True "
+__TORNADOVM_PRINT_BC__                  = "-Dtornado.print.bytecodes=True"
+__TORNADOVM_DUMP_PROFILER__             = "-Dtornado.profiler=True -Dtornado.log.profiler=True -Dtornado.profiler.dump.dir="
+__TORNADOVM_ENABLE_PROFILER_SILENT__    = "-Dtornado.profiler=True -Dtornado.log.profiler=True "
+__TORNADOVM_ENABLE_PROFILER_CONSOLE__   = "-Dtornado.profiler=True "
 
 __TORNADOVM_PROVIDERS__ = """\
 -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule \
@@ -77,6 +76,9 @@ __JAVA_BASE_OPTIONS__ = "-server -XX:-UseCompressedOops -XX:+UnlockExperimentalV
 # This allows us have the GraalIR in states which normally would be illegal.
 __GRAAL_ENABLE_ASSERTIONS__ = "-ea -da:org.graalvm.compiler... "
 
+# ########################################################
+# TornadoVM Runner Tool
+# ########################################################
 class TornadoVMRunnerTool():
 
     def __init__(self):
@@ -156,13 +158,9 @@ class TornadoVMRunnerTool():
         self.printRelease()
         self.getInstalledBackends(True)
 
-    def buildJavaCommand(self, args):
-
-        javaFlags = ""
-
-        ## build TornadoVM Flags
-        tornadoFlags = " "
-
+    
+    def buildTornadoVMOptions(self, args):
+        tornadoFlags = ""
         if (args.debug):
             tornadoFlags = tornadoFlags + __TORNADOVM_DEBUG__ 
 
@@ -193,15 +191,20 @@ class TornadoVMRunnerTool():
         if (args.dumpProfiler != None):
             tornadoFlags = tornadoFlags + __TORNADOVM_DUMP_PROFILER__ + " " + args.dumpProfiler + " "
             
-
         tornadoFlags = tornadoFlags + "-Djava.library.path=" + self.sdk + "/lib "
         if (self.java_version == 8):
             tornadoFlags = tornadoFlags + " -Djava.ext.dirs=" + self.sdk + "/share/java/tornado "
         else:
             tornadoFlags = tornadoFlags + " --module-path .:"+ self.sdk + "/share/java/tornado "
 
+        return tornadoFlags
+
+
+    def buildJavaCommand(self, args):
+        tornadoFlags = self.buildTornadoVMOptions(args)
         tornadoAddModules = __TORNADOVM_ADD_MODULES__
 
+        javaFlags = ""
         if (args.enableAssertions):
             javaFlags = javaFlags + __GRAAL_ENABLE_ASSERTIONS__
 
@@ -238,11 +241,22 @@ class TornadoVMRunnerTool():
 
             javaFlags = javaFlags + tornadoAddModules + " "
 
+        if (args.jvmOptions != None):
+            javaFlags = javaFlags + args.jvmOptions + " "
+
+        if (args.classPath != None):
+            javaFlags = javaFlags + " -cp " + args.classPath + " "
+
         return self.java_command + javaFlags
 
     
     def executeCommand(self, args):
         javaFlags = self.buildJavaCommand(args)
+
+        if (args.versionJVM):
+            command = javaFlags + " -version"
+            os.system(command)
+            sys.exit(0)
 
         if (args.printFlags):
             print(javaFlags)
@@ -258,7 +272,7 @@ class TornadoVMRunnerTool():
             params = args.applicationParameters
 
         if (args.moduleApplication != None):
-            command = comjavaFlagsmand + " -m " + str(args.moduleApplication) + " " + params
+            command = javaFlags + " -m " + str(args.moduleApplication) + " " + params
         else:       
             command = javaFlags + " " + str(args.application) + " " + params
 
@@ -268,8 +282,9 @@ class TornadoVMRunnerTool():
 
 def parseArguments():
     """ Parse command line arguments """
-    parser = argparse.ArgumentParser(description='Tool for running TornadoVM Applications')
+    parser = argparse.ArgumentParser(description='Tool for running TornadoVM Applications. This tool sets all Java options for enabling TornadoVM')
     parser.add_argument('--version', action="store_true", dest="version", default=False, help="Print version of TornadoVM")
+    parser.add_argument('-version', action="store_true", dest="versionJVM", default=False, help="Print JVM Version")
     parser.add_argument('--debug', action="store_true", dest="debug", default=False, help="Enable debug mode")
     parser.add_argument('--threadInfo', action="store_true", dest="threadInfo", default=False, help="Print thread deploy information per task on the accelerator")
     parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Debug Compilation Graphs using Ideal Graph Visualizer (IGV)")
@@ -282,7 +297,8 @@ def parseArguments():
     parser.add_argument('--displayOptions', action="store_true", dest="displayOptions", default=False, help="Print most common TornadoVM options")
     parser.add_argument('--devices', action="store_true", dest="showDevices", default=False, help="Print information about the  accelerators available")
     parser.add_argument('--ea', action="store_true", dest="enableAssertions", default=False, help="Enable assertions")
-    parser.add_argument('--jvm', action="store", dest="jvmOptions", default=False, help="Pass JVM options")
+    parser.add_argument('--jvm', action="store", dest="jvmOptions", default=None, help="Pass JVM options")
+    parser.add_argument('--cp', action="store", dest="classPath", default=None, help="Set class-path")
     parser.add_argument('-m', action="store", dest="moduleApplication", default=None, help="Application using Java modules")
     parser.add_argument('--params', action="store", dest="applicationParameters", default=None, help="Command-line parameters for the application")
     parser.add_argument("application", nargs="?")
