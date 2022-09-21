@@ -74,7 +74,7 @@ __JAVA_BASE_OPTIONS__ = "-server -XX:-UseCompressedOops -XX:+UnlockExperimentalV
 
 # We do not satisfy the Graal compiler assertions because we only support a subset of the Java specification.
 # This allows us have the GraalIR in states which normally would be illegal.
-__GRAAL_ENABLE_ASSERTIONS__ = "-ea -da:org.graalvm.compiler... "
+__GRAAL_ENABLE_ASSERTIONS__ = " -ea -da:org.graalvm.compiler... "
 
 # ########################################################
 # TornadoVM Runner Tool
@@ -293,7 +293,7 @@ def parseArguments():
     parser.add_argument('--printFlags', action="store_true", dest="printFlags", default=False, help="Print the TornadoVM flags")
     parser.add_argument('--displayOptions', action="store_true", dest="displayOptions", default=False, help="Print most common TornadoVM options")
     parser.add_argument('--devices', action="store_true", dest="showDevices", default=False, help="Print information about the  accelerators available")
-    parser.add_argument('--ea', action="store_true", dest="enableAssertions", default=False, help="Enable assertions")
+    parser.add_argument('--ea', '-ea', action="store_true", dest="enableAssertions", default=False, help="Enable assertions")
     parser.add_argument('--module-path', action="store", dest="module_path", default=None, help="Module path option for the JVM")
     parser.add_argument('--jvm', action="store", dest="jvm_options", default=None, help="Pass JVM options")
     parser.add_argument('--cp', action="store", dest="classPath", default=None, help="Set class-path")
