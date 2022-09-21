@@ -193,7 +193,12 @@ class TornadoVMRunnerTool():
         if (self.java_version == 8):
             tornadoFlags = tornadoFlags + " -Djava.ext.dirs=" + self.sdk + "/share/java/tornado "
         else:
-            tornadoFlags = tornadoFlags + " --module-path .:"+ self.sdk + "/share/java/tornado "
+            tornadoFlags = tornadoFlags + " --module-path .:"+ self.sdk + "/share/java/tornado"
+
+        if (args.module_path != None):
+            tornadoFlags = tornadoFlags + ":" + args.module_path + " "
+        else:
+            tornadoFlags = tornadoFlags + " "
 
         return tornadoFlags
 
