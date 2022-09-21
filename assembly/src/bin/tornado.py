@@ -122,7 +122,6 @@ class TornadoVMRunnerTool():
         else:
             return False
 
-    
     def checkCompatibilityWithTornadoVM(self):
         if (self.java_version == 9 or self.java_version == 10):
             print("TornadoVM does not support Java 9 and 10")
@@ -157,7 +156,6 @@ class TornadoVMRunnerTool():
     def printVersion(self):
         self.printRelease()
         self.getInstalledBackends(True)
-
     
     def buildTornadoVMOptions(self, args):
         tornadoFlags = ""
@@ -179,17 +177,17 @@ class TornadoVMRunnerTool():
         if (args.printBytecodes):
             tornadoFlags = tornadoFlags + __TORNADOVM_PRINT_BC__
 
-        if (args.enableProfiler != None):
-            if (args.enableProfiler == "silent"):
+        if (args.enable_profiler != None):
+            if (args.enable_profiler == "silent"):
                 tornadoFlags = tornadoFlags + __TORNADOVM_ENABLE_PROFILER_SILENT__
-            elif (args.enableProfiler == "console"):
+            elif (args.enable_profiler == "console"):
                 tornadoFlags = tornadoFlags + __TORNADOVM_ENABLE_PROFILER_CONSOLE__
             else:
                 print("[ERROR] Please select --enableProfiler <silent|console>")
                 sys.exit(0)
 
-        if (args.dumpProfiler != None):
-            tornadoFlags = tornadoFlags + __TORNADOVM_DUMP_PROFILER__ + " " + args.dumpProfiler + " "
+        if (args.dump_profiler != None):
+            tornadoFlags = tornadoFlags + __TORNADOVM_DUMP_PROFILER__ + " " + args.dump_profiler + " "
             
         tornadoFlags = tornadoFlags + "-Djava.library.path=" + self.sdk + "/lib "
         if (self.java_version == 8):
@@ -241,8 +239,8 @@ class TornadoVMRunnerTool():
 
             javaFlags = javaFlags + tornadoAddModules + " "
 
-        if (args.jvmOptions != None):
-            javaFlags = javaFlags + args.jvmOptions + " "
+        if (args.jvm_options != None):
+            javaFlags = javaFlags + args.jvm_options + " "
 
         if (args.classPath != None):
             javaFlags = javaFlags + " -cp " + args.classPath + " "
@@ -268,18 +266,17 @@ class TornadoVMRunnerTool():
             sys.exit(0)
 
         params = ""
-        if (args.applicationParameters != None):
-            params = args.applicationParameters
+        if (args.application_parameters != None):
+            params = args.application_parameters
 
-        if (args.moduleApplication != None):
-            command = javaFlags + " -m " + str(args.moduleApplication) + " " + params
+        if (args.module_application != None):
+            command = javaFlags + " -m " + str(args.module_application) + " " + params
         else:       
             command = javaFlags + " " + str(args.application) + " " + params
 
         ## Execute the command
         os.system(command)
        
-
 def parseArguments():
     """ Parse command line arguments """
     parser = argparse.ArgumentParser(description='Tool for running TornadoVM Applications. This tool sets all Java options for enabling TornadoVM')
@@ -291,16 +288,17 @@ def parseArguments():
     parser.add_argument('--igvLowTier', action="store_true", dest="igvLowTier", default=False, help="Debug Low Tier Compilation Graphs using Ideal Graph Visualizer (IGV)")
     parser.add_argument('--printKernel', action="store_true", dest="printKernel", default=False, help="Print generated kernel (OpenCL, PTX or SPIR-V)")
     parser.add_argument('--printBytecodes', action="store_true", dest="printBytecodes", default=False, help="Print the generated internal TornadoVM bytecodes")
-    parser.add_argument('--enableProfiler', action="store", dest="enableProfiler", default=None, help="Enable the profiler {silent|console}")
-    parser.add_argument('--dumpProfiler', action="store", dest="dumpProfiler", default=None, help="Dump the profiler to a file")
+    parser.add_argument('--enableProfiler', action="store", dest="enable_profiler", default=None, help="Enable the profiler {silent|console}")
+    parser.add_argument('--dumpProfiler', action="store", dest="dump_profiler", default=None, help="Dump the profiler to a file")
     parser.add_argument('--printFlags', action="store_true", dest="printFlags", default=False, help="Print the TornadoVM flags")
     parser.add_argument('--displayOptions', action="store_true", dest="displayOptions", default=False, help="Print most common TornadoVM options")
     parser.add_argument('--devices', action="store_true", dest="showDevices", default=False, help="Print information about the  accelerators available")
     parser.add_argument('--ea', action="store_true", dest="enableAssertions", default=False, help="Enable assertions")
-    parser.add_argument('--jvm', action="store", dest="jvmOptions", default=None, help="Pass JVM options")
+    parser.add_argument('--module-path', action="store", dest="module_path", default=None, help="Module path option for the JVM")
+    parser.add_argument('--jvm', action="store", dest="jvm_options", default=None, help="Pass JVM options")
     parser.add_argument('--cp', action="store", dest="classPath", default=None, help="Set class-path")
-    parser.add_argument('-m', action="store", dest="moduleApplication", default=None, help="Application using Java modules")
-    parser.add_argument('--params', action="store", dest="applicationParameters", default=None, help="Command-line parameters for the application")
+    parser.add_argument('-m', action="store", dest="module_application", default=None, help="Application using Java modules")
+    parser.add_argument('--params', action="store", dest="application_parameters", default=None, help="Command-line parameters for the application")
     parser.add_argument("application", nargs="?")
     args = parser.parse_args()
     return args
@@ -310,7 +308,6 @@ if __name__ == "__main__":
     args = parseArguments() 
 
     tornadoVMRunner = TornadoVMRunnerTool()
-
     if (args.version):
         tornadoVMRunner.printVersion()
         sys.exit(0)
