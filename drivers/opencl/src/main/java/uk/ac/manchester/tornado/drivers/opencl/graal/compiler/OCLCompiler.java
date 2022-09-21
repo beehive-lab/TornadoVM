@@ -47,9 +47,10 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.graalvm.compiler.code.CompilationResult;
-import org.graalvm.compiler.core.common.alloc.ComputeBlockOrder;
+import org.graalvm.compiler.core.common.alloc.LinearScanOrder;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
+import org.graalvm.compiler.core.common.cfg.CodeEmissionOrder;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpScope;
@@ -244,13 +245,11 @@ public class OCLCompiler {
             assert startBlock.getPredecessorCount() == 0;
 
             LIR lir = null;
-            AbstractBlockBase<?>[] codeEmittingOrder = null;
-            AbstractBlockBase<?>[] linearScanOrder = null;
             try (DebugContext.Scope s = getDebugContext().scope("ComputeLinearScanOrder", lir)) {
-                codeEmittingOrder = ComputeBlockOrder.computeCodeEmittingOrder(blocks.length, startBlock);
-                linearScanOrder = ComputeBlockOrder.computeLinearScanOrder(blocks.length, startBlock);
+                CodeEmissionOrder<?> blockOrder = backend.newBlockOrder(blocks.length, startBlock);
+                AbstractBlockBase<?>[] linearScanOrder = LinearScanOrder.computeLinearScanOrder(blocks.length, startBlock);
+                lir = new LIR(schedule.getCFG(), linearScanOrder, graph.getOptions(), graph.getDebug());
 
-                lir = new LIR(schedule.getCFG(), linearScanOrder, codeEmittingOrder, options, getDebugContext());
                 getDebugContext().dump(DebugContext.INFO_LEVEL, lir, "After linear scan order");
             } catch (Throwable e) {
                 throw getDebugContext().handle(e);

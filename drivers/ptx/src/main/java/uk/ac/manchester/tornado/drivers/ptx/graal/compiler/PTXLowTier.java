@@ -27,7 +27,6 @@ package uk.ac.manchester.tornado.drivers.ptx.graal.compiler;
 import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Required;
 
-import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
@@ -35,7 +34,7 @@ import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.FixReadsPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
-import org.graalvm.compiler.phases.common.LoweringPhase;
+import org.graalvm.compiler.phases.common.LowTierLoweringPhase;
 import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 
@@ -56,9 +55,9 @@ public class PTXLowTier extends TornadoLowTier {
         this.tornadoDeviceContext = tornadoDeviceContext;
         CanonicalizerPhase canonicalizer = CanonicalizerPhase.create();
 
-        appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.LOW_TIER));
+        appendPhase(new LowTierLoweringPhase(canonicalizer));
 
-        appendPhase(new RemoveValueProxyPhase());
+        appendPhase(new RemoveValueProxyPhase(canonicalizer));
 
         /*
          * Cleanup IsNull checks resulting from MID_TIER/LOW_TIER lowering and
@@ -68,7 +67,7 @@ public class PTXLowTier extends TornadoLowTier {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, false));
         }
 
-        appendPhase(new FixReadsPhase(true, new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS), canonicalizer));
+        appendPhase(new FixReadsPhase(true, new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS)));
 
         appendPhase(new AddressLoweringPhase(addressLowering));
 

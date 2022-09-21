@@ -35,16 +35,16 @@ Note that GraalVM Community Edition releases based on JDK8 are no longer being b
 ```bash
 $ ./scripts/tornadovmInstaller.sh 
 TornadoVM installer for Linux and OSx
-./script/tornadoVMInstaller.sh <JDK> <BACKENDS>
+$ ./script/tornadoVMInstaller.sh <JDK> <BACKENDS>
 JDK (select one):
        --jdk11            : Install TornadoVM with OpenJDK 11
        --jdk17            : Install TornadoVM with OpenJDK 17
-       --graal-jdk-11     : Install TornadoVM with GraalVM and JDK 11 (GraalVM 22.1.0)
-       --graal-jdk-17     : Install TornadoVM with GraalVM and JDK 17 (GraalVM 22.1.0)
+       --graal-jdk-11     : Install TornadoVM with GraalVM and JDK 11 (GraalVM 22.2.0)
+       --graal-jdk-17     : Install TornadoVM with GraalVM and JDK 17 (GraalVM 22.2.0)
        --corretto-11      : Install TornadoVM with Corretto JDK 11
        --corretto-17      : Install TornadoVM with Corretto JDK 17
-       --mandrel-11       : Install TornadoVM with Mandrel 22.1.0 (JDK 11)
-       --mandrel-17       : Install TornadoVM with Mandrel 22.1.0 (JDK 17)
+       --mandrel-11       : Install TornadoVM with Mandrel 22.2.0 (JDK 11)
+       --mandrel-17       : Install TornadoVM with Mandrel 22.2.0 (JDK 17)
        --microsoft-jdk-11 : Install TornadoVM with Microsoft JDK 11
        --microsoft-jdk-17 : Install TornadoVM with Microsoft JDK 17
        --zulu-jdk-11      : Install TornadoVM with Azul Zulu JDK 11
@@ -55,7 +55,6 @@ TornadoVM Backends:
        --spirv            : Install TornadoVM and build the SPIR-V backend
 Help:
        --help             : Print this help
-
 ```
 
 **NOTE** Select the desired backend:
