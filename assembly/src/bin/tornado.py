@@ -73,7 +73,7 @@ __JAVA_GC_JDK16__   = "-XX:+UseParallelGC "
 __JAVA_BASE_OPTIONS__ = "-server -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI "
 
 # We do not satisfy the Graal compiler assertions because we only support a subset of the Java specification.
-# This allows us have the GraalIR in states which normally would be illegal.
+# This allows us to have the GraalIR in states which normally would be illegal.
 __GRAAL_ENABLE_ASSERTIONS__ = " -ea -da:org.graalvm.compiler... "
 
 # ########################################################
@@ -273,13 +273,13 @@ class TornadoVMRunnerTool():
             command = javaFlags + " -m " + str(args.module_application) + " " + params
         else:       
             command = javaFlags + " " + str(args.application) + " " + params
-            
+        
         ## Execute the command
         os.system(command)
        
 def parseArguments():
     """ Parse command line arguments """
-    parser = argparse.ArgumentParser(description='Tool for running TornadoVM Applications. This tool sets all Java options for enabling TornadoVM')
+    parser = argparse.ArgumentParser(description="""Tool for running TornadoVM Applications. This tool sets all Java options for enabling TornadoVM.""")
     parser.add_argument('--version', action="store_true", dest="version", default=False, help="Print version of TornadoVM")
     parser.add_argument('-version', action="store_true", dest="versionJVM", default=False, help="Print JVM Version")
     parser.add_argument('--debug', action="store_true", dest="debug", default=False, help="Enable debug mode")
@@ -287,18 +287,17 @@ def parseArguments():
     parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Debug Compilation Graphs using Ideal Graph Visualizer (IGV)")
     parser.add_argument('--igvLowTier', action="store_true", dest="igvLowTier", default=False, help="Debug Low Tier Compilation Graphs using Ideal Graph Visualizer (IGV)")
     parser.add_argument('--printKernel', '-pk', action="store_true", dest="printKernel", default=False, help="Print generated kernel (OpenCL, PTX or SPIR-V)")
-    parser.add_argument('--printBytecodes', '-pc', action="store_true", dest="printBytecodes", default=False, help="Print the generated internal TornadoVM bytecodes")
+    parser.add_argument('--printBytecodes', '-pc', action="store_true", dest="printBytecodes", default=False, help="Print the generated TornadoVM bytecodes")
     parser.add_argument('--enableProfiler', action="store", dest="enable_profiler", default=None, help="Enable the profiler {silent|console}")
     parser.add_argument('--dumpProfiler', action="store", dest="dump_profiler", default=None, help="Dump the profiler to a file")
-    parser.add_argument('--printFlags', action="store_true", dest="printFlags", default=False, help="Print the TornadoVM flags")
-    parser.add_argument('--displayOptions', action="store_true", dest="displayOptions", default=False, help="Print most common TornadoVM options")
+    parser.add_argument('--printJavaFlags', action="store_true", dest="printFlags", default=False, help="Print all the Java flags to enable the execution with TornadoVM")
     parser.add_argument('--devices', action="store_true", dest="showDevices", default=False, help="Print information about the  accelerators available")
     parser.add_argument('--ea', '-ea', action="store_true", dest="enableAssertions", default=False, help="Enable assertions")
     parser.add_argument('--module-path', action="store", dest="module_path", default=None, help="Module path option for the JVM")
-    parser.add_argument('--jvm', '-J', action="store", dest="jvm_options", default=None, help="Pass JVM options")
     parser.add_argument('--cp', action="store", dest="classPath", default=None, help="Set class-path")
+    parser.add_argument('--jvm', '-J', action="store", dest="jvm_options", default=None, help="Pass Java options to the JVM. Use without spaces: e.g., --jvm=\"-Xms10g\" or -J\"-Xms10g\"")
     parser.add_argument('-m', action="store", dest="module_application", default=None, help="Application using Java modules")
-    parser.add_argument('--params', action="store", dest="application_parameters", default=None, help="Command-line parameters for the application")
+    parser.add_argument('--params', action="store", dest="application_parameters", default=None, help="Command-line parameters for the host-application. Example: --params=\"param1 param2...\"")
     parser.add_argument("application", nargs="?")
     args = parser.parse_args()
     return args
