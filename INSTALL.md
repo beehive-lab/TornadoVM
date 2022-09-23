@@ -180,7 +180,7 @@ Where `s` is the *TaskSchedule name* and `t` is the *task name*.
 For example running on `driver:device` `1:1` (Intel HD Graphics in our example) will look like this:
 
 ```bash
-$ tornado -Ds0.t0.device=1:1 -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D
+$ tornado --jvm="-Ds0.t0.device=1:1" -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D
 ```
 
 The command above will run the MatrixMultiplication1D example on the integrated GPU (Intel HD Graphics).
@@ -216,7 +216,7 @@ List of benchmarks:
 ###### Running a specific benchmark
 
 ```bash
-$ tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner sgemm
+$ tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner --params="sgemm"
 ```
 
 ## 4. Running Unittests

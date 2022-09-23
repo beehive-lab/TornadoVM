@@ -149,9 +149,11 @@ def runBenchmarksFullCoverage(args):
 	options = composeAllOptions(args)
 	for key in allSizes.keys():
 		for size in allSizes[key][0]:
-			command = __TORNADO_COMMAND__ + options + " " + __RUNNER__ + key + " " + str(allSizes[key][1][0]) + " " + str(size)
+			command = __TORNADO_COMMAND__ + " --jvm=\"" + options + "\" " + __RUNNER__ + " --params=\"" + key + " " + str(allSizes[key][1][0]) + " " + str(size)
 			if key == "sgemm":
 				command = command + " " + str(size)
+			command += "\""
+			print(command)
 			os.system(command)
 
 def runMediumConfiguration(args):
@@ -160,16 +162,19 @@ def runMediumConfiguration(args):
 	for key in mediumSizes.keys():
 		for size in mediumSizes[key][0]:
 			numIterations = eval(mediumSizes[key][1][0])
-			command = __TORNADO_COMMAND__ + options + " " + __RUNNER__ + key + " " + str(numIterations) + " " + str(size)
+			command = __TORNADO_COMMAND__ + " --jvm=\"" + options + "\" " + __RUNNER__ + " --params=\"" + key + " " + str(numIterations) + " " + str(size)
 			if key == "sgemm":
 				command = command + " " + str(size)
+			command += "\""
+			print(command)
 			os.system(command)
 
 def runWithJMH(args):
 	printBenchmarks()
 	options = composeAllOptions(args)
 	print(Colors.CYAN + "[INFO] TornadoVM options: " + options + Colors.RESET)
-	command = __TORNADO_COMMAND__ + " -jar benchmarks/target/jmhbenchmarks.jar "
+	command = __TORNADO_COMMAND__ + " -jar benchmarks/target/jmhbenchmarks.jar " 
+	print(command)
 	os.system(command)
 
 def runDefaultSizePerBenchmark(args):
@@ -177,7 +182,8 @@ def runDefaultSizePerBenchmark(args):
 	options = composeAllOptions(args)
 	print(Colors.CYAN + "[INFO] TornadoVM options: " + options + Colors.RESET)
 	for b in __BENCHMARKS__:
-		command = __TORNADO_COMMAND__ + options + " " + __RUNNER__ + b
+		command = __TORNADO_COMMAND__ + "--jvm=\"" + options + "\" " + __RUNNER__ + "--params=\"" +  b + "\""
+		print(command)
 		os.system(command)
 
 def parseArguments():

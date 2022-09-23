@@ -271,6 +271,8 @@ class TornadoVMRunnerTool():
 
         if (args.module_application != None):
             command = javaFlags + " -m " + str(args.module_application) + " " + params
+        elif (args.jar_file != None):
+            command = javaFlags + " -jar " + str(args.jar_file) + " " + params
         else:       
             command = javaFlags + " " + str(args.application) + " " + params
         
@@ -297,6 +299,7 @@ def parseArguments():
     parser.add_argument('--classpath', "-cp" , "--cp", action="store", dest="classPath", default=None, help="Set class-path")
     parser.add_argument('--jvm', '-J', action="store", dest="jvm_options", default=None, help="Pass Java options to the JVM. Use without spaces: e.g., --jvm=\"-Xms10g\" or -J\"-Xms10g\"")
     parser.add_argument('-m', action="store", dest="module_application", default=None, help="Application using Java modules")
+    parser.add_argument('-jar', action="store", dest="jar_file", default=None, help="Main Java application in a JAR File")
     parser.add_argument('--params', action="store", dest="application_parameters", default=None, help="Command-line parameters for the host-application. Example: --params=\"param1 param2...\"")
     parser.add_argument("application", nargs="?")
     args = parser.parse_args()
