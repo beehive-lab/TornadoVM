@@ -10,7 +10,7 @@ There is a number of runtime flags and compiler flags to enable experimental fea
 All flags needs Java prefix of ```-D```. An example of tornado using a flag is the following:  
 
 
-```$ tornado -Dtornado.fullDebug=true -m tornado.examples/uk.ac.manchester.examples.compute.Montecarlo 1024```  
+```$ tornado --jvm "-Dtornado.fullDebug=true" -m tornado.examples/uk.ac.manchester.examples.compute.Montecarlo 1024```  
 
 
 ## List of TornadoVM Flags:

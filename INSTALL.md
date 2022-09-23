@@ -107,6 +107,53 @@ $ make BACKENDS=opencl,ptx,spirv
 
 ## 2. Running Examples
 
+TornadoVM includes a tool for launching applications from the command-line:
+
+```bash
+$ tornado --help
+usage: tornado [-h] [--version] [-version] [--debug] [--threadInfo] [--igv] [--igvLowTier] [--printKernel] [--printBytecodes] [--enableProfiler ENABLE_PROFILER] [--dumpProfiler DUMP_PROFILER] [--printJavaFlags] [--devices] [--ea]
+               [--module-path MODULE_PATH] [--classpath CLASSPATH] [--jvm JVM_OPTIONS] [-m MODULE_APPLICATION] [-jar JAR_FILE] [--params APPLICATION_PARAMETERS]
+               [application]
+
+Tool for running TornadoVM Applications. This tool sets all Java options for enabling TornadoVM.
+
+positional arguments:
+  application
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --version             Print version of TornadoVM
+  -version              Print JVM Version
+  --debug               Enable debug mode
+  --threadInfo          Print thread deploy information per task on the accelerator
+  --igv                 Debug Compilation Graphs using Ideal Graph Visualizer (IGV)
+  --igvLowTier          Debug Low Tier Compilation Graphs using Ideal Graph Visualizer (IGV)
+  --printKernel, -pk    Print generated kernel (OpenCL, PTX or SPIR-V)
+  --printBytecodes, -pc
+                        Print the generated TornadoVM bytecodes
+  --enableProfiler ENABLE_PROFILER
+                        Enable the profiler {silent|console}
+  --dumpProfiler DUMP_PROFILER
+                        Dump the profiler to a file
+  --printJavaFlags      Print all the Java flags to enable the execution with TornadoVM
+  --devices             Print information about the accelerators available
+  --ea, -ea             Enable assertions
+  --module-path MODULE_PATH
+                        Module path option for the JVM
+  --classpath CLASSPATH, -cp CLASSPATH, --cp CLASSPATH
+                        Set class-path
+  --jvm JVM_OPTIONS, -J JVM_OPTIONS
+                        Pass Java options to the JVM. Use without spaces: e.g., --jvm="-Xms10g" or -J"-Xms10g"
+  -m MODULE_APPLICATION
+                        Application using Java modules
+  -jar JAR_FILE         Main Java application in a JAR File
+  --params APPLICATION_PARAMETERS
+                        Command-line parameters for the host-application. Example: --params="param1 param2..."
+```
+
+#### Examples: 
+
+
 ```bash
 $ tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D
 ```

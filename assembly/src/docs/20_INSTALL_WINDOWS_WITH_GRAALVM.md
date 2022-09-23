@@ -191,13 +191,13 @@ You should see a list of OpenCL and/or CUDA devices available on your system.
 Now try to run a simple test. To run examples with Graal JDK 11, TornadoVM uses modules:
 
 ```bash 
-tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D 512
+tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D --params="512"
 ```
 
 To run individual tests:
 
 ```bash
-tornado -Dtornado.unittests.verbose=True -Xmx6g  -m  tornado.unittests/uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner uk.ac.manchester.tornado.unittests.arrays.TestArrays
+tornado --jvm="-Dtornado.unittests.verbose=True -Xmx6g"  -m  tornado.unittests/uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner --params="uk.ac.manchester.tornado.unittests.arrays.TestArrays"
 ```
 
 To run all unit-tests:

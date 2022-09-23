@@ -122,7 +122,7 @@ To run on a specific device, use the following option:
 In order to run your code on a device of your choice you can issue:
 
 ```bash
-$ tornado -Ds0.device=0:1 --debug examples/TestTornado
+$ tornado --jvm="-Ds0.device=0:1" --debug examples/TestTornado
 ```
 
 This will run TaskSchedule (s0) on the device 1 (Intel HD Graphics).
@@ -390,7 +390,7 @@ parallelFilter.execute();
 
 For each task (red, blue and green) of the TaskSchedule (blur) the device can be specified as in:
 ```bash
-tornado -Dblur.red.device=0:0 -Dblur.green.device=0:1 -Dblur.blue.device=0:2 -m tornado.examples/uk.ac.manchester.tornado.examples.compute.BlurFilter
+tornado --jvm="-Dblur.red.device=0:0 -Dblur.green.device=0:1 -Dblur.blue.device=0:2" -m tornado.examples/uk.ac.manchester.tornado.examples.compute.BlurFilter
 ```
 
 Where device ids (0:0, 0:1 and 0:2) correspond to device ids obtained from:

@@ -67,8 +67,8 @@ For this configuration the TornadoVM `JAVA_FLAGS` and `CLASSPATHS` are needed.
 
 
 ```
-$ make BACKENDS={opencl,ptx}
-$ tornado --printFlags
+$ make BACKENDS={opencl,ptx,spirv}
+$ tornado --printJavaFlags
 ```
 
 Output should be something similar to this:
@@ -83,7 +83,7 @@ You need to copy from `-server` to end.
 
 Again, ***Run > Edit Configurations > Application > Add new (e.g. plus sign)***
 
-Then, add your own paraters similar to the following:
+Then, add your own parameters similar to the following:
 
 * **Main Class:** uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D
 * **VM Options:** What you copied from `-server` and on
