@@ -89,7 +89,6 @@ $ source source.sh
 
 TornadoVM can be executed with the following three configurations:
 
-  * TornadoVM with JDK 8 with JVMCI support: see the installation guide [here](assembly/src/docs/11_INSTALL_WITH_JDK8.md).
   * TornadoVM with GraalVM (JDK 11 and JDK 17): see the installation guide [here](assembly/src/docs/10_INSTALL_WITH_GRAALVM.md).
   * TornadoVM with JDK11+ (e.g. OpenJDK [11-17], Red Hat Mandrel, Amazon Corretto): see the installation guide [here](assembly/src/docs/12_INSTALL_WITH_JDK11_PLUS.md).
 
