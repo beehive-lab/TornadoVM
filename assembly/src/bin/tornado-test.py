@@ -220,9 +220,9 @@ def composeAllOptions(args):
     options = __GC__ + __BASE_OPTIONS__
 
     if (args.verbose):
-        options = __VERBOSE_OPTION__ + "True "
+        options = options + __VERBOSE_OPTION__ + "True "
     else:
-        options = __VERBOSE_OPTION__ + "False "
+        options = options + __VERBOSE_OPTION__ + "False "
 
     if (args.dumpIGVLastTier):
         options = options + __IGV_LAST_PHASE__
