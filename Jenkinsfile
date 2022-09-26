@@ -183,14 +183,15 @@ void buildAndTest(String JDK, String tornadoProfile) {
         sleep 5
         timeout(time: 5, unit: 'MINUTES') {
             sh "cd ${KFUSION_ROOT} && sed -i 's/kfusion.tornado.backend=PTX/kfusion.tornado.backend=OpenCL/' conf/kfusion.settings"
-            sh 'cd ${KFUSION_ROOT} && kfusion kfusion.tornado.Benchmark ${KFUSION_ROOT}/conf/traj2.settings'
+            sh 'cd ${KFUSION_ROOT} && ./scripts/run.sh'
+
         }
     }
     stage('PTX: Run KFusion') {
         sleep 5
         timeout(time: 5, unit: 'MINUTES') {
             sh "cd ${KFUSION_ROOT} && sed -i 's/kfusion.tornado.backend=OpenCL/kfusion.tornado.backend=PTX/' conf/kfusion.settings"
-            sh 'cd ${KFUSION_ROOT} && kfusion kfusion.tornado.Benchmark ${KFUSION_ROOT}/conf/traj2.settings'
+            sh 'cd ${KFUSION_ROOT} && ./scripts/run.sh'
         }
     }
 }
