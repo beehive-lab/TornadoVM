@@ -27,6 +27,7 @@
 import argparse
 import os
 import re
+import shlex
 import subprocess
 import sys
 import time
@@ -256,10 +257,9 @@ def runSingleCommand(cmd, args):
     """
 
     cmd = cmd + " " + args.testClass
-    cmd = cmd.split(" ")
 
     start = time.time()
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
     end = time.time()
     out = out.decode('utf-8')
@@ -315,8 +315,7 @@ def processStats(out, stats):
 
 def runCommandWithStats(command, stats):
     """ Run a command and update the stats dictionary """
-    command = command.split(" ")
-    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
     out = out.decode('utf-8')
     err = err.decode('utf-8')
@@ -325,7 +324,7 @@ def runCommandWithStats(command, stats):
         print(Colors.REVERSE)
         print("[!] RUNNING AGAIN BECAUSE OF A SEG FAULT")
         print(Colors.RESET)
-        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = p.communicate()
         out = out.decode('utf-8')
         err = err.decode('utf-8')
@@ -355,19 +354,19 @@ def runTests(args):
 
     options = composeAllOptions(args)
 
-    cmd = TORNADO_CMD + options
-
     if (args.testClass != None):
+        options = "--jvm \"" + options + "\" "
+        cmd = TORNADO_CMD + options
         command = appendTestRunnerClassToCmd(cmd, args)
+        command = command + " --params \"" + args.testClass + "\""
         if (args.fast):
-            command = command + " " + args.testClass
             print(command)
             os.system(command)
         else:
             runSingleCommand(command, args)
     else:
         start = time.time()
-        stats = runTestTheWorld(cmd, args)
+        stats = runTestTheWorld(options, args)
         end = time.time()
         print(Colors.CYAN)
 
@@ -390,28 +389,32 @@ def runTests(args):
         print(Colors.RESET)
 
 
-def runTestTheWorld(cmd, args):
+def runTestTheWorld(options, args):
     stats = {"[PASS]": 0, "[FAILED]": 0, "[UNSUPPORTED]": 0}
 
     for t in __TEST_THE_WORLD__:
-        command = cmd
+        command = options
         if t.testParameters:
             for testParam in t.testParameters:
                 command += " " + testParam
 
+        command = TORNADO_CMD + " --jvm \"" + command + "\" "
+
         command = appendTestRunnerClassToCmd(command, args)
-        command += " " + t.testName
+        command = command + " --params \"" + t.testName
         if t.testMethods:
             for testMethod in t.testMethods:
-                testMethodCmd = command + "#" + testMethod
+                testMethodCmd = command + "#" + testMethod + "\""
                 if (args.fast):
                     os.system(testMethodCmd)
                 else:
                     print(testMethodCmd)
                     stats = runCommandWithStats(testMethodCmd, stats)
         elif (args.fast):
+            command += "\""
             os.system(command)
         else:
+            command += "\""
             print(command)
             stats = runCommandWithStats(command, stats)
 
@@ -423,7 +426,7 @@ def runWithJUnit(args):
 
     if (args.testClass != None):
         command = appendTestRunnerClassToCmd(TORNADO_CMD, args)
-        command = command + args.testClass
+        command = command + " --params \"" + args.testClass + "\""
         os.system(command)
     else:
         runTestTheWorldWithJunit(args)
@@ -436,12 +439,13 @@ def runTestTheWorldWithJunit(args):
             for testParam in t.testParameters:
                 command += " " + testParam
 
+        command = " --jvm \"" + command + "\" "
+
         command = appendTestRunnerClassToCmd(command, args)
-        command += " " + t.testName
+        command += " --params \"" + t.testName + "\""
         if t.testMethods:
             for testMethod in t.testMethods:
-                print(
-                    "Unable to run specific test methods with the default JUnit runner: " + t.testName + "#" + testMethod)
+                print("Unable to run specific test methods with the default JUnit runner: " + t.testName + "#" + testMethod)
         else:
             os.system(command)
 

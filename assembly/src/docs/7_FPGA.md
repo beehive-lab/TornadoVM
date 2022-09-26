@@ -154,18 +154,13 @@ The compilation dumps along with the generated FPGA bitstream and the generated 
 Example:
 
 ```bash
-tornado \
-    -Ds0.t0.device=0:1 \
-    -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 1
+tornado --jvm="-Ds0.t0.device=0:1" -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic --params="1024 normal 1"
 ```
 
 Note: The Full JIT mode on the Alveo U50 presents some constraints regarding the maximum allocated space on the device memory. Although the Xilinx driver reports 1GB as the maximum allocation space, the XRT layer throws an error (`[XRT] ERROR: std::bad_alloc`) when the heap size is larger than 64MB. This issue is reported to Xilinx, and it is anticipated to be fixed soon. For applications that do not require more than 64MB of heap size, the following flag can be used `-Dtornado.device.memory=64MB`.
 
 ```bash
-tornado \
-    -Ds0.t0.device=0:1 \
-    -Dtornado.device.memory=64MB \
-    -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 1
+tornado --jvm="-Ds0.t0.device=0:1 -Dtornado.device.memory=64MB" -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic --params="1024 normal 1"
 ```
 
 ### 2. Ahead of Time Execution Mode
@@ -175,21 +170,18 @@ Ahead of time execution mode allows the user to use a pre-generated bitstream of
 Example:  
 
 ```bash
-tornado \
-    -Ds0.t0.device=0:1 \
-    -Ds0.t0.global.dims=1024 \
-    -Ds0.t0.local.dims=64 \
-    -Dtornado.precompiled.binary=/path/to/lookupBufferAddress,s0.t0.device=0:1 \
-    -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 10
+tornado --jvm="-Ds0.t0.device=0:1 -Ds0.t0.global.dims=1024 -Ds0.t0.local.dims=64 \
+    -Dtornado.precompiled.binary=/path/to/lookupBufferAddress,s0.t0.device=0:1 "
+    -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic \
+    --params="1024 normal 10"
 ```
 
 Note: The Ahead of Time mode on the Alveo U50 presents some constraints regarding the maximum allocated space on the device memory. Although the Xilinx driver reports 1GB as the maximum allocation space, the XRT layer throws an error (`[XRT] ERROR: std::bad_alloc`) when the heap size is larger than 64MB. This issue is reported to Xilinx, and it is anticipated to be fixed soon. For applications that do not require more than 64MB of heap size, the following flag can be used `-Dtornado.device.memory=64MB`.
 
 ```bash
-tornado \
-    -Ds0.t0.device=0:1 \
-    -Dtornado.device.memory=64MB \
-    -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 1
+tornado --jvm="-Ds0.t0.device=0:1 -Dtornado.device.memory=64MB "\
+    -m tornadoexamples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic \
+    --params="1024 normal 1"
 ```
 
 ### 3. Emulation Mode
@@ -214,8 +206,8 @@ Therefore you can run the following example in which the FPGA device uses the id
 Example:
 ```bash
 ./run_intel_openjdk.sh tornado \
-    -Ds0.t0.device=1:0 \
-    -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 default 10
+    --jvm="-Ds0.t0.device=1:0 "
+    -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic --params="1024 default 10"
 ```
 
 - Local execution:
@@ -229,8 +221,9 @@ Example:
 
 ```bash
 env CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA=1 tornado \
-    -Ds0.t0.device=0:1 \
-    -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 10
+    --jvm="-Ds0.t0.device=0:1" \
+    -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic \
+    --params="1024 normal 10"
 ```
 
 #### B) Emulation of a Xilinx platform (using Vitis):
@@ -249,8 +242,9 @@ Example:
 
 ```bash
 tornado \
-    -Ds0.t0.device=0:1 \
-    -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 10
+    --jvm="-Ds0.t0.device=0:1" \
+    -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic \
+    --params="1024 normal 10"
 ```
 
 Note: The emulation mode through SDAccel results in wrong results. However when we run in the Full JIT or the Ahead of Time modes the kernels return correct results. 

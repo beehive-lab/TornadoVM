@@ -82,7 +82,7 @@ You can run TornadoVM with your configuration file, by using the `-Dtornado.fpga
 
 The following example uses a custom configuration file (`aws-fpga.conf`) to execute the DFT on the AWS F1 FPGA:
 ```bash
-$ tornado -Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM/etc/aws-fpga.conf --threadInfo -Xmx20g -Xms20g --printKernel -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 256 default 1 >> output.log
+$ tornado --jvm "-Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM/etc/aws-fpga.conf -Xmx20g -Xms20g" --printKernel --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic --params="256 default 1" >> output.log
 $ Ctrl-Z (^Z)
 $ bg
 $ disown
@@ -141,15 +141,16 @@ When the state change from `pending` to `available`, the `awsxlcbin` binary code
 If you have logged out, ensure that you run (Steps 2 and 4).
 
 ```bash
-$ tornado -Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM/etc/aws-fpga.conf --debug -Xmx20g -Xms20g --printKernel -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 256 default 1 >> output.log
+$ tornado --jvm="-Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM/etc/aws-fpga.conf -Xmx20g -Xms20g" --debug --printKernel -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic --params="256 default 1" >> output.log
 ```
 
 The result is the following:
 
-```OpenCL
-tornado -Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM-Internal-feat-removeBufferCache/etc/aws-fpga.conf --threadInfo -Xmx20g -Xms20g --printKernel -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 256 default 1
+```bash
+tornado --jvm="-Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM-Internal-feat-removeBufferCache/etc/aws-fpga.conf --threadInfo -Xmx20g -Xms20g" --printKernel -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic --parms "256 default 1"
 Initialization time:  705795966 ns
-
+```
+```c
 __attribute__((reqd_work_group_size(64, 1, 1)))
 __kernel void computeDft(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global uchar *inreal, __global uchar *inimag, __global uchar *outreal, __global uchar *outimag, __global uchar *inputSize)
 {
