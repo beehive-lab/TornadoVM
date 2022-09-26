@@ -52,26 +52,26 @@ function downloadOpenJDK17() {
 function downloadGraalVMJDK11() {
     platform=$(getPlatform)
     if [[ "$platform" == 'linux' ]]; then
-        wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.1.0/graalvm-ce-java11-linux-amd64-22.1.0.tar.gz
-	tar -xf graalvm-ce-java11-linux-amd64-22.1.0.tar.gz
-	export JAVA_HOME=$PWD/graalvm-ce-java11-22.1.0
+        wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java11-linux-amd64-22.2.0.tar.gz
+	tar -xf graalvm-ce-java11-linux-amd64-22.2.0.tar.gz
+	export JAVA_HOME=$PWD/graalvm-ce-java11-22.2.0
     elif [[ "$platform" == 'darwin' ]]; then
-        wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.1.0/graalvm-ce-java11-darwin-amd64-22.1.0.tar.gz
-        tar -xf graalvm-ce-java11-darwin-amd64-22.1.0.tar.gz
-        export JAVA_HOME=$PWD/graalvm-ce-java11-22.1.0/Contents/Home/
+        wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java11-darwin-amd64-22.2.0.tar.gz
+        tar -xf graalvm-ce-java11-darwin-amd64-22.2.0.tar.gz
+        export JAVA_HOME=$PWD/graalvm-ce-java11-22.2.0/Contents/Home/
     fi
 }
 
 function downloadGraalVMJDK17() {
     platform=$(getPlatform)
     if [[ "$platform" == 'linux' ]]; then
-        wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.1.0/graalvm-ce-java17-linux-amd64-22.1.0.tar.gz
-        tar -xf graalvm-ce-java17-linux-amd64-22.1.0.tar.gz
-        export JAVA_HOME=$PWD/graalvm-ce-java17-22.1.0
+        wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java17-linux-amd64-22.2.0.tar.gz
+        tar -xf graalvm-ce-java17-linux-amd64-22.2.0.tar.gz
+        export JAVA_HOME=$PWD/graalvm-ce-java17-22.2.0
     elif [[ "$platform" == 'darwin' ]]; then
-        wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.1.0/graalvm-ce-java17-darwin-amd64-22.1.0.tar.gz
-        tar -xf graalvm-ce-java17-darwin-amd64-22.1.0.tar.gz
-        export JAVA_HOME=$PWD/graalvm-ce-java17-22.1.0/Contents/Home/
+        wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java17-darwin-amd64-22.2.0.tar.gz
+        tar -xf graalvm-ce-java17-darwin-amd64-22.2.0.tar.gz
+        export JAVA_HOME=$PWD/graalvm-ce-java17-22.2.0/Contents/Home/
     fi
 }
 
@@ -104,9 +104,9 @@ function downloadCorretto17() {
 function downloadMandrel11() {
     platform=$(getPlatform)
     if [[ "$platform" == 'linux' ]]; then
-        wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.1.0/graalvm-ce-java11-linux-amd64-22.1.0.tar.gz
-        tar xf mandrel-java11-linux-amd64-22.1.0.0-Final.tar.gz
-        export JAVA_HOME=$PWD/mandrel-java11-22.1.0.0-Final
+        wget https://github.com/graalvm/mandrel/releases/download/mandrel-22.2.0.0-Final/mandrel-java11-linux-amd64-22.2.0.0-Final.tar.gz
+        tar xf mandrel-java11-linux-amd64-22.2.0.0-Final.tar.gz
+        export JAVA_HOME=$PWD/mandrel-java11-22.2.0.0-Final
     elif [[ "$platform" == 'darwin' ]]; then
         echo "OS Not supported"
         cd ../ && rm -rf $dirname
@@ -117,9 +117,9 @@ function downloadMandrel11() {
 function downloadMandrel17() {
     platform=$(getPlatform)
     if [[ "$platform" == 'linux' ]]; then
-        wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.1.0/graalvm-ce-java17-linux-amd64-22.1.0.tar.gz
-        tar xf mandrel-java17-linux-amd64-22.1.0.0-Final.tar.gz
-        export JAVA_HOME=$PWD/mandrel-java17-22.1.0.0-Final
+        wget https://github.com/graalvm/mandrel/releases/download/mandrel-22.2.0.0-Final/mandrel-java17-linux-amd64-22.2.0.0-Final.tar.gz
+        tar xf mandrel-java17-linux-amd64-22.2.0.0-Final.tar.gz
+        export JAVA_HOME=$PWD/mandrel-java17-22.2.0.0-Final
     elif [[ "$platform" == 'darwin' ]]; then
         echo "OS Not supported"
         cd ../ && rm -rf $dirname
@@ -216,6 +216,19 @@ function downloadCMake() {
         unZipAndSetCmake $platform
     else
         unZipAndSetCmake $platform
+    fi
+}
+
+function downloadMaven() {
+    platform=$(getPlatform)
+    if [[ "$platform" == 'linux' ]]; then
+        wget https://dlcdn.apache.org/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz
+        tar xvzf apache-maven-3.8.6-bin.tar.gz 
+        export MAVENPATH=`pwd`/apache-maven-3.8.6/bin 
+        export PATH=`pwd`/apache-maven-3.8.6/bin:$PATH
+    else 
+        echo "OS platform not supported"
+        exit 0
     fi
 }
 
@@ -416,12 +429,12 @@ function printHelp() {
     echo "JDK (select one):"
     echo "       --jdk11            : Install TornadoVM with OpenJDK 11"
     echo "       --jdk17            : Install TornadoVM with OpenJDK 17"
-    echo "       --graal-jdk-11     : Install TornadoVM with GraalVM and JDK 11 (GraalVM 22.1.0)"
-    echo "       --graal-jdk-17     : Install TornadoVM with GraalVM and JDK 17 (GraalVM 22.1.0)"
+    echo "       --graal-jdk-11     : Install TornadoVM with GraalVM and JDK 11 (GraalVM 22.2.0)"
+    echo "       --graal-jdk-17     : Install TornadoVM with GraalVM and JDK 17 (GraalVM 22.2.0)"
     echo "       --corretto-11      : Install TornadoVM with Corretto JDK 11"
     echo "       --corretto-17      : Install TornadoVM with Corretto JDK 17"
-    echo "       --mandrel-11       : Install TornadoVM with Mandrel 22.1.0 (JDK 11)"
-    echo "       --mandrel-17       : Install TornadoVM with Mandrel 22.1.0 (JDK 17)"
+    echo "       --mandrel-11       : Install TornadoVM with Mandrel 22.2.0 (JDK 11)"
+    echo "       --mandrel-17       : Install TornadoVM with Mandrel 22.2.0 (JDK 17)"
     echo "       --microsoft-jdk-11 : Install TornadoVM with Microsoft JDK 11"
     echo "       --microsoft-jdk-17 : Install TornadoVM with Microsoft JDK 17"
     echo "       --zulu-jdk-11      : Install TornadoVM with Azul Zulu JDK 11"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.examples.compute;
+package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 
 import java.awt.Color;
 import java.awt.Component;
@@ -30,10 +30,11 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
+import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid2D;
 
 /**
  * It applies a Blur filter to an input image. Algorithm taken from CUDA course
@@ -46,7 +47,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  * How to run?
  *
  * <code>
- * $ tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.compute.BlurFilter
+ * $ tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.compute.BlurFilter
  * </code>
  *
  *
@@ -103,25 +104,22 @@ public class BlurFilter {
             }
         }
 
-        private static void compute(int[] channel, int[] channelBlurred, final int numRows, final int numCols, float[] filter, final int filterWidth) {
+        private static void compute(KernelContext context, int[] channel, int[] channelBlurred, final int numRows, final int numCols, float[] filter, final int filterWidth) {
             // For every pixel in the image
             assert (filterWidth % 2 == 1);
-
-            for (@Parallel int r = 0; r < numRows; r++) {
-                for (@Parallel int c = 0; c < numCols; c++) {
-                    float result = 0.0f;
-                    for (int filter_r = -filterWidth / 2; filter_r <= filterWidth / 2; filter_r++) {
-                        for (int filter_c = -filterWidth / 2; filter_c <= filterWidth / 2; filter_c++) {
-                            int image_r = Math.min(Math.max(r + filter_r, 0), (numRows - 1));
-                            int image_c = Math.min(Math.max(c + filter_c, 0), (numCols - 1));
-                            float image_value = (channel[image_r * numCols + image_c]);
-                            float filter_value = filter[(filter_r + filterWidth / 2) * filterWidth + filter_c + filterWidth / 2];
-                            result += image_value * filter_value;
-                        }
-                    }
-                    channelBlurred[r * numCols + c] = result > 255 ? 255 : (int) result;
+            int r = context.globalIdy;
+            int c = context.globalIdx;
+            float result = 0.0f;
+            for (int filter_r = -filterWidth / 2; filter_r <= filterWidth / 2; filter_r++) {
+                for (int filter_c = -filterWidth / 2; filter_c <= filterWidth / 2; filter_c++) {
+                    int image_r = Math.min(Math.max(r + filter_r, 0), (numRows - 1));
+                    int image_c = Math.min(Math.max(c + filter_c, 0), (numCols - 1));
+                    float image_value = (channel[image_r * numCols + image_c]);
+                    float filter_value = filter[(filter_r + filterWidth / 2) * filterWidth + filter_c + filterWidth / 2];
+                    result += image_value * filter_value;
                 }
             }
+            channelBlurred[r * numCols + c] = result > 255 ? 255 : (int) result;
         }
 
         private void parallelCompute() {
@@ -157,16 +155,21 @@ public class BlurFilter {
             }
 
             long start = System.nanoTime();
-            TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
-
+            WorkerGrid workerGrid = new WorkerGrid2D(w, h);
+            GridScheduler gridScheduler = new GridScheduler("blur.red", workerGrid);
+            gridScheduler.setWorkerGrid("blur.green", workerGrid);
+            gridScheduler.setWorkerGrid("blur.blue", workerGrid);
+            KernelContext context = new KernelContext();
             TaskGraph parallelFilter = new TaskGraph("blur") //
-                    .task("red", BlurFilterImage::compute, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
-                    .task("green", BlurFilterImage::compute, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
-                    .task("blue", BlurFilterImage::compute, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
+                    .task("red", BlurFilterImage::compute, context, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
+                    .task("green", BlurFilterImage::compute, context, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
+                    .task("blue", BlurFilterImage::compute, context, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
                     .transferToHost(redFilter, greenFilter, blueFilter) //
                     .useDefaultThreadScheduler(true);
 
-            parallelFilter.execute();
+            workerGrid.setGlobalWork(h, w, 1);
+            workerGrid.setLocalWorkToNull();
+            parallelFilter.execute(gridScheduler);
 
             // now recombine into the output image - Alpha is 255 for no
             // transparency

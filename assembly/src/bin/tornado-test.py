@@ -5,7 +5,7 @@
 # This file is part of Tornado: A heterogeneous programming framework:
 # https://github.com/beehive-lab/tornadovm
 #
-# Copyright (c) 2013-2021, APT Group, Department of Computer Science,
+# Copyright (c) 2013-2022, APT Group, Department of Computer Science,
 # The University of Manchester. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -27,10 +27,10 @@
 import argparse
 import os
 import re
+import shlex
 import subprocess
 import sys
 import time
-
 
 class TestEntry:
     def __init__(self, testName, testMethods=None, testParameters=None):
@@ -171,7 +171,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 ]
 
 # ################################################################################################################
-## Options
+## Default options and flags
 # ################################################################################################################
 __MAIN_TORNADO_TEST_RUNNER_MODULE__ = " tornado.unittests/"
 __MAIN_TORNADO_TEST_RUNNER__        = "uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
@@ -185,12 +185,13 @@ __THREAD_INFO__                     = "-Dtornado.threadInfo=True "
 __PRINT_EXECUTION_TIMER__           = "-Dtornado.debug.executionTime=True "
 __GC__                              = "-Xmx6g "
 __BASE_OPTIONS__                    = "-Dtornado.recover.bailout=False "
+__VERBOSE_OPTION__                  = "-Dtornado.unittests.verbose="
 # ################################################################################################################
 
 TORNADO_CMD = "tornado "
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "0.13_24032022"
+__VERSION__ = "0.14_14092022"
 
 JDK_8_VERSION = "1.8"
 try:
@@ -200,7 +201,6 @@ except:
     sys.exit(-1)
 
 __TEST_NOT_PASSED__ = False
-
 
 class Colors:
     RED = "\033[1;31m"
@@ -217,15 +217,12 @@ def composeAllOptions(args):
         the Tornado VM. New options should be concatenated in this method.
     """
 
-    verbose = "-Dtornado.unittests.verbose="
-    options = verbose
+    options = __GC__ + __BASE_OPTIONS__
 
     if (args.verbose):
-        options = options + "True "
+        options = options + __VERBOSE_OPTION__ + "True "
     else:
-        options = options + "False "
-
-    options = options + __GC__ + __BASE_OPTIONS__
+        options = options + __VERBOSE_OPTION__ + "False "
 
     if (args.dumpIGVLastTier):
         options = options + __IGV_LAST_PHASE__
@@ -260,10 +257,9 @@ def runSingleCommand(cmd, args):
     """
 
     cmd = cmd + " " + args.testClass
-    cmd = cmd.split(" ")
 
     start = time.time()
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
     end = time.time()
     out = out.decode('utf-8')
@@ -319,8 +315,7 @@ def processStats(out, stats):
 
 def runCommandWithStats(command, stats):
     """ Run a command and update the stats dictionary """
-    command = command.split(" ")
-    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
     out = out.decode('utf-8')
     err = err.decode('utf-8')
@@ -329,7 +324,7 @@ def runCommandWithStats(command, stats):
         print(Colors.REVERSE)
         print("[!] RUNNING AGAIN BECAUSE OF A SEG FAULT")
         print(Colors.RESET)
-        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = p.communicate()
         out = out.decode('utf-8')
         err = err.decode('utf-8')
@@ -359,19 +354,19 @@ def runTests(args):
 
     options = composeAllOptions(args)
 
-    cmd = TORNADO_CMD + options
-
     if (args.testClass != None):
+        options = "--jvm \"" + options + "\" "
+        cmd = TORNADO_CMD + options
         command = appendTestRunnerClassToCmd(cmd, args)
+        command = command + " --params \"" + args.testClass + "\""
         if (args.fast):
-            command = command + " " + args.testClass
             print(command)
             os.system(command)
         else:
             runSingleCommand(command, args)
     else:
         start = time.time()
-        stats = runTestTheWorld(cmd, args)
+        stats = runTestTheWorld(options, args)
         end = time.time()
         print(Colors.CYAN)
 
@@ -394,28 +389,32 @@ def runTests(args):
         print(Colors.RESET)
 
 
-def runTestTheWorld(cmd, args):
+def runTestTheWorld(options, args):
     stats = {"[PASS]": 0, "[FAILED]": 0, "[UNSUPPORTED]": 0}
 
     for t in __TEST_THE_WORLD__:
-        command = cmd
+        command = options
         if t.testParameters:
             for testParam in t.testParameters:
                 command += " " + testParam
 
+        command = TORNADO_CMD + " --jvm \"" + command + "\" "
+
         command = appendTestRunnerClassToCmd(command, args)
-        command += " " + t.testName
+        command = command + " --params \"" + t.testName
         if t.testMethods:
             for testMethod in t.testMethods:
-                testMethodCmd = command + "#" + testMethod
+                testMethodCmd = command + "#" + testMethod + "\""
                 if (args.fast):
                     os.system(testMethodCmd)
                 else:
                     print(testMethodCmd)
                     stats = runCommandWithStats(testMethodCmd, stats)
         elif (args.fast):
+            command += "\""
             os.system(command)
         else:
+            command += "\""
             print(command)
             stats = runCommandWithStats(command, stats)
 
@@ -427,7 +426,7 @@ def runWithJUnit(args):
 
     if (args.testClass != None):
         command = appendTestRunnerClassToCmd(TORNADO_CMD, args)
-        command = command + args.testClass
+        command = command + " --params \"" + args.testClass + "\""
         os.system(command)
     else:
         runTestTheWorldWithJunit(args)
@@ -440,12 +439,13 @@ def runTestTheWorldWithJunit(args):
             for testParam in t.testParameters:
                 command += " " + testParam
 
+        command = " --jvm \"" + command + "\" "
+
         command = appendTestRunnerClassToCmd(command, args)
-        command += " " + t.testName
+        command += " --params \"" + t.testName + "\""
         if t.testMethods:
             for testMethod in t.testMethods:
-                print(
-                    "Unable to run specific test methods with the default JUnit runner: " + t.testName + "#" + testMethod)
+                print("Unable to run specific test methods with the default JUnit runner: " + t.testName + "#" + testMethod)
         else:
             os.system(command)
 

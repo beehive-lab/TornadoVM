@@ -18,9 +18,9 @@ confirmed [here](https://support.apple.com/en-gb/HT202823).
 TornadoVM is based on the Graal compiler that depends on JVMCI (Java Virtual Machine Compiler Interface). Different JDKs come with different versions of JVMCI. Therefore, the version of the Graal compiler that TornadoVM uses might not be compatible with the JVMCI version of some JDKs. Below are listed the Java 11+ JDK distributions against which TornadoVM has been tested, but compatibility is not guaranteed.
 
   ```bash
-  Red Hat Mandrel 11.0.12 (Mandrel 22.1.0.0 Final)
+  Red Hat Mandrel 11.0.12 (Mandrel 22.2.0.0 Final)
   Amazon Corretto >= 11.0.12.7
-  GraalVM LabsJDK 11.0.13+7 (GraalVM 22.1.0)
+  GraalVM LabsJDK 11.0.13+7 (GraalVM 22.2.0)
   OpenJDK 11.0.13+7
   OpenJDK 17.0.1
   Microsoft Build of OpenJDK (OpenJDK 11.0.13+8)
@@ -145,19 +145,19 @@ TornadoVM uses modules:
 To run examples:
 
 ```bash
-$ tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D 512
+$ tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D --params "512"
 ```
 
 To run benchmarks:
 
 ```bash
-$ tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner dft
+$ tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner --params "dft"
 ```
 
 To run individual tests:
 
 ```bash
-tornado -Dtornado.unittests.verbose=True -Xmx6g  -m  tornado.unittests/uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner uk.ac.manchester.tornado.unittests.arrays.TestArrays
+tornado --jvm "-Dtornado.unittests.verbose=True -Xmx6g"  -m  tornado.unittests/uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner --params "uk.ac.manchester.tornado.unittests.arrays.TestArrays"
 ```
 
 

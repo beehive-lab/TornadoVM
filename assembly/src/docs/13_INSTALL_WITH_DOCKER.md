@@ -1,6 +1,6 @@
 # Using Docker with TornadoVM
 
-_We have tested our docker images for CentOS >= 7.4 and Ubuntu >= 16.04._ We currently have docker images for NVIDIA GPUs, and Intel Integrated GPUs, Intel CPUs and Intel FPGAs using OpenJDK 11, 17 and GraalVM 22.1.0:
+_We have tested our docker images for CentOS >= 7.4 and Ubuntu >= 16.04._ We currently have docker images for NVIDIA GPUs, and Intel Integrated GPUs, Intel CPUs and Intel FPGAs using OpenJDK 11, 17 and GraalVM 22.2.0:
 
 * TornadoVM docker images for **NVIDIA GPUs**
 * TornadoVM docker images for **Intel Integrated Graphics, Intel FPGAs, and Intel CPUs**
@@ -59,7 +59,7 @@ $ ./run_nvidia.sh tornado --debug example/MatrixMultiplication
 The `tornado` command is just an alias to the `java` command with all the parameters for TornadoVM execution. So you can pass any Java (OpenJDK or Hotspot) parameter.
 
 ```bash
-$ ./run_nvidia.sh tornado -Xmx16g -Xms16g example/MatrixMultiplication
+$ ./run_nvidia.sh tornado --jvm="-Xmx16g -Xms16g" example/MatrixMultiplication
 ```
 
 ## Intel Integrated Graphics
@@ -88,7 +88,7 @@ $ git clone https://github.com/beehive-lab/docker-tornado
 $ cd docker-tornado
 
 ## Run Matrix Multiplication - provided in the docker-tornado repository
-$ ./run_intel_openjdk.sh tornado -cp example/target/example-1.0-SNAPSHOT.jar example.MatrixMultiplication 256
+$ ./run_intel_openjdk.sh tornado -cp example/target/example-1.0-SNAPSHOT.jar example.MatrixMultiplication --parms="256"
 
 Computing MxM of 256x256
 	CPU Execution: 1.53 GFlops, Total time = 22 ms

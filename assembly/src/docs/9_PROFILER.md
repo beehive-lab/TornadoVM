@@ -8,7 +8,7 @@ To enable the TornadoVM profiler use `--enableProfiler <silent|console>`.
 Example:
 
 ```bash
-$ tornado --enableProfiler console  -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt 100000
+$ tornado --enableProfiler console  -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt --params="100000"
 {
     "s0": {
         "TOTAL_BYTE_CODE_GENERATION": "10465146",
@@ -184,7 +184,7 @@ To enable TornadoVM's code feature extraction, use the following flag: `-Dtornad
 Example:
 
 ```bash
-$ tornado -Dtornado.feature.extraction=True -m tornado.examples/uk.ac.manchester.tornado.examples.compute.NBody 1024 1
+$ tornado --jvm="-Dtornado.feature.extraction=True" -m tornado.examples/uk.ac.manchester.tornado.examples.compute.NBody --params "1024 1"
 {
     "nBody": {
         "BACKEND" : "PTX",
@@ -224,7 +224,7 @@ Use the option `-Dtornado.feature.extraction=True` `-Dtornado.features.dump.dir=
 TornadoVM allows redirecting profiling and feature extraction logs to a specific port. This feature can be enabled with the option `-Dtornado.dump.to.ip=IP:PORT`.  
 The following example redirects the profiler output to the localhost (127.0.0.1) and to a specified open port (2000):
 ```bash
-$ tornado -Dtornado.profiler=True  -Dtornado.dump.to.ip=127.0.0.1:2000 -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt 100000
+$ tornado --jvm="-Dtornado.profiler=True  -Dtornado.dump.to.ip=127.0.0.1:2000" -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt --params "100000"
 ```
 To test that the socket streams the logs correctly, open a local server in a different terminal with the following command:
 ```bash

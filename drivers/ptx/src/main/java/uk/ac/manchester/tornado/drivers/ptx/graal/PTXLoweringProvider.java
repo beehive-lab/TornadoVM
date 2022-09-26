@@ -92,7 +92,6 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.LocalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.LoadIndexedVectorNode;
-import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoFloatingReadReplacement;
 import uk.ac.manchester.tornado.drivers.ptx.graal.snippets.PTXGPUReduceSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
@@ -110,8 +109,6 @@ import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
  * TornadoVM Mid-IR).
  */
 public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
-
-    private static final TornadoFloatingReadReplacement snippetReadReplacementPhase = new TornadoFloatingReadReplacement(true, true);
 
     private static final boolean USE_ATOMICS = false;
     private static boolean gpuSnippet = false;
@@ -207,6 +204,11 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
     @Override
     public boolean writesStronglyOrdered() {
         unimplemented();
+        return false;
+    }
+
+    @Override
+    public boolean divisionOverflowIsJVMSCompliant() {
         return false;
     }
 
@@ -350,10 +352,6 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
             }
         }
         gpuReduceSnippets.lower(storeIndexed, threadID, tool);
-
-        // We append this phase to move floating reads close to their actual usage and
-        // set the FixedAccessNode::lastLocationAccess
-        snippetReadReplacementPhase.apply(graph);
     }
 
     private void lowerAtomicStoreIndexedNode(StoreAtomicIndexedNode storeIndexed) {

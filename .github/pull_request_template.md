@@ -15,19 +15,19 @@ They are listed in a white-list in the `tornado-test.py` script.
 $ make tests
 ```
 
-TornadoVM currently supports two backends. When possible, please check that the new changes do not break any backend.
+TornadoVM currently supports three backends. When possible, please check that the new changes do not break any backend.
 
 ```bash
 ## Pass Unittests using the OpenCL backend
-$ make
+$ make BACKEND=opencl
 $ make tests
 
-## If applicable to your PR, 
+## If the changes are also applicable to the PTX backend: 
 ## Pass unittests using the PTX backend
 $ make BACKEND=ptx
 $ make tests 
 
-## If applicable to your PR, 
+## If the changes are also applicable to the SPIR-V backend: 
 ## Pass unittests using the SPIRV backend
 $ make BACKEND=spirv
 $ make tests 

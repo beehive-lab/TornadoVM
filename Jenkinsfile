@@ -11,12 +11,12 @@ pipeline {
     }
 
     environment {
-        ZULU_11_JAVA_HOME="/opt/jenkins/jdks/zulu11.56.19-ca-jdk11.0.15-linux_x64"
-        ZULU_17_JAVA_HOME="/opt/jenkins/jdks/zulu17.34.19-ca-jdk17.0.3-linux_x64"
-        CORRETTO_11_JAVA_HOME="/opt/jenkins/jdks/amazon-corretto-11.0.15.9.1-linux-x64"
-        JDK_17_JAVA_HOME="/opt/jenkins/jdks/jdk-17.0.1"
-        GRAALVM_11_JAVA_HOME="/opt/jenkins/jdks/graalvm-ce-java11-22.1.0"
-        GRAALVM_17_JAVA_HOME="/opt/jenkins/jdks/graalvm-ce-java17-22.1.0"
+        ZULU_11_JAVA_HOME="/opt/jenkins/jdks/graal-22.2.0/zulu11.56.19-ca-jdk11.0.15-linux_x64"
+        ZULU_17_JAVA_HOME="/opt/jenkins/jdks/graal-22.2.0/zulu17.34.19-ca-jdk17.0.3-linux_x64"
+        CORRETTO_11_JAVA_HOME="/opt/jenkins/jdks/graal-22.2.0/amazon-corretto-11.0.15.9.1-linux-x64"
+        JDK_17_JAVA_HOME="/opt/jenkins/jdks/graal-22.2.0/jdk-17.0.1"
+        GRAALVM_11_JAVA_HOME="/opt/jenkins/jdks/graal-22.2.0/graalvm-ce-java11-22.2.0"
+        GRAALVM_17_JAVA_HOME="/opt/jenkins/jdks/graal-22.2.0/graalvm-ce-java17-22.2.0"
         TORNADO_ROOT="/var/lib/jenkins/workspace/Tornado-pipeline"
         PATH="/var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor/bin:/var/lib/jenkins/workspace/Tornado-pipeline/bin/bin:$PATH"    
         TORNADO_SDK="/var/lib/jenkins/workspace/Tornado-pipeline/bin/sdk" 
@@ -183,14 +183,15 @@ void buildAndTest(String JDK, String tornadoProfile) {
         sleep 5
         timeout(time: 5, unit: 'MINUTES') {
             sh "cd ${KFUSION_ROOT} && sed -i 's/kfusion.tornado.backend=PTX/kfusion.tornado.backend=OpenCL/' conf/kfusion.settings"
-            sh 'cd ${KFUSION_ROOT} && kfusion kfusion.tornado.Benchmark ${KFUSION_ROOT}/conf/traj2.settings'
+            sh 'cd ${KFUSION_ROOT} && ./scripts/run.sh'
+
         }
     }
     stage('PTX: Run KFusion') {
         sleep 5
         timeout(time: 5, unit: 'MINUTES') {
             sh "cd ${KFUSION_ROOT} && sed -i 's/kfusion.tornado.backend=OpenCL/kfusion.tornado.backend=PTX/' conf/kfusion.settings"
-            sh 'cd ${KFUSION_ROOT} && kfusion kfusion.tornado.Benchmark ${KFUSION_ROOT}/conf/traj2.settings'
+            sh 'cd ${KFUSION_ROOT} && ./scripts/run.sh'
         }
     }
 }
