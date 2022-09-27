@@ -2,33 +2,28 @@
 
 SPIR-V makes use of the [Intel Level Zero API](https://spec.oneapi.io/level-zero/latest/index.html).
 
-Disclaimer: The SPIR-V backend with Intel Level-Zero dispatcher is a new project within TornadoVM. Currently, we offer a
-preview and an initial implementation.
+Disclaimer: The SPIR-V backend with the Intel Level-Zero dispatcher is a new project within TornadoVM. Currently, we offer a preview and an initial implementation.
 
 ## 1. Install Intel oneAPI Level Zero Compute Runtime
 
-In order to use Intel Level Zero from oneAPI, you need to install the driver for the Intel HD Graphics.
+In order to use Intel Level Zero from oneAPI, you need to install the Intel driver for the Intel HD Graphics.
 
-All drivers are available
-here: [https://github.com/intel/compute-runtime/releases](https://github.com/intel/compute-runtime/releases)
-
-
-###### Level Zero in Linux distributions 
-
-https://github.com/intel/compute-runtime/blob/master/level_zero/doc/DISTRIBUTIONS.md
+All drivers are available here: [https://github.com/intel/compute-runtime/releases](https://github.com/intel/compute-runtime/releases).
 
 
 ## 2. Install TornadoVM
 
-Then setup TornadoVM as usual. Please, visit [1_INSTALL](1_INSTALL.md) for more details.
+Install TornadoVM following the instructions in [1_INSTALL](1_INSTALL.md).
 
 To build the SPIR-V Backend, enable the backend as follows:
 
-```
-$ make BACKENDS=spirv
+```bash
+$ cd <tornadovm-directory>
+$ ./scripts/tornadoVMInstaller.sh --jdk17 --spirv
+$ . source.sh
 ```
 
-## 3. Run examples with the SPIR-V Backend and inspect the assembly code
+## 3. Run examples with the SPIR-V backend, and inspect the assembly code
 
 #### Running DFT from the unit-test suite
 
@@ -50,10 +45,9 @@ Test: class uk.ac.manchester.tornado.unittests.compute.ComputeTests#testDFT
 	Running test: testDFT                    ................  [PASS] 
 ```
 
-The SPIR-V Binary was stored in `/tmp/tornadoVM-spirv/8442884346950-s0.t0computeDFT.spv`. We can dissasemble the binary
-with `spirv-dis` [from Khronos](https://github.com/KhronosGroup/SPIRV-Tools)
+The SPIR-V Binary is stored in `/tmp/tornadoVM-spirv/8442884346950-s0.t0computeDFT.spv`. We can disassemble the binary with `spirv-dis` [from Khronos](https://github.com/KhronosGroup/SPIRV-Tools)
 
-Note: Usually, `spirv-dis` can be installed from the common OS repositories:
+Note: Usually, `spirv-dis` can be installed from the common OS repositories (e.g., Fedora, Ubuntu repositories):
 
 ```bash
 ## Fedora OS
