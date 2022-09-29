@@ -9,7 +9,7 @@ then
 	exit 0
 fi
 
-VERSION=0.14
+VERSION=0.14.1
 GROUPID="tornado"
 API_PATH=$TORNADO_SDK/share/java/tornado
 

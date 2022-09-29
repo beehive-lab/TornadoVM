@@ -3,7 +3,7 @@
   <groupId>tornado</groupId>
   <artifactId>tornado-benchmarks</artifactId>
   <versioning>
-    <release>0.14</release>
+    <release>0.14.1</release>
     <versions>
       <version>0.2</version>
       <version>0.3</version>
@@ -18,7 +18,8 @@
       <version>0.12</version>
       <version>0.13</version>
       <version>0.14</version>
+      <version>0.14.1</version>
     </versions>
-    <lastUpdated>20220615093748</lastUpdated>
+    <lastUpdated>20220929084049</lastUpdated>
   </versioning>
 </metadata>
