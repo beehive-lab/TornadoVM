@@ -4,6 +4,29 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 ---
 
+## TornadoVM 0.14.1
+
+29/09/2022
+
+## Improvements 
+- The tornado command is replaced from a Bash to a Python script.
+    - Use `tornado --help` to check the new options and examples. 
+- Support of native tests for the SPIR-V backend.
+- Improvement of the OpenCL and PTX tests of the internal APIs.  
+ 
+## Compatibility/Integration 
+- Integration and compatibility with the Graal 22.2.0 JIT Compiler.
+- Compatibility with JDK 18 and JDK 19. 
+- Compatibility with Apple M1 Pro using the OpenCL backend.
+
+## Bug Fixes
+- CUDA PTX generated header fixed to target NVIDIA 30xx GPUs and CUDA 11.7.
+- The signature of generated PTX kernels fixed for NVIDIA driver >= 510 and 30XX GPUs when using the TornadoVM Kernel API.  
+- Tests of virtual OpenCL devices fixed. 
+- Thread deployment information for the OpenCL backend is fixed.
+- `TornadoVMRuntimeCI` moved to `TornadoVMRutimeInterface`.
+
+
 ## TornadoVM 0.14
 
 15/06/2022
