@@ -1,5 +1,19 @@
 # Installing TornadoVM
 
+**Pre-requisites**
+
+  * Maven Version >= 3.6.3
+  * CMake 3.6 (or newer)
+  * At least one of:
+    * OpenCL: GPUs and CPUs >= 2.1, FPGAs >= 1.0
+    * CUDA 9.0 +
+    * Level Zero >= 1.2
+  * GCC or clang/LLVM (GCC >= 9.0)
+  * Python (>= 3.0)
+
+  For Mac OS X users: the OpenCL support for your Apple model can be confirmed [here](https://support.apple.com/en-gb/HT202823).
+
+
 **Supported Platforms**
 
 The following table includes the platforms that TornadoVM can be executed.
