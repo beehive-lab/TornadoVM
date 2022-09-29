@@ -35,7 +35,7 @@ clean:
 	mvn -Popencl-backend,ptx-backend clean
 
 example:
-	tornado --printKernel --debug uk.ac.manchester.tornado.examples.VectorAddInt 8192
+	tornado --printKernel --debug -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt --params="8192"
 
 tests:
 	tornado --devices
