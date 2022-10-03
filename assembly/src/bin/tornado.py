@@ -305,9 +305,10 @@ class TornadoVMRunnerTool():
             params = args.application_parameters
         else:
             params = self.buildOptionalParameters(args)
+            if (args.module_application):
+                params = args.application + " " + params    
 
         if (args.module_application != None):
-            params = args.application + " " + params
             command = javaFlags + " -m " + str(args.module_application) + " " + params
         elif (args.jar_file != None):
             params = args.application + " " + params
