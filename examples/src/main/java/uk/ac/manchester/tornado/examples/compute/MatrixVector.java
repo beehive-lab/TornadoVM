@@ -33,11 +33,15 @@ import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
  * How to run?
  *
  * <code>
- *     $ # with level-zero and SPIR-V
+ *     $ # To run with level-zero and SPIR-V
  *     $ tornado --jvm="-Dla.mv.device=0:0 -Dtornado.device.memory=24GB" -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixVector
  * </code>
  *
- * How to run with the TornadoVM profiler?
+ * If this example is executed on a discrete GPU, then we need to decrease the
+ * data size (maximum allocation size is usually 1/4 of total GPU memory's
+ * capacity. How to run with the TornadoVM profiler?
+ *
+ * Run with the profiler:
  *
  * <code>
  *     $ tornado --enableProfiler console -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixVector
