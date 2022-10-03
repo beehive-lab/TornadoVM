@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceType;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeMemoryProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class SPIRVLevelZeroDevice extends SPIRVDevice {
 
@@ -192,6 +193,9 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
 
     @Override
     public long getDeviceMaxAllocationSize() {
+        if (TornadoOptions.LEVEL_ZERO_EXTENDED_MEMORY_MODE) {
+            return totalMemorySize;
+        }
         return deviceProperties.getMaxMemAllocSize();
     }
 
