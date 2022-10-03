@@ -198,6 +198,41 @@ class TornadoVMRunnerTool():
         return tornadoFlags
 
 
+    def buildOptionalParameters(self, args):
+        params = ""
+        if (args.param1 != None):
+            params += args.param1 + " "
+        if (args.param2 != None):
+            params += args.param2 + " "
+        if (args.param3 != None):
+            params += args.param3 + " "
+        if (args.param4 != None):
+            params += args.param4 + " "
+        if (args.param5 != None):
+            params += args.param5 + " "
+        if (args.param6 != None):
+            params += args.param6 + " "
+        if (args.param7 != None):
+            params += args.param7 + " "
+        if (args.param8 != None):
+            params += args.param8 + " "
+        if (args.param9 != None):
+            params += args.param9 + " "
+        if (args.param10 != None):
+            params += args.param10 + " "
+        if (args.param11 != None):
+            params += args.param11 + " "
+        if (args.param12 != None):
+            params += args.param12 + " "
+        if (args.param13 != None):
+            params += args.param13 + " "
+        if (args.param14 != None):
+            params += args.param14 + " "
+        if (args.param15 != None):
+            params += args.param15 + " "
+        return params
+
+
     def buildJavaCommand(self, args):
         tornadoFlags = self.buildTornadoVMOptions(args)
         tornadoAddModules = __TORNADOVM_ADD_MODULES__
@@ -268,10 +303,14 @@ class TornadoVMRunnerTool():
         params = ""
         if (args.application_parameters != None):
             params = args.application_parameters
+        else:
+            params = self.buildOptionalParameters(args)
 
         if (args.module_application != None):
+            params = args.application + " " + params
             command = javaFlags + " -m " + str(args.module_application) + " " + params
         elif (args.jar_file != None):
+            params = args.application + " " + params
             command = javaFlags + " -jar " + str(args.jar_file) + " " + params
         else:       
             command = javaFlags + " " + str(args.application) + " " + params
@@ -302,6 +341,21 @@ def parseArguments():
     parser.add_argument('-jar', action="store", dest="jar_file", default=None, help="Main Java application in a JAR File")
     parser.add_argument('--params', action="store", dest="application_parameters", default=None, help="Command-line parameters for the host-application. Example: --params=\"param1 param2...\"")
     parser.add_argument("application", nargs="?")
+    parser.add_argument("param1", nargs="?")
+    parser.add_argument("param2", nargs="?")
+    parser.add_argument("param3", nargs="?")
+    parser.add_argument("param4", nargs="?")
+    parser.add_argument("param5", nargs="?")
+    parser.add_argument("param6", nargs="?")
+    parser.add_argument("param7", nargs="?")
+    parser.add_argument("param8", nargs="?")
+    parser.add_argument("param9", nargs="?")
+    parser.add_argument("param10", nargs="?")
+    parser.add_argument("param11", nargs="?")
+    parser.add_argument("param12", nargs="?")
+    parser.add_argument("param13", nargs="?")
+    parser.add_argument("param14", nargs="?")
+    parser.add_argument("param15", nargs="?")
     args = parser.parse_args()
     return args
 
