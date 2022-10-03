@@ -305,7 +305,7 @@ class TornadoVMRunnerTool():
             params = args.application_parameters
         else:
             params = self.buildOptionalParameters(args)
-            if (args.module_application):
+            if (args.module_application and args.application != None):
                 params = args.application + " " + params    
 
         if (args.module_application != None):
