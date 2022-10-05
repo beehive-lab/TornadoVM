@@ -53,8 +53,6 @@ public class MatrixVector {
     public static final int WARM_UP_ITERATIONS = 100;
     public static final int MAX_ITERATIONS = 100;
 
-    public static int SIZE = 8192 * 4;
-
     private static void computeMatrixVector(Matrix2DFloat matrix, VectorFloat vector, VectorFloat output) {
         for (@Parallel int i = 0; i < vector.size(); i++) {
             float sum = 0.0f;
@@ -67,25 +65,36 @@ public class MatrixVector {
 
     public static void main(String[] args) {
 
+        int size = 8192;
+        if (args.length >= 1) {
+            try {
+                size = Integer.parseInt(args[0]);
+            } catch (NumberFormatException numberFormatException) {
+                size = 8192;
+            }
+        }
+
         // Create a matrix of M rows and N columns (MxN)
-        Matrix2DFloat matrix2DFloat = new Matrix2DFloat(SIZE, SIZE);
+        Matrix2DFloat matrix2DFloat = new Matrix2DFloat(size, size);
 
         // Vector must be of size N
-        VectorFloat vectorFloat = new VectorFloat(SIZE);
+        VectorFloat vectorFloat = new VectorFloat(size);
 
         // Output
-        VectorFloat result = new VectorFloat(SIZE);
+        VectorFloat result = new VectorFloat(size);
 
-        VectorFloat resultSeq = new VectorFloat(SIZE);
+        VectorFloat resultSeq = new VectorFloat(size);
 
         Random r = new Random();
 
         ArrayList<Long> seqTimers = new ArrayList<>();
         ArrayList<Long> tornadoTimers = new ArrayList<>();
 
+        final int s = size;
+
         // Init Data
-        IntStream.range(0, SIZE).forEach(idx -> vectorFloat.set(idx, r.nextFloat()));
-        IntStream.range(0, SIZE).forEach(idx -> IntStream.range(0, SIZE).forEach(jdx -> {
+        IntStream.range(0, size).forEach(idx -> vectorFloat.set(idx, r.nextFloat()));
+        IntStream.range(0, size).forEach(idx -> IntStream.range(0, s).forEach(jdx -> {
             matrix2DFloat.set(idx, jdx, r.nextFloat());
         }));
 
@@ -128,6 +137,5 @@ public class MatrixVector {
         System.out.println("SEQ    : " + statsSeq.getAverage());
         System.out.println("Tornado: " + statsTornado.getAverage());
         System.out.println("SPEEDUP: " + (statsSeq.getAverage() / statsTornado.getAverage()));
-
     }
 }

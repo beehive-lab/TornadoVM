@@ -41,6 +41,8 @@ import uk.ac.manchester.tornado.api.collections.types.Byte3;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -711,6 +713,53 @@ public class ComputeTests extends TornadoTestBase {
             assertEquals(hueSeq[i], hue[i], delta);
             assertEquals(brightnessSeq[i], brightness[i], delta);
         }
+    }
 
+    private static void computeMatrixVector(Matrix2DFloat matrix, VectorFloat vector, VectorFloat output) {
+        for (@Parallel int i = 0; i < vector.size(); i++) {
+            float sum = 0.0f;
+            for (int j = 0; j < matrix.N(); j++) {
+                sum += vector.get(i) * matrix.get(i, i);
+            }
+            output.set(i, sum);
+        }
+    }
+
+    @Test
+    public void matrixVector() {
+        int size = 4096;
+
+        // Create a matrix of M rows and N columns (MxN)
+        Matrix2DFloat matrix2DFloat = new Matrix2DFloat(size, size);
+
+        // Vector must be of size N
+        VectorFloat vectorFloat = new VectorFloat(size);
+
+        // Output
+        VectorFloat result = new VectorFloat(size);
+
+        VectorFloat resultSeq = new VectorFloat(size);
+
+        Random r = new Random();
+
+        final int s = size;
+
+        // Init Data
+        IntStream.range(0, size).forEach(idx -> vectorFloat.set(idx, r.nextFloat()));
+        IntStream.range(0, size).forEach(idx -> IntStream.range(0, s).forEach(jdx -> {
+            matrix2DFloat.set(idx, jdx, r.nextFloat());
+        }));
+
+        TaskSchedule ts = new TaskSchedule("la") //
+                .streamIn(matrix2DFloat, vectorFloat) //
+                .lockObjectsInMemory(matrix2DFloat, vectorFloat, result) //
+                .task("mv", ComputeTests::computeMatrixVector, matrix2DFloat, vectorFloat, result) //
+                .streamOut(result);
+        ts.execute();
+
+        computeMatrixVector(matrix2DFloat, vectorFloat, resultSeq);
+        for (int i = 0; i < vectorFloat.size(); i++) {
+            assertEquals(resultSeq.get(i), resultSeq.get(i), 0.1);
+        }
     }
 }
