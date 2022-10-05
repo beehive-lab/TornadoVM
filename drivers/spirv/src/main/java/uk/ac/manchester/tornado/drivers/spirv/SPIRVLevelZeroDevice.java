@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDeviceType;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeDriverHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeMemoryProperties;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class SPIRVLevelZeroDevice extends SPIRVDevice {
 
@@ -192,6 +193,9 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
 
     @Override
     public long getDeviceMaxAllocationSize() {
+        if (TornadoOptions.LEVEL_ZERO_EXTENDED_MEMORY_MODE) {
+            return totalMemorySize;
+        }
         return deviceProperties.getMaxMemAllocSize();
     }
 

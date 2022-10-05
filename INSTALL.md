@@ -1,5 +1,19 @@
 # Installing TornadoVM
 
+**Pre-requisites**
+
+  * Maven Version >= 3.6.3
+  * CMake 3.6 (or newer)
+  * At least one of:
+    * OpenCL: GPUs and CPUs >= 2.1, FPGAs >= 1.0
+    * CUDA 9.0 +
+    * Level Zero >= 1.2
+  * GCC or clang/LLVM (GCC >= 9.0)
+  * Python (>= 3.0)
+
+  For Mac OS X users: the OpenCL support for your Apple model can be confirmed [here](https://support.apple.com/en-gb/HT202823).
+
+
 **Supported Platforms**
 
 The following table includes the platforms that TornadoVM can be executed.
@@ -20,7 +34,7 @@ Note: The SPIR-V backend is only supported for Linux OS. Besides, the SPIR-V bac
 
 TornadoVM can be built with three compiler backends and is able to generate OpenCL, PTX and SPIR-V code. 
 
-**Important [SPIR-V Backend Configuration]** Prior to the built with the SPIR-V backend, users have to ensure that Level Zero is installed in their system. Please follow the guidelines [here](assembly/src/docs/22_SPIRV_BACKEND_INSTALL.md).
+**Important [SPIR-V Backend Configuration]** Prior to the built with the SPIR-V backend, users have to ensure that Level Zero is installed in their system. Please follow the guidelines [here](assembly/src/docs/11_SPIRV_BACKEND_INSTALL.md).
 
 There are two ways to install TornadoVM: 
 
@@ -355,13 +369,13 @@ To use the TornadoVM API in your projects, you can checkout our maven repository
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>0.14</version>
+         <version>0.14.1</version>
       </dependency>
 
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-matrices</artifactId>
-         <version>0.14</version>
+         <version>0.14.1</version>
       </dependency>
    </dependencies>
 ```
@@ -370,6 +384,7 @@ Notice that, for running with TornadoVM, you will need either the docker images 
 
 #### Versions available
 
+* 0.14.1
 * 0.14
 * 0.13
 * 0.12

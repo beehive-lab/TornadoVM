@@ -271,7 +271,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
     private void propagateParameters(StructuredGraph graph, ParameterNode parameterNode, Object[] args) {
         if (args[parameterNode.index()] != null && RuntimeUtilities.isBoxedPrimitiveClass(args[parameterNode.index()].getClass())) {
-            /**
+            /*
              * This condition covers the case that loop bounds should be taken based on the
              * grid size given by {@link GridScheduler}. This allows the loop bounds to be
              * dynamically configured, without requiring recompilation.
