@@ -84,12 +84,10 @@ public class TestHello extends TornadoTestBase {
         Arrays.fill(a, 1);
         Arrays.fill(b, 2);
 
-        // @formatter:off
-		new TaskGraph("s0")
-		    .task("t0", TestHello::add, a, b, c)
-		    .transferToHost(c)
-		    .execute();
-		// @formatter:on
+        new TaskGraph("s0") //
+                .task("t0", TestHello::add, a, b, c) //
+                .transferToHost(c) //
+                .execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);
@@ -134,13 +132,11 @@ public class TestHello extends TornadoTestBase {
 
         TestHello t = new TestHello();
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a)
-            .task("t0", t::compute, a, b)
-            .transferToHost(b)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
+                .task("t0", t::compute, a, b) //
+                .transferToHost(b) //
+                .execute();
 
         for (int i = 0; i < b.length; i++) {
             assertEquals(a[i] * 2, b[i]);
@@ -154,15 +150,13 @@ public class TestHello extends TornadoTestBase {
 
         Arrays.fill(a, 10);
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .task("t0", TestHello::compute, a)
-            .transferToHost(a)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .task("t0", TestHello::compute, a) //
+                .transferToHost(a) //
+                .execute();
 
-        for (int i = 0; i < a.length; i++) {
-            assertEquals(20, a[i]);
+        for (int j : a) {
+            assertEquals(20, j);
         }
     }
 

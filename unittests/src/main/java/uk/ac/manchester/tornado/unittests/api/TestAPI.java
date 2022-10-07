@@ -26,9 +26,17 @@ import java.util.stream.IntStream;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.arrays.TestArrays;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * How to run?
+ *
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.api.TestAPI
+ * </code>
+ */
 public class TestAPI extends TornadoTestBase {
 
     @Test
@@ -46,9 +54,11 @@ public class TestAPI extends TornadoTestBase {
 
         taskGraph.lockObjectInMemory(data);
 
-        taskGraph.task("t0", TestArrays::addAccumulator, data, 1).execute();
-        taskGraph.syncObject(data);
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestArrays::addAccumulator, data, 1) //
+                .execute(); //
 
+        taskGraph.syncObject(data);
         taskGraph.unlockObjectFromMemory(data);
 
         for (int i = 0; i < N; i++) {
@@ -72,10 +82,11 @@ public class TestAPI extends TornadoTestBase {
 
         tg.lockObjectInMemory(data);
 
+        tg.transferToDevice(DataTransferMode.FIRST_EXECUTION, data);
         tg.task("t0", TestArrays::addAccumulator, data, 1);
         tg.execute();
-        tg.syncObjects(data);
 
+        tg.syncObjects(data);
         tg.unlockObjectFromMemory(data);
 
         for (int i = 0; i < N; i++) {
@@ -99,11 +110,13 @@ public class TestAPI extends TornadoTestBase {
 
         taskGraph.lockObjectInMemory(data);
 
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data);
         taskGraph.task("t0", TestArrays::addAccumulator, data, 1);
         taskGraph.transferToHost(data);
-        taskGraph.warmup();
-        taskGraph.execute();
 
+        taskGraph.warmup();
+
+        taskGraph.execute();
         taskGraph.unlockObjectFromMemory(data);
 
         for (int i = 0; i < N; i++) {

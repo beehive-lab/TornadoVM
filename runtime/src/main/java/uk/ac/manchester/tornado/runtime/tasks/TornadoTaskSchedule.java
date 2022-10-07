@@ -795,7 +795,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 // Add to COPY-ONLY list
                 executionContext.getObjectState(object).setStreamIn(false);
             }
-            System.out.println("Inserting param: " + object);
             argumentsLookUp.add(object);
         }
     }
@@ -1045,7 +1044,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             // Note: the first parameter is a lambda expression
             for (int i = 1; i < (taskParameters.length - 1); i++) {
                 Object parameter = taskParameters[i];
-                System.out.println("Searching param: " + parameter);
                 if (!argumentsLookUp.contains(parameter)) {
                     throw new TornadoTaskRuntimeException("Parameter: " + parameterNumber + " from task: " + task.getId() + " not specified neither in transferToDevice nor transferToHost functions");
                 }
