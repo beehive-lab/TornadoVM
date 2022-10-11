@@ -36,6 +36,7 @@ import uk.ac.manchester.tornado.api.collections.types.VectorFloat2;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat8;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -239,6 +240,7 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::dotMethodFloat2, a, b, output)
                 .transferToHost(output)
                 .execute();
@@ -255,6 +257,7 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::dotMethodFloat3, a, b, output)
                 .transferToHost(output)
                 .execute();
@@ -271,6 +274,7 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::dotMethodFloat4, a, b, output)
                 .transferToHost(output)
                 .execute();
@@ -287,6 +291,7 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::dotMethodFloat6, a, b, output)
                 .transferToHost(output)
                 .execute();
@@ -303,6 +308,7 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::dotMethodFloat8, a, b, output)
                 .transferToHost(output)
                 .execute();
@@ -320,6 +326,7 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::testFloat3Add, a, b, output)
                 .transferToHost(output)
                 .execute();
@@ -347,6 +354,7 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::addFloat, a, b, output)
                 .transferToHost(output)
                 .execute();
@@ -372,6 +380,7 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::addFloat2, a, b, output)
                 .transferToHost(output)
                 .execute();
@@ -399,6 +408,7 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::addVectorFloat2, a, b, output)
                 .transferToHost(output)
                 .execute();
@@ -426,6 +436,7 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::addVectorFloat3, a, b, output)
                 .transferToHost(output)
                 .execute();
@@ -453,6 +464,7 @@ public class TestFloats extends TornadoTestBase {
         }
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::addVectorFloat3, a, b, output)//
                 .transferToHost(output)//
                 .execute();
@@ -474,6 +486,7 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::addVectorFloat4, a, b, output)
                 .transferToHost(output)
                 .execute();
@@ -503,6 +516,7 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::addVectorFloat8, a, b, output)
                 .transferToHost(output)
                 .execute();
@@ -534,6 +548,7 @@ public class TestFloats extends TornadoTestBase {
 
         //@formatter:off
         new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestFloats::addVectorFloat8Storage, a, output)
                 .transferToHost(output)
                 .execute();
@@ -578,6 +593,7 @@ public class TestFloats extends TornadoTestBase {
         // Parallel computation with Tornado
         //@formatter:off
         new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b, outputMap) //
                 .task("t0-MAP", TestFloats::dotProductFunctionMap, a, b, outputMap)
                 .task("t1-REDUCE", TestFloats::dotProductFunctionReduce, outputMap, outputReduce)
                 .transferToHost(outputReduce)
@@ -595,12 +611,11 @@ public class TestFloats extends TornadoTestBase {
 
         input.fill(1f);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestFloats::vectorPhiTest, input, output)
-                .transferToHost(output)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
+                .task("t0", TestFloats::vectorPhiTest, input, output) //
+                .transferToHost(output) //
                 .execute();
-        //@formatter:on
 
         assertEquals(8.0f, output.get(0).getS0(), DELTA);
         assertEquals(8.0f, output.get(0).getS1(), DELTA);

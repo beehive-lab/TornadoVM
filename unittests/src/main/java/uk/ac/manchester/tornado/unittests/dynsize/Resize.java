@@ -207,6 +207,7 @@ public class Resize extends TornadoTestBase {
 
         // Do not stream in 'a'
         TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", Resize::resize02, a, b) //
                 .transferToHost(b); //
         taskGraph.execute(gridScheduler);

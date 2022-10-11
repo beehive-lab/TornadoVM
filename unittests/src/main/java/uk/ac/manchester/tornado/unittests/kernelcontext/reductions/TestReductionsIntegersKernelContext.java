@@ -328,6 +328,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
                 .task("t0", TestReductionsIntegersKernelContext::intReductionAddLocalMemory, context, input, reduce) //
                 .transferToHost(reduce);
 
@@ -544,7 +545,7 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestReductionsIntegersKernelContext::intReductionMinLocalMemory, context, input, reduce) //
                 .transferToHost(reduce);
         // Change the Grid

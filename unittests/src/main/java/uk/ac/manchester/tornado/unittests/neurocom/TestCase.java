@@ -21,6 +21,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestCase extends TornadoTestBase {
@@ -68,11 +69,11 @@ public class TestCase extends TornadoTestBase {
         float[] cache_dqtfidf = new float[total_len];
         int[] sizes = new int[6];
 
-        // @formatter:off
-        TaskGraph taskGraph = new TaskGraph("foo")
-                .task("bar", TestCase::KMeansCalculateCentroids, cache_dqsize, cache_dstart, cache_dqid, cache_dqtfidf, cache_kmeans, doc_group, sizes)
+        TaskGraph taskGraph = new TaskGraph("foo") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, cache_dqsize, cache_dqid, cache_dqtfidf, cache_kmeans, doc_group)
+                .task("bar", TestCase::KMeansCalculateCentroids, cache_dqsize, cache_dstart, cache_dqid, cache_dqtfidf, cache_kmeans, doc_group, sizes) //
                 .transferToHost(cache_dstart);
-        // @formatter:on
+
         taskGraph.warmup();
         taskGraph.execute();
     }

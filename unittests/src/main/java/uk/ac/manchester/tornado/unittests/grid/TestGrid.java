@@ -135,6 +135,7 @@ public class TestGrid extends TornadoTestBase {
         Matrix2DInt matrixA = new Matrix2DInt(a);
         Matrix2DInt matrixB = new Matrix2DInt(X, Y);
         TaskGraph taskGraph = new TaskGraph("foo") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
                 .task("bar", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
                 .transferToHost(matrixB);
 
@@ -204,6 +205,7 @@ public class TestGrid extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("mxm", TestGrid::matrixMultiplication, matrixA, matrixB, matrixC, N) //
                 .transferToHost(matrixC);
 

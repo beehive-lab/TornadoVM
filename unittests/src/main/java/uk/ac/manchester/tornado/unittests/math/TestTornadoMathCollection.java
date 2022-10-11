@@ -27,6 +27,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -612,8 +613,11 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seq[i] = b[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestTornadoMathCollection::testClamp, a, b).transferToHost(b).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestTornadoMathCollection::testClamp, a, b) //
+                .transferToHost(b) //
+                .execute();
 
         testClamp(a, seq);
         assertArrayEquals(b, seq);
@@ -636,8 +640,11 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seqB[i] = b[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestTornadoMathCollection::testTornadoAtan2, a, b).transferToHost(a).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b) //
+                .task("t0", TestTornadoMathCollection::testTornadoAtan2, a, b) //
+                .transferToHost(a) //
+                .execute();
 
         testTornadoAtan2(seqA, seqB);
 

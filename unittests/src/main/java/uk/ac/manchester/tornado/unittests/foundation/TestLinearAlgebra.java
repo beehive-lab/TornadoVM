@@ -24,6 +24,7 @@ import java.util.Arrays;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestLinearAlgebra extends TornadoTestBase {
@@ -42,6 +43,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
         Arrays.fill(expectedResult, 300);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b, c) //
                 .task("t0", TestKernels::vectorAddCompute, a, b, c) //
                 .transferToHost(a) //
                 .execute(); //
@@ -64,6 +66,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
         Arrays.fill(expectedResult, 500);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b, c) //
                 .task("t0", TestKernels::vectorMul, a, b, c) //
                 .transferToHost(a) //
                 .execute(); //
@@ -86,6 +89,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
         Arrays.fill(expectedResult, 25);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b, c) //
                 .task("t0", TestKernels::vectorSub, a, b, c) //
                 .transferToHost(a) //
                 .execute(); //
@@ -107,6 +111,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
         Arrays.fill(expectedResult, 256);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b, c) //
                 .task("t0", TestKernels::vectorDiv, a, b, c) //
                 .transferToHost(a) //
                 .execute(); //
@@ -129,6 +134,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
         }
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b) //
                 .task("t0", TestKernels::vectorSquare, a, b) //
                 .transferToHost(a) //
                 .execute(); //
@@ -153,6 +159,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
         }
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b, c) //
                 .task("t0", TestKernels::saxpy, a, b, c, 2) //
                 .transferToHost(a) //
                 .execute(); //

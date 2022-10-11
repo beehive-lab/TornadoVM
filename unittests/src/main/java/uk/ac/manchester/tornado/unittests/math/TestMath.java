@@ -27,6 +27,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -432,8 +433,11 @@ public class TestMath extends TornadoTestBase {
             b[i] = (float) Math.random();
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testMin, a, b, c).transferToHost(c).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestMath::testMin, a, b, c) //
+                .transferToHost(c) //
+                .execute();
 
         testMin(a, b, seq);
         assertArrayEquals(c, seq, 0.01f);
@@ -452,8 +456,11 @@ public class TestMath extends TornadoTestBase {
             b[i] = (float) Math.random();
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testMax, a, b, c).transferToHost(c).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestMath::testMax, a, b, c) //
+                .transferToHost(c) //
+                .execute();
 
         testMax(a, b, seq);
         assertArrayEquals(c, seq, 0.01f);
@@ -474,8 +481,11 @@ public class TestMath extends TornadoTestBase {
             a[i] = min + r.nextFloat() * (max - min);
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testNegate, a, b).transferToHost(b).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestMath::testNegate, a, b) //
+                .transferToHost(b) //
+                .execute();
 
         testNegate(a, seq);
         assertArrayEquals(b, seq, 0.001f);
@@ -495,8 +505,11 @@ public class TestMath extends TornadoTestBase {
             seq[i] = b[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testRemainder, a, b).transferToHost(b).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestMath::testRemainder, a, b) //
+                .transferToHost(b) //
+                .execute();
 
         testRemainder(a, seq);
         assertArrayEquals(b, seq);
@@ -516,8 +529,11 @@ public class TestMath extends TornadoTestBase {
             seq[i] = b[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testFMA, a, b).transferToHost(b).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestMath::testFMA, a, b) //
+                .transferToHost(b) //
+                .execute();
 
         testFMA(a, seq);
 
@@ -538,8 +554,11 @@ public class TestMath extends TornadoTestBase {
             seq[i] = b[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testFMA2, a, b).transferToHost(b).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestMath::testFMA2, a, b) //
+                .transferToHost(b) //
+                .execute();
 
         testFMA2(a, seq);
 
@@ -563,8 +582,11 @@ public class TestMath extends TornadoTestBase {
             seqB[i] = b[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testAtan2, a, b).transferToHost(a).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b) //
+                .task("t0", TestMath::testAtan2, a, b) //
+                .transferToHost(a) //
+                .execute();
 
         testAtan2(seqA, seqB);
 

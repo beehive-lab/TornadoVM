@@ -57,11 +57,10 @@ public class TestDynamic extends TornadoTestBase {
 
         Arrays.fill(a, 10);
 
-        //@formatter:off
-        TaskGraph taskGraph = new TaskGraph("s0")
-            .task("t0", TestDynamic::compute, a, b)
-            .transferToHost(b);
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestDynamic::compute, a, b) //
+                .transferToHost(b); //
 
         // Run first time to obtain the best performance device
         taskGraph.executeWithProfilerSequential(Policy.PERFORMANCE);
@@ -84,11 +83,10 @@ public class TestDynamic extends TornadoTestBase {
 
         Arrays.fill(a, 10);
 
-        //@formatter:off
-        TaskGraph taskGraph = new TaskGraph("ss0")
-            .task("tt0", TestDynamic::compute, a, b)
-            .transferToHost(b);
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("ss0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("tt0", TestDynamic::compute, a, b) //
+                .transferToHost(b); //
 
         // Run first time to obtain the best performance device
         taskGraph.executeWithProfiler(Policy.END_2_END);
@@ -197,11 +195,10 @@ public class TestDynamic extends TornadoTestBase {
 
         Arrays.fill(a, 10);
 
-        //@formatter:off
-        TaskGraph taskGraph = new TaskGraph("s0")
-            .task("t0", TestDynamic::compute, a, b)
-            .transferToHost(b);
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestDynamic::compute, a, b) //
+                .transferToHost(b);
 
         // Run first time to obtain the best performance device
         taskGraph.executeWithProfiler(Policy.LATENCY);

@@ -25,6 +25,7 @@ import java.util.Arrays;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.TestHello;
@@ -63,11 +64,10 @@ public class TestProfiler extends TornadoTestBase {
         // Enable profiler
         System.setProperty("tornado.profiler", "True");
 
-        // @formatter:off
-        TaskGraph taskGraph = new TaskGraph("s0")
-                .task("t0", TestHello::add, a, b, c)
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b)//
+                .task("t0", TestHello::add, a, b, c)//
                 .transferToHost(c);
-        // @formatter:on
 
         taskGraph.execute();
 
@@ -108,11 +108,10 @@ public class TestProfiler extends TornadoTestBase {
         // Disable profiler
         System.setProperty("tornado.profiler", "False");
 
-        // @formatter:off
-        TaskGraph taskGraph = new TaskGraph("s0")
-                .task("t0", TestHello::add, a, b, c)
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestHello::add, a, b, c) //
                 .transferToHost(c);
-        // @formatter:on
 
         taskGraph.execute();
 

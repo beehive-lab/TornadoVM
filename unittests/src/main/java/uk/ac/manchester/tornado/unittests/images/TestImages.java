@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat8;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -56,7 +57,9 @@ public class TestImages extends TornadoTestBase {
         final ImageFloat image = new ImageFloat(M, N);
         image.fill(100f);
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", image::fill, 1f).transferToHost(image);
+        final TaskGraph taskGraph = new TaskGraph("s0") //
+                .task("t0", image::fill, 1f) //
+                .transferToHost(image);
 
         taskGraph.execute();
 
@@ -79,7 +82,9 @@ public class TestImages extends TornadoTestBase {
         final ImageFloat image = new ImageFloat(M, N);
         image.fill(100f);
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", image::fill, 1f).transferToHost(image);
+        final TaskGraph taskGraph = new TaskGraph("s0") //
+                .task("t0", image::fill, 1f) //
+                .transferToHost(image);
 
         taskGraph.execute();
 
@@ -102,7 +107,9 @@ public class TestImages extends TornadoTestBase {
         final ImageFloat image = new ImageFloat(M, N);
         image.fill(100f);
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", image::fill, 1f).transferToHost(image);
+        final TaskGraph taskGraph = new TaskGraph("s0") //
+                .task("t0", image::fill, 1f) //
+                .transferToHost(image);
 
         taskGraph.execute();
 
@@ -136,7 +143,11 @@ public class TestImages extends TornadoTestBase {
         final ImageFloat imageB = new ImageFloat(M, N);
         imageA.fill(100f);
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t1", TestImages::taskWithImages, imageA, imageB).transferToHost(imageB);
+        final TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, imageA) //
+                .task("t1", TestImages::taskWithImages, imageA, imageB) //
+                .transferToHost(imageB);
+
         taskGraph.execute();
 
         for (int i = 0; i < M; i++) {
@@ -148,7 +159,7 @@ public class TestImages extends TornadoTestBase {
 
     /**
      * Test for computing a referenced method using {@link ImageFloat} on the OpenCL
-     * device using non square matrices and small size.
+     * device using non-square matrices and small size.
      */
     @Test
     public void testImageFloat05() {
@@ -161,7 +172,10 @@ public class TestImages extends TornadoTestBase {
         imageA.fill(100f);
         imageB.fill(-1f);
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t1", TestImages::taskWithImages, imageA, imageB).transferToHost(imageB);
+        final TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, imageA) //
+                .task("t1", TestImages::taskWithImages, imageA, imageB) //
+                .transferToHost(imageB);
         taskGraph.execute();
 
         for (int i = 0; i < M; i++) {
@@ -173,7 +187,7 @@ public class TestImages extends TornadoTestBase {
 
     /**
      * Test for computing a referenced method using {@link ImageFloat} on the OpenCL
-     * device using non square matrices with big size.
+     * device using non-square matrices with big size.
      */
     @Test
     public void testImageFloat06() {
@@ -186,7 +200,10 @@ public class TestImages extends TornadoTestBase {
         imageA.fill(100f);
         imageB.fill(-1f);
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t1", TestImages::taskWithImages, imageA, imageB).transferToHost(imageB);
+        final TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, imageA) //
+                .task("t1", TestImages::taskWithImages, imageA, imageB) //
+                .transferToHost(imageB);
         taskGraph.execute();
 
         for (int i = 0; i < M; i++) {
@@ -240,7 +257,10 @@ public class TestImages extends TornadoTestBase {
             }
         }
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestImages::taskWithImagesFloat3, imageA, imageB).transferToHost(imageB);
+        final TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, imageA) //
+                .task("t0", TestImages::taskWithImagesFloat3, imageA, imageB) //
+                .transferToHost(imageB);
         taskGraph.execute();
 
         for (int i = 0; i < M; i++) {
@@ -270,7 +290,10 @@ public class TestImages extends TornadoTestBase {
             }
         }
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestImages::taskWithImagesFloat3, imageA, imageB).transferToHost(imageB);
+        final TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, imageA) //
+                .task("t0", TestImages::taskWithImagesFloat3, imageA, imageB) //
+                .transferToHost(imageB);
         taskGraph.execute();
 
         for (int i = 0; i < M; i++) {
@@ -300,7 +323,10 @@ public class TestImages extends TornadoTestBase {
             }
         }
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestImages::taskWithImagesFloat4, imageA, imageB).transferToHost(imageB);
+        final TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, imageA) //
+                .task("t0", TestImages::taskWithImagesFloat4, imageA, imageB) //
+                .transferToHost(imageB);
         taskGraph.execute();
 
         for (int i = 0; i < M; i++) {
@@ -331,7 +357,10 @@ public class TestImages extends TornadoTestBase {
             }
         }
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestImages::taskWithImagesFloat4, imageA, imageB).transferToHost(imageB);
+        final TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, imageA) //
+                .task("t0", TestImages::taskWithImagesFloat4, imageA, imageB) //
+                .transferToHost(imageB);
         taskGraph.execute();
 
         for (int i = 0; i < M; i++) {
@@ -362,7 +391,10 @@ public class TestImages extends TornadoTestBase {
             }
         }
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestImages::taskWithImagesFloat8, imageA, imageB).transferToHost(imageB);
+        final TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, imageA) //
+                .task("t0", TestImages::taskWithImagesFloat8, imageA, imageB) //
+                .transferToHost(imageB);
         taskGraph.execute();
 
         for (int i = 0; i < M; i++) {
@@ -416,6 +448,7 @@ public class TestImages extends TornadoTestBase {
         }
 
         final TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, imageA) //
                 .task("t0", TestImages::taskWithImagesByte3, imageA, imageB) //
                 .transferToHost(imageB);
 
@@ -448,7 +481,10 @@ public class TestImages extends TornadoTestBase {
             }
         }
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestImages::taskWithImagesByte3, imageA, imageB).transferToHost(imageB);
+        final TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, imageA) //
+                .task("t0", TestImages::taskWithImagesByte3, imageA, imageB) //
+                .transferToHost(imageB);
         taskGraph.execute();
 
         for (int i = 0; i < M; i++) {
@@ -478,7 +514,10 @@ public class TestImages extends TornadoTestBase {
             }
         }
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestImages::taskWithImagesByte4, imageA, imageB).transferToHost(imageB);
+        final TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, imageA) //
+                .task("t0", TestImages::taskWithImagesByte4, imageA, imageB) //
+                .transferToHost(imageB);
         taskGraph.execute();
 
         for (int i = 0; i < M; i++) {
@@ -509,8 +548,11 @@ public class TestImages extends TornadoTestBase {
             }
         }
 
-        final TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestImages::taskWithImagesByte4, imageA, imageB).transferToHost(imageB);
+        final TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, imageA) //
+                .task("t0", TestImages::taskWithImagesByte4, imageA, imageB)//
+                .transferToHost(imageB);
+
         taskGraph.execute();
 
         for (int i = 0; i < M; i++) {

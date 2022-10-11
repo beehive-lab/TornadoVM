@@ -374,8 +374,19 @@ public class TestMultipleFunctions extends TornadoTestBase {
 
         TestMultipleFunctions testTaskAccesses = new TestMultipleFunctions();
 
-        TaskGraph taskGraph = new TaskGraph("s0").task("t0", testTaskAccesses::caller1, testArrays.calleeReadTor, testArrays.ignoreParam1, testArrays.callerReadCalleeWriteTor, testArrays.ignoreParam2,
-                testArrays.callerReadTor, testArrays.callerWriteTor).transferToHost(testArrays.callerReadCalleeWriteTor, testArrays.callerWriteTor);
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, //
+                        testArrays.calleeReadTor, //
+                        testArrays.ignoreParam1, //
+                        testArrays.callerReadTor) //
+                .task("t0", testTaskAccesses::caller1, //
+                        testArrays.calleeReadTor, //
+                        testArrays.ignoreParam1, //
+                        testArrays.callerReadCalleeWriteTor, //
+                        testArrays.ignoreParam2, //
+                        testArrays.callerReadTor, //
+                        testArrays.callerWriteTor) //
+                .transferToHost(testArrays.callerReadCalleeWriteTor, testArrays.callerWriteTor);
         taskGraph.execute();
 
         Assert.assertArrayEquals(testArrays.calleeReadSeq, testArrays.calleeReadTor);
@@ -398,11 +409,19 @@ public class TestMultipleFunctions extends TornadoTestBase {
 
         TestMultipleFunctions testTaskAccesses = new TestMultipleFunctions();
 
-        TaskGraph taskGraph = new TaskGraph("s0")
-                .task("t0", testTaskAccesses::caller1, testArrays.calleeReadTor, testArrays.ignoreParam1, testArrays.callerReadCalleeWriteTor, testArrays.ignoreParam2, testArrays.callerReadTor,
-                        testArrays.callerWriteTor)
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, //
+                        testArrays.calleeReadTor) //
+                .task("t0", testTaskAccesses::caller1, //
+                        testArrays.calleeReadTor, //
+                        testArrays.ignoreParam1, //
+                        testArrays.callerReadCalleeWriteTor, //
+                        testArrays.ignoreParam2, //
+                        testArrays.callerReadTor, //
+                        testArrays.callerWriteTor) //
                 .task("t1", testTaskAccesses::caller2, testArrays.callerReadTor, testArrays.calleeReadTor)
                 .transferToHost(testArrays.callerReadCalleeWriteTor, testArrays.callerWriteTor, testArrays.callerReadTor);
+
         taskGraph.execute();
 
         Assert.assertArrayEquals(testArrays.calleeReadSeq, testArrays.calleeReadTor);
@@ -426,11 +445,29 @@ public class TestMultipleFunctions extends TornadoTestBase {
 
         TestMultipleFunctions testTaskAccesses = new TestMultipleFunctions();
 
-        TaskGraph taskGraph = new TaskGraph("s0")
-                .task("t0", testTaskAccesses::caller1, arrays.calleeReadTor, arrays.ignoreParam1, arrays.callerReadCalleeWriteTor, arrays.ignoreParam2, arrays.callerReadTor, arrays.callerWriteTor)
-                .task("t1", testTaskAccesses::caller2, arrays.callerReadTor, arrays.calleeReadTor)
-                .task("t2", testTaskAccesses::caller3, arrays.callerReadWriteTor, arrays.calleeReadTor, arrays.callee1WriteTor, arrays.callerReadCalleeWriteTor, arrays.callee2ReadTor)
-                .transferToHost(arrays.callerReadCalleeWriteTor, arrays.callerWriteTor, arrays.callerReadTor, arrays.callerReadWriteTor, arrays.callee1WriteTor, arrays.callerReadCalleeWriteTor);
+        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, arrays.calleeReadTor, //
+                arrays.callee2ReadTor)//
+                .task("t0", testTaskAccesses::caller1, //
+                        arrays.calleeReadTor, //
+                        arrays.ignoreParam1, //
+                        arrays.callerReadCalleeWriteTor, //
+                        arrays.ignoreParam2, //
+                        arrays.callerReadTor, //
+                        arrays.callerWriteTor)//
+                .task("t1", testTaskAccesses::caller2, arrays.callerReadTor, //
+                        arrays.calleeReadTor) //
+                .task("t2", testTaskAccesses::caller3, //
+                        arrays.callerReadWriteTor, //
+                        arrays.calleeReadTor, //
+                        arrays.callee1WriteTor, //
+                        arrays.callerReadCalleeWriteTor, //
+                        arrays.callee2ReadTor)//
+                .transferToHost(arrays.callerReadCalleeWriteTor, //
+                        arrays.callerWriteTor, //
+                        arrays.callerReadTor, //
+                        arrays.callerReadWriteTor, //
+                        arrays.callee1WriteTor, //
+                        arrays.callerReadCalleeWriteTor);//
         taskGraph.execute();
 
         Assert.assertArrayEquals(arrays.calleeReadSeq, arrays.calleeReadTor);

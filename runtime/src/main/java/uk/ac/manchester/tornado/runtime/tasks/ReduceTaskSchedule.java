@@ -67,6 +67,7 @@ class ReduceTaskSchedule {
     private static final int DEFAULT_DEVICE_INDEX = 0;
     private static AtomicInteger counterName = new AtomicInteger(0);
     private static AtomicInteger counterSeqName = new AtomicInteger(0);
+    private final ArrayList<StreamingObject> streamingObjects;
 
     private String idTaskGraph;
     private ArrayList<TaskPackage> taskPackages;
@@ -85,10 +86,12 @@ class ReduceTaskSchedule {
     private HashMap<Object, REDUCE_OPERATION> hybridMergeTable;
     private boolean hybridInitialized;
 
-    ReduceTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects, CachedGraph<?> graph) {
+    ReduceTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<StreamingObject> streamingObjects, ArrayList<Object> streamOutObjects,
+            CachedGraph<?> graph) {
         this.taskPackages = taskPackages;
         this.idTaskGraph = taskScheduleID;
         this.streamInObjects = streamInObjects;
+        this.streamingObjects = streamingObjects;
         this.streamOutObjects = streamOutObjects;
         this.sketchGraph = graph;
     }
@@ -326,6 +329,15 @@ class ReduceTaskSchedule {
 
             TornadoTaskSchedule.performStreamInThread(rewrittenTaskGraph, streamInObjects, DataTransferMode.EVERY_EXECUTION);
 
+            for (StreamingObject so : streamingObjects) {
+                if (so.getMode() == DataTransferMode.FIRST_EXECUTION) {
+                    Object o = so.getObject();
+                    ArrayList<Object> dList = new ArrayList<>();
+                    dList.add(o);
+                    TornadoTaskSchedule.performStreamInThread(rewrittenTaskGraph, dList, DataTransferMode.FIRST_EXECUTION);
+                }
+            }
+
             for (int i = 0; i < streamOutObjects.size(); i++) {
                 if (originalReduceVariables.containsKey(streamOutObjects.get(i))) {
                     Object newArray = originalReduceVariables.get(streamOutObjects.get(i));
@@ -515,7 +527,7 @@ class ReduceTaskSchedule {
                 for (int i = 0; i < taskPackages.get(taskNumber).getTaskParameters().length - 1; i++) {
                     Object parameterToMethod = taskPackages.get(taskNumber).getTaskParameters()[i + 1];
                     if (reduceOperandTable.containsKey(parameterToMethod) && (reduceOperandTable.get(parameterToMethod).size() > 1)) {
-                        rewrittenTaskGraph.forceCopyIn(parameterToMethod);
+                        rewrittenTaskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, parameterToMethod);
                     }
                 }
             }

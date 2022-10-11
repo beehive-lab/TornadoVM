@@ -30,6 +30,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestResizeImage extends TornadoTestBase {
@@ -65,7 +66,10 @@ public class TestResizeImage extends TornadoTestBase {
             }
         }
 
-        final TaskGraph taskGraph = new TaskGraph("s0").task("t0", TestResizeImage::resize, image2, image1, 2).transferToHost(image2);
+        final TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, image1) //
+                .task("t0", TestResizeImage::resize, image2, image1, 2) //
+                .transferToHost(image2);
 
         taskGraph.warmup();
 

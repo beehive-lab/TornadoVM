@@ -27,6 +27,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestLambdas extends TornadoTestBase {
@@ -43,17 +44,16 @@ public class TestLambdas extends TornadoTestBase {
             b[i] = Math.random();
         });
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .task("t0", (x, y, z) -> {
-                // Computation in a lambda expression
-                for (@Parallel int i = 0; i < z.length; i++) {
-                    z[i] = x[i] + y[i];
-                }
-            }, a, b, c)
-            .transferToHost(c)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", (x, y, z) -> {
+                    // Computation in a lambda expression
+                    for (@Parallel int i = 0; i < z.length; i++) {
+                        z[i] = x[i] + y[i];
+                    }
+                }, a, b, c) //
+                .transferToHost(c) //
+                .execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);
@@ -74,17 +74,16 @@ public class TestLambdas extends TornadoTestBase {
             b[i] = r.nextInt(1000);
         });
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .task("t0", (x, y, z) -> {
-                // Computation in a lambda expression
-                for (@Parallel int i = 0; i < z.length; i++) {
-                    z[i] = x[i] * y[i];
-                }
-            }, a, b, c)
-            .transferToHost(c)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", (x, y, z) -> {
+                    // Computation in a lambda expression
+                    for (@Parallel int i = 0; i < z.length; i++) {
+                        z[i] = x[i] * y[i];
+                    }
+                }, a, b, c) //
+                .transferToHost(c) //
+                .execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] * b[i], c[i], 0.001);
@@ -105,17 +104,16 @@ public class TestLambdas extends TornadoTestBase {
             b[i] = r.nextInt(1000);
         });
 
-        //@formatter:off
-        new TaskGraph("s0")
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", (x, y, z) -> {
                     // Computation in a lambda expression
                     for (@Parallel int i = 0; i < z.length; i++) {
                         z[i] = x[i] * y[i];
                     }
-                }, a, b, c)
-                .transferToHost(c)
+                }, a, b, c) //
+                .transferToHost(c) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] * b[i], c[i], 0.001);

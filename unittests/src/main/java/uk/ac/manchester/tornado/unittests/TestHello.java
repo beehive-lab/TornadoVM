@@ -85,6 +85,7 @@ public class TestHello extends TornadoTestBase {
         Arrays.fill(b, 2);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestHello::add, a, b, c) //
                 .transferToHost(c) //
                 .execute();

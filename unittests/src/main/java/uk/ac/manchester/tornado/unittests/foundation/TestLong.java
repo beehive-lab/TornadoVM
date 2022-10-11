@@ -24,6 +24,7 @@ import java.util.Arrays;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestLong extends TornadoTestBase {
@@ -64,6 +65,7 @@ public class TestLong extends TornadoTestBase {
         }
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b, c) //
                 .task("t0", TestKernels::vectorSumLongCompute, a, b, c) //
                 .transferToHost(a) //
                 .execute(); //

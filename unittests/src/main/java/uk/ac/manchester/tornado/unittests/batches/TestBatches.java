@@ -28,6 +28,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
 
@@ -95,8 +96,9 @@ public class TestBatches extends TornadoTestBase {
 
         // @formatter:off
         taskGraph.batch("100MB")   // Slots of 100 MB
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA)
                 .task("t0", TestBatches::compute, arrayA, arrayB)
-                .transferToHost((Object) arrayB)
+                .transferToHost(arrayB)
                 .execute();
         // @formatter:on
 
@@ -126,8 +128,9 @@ public class TestBatches extends TornadoTestBase {
 
         // @formatter:off
         taskGraph.batch("300MB")   // Slots of 300 MB
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA)
                 .task("t0", TestBatches::compute, arrayA, arrayB)
-                .transferToHost((Object) arrayB)
+                .transferToHost(arrayB)
                 .execute();
         // @formatter:on
 
@@ -155,8 +158,9 @@ public class TestBatches extends TornadoTestBase {
 
         // @formatter:off
         taskGraph.batch("512MB")   // Slots of 512 MB
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA)
                 .task("t0", TestBatches::compute, arrayA)
-                .transferToHost((Object) arrayA)
+                .transferToHost(arrayA)
                 .execute();
         // @formatter:on
 
@@ -189,8 +193,9 @@ public class TestBatches extends TornadoTestBase {
 
         // @formatter:off
         taskGraph.batch("50MB")   // Process Slots of 50 MB
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA, arrayB)
                 .task("t0", TestBatches::compute, arrayA, arrayB, arrayC)
-                .transferToHost((Object) arrayC)
+                .transferToHost(arrayC)
                 .execute();
         // @formatter:on
 
@@ -223,8 +228,9 @@ public class TestBatches extends TornadoTestBase {
 
         // @formatter:off
         taskGraph.batch("50MB")   // Process Slots of 50 MB
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA, arrayB)
                 .task("t0", TestBatches::compute, arrayA, arrayB, arrayC)
-                .transferToHost((Object) arrayC)
+                .transferToHost(arrayC)
                 .execute();
         // @formatter:on
 
@@ -258,8 +264,9 @@ public class TestBatches extends TornadoTestBase {
 
         // @formatter:off
         taskGraph.batch("50MB")   // Process Slots of 50 MB
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA, arrayB)
                 .task("t0", TestBatches::compute, arrayA, arrayB, arrayC)
-                .transferToHost((Object) arrayC)
+                .transferToHost(arrayC)
                 .execute();
         // @formatter:on
 
@@ -291,8 +298,9 @@ public class TestBatches extends TornadoTestBase {
 
         // @formatter:off
         taskGraph.batch("50MB")   // Process Slots of 50 MB
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA, arrayB)
                 .task("t0", TestBatches::compute, arrayA, arrayB, arrayC)
-                .transferToHost((Object) arrayC)
+                .transferToHost(arrayC)
                 .execute();
         // @formatter:on
 
@@ -325,8 +333,9 @@ public class TestBatches extends TornadoTestBase {
 
         // @formatter:off
         taskGraph.batch("50MB")   // Process Slots of 50 MB
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA, arrayB)
                 .task("t0", TestBatches::compute, arrayA, arrayB, arrayC)
-                .transferToHost((Object) arrayC)
+                .transferToHost(arrayC)
                 .execute();
         // @formatter:on
 

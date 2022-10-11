@@ -24,6 +24,7 @@ import java.util.Arrays;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestDoubles extends TornadoTestBase {
@@ -58,6 +59,7 @@ public class TestDoubles extends TornadoTestBase {
         }
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b, c) //
                 .task("t0", TestKernels::vectorAddDoubleCompute, a, b, c) //
                 .transferToHost(a) //
                 .execute(); //
@@ -84,6 +86,7 @@ public class TestDoubles extends TornadoTestBase {
         }
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b, c) //
                 .task("t0", TestKernels::vectorSubDoubleCompute, a, b, c) //
                 .transferToHost(a) //
                 .execute(); //
@@ -109,6 +112,7 @@ public class TestDoubles extends TornadoTestBase {
         }
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b, c) //
                 .task("t0", TestKernels::vectorMulDoubleCompute, a, b, c) //
                 .transferToHost(a) //
                 .execute(); //
@@ -134,6 +138,7 @@ public class TestDoubles extends TornadoTestBase {
         }
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b, c) //
                 .task("t0", TestKernels::vectorDivDoubleCompute, a, b, c) //
                 .transferToHost(a) //
                 .execute(); //

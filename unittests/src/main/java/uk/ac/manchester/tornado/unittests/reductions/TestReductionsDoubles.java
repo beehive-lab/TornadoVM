@@ -57,11 +57,10 @@ public class TestReductionsDoubles extends TornadoTestBase {
             input[i] = r.nextDouble();
         });
 
-        //@formatter:off
-		TaskGraph taskGraph = new TaskGraph("s0")
-			.task("t0", TestReductionsDoubles::reductionAddDoubles, input, result)
-			.transferToHost(result);
-		//@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
+                .task("t0", TestReductionsDoubles::reductionAddDoubles, input, result) //
+                .transferToHost(result);
 
         taskGraph.execute();
 
@@ -92,11 +91,10 @@ public class TestReductionsDoubles extends TornadoTestBase {
             input[i] = r.nextDouble();
         });
 
-        //@formatter:off
-        TaskGraph taskGraph = new TaskGraph("s0")
-                .task("t0", TestReductionsDoubles::reductionWithFunctionCall, input, result)
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
+                .task("t0", TestReductionsDoubles::reductionWithFunctionCall, input, result) //
                 .transferToHost(result);
-        //@formatter:on
 
         taskGraph.execute();
 
@@ -122,11 +120,10 @@ public class TestReductionsDoubles extends TornadoTestBase {
             input[i] = r.nextDouble();
         });
 
-        //@formatter:off
-        TaskGraph taskGraph = new TaskGraph("s0")
-                .task("t0", TestReductionsDoubles::reductionAddDoublesLarge, input, result)
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
+                .task("t0", TestReductionsDoubles::reductionAddDoublesLarge, input, result) //
                 .transferToHost(result);
-        //@formatter:on
 
         taskGraph.execute();
 
@@ -440,14 +437,12 @@ public class TestReductionsDoubles extends TornadoTestBase {
             sequentialData[idx] = data[idx];
         });
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, data)
-                .task("t0", TestReductionsDoubles::prepareTornadoSumForMeanComputation, data, resultSum)
-                .task("t1", TestReductionsDoubles::computeStandardDeviation, data2, resultSum, resultStd)
-                .transferToHost(resultSum, resultStd)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, data, data2, resultSum)//
+                .task("t0", TestReductionsDoubles::prepareTornadoSumForMeanComputation, data, resultSum)//
+                .task("t1", TestReductionsDoubles::computeStandardDeviation, data2, resultSum, resultStd)//
+                .transferToHost(resultSum, resultStd)//
                 .execute();
-        //@formatter:on
 
         prepareTornadoSumForMeanComputation(sequentialData, sequentialSum);
         computeStandardDeviation(sequentialData, sequentialSum, sequentialStd);

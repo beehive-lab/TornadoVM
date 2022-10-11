@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -268,12 +268,6 @@ public class TaskGraph implements TornadoAPI, ProfileInterface {
     @Override
     public TaskGraph transferToDevice(final int mode, Object... objects) {
         taskScheduleImpl.transferToDevice(mode, objects);
-        return this;
-    }
-
-    @Override
-    public TornadoAPI forceCopyIn(Object... objects) {
-        taskScheduleImpl.forceTransferToDevice(objects);
         return this;
     }
 

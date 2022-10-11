@@ -7,6 +7,7 @@ import java.util.Arrays;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /*
@@ -57,6 +58,7 @@ public class TestFloats extends TornadoTestBase {
         }
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b, c) //
                 .task("t0", TestKernels::vectorAddFloatCompute, a, b, c) //
                 .transferToHost(a) //
                 .execute(); //
@@ -82,6 +84,7 @@ public class TestFloats extends TornadoTestBase {
         }
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b, c) //
                 .task("t0", TestKernels::vectorSubFloatCompute, a, b, c) //
                 .transferToHost(a) //
                 .execute(); //
@@ -109,6 +112,7 @@ public class TestFloats extends TornadoTestBase {
         }
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b, c) //
                 .task("t0", TestKernels::vectorMulFloatCompute, a, b, c) //
                 .transferToHost(a) //
                 .execute(); //
@@ -135,6 +139,7 @@ public class TestFloats extends TornadoTestBase {
         }
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b, c) //
                 .task("t0", TestKernels::vectorDivFloatCompute, a, b, c) //
                 .transferToHost(a) //
                 .execute(); //

@@ -19,7 +19,7 @@ package uk.ac.manchester.tornado.unittests.compute;
 
 import static org.junit.Assert.assertEquals;
 
-import java.awt.Color;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 import java.io.File;
@@ -485,6 +485,7 @@ public class ComputeTests extends TornadoTestBase {
         }
 
         graph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, inReal, inImag) //
                 .task("t0", ComputeTests::computeDFT, inReal, inImag, outReal, outImag) //
                 .transferToHost(outReal, outImag);
         graph.execute();
@@ -507,6 +508,7 @@ public class ComputeTests extends TornadoTestBase {
         }
 
         taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, inReal, inImag) //
                 .task("t0", ComputeTests::computeDFTFloat, inReal, inImag, outReal, outImag) //
                 .transferToHost(outReal, outImag);
         taskGraph.execute();

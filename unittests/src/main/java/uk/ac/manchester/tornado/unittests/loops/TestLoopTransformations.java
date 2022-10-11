@@ -28,6 +28,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -64,11 +65,10 @@ public class TestLoopTransformations extends TornadoTestBase {
 
         TornadoRuntime.setProperty("tornado.experimental.partial.unroll", "True");
 
-        //@formatter:off
-        TaskGraph taskGraph = new TaskGraph("s0")
-                .task("t0", TestLoopTransformations::matrixVectorMultiplication, matrixA, matrixB, matrixC, size)
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
+                .task("t0", TestLoopTransformations::matrixVectorMultiplication, matrixA, matrixB, matrixC, size) //
                 .transferToHost(matrixC);
-        //@formatter:on
 
         taskGraph.execute();
 
@@ -111,6 +111,7 @@ public class TestLoopTransformations extends TornadoTestBase {
         }
 
         TaskGraph t = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", TestLoopTransformations::matrixVectorMultiplication, matrixA, matrixB, matrixC, size) //
                 .transferToHost(matrixC); //
 
@@ -148,6 +149,7 @@ public class TestLoopTransformations extends TornadoTestBase {
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
                 .task("t0", TestLoopTransformations::matrixTranspose, matrixA, matrixB, N) //
                 .transferToHost(matrixB); //
         taskGraph.execute();

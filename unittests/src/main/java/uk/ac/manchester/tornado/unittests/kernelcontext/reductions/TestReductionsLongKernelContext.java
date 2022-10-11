@@ -80,7 +80,7 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestReductionsLongKernelContext::longReductionAddGlobalMemory, context, input, reduce) //
                 .transferToHost(reduce);
         // Change the Grid
@@ -131,7 +131,7 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestReductionsLongKernelContext::longReductionAddLocalMemory, context, input, reduce) //
                 .transferToHost(reduce);
         // Change the Grid
@@ -187,7 +187,7 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestReductionsLongKernelContext::longReductionMaxGlobalMemory, context, input, reduce) //
                 .transferToHost(reduce);
         // Change the Grid
@@ -237,7 +237,7 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestReductionsLongKernelContext::longReductionMaxLocalMemory, context, input, reduce) //
                 .transferToHost(reduce);
         // Change the Grid
@@ -293,7 +293,7 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestReductionsLongKernelContext::longReductionMinGlobalMemory, context, input, reduce) //
                 .transferToHost(reduce);
         // Change the Grid
@@ -343,7 +343,7 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         KernelContext context = new KernelContext();
 
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestReductionsLongKernelContext::longReductionMinLocalMemory, context, input, reduce) //
                 .transferToHost(reduce);
         // Change the Grid

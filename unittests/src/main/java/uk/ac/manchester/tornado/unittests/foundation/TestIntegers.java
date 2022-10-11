@@ -72,6 +72,7 @@ public class TestIntegers extends TornadoTestBase {
         Arrays.fill(b, 100);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b) //
                 .task("t0", TestKernels::copyTest2, a, b) //
                 .transferToHost(a) //
                 .execute(); //
@@ -90,6 +91,7 @@ public class TestIntegers extends TornadoTestBase {
         Arrays.fill(expectedResult, 150);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b) //
                 .task("t0", TestKernels::compute, a, b) //
                 .transferToHost(a) //
                 .execute(); //
@@ -114,7 +116,6 @@ public class TestIntegers extends TornadoTestBase {
                 .task("t0", TestKernels::init, a, b) //
                 .transferToHost(a, b) //
                 .execute(); //
-
         assertArrayEquals(expectedResultA, a);
         assertArrayEquals(expectedResultB, b);
     }

@@ -359,12 +359,11 @@ public class TestReductionsIntegers extends TornadoTestBase {
         int[] result = new int[1];
         Arrays.fill(result, Integer.MAX_VALUE);
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .task("t0", TestReductionsIntegers::minReductionAnnotation, input, result)
-            .transferToHost(result)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
+                .task("t0", TestReductionsIntegers::minReductionAnnotation, input, result) //
+                .transferToHost(result) //
+                .execute();
 
         int[] sequential = new int[] { Integer.MAX_VALUE };
         minReductionAnnotation(input, sequential);

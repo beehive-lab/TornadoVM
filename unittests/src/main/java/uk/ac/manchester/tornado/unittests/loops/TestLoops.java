@@ -786,7 +786,7 @@ public class TestLoops extends TornadoTestBase {
     }
 
     @Test
-    public void testInnertForEach() {
+    public void testInnerForEach() {
         final int size = 10;
 
         int[] a = new int[size];
@@ -794,12 +794,11 @@ public class TestLoops extends TornadoTestBase {
         Arrays.fill(a, 1);
         Arrays.fill(c, 0);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestLoops::forEach, a, c, size)
-                .transferToHost(c)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestLoops::forEach, a, c, size) //
+                .transferToHost(c) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i++) {
             assertEquals(2, c[i]);

@@ -149,12 +149,11 @@ public class TestReductionsLong extends TornadoTestBase {
         long[] result = new long[1];
         Arrays.fill(result, Integer.MAX_VALUE);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestReductionsLong::minReductionAnnotation, input, result)
-                .transferToHost(result)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
+                .task("t0", TestReductionsLong::minReductionAnnotation, input, result) //
+                .transferToHost(result) //
                 .execute();
-        //@formatter:on
 
         long[] sequential = new long[] { Long.MAX_VALUE };
         minReductionAnnotation(input, sequential);

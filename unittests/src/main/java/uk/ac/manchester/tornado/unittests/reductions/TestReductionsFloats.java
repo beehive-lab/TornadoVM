@@ -355,12 +355,11 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         Arrays.fill(result, 0.0f);
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .task("t0", TestReductionsFloats::computePi, input, result)
-            .transferToHost(result)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
+                .task("t0", TestReductionsFloats::computePi, input, result) //
+                .transferToHost(result) //
+                .execute();
 
         final float piValue = result[0] * 4;
 

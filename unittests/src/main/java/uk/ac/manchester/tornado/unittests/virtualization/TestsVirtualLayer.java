@@ -33,6 +33,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeInterface;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
@@ -156,6 +157,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         IntStream.range(0, numElements).parallel().forEach(i -> x[i] = 450);
 
         TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, x);
 
         taskGraph.task("t0", TestsVirtualLayer::saxpy, alpha, x, y).transferToHost(y);
         taskGraph.transferToHost(y);

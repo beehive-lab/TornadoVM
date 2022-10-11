@@ -34,6 +34,7 @@ import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat4;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DInt;
 import uk.ac.manchester.tornado.api.collections.types.Matrix3DFloat;
 import uk.ac.manchester.tornado.api.collections.types.Matrix3DFloat4;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestMatrixTypes extends TornadoTestBase {
@@ -139,6 +140,7 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
 
         TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA);
         taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, N);
         taskGraph.transferToHost(matrixB);
         taskGraph.execute();
@@ -163,6 +165,7 @@ public class TestMatrixTypes extends TornadoTestBase {
         Matrix2DFloat matrixA = new Matrix2DFloat(a);
         Matrix2DFloat matrixB = new Matrix2DFloat(N, N);
         TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA);
         taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, N);
         taskGraph.transferToHost(matrixB);
         taskGraph.execute();
@@ -190,6 +193,7 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
 
         TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB);
         taskGraph.task("t0", TestMatrixTypes::computeMatrixMultiplication, matrixA, matrixB, matrixC);
         taskGraph.transferToHost(matrixC);
         taskGraph.execute();
@@ -218,6 +222,7 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
 
         TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB);
         taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, N);
         taskGraph.transferToHost(matrixB);
         taskGraph.execute();
@@ -246,6 +251,7 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
 
         TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA);
         taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y);
         taskGraph.transferToHost(matrixB);
         taskGraph.execute();
@@ -303,6 +309,7 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
 
         TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA);
         taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y, Z);
         taskGraph.transferToHost(matrixB);
         taskGraph.execute();
@@ -366,6 +373,7 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
 
         TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA);
         taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, SMALL_SIZE, SMALL_SIZE, SMALL_SIZE);
         taskGraph.transferToHost(matrixB);
         taskGraph.execute();
@@ -402,6 +410,7 @@ public class TestMatrixTypes extends TornadoTestBase {
         Matrix3DFloat matrixA = new Matrix3DFloat(a);
         Matrix3DFloat matrixB = new Matrix3DFloat(X, Y, Z);
         TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA);
         taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y, Z);
         taskGraph.transferToHost(matrixB);
         taskGraph.execute();
@@ -426,6 +435,7 @@ public class TestMatrixTypes extends TornadoTestBase {
         Matrix2DFloat matrixA = new Matrix2DFloat(a);
         Matrix2DFloat matrixB = new Matrix2DFloat(X, Y);
         TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA);
         taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y);
         taskGraph.transferToHost(matrixB);
         taskGraph.execute();
@@ -468,6 +478,7 @@ public class TestMatrixTypes extends TornadoTestBase {
         Matrix2DInt matrixA = new Matrix2DInt(a);
         Matrix2DInt matrixB = new Matrix2DInt(X, Y);
         TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA);
         taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y);
         taskGraph.transferToHost(matrixB);
         taskGraph.execute();
@@ -505,6 +516,7 @@ public class TestMatrixTypes extends TornadoTestBase {
         Matrix2DDouble matrixA = new Matrix2DDouble(a);
         Matrix2DDouble matrixB = new Matrix2DDouble(X, Y);
         TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA);
         taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y);
         taskGraph.transferToHost(matrixB);
         taskGraph.execute();
@@ -546,6 +558,7 @@ public class TestMatrixTypes extends TornadoTestBase {
         Matrix2DFloat matrixA = new Matrix2DFloat(a);
         Matrix2DFloat matrixB = new Matrix2DFloat(X, Y);
         TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA);
         taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y);
         taskGraph.transferToHost(matrixB);
         taskGraph.execute();
@@ -572,6 +585,7 @@ public class TestMatrixTypes extends TornadoTestBase {
         Matrix2DFloat matrixA = new Matrix2DFloat(a);
         Matrix2DFloat matrixB = new Matrix2DFloat(X, Y);
         TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA);
         taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y);
         taskGraph.transferToHost(matrixB);
         taskGraph.execute();

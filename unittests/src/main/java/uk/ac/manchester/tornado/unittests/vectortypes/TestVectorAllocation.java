@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestVectorAllocation extends TornadoTestBase {
@@ -58,12 +59,11 @@ public class TestVectorAllocation extends TornadoTestBase {
             a[i] = (float) i;
         }
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .task("t0", TestVectorAllocation::testVectorAlloc, a, output)
-            .transferToHost(output)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestVectorAllocation::testVectorAlloc, a, output) //
+                .transferToHost(output) //
+                .execute();
 
         for (int i = 0; i < size; i++) {
             assertEquals(a[i] + (10), output[i], 0.001);
@@ -95,12 +95,11 @@ public class TestVectorAllocation extends TornadoTestBase {
             a[i] = (float) i;
         }
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestVectorAllocation::testVectorAlloc2, a, output)
-                .transferToHost(output)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestVectorAllocation::testVectorAlloc2, a, output) //
+                .transferToHost(output) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i++) {
             Float4 sequential = new Float4(a.length, 10, a[i], a[i] * 10);
@@ -136,12 +135,11 @@ public class TestVectorAllocation extends TornadoTestBase {
             a[i] = (float) i;
         }
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestVectorAllocation::testVectorAlloc3, a, output)
-                .transferToHost(output)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestVectorAllocation::testVectorAlloc3, a, output) //
+                .transferToHost(output) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i++) {
             Float3 sequential = new Float3(a.length, 10, a[i]);

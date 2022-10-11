@@ -28,6 +28,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -104,7 +105,8 @@ public class CodeGen extends TornadoTestBase {
 
         IntStream.range(0, imageHeight * imageHeight).forEach(x -> grayIntegralImage[x] = x);
 
-        taskGraph.task("bar", CodeGen::cascadeKernel, grayIntegralImage, imageWidth, imageHeight, resultsXY) //
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, grayIntegralImage) //
+                .task("bar", CodeGen::cascadeKernel, grayIntegralImage, imageWidth, imageHeight, resultsXY) //
                 .transferToHost(resultsXY);
 
         taskGraph.execute();

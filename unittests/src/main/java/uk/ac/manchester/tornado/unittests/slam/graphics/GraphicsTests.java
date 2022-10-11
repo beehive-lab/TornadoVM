@@ -63,6 +63,7 @@ import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
 import uk.ac.manchester.tornado.api.collections.types.VolumeOps;
 import uk.ac.manchester.tornado.api.collections.types.VolumeShort2;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class GraphicsTests extends TornadoTestBase {
@@ -102,6 +103,7 @@ public class GraphicsTests extends TornadoTestBase {
 
         // @formatter:off
         new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, src)
                 .task("t0", ImagingOps::mm2metersKernel, dest, src, scaleFactor)
                 .transferToHost(dest)
                 .execute();
@@ -145,6 +147,7 @@ public class GraphicsTests extends TornadoTestBase {
 
         // @formatter:off
         new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, src, gaussian)
                 .task("t0", ImagingOps::bilateralFilter, dest, src, gaussian, e_delta, radius)
                 .transferToHost(dest)
                 .execute();
@@ -181,6 +184,7 @@ public class GraphicsTests extends TornadoTestBase {
 
         // @formatter:off
         new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, src)
                 .task("t0", ImagingOps::resizeImage6, dest, src, scaleFactor, e_delta * 3, radius)
                 .transferToHost(dest)
                 .execute();
@@ -227,9 +231,10 @@ public class GraphicsTests extends TornadoTestBase {
 
         // @formatter:off
         new TaskGraph("s0")
-            .task("t0", GraphicsTests::testRotate, matrix4, vector3, result)
-            .transferToHost(result)
-            .execute();
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrix4, vector3)
+                .task("t0", GraphicsTests::testRotate, matrix4, vector3, result)
+                .transferToHost(result)
+                .execute();
         // @formatter:on
 
         for (int i = 0; i < size; i++) {
@@ -269,12 +274,11 @@ public class GraphicsTests extends TornadoTestBase {
         // Sequential execution
         GraphicsMath.depth2vertex(sequential, depth, matrix4);
 
-        // @formatter:off
-        new TaskGraph("s0")
-            .task("t0", GraphicsMath::depth2vertex, vertext, depth, matrix4)
-            .transferToHost(vertext)
-            .execute();
-        // @formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrix4, vertext, depth) //
+                .task("t0", GraphicsMath::depth2vertex, vertext, depth, matrix4) //
+                .transferToHost(vertext) //
+                .execute();
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
@@ -462,6 +466,7 @@ public class GraphicsTests extends TornadoTestBase {
 
         // @formatter:off
         new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, pyramidVertices, pyramidNormals, referenceViewVertices, referenceViewNormals, pyramidPose, projectReference) //
                 .task("t0", GraphicsTests::trackPose, pyramidTrackingResults, pyramidVertices, pyramidNormals,
                         referenceViewVertices, referenceViewNormals, pyramidPose,
                         projectReference, distanceThreshold, normalThreshold)
@@ -511,12 +516,11 @@ public class GraphicsTests extends TornadoTestBase {
 
         GraphicsTests.testPhiNode(verticesSeq, depth, matrix4);
 
-        // @formatter:off
-        new TaskGraph("s0")
-            .task("t0", GraphicsTests::testPhiNode, vertices, depth, matrix4)
-            .transferToHost(vertices)
-            .execute();
-        // @formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, depth, matrix4) //
+                .task("t0", GraphicsTests::testPhiNode, vertices, depth, matrix4) //
+                .transferToHost(vertices) //
+                .execute();
 
         Float3 o = vertices.get(0);
         Float3 s = verticesSeq.get(0);
@@ -552,12 +556,11 @@ public class GraphicsTests extends TornadoTestBase {
 
         GraphicsTests.testPhiNode2(verticesSeq, depth, matrix4);
 
-        // @formatter:off
-        new TaskGraph("s0")
-            .task("t0", GraphicsTests::testPhiNode2, vertices, depth, matrix4)
-            .transferToHost(vertices)
-            .execute();
-        // @formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, depth, matrix4) //
+                .task("t0", GraphicsTests::testPhiNode2, vertices, depth, matrix4) //
+                .transferToHost(vertices) //
+                .execute();
 
         Float3 o = vertices.get(0);
         Float3 s = verticesSeq.get(0);
@@ -598,12 +601,11 @@ public class GraphicsTests extends TornadoTestBase {
         // Sequential execution
         computeRigidTransform(matrix4, point, sequential);
 
-        // @formatter:off
-        new TaskGraph("s0")
-            .task("t0", GraphicsTests::computeRigidTransform, matrix4, point, output)
-            .transferToHost(output)
-            .execute();
-        // @formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrix4, point) //
+                .task("t0", GraphicsTests::computeRigidTransform, matrix4, point, output)//
+                .transferToHost(output)//
+                .execute();
 
         for (int i = 0; i < size; i++) {
             Float3 o = output.get(i);
@@ -643,12 +645,11 @@ public class GraphicsTests extends TornadoTestBase {
         // Sequential execution
         testNormaliseFunction(input, outSeq);
 
-        // @formatter:off
-        new TaskGraph("s0")
-                .task("t0", GraphicsTests::testNormaliseFunction, input, out)
-                .transferToHost(out)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
+                .task("t0", GraphicsTests::testNormaliseFunction, input, out) //
+                .transferToHost(out) //
                 .execute();
-        // @formatter:on
 
         for (int i = 0; i < size; i++) {
             Float3 o = out.get(i);
@@ -663,7 +664,7 @@ public class GraphicsTests extends TornadoTestBase {
 
     private static final float INVALID = -2;
 
-    public static final void raycast(ImageFloat3 verticies, ImageFloat3 normals, VolumeShort2 volume, Float3 volumeDims, Matrix4x4Float view, float nearPlane, float farPlane, float largeStep,
+    public static void raycast(ImageFloat3 verticies, ImageFloat3 normals, VolumeShort2 volume, Float3 volumeDims, Matrix4x4Float view, float nearPlane, float farPlane, float largeStep,
             float smallStep) {
 
         // use volume model to generate a reference view by raycasting ...
@@ -732,12 +733,11 @@ public class GraphicsTests extends TornadoTestBase {
 
         GraphicsTests.raycast(verticiesSequential, normalsSequential, volume, volumeDims, view, nearPlane, farPlane, largeStep, smallStep);
 
-        // @formatter:off
-        new TaskGraph("s0")
-            .task("t0", GraphicsTests::raycast, verticies, normals, volume, volumeDims, view, nearPlane, farPlane, largeStep, smallStep)
-            .transferToHost(verticies, normals)
-            .execute();
-        // @formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, volume, volumeDims, view) //
+                .task("t0", GraphicsTests::raycast, verticies, normals, volume, volumeDims, view, nearPlane, farPlane, largeStep, smallStep) //
+                .transferToHost(verticies, normals) //
+                .execute();
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
@@ -760,7 +760,7 @@ public class GraphicsTests extends TornadoTestBase {
         }
     }
 
-    public static final void testRayCastPointIsolation(ImageFloat4 output, ImageFloat3 verticies, VolumeShort2 volume, Float3 volumeDims, Matrix4x4Float view, float nearPlane, float farPlane,
+    public static void testRayCastPointIsolation(ImageFloat4 output, ImageFloat3 verticies, VolumeShort2 volume, Float3 volumeDims, Matrix4x4Float view, float nearPlane, float farPlane,
             float largeStep, float smallStep) {
 
         // use volume model to generate a reference view by raycasting ...
@@ -806,12 +806,11 @@ public class GraphicsTests extends TornadoTestBase {
 
         GraphicsTests.testRayCastPointIsolation(outputSeq, verticies, volume, volumeDims, view, nearPlane, farPlane, largeStep, smallStep);
 
-        // @formatter:off
-        new TaskGraph("s0")
-            .task("t0", GraphicsTests::testRayCastPointIsolation, output, verticies, volume, volumeDims, view, nearPlane, farPlane, largeStep, smallStep)
-            .transferToHost(output)
-            .execute();
-        // @formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, verticies, volume, volumeDims, view) //
+                .task("t0", GraphicsTests::testRayCastPointIsolation, output, verticies, volume, volumeDims, view, nearPlane, farPlane, largeStep, smallStep) //
+                .transferToHost(output)//
+                .execute();
 
         for (int i = 0; i < output.X(); i++) {
             for (int j = 0; j < output.Y(); j++) {
@@ -936,11 +935,10 @@ public class GraphicsTests extends TornadoTestBase {
 
         integrate(filteredDepthImage, invTrack, m2, volumeDims, sequential, mu, maxW);
 
-        // @formatter:off
-        TaskGraph taskGraph = new TaskGraph("s0")
-            .task("t0", GraphicsTests::integrate, filteredDepthImage, invTrack, m2, volumeDims, volume, mu, maxW)
-            .transferToHost(volume);
-        // @formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, filteredDepthImage, invTrack, m2, volumeDims) //
+                .task("t0", GraphicsTests::integrate, filteredDepthImage, invTrack, m2, volumeDims, volume, mu, maxW) //
+                .transferToHost(volume); //
 
         int c = 0;
         while (c++ < 10) {
@@ -977,12 +975,11 @@ public class GraphicsTests extends TornadoTestBase {
 
         Renderer.renderTrack(sequential, track);
 
-        // @formatter:off
-        new TaskGraph("s0")
-            .task("t0", Renderer::renderTrack, output, track)
-            .transferToHost(output)
-            .execute();
-        // @formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, track) //
+                .task("t0", Renderer::renderTrack, output, track) //
+                .transferToHost(output) //
+                .execute(); //
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
@@ -1027,12 +1024,11 @@ public class GraphicsTests extends TornadoTestBase {
 
         GraphicsTests.volumeOps(outputSeq, volume, dim, point);
 
-        // @formatter:off
-        new TaskGraph("s0")
-            .task("t0", GraphicsTests::volumeOps, output, volume, dim, point)
-            .transferToHost(output)
-            .execute();
-        // @formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, volume, dim, point) //
+                .task("t0", GraphicsTests::volumeOps, output, volume, dim, point) //
+                .transferToHost(output) //
+                .execute();
 
         for (int i = 0; i < output.getLength(); i++) {
             Float3 o = output.get(i);
@@ -1080,12 +1076,11 @@ public class GraphicsTests extends TornadoTestBase {
 
         GraphicsTests.getCameraMatrix(f, seq);
 
-        // @formatter:off
-        new TaskGraph("s0")
-            .task("t0", GraphicsTests::getCameraMatrix, f, m)
-            .transferToHost(m)
-            .execute();
-        // @formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, f) //
+                .task("t0", GraphicsTests::getCameraMatrix, f, m) //
+                .transferToHost(m) //
+                .execute();
 
         for (int i = 0; i < m.N(); i++) {
             for (int j = 0; j < m.M(); j++) {
@@ -1140,12 +1135,11 @@ public class GraphicsTests extends TornadoTestBase {
 
         Renderer.renderVolume(outputSeq, volumeSeq, volumeDimsSeq, scenePoseSeq, nearPlane, farPlane * 2f, smallStep, largeStep, light, ambient);
 
-        // @formatter:off
-        new TaskGraph("s0")
-            .task("t0", Renderer::renderVolume, output, volume, volumeDims, scenePose, nearPlane, farPlane * 2f, smallStep, largeStep, light, ambient)
-            .transferToHost(output)
-            .execute();
-        // @formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, volume, volumeDims, scenePose, light, ambient) //
+                .task("t0", Renderer::renderVolume, output, volume, volumeDims, scenePose, nearPlane, farPlane * 2f, smallStep, largeStep, light, ambient) //
+                .transferToHost(output) //
+                .execute();
 
         for (int i = 0; i < output.X(); i++) {
             for (int j = 0; j < output.Y(); j++) {
@@ -1272,12 +1266,11 @@ public class GraphicsTests extends TornadoTestBase {
 
         GraphicsTests.mapReduce(outputSeq, image);
 
-        // @formatter:off
-        new TaskGraph("s0")
-            .task("t0", GraphicsTests::mapReduce, output, image)
-            .transferToHost(output)
-            .execute();
-        // @formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, image) //
+                .task("t0", GraphicsTests::mapReduce, output, image) //
+                .transferToHost(output) //
+                .execute();
 
         Assert.assertArrayEquals(outputSeq, output, 0.1f);
     }
@@ -1323,12 +1316,12 @@ public class GraphicsTests extends TornadoTestBase {
             input.set(i, f);
         }
 
-        // @formatter:off
-        new TaskGraph("s0")
-            .task("t0", GraphicsTests::mapReduce3, output, input)
-            .transferToHost(output)
-            .execute();
-        // @formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
+                .task("t0", GraphicsTests::mapReduce3, output, input) //
+                .transferToHost(output) //
+                .execute();
+
     }
 
     public static void testVSKernel(int[] x, int[] y, int[] z, VolumeShort2 v, float[] output) {
@@ -1366,12 +1359,11 @@ public class GraphicsTests extends TornadoTestBase {
 
         testVSKernel(x, y, z, volume, seq);
 
-        // @formatter:off
-        new TaskGraph("s0")
-            .task("t0", GraphicsTests::testVSKernel, x, y, z, volume, output)
-            .transferToHost(output)
-            .execute();
-        // @formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, x, y, z, volume) //
+                .task("t0", GraphicsTests::testVSKernel, x, y, z, volume, output) //
+                .transferToHost(output) //
+                .execute();
 
         for (int i = 0; i < output.length; i++) {
             assertEquals(seq[i], output[i], 0.001f);

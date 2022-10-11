@@ -562,8 +562,6 @@ public interface TornadoAPI {
 
     TornadoAPI transferToDevice(final int mode, Object... objects);
 
-    TornadoAPI forceCopyIn(Object... objects);
-
     /**
      * Open a stream channel between the device and the host.
      *

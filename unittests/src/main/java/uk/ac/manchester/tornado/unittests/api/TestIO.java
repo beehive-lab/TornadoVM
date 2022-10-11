@@ -58,7 +58,7 @@ public class TestIO extends TornadoTestBase {
         TaskGraph s0 = new TaskGraph("s0");
         assertNotNull(s0);
 
-        s0.forceCopyIn(arrayA, arrayB);
+        s0.transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA, arrayB);
         s0.task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC);
         s0.transferToHost(arrayC);
 
