@@ -47,7 +47,7 @@ public class PTXDevice implements TornadoTargetDevice {
     private final long totalDeviceMemory;
     private final long constantBufferSize;
     private final long maxAllocationSize;
-    private long maxThreadsPerBlock;
+    private int maxThreadsPerBlock;
 
     public PTXDevice(int deviceIndex) {
         this.deviceIndex = deviceIndex;
@@ -140,7 +140,7 @@ public class PTXDevice implements TornadoTargetDevice {
     }
 
     @Override
-    public long getMaxThreadsPerBlock() {
+    public int getMaxThreadsPerBlock() {
         return maxThreadsPerBlock;
     }
 

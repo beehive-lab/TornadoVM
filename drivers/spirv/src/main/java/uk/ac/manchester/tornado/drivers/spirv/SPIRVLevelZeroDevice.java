@@ -181,8 +181,8 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
     }
 
     @Override
-    public long getMaxThreadsPerBlock() {
-        return getDeviceMaxWorkGroupSize()[0];
+    public int getMaxThreadsPerBlock() {
+        return (int) getDeviceMaxWorkGroupSize()[0];
     }
 
     @Override

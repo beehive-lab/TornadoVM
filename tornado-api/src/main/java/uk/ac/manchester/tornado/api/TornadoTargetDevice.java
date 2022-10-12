@@ -55,7 +55,7 @@ public interface TornadoTargetDevice {
 
     long[] getDeviceMaxWorkGroupSize();
 
-    long getMaxThreadsPerBlock();
+    int getMaxThreadsPerBlock();
 
     int getDeviceMaxClockFrequency();
 

@@ -97,7 +97,7 @@ public class SPIRVOCLDevice extends SPIRVDevice {
     }
 
     @Override
-    public long getMaxThreadsPerBlock() {
+    public int getMaxThreadsPerBlock() {
         return device.getMaxThreadsPerBlock();
     }
 

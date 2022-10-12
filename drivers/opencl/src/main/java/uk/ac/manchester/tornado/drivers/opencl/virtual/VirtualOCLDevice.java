@@ -158,8 +158,8 @@ public class VirtualOCLDevice extends TornadoLogger implements OCLTargetDevice {
     }
 
     @Override
-    public long getMaxThreadsPerBlock() {
-        return maxWorkGroupSize[0];
+    public int getMaxThreadsPerBlock() {
+        return (int) maxWorkGroupSize[0];
     }
 
     @Override
