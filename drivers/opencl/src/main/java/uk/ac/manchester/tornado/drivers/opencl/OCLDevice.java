@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -40,10 +40,6 @@ import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceInfo;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLLocalMemType;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-
-import static uk.ac.manchester.tornado.drivers.opencl.OpenCL.CL_TRUE;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableFreq;
 
 public class OCLDevice implements OCLTargetDevice {
 
@@ -130,6 +126,7 @@ public class OCLDevice implements OCLTargetDevice {
         getDeviceSingleFPConfig();
         getDeviceMemoryBaseAlignment();
         getDeviceMaxWorkItemSizes();
+        getDeviceMaxWorkGroupSize();
         getDeviceName();
         getDeviceVersion();
         getDeviceType();
@@ -143,7 +140,7 @@ public class OCLDevice implements OCLTargetDevice {
         getDeviceVendorId();
     }
 
-    native static void clGetDeviceInfo(long id, int info, byte[] buffer);
+    static native void clGetDeviceInfo(long id, int info, byte[] buffer);
 
     public long getId() {
         return id;
@@ -341,7 +338,8 @@ public class OCLDevice implements OCLTargetDevice {
 
     private long getDeviceMaxWorkGroupSize_0() {
         queryOpenCLAPI(OCLDeviceInfo.CL_DEVICE_MAX_WORK_GROUP_SIZE.getValue());
-        return buffer.getLong();
+        maxWorkGroupSize = buffer.getLong();
+        return maxWorkGroupSize;
     }
 
     @Override
@@ -351,6 +349,11 @@ public class OCLDevice implements OCLTargetDevice {
         }
         maxWorkGroupSize = getDeviceMaxWorkGroupSize_0();
         return new long[] { maxWorkGroupSize };
+    }
+
+    @Override
+    public long getMaxThreadsPerBlock() {
+        return maxWorkGroupSize;
     }
 
     @Override

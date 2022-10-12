@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2022 APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,13 +38,13 @@ public class PTXModule {
         javaName = name;
     }
 
-    private native static byte[] cuModuleLoadData(byte[] source);
+    private static native byte[] cuModuleLoadData(byte[] source);
 
-    private native static long cuModuleUnload(byte[] module);
+    private static native long cuModuleUnload(byte[] module);
 
-    private native static int cuOccupancyMaxPotentialBlockSize(byte[] module, String funcName);
+    private static native int cuOccupancyMaxPotentialBlockSize(byte[] module, String funcName);
 
-    public int getMaxThreadBlocks() {
+    public int getPotentialBlockSizeMaxOccupancy() {
         if (maxBlockSize < 0) {
             maxBlockSize = cuOccupancyMaxPotentialBlockSize(moduleWrapper, kernelFunctionName);
         }
