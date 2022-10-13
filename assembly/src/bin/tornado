@@ -30,6 +30,7 @@ import shlex
 import sys
 import re
 import argparse
+import platform
 
 # ########################################################
 # FLAGS FOR TORNADOVM
@@ -90,6 +91,8 @@ class TornadoVMRunnerTool():
 
         try:
             self.java_home = os.environ["JAVA_HOME"]
+            if (platform.platform().startswith("MING")):
+                self.java_home = self.java_home.replace("\\", "/")
         except:
             print("Please ensure the JAVA_HOME environment variable is set correctly")
             sys.exit(0)

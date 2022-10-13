@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2022 APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -57,13 +57,18 @@ public class PTXScheduler {
         if (taskMeta.isLocalWorkDefined()) {
             return Arrays.stream(taskMeta.getLocalWork()).mapToInt(l -> (int) l).toArray();
         }
-        return calculateBlockDimension(taskMeta.getGlobalWork(), module.getMaxThreadBlocks(), taskMeta.getDims(), module.javaName);
+
+        long maxThreadsPerBlock = taskMeta.getLogicDevice().getPhysicalDevice().getMaxThreadsPerBlock();
+        if (taskMeta.getDims() > 1) {
+            maxThreadsPerBlock = module.getPotentialBlockSizeMaxOccupancy();
+        }
+        return calculateBlockDimension(taskMeta.getGlobalWork(), maxThreadsPerBlock, taskMeta.getDims(), module.javaName);
     }
 
-    public int[] calculateBlockDimension(long[] globalWork, int maxThreadBlocks, int dimension, String javaName) {
+    public int[] calculateBlockDimension(long[] globalWork, long maxThreadBlocks, int dimension, String javaName) {
         int[] defaultBlocks = { 1, 1, 1 };
         try {
-            int maxBlockThreads = maxThreadBlocks;
+            long maxBlockThreads = maxThreadBlocks;
             for (int i = 0; i < dimension; i++) {
                 defaultBlocks[i] = calculateBlockSize(calculateEffectiveMaxWorkItemSize(dimension, maxBlockThreads), globalWork[i]);
             }
@@ -78,7 +83,7 @@ public class PTXScheduler {
         return defaultBlocks;
     }
 
-    private long calculateEffectiveMaxWorkItemSize(int dimension, int threads) {
+    private long calculateEffectiveMaxWorkItemSize(int dimension, long threads) {
         if (dimension == 0) {
             shouldNotReachHere();
         }
