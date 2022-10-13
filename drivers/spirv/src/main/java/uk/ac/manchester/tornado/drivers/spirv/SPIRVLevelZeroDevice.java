@@ -181,6 +181,11 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
     }
 
     @Override
+    public int getMaxThreadsPerBlock() {
+        return (int) getDeviceMaxWorkGroupSize()[0];
+    }
+
+    @Override
     public int getDeviceMaxClockFrequency() {
         return deviceProperties.getCoreClockRate();
     }
