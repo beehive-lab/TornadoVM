@@ -22,20 +22,22 @@
  */
 package uk.ac.manchester.tornado.drivers.common;
 
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
+
+import java.util.ArrayList;
+
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 
-import java.util.ArrayList;
-
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
-
 /**
- * This class implements a cache of allocated buffers on the device and also handles the logic
- * to allocate and free buffers. It is extended for each backend.
- * It maintains a list of used buffers and another list of free buffers. When performing an allocation,
- * it first checks if memory is available on the device. If it is not, then it will try to use a buffer from the cache.
+ * This class implements a cache of allocated buffers on the device and also
+ * handles the logic to allocate and free buffers. It is extended for each
+ * backend. It maintains a list of used buffers and another list of free
+ * buffers. When performing an allocation, it first checks if memory is
+ * available on the device. If it is not, then it will try to use a buffer from
+ * the cache.
  */
 public abstract class TornadoBufferProvider {
 
@@ -50,8 +52,10 @@ public abstract class TornadoBufferProvider {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof BufferInfo)) return false;
+            if (this == o)
+                return true;
+            if (!(o instanceof BufferInfo))
+                return false;
             BufferInfo that = (BufferInfo) o;
             return buffer == that.buffer && size == that.size;
         }
@@ -72,7 +76,8 @@ public abstract class TornadoBufferProvider {
         this.usedBuffers = new ArrayList<>();
         this.freeBuffers = new ArrayList<>();
 
-        // There is no way of querying the available memory on the device. Instead, use a flag similar to -Xmx.
+        // There is no way of querying the available memory on the device. Instead, use
+        // a flag similar to -Xmx.
         availableMemory = DEVICE_AVAILABLE_MEMORY;
     }
 
@@ -114,8 +119,10 @@ public abstract class TornadoBufferProvider {
             return allocate(size);
         } else if (size < targetDevice.getDeviceMaxAllocationSize()) {
             // First check if there is an available buffer of given size.
-            // Perform a sequential search through the freeBuffers to get the buffer with the lowest size
-            // than can fulfill the allocation. The number of allocated buffers is usually low, so searching
+            // Perform a sequential search through the freeBuffers to get the buffer with
+            // the lowest size
+            // than can fulfill the allocation. The number of allocated buffers is usually
+            // low, so searching
             // sequentially should not take a lot of time.
             int minBufferIndex = -1;
             for (int i = 0; i < freeBuffers.size(); i++) {
@@ -128,7 +135,8 @@ public abstract class TornadoBufferProvider {
             if (minBufferIndex != -1) {
                 return markBufferUsed(minBufferIndex).buffer;
             } else {
-                // There is no buffer to fulfill the size. Start freeing unused buffers and try to allocate.
+                // There is no buffer to fulfill the size. Start freeing unused buffers and try
+                // to allocate.
                 freeBuffers(size);
                 if (size <= availableMemory) {
                     return allocate(size);
@@ -143,7 +151,8 @@ public abstract class TornadoBufferProvider {
     }
 
     /**
-     * Removes the buffer from the {@link #usedBuffers} list and add it to the @{@link #freeBuffers} list.
+     * Removes the buffer from the {@link #usedBuffers} list and add it to
+     * the @{@link #freeBuffers} list.
      */
     public void markBufferReleased(long buffer, long size) {
         int foundIndex = -1;
@@ -158,8 +167,8 @@ public abstract class TornadoBufferProvider {
         freeBuffers.add(removedBuffer);
     }
 
-    public boolean canAllocate(int allocationsRequired) {
-        return freeBuffers.size() >= allocationsRequired;
+    public boolean checkBufferAvailability(int numBuffersRequired) {
+        return freeBuffers.size() >= numBuffersRequired;
     }
 
     public void resetBuffers() {

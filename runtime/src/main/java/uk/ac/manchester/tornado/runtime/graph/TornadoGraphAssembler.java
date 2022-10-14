@@ -34,28 +34,96 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 
 public class TornadoGraphAssembler {
 
-    public enum TornadoVMBytecodes {
-        // @formatter:off
-        PERSIST((byte) 10),             // PERSIST(dest, numObjects, objects)
-        COPY_IN((byte) 11),             // COPY(obj, src, dest)
-        STREAM_IN((byte) 12),           // STREAM_IN(obj, src, dest)
-        STREAM_OUT((byte) 13),          // STREAM_OUT(obj, src, dest)
+    public enum TornadoVMBytecode {
+
+        /**
+         * Native buffer allocation. If there is not enough space on the target device,
+         * then we throw an exception.
+         */
+        ALLOC((byte) 10), // ALLOC(dest, numObjects, objects)
+
+        /**
+         * Send data from H -> D only in the first execution of the task-graph.
+         *
+         * If there is no ALLOC associated with the copy-in. Otherwise, an exception is
+         * launched.
+         */
+        TRANSFER_HOST_TO_DEVICE_ONCE((byte) 11), // TRANSFER_HOST_TO_DEVICE_ONCE(obj, src, dest)
+
+        /**
+         * Send data from H -> D in every execution of the task-graph. If there is no
+         * ALLOC associated with the copy-in. Otherwise, an exception is launched.
+         */
+        TRANSFER_HOST_TO_DEVICE_ALWAYS((byte) 12), // TRANSFER_HOST_TO_DEVICE_ALWAYS(obj, src, dest)
+
+        /**
+         * Send data from D -> H in every execution of the task-graph. If there is no
+         * ALLOC associated with the stream_out. Otherwise, an exception is launched.
+         */
+        TRANSFER_DEVICE_TO_HOST_ALWAYS((byte) 13), // STREAM_OUT(obj, src, dest)
+
+        /**
+         *
+         */
         STREAM_OUT_BLOCKING((byte) 14), // STREAM_OUT(obj, src, dest)
-        LAUNCH((byte) 15),              // LAUNCH(dep list index)
-        BARRIER((byte) 16),             // BARRIER <events>
-        SETUP((byte) 17),
-        BEGIN((byte) 18),               // BEGIN(num contexts, num stacks, num dep lists)
-        ADD_DEP((byte) 19),             // ADD_DEP(list index)
-        CONTEXT((byte) 20),             // CONTEXT(ctx)
-        END((byte) 21),                 // END(ctx)
-        CONSTANT_ARGUMENT((byte) 22),
-        REFERENCE_ARGUMENT((byte) 23),
-        DEALLOCATE((byte) 24);          // DEALLOCATE(obj,dest)
-        // @formatter:on
+
+        /**
+         * Compile the code the first iteration that the task-graph is executed and then
+         * execute the kernel. If the kernel is already compiled, the kernel is directly
+         * launched.
+         */
+        LAUNCH((byte) 15), // LAUNCH(dep list index)
+
+        /**
+         * Sync point. The BC interpreter waits for an event to be finished before
+         * continuing the execution.
+         */
+        BARRIER((byte) 16), // BARRIER <events>
+
+        /**
+         * Initialization of a TornadoVM BC region
+         */
+        INIT_BC_REGION((byte) 17), // INIT(num contexts, num stacks, num dep lists),
+
+        /**
+         * Execution initialization.
+         */
+        BEGIN((byte) 18), //
+
+        /**
+         * Register an event to be used in a barrier bytecode.
+         */
+        ADD_DEPENDENCY((byte) 19), // ADD_DEPENDENCY(list index)
+
+        /**
+         * Open an execution context. It needs a context-id (device-id).
+         */
+        CONTEXT((byte) 20), // CONTEXT(ctx)
+
+        /**
+         * Close a bytecode region associated with a context.
+         */
+        END((byte) 21), // END(ctx)
+
+        /**
+         * Add a constant value to be used as an argument for a compute-kernel.
+         */
+        PUSH_CONSTANT_ARGUMENT((byte) 22), //
+
+        /**
+         * Add a reference (e.g., a Java array reference) to be used as an argument for
+         * a compute-kernel.
+         */
+        PUSH_REFERENCE_ARGUMENT((byte) 23), //
+
+        /**
+         * De-allocation of a buffer from a device
+         */
+        DEALLOC((byte) 24); // DEALLOCATE(obj,dest)
 
         private byte value;
 
-        TornadoVMBytecodes(byte value) {
+        TornadoVMBytecode(byte value) {
             this.value = value;
         }
 
@@ -80,32 +148,32 @@ public class TornadoGraphAssembler {
     }
 
     void begin() {
-        buffer.put(TornadoVMBytecodes.BEGIN.value);
+        buffer.put(TornadoVMBytecode.BEGIN.value);
     }
 
     public void end() {
-        buffer.put(TornadoVMBytecodes.END.value);
+        buffer.put(TornadoVMBytecode.END.value);
     }
 
     void setup(int numContexts, int numStacks, int numDeps) {
-        buffer.put(TornadoVMBytecodes.SETUP.value);
+        buffer.put(TornadoVMBytecode.INIT_BC_REGION.value);
         buffer.putInt(numContexts);
         buffer.putInt(numStacks);
         buffer.putInt(numDeps);
     }
 
     void addDependency(int index) {
-        buffer.put(TornadoVMBytecodes.ADD_DEP.value);
+        buffer.put(TornadoVMBytecode.ADD_DEPENDENCY.value);
         buffer.putInt(index);
     }
 
     public void context(int index) {
-        buffer.put(TornadoVMBytecodes.CONTEXT.value);
+        buffer.put(TornadoVMBytecode.CONTEXT.value);
         buffer.putInt(index);
     }
 
-    public void persist(List<AbstractNode> values, int ctx, long batchSize) {
-        buffer.put(TornadoVMBytecodes.PERSIST.value);
+    public void allocate(List<AbstractNode> values, int ctx, long batchSize) {
+        buffer.put(TornadoVMBytecode.ALLOC.value);
         buffer.putInt(ctx);
         buffer.putLong(batchSize);
         buffer.putInt(values.size());
@@ -115,13 +183,13 @@ public class TornadoGraphAssembler {
     }
 
     public void deallocate(int object, int ctx) {
-        buffer.put(TornadoVMBytecodes.DEALLOCATE.value);
+        buffer.put(TornadoVMBytecode.DEALLOC.value);
         buffer.putInt(object);
         buffer.putInt(ctx);
     }
 
-    void copyToContext(int obj, int ctx, int dep, long offset, long size) {
-        buffer.put(TornadoVMBytecodes.COPY_IN.value);
+    void transferToDeviceContext(int obj, int ctx, int dep, long offset, long size) {
+        buffer.put(TornadoVMBytecode.TRANSFER_HOST_TO_DEVICE_ONCE.value);
         buffer.putInt(obj);
         buffer.putInt(ctx);
         buffer.putInt(dep);
@@ -130,7 +198,7 @@ public class TornadoGraphAssembler {
     }
 
     void streamInToContext(int obj, int ctx, int dep, long offset, long size) {
-        buffer.put(TornadoVMBytecodes.STREAM_IN.value);
+        buffer.put(TornadoVMBytecode.TRANSFER_HOST_TO_DEVICE_ALWAYS.value);
         buffer.putInt(obj);
         buffer.putInt(ctx);
         buffer.putInt(dep);
@@ -139,7 +207,7 @@ public class TornadoGraphAssembler {
     }
 
     void streamOutOfContext(int obj, int ctx, int dep, long offset, long size) {
-        buffer.put(TornadoVMBytecodes.STREAM_OUT.value);
+        buffer.put(TornadoVMBytecode.TRANSFER_DEVICE_TO_HOST_ALWAYS.value);
         buffer.putInt(obj);
         buffer.putInt(ctx);
         buffer.putInt(dep);
@@ -148,7 +216,7 @@ public class TornadoGraphAssembler {
     }
 
     void launch(int gtid, int ctx, int task, int numParameters, int dep, long offset, long size) {
-        buffer.put(TornadoVMBytecodes.LAUNCH.value);
+        buffer.put(TornadoVMBytecode.LAUNCH.value);
         buffer.putInt(gtid);
         buffer.putInt(ctx);
         buffer.putInt(task);
@@ -159,17 +227,17 @@ public class TornadoGraphAssembler {
     }
 
     public void barrier(int dep) {
-        buffer.put(TornadoVMBytecodes.BARRIER.value);
+        buffer.put(TornadoVMBytecode.BARRIER.value);
         buffer.putInt(dep);
     }
 
     void constantArg(int index) {
-        buffer.put(TornadoVMBytecodes.CONSTANT_ARGUMENT.value);
+        buffer.put(TornadoVMBytecode.PUSH_CONSTANT_ARGUMENT.value);
         buffer.putInt(index);
     }
 
     void referenceArg(int index) {
-        buffer.put(TornadoVMBytecodes.REFERENCE_ARGUMENT.value);
+        buffer.put(TornadoVMBytecode.PUSH_REFERENCE_ARGUMENT.value);
         buffer.putInt(index);
     }
 
