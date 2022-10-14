@@ -20,8 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 package uk.ac.manchester.tornado.runtime;
 
@@ -246,10 +244,10 @@ public class TornadoVM extends TornadoLogger {
             }
         }
 
-        return device.allocateBulk(objects, sizeBatch, objectStates);
+        return device.allocateObjects(objects, sizeBatch, objectStates);
     }
 
-    private int executeDealloc(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex) {
+    private int executeDeAlloc(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex) {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
         Object object = objects.get(objectIndex);
 
@@ -685,7 +683,7 @@ public class TornadoVM extends TornadoLogger {
                 if (isWarmup) {
                     continue;
                 }
-                lastEvent = executeDealloc(tornadoVMBytecodeList, objectIndex, contextIndex);
+                lastEvent = executeDeAlloc(tornadoVMBytecodeList, objectIndex, contextIndex);
             } else if (op == TornadoVMBytecode.TRANSFER_HOST_TO_DEVICE_ONCE.value()) {
                 final int objectIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();

@@ -69,7 +69,7 @@ public interface TornadoDevice {
      */
     int allocate(Object object, long batchSize, TornadoDeviceObjectState state);
 
-    int allocateBulk(Object[] objects, long batchSize, TornadoDeviceObjectState[] states);
+    int allocateObjects(Object[] objects, long batchSize, TornadoDeviceObjectState[] states);
 
     int deallocate(TornadoDeviceObjectState state);
 
