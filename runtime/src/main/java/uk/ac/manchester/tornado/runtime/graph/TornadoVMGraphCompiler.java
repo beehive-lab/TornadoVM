@@ -43,7 +43,6 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
-import uk.ac.manchester.tornado.runtime.graph.TornadoGraphAssembler.TornadoVMBytecode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextOpNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.DependentReadNode;
@@ -215,13 +214,15 @@ public class TornadoVMGraphCompiler {
     private static void synchronizeOperationLastByteCode(TornadoVMGraphCompilationResult result, int numDepLists) {
         final byte[] code = result.getCode();
         final int codeSize = result.getCodeSize();
-        if (code[codeSize - 13] == TornadoVMBytecode.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()) {
-            code[codeSize - 13] = TornadoVMBytecode.STREAM_OUT_BLOCKING.value();
-        } else if (code[codeSize - 29] == TornadoVMBytecode.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()) {
-            code[codeSize - 29] = TornadoVMBytecode.STREAM_OUT_BLOCKING.value();
-        } else {
-            result.barrier(numDepLists);
-        }
+        // if (code[codeSize - 13] ==
+        // TornadoVMBytecode.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()) {
+        // code[codeSize - 13] = TornadoVMBytecode.STREAM_OUT_BLOCKING.value();
+        // } else if (code[codeSize - 29] ==
+        // TornadoVMBytecode.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()) {
+        // code[codeSize - 29] = TornadoVMBytecode.STREAM_OUT_BLOCKING.value();
+        // } else {
+        result.barrier(numDepLists);
+        // }
     }
 
     private static void printIvs(StructuredGraph graph) {

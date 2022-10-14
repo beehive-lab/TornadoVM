@@ -277,7 +277,8 @@ public class TornadoVM extends TornadoLogger {
         return (object instanceof KernelContext);
     }
 
-    private int executeCopyIn(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch, final int[] waitList) {
+    private int transferHostToDeviceOnce(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch,
+            final int[] waitList) {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
         Object object = objects.get(objectIndex);
 
@@ -322,7 +323,7 @@ public class TornadoVM extends TornadoLogger {
         return 0;
     }
 
-    private int executeStreamIn(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch,
+    private int transferHostToDeviceAlways(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch,
             final int[] waitList) {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
         Object object = objects.get(objectIndex);
@@ -360,7 +361,7 @@ public class TornadoVM extends TornadoLogger {
         return 0;
     }
 
-    private int executeStreamOut(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch,
+    private int transferDeviceToHost(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch,
             final int[] waitList) {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
         Object object = objects.get(objectIndex);
@@ -370,8 +371,8 @@ public class TornadoVM extends TornadoLogger {
         }
 
         if (TornadoOptions.PRINT_BYTECODES) {
-            String verbose = String.format("bc: " + debugHighLightBC("STREAM_OUT") + "[0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset,
-                    eventList);
+            String verbose = String.format("bc: " + debugHighLightBC("TRANSFER_DEVICE_TO_HOST_ALWAYS") + "[0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device,
+                    sizeBatch, offset, eventList);
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
 
@@ -397,7 +398,7 @@ public class TornadoVM extends TornadoLogger {
         return lastEvent;
     }
 
-    private void executeStreamOutBlocking(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch,
+    private void transferDeviceToHostBlocking(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch,
             final int[] waitList) {
 
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
@@ -704,7 +705,7 @@ public class TornadoVM extends TornadoLogger {
                 if (isWarmup) {
                     continue;
                 }
-                executeCopyIn(tornadoVMBytecodeList, objectIndex, contextIndex, offset, eventList, sizeBatch, waitList);
+                transferHostToDeviceOnce(tornadoVMBytecodeList, objectIndex, contextIndex, offset, eventList, sizeBatch, waitList);
             } else if (op == TornadoVMBytecode.TRANSFER_HOST_TO_DEVICE_ALWAYS.value()) {
                 final int objectIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();
@@ -715,7 +716,7 @@ public class TornadoVM extends TornadoLogger {
                 if (isWarmup) {
                     continue;
                 }
-                executeStreamIn(tornadoVMBytecodeList, objectIndex, contextIndex, offset, eventList, sizeBatch, waitList);
+                transferHostToDeviceAlways(tornadoVMBytecodeList, objectIndex, contextIndex, offset, eventList, sizeBatch, waitList);
             } else if (op == TornadoVMBytecode.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()) {
                 final int objectIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();
@@ -726,7 +727,7 @@ public class TornadoVM extends TornadoLogger {
                 if (isWarmup) {
                     continue;
                 }
-                lastEvent = executeStreamOut(tornadoVMBytecodeList, objectIndex, contextIndex, offset, eventList, sizeBatch, waitList);
+                lastEvent = transferDeviceToHost(tornadoVMBytecodeList, objectIndex, contextIndex, offset, eventList, sizeBatch, waitList);
             } else if (op == TornadoVMBytecode.STREAM_OUT_BLOCKING.value()) {
                 final int objectIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();
@@ -738,7 +739,7 @@ public class TornadoVM extends TornadoLogger {
                 if (isWarmup) {
                     continue;
                 }
-                executeStreamOutBlocking(tornadoVMBytecodeList, objectIndex, contextIndex, offset, eventList, sizeBatch, waitList);
+                transferDeviceToHostBlocking(tornadoVMBytecodeList, objectIndex, contextIndex, offset, eventList, sizeBatch, waitList);
             } else if (op == TornadoVMBytecode.LAUNCH.value()) {
                 final int callWrapperIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();
