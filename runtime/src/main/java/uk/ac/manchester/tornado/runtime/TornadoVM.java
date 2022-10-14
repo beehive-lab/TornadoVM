@@ -233,11 +233,6 @@ public class TornadoVM extends TornadoLogger {
 
     private int executeAlloc(StringBuilder tornadoVMBytecodeList, int[] args, int contextIndex, long sizeBatch) {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
-        // if (TornadoOptions.PRINT_BYTECODES) {
-        // String verbose = String.format("bc: PERSIST %d objects on %s, size=%d",
-        // args.length, device, sizeBatch);
-        // tornadoVMBytecodeList.append(verbose).append("\n");
-        // }
 
         Object[] objects = new Object[args.length];
         DeviceObjectState[] objectStates = new DeviceObjectState[args.length];
