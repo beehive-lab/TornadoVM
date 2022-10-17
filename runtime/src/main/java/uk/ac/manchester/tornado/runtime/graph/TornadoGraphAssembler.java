@@ -34,6 +34,9 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 
 public class TornadoGraphAssembler {
 
+    /**
+     * TornadoVM Bytecode
+     */
     public enum TornadoVMBytecode {
 
         /**
@@ -60,12 +63,12 @@ public class TornadoGraphAssembler {
          * Send data from D -> H in every execution of the task-graph. If there is no
          * ALLOC associated with the stream_out. Otherwise, an exception is launched.
          */
-        TRANSFER_DEVICE_TO_HOST_ALWAYS((byte) 13), // STREAM_OUT(obj, src, dest)
+        TRANSFER_DEVICE_TO_HOST_ALWAYS((byte) 13), // TRANSFER_DEVICE_TO_HOST_ALWAYS(obj, src, dest)
 
         /**
          *
          */
-        STREAM_OUT_BLOCKING((byte) 14), // STREAM_OUT(obj, src, dest)
+        TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING((byte) 14), // TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING(obj, src, dest)
 
         /**
          * Compile the code the first iteration that the task-graph is executed and then
@@ -108,18 +111,18 @@ public class TornadoGraphAssembler {
         /**
          * Add a constant value to be used as an argument for a compute-kernel.
          */
-        PUSH_CONSTANT_ARGUMENT((byte) 22), //
+        PUSH_CONSTANT_ARGUMENT((byte) 22), // PUSH_CONSTANT_ARGUMENT(constant)
 
         /**
          * Add a reference (e.g., a Java array reference) to be used as an argument for
          * a compute-kernel.
          */
-        PUSH_REFERENCE_ARGUMENT((byte) 23), //
+        PUSH_REFERENCE_ARGUMENT((byte) 23), // PUSH_REFERENCE_ARGUMENT(reference)
 
         /**
          * De-allocation of a buffer from a device
          */
-        DEALLOC((byte) 24); // DEALLOCATE(obj,dest)
+        DEALLOC((byte) 24); // DEALLOC(obj,dest)
 
         private byte value;
 
