@@ -214,9 +214,9 @@ public class TornadoVMGraphCompiler {
         final byte[] code = result.getCode();
         final int codeSize = result.getCodeSize();
         if (code[codeSize - 13] == TornadoVMBytecode.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()) {
-            code[codeSize - 13] = TornadoVMBytecode.STREAM_OUT_BLOCKING.value();
+            code[codeSize - 13] = TornadoVMBytecode.TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING.value();
         } else if (code[codeSize - 29] == TornadoVMBytecode.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()) {
-            code[codeSize - 29] = TornadoVMBytecode.STREAM_OUT_BLOCKING.value();
+            code[codeSize - 29] = TornadoVMBytecode.TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING.value();
         } else {
             result.barrier(numDepLists);
         }
