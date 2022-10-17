@@ -126,12 +126,10 @@ public class TornadoVM extends TornadoLogger {
 
         debug("loading tornado vm...");
 
-        TornadoInternalError.guarantee(buffer.get() == TornadoVMBytecode.INIT_BC_REGION.value(), "invalid code");
+        TornadoInternalError.guarantee(buffer.get() == TornadoVMBytecode.INIT_REGION.value(), "invalid code");
 
         contexts = new ArrayList<>();
-        for (TornadoAcceleratorDevice dev : graphContext.getDevices()) {
-            contexts.add(dev);
-        }
+        contexts.addAll(graphContext.getDevices());
         buffer.getInt();
         int taskCount = buffer.getInt();
         callWrappers = graphContext.getCallWrappers().clone();

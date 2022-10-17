@@ -103,6 +103,14 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     private ObjectBuffer reuseBuffer;
     private ConcurrentHashMap<Object, Integer> mappingAtomics;
 
+    /**
+     * Constructor used also in SLAMBench/KFusion
+     *
+     * @param platformIndex
+     *            OpenCL Platform index
+     * @param deviceIndex
+     *            OpenCL Device Index
+     */
     public OCLTornadoDevice(final int platformIndex, final int deviceIndex) {
         this.platformIndex = platformIndex;
         this.deviceIndex = deviceIndex;

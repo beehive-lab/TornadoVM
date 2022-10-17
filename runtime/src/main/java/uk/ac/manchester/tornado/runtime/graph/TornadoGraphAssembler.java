@@ -83,7 +83,7 @@ public class TornadoGraphAssembler {
         /**
          * Initialization of a TornadoVM BC region
          */
-        INIT_BC_REGION((byte) 17), // INIT(num contexts, num stacks, num dep lists),
+        INIT_REGION((byte) 17), // INIT(num contexts, num stacks, num dep lists),
 
         /**
          * Execution initialization.
@@ -156,7 +156,7 @@ public class TornadoGraphAssembler {
     }
 
     void setup(int numContexts, int numStacks, int numDeps) {
-        buffer.put(TornadoVMBytecode.INIT_BC_REGION.value);
+        buffer.put(TornadoVMBytecode.INIT_REGION.value);
         buffer.putInt(numContexts);
         buffer.putInt(numStacks);
         buffer.putInt(numDeps);
