@@ -109,6 +109,11 @@ public class TestVM {
 
         System.out.println(Arrays.toString(b));
 
+        // De-alloc
+        device.deallocate(objectStateA);
+        device.deallocate(objectStateB);
+        device.deallocate(objectStateC);
+
     }
 
     public void test() {
