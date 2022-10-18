@@ -212,7 +212,7 @@ public class TestInts extends TornadoTestBase {
         dotProductFunctionMap(a, b, seqMap);
         dotProductFunctionReduce(seqMap, seqReduce);
 
-        new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+        new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b, outputMap) //
                 .task("t0-MAP", TestInts::dotProductFunctionMap, a, b, outputMap) //
                 .task("t1-REDUCE", TestInts::dotProductFunctionReduce, outputMap, outputReduce) //
                 .transferToHost(outputReduce) //

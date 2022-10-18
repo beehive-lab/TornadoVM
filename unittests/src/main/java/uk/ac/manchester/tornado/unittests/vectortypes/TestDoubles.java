@@ -213,7 +213,7 @@ public class TestDoubles extends TornadoTestBase {
         dotProductFunctionReduce(seqMap, seqReduce);
 
         new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b, outputMap) //
                 .task("t0-MAP", TestDoubles::dotProductFunctionMap, a, b, outputMap) //
                 .task("t1-REDUCE", TestDoubles::dotProductFunctionReduce, outputMap, outputReduce) //
                 .transferToHost(outputReduce) //
