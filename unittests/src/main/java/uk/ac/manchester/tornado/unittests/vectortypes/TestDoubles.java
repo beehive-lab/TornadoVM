@@ -38,6 +38,14 @@ import uk.ac.manchester.tornado.api.collections.types.VectorDouble8;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.vectortypes.TestDoubles
+ * </code>
+ */
 public class TestDoubles extends TornadoTestBase {
 
     public static final double DELTA = 0.001;
@@ -205,7 +213,7 @@ public class TestDoubles extends TornadoTestBase {
         dotProductFunctionReduce(seqMap, seqReduce);
 
         new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b, outputMap) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0-MAP", TestDoubles::dotProductFunctionMap, a, b, outputMap) //
                 .task("t1-REDUCE", TestDoubles::dotProductFunctionReduce, outputMap, outputReduce) //
                 .transferToHost(outputReduce) //

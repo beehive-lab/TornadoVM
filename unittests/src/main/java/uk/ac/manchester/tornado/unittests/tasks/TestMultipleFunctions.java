@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,6 +34,12 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 /**
  * Tests TornadoVM compilation under different scenarios, when not performing
  * inlining in the method passed to the task.
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions
+ * </code>
  */
 public class TestMultipleFunctions extends TornadoTestBase {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,6 +35,12 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * Testing Tornado with one task in the same device. The {@link TaskGraph}
  * contains a single task. This task is executed on either on the default device
  * of the one selected.
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice
+ * </code>
  *
  */
 public class TestSingleTaskSingleDevice extends TornadoTestBase {
@@ -57,13 +63,11 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
             b[i] = (float) Math.random();
         });
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
-            .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)
-            .transferToHost(c)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
+                .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)//
+                .transferToHost(c)//
+                .execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);
@@ -88,12 +92,10 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
         int deviceNumber = 0;
         taskGraph.setDevice(driver.getDevice(deviceNumber));
 
-        //@formatter:off
-        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
-            .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)
-            .transferToHost(c)
-            .execute();
-        //@formatter:on
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
+                .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)//
+                .transferToHost(c)//
+                .execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);
@@ -123,12 +125,10 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
 
         taskGraph.setDevice(driver.getDevice(deviceNumber));
 
-        //@formatter:off
-		taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
-		  .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)
-		  .transferToHost(c)
-		  .execute();
-	    //@formatter:on
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
+                .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)//
+                .transferToHost(c)//
+                .execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);

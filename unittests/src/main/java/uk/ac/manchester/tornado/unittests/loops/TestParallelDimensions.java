@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,6 +28,14 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.loops.TestParallelDimensions
+ * </code>
+ */
 public class TestParallelDimensions extends TornadoTestBase {
 
     public static void forLoopOneD(int[] a) {
@@ -44,15 +52,13 @@ public class TestParallelDimensions extends TornadoTestBase {
 
         Arrays.fill(a, 1);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestParallelDimensions::forLoopOneD, a)
-                .transferToHost(a)
+        new TaskGraph("s0") //
+                .task("t0", TestParallelDimensions::forLoopOneD, a) //
+                .transferToHost(a) //
                 .execute();
-        //@formatter:on
 
-        for (int i = 0; i < a.length; i++) {
-            assertEquals(10, a[i]);
+        for (int j : a) {
+            assertEquals(10, j);
         }
 
     }
@@ -72,12 +78,10 @@ public class TestParallelDimensions extends TornadoTestBase {
         int[] a = new int[size * size];
         Arrays.fill(a, 1);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestParallelDimensions::forLoop2D, a, size)
-                .transferToHost(a)
+        new TaskGraph("s0") //
+                .task("t0", TestParallelDimensions::forLoop2D, a, size) //
+                .transferToHost(a) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
@@ -103,12 +107,10 @@ public class TestParallelDimensions extends TornadoTestBase {
         int[] a = new int[size * size * size];
         Arrays.fill(a, 1);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestParallelDimensions::forLoop3D, a, size)
-                .transferToHost(a)
+        new TaskGraph("s0") //
+                .task("t0", TestParallelDimensions::forLoop3D, a, size) //
+                .transferToHost(a) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {

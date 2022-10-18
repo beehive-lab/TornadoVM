@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,11 +34,17 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * Test to check TornadoVM is able to bailout to the Java sequential
  * implementation if there are errors during optimizations phases, code
  * generation, or runtime.
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.fails.CodeFail
+ * </code>
  */
 public class CodeFail extends TornadoTestBase {
 
     /**
-     * This case is not failing any more. This stresses the local memory allocator.
+     * This case is not failing anymore. This stresses the local memory allocator.
      */
     public static void foo(float[] a) {
         float[] x = new float[a.length % 10];
@@ -61,6 +67,7 @@ public class CodeFail extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0");
 
         taskGraph.task("t0", CodeFail::foo, a) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .transferToHost(a)//
                 .execute();
     }
@@ -91,6 +98,7 @@ public class CodeFail extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0");
 
         taskGraph.task("t0", CodeFail::bar, a) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .transferToHost(a) //
                 .execute();
     }

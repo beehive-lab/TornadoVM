@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,6 +30,14 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *      tornado-test.py -V uk.ac.manchester.tornado.unittests.functional.TestLambdas
+ * </code>
+ */
 public class TestLambdas extends TornadoTestBase {
 
     @Test

@@ -40,6 +40,14 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.vectortypes.TestFloats
+ * </code>
+ */
 public class TestFloats extends TornadoTestBase {
 
     public static final double DELTA = 0.001;

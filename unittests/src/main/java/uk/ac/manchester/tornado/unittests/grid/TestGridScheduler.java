@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,6 +30,15 @@ import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *      tornado-test.py -V --debug uk.ac.manchester.tornado.unittests.grid.TestGridScheduler
+ * </code>
+ *
+ */
 public class TestGridScheduler {
 
     public static float computeSequential(float[] a, float[] b, float[] c) {

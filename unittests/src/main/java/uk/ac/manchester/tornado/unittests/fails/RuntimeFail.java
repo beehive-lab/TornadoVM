@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 20212-2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,9 +23,18 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.fails.RuntimeFail
+ * </code>
+ */
 public class RuntimeFail extends TornadoTestBase {
 
     public static void vectorAdd(float[] a, float[] b, float[] c) {
@@ -60,6 +69,7 @@ public class RuntimeFail extends TornadoTestBase {
         Arrays.fill(y, 8.0f);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, x, y) //
                 .task("t0", RuntimeFail::vectorAdd, x, y, z) //
                 .task("t0", RuntimeFail::square, z) //
                 .transferToHost(z);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,6 +32,14 @@ import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.vectortypes.TestVectorAllocation
+ * </code>
+ */
 public class TestVectorAllocation extends TornadoTestBase {
 
     /**
@@ -56,7 +64,7 @@ public class TestVectorAllocation extends TornadoTestBase {
         float[] output = new float[size];
 
         for (int i = 0; i < size; i++) {
-            a[i] = (float) i;
+            a[i] = i;
         }
 
         new TaskGraph("s0") //
@@ -92,7 +100,7 @@ public class TestVectorAllocation extends TornadoTestBase {
         VectorFloat4 output = new VectorFloat4(size);
 
         for (int i = 0; i < size; i++) {
-            a[i] = (float) i;
+            a[i] = i;
         }
 
         new TaskGraph("s0") //
@@ -132,7 +140,7 @@ public class TestVectorAllocation extends TornadoTestBase {
         VectorFloat3 output = new VectorFloat3(size);
 
         for (int i = 0; i < size; i++) {
-            a[i] = (float) i;
+            a[i] = i;
         }
 
         new TaskGraph("s0") //

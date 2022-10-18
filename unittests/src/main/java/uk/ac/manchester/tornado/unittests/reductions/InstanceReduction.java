@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,6 +30,14 @@ import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.reductions.InstanceReduction
+ * </code>
+ */
 public class InstanceReduction extends TornadoTestBase {
 
     public static final int N = 1024;
@@ -55,19 +63,17 @@ public class InstanceReduction extends TornadoTestBase {
             input[i] = rand.nextFloat();
         });
 
-        for (int i = 0; i < input.length; i++) {
-            expected[0] += input[i];
+        for (float v : input) {
+            expected[0] += v;
         }
 
         ReduceTest rd = new ReduceTest();
 
-        // @formatter:off
-        new TaskGraph("ts")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-                .task("reduce", rd::reduce, input, result)
-                .transferToHost(result)
+        new TaskGraph("ts") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//
+                .task("reduce", rd::reduce, input, result)//
+                .transferToHost(result)//
                 .execute();
-        // @formatter:on
 
         assertEquals(expected[0], result[0], 0.1f);
     }

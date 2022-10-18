@@ -30,6 +30,12 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 /**
  * Testing Tornado with multiple tasks in the same device. The {@link TaskGraph}
  * contains more than one task.
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice
+ * </code>
  *
  */
 public class TestMultipleTasksSingleDevice extends TornadoTestBase {
@@ -52,29 +58,21 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
         }
     }
 
-    public static void task3Copy(int[] a, int[] b, int alpha) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            b[i] = a[i];
-        }
-    }
-
     @Test
     public void testTwoTasks() {
         final int numElements = 1024;
         int[] a = new int[numElements];
         int[] b = new int[numElements];
 
-        //@formatter:off
-        new TaskGraph("s0")
-		    .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
-		    .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)
-		    .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)
-		    .transferToHost(a)
-		    .execute();
-        //@formatter:on
+        new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
+                .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)//
+                .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)//
+                .transferToHost(a) //
+                .execute();
 
-        for (int i = 0; i < a.length; i++) {
-            assertEquals(120, a[i]);
+        for (int j : a) {
+            assertEquals(120, j);
         }
     }
 
@@ -84,15 +82,13 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
         int[] a = new int[numElements];
         int[] b = new int[numElements];
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
-            .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)
-            .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)
-            .task("t3", TestMultipleTasksSingleDevice::task2Saxpy, a, a, b, 12)
-            .transferToHost(b)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
+                .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)//
+                .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)//
+                .task("t3", TestMultipleTasksSingleDevice::task2Saxpy, a, a, b, 12)//
+                .transferToHost(b)//
+                .execute();
 
         int val = (12 * 120) + 120;
         for (int i = 0; i < a.length; i++) {
@@ -107,16 +103,14 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
         int[] b = new int[numElements];
         int[] c = new int[numElements];
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
-            .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)
-            .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)
-            .task("t2", TestMultipleTasksSingleDevice::task0Initialization, b)
-            .task("t3", TestMultipleTasksSingleDevice::task2Saxpy, a, b, c, 12)
-            .transferToHost(c)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
+                .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)//
+                .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)//
+                .task("t2", TestMultipleTasksSingleDevice::task0Initialization, b)//
+                .task("t3", TestMultipleTasksSingleDevice::task2Saxpy, a, b, c, 12)//
+                .transferToHost(c)//
+                .execute();
 
         int val = (12 * 120) + 10;
         for (int i = 0; i < a.length; i++) {
@@ -131,17 +125,15 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
         int[] b = new int[numElements];
         int[] c = new int[numElements];
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
-            .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)
-            .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)
-            .task("t2", TestMultipleTasksSingleDevice::task0Initialization, b)
-            .task("t3", TestMultipleTasksSingleDevice::task2Saxpy, a, b, b, 12)
-            .task("t4", TestMultipleTasksSingleDevice::task2Saxpy, b, a, c, 12)
-            .transferToHost(c)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
+                .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)//
+                .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)//
+                .task("t2", TestMultipleTasksSingleDevice::task0Initialization, b)//
+                .task("t3", TestMultipleTasksSingleDevice::task2Saxpy, a, b, b, 12)//
+                .task("t4", TestMultipleTasksSingleDevice::task2Saxpy, b, a, c, 12)//
+                .transferToHost(c)//
+                .execute();
 
         int val = (12 * 120) + 10;
         val = (12 * val) + (120);

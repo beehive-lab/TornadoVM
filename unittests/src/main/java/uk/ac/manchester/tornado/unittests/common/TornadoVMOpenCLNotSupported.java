@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 20212-2022 APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,4 @@ public class TornadoVMOpenCLNotSupported extends RuntimeException {
         super(message);
     }
 
-    public TornadoVMOpenCLNotSupported(String message, Throwable cause) {
-        super(message, cause);
-    }
 }

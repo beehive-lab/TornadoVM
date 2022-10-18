@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022 APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -52,13 +52,15 @@ public class TestAPI extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0");
         assertNotNull(taskGraph);
 
-        taskGraph.lockObjectInMemory(data);
-
-        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+        taskGraph.lockObjectInMemory(data) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestArrays::addAccumulator, data, 1) //
                 .execute(); //
 
+        // Force data transfers from D->H after the execution of a task-graph
         taskGraph.syncObject(data);
+
+        // Mark objects associated with the task-graph for reusing memory
         taskGraph.unlockObjectFromMemory(data);
 
         for (int i = 0; i < N; i++) {
@@ -81,7 +83,6 @@ public class TestAPI extends TornadoTestBase {
         assertNotNull(tg);
 
         tg.lockObjectInMemory(data);
-
         tg.transferToDevice(DataTransferMode.FIRST_EXECUTION, data);
         tg.task("t0", TestArrays::addAccumulator, data, 1);
         tg.execute();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022 APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,6 +34,12 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 /**
  * The unit-tests in this class check that the {@link KernelContext} parameter
  * can be passed in any sequence.
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test.py -V uk.ac.manchester.tornado.unittests.kernelcontext.api.TestVectorAdditionKernelContext
+ * </code>
  */
 public class TestVectorAdditionKernelContext extends TornadoTestBase {
     public static void vectorAddJava(int[] a, int[] b, int[] c) {

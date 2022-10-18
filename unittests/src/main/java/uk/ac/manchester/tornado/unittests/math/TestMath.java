@@ -32,10 +32,11 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
+ * <p>
  * How to run:
- *
+ * </p>
  * <code>
- * tornado-test.py -V --fast uk.ac.manchester.tornado.unittests.math.TestMath
+ *      tornado-test.py -V --fast uk.ac.manchester.tornado.unittests.math.TestMath
  * </code>
  */
 public class TestMath extends TornadoTestBase {
@@ -114,7 +115,7 @@ public class TestMath extends TornadoTestBase {
 
     public static void testPowDouble(double[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = (double) Math.pow(a[i], 2);
+            a[i] = Math.pow(a[i], 2);
         }
     }
 
@@ -193,8 +194,11 @@ public class TestMath extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testCos, data).transferToHost(data).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestMath::testCos, data) //
+                .transferToHost(data) //
+                .execute();
 
         testCos(seq);
 
@@ -215,8 +219,11 @@ public class TestMath extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testAtan, data).transferToHost(data).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestMath::testAtan, data) //
+                .transferToHost(data) //
+                .execute();
 
         testAtan(seq);
 
@@ -235,8 +242,11 @@ public class TestMath extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testTan, data).transferToHost(data).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestMath::testTan, data) //
+                .transferToHost(data) //
+                .execute();
 
         testTan(seq);
 
@@ -255,8 +265,11 @@ public class TestMath extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testTanh, data).transferToHost(data).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestMath::testTanh, data) //
+                .transferToHost(data) //
+                .execute();
 
         testTanh(seq);
 
@@ -275,8 +288,11 @@ public class TestMath extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testLog, data).transferToHost(data).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestMath::testLog, data) //
+                .transferToHost(data) //
+                .execute();
 
         testLog(seq);
 
@@ -295,8 +311,11 @@ public class TestMath extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testSqrt, data).transferToHost(data).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestMath::testSqrt, data) //
+                .transferToHost(data) //
+                .execute();
 
         testSqrt(seq);
 
@@ -315,8 +334,11 @@ public class TestMath extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testExp, data).transferToHost(data).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestMath::testExp, data) //
+                .transferToHost(data) //
+                .execute();
 
         testExp(seq);
 
@@ -335,8 +357,11 @@ public class TestMath extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testExpFloat, data).transferToHost(data).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestMath::testExpFloat, data) //
+                .transferToHost(data) //
+                .execute();
 
         testExpFloat(seq);
 
@@ -351,12 +376,15 @@ public class TestMath extends TornadoTestBase {
         double[] seq = new double[size];
 
         IntStream.range(0, size).parallel().forEach(i -> {
-            data[i] = (double) Math.random();
+            data[i] = Math.random();
             seq[i] = data[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testExpDouble, data).transferToHost(data).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestMath::testExpDouble, data) //
+                .transferToHost(data) //
+                .execute();
 
         testExpDouble(seq);
 
@@ -375,8 +403,11 @@ public class TestMath extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testPow, data).transferToHost(data).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestMath::testPow, data) //
+                .transferToHost(data) //
+                .execute();
 
         testPow(seq);
         assertArrayEquals(data, seq, 0.01f);
@@ -394,8 +425,11 @@ public class TestMath extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testPowDouble, data).transferToHost(data).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestMath::testPowDouble, data) //
+                .transferToHost(data) //
+                .execute();
 
         testPowDouble(seq);
         assertArrayEquals(data, seq, 0.01f);
@@ -413,8 +447,11 @@ public class TestMath extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testAbs, data).transferToHost(data).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestMath::testAbs, data) //
+                .transferToHost(data) //
+                .execute();
 
         testAbs(seq);
         assertArrayEquals(data, seq, 0.01f);
@@ -606,8 +643,11 @@ public class TestMath extends TornadoTestBase {
             seqA[i] = a[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testAcos, a).transferToHost(a).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestMath::testAcos, a) //
+                .transferToHost(a) //
+                .execute();
 
         testAcos(seqA);
 
@@ -627,8 +667,11 @@ public class TestMath extends TornadoTestBase {
             seqA[i] = a[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testAsin, a).transferToHost(a).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestMath::testAsin, a) //
+                .transferToHost(a) //
+                .execute();
 
         testAsin(seqA);
 
@@ -647,8 +690,11 @@ public class TestMath extends TornadoTestBase {
             seqA[i] = a[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testSignumFloat, a).transferToHost(a).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestMath::testSignumFloat, a) //
+                .transferToHost(a) //
+                .execute();
 
         testSignumFloat(seqA);
 
@@ -660,7 +706,6 @@ public class TestMath extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
-        Random r = new Random();
         final int size = 128;
         float[] a = new float[size];
         float[] seqA = new float[size];
@@ -670,8 +715,11 @@ public class TestMath extends TornadoTestBase {
             seqA[i] = a[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testSignumFloat, a).transferToHost(a).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestMath::testSignumFloat, a) //
+                .transferToHost(a) //
+                .execute();
 
         testSignumFloat(seqA);
 
@@ -690,8 +738,11 @@ public class TestMath extends TornadoTestBase {
             seqA[i] = a[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testSignumDouble, a).transferToHost(a).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestMath::testSignumDouble, a) //
+                .transferToHost(a) //
+                .execute();
 
         testSignumDouble(seqA);
 
@@ -703,7 +754,6 @@ public class TestMath extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
-        Random r = new Random();
         final int size = 128;
         double[] a = new double[size];
         double[] seqA = new double[size];
@@ -713,8 +763,11 @@ public class TestMath extends TornadoTestBase {
             seqA[i] = a[i];
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", TestMath::testSignumDouble, a).transferToHost(a).execute();
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestMath::testSignumDouble, a) //
+                .transferToHost(a) //
+                .execute();
 
         testSignumDouble(seqA);
 

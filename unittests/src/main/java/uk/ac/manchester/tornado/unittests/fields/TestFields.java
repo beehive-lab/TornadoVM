@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,6 +32,14 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to test?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.fields.TestFields
+ * </code>
+ */
 public class TestFields extends TornadoTestBase {
 
     private static class Foo {
@@ -91,10 +99,10 @@ public class TestFields extends TornadoTestBase {
         assertNotNull(taskGraph);
 
         taskGraph.lockObjectInMemory(foo);
+        taskGraph.task("t0", foo::computeInit);
+        taskGraph.execute();
 
-        taskGraph.task("t0", foo::computeInit).execute();
         taskGraph.syncObject(foo.output);
-
         taskGraph.unlockObjectFromMemory(foo);
 
         for (int i = 0; i < N; i++) {
@@ -112,11 +120,11 @@ public class TestFields extends TornadoTestBase {
         assertNotNull(taskGraph);
 
         taskGraph.lockObjectInMemory(foo);
-
-        taskGraph.task("t0", foo::computeAdd).execute();
-        taskGraph.syncObject(foo.output);
-
+        taskGraph.task("t0", foo::computeAdd);
         taskGraph.unlockObjectFromMemory(foo);
+        taskGraph.execute();
+
+        taskGraph.syncObject(foo.output);
 
         for (int i = 0; i < N; i++) {
             assertEquals(foo.a[i] + foo.b[i], foo.output[i]);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,6 +32,12 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 /**
  * Test bad uses of the TornadoVM API. It should throw exceptions when possible
  * with the concrete problem.
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.fails.TestFails
+ * </code>
  */
 public class TestFails extends TornadoTestBase {
 
@@ -64,7 +70,8 @@ public class TestFails extends TornadoTestBase {
                     for (int i = 0; i < 100; i++) {
 
                     }
-                }, x, y).transferToHost(y);
+                }, x, y) //
+                .transferToHost(y);
 
         // How to provoke the failure
         taskGraph.warmup();
@@ -86,12 +93,10 @@ public class TestFails extends TornadoTestBase {
         float[] x = new float[100];
         float[] y = new float[100];
 
-        // @formatter:off
-        TaskGraph taskGraph = new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x)
-                .task("s0", TestFails::kernel, x, y)
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
+                .task("s0", TestFails::kernel, x, y) //
                 .transferToHost(y);
-        // @formatter:on
 
         // How to provoke the failure
         taskGraph.execute();

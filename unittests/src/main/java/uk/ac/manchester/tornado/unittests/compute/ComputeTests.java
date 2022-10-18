@@ -19,7 +19,7 @@ package uk.ac.manchester.tornado.unittests.compute;
 
 import static org.junit.Assert.assertEquals;
 
-import java.awt.*;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 import java.io.File;
@@ -388,6 +388,7 @@ public class ComputeTests extends TornadoTestBase {
         workerGrid.setLocalWork(32, 1, 1);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, posTornadoVM, velTornadoVM) //
                 .task("t0", ComputeTests::nBody, numBodies, posTornadoVM, velTornadoVM) //
                 .transferToHost(posTornadoVM, velTornadoVM) //
                 .execute(gridScheduler);
@@ -423,6 +424,7 @@ public class ComputeTests extends TornadoTestBase {
         workerGrid.setLocalWork(32, 1, 1);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, posTornadoVM, velTornadoVM) //
                 .task("t0", ComputeTests::nBody, numBodies, posTornadoVM, velTornadoVM) //
                 .transferToHost(posTornadoVM, velTornadoVM) //
                 .execute(gridScheduler);
@@ -453,6 +455,7 @@ public class ComputeTests extends TornadoTestBase {
         nBody(numBodies, posSeq, velSeq);
 
         new TaskGraph("compute") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, posTornadoVM, velTornadoVM) //
                 .task("nbody", ComputeTests::nBody, numBodies, posTornadoVM, velTornadoVM) //
                 .transferToHost(posTornadoVM, velTornadoVM) //
                 .execute();
@@ -670,6 +673,7 @@ public class ComputeTests extends TornadoTestBase {
         }
 
         TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", ComputeTests::renderTrack, outputTornadoVM, input) //
                 .transferToHost(outputTornadoVM);
 

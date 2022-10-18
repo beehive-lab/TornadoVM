@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,14 +31,23 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest
+ * </code>
+ */
 public class PrebuiltTest extends TornadoTestBase {
 
     @Test
-    public void testPrebuild01() {
+    public void testPrebuilt01() {
 
         final int numElements = 8;
         int[] a = new int[numElements];
@@ -68,67 +77,17 @@ public class PrebuiltTest extends TornadoTestBase {
                 throw new RuntimeException("Backend not supported");
         }
 
-        // @formatter:off
-        new TaskGraph("s0")
-            .prebuiltTask("t0",
-                        "add",
-                        filePath,
-                        new Object[] { a, b, c },
-                        new Access[] { Access.READ, Access.READ, Access.WRITE },
-                        defaultDevice,
-                        new int[] { numElements })
-            .transferToHost(c)
-            .execute();
-        // @formatter:on
-
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i]);
-        }
-    }
-
-    @Test
-    public void testPrebuild02() {
-
-        final int numElements = 8;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
-
-        String tornadoSDK = System.getenv("TORNADO_SDK");
-
-        Arrays.fill(a, 1);
-        Arrays.fill(b, 2);
-
-        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
-        String filePath = tornadoSDK + "/examples/generated/";
-
-        TornadoVMBackendType backendType = TornadoRuntime.getTornadoRuntime().getBackendType(0);
-        switch (backendType) {
-            case PTX:
-                filePath += "add.ptx";
-                break;
-            case OPENCL:
-                filePath += "add.cl";
-                break;
-            case SPIRV:
-                filePath += "add.spv";
-                break;
-            default:
-                throw new RuntimeException("Backend not supported");
-        }
-
-        // @formatter:off
-        new TaskGraph("s0")
-                .prebuiltTask("t0",
-                        "add",
-                        filePath,
-                        new Object[] { a, b, c },
-                        new Access[] { Access.READ, Access.READ, Access.WRITE },
-                        defaultDevice,
-                        new int[] { numElements })
-                .transferToHost(c)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .prebuiltTask("t0", //
+                        "add", //
+                        filePath, //
+                        new Object[] { a, b, c }, //
+                        new Access[] { Access.READ, Access.READ, Access.WRITE }, //
+                        defaultDevice, //
+                        new int[] { numElements })//
+                .transferToHost(c)//
                 .execute();
-        // @formatter:on
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i]);
@@ -136,7 +95,55 @@ public class PrebuiltTest extends TornadoTestBase {
     }
 
     @Test
-    public void testPrebuild03() {
+    public void testPrebuilt02() {
+
+        final int numElements = 8;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+        int[] c = new int[numElements];
+
+        String tornadoSDK = System.getenv("TORNADO_SDK");
+
+        Arrays.fill(a, 1);
+        Arrays.fill(b, 2);
+
+        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
+        String filePath = tornadoSDK + "/examples/generated/";
+
+        TornadoVMBackendType backendType = TornadoRuntime.getTornadoRuntime().getBackendType(0);
+        switch (backendType) {
+            case PTX:
+                filePath += "add.ptx";
+                break;
+            case OPENCL:
+                filePath += "add.cl";
+                break;
+            case SPIRV:
+                filePath += "add.spv";
+                break;
+            default:
+                throw new RuntimeException("Backend not supported");
+        }
+
+        new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .prebuiltTask("t0", //
+                        "add", //
+                        filePath, //
+                        new Object[] { a, b, c }, //
+                        new Access[] { Access.READ, Access.READ, Access.WRITE }, //
+                        defaultDevice, //
+                        new int[] { numElements })//
+                .transferToHost(c)//
+                .execute();
+
+        for (int i = 0; i < c.length; i++) {
+            assertEquals(a[i] + b[i], c[i]);
+        }
+    }
+
+    @Test
+    public void testPrebuilt03() {
         assertNotBackend(TornadoVMBackendType.PTX);
 
         TornadoDevice device = checkSPIRVSupport();
@@ -159,18 +166,17 @@ public class PrebuiltTest extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        // @formatter:off
-        new TaskGraph("s0")
-                .prebuiltTask("t0",
-                        "floatReductionAddLocalMemory",
-                        filePath,
-                        new Object[]{context, input, reduce},
-                        new Access[]{Access.READ, Access.READ, Access.WRITE},
-                        device,
-                        new int[]{size})
-                .transferToHost(reduce)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
+                .prebuiltTask("t0", //
+                        "floatReductionAddLocalMemory", //
+                        filePath, //
+                        new Object[] { context, input, reduce }, //
+                        new Access[] { Access.READ, Access.READ, Access.WRITE }, //
+                        device, //
+                        new int[] { size })//
+                .transferToHost(reduce)//
                 .execute(gridScheduler);
-        // @formatter:on
 
         // Final SUM
         float finalSum = 0;
@@ -183,7 +189,7 @@ public class PrebuiltTest extends TornadoTestBase {
     }
 
     @Test
-    public void testPrebuild04() {
+    public void testPrebuilt04() {
         assertNotBackend(TornadoVMBackendType.PTX);
 
         TornadoDevice device = checkSPIRVSupport();
@@ -206,18 +212,17 @@ public class PrebuiltTest extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("a.b", worker);
         KernelContext context = new KernelContext();
 
-        // @formatter:off
-        new TaskGraph("a")
-                .prebuiltTask("b",
-                        "intReductionAddGlobalMemory",
-                        filePath,
-                        new Object[]{context, input, reduce},
-                        new Access[]{Access.READ, Access.READ, Access.WRITE},
-                        device,
-                        new int[]{size})
-                .transferToHost(reduce)
+        new TaskGraph("a") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
+                .prebuiltTask("b", //
+                        "intReductionAddGlobalMemory", //
+                        filePath, //
+                        new Object[] { context, input, reduce }, //
+                        new Access[] { Access.READ, Access.READ, Access.WRITE }, //
+                        device, //
+                        new int[] { size })//
+                .transferToHost(reduce)//
                 .execute(gridScheduler);
-        // @formatter:on
 
         // Final SUM
         float finalSum = 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,6 +33,15 @@ import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.images.TestResizeImage
+ * </code>
+ *
+ */
 public class TestResizeImage extends TornadoTestBase {
 
     public static void resize(ImageFloat dest, ImageFloat src, int scaleFactor) {
@@ -55,21 +64,21 @@ public class TestResizeImage extends TornadoTestBase {
         final int numElementsX = 8;
         final int numElementsY = 8;
 
-        final ImageFloat image1 = new ImageFloat(numElementsX, numElementsY);
-        final ImageFloat image2 = new ImageFloat(numElementsX / 2, numElementsY / 2);
+        final ImageFloat imageSource = new ImageFloat(numElementsX, numElementsY);
+        final ImageFloat imageDst = new ImageFloat(numElementsX / 2, numElementsY / 2);
 
         final Random rand = new Random();
 
         for (int y = 0; y < numElementsY; y++) {
             for (int x = 0; x < numElementsX; x++) {
-                image1.set(x, y, rand.nextFloat());
+                imageSource.set(x, y, rand.nextFloat());
             }
         }
 
         final TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, image1) //
-                .task("t0", TestResizeImage::resize, image2, image1, 2) //
-                .transferToHost(image2);
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, imageSource) //
+                .task("t0", TestResizeImage::resize, imageDst, imageSource, 2) //
+                .transferToHost(imageDst);
 
         taskGraph.warmup();
 
@@ -77,15 +86,15 @@ public class TestResizeImage extends TornadoTestBase {
 
         final int scale = 2;
 
-        for (int i = 0; i < image2.X(); i++) {
-            for (int j = 0; j < image2.Y(); j++) {
+        for (int i = 0; i < imageDst.X(); i++) {
+            for (int j = 0; j < imageDst.Y(); j++) {
 
-                int cx = clamp(scale * i, 0, image1.X() - 1);
-                int cy = clamp(scale * j, 0, image1.Y() - 1);
+                int cx = clamp(scale * i, 0, imageSource.X() - 1);
+                int cy = clamp(scale * j, 0, imageSource.Y() - 1);
 
-                float center = image1.get(cx, cy);
+                float center = imageSource.get(cx, cy);
 
-                assertEquals(image2.get(i, j), center, 0.1);
+                assertEquals(imageDst.get(i, j), center, 0.1);
             }
         }
     }

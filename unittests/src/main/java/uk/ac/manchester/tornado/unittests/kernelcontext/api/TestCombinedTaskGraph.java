@@ -38,10 +38,17 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * features or adhere to the original TornadoVM annotations
  * {@link uk.ac.manchester.tornado.api.annotations.Parallel} or
  * {@link uk.ac.manchester.tornado.api.annotations.Reduce}.
- *
+ * <p>
  * The following tests implement a single TaskSchedule that has three
  * consecutive tasks: t0: Vector Addition, t1: Vector Multiplication and t2:
  * Vector Subtraction.
+ * </p>
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test.py -V uk.ac.manchester.tornado.unittests.kernelcontext.api.TestCombinedTaskGraph
+ * </code>
  */
 public class TestCombinedTaskGraph extends TornadoTestBase {
 

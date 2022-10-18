@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,6 +34,14 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles
+ * </code>
+ */
 public class TestReductionsDoubles extends TornadoTestBase {
 
     private static final int SIZE_LARGE = 65536;
@@ -438,7 +446,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         });
 
         new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, data, data2, resultSum)//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, data, data2)//
                 .task("t0", TestReductionsDoubles::prepareTornadoSumForMeanComputation, data, resultSum)//
                 .task("t1", TestReductionsDoubles::computeStandardDeviation, data2, resultSum, resultStd)//
                 .transferToHost(resultSum, resultStd)//
@@ -455,13 +463,6 @@ public class TestReductionsDoubles extends TornadoTestBase {
         result[0] = 0;
         for (@Parallel int i = 0; i < values.length; i++) {
             result[0] += values[i];
-        }
-    }
-
-    private static void computeMax(final double[] values, final double[] sum, @Reduce final double[] std) {
-        final double s = sum[0] / values.length;
-        for (@Parallel int i = 0; i < values.length; i++) {
-            std[0] += values[i] + s;
         }
     }
 

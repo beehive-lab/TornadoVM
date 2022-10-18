@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,13 +34,22 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * In a nutshell, byte operations are performed in bytes, but JVM narrows up the
  * result to int (signed), which leads to wrong results, because the output is
  * not a byte anymore, is an integer.
+ * </p>
  * <p>
  * Since this is in the JLS spec, we can't do too much regarding Java semantics,
  * but a possible solution is to expose a type in TornadoVM that we can handle
  * like an intrinsic and force not to sign those operations.
+ * </p>
  * <p>
  * Affect arithmetic, logical and shift operations when operands are byte and
  * short data types.
+ * </p>
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion
+ * </code>
  */
 
 public class TestNumericPromotion extends TornadoTestBase {
@@ -138,13 +147,11 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] result = new byte[4];
         byte[] input = new byte[] { 127, 127, 127, 127, 1, 1, 1, 1 };
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)
-                .task("t0", TestNumericPromotion::bitwiseOr, result, input, elements)
-                .transferToHost(result)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements) //
+                .task("t0", TestNumericPromotion::bitwiseOr, result, input, elements) //
+                .transferToHost(result) //
                 .execute();
-        //@formatter:on
 
         byte[] sequential = new byte[4];
         bitwiseOr(sequential, input, elements);
@@ -160,13 +167,11 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] result = new byte[4];
         byte[] input = new byte[] { 127, 127, 127, 127, 1, 1, 1, 1 };
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)
-                .task("t0", TestNumericPromotion::bitwiseAnd, result, input, elements)
-                .transferToHost(result)
+        new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
+                .task("t0", TestNumericPromotion::bitwiseAnd, result, input, elements)//
+                .transferToHost(result)//
                 .execute();
-        //@formatter:on
 
         byte[] sequential = new byte[4];
         bitwiseAnd(sequential, input, elements);
@@ -182,13 +187,11 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] result = new byte[4];
         byte[] input = new byte[] { 127, 127, 127, 127, 1, 1, 1, 1 };
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)
-                .task("t0", TestNumericPromotion::bitwiseXor, result, input, elements)
-                .transferToHost(result)
+        new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
+                .task("t0", TestNumericPromotion::bitwiseXor, result, input, elements)//
+                .transferToHost(result)//
                 .execute();
-        //@formatter:on
 
         byte[] sequential = new byte[4];
         bitwiseXor(sequential, input, elements);
@@ -205,13 +208,11 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] result = new byte[8];
         byte[] input = new byte[] { 0, 0, 127, -127, 1, -1, 1, 1 };
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-                .task("t0", TestNumericPromotion::bitwiseNot, result, input)
-                .transferToHost(result)
+        new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//
+                .task("t0", TestNumericPromotion::bitwiseNot, result, input)//
+                .transferToHost(result)//
                 .execute();
-        //@formatter:on
 
         byte[] sequential = new byte[8];
         bitwiseNot(sequential, input);
@@ -227,13 +228,11 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] result = new byte[4];
         byte[] input = new byte[] { 125, 125, 125, 125, 1, 1, 1, 1 };
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)
-                .task("t0", TestNumericPromotion::addition, result, input, elements)
-                .transferToHost(result)
+        new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
+                .task("t0", TestNumericPromotion::addition, result, input, elements)//
+                .transferToHost(result)//
                 .execute();
-        //@formatter:on
 
         byte[] sequential = new byte[4];
         addition(sequential, input, elements);
@@ -249,13 +248,11 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] result = new byte[4];
         byte[] input = new byte[] { 125, 125, 125, 125, 1, 1, 1, 1 };
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)
-                .task("t0", TestNumericPromotion::subtraction, result, input, elements)
-                .transferToHost(result)
+        new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
+                .task("t0", TestNumericPromotion::subtraction, result, input, elements)//
+                .transferToHost(result)//
                 .execute();
-        //@formatter:on
 
         byte[] sequential = new byte[4];
         subtraction(sequential, input, elements);
@@ -271,13 +268,11 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] result = new byte[] { 1, 1, 1, 1 };
         byte[] input = new byte[] { 125, 125, 125, 125, 1, 1, 1, 1 };
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)
-                .task("t0", TestNumericPromotion::multiplication, result, input, elements)
-                .transferToHost(result)
+        new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
+                .task("t0", TestNumericPromotion::multiplication, result, input, elements)//
+                .transferToHost(result)//
                 .execute();
-        //@formatter:on
 
         byte[] sequential = new byte[] { 1, 1, 1, 1 };
         multiplication(sequential, input, elements);
@@ -293,13 +288,11 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] result = new byte[] { 8, 8, 8, 8 };
         byte[] input = new byte[] { 2, 2, 2, 2, 1, 1, 1, 1 };
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)
-                .task("t0", TestNumericPromotion::division, result, input, elements)
-                .transferToHost(result)
+        new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
+                .task("t0", TestNumericPromotion::division, result, input, elements)//
+                .transferToHost(result)//
                 .execute();
-        //@formatter:on
 
         byte[] sequential = new byte[] { 8, 8, 8, 8 };
         division(sequential, input, elements);
@@ -315,13 +308,11 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] result = new byte[] { 8, 8, 8, 8 };
         byte[] input = new byte[] { 2, 2, 2, 2, 1, 1, 1, 1 };
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)
-                .task("t0", TestNumericPromotion::signedLeftShift, result, input, elements)
-                .transferToHost(result)
+        new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
+                .task("t0", TestNumericPromotion::signedLeftShift, result, input, elements)//
+                .transferToHost(result)//
                 .execute();
-        //@formatter:on
 
         byte[] sequential = new byte[] { 8, 8, 8, 8 };
         signedLeftShift(sequential, input, elements);
@@ -337,13 +328,11 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] result = new byte[] { 8, 8, 8, 8 };
         byte[] input = new byte[] { 2, 2, 2, 2, 1, 1, 1, 1 };
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)
-                .task("t0", TestNumericPromotion::signedRightShift, result, input, elements)
-                .transferToHost(result)
+        new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
+                .task("t0", TestNumericPromotion::signedRightShift, result, input, elements)//
+                .transferToHost(result)//
                 .execute();
-        //@formatter:on
 
         byte[] sequential = new byte[] { 8, 8, 8, 8 };
         signedRightShift(sequential, input, elements);
@@ -359,13 +348,11 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] result = new byte[] { 8, 8, 8, 8 };
         byte[] input = new byte[] { 2, 2, 2, 2, 1, 1, 1, 1 };
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)
-                .task("t0", TestNumericPromotion::unsignedRightShift, result, input, elements)
-                .transferToHost(result)
+        new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
+                .task("t0", TestNumericPromotion::unsignedRightShift, result, input, elements)//
+                .transferToHost(result)//
                 .execute();
-        //@formatter:on
 
         byte[] sequential = new byte[] { 8, 8, 8, 8 };
         unsignedRightShift(sequential, input, elements);

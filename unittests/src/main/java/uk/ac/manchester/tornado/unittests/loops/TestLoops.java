@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,6 +32,14 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to test?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.loops.TestLoops
+ * </code>
+ */
 public class TestLoops extends TornadoTestBase {
 
     public static void forConstant01(int[] a, final int n) {
@@ -178,12 +186,10 @@ public class TestLoops extends TornadoTestBase {
 
         Arrays.fill(a, 1);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestLoops::forLoopOneD, a)
-                .transferToHost(a)
-                .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .task("t0", TestLoops::forLoopOneD, a) //
+                .transferToHost(a) //
+                .execute(); //
 
         for (int j : a) {
             assertEquals(10, j);
@@ -204,12 +210,10 @@ public class TestLoops extends TornadoTestBase {
 
         Arrays.fill(a, 75);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestLoops::steppedLoop, a, size)
-                .transferToHost(a)
+        new TaskGraph("s0") //
+                .task("t0", TestLoops::steppedLoop, a, size) //
+                .transferToHost(a) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i += 2) {
             assertEquals(200, a[i]);
@@ -231,12 +235,10 @@ public class TestLoops extends TornadoTestBase {
         int[] a = new int[size];
         Arrays.fill(a, 75);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestLoops::steppedLoop2, a, size)
-                .transferToHost(a)
+        new TaskGraph("s0") //
+                .task("t0", TestLoops::steppedLoop2, a, size) //
+                .transferToHost(a) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i++) {
             assertEquals(200, a[i]);
@@ -258,12 +260,10 @@ public class TestLoops extends TornadoTestBase {
         int[] a = new int[size];
         Arrays.fill(a, 75);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestLoops::steppedLoop3, a, size)
-                .transferToHost(a)
+        new TaskGraph("s0") //
+                .task("t0", TestLoops::steppedLoop3, a, size) //
+                .transferToHost(a) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i++) {
             assertEquals(200, a[i]);
@@ -283,12 +283,10 @@ public class TestLoops extends TornadoTestBase {
         int[] a = new int[size];
         Arrays.fill(a, 75);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestLoops::steppedLoop4, a, size)
-                .transferToHost(a)
+        new TaskGraph("s0") //
+                .task("t0", TestLoops::steppedLoop4, a, size) //
+                .transferToHost(a) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i += 4) {
             assertEquals(200, a[i]);
@@ -311,12 +309,10 @@ public class TestLoops extends TornadoTestBase {
         int[] a = new int[size];
         Arrays.fill(a, 75);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestLoops::steppedLoop5, a, size)
-                .transferToHost(a)
+        new TaskGraph("s0") //
+                .task("t0", TestLoops::steppedLoop5, a, size) //
+                .transferToHost(a) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i += 3) {
             assertEquals(200, a[i]);
@@ -339,12 +335,10 @@ public class TestLoops extends TornadoTestBase {
         int[] a = new int[size];
         Arrays.fill(a, 75);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestLoops::steppedLoop7, a, size)
-                .transferToHost(a)
+        new TaskGraph("s0") //
+                .task("t0", TestLoops::steppedLoop7, a, size) //
+                .transferToHost(a) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i += 7) {
             assertEquals(200, a[i]);
@@ -367,12 +361,10 @@ public class TestLoops extends TornadoTestBase {
         int[] a = new int[size];
         Arrays.fill(a, 75);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestLoops::steppedLoop10, a, size)
-                .transferToHost(a)
+        new TaskGraph("s0") //
+                .task("t0", TestLoops::steppedLoop10, a, size) //
+                .transferToHost(a) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i += 10) {
             assertEquals(200, a[i]);
@@ -400,13 +392,11 @@ public class TestLoops extends TornadoTestBase {
 
         Arrays.fill(a, 1);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a)
-                .task("t0", TestLoops::conditionalInLoop, a)
-                .transferToHost(a)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
+                .task("t0", TestLoops::conditionalInLoop, a) //
+                .transferToHost(a) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < a.length; i++) {
             if (i == 4) {
@@ -433,13 +423,11 @@ public class TestLoops extends TornadoTestBase {
 
         Arrays.fill(a, 1);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a)
-                .task("t0", TestLoops::conditionalInLoop2, a)
-                .transferToHost(a)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
+                .task("t0", TestLoops::conditionalInLoop2, a) //
+                .transferToHost(a) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < a.length; i++) {
             if (i == 4) {
@@ -465,17 +453,12 @@ public class TestLoops extends TornadoTestBase {
     @Test
     public void testIfElseElseInLoop() {
         final int size = 10;
-
         int[] a = new int[size];
 
-        Arrays.fill(a, 0);
-
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestLoops::conditionalIfElseLoop, a)
-                .transferToHost(a)
+        new TaskGraph("s0") //
+                .task("t0", TestLoops::conditionalIfElseLoop, a) //
+                .transferToHost(a) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < a.length; i++) {
             if (i == 4) {
@@ -502,16 +485,14 @@ public class TestLoops extends TornadoTestBase {
 
         int[][] a = new int[size][size];
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestLoops::twoDLoop, a)
-                .transferToHost(a)
+        new TaskGraph("s0") //
+                .task("t0", TestLoops::twoDLoop, a) //
+                .transferToHost(a) //
                 .execute();
-        //@formatter:on
 
-        for (int i = 0; i < a.length; i++) {
-            for (int j = 0; j < a[i].length; j++) {
-                assertEquals(10, a[i][j]);
+        for (int[] ints : a) {
+            for (int anInt : ints) {
+                assertEquals(10, anInt);
             }
         }
     }
@@ -531,12 +512,10 @@ public class TestLoops extends TornadoTestBase {
         int[] a = new int[size * size];
         Arrays.fill(a, 1);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestLoops::nestedForLoopOneDArray, a, size)
-                .transferToHost(a)
+        new TaskGraph("s0") //
+                .task("t0", TestLoops::nestedForLoopOneDArray, a, size) //
+                .transferToHost(a) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
@@ -563,16 +542,14 @@ public class TestLoops extends TornadoTestBase {
             Arrays.fill(a[i], 1);
         }
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestLoops::nestedForLoopTwoDArray, a, size)
-                .transferToHost(a)
+        new TaskGraph("s0") //
+                .task("t0", TestLoops::nestedForLoopTwoDArray, a, size) //
+                .transferToHost(a) //
                 .execute();
-        //@formatter:on
 
-        for (int i = 0; i < a.length; i++) {
-            for (int j = 0; j < a[i].length; j++) {
-                assertEquals(10, a[i][j]);
+        for (int[] ints : a) {
+            for (int anInt : ints) {
+                assertEquals(10, anInt);
             }
         }
     }
@@ -604,16 +581,13 @@ public class TestLoops extends TornadoTestBase {
         final int size = 10;
 
         int[] a = new int[size];
-
         Arrays.fill(a, 1);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a)
-                .task("t0", TestLoops::controlFlowBreak, a)
-                .transferToHost(a)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
+                .task("t0", TestLoops::controlFlowBreak, a) //
+                .transferToHost(a) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < a.length; i++) {
             if (i == 4) {
@@ -633,12 +607,11 @@ public class TestLoops extends TornadoTestBase {
         Arrays.fill(a, 1000);
         a[2] = 2;
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestLoops::controlFlowBreak2, a)
-                .transferToHost(a)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
+                .task("t0", TestLoops::controlFlowBreak2, a) //
+                .transferToHost(a) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < a.length; i++) {
             if (i == 2) {
@@ -664,12 +637,10 @@ public class TestLoops extends TornadoTestBase {
         int[] foo = new int[size];
         Arrays.fill(foo, 50);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestLoops::controlFlowContinue, foo)
-                .transferToHost(foo)
+        new TaskGraph("s0").transferToDevice(DataTransferMode.EVERY_EXECUTION, foo) //
+                .task("t0", TestLoops::controlFlowContinue, foo) //
+                .transferToHost(foo) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < foo.length; i++) {
             if (i == 4) {
@@ -695,12 +666,11 @@ public class TestLoops extends TornadoTestBase {
         int[] a = new int[size * size];
         Arrays.fill(a, 1);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestLoops::nested2ParallelLoops, a, size)
-                .transferToHost(a)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
+                .task("t0", TestLoops::nested2ParallelLoops, a, size) //
+                .transferToHost(a) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
@@ -726,12 +696,11 @@ public class TestLoops extends TornadoTestBase {
         int[] a = new int[size * size];
         Arrays.fill(a, 1);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestLoops::whileLoop, a, size)
-                .transferToHost(a)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestLoops::whileLoop, a, size) //
+                .transferToHost(a) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i++) {
             int y = 0;
@@ -759,12 +728,11 @@ public class TestLoops extends TornadoTestBase {
         int[] a = new int[size * size];
         Arrays.fill(a, 1);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestLoops::dowWhileLoop, a, size)
-                .transferToHost(a)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestLoops::dowWhileLoop, a, size) //
+                .transferToHost(a) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i++) {
             int y = 0;
@@ -820,6 +788,7 @@ public class TestLoops extends TornadoTestBase {
         Arrays.fill(a, 1);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestLoops::reverseLoop, a) //
                 .transferToHost(a) //
                 .execute(); //
@@ -870,6 +839,7 @@ public class TestLoops extends TornadoTestBase {
         inTor[0] = inSeq[0] = size / 4 - 1;
 
         TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, inTor) //
                 .task("t0", TestLoops::testSingleThreadLoopCond, inTor, outTor) //
                 .transferToHost(inTor, outTor);
 
@@ -913,6 +883,7 @@ public class TestLoops extends TornadoTestBase {
         inTor[0] = inSeq[0] = size / 4 - 1;
 
         TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, inTor) //
                 .task("t0", TestLoops::testMultipleThreadLoopCond, inTor, outTor) //
                 .transferToHost(inTor, outTor); //
 

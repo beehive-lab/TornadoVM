@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -66,6 +66,14 @@ import uk.ac.manchester.tornado.api.collections.types.VolumeShort2;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.slam.graphics.GraphicsTests
+ * </code>
+ */
 public class GraphicsTests extends TornadoTestBase {
 
     private static void testPhiNode(ImageFloat3 vertices, ImageFloat depths, Matrix4x4Float invK) {

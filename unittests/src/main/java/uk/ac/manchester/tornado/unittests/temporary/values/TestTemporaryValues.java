@@ -30,6 +30,14 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.temporary.values.TestTemporaryValues
+ * </code>
+ */
 public class TestTemporaryValues extends TornadoTestBase {
     private static void computeWithTemporaryValues(float[] a, float[] b, float[] c) {
         for (@Parallel int i = 0; i < a.length; i++) {

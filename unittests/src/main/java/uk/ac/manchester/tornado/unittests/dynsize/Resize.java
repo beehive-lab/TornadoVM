@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,6 +33,14 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * How to run?
+ * <p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.dynsize.Resize
+ * </code>
+ * </p>
+ */
 public class Resize extends TornadoTestBase {
 
     public static void resize01(float[] a) {
@@ -68,8 +76,9 @@ public class Resize extends TornadoTestBase {
         // Resize data
         float[] b = createArray(512);
 
-        // Update old reference for a new reference
+        // Replace parameter a of the task-graph for b
         taskGraph.replaceParameter(a, b);
+
         taskGraph.execute();
 
         for (float v : b) {
@@ -205,7 +214,6 @@ public class Resize extends TornadoTestBase {
         WorkerGrid workerGrid = new WorkerGrid1D(256);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
 
-        // Do not stream in 'a'
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", Resize::resize02, a, b) //

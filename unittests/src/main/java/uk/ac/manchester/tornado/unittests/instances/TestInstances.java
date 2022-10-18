@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +25,15 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *      tornado-test.py -V uk.ac.manchester.tornado.unittests.instances.TestInstances
+ * </code>
+ *
+ */
 public class TestInstances extends TornadoTestBase {
 
     public static class Foo {
@@ -41,15 +50,13 @@ public class TestInstances extends TornadoTestBase {
         Foo f = new Foo();
         double[] array = new double[1000];
 
-        // @formatter:off
-        new TaskGraph("s0")
-            .task("t0", f::compute, array, 2.1)
-            .transferToHost(array)
-            .execute();
-        // @formatter:on
+        new TaskGraph("s0") //
+                .task("t0", f::compute, array, 2.1) //
+                .transferToHost(array) //
+                .execute();
 
-        for (int i = 0; i < array.length; i++) {
-            assertEquals(2.1, array[i], 0.001);
+        for (double v : array) {
+            assertEquals(2.1, v, 0.001);
         }
     }
 
@@ -63,15 +70,13 @@ public class TestInstances extends TornadoTestBase {
     public void testThis() {
         double[] array = new double[1000];
 
-        // @formatter:off
-        new TaskGraph("s0")
-            .task("t0", this::compute, array, 2.1)
-            .transferToHost(array)
-            .execute();
-        // @formatter:on
+        new TaskGraph("s0") //
+                .task("t0", this::compute, array, 2.1) //
+                .transferToHost(array) //
+                .execute();
 
-        for (int i = 0; i < array.length; i++) {
-            assertEquals(2.1, array[i], 0.001);
+        for (double v : array) {
+            assertEquals(2.1, v, 0.001);
         }
     }
 }

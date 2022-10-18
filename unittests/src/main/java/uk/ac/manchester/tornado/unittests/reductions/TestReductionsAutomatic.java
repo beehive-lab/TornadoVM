@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,6 +30,14 @@ import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.reductions.TestReductionsAutomatic
+ * </code>
+ */
 public class TestReductionsAutomatic extends TornadoTestBase {
 
     public static void test(int[] input, @Reduce int[] output) {
@@ -53,12 +61,10 @@ public class TestReductionsAutomatic extends TornadoTestBase {
 
         IntStream.range(0, size).parallel().forEach(i -> input[i] = i);
 
-        //@formatter:off
-        TaskGraph taskGraph = new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-            .task("t0", TestReductionsAutomatic::test, input, result)
-            .transferToHost(result);
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//
+                .task("t0", TestReductionsAutomatic::test, input, result)//
+                .transferToHost(result);
 
         taskGraph.execute();
 
@@ -79,12 +85,10 @@ public class TestReductionsAutomatic extends TornadoTestBase {
             input[i] = r.nextFloat();
         });
 
-        //@formatter:off
-        TaskGraph taskGraph = new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-            .task("t0", TestReductionsAutomatic::testFloat, input, result)
-            .transferToHost(result);
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//
+                .task("t0", TestReductionsAutomatic::testFloat, input, result)//
+                .transferToHost(result);
 
         taskGraph.execute();
 
@@ -129,12 +133,10 @@ public class TestReductionsAutomatic extends TornadoTestBase {
             input[i] = i;
         });
 
-        //@formatter:off
-            TaskGraph taskGraph = new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-                .task("t0", TestReductionsAutomatic::testDouble, input, result)
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//
+                .task("t0", TestReductionsAutomatic::testDouble, input, result)//
                 .transferToHost(result);
-            //@formatter:on
 
         taskGraph.execute();
 

@@ -38,6 +38,14 @@ import uk.ac.manchester.tornado.api.collections.types.VectorInt8;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.vectortypes.TestInts
+ * </code>
+ */
 public class TestInts extends TornadoTestBase {
 
     private static void addInt2(Int2 a, Int2 b, VectorInt results) {
@@ -204,7 +212,7 @@ public class TestInts extends TornadoTestBase {
         dotProductFunctionMap(a, b, seqMap);
         dotProductFunctionReduce(seqMap, seqReduce);
 
-        new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b, outputMap) //
+        new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0-MAP", TestInts::dotProductFunctionMap, a, b, outputMap) //
                 .task("t1-REDUCE", TestInts::dotProductFunctionReduce, outputMap, outputReduce) //
                 .transferToHost(outputReduce) //

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,6 +41,12 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 /**
  * Test for {@link ImageFloat} and {@link ImageByte3} data structures in
  * Tornado.
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.images.TestImages
+ * </code>
  *
  */
 public class TestImages extends TornadoTestBase {
@@ -58,6 +64,7 @@ public class TestImages extends TornadoTestBase {
         image.fill(100f);
 
         final TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, image) //
                 .task("t0", image::fill, 1f) //
                 .transferToHost(image);
 
@@ -143,12 +150,11 @@ public class TestImages extends TornadoTestBase {
         final ImageFloat imageB = new ImageFloat(M, N);
         imageA.fill(100f);
 
-        final TaskGraph taskGraph = new TaskGraph("s0") //
+        new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, imageA) //
                 .task("t1", TestImages::taskWithImages, imageA, imageB) //
-                .transferToHost(imageB);
-
-        taskGraph.execute();
+                .transferToHost(imageB) //
+                .execute();
 
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {

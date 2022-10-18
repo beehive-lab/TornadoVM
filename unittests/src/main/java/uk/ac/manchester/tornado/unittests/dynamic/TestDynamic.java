@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2018, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2018, 2022, APT Group, School of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,6 +29,14 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * How to run?
+ * <p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.dynamic.TestDynamic
+ * </code>
+ * </p>
+ */
 public class TestDynamic extends TornadoTestBase {
 
     public static void compute(int[] a, int[] b) {
@@ -110,13 +118,11 @@ public class TestDynamic extends TornadoTestBase {
         Arrays.fill(a, 10);
         Arrays.fill(b, 0);
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a)
-            .task("t0", TestDynamic::saxpy, 2.0f, a, b)
-            .transferToHost(b)
-            .executeWithProfilerSequential(Policy.PERFORMANCE);
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
+                .task("t0", TestDynamic::saxpy, 2.0f, a, b) //
+                .transferToHost(b) //
+                .executeWithProfilerSequential(Policy.PERFORMANCE);
 
         for (int i = 0; i < b.length; i++) {
             assertEquals(a[i] * 2.0f, b[i], 0.01f);
@@ -134,12 +140,10 @@ public class TestDynamic extends TornadoTestBase {
 
         compute2(a, seq);
 
-        //@formatter:off
-        TaskGraph taskGraph = new TaskGraph("ts")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a)
-            .task("task", TestDynamic::compute2, a, b)
-            .transferToHost(b);
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("ts") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
+                .task("task", TestDynamic::compute2, a, b) //
+                .transferToHost(b);
 
         // Run first time to obtain the best performance device
         taskGraph.executeWithProfilerSequential(Policy.PERFORMANCE);
@@ -166,13 +170,11 @@ public class TestDynamic extends TornadoTestBase {
         compute(a, seq);
         compute2(seq, seq);
 
-        //@formatter:off
-        TaskGraph taskGraph = new TaskGraph("pp")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a)
-            .task("t0", TestDynamic::compute, a, b)
-            .task("t1", TestDynamic::compute2, b, b)
-            .transferToHost(b);
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("pp") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
+                .task("t0", TestDynamic::compute, a, b) //
+                .task("t1", TestDynamic::compute2, b, b) //
+                .transferToHost(b);
 
         // Run first time to obtain the best performance device
         taskGraph.executeWithProfilerSequential(Policy.PERFORMANCE);
@@ -212,5 +214,4 @@ public class TestDynamic extends TornadoTestBase {
             assertEquals(a[i] * 2, b[i]);
         }
     }
-
 }

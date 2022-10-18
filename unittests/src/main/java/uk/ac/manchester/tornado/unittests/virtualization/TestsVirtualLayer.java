@@ -38,6 +38,14 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer
+ * </code>
+ */
 public class TestsVirtualLayer extends TornadoTestBase {
 
     public static void accumulator(int[] a, int value) {
@@ -195,12 +203,14 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
         // Assign task to device 0
         taskGraph.setDevice(driver.getDevice(0));
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data);
         taskGraph.task("t0", TestsVirtualLayer::testA, data, 1);
         taskGraph.transferToHost(data);
         taskGraph.execute();
 
         // Assign another task to device 1
         taskGraph.setDevice(driver.getDevice(1));
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data);
         taskGraph.task("t1", TestsVirtualLayer::testA, data, 10);
         taskGraph.transferToHost(data);
         taskGraph.execute();
@@ -222,8 +232,10 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.setDevice(driver.getDevice(0));
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data);
         taskGraph.task("t0", TestsVirtualLayer::testA, data, 1);
         taskGraph.setDevice(driver.getDevice(1));
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data);
         taskGraph.task("t1", TestsVirtualLayer::testA, data, 10);
         taskGraph.transferToHost(data);
         taskGraph.execute();
@@ -251,6 +263,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         Arrays.fill(dataB, 200);
 
         TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, dataA, dataB);
         taskGraph.task("t0", TestsVirtualLayer::testA, dataA, 1);
         taskGraph.task("t1", TestsVirtualLayer::testA, dataB, 10);
         taskGraph.transferToHost(dataA);
@@ -294,20 +307,11 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
             String taskName = "t0";
 
-            // It creates one task scheduler with one task. This task is shared
-            // across devices.
-
-            //@formatter:off
-            taskGraph.task(taskName, TestsVirtualLayer::testA, data, 1)
-              .transferToHost(data);
-            //@formatter:on
+            taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                    .task(taskName, TestsVirtualLayer::testA, data, 1) //
+                    .transferToHost(data);
 
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
-                String propertyDevice = "s" + driverIndex + "." + taskName + ".device";
-                String value = driverIndex + ":" + deviceIndex;
-
-                // XXX: the set property should be optional.
-                // Tornado.setProperty(propertyDevice, value);
                 taskGraph.setDevice(driver.getDevice(deviceIndex));
                 taskGraph.execute();
             }
@@ -339,14 +343,13 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0");
         TornadoRuntime.setProperty("s0.t0.device", "0:0");
-        // s0.setDevice(tornadoDriver.getDevice(1)); /// XXX: fix this call
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, dataA, dataB);
         taskGraph.task("t0", TestsVirtualLayer::testA, dataA, 1);
         taskGraph.transferToHost(dataA);
         taskGraph.execute();
 
         TaskGraph taskGraph1 = new TaskGraph("s1");
         TornadoRuntime.setProperty("s1.t1.device", "0:1");
-        // s1.setDevice(tornadoDriver.getDevice(0));
         taskGraph1.task("t1", TestsVirtualLayer::testA, dataB, 1);
         taskGraph1.transferToHost(dataB);
         taskGraph1.execute();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,10 +36,11 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes;
 
 /**
+ * <p>
  * How to run?
- *
+ * </p>
  * <code>
- * tornado-test.py -V --debug uk.ac.manchester.tornado.unittests.grid.TestGrid
+ *      tornado-test.py -V --debug uk.ac.manchester.tornado.unittests.grid.TestGrid
  * </code>
  *
  */

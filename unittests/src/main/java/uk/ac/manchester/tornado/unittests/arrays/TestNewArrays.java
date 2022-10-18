@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022 APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,6 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -135,15 +134,14 @@ public class TestNewArrays extends TornadoTestBase {
         Arrays.fill(a, 10);
         Arrays.fill(b, 20);
 
-        //@formatter:off
-        TaskGraph taskGraph = new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
-                .task("t0", TestNewArrays::vectorAdd, a, b, c)
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("t0", TestNewArrays::vectorAdd, a, b, c) //
                 .transferToHost(c);
-        //@formatter:on
-        taskGraph.execute();
-        vectorAdd(a, b, sequentialResult);
 
+        taskGraph.execute();
+
+        vectorAdd(a, b, sequentialResult);
         for (int i = 0; i < size; i++) {
             assertEquals(sequentialResult[i], c[i]);
         }
@@ -161,15 +159,14 @@ public class TestNewArrays extends TornadoTestBase {
         Arrays.fill(a, 10);
         Arrays.fill(b, 20);
 
-        //@formatter:off
-        TaskGraph taskGraph = new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
-                .task("t0", TestNewArrays::vectorAddComplexConditions, a, b, c)
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("t0", TestNewArrays::vectorAddComplexConditions, a, b, c) //
                 .transferToHost(c);
-        //@formatter:on
-        taskGraph.execute();
-        vectorAddComplexConditions(a, b, sequentialResult);
 
+        taskGraph.execute();
+
+        vectorAddComplexConditions(a, b, sequentialResult);
         for (int i = 0; i < size; i++) {
             assertEquals(sequentialResult[i], c[i]);
         }
@@ -181,8 +178,9 @@ public class TestNewArrays extends TornadoTestBase {
         int[] data = new int[N];
         int[] dataSeq = new int[N];
 
-        IntStream.range(0, N).parallel().forEach(i -> {
-            data[i] = (int) Math.random();
+        Random r = new Random();
+        IntStream.range(0, N).forEach(i -> {
+            data[i] = r.nextInt();
             dataSeq[i] = data[i];
         });
 
@@ -206,8 +204,9 @@ public class TestNewArrays extends TornadoTestBase {
         float[] data = new float[N];
         float[] dataSeq = new float[N];
 
-        IntStream.range(0, N).parallel().forEach(i -> {
-            data[i] = (float) Math.random();
+        Random r = new Random();
+        IntStream.range(0, N).forEach(i -> {
+            data[i] = r.nextFloat();
             dataSeq[i] = data[i];
         });
 
@@ -231,8 +230,9 @@ public class TestNewArrays extends TornadoTestBase {
         float[] data = new float[N];
         float[] dataSeq = new float[N];
 
+        Random r = new Random();
         IntStream.range(0, N).parallel().forEach(i -> {
-            data[i] = (float) Math.random();
+            data[i] = r.nextFloat();
             dataSeq[i] = data[i];
         });
 
@@ -250,14 +250,15 @@ public class TestNewArrays extends TornadoTestBase {
         }
     }
 
-    @Ignore
+    @TornadoNotSupported
     public void testInitNewArrayParallel() {
         final int N = 128;
         float[] data = new float[N];
         float[] dataSeq = new float[N];
 
+        Random r = new Random();
         IntStream.range(0, N).parallel().forEach(i -> {
-            data[i] = (int) Math.random();
+            data[i] = r.nextInt();
             dataSeq[i] = data[i];
         });
 

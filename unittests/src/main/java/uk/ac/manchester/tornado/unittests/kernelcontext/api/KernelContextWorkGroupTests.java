@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,8 +31,9 @@ import uk.ac.manchester.tornado.api.WorkerGrid3D;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- * How to execute:
- *
+ * <p>
+ * How to run:
+ * </p>
  * <code>
  *     tornado-test.py --threadInfo --printKernel --fast -V uk.ac.manchester.tornado.unittests.kernelcontext.api.KernelContextWorkGroupTests
  * </code>

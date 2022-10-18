@@ -39,6 +39,13 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * How to test?
+ *
+ * <code>
+ *     tornado-test -V --fast uk.ac.manchester.tornado.unittests.atomics.TestAtomics
+ * </code>
+ */
 public class TestAtomics extends TornadoTestBase {
 
     /**
@@ -166,6 +173,7 @@ public class TestAtomics extends TornadoTestBase {
         Arrays.fill(b, 1);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestAtomics::atomic03, a) //
                 .transferToHost(a) //
                 .execute();
@@ -197,7 +205,7 @@ public class TestAtomics extends TornadoTestBase {
 
         // On GPUs and FPGAs, threads within the same work-group run in parallel.
         // Increments will be performed atomically when using TornadoAtomicInteger.
-        // However the order is not guaranteed. For this test, we need to check that
+        // However, the order is not guaranteed. For this test, we need to check that
         // there are not repeated values in the output array.
         boolean repeated = isValueRepeated(a);
         assertTrue(!repeated);
@@ -310,6 +318,7 @@ public class TestAtomics extends TornadoTestBase {
         Arrays.fill(a, 1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestAtomics::atomic07, a) //
                 .transferToHost(a); //
 
@@ -332,6 +341,7 @@ public class TestAtomics extends TornadoTestBase {
         Arrays.fill(a, 1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestAtomics::atomic08, a) //
                 .transferToHost(a); //
 
@@ -397,8 +407,8 @@ public class TestAtomics extends TornadoTestBase {
 
         AtomicInteger ai = new AtomicInteger(initialValue);
 
-        // We force a COPY_IN instead of STREAM_IN
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestAtomics::atomic09, a, ai) //
                 .transferToHost(a, ai) //
                 .execute();
@@ -423,9 +433,8 @@ public class TestAtomics extends TornadoTestBase {
 
         AtomicInteger ai = new AtomicInteger(initialValue);
 
-        // We force a COPY_IN instead of STREAM_IN
-        // Also, the atomic uses COPY_OUT non-blocking call
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestAtomics::atomic09, a, ai) //
                 .transferToHost(ai, a) //
                 .execute();
@@ -454,6 +463,7 @@ public class TestAtomics extends TornadoTestBase {
         AtomicInteger bi = new AtomicInteger(initialValueB);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestAtomics::atomic10, a, ai, bi) //
                 .transferToHost(ai, a, bi) //
                 .execute();
@@ -483,6 +493,7 @@ public class TestAtomics extends TornadoTestBase {
         AtomicInteger ai = new AtomicInteger(initialValueA);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestAtomics::atomic13, a, ai) //
                 .transferToHost(ai, a) //
                 .execute();
@@ -510,6 +521,7 @@ public class TestAtomics extends TornadoTestBase {
         AtomicInteger bi = new AtomicInteger(initialValueB);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestAtomics::atomic14, a, ai, bi) //
                 .transferToHost(ai, a, bi) //
                 .execute();
@@ -535,6 +547,7 @@ public class TestAtomics extends TornadoTestBase {
         AtomicInteger ai = new AtomicInteger(initialValueA);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestAtomics::atomic15, a, ai) //
                 .transferToHost(ai, a) //
                 .execute();
@@ -560,7 +573,7 @@ public class TestAtomics extends TornadoTestBase {
         AtomicInteger ai = new AtomicInteger(initialValueA);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, ai) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, ai) //
                 .task("t0", TestAtomics::atomic16, a, ai) //
                 .transferToHost(ai, a);
 

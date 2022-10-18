@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022 APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,6 +34,13 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * How to test?
+ *
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.codegen.CodeGen
+ * </code>
+ */
 public class CodeGen extends TornadoTestBase {
 
     public static void cascadeKernel(int grayIntegralImage[], int imageWidth, int imageHeight, int resultsXY[]) {
@@ -159,6 +166,7 @@ public class CodeGen extends TornadoTestBase {
         breakStatement(serial);
 
         new TaskGraph("break") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("task", CodeGen::breakStatement, a) //
                 .transferToHost(a) //
                 .execute(); //

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,10 +33,18 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  * Testing TornadoVM with multiple independent tasks on different devices. The
  * {@link TaskGraph} contains more than one task. If multiple devices are not
  * specified by the user, then the default device is used.
- *
- * The user needs to specify the target device for each task as follows: <code>
+ * <p>
+ * The user needs to specify the target device for each task as follows:
+ * </p>
+ * <code>
  *  -Ds0.t0.device=0:0 -Ds0.t0.device=0:1
  *</code>
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices
+ * </code>
  **/
 public class TestMultipleTasksMultipleDevices {
 

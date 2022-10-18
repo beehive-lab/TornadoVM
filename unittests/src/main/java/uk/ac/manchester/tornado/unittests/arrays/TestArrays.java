@@ -120,11 +120,12 @@ public class TestArrays extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0");
         assertNotNull(taskGraph);
 
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data);
         for (int i = 0; i < numKernels; i++) {
             taskGraph.task("t" + i, TestArrays::addAccumulator, data, 1);
         }
-
-        taskGraph.transferToHost(data).warmup();
+        taskGraph.transferToHost(data) //
+                .warmup();
 
         taskGraph.execute();
 
@@ -135,6 +136,7 @@ public class TestArrays extends TornadoTestBase {
 
     @Test
     public void testInitByteArray() {
+        // Initialization: there is no copy-in.
         final int N = 128;
         byte[] data = new byte[N];
 
@@ -152,6 +154,8 @@ public class TestArrays extends TornadoTestBase {
 
     @Test
     public void testInitNotParallel() {
+        // Initialization: there is no copy-in.
+
         final int N = 128;
         int[] data = new int[N];
 
@@ -169,6 +173,8 @@ public class TestArrays extends TornadoTestBase {
 
     @Test
     public void testInitParallel() {
+        // Initialization: there is no copy-in.
+
         final int N = 128;
         int[] data = new int[N];
 
@@ -199,11 +205,12 @@ public class TestArrays extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0");
         assertNotNull(taskGraph);
 
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, data);
         for (int i = 0; i < numKernels; i++) {
             taskGraph.task("t" + i, TestArrays::addAccumulator, data, 1);
         }
-
-        taskGraph.transferToHost(data).execute();
+        taskGraph.transferToHost(data) //
+                .execute();
 
         for (int i = 0; i < N; i++) {
             assertEquals(i + numKernels, data[i], 0.0001);
@@ -222,13 +229,11 @@ public class TestArrays extends TornadoTestBase {
             b[i] = (float) Math.random();
         });
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
-            .task("t0", TestArrays::vectorAddDouble, a, b, c)
-            .transferToHost(c)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("t0", TestArrays::vectorAddDouble, a, b, c) //
+                .transferToHost(c) //
+                .execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.01);
@@ -271,13 +276,11 @@ public class TestArrays extends TornadoTestBase {
             b[i] = r.nextInt();
         });
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
-            .task("t0", TestArrays::vectorAddInteger, a, b, c)
-            .transferToHost(c)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("t0", TestArrays::vectorAddInteger, a, b, c) //
+                .transferToHost(c) //
+                .execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i]);
@@ -296,13 +299,11 @@ public class TestArrays extends TornadoTestBase {
             b[i] = i;
         });
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
-            .task("t0", TestArrays::vectorAddLong, a, b, c)
-            .transferToHost(c)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("t0", TestArrays::vectorAddLong, a, b, c) //
+                .transferToHost(c) //
+                .execute(); //
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i]);
@@ -321,13 +322,11 @@ public class TestArrays extends TornadoTestBase {
             b[idx] = 34;
         });
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION,a, b)
-            .task("t0", TestArrays::vectorAddShort, a, b, c)
-            .transferToHost(c)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("t0", TestArrays::vectorAddShort, a, b, c) //
+                .transferToHost(c) //
+                .execute(); //
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i]);
@@ -346,13 +345,11 @@ public class TestArrays extends TornadoTestBase {
             b[idx] = '0';
         });
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
-            .task("t0", TestArrays::vectorChars, a, b, c)
-            .transferToHost(c)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("t0", TestArrays::vectorChars, a, b, c) //
+                .transferToHost(c) //
+                .execute(); //
 
         for (char value : c) {
             assertEquals('f', value);
@@ -371,13 +368,11 @@ public class TestArrays extends TornadoTestBase {
             b[idx] = 11;
         });
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
-                .task("t0", TestArrays::vectorAddByte, a, b, c)
-                .transferToHost(c)
-                .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("t0", TestArrays::vectorAddByte, a, b, c) //
+                .transferToHost(c) //
+                .execute(); //
 
         for (byte value : c) {
             assertEquals(21, value);
@@ -403,13 +398,11 @@ public class TestArrays extends TornadoTestBase {
         char[] a = new char[] { 'h', 'e', 'l', 'l', 'o', ' ', '\0', '\0', '\0', '\0', '\0', '\0' };
         int[] b = new int[] { 15, 10, 6, 0, -11, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
-            .task("t0", TestArrays::addChars, a, b)
-            .transferToHost(a)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("t0", TestArrays::addChars, a, b) //
+                .transferToHost(a) //
+                .execute();
 
         assertEquals('w', a[0]);
         assertEquals('o', a[1]);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, School of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,6 @@
  * limitations under the License.
  *
  */
-
 package uk.ac.manchester.tornado.unittests.reductions;
 
 import static org.junit.Assert.assertEquals;
@@ -33,6 +32,14 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.reductions.TestReductionsLong
+ * </code>
+ */
 public class TestReductionsLong extends TornadoTestBase {
 
     private static final int SIZE = 4096;

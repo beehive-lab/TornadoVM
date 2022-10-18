@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022 APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -91,9 +91,8 @@ public abstract class TornadoTestBase {
         }
         int driverIndex = TornadoRuntime.getTornadoRuntime().getDefaultDevice().getDriverIndex();
         if (TornadoRuntime.getTornadoRuntime().getBackendType(driverIndex) == backend) {
-            switch (backend) {
-                case SPIRV:
-                    throw new SPIRVOptNotSupported("Test not supported for the optimized SPIR-V BACKEND");
+            if (backend == TornadoVMBackendType.SPIRV) {
+                throw new SPIRVOptNotSupported("Test not supported for the optimized SPIR-V BACKEND");
             }
         }
     }

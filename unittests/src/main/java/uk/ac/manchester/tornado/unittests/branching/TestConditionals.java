@@ -22,15 +22,22 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
-import java.util.Random;
 import java.util.stream.IntStream;
 
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * How to test?
+ *
+ * <code>
+ *     tornado-test -V --fast uk.ac.manchester.tornado.unittests.branching.TestConditionals
+ * </code>
+ */
 public class TestConditionals extends TornadoTestBase {
 
     public static void ifStatement(int[] a) {
@@ -190,6 +197,7 @@ public class TestConditionals extends TornadoTestBase {
         Arrays.fill(a, 5);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::ifStatement, a) //
                 .transferToHost(a) //
                 .execute(); //
@@ -204,6 +212,7 @@ public class TestConditionals extends TornadoTestBase {
         Arrays.fill(a, 5);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::ifElseStatement, a) //
                 .transferToHost(a) //
                 .execute(); //
@@ -217,8 +226,6 @@ public class TestConditionals extends TornadoTestBase {
         int[] a = new int[size];
         int[] serial = new int[size];
 
-        Random random = new Random();
-
         IntStream.range(0, size).forEach(i -> {
             a[i] = 50;
             serial[i] = a[i];
@@ -227,6 +234,7 @@ public class TestConditionals extends TornadoTestBase {
         nestedIfElseStatement(serial);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::nestedIfElseStatement, a) //
                 .transferToHost(a) //
                 .execute(); //
@@ -243,6 +251,7 @@ public class TestConditionals extends TornadoTestBase {
         Arrays.fill(a, 20);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::switchStatement, a) //
                 .transferToHost(a) //
                 .execute(); //
@@ -259,6 +268,7 @@ public class TestConditionals extends TornadoTestBase {
         Arrays.fill(a, 23);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::switchStatement, a) //
                 .transferToHost(a) //
                 .execute(); //
@@ -275,6 +285,7 @@ public class TestConditionals extends TornadoTestBase {
         Arrays.fill(a, 20);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::switchStatement2, a) //
                 .transferToHost(a) //
                 .execute(); //
@@ -291,6 +302,7 @@ public class TestConditionals extends TornadoTestBase {
         Arrays.fill(a, 20);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::switchStatement3, a) //
                 .transferToHost(a) //
                 .execute(); //
@@ -309,6 +321,7 @@ public class TestConditionals extends TornadoTestBase {
         Arrays.fill(a, 20);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::switchStatement4, a) //
                 .transferToHost(a) //
                 .execute();//
@@ -326,6 +339,7 @@ public class TestConditionals extends TornadoTestBase {
         Arrays.fill(a, 12);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::switchStatement5, a) //
                 .transferToHost(a) //
                 .execute();//
@@ -343,12 +357,11 @@ public class TestConditionals extends TornadoTestBase {
 
         Arrays.fill(a, 20);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", TestConditionals::ternaryCondition, a)
-                .transferToHost(a)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestConditionals::ternaryCondition, a) //
+                .transferToHost(a) //
                 .execute();
-        // @formatter:on
 
         for (int value : a) {
             assertEquals(10, value);
@@ -366,6 +379,7 @@ public class TestConditionals extends TornadoTestBase {
         Arrays.fill(b, 30);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::ternaryComplexCondition, a, b) //
                 .transferToHost(a) //
                 .execute(); //
@@ -385,8 +399,10 @@ public class TestConditionals extends TornadoTestBase {
         Arrays.fill(b, 30);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::ternaryComplexCondition2, a, b) //
-                .transferToHost(a).execute(); //
+                .transferToHost(a) //
+                .execute(); //
 
         for (int value : a) {
             assertEquals(50, value);
@@ -401,8 +417,10 @@ public class TestConditionals extends TornadoTestBase {
         Arrays.fill(a, 42);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::switchStatement6, a) //
-                .transferToHost(a).execute(); //
+                .transferToHost(a) //
+                .execute(); //
 
         for (int value : a) {
             assertEquals(30, value);
@@ -417,8 +435,10 @@ public class TestConditionals extends TornadoTestBase {
         Arrays.fill(a, 12);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::switchStatement6, a) //
-                .transferToHost(a).execute(); //
+                .transferToHost(a) //
+                .execute(); //
 
         for (int value : a) {
             assertEquals(10, value);
@@ -433,8 +453,10 @@ public class TestConditionals extends TornadoTestBase {
         Arrays.fill(a, 22);
 
         new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::switchStatement6, a) //
-                .transferToHost(a).execute(); //
+                .transferToHost(a) //
+                .execute(); //
 
         for (int value : a) {
             assertEquals(10, value);
@@ -452,9 +474,9 @@ public class TestConditionals extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0");
 
-        // @formatter:off
-        taskGraph.task("t0", TestConditionals::integerTestMove, output, N).transferToHost(output);
-        // @formatter:on
+        taskGraph.task("t0", TestConditionals::integerTestMove, output, N) //
+                .transferToHost(output);
+
         taskGraph.execute();
 
         integerTestMove(sequential, N);

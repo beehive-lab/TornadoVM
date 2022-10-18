@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,8 +26,17 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.lambdas.TestLambdas
+ * </code>
+ */
 public class TestLambdas extends TornadoTestBase {
 
     @Test
@@ -41,21 +50,18 @@ public class TestLambdas extends TornadoTestBase {
 
         IntStream.range(0, a.length).forEach(i -> a[i] = r.nextInt(100));
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .task("t0", (x, y) ->
-            {
-              for (@Parallel int i = 0; i < x.length; i++) {
-                  x[i] = y[i] * y[i];
-              }
-            }, a, b)
-            .transferToHost(a)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b) //
+                .task("t0", (x, y) -> {
+                    for (@Parallel int i = 0; i < x.length; i++) {
+                        x[i] = y[i] * y[i];
+                    }
+                }, a, b) //
+                .transferToHost(a) //
+                .execute();
 
         for (int i = 0; i < b.length; i++) {
             assertEquals(b[i] * b[i], a[i]);
         }
     }
-
 }
