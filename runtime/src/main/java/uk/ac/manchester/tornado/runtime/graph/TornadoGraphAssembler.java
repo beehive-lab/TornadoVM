@@ -42,30 +42,55 @@ public class TornadoGraphAssembler {
         /**
          * Native buffer allocation. If there is not enough space on the target device,
          * then we throw an exception.
+         *
+         * Format:
+         *
+         * <code>
+         *     ALLOC(dest, numObjects, objects)
+         * </code>
          */
-        ALLOC((byte) 10), // ALLOC(dest, numObjects, objects)
+        ALLOC((byte) 10),
 
         /**
          * Send data from Host -> Device only in the first execution of a task-graph.
          *
          * If there is no ALLOC associated with the TRANSFER_HOST_TO_DEVICE_ONCE-in, an
          * exception is launched.
+         *
+         * Format:
+         *
+         * <code>
+         *      TRANSFER_HOST_TO_DEVICE_ONCE(obj, src, dest)
+         * </code>
+         *
          */
-        TRANSFER_HOST_TO_DEVICE_ONCE((byte) 11), // TRANSFER_HOST_TO_DEVICE_ONCE(obj, src, dest)
+        TRANSFER_HOST_TO_DEVICE_ONCE((byte) 11),
 
         /**
          * Send data from Host -> Device in every execution of a task-graph. If there is
          * no ALLOC associated with the TRANSFER_HOST_TO_DEVICE_ALWAYS, an exception is
          * launched.
+         *
+         * Format:
+         *
+         * <code>
+         *     TRANSFER_HOST_TO_DEVICE_ALWAYS(obj, src, dest)
+         * </code>
          */
-        TRANSFER_HOST_TO_DEVICE_ALWAYS((byte) 12), // TRANSFER_HOST_TO_DEVICE_ALWAYS(obj, src, dest)
+        TRANSFER_HOST_TO_DEVICE_ALWAYS((byte) 12),
 
         /**
          * Send data from Device -> Host in every execution of the task-graph. If there
          * is no ALLOC associated with the TRANSFER_DEVICE_TO_HOST_ALWAYS, an exception
          * is launched.
+         *
+         * Format:
+         *
+         * <code>
+         *     TRANSFER_DEVICE_TO_HOST_ALWAYS(obj, src, dest)
+         * </code>
          */
-        TRANSFER_DEVICE_TO_HOST_ALWAYS((byte) 13), // TRANSFER_DEVICE_TO_HOST_ALWAYS(obj, src, dest)
+        TRANSFER_DEVICE_TO_HOST_ALWAYS((byte) 13),
 
         /**
          *
@@ -76,19 +101,37 @@ public class TornadoGraphAssembler {
          * Compile the code the first iteration that the task-graph is executed and then
          * execute the kernel. If the kernel is already compiled, the kernel is directly
          * launched.
+         *
+         * Format:
+         *
+         * <code>
+         *     LAUNCH(dep list index)
+         * </code>
          */
-        LAUNCH((byte) 15), // LAUNCH(dep list index)
+        LAUNCH((byte) 15),
 
         /**
          * Sync point. The BC interpreter waits for an event to be finished before
          * continuing the execution.
+         *
+         * Format:
+         *
+         * <code>
+         *     BARRIER <event>
+         * </code>
          */
-        BARRIER((byte) 16), // BARRIER <event>
+        BARRIER((byte) 16),
 
         /**
-         * Initialization of a TornadoVM BC region
+         * Initialization of a TornadoVM BC region.
+         *
+         * Format:
+         *
+         * <code>
+         *     INIT(num contexts, num stacks, num dep lists)
+         * </code>
          */
-        INIT((byte) 17), // INIT(num contexts, num stacks, num dep lists)
+        INIT((byte) 17),
 
         /**
          * Execution initialization.
@@ -97,36 +140,72 @@ public class TornadoGraphAssembler {
 
         /**
          * Register an event to be used in a barrier bytecode.
+         *
+         * Format:
+         *
+         * <code>
+         *     ADD_DEPENDENCY(list index)
+         * </code>
          */
-        ADD_DEPENDENCY((byte) 19), // ADD_DEPENDENCY(list index)
+        ADD_DEPENDENCY((byte) 19),
 
         /**
          * Open an execution context. It needs a context-id (device-id).
+         *
+         * Format:
+         *
+         * <code>
+         *     CONTEXT(ctx)
+         * </code>
          */
-        CONTEXT((byte) 20), // CONTEXT(ctx)
+        CONTEXT((byte) 20),
 
         /**
          * Close a bytecode region associated with a context.
+         *
+         * Format:
+         *
+         * <code>
+         *     END(ctx)
+         * </code>
          */
-        END((byte) 21), // END(ctx)
+        END((byte) 21),
 
         /**
          * Add a constant value to be used as an argument for a compute-kernel.
+         *
+         * Format:
+         *
+         * <code>
+         *     PUSH_CONSTANT_ARGUMENT(constant)
+         * </code>
          */
-        PUSH_CONSTANT_ARGUMENT((byte) 22), // PUSH_CONSTANT_ARGUMENT(constant)
+        PUSH_CONSTANT_ARGUMENT((byte) 22),
 
         /**
          * Add a reference (e.g., a Java array reference) to be used as an argument for
          * a compute-kernel.
+         *
+         * Format:
+         *
+         * <code>
+         *     PUSH_REFERENCE_ARGUMENT(reference)
+         * </code>
          */
-        PUSH_REFERENCE_ARGUMENT((byte) 23), // PUSH_REFERENCE_ARGUMENT(reference)
+        PUSH_REFERENCE_ARGUMENT((byte) 23),
 
         /**
          * De-allocation of a buffer from a device
+         *
+         * Format:
+         *
+         * <code>
+         *     DEALLOC(obj,dest)
+         * </code>
          */
-        DEALLOC((byte) 24); // DEALLOC(obj,dest)
+        DEALLOC((byte) 24);
 
-        private byte value;
+        private final byte value;
 
         TornadoVMBytecode(byte value) {
             this.value = value;
@@ -193,7 +272,7 @@ public class TornadoGraphAssembler {
         buffer.putInt(ctx);
     }
 
-    void transferToDeviceContext(int obj, int ctx, int dep, long offset, long size) {
+    void transferToDeviceOnce(int obj, int ctx, int dep, long offset, long size) {
         buffer.put(TornadoVMBytecode.TRANSFER_HOST_TO_DEVICE_ONCE.value);
         buffer.putInt(obj);
         buffer.putInt(ctx);
@@ -202,7 +281,7 @@ public class TornadoGraphAssembler {
         buffer.putLong(size);
     }
 
-    void streamInToContext(int obj, int ctx, int dep, long offset, long size) {
+    void transferToDeviceAlways(int obj, int ctx, int dep, long offset, long size) {
         buffer.put(TornadoVMBytecode.TRANSFER_HOST_TO_DEVICE_ALWAYS.value);
         buffer.putInt(obj);
         buffer.putInt(ctx);
@@ -211,7 +290,7 @@ public class TornadoGraphAssembler {
         buffer.putLong(size);
     }
 
-    void streamOutOfContext(int obj, int ctx, int dep, long offset, long size) {
+    void transferToHost(int obj, int ctx, int dep, long offset, long size) {
         buffer.put(TornadoVMBytecode.TRANSFER_DEVICE_TO_HOST_ALWAYS.value);
         buffer.putInt(obj);
         buffer.putInt(ctx);
