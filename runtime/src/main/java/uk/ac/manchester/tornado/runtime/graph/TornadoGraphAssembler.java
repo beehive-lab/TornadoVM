@@ -46,22 +46,24 @@ public class TornadoGraphAssembler {
         ALLOC((byte) 10), // ALLOC(dest, numObjects, objects)
 
         /**
-         * Send data from H -> D only in the first execution of the task-graph.
+         * Send data from Host -> Device only in the first execution of a task-graph.
          *
-         * If there is no ALLOC associated with the copy-in. Otherwise, an exception is
-         * launched.
+         * If there is no ALLOC associated with the TRANSFER_HOST_TO_DEVICE_ONCE-in, an
+         * exception is launched.
          */
         TRANSFER_HOST_TO_DEVICE_ONCE((byte) 11), // TRANSFER_HOST_TO_DEVICE_ONCE(obj, src, dest)
 
         /**
-         * Send data from H -> D in every execution of the task-graph. If there is no
-         * ALLOC associated with the copy-in. Otherwise, an exception is launched.
+         * Send data from Host -> Device in every execution of a task-graph. If there is
+         * no ALLOC associated with the TRANSFER_HOST_TO_DEVICE_ALWAYS, an exception is
+         * launched.
          */
         TRANSFER_HOST_TO_DEVICE_ALWAYS((byte) 12), // TRANSFER_HOST_TO_DEVICE_ALWAYS(obj, src, dest)
 
         /**
-         * Send data from D -> H in every execution of the task-graph. If there is no
-         * ALLOC associated with the stream_out. Otherwise, an exception is launched.
+         * Send data from Device -> Host in every execution of the task-graph. If there
+         * is no ALLOC associated with the TRANSFER_DEVICE_TO_HOST_ALWAYS, an exception
+         * is launched.
          */
         TRANSFER_DEVICE_TO_HOST_ALWAYS((byte) 13), // TRANSFER_DEVICE_TO_HOST_ALWAYS(obj, src, dest)
 
@@ -81,17 +83,17 @@ public class TornadoGraphAssembler {
          * Sync point. The BC interpreter waits for an event to be finished before
          * continuing the execution.
          */
-        BARRIER((byte) 16), // BARRIER <events>
+        BARRIER((byte) 16), // BARRIER <event>
 
         /**
          * Initialization of a TornadoVM BC region
          */
-        INIT_REGION((byte) 17), // INIT(num contexts, num stacks, num dep lists),
+        INIT((byte) 17), // INIT(num contexts, num stacks, num dep lists)
 
         /**
          * Execution initialization.
          */
-        BEGIN((byte) 18), //
+        BEGIN((byte) 18),
 
         /**
          * Register an event to be used in a barrier bytecode.
@@ -159,7 +161,7 @@ public class TornadoGraphAssembler {
     }
 
     void setup(int numContexts, int numStacks, int numDeps) {
-        buffer.put(TornadoVMBytecode.INIT_REGION.value);
+        buffer.put(TornadoVMBytecode.INIT.value);
         buffer.putInt(numContexts);
         buffer.putInt(numStacks);
         buffer.putInt(numDeps);

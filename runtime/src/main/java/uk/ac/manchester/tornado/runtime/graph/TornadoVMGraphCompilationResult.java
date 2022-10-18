@@ -27,7 +27,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
-import uk.ac.manchester.tornado.runtime.graph.nodes.AllocBulkNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateMultipleNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ConstantNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.CopyInNode;
@@ -73,8 +73,8 @@ public class TornadoVMGraphCompilationResult {
     }
 
     void emitAsyncNode(AbstractNode node, int contextID, int dependencyBC, long offset, long batchSize, long nThreads) {
-        if (node instanceof AllocBulkNode) {
-            bitcodeASM.allocate(((AllocBulkNode) node).getValues(), contextID, batchSize);
+        if (node instanceof AllocateMultipleNode) {
+            bitcodeASM.allocate(((AllocateMultipleNode) node).getValues(), contextID, batchSize);
         } else if (node instanceof CopyInNode) {
             bitcodeASM.transferToDeviceContext(((CopyInNode) node).getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
         } else if (node instanceof AllocateNode) {

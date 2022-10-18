@@ -198,7 +198,7 @@ public class TornadoVMGraphCompiler {
         }
 
         // Last operation -> perform synchronisation
-        if (TornadoOptions.USE_LAST_SYNC) {
+        if (TornadoOptions.ENABLE_STREAM_OUT_BLOCKING) {
             synchronizeOperationLastByteCode(result, numDepLists);
         } else {
             result.barrier(numDepLists);

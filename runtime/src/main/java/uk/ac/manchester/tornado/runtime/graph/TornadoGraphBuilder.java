@@ -35,7 +35,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
-import uk.ac.manchester.tornado.runtime.graph.nodes.AllocBulkNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateMultipleNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ConstantNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
@@ -55,7 +55,7 @@ import uk.ac.manchester.tornado.runtime.tasks.TornadoGraphBitcodes;
 
 public class TornadoGraphBuilder {
 
-    private static void createStreamInNode(ContextNode context, TornadoGraph graph, ObjectNode arg, AbstractNode[] args, int argIndex, AllocBulkNode persistNode) {
+    private static void createStreamInNode(ContextNode context, TornadoGraph graph, ObjectNode arg, AbstractNode[] args, int argIndex, AllocateMultipleNode persistNode) {
         final StreamInNode streamInNode = new StreamInNode(context);
         streamInNode.setValue(arg);
         graph.add(streamInNode);
@@ -64,7 +64,7 @@ public class TornadoGraphBuilder {
         persistNode.addValue(arg);
     }
 
-    private static void createAllocateNode(ContextNode context, TornadoGraph graph, AbstractNode arg, AbstractNode[] args, int argIndex, AllocBulkNode persistNode) {
+    private static void createAllocateNode(ContextNode context, TornadoGraph graph, AbstractNode arg, AbstractNode[] args, int argIndex, AllocateMultipleNode persistNode) {
         final AllocateNode allocateNode = new AllocateNode(context);
         allocateNode.setValue((ObjectNode) arg);
         graph.add(allocateNode);
@@ -73,7 +73,7 @@ public class TornadoGraphBuilder {
         persistNode.addValue((ObjectNode) arg);
     }
 
-    private static void createCopyInNode(ContextNode context, TornadoGraph graph, AbstractNode arg, AbstractNode[] args, int argIndex, AllocBulkNode persistNode) {
+    private static void createCopyInNode(ContextNode context, TornadoGraph graph, AbstractNode arg, AbstractNode[] args, int argIndex, AllocateMultipleNode persistNode) {
         final CopyInNode copyInNode = new CopyInNode(context);
         copyInNode.setValue((ObjectNode) arg);
         graph.add(copyInNode);
@@ -92,7 +92,7 @@ public class TornadoGraphBuilder {
         SchedulableTask task;
         AbstractNode[] args = null;
         ContextNode context = null;
-        AllocBulkNode persist = null;
+        AllocateMultipleNode persist = null;
         TaskNode taskNode = null;
         int argIndex = 0;
         int taskIndex = 0;
@@ -191,7 +191,7 @@ public class TornadoGraphBuilder {
 
                 context = graph.addUnique(new ContextNode(graphContext.getDeviceIndexForTask(globalTaskId)));
 
-                persist = graph.addUnique(new AllocBulkNode(context));
+                persist = graph.addUnique(new AllocateMultipleNode(context));
                 context.addUse(persist);
 
                 if (task instanceof CompilableTask) {

@@ -30,6 +30,7 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 /**
  * This class implements a cache of allocated buffers on the device and also
@@ -76,9 +77,9 @@ public abstract class TornadoBufferProvider {
         this.usedBuffers = new ArrayList<>();
         this.freeBuffers = new ArrayList<>();
 
-        // There is no way of querying the available memory on the device. Instead, use
-        // a flag similar to -Xmx.
-        currentMemoryAvailable = DEVICE_AVAILABLE_MEMORY;
+        // There is no way of querying the available memory on the device.
+        // Instead, use a flag similar to -Xmx.
+        currentMemoryAvailable = TornadoOptions.DEVICE_AVAILABLE_MEMORY;
     }
 
     protected abstract long allocateBuffer(long size);
@@ -112,12 +113,18 @@ public abstract class TornadoBufferProvider {
         return buffer;
     }
 
+    /**
+     * First check if there is an available buffer of a given size. Perform a
+     * sequential search through the freeBuffers to get the buffer with the lowest
+     * size than can fulfill the allocation. The number of allocated buffers is
+     * usually low, so searching sequentially should not take a lot of time.
+     *
+     * @param sizeInBytes
+     *            Size in bytes for the requested buffer.
+     * @return returns the index position of a free buffer within the free buffer
+     *         list. It returns -1 if a free buffer slot is not found.
+     */
     private int bufferIndexOfAFreeSpace(long sizeInBytes) {
-        // First check if there is an available buffer of given size. Perform a
-        // sequential search through the freeBuffers to get the buffer with
-        // the lowest size than can fulfill the allocation. The number of allocated
-        // buffers is usually low, so searching sequentially should not take a lot of
-        // time.
         int minBufferIndex = -1;
         for (int i = 0; i < freeBuffers.size(); i++) {
             BufferInfo bufferInfo = freeBuffers.get(i);
@@ -128,9 +135,15 @@ public abstract class TornadoBufferProvider {
         return minBufferIndex;
     }
 
-    private long freeMemoryAndAssignRegion(long sizeInBytes) {
-        // There is no buffer to fulfill the size. Start freeing unused buffers and try
-        // to allocate.
+    /**
+     * There is no buffer to fulfill the size. Start freeing unused buffers and try
+     * to allocate.
+     *
+     * @param sizeInBytes
+     *            Size in bytes for the requested buffer.
+     * @return It returns a buffer native pointer.
+     */
+    private long freeUnusedNativeBufferAndAssignRegion(long sizeInBytes) {
         freeBuffers(sizeInBytes);
         if (sizeInBytes <= currentMemoryAvailable) {
             return allocate(sizeInBytes);
@@ -139,6 +152,18 @@ public abstract class TornadoBufferProvider {
         }
     }
 
+    /**
+     * Method that finds a suitable space for a requested buffer size. If a free
+     * memory space is found, it performs the native buffer allocation on the target
+     * device. Otherwise, it throws an exception.
+     *
+     * @param sizeInBytes
+     *            Size in bytes for the requested buffer.
+     * @return Returns a pointer to the native buffer (JNI).
+     *
+     * @throws {@link
+     *             TornadoOutOfMemoryException}
+     */
     public long getBufferWithSize(long sizeInBytes) {
         TornadoTargetDevice targetDevice = deviceContext.getDevice();
         if (sizeInBytes <= currentMemoryAvailable && sizeInBytes < targetDevice.getDeviceMaxAllocationSize()) {
@@ -150,10 +175,9 @@ public abstract class TornadoBufferProvider {
             if (minBufferIndex != -1) {
                 return markBufferUsed(minBufferIndex).buffer;
             } else {
-                return freeMemoryAndAssignRegion(sizeInBytes);
+                return freeUnusedNativeBufferAndAssignRegion(sizeInBytes);
             }
         } else {
-            // Throw OOM exception.
             throw new TornadoOutOfMemoryException("Unable to allocate " + sizeInBytes + " bytes of memory.");
         }
     }

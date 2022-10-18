@@ -226,7 +226,7 @@ public class TornadoOptions {
      *
      * This is FALSE by default.
      */
-    public static final boolean USE_LAST_SYNC = getBooleanValue("tornado.enable.streamOut.blocking", FALSE);;
+    public static final boolean ENABLE_STREAM_OUT_BLOCKING = getBooleanValue("tornado.enable.streamOut.blocking", FALSE);;
 
     /**
      * Option to load FPGA pre-compiled binaries.

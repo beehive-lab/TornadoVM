@@ -26,9 +26,9 @@ package uk.ac.manchester.tornado.runtime.graph.nodes;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AllocBulkNode extends ContextOpNode {
+public class AllocateMultipleNode extends ContextOpNode {
 
-    public AllocBulkNode(ContextNode context) {
+    public AllocateMultipleNode(ContextNode context) {
         super(context);
         this.values = new ArrayList<>();
     }

@@ -127,7 +127,7 @@ public class TornadoVM extends TornadoLogger {
 
         debug("loading tornado vm...");
 
-        TornadoInternalError.guarantee(buffer.get() == TornadoVMBytecode.INIT_REGION.value(), "invalid code");
+        TornadoInternalError.guarantee(buffer.get() == TornadoVMBytecode.INIT.value(), "invalid code");
 
         contexts = new ArrayList<>();
         contexts.addAll(graphContext.getDevices());
