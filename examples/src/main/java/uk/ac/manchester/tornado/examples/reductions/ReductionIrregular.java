@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,6 +27,15 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.reductions.ReductionIrregular
+ * </code>
+ *
+ */
 public class ReductionIrregular {
 
     private static void reduceFloats(float[] input, @Reduce float[] output) {
@@ -41,12 +50,10 @@ public class ReductionIrregular {
         float[] result = new float[] { 0.0f };
         Random r = new Random(101);
 
-        //@formatter:off
-        TaskGraph task = new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-            .task("t0", ReductionIrregular::reduceFloats, input, result)
-            .transferToHost(result);
-        //@formatter:on
+        TaskGraph task = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//
+                .task("t0", ReductionIrregular::reduceFloats, input, result)//
+                .transferToHost(result);
 
         ArrayList<Long> timers = new ArrayList<>();
         for (int i = 0; i < ConfigurationReduce.MAX_ITERATIONS; i++) {

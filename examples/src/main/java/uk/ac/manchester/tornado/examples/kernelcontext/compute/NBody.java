@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022 APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,8 +25,20 @@ import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.profiler.ChromeEventTracer;
 
+/**
+ * Montecarlo algorithm to approximate the PI value. This version has been
+ * adapted from Marawacc test-suite.
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.compute.NBody
+ * </code>
+ *
+ */
 public class NBody {
 
     private static boolean VALIDATION = true;
@@ -160,7 +172,7 @@ public class NBody {
 
         long timeSequential = (end - start);
 
-        System.out.println(resultsIterations.toString());
+        System.out.println(resultsIterations);
 
         WorkerGrid workerGrid = new WorkerGrid1D(numBodies);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
@@ -170,10 +182,10 @@ public class NBody {
         // [Optional] Set the local work group
         workerGrid.setLocalWork(1024, 1, 1);
 
-        // @formatter:off
-        final TaskGraph t0 = new TaskGraph("s0")
-                .task("t0", NBody::nBody, context, numBodies, posTornadoVM, velTornadoVM).transferToHost(posTornadoVM, velTornadoVM);
-        // @formatter:on
+        final TaskGraph t0 = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, posTornadoVM, velTornadoVM) //
+                .task("t0", NBody::nBody, context, numBodies, posTornadoVM, velTornadoVM) //
+                .transferToHost(posTornadoVM, velTornadoVM);
 
         resultsIterations = new StringBuffer();
 

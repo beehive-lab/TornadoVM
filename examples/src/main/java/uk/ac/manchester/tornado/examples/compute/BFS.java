@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,8 +31,12 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 /**
  * Parallel Implementation of the BFS: this is based on the Marawacc compiler
  * framework.
- *
- * @author Juan Fumero
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.BFS
+ * </code>
  *
  */
 public class BFS {
@@ -53,11 +57,6 @@ public class BFS {
     /**
      * Set to one the connection between node from and node to into the adjacency
      * matrix.
-     *
-     * @param from
-     * @param to
-     * @param graph
-     * @param N
      */
     public static void connect(int from, int to, int[] graph, int N) {
         if (from != to && (graph[from * N + to] == 0)) {
@@ -67,11 +66,8 @@ public class BFS {
 
     /**
      * It builds a simple graph just for showing the example.
-     *
-     * @param adjacencyMatrix
-     * @param numNodes
      */
-    public static void initilizeAdjacencyMatrixSimpleGraph(int[] adjacencyMatrix, int numNodes) {
+    public static void initializeAdjacencyMatrixSimpleGraph(int[] adjacencyMatrix, int numNodes) {
         Arrays.fill(adjacencyMatrix, 0);
         connect(0, 1, adjacencyMatrix, numNodes);
         connect(0, 4, adjacencyMatrix, numNodes);
@@ -170,7 +166,7 @@ public class BFS {
         boolean validModifyResults = true;
 
         if (SAMPLE) {
-            initilizeAdjacencyMatrixSimpleGraph(adjacencyMatrix, numNodes);
+            initializeAdjacencyMatrixSimpleGraph(adjacencyMatrix, numNodes);
         } else {
             generateRandomGraph(adjacencyMatrix, numNodes, rootNode);
         }

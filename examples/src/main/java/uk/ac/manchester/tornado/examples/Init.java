@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,9 +27,12 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.examples.common.Messages;
 
 /**
+ * <p>
  * Run with:
- *
- * tornado uk.ac.manchester.tornado.examples.Init <size>
+ * </p>
+ * <code>
+ *      tornado -m tornado.examples/uk.ac.manchester.tornado.examples.Init <size>
+ * </code>
  *
  */
 public class Init {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +23,11 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
+/**
+ * <code>
+ *     tornado --enableProfiler console -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt 256
+ * </code>
+ */
 public class VectorAddInt {
 
     private static void vectorAdd(int[] a, int[] b, int[] c) {
@@ -42,12 +47,11 @@ public class VectorAddInt {
         Arrays.fill(a, 10);
         Arrays.fill(b, 20);
 
-        //@formatter:off
-        TaskGraph taskGraph = new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
-                .task("t0", VectorAddInt::vectorAdd, a, b, c)
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .lockObjectsInMemory(a, b, c) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("t0", VectorAddInt::vectorAdd, a, b, c) //
                 .transferToHost(c);
-        //@formatter:on
 
         boolean wrongResult;
         for (int idx = 0; idx < 10; idx++) {
@@ -58,8 +62,8 @@ public class VectorAddInt {
 
             // Check Result
             wrongResult = false;
-            for (int i = 0; i < c.length; i++) {
-                if (c[i] != 30) {
+            for (int j : c) {
+                if (j != 30) {
                     wrongResult = true;
                     break;
                 }

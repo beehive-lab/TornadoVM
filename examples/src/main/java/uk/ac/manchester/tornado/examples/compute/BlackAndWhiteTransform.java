@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,17 +37,16 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 /**
  * Program taken from the Marawacc parallel programming framework with the
  * permission from the author.
- *
+ * <p>
  * It takes an input coloured input image and transforms it into a grey-scale
  * image.
- *
+ * </p>
+ * <p>
  * How to run?
- *
+ * </p>
  * <code>
- * $ tornado uk.ac.manchester.tornado.examples.compute.BlackAndWhiteTransform
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.BlackAndWhiteTransform
  * </code>
- *
- *
  */
 public class BlackAndWhiteTransform {
 
@@ -89,21 +88,6 @@ public class BlackAndWhiteTransform {
             }
         }
 
-        private static void compute1D(int[] image, final int w, final int s) {
-            for (@Parallel int i = 0; i < w * s; i++) {
-                int rgb = image[i];
-                int alpha = (rgb >> 24) & 0xff;
-                int red = (rgb >> 16) & 0xFF;
-                int green = (rgb >> 8) & 0xFF;
-                int blue = (rgb & 0xFF);
-
-                int grayLevel = (red + green + blue) / 3;
-                int gray = (alpha << 24) | (grayLevel << 16) | (grayLevel << 8) | grayLevel;
-
-                image[i] = gray;
-            }
-        }
-
         private void writeImage(String fileName) {
             try {
                 ImageIO.write(image, "jpg", new File("/tmp/" + fileName));
@@ -131,8 +115,9 @@ public class BlackAndWhiteTransform {
 
                 if (taskGraph == null) {
                     taskGraph = new TaskGraph("s0");
-                    taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, imageRGB).task("t0", LoadImage::compute, imageRGB, w, s).transferToHost(imageRGB);
-
+                    taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, imageRGB) //
+                            .task("t0", LoadImage::compute, imageRGB, w, s) //
+                            .transferToHost(imageRGB);
                 }
 
                 taskStart = System.nanoTime();

@@ -793,6 +793,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 continue;
             }
 
+            if (object instanceof Number) {
+                continue;
+            }
+
             // Only add the object is the streamIn list if the data transfer mode is set to
             // EVERY_EXECUTION
             if (mode == DataTransferMode.EVERY_EXECUTION) {
@@ -1038,20 +1042,17 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private boolean checkAllArgumentsPerTask() {
         for (TaskPackage task : taskPackages) {
             Object[] taskParameters = task.getTaskParameters();
-            int parameterNumber = 1;
             // Note: the first element in the object list is a lambda expression
             // (computation)
             for (int i = 1; i < (taskParameters.length - 1); i++) {
                 Object parameter = taskParameters[i];
-
                 if (parameter instanceof Number || parameter instanceof KernelContext) {
                     continue;
                 }
                 if (!argumentsLookUp.contains(parameter)) {
                     throw new TornadoTaskRuntimeException(
-                            "Parameter #" + parameterNumber + " <" + parameter + "> from task <" + task.getId() + "> not specified either in transferToDevice or transferToHost functions");
+                            "Parameter #" + i + " <" + parameter + "> from task <" + task.getId() + "> not specified either in transferToDevice or transferToHost functions");
                 }
-                parameterNumber++;
             }
         }
         return true;
@@ -1065,12 +1066,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             try {
                 checkAllArgumentsPerTask();
             } catch (TornadoTaskRuntimeException tre) {
-                if (!TornadoOptions.RECOVER_BAILOUT) {
-                    throw tre;
-                } else {
-                    runAllTasksJavaSequential();
-                    return this;
-                }
+                throw tre;
             }
         }
 

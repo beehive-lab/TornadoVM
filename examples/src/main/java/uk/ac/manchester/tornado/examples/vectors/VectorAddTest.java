@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,14 +22,16 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Test Using the Profiler
  *
+ * <p>
  * How to run?
- *
+ * </p>
  * <code>
- *     tornado -Dtornado.profiler=True -Dtornado.log.profiler=True uk.ac.manchester.tornado.examples.vectors.VectorAddTest
+ *     tornado --enableProfiler console --jvm="-Dtornado.profiler=True" -m tornado.examples/uk.ac.manchester.tornado.examples.vectors.VectorAddTest
  * </code>
  *
  */
@@ -55,11 +57,11 @@ public class VectorAddTest {
         System.out.printf("vector<float3>: %s\n", a);
         System.out.printf("vector<float3>: %s\n", b);
 
-        //@formatter:off
-        TaskGraph s0 = new TaskGraph("s0")
-                .task("t0", VectorAddTest::test, a, b, results)
+        TaskGraph s0 = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", VectorAddTest::test, a, b, results) //
                 .transferToHost(results);
-        //@formatter:on
+
         s0.execute();
 
         System.out.println("Profiler kernel: " + s0.getDeviceKernelTime());

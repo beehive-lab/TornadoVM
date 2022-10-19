@@ -22,12 +22,20 @@ import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
+/**
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTMT 
+ * </code>
+ */
 public class DFTMT {
 
     public static boolean CHECK_RESULT = true;
 
-    public static void computeDft(float[] inreal, float[] inimag, float[] outreal, float[] outimag, int[] inputSize) {
+    public static void computeDFT(float[] inreal, float[] inimag, float[] outreal, float[] outimag, int[] inputSize) {
         int n = inreal.length;
         for (@Parallel int k = 0; k < n; k++) { // For each output element
             float sumreal = 0;
@@ -42,7 +50,7 @@ public class DFTMT {
         }
     }
 
-    public static void computeDftThreads(float[] inreal, float[] inimag, float[] outreal, float[] outimag, int threads, Thread[] th) throws InterruptedException {
+    public static void computeDFTThreads(float[] inreal, float[] inimag, float[] outreal, float[] outimag, int threads, Thread[] th) throws InterruptedException {
         int n = inreal.length;
         int balk = inreal.length / threads;
         for (int i = 0; i < threads; i++) {
@@ -80,7 +88,7 @@ public class DFTMT {
         float[] outRealTor = new float[size];
         float[] outImagTor = new float[size];
 
-        computeDft(inReal, inImag, outRealTor, outImagTor, inputSize);
+        computeDFT(inReal, inImag, outRealTor, outImagTor, inputSize);
 
         for (int i = 0; i < size; i++) {
             if (Math.abs(outImagTor[i] - outImag[i]) > 0.1) {
@@ -131,11 +139,11 @@ public class DFTMT {
         }
 
         graph = new TaskGraph("s0");
-        if (executionType.equals("multi") || executionType.equals("sequential")) {
-            ;
-        } else {
+        if (!executionType.equals("multi") && !executionType.equals("sequential")) {
             long startInit = System.nanoTime();
-            graph.task("t0", DFTMT::computeDft, inReal, inImag, outReal, outImag, inputSize).transferToHost(outReal, outImag);
+            graph.transferToDevice(DataTransferMode.FIRST_EXECUTION, inReal, inImag) //
+                    .task("t0", DFTMT::computeDFT, inReal, inImag, outReal, outImag, inputSize) //
+                    .transferToHost(outReal, outImag);
             long stopInit = System.nanoTime();
             System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
         }
@@ -159,12 +167,12 @@ public class DFTMT {
                     break;
                 case "sequential":
                     start = System.nanoTime();
-                    computeDft(inReal, inImag, outReal, outImag, inputSize);
+                    computeDFT(inReal, inImag, outReal, outImag, inputSize);
                     end = System.nanoTime();
                     break;
                 case "multi":
                     start = System.nanoTime();
-                    computeDftThreads(inReal, inImag, outReal, outImag, maxSystemThreads, threads);
+                    computeDFTThreads(inReal, inImag, outReal, outImag, maxSystemThreads, threads);
                     end = System.nanoTime();
                     break;
                 default:

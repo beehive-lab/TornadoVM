@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,10 +24,17 @@ import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * BlackScholes implementation adapted from AMD-OpenCL examples and Marawacc
  * compiler framework.
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.BlackScholesMT
+ * </code>
  */
 public class BlackScholesMT {
 
@@ -115,7 +122,7 @@ public class BlackScholesMT {
         final float oneBySqrt2pi = 0.398942280f;
         float absX = TornadoMath.abs(X);
         float t = one / (one + temp4 * absX);
-        float y = (float) (one - oneBySqrt2pi * TornadoMath.exp(-X * X / two) * t * (c1 + t * (c2 + t * (c3 + t * (c4 + t * c5)))));
+        float y = (one - oneBySqrt2pi * TornadoMath.exp(-X * X / two) * t * (c1 + t * (c2 + t * (c3 + t * (c4 + t * c5)))));
         return (X < zero) ? (one - y) : y;
     }
 
@@ -152,11 +159,11 @@ public class BlackScholesMT {
 
         Thread[] th = new Thread[maxThreadCount];
 
-        if (executionType.equals("multi") || executionType.equals("sequential")) {
-            ;
-        } else {
+        if (!executionType.equals("multi") && !executionType.equals("sequential")) {
             long startInit = System.nanoTime();
-            graph.task("t0", BlackScholesMT::blackScholesKernel, input, callPrice, putPrice).transferToHost(callPrice, putPrice);
+            graph.transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
+                    .task("t0", BlackScholesMT::blackScholesKernel, input, callPrice, putPrice) //
+                    .transferToHost(callPrice, putPrice);
             long stopInit = System.nanoTime();
             System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
         }

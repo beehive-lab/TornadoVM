@@ -24,10 +24,20 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
+/**
+ * Example using the Prebuilt API of TornadoVM. <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.arrays.ArrayAddIntPrebuilt
+ * </code>
+ */
 public class ArrayAddIntPrebuilt {
 
+    /**
+     * The following method represents the prebuilt code. It performs a vector
+     * addition using three parameters.
+     */
     public static void add(int[] a, int[] b, int[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
             c[i] = a[i] + b[i];
@@ -51,16 +61,15 @@ public class ArrayAddIntPrebuilt {
         String filePath = tornadoSDK + "/examples/generated/";
         filePath += device.getPlatformName().contains("PTX") ? "add.ptx" : "add.cl";
 
-        // @formatter:off
-        new TaskGraph("s0")
-                .prebuiltTask("t0", "add", filePath,
-                        new Object[] { a, b, c },
-                        new Access[] { Access.READ, Access.READ, Access.WRITE },
-                        device,
-                        new int[] { numElements })
-                .transferToHost(c)
-                .execute();
-        // @formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .prebuiltTask("t0", "add", filePath, //
+                        new Object[] { a, b, c }, //
+                        new Access[] { Access.READ, Access.READ, Access.WRITE }, //
+                        device, //
+                        new int[] { numElements }) //
+                .transferToHost(c) //
+                .execute(); //
 
         System.out.println("a: " + Arrays.toString(a));
         System.out.println("b: " + Arrays.toString(b));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022 APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,6 +27,12 @@ import uk.ac.manchester.tornado.api.WorkerGrid1D;
 /**
  * Montecarlo algorithm to approximate the PI value. This version has been
  * adapted from Marawacc test-suite.
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.compute.Montecarlo
+ * </code>
  *
  */
 public class Montecarlo {

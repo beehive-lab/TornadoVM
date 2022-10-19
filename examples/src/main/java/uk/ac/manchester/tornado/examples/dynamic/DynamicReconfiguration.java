@@ -23,9 +23,16 @@ import java.util.Arrays;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Simple example to show to dynamic reconfiguration in action.
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *      tornado -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DynamicReconfiguration
+ * </code>
  *
  */
 public class DynamicReconfiguration {
@@ -41,12 +48,13 @@ public class DynamicReconfiguration {
         float[] a = new float[numElements];
         float[] b = new float[numElements];
         Arrays.fill(a, 10);
-        //@formatter:off
-        new TaskGraph("s0")
-            .task("t0", DynamicReconfiguration::saxpy, 2.0f, a, b)
-            .transferToHost(b)
-            .executeWithProfiler(Policy.PERFORMANCE);
-        //@formatter:on
+
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", DynamicReconfiguration::saxpy, 2.0f, a, b) //
+                .transferToHost(b) //
+                .executeWithProfiler(Policy.PERFORMANCE);
+
     }
 
     public static void main(String[] args) {

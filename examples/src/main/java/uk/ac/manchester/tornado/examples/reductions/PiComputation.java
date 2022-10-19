@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,14 +25,25 @@ import java.util.stream.IntStream;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.reductions.PiComputation
+ * </code>
+ *
+ */
 public class PiComputation {
 
     public static void computePi(float[] input, @Reduce float[] result) {
+        result[0] = 0.0f;
         for (@Parallel int i = 1; i < input.length; i++) {
-            float value = (float) (Math.pow(-1, i + 1) / (2 * i - 1));
-            result[0] += value + input[i];
+            float value = input[i] + (float) (TornadoMath.pow(-1, i + 1) / (2 * i - 1));
+            result[0] += value;
         }
     }
 
@@ -41,12 +52,10 @@ public class PiComputation {
         float[] result = new float[1];
         Arrays.fill(result, 0.0f);
 
-        //@formatter:off
-        TaskGraph task = new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-            .task("t0", PiComputation::computePi, input, result)
-            .transferToHost(result);
-        //@formatter:on
+        TaskGraph task = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//
+                .task("t0", PiComputation::computePi, input, result) //
+                .transferToHost(result);
 
         ArrayList<Long> timers = new ArrayList<>();
         for (int i = 0; i < ConfigurationReduce.MAX_ITERATIONS; i++) {

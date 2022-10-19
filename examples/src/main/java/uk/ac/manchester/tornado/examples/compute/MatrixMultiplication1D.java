@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2021, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,8 +22,17 @@ import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D
+ * </code>
+ */
 public class MatrixMultiplication1D {
 
     private static final int WARMING_UP_ITERATIONS = 15;
@@ -61,6 +70,8 @@ public class MatrixMultiplication1D {
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
+                .lockObjectsInMemory(matrixA, matrixB, matrixC) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", MatrixMultiplication1D::matrixMultiplication, matrixA, matrixB, matrixC, size) //
                 .transferToHost(matrixC); //
 

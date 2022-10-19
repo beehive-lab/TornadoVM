@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,9 +24,15 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 /**
  * Montecarlo algorithm to approximate the PI value. This version has been
  * adapted from Marawacc test-suite.
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MonteCarlo
+ * </code>
  *
  */
-public class Montecarlo {
+public class MonteCarlo {
 
     private static void computeMontecarlo(float[] output, final int iterations) {
         for (@Parallel int j = 0; j < iterations; j++) {
@@ -56,7 +62,9 @@ public class Montecarlo {
         float[] output = new float[size];
         float[] seq = new float[size];
 
-        TaskGraph taskGraph = new TaskGraph("s0").task("taskGraph", Montecarlo::computeMontecarlo, output, size).transferToHost(output);
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .task("taskGraph", MonteCarlo::computeMontecarlo, output, size) //
+                .transferToHost(output);
 
         long start = System.nanoTime();
         taskGraph.execute();

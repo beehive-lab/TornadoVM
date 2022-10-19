@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.examples.fft;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Example of FFT provided by Nikos Foutris.
@@ -27,7 +28,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
  * How to run:
  *
  * <code>
- *     tornado uk.ac.manchester.tornado.examples.fft.TestFFT
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.fft.TestFFT
  * </code>
  */
 public class TestFFT {
@@ -99,6 +100,7 @@ public class TestFFT {
         int[] seq = new int[] { input[0], input[1] };
 
         TaskGraph s0 = new TaskGraph("x0");
+        s0.transferToDevice(DataTransferMode.FIRST_EXECUTION, factors, dimArr);
         s0.task("t0", TestFFT::nesting, input, dim, factors, size, dummyFac, dimArr);
         s0.transferToHost(input);
         s0.execute();

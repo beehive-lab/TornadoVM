@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,6 +33,14 @@ import javax.swing.JFrame;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.compute.Mandelbrot
+ * </code>
+ */
 public class Mandelbrot {
 
     public static final int SIZE = 1024;
@@ -138,7 +146,7 @@ public class Mandelbrot {
             } else {
                 short[] result = new short[SIZE * SIZE];
                 TaskGraph taskGraph = new TaskGraph("s0");
-
+                taskGraph.lockObjectsInMemory(result);
                 taskGraph.task("t0", MandelbrotImage::mandelbrotTornado, SIZE, result);
                 taskGraph.transferToHost(result).execute();
                 this.image = writeFile(result, SIZE);

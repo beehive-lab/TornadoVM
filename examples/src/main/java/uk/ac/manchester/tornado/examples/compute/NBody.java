@@ -24,7 +24,16 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.NBody
+ * </code>
+ */
 public class NBody {
 
     private static boolean VALIDATION = true;
@@ -135,12 +144,11 @@ public class NBody {
 
         long timeSequential = (end - start);
 
-        System.out.println(resultsIterations.toString());
+        System.out.println(resultsIterations);
 
-        // @formatter:off
-        final TaskGraph taskGraph = new TaskGraph("s0")
-            .task("t0", NBody::nBody, numBodies, posTornadoVM, velTornadoVM, delT, espSqr);
-        // @formatter:on
+        final TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, posTornadoVM, velTornadoVM) //
+                .task("t0", NBody::nBody, numBodies, posTornadoVM, velTornadoVM, delT, espSqr);
 
         resultsIterations = new StringBuffer();
 

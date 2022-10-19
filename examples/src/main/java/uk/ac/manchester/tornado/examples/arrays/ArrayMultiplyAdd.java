@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,23 +22,30 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.math.SimpleMath;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
+/**
+ * Example of a task-graph with multiple tasks.
+ * <p>
+ * How to run?:
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.arrays.ArrayMultiplyAdd
+ * </code>
+ */
 public class ArrayMultiplyAdd {
 
     public static void main(final String[] args) {
 
         final int numElements = (args.length == 1) ? Integer.parseInt(args[0]) : 1024;
 
-        /*
-         * allocate data
-         */
         final float[] a = new float[numElements];
         final float[] b = new float[numElements];
         final float[] c = new float[numElements];
         final float[] d = new float[numElements];
 
         /*
-         * populate data
+         * Data Initialization
          */
         Arrays.fill(a, 3);
         Arrays.fill(b, 2);
@@ -48,12 +55,13 @@ public class ArrayMultiplyAdd {
         /*
          * build an execution graph
          */
-        TaskGraph taskGraph = new TaskGraph("s0").task("t0", SimpleMath::vectorMultiply, a, b, c) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b, c) //
+                .task("t0", SimpleMath::vectorMultiply, a, b, c) //
                 .task("t1", SimpleMath::vectorAdd, c, b, d) //
                 .transferToHost(d);
 
         taskGraph.execute();
-        taskGraph.dumpTimes();
 
         /*
          * Check to make sure result is correct
@@ -64,7 +72,5 @@ public class ArrayMultiplyAdd {
                 break;
             }
         }
-
     }
-
 }

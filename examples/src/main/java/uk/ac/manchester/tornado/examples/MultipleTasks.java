@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +25,15 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
+/**
+ * <p>
+ * Run with:
+ * </p>
+ * <code>
+ *      tornado -m tornado.examples/uk.ac.manchester.tornado.examples.MultipleTasks
+ * </code>
+ *
+ */
 public class MultipleTasks {
 
     private static void foo(float[] x, float[] y) {
@@ -53,13 +62,11 @@ public class MultipleTasks {
         Random r = new Random();
         IntStream.range(0, numElements).parallel().forEach(i -> x[i] = r.nextFloat());
 
-        // @formatter:off
-        TaskGraph taskGraph = new TaskGraph("example")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x)
-                .task("foo", MultipleTasks::foo, x, y)
-                .task("bar", MultipleTasks::bar, y)
+        TaskGraph taskGraph = new TaskGraph("example") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
+                .task("foo", MultipleTasks::foo, x, y) //
+                .task("bar", MultipleTasks::bar, y) //
                 .transferToHost(y);
-        //@formatter:on
 
         for (int i = 0; i < 100; i++) {
             taskGraph.execute();

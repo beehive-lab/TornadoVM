@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,12 +26,14 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
- * BlackScholes implementation adapted from AMD-OpenCL examples and Marawacc
+ * Black-Scholes implementation adapted from AMD-OpenCL examples and Marawacc
  * compiler framework.
- *
+ * <p>
  * How to run:
- *
- * tornado uk.ac.manchester.tornado.examples.compute.BlackScholes
+ * </p>
+ * <code>
+ *      tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.BlackScholes
+ * </code>
  *
  */
 public class BlackScholes {

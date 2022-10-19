@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +22,16 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.arrays.ArrayAccInt
+ * </code>
+ */
 public class ArrayAccInt {
 
     public static void acc(int[] a, int value) {
@@ -37,19 +46,20 @@ public class ArrayAccInt {
         final int numKernels = 8;
         int[] a = new int[numElements];
 
-        Arrays.fill(a, 0);
+        Arrays.fill(a, 10);
 
-        //@formatter:off
         TaskGraph taskGraph = new TaskGraph("s0");
+
+        taskGraph.lockObjectsInMemory(a);
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, a);
         for (int i = 0; i < numKernels; i++) {
             taskGraph.task("t" + i, ArrayAccInt::acc, a, 1);
         }
-        taskGraph.transferToHost(a)
-                .execute();
-        taskGraph.dumpEvents();
-        //@formatter:on
+        taskGraph.transferToHost(a);
+        taskGraph.execute();
 
+        // The result must be the initial value for the array plus the number of tasks
+        // composed in the task-graph.
         System.out.println("a: " + Arrays.toString(a));
     }
-
 }

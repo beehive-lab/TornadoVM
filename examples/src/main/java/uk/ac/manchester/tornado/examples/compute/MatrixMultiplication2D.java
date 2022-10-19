@@ -22,11 +22,13 @@ import java.util.Random;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 
 /**
+ * <p>
  * How to run?
- *
+ * </p>
  * <code>
  *     $ tornado --threadInfo  -Ds0.t0.device=0:0 -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D
  * </code>
@@ -73,12 +75,11 @@ public class MatrixMultiplication2D {
             }
         }
 
-        //@formatter:off
-        TaskGraph taskGraph = new TaskGraph("s0")
-                .lockObjectsInMemory(matrixA, matrixB, matrixC)   // lock these objects
-                .task("t0", MatrixMultiplication2D::matrixMultiplication, matrixA, matrixB, matrixC, size)
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .lockObjectsInMemory(matrixA, matrixB, matrixC) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
+                .task("t0", MatrixMultiplication2D::matrixMultiplication, matrixA, matrixB, matrixC, size) //
                 .transferToHost(matrixC);
-        //@formatter:on
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {

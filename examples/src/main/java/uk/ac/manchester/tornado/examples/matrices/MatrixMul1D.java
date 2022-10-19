@@ -1,15 +1,42 @@
+/*
+ * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
+ * The University of Manchester.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 package uk.ac.manchester.tornado.examples.matrices;
-
-import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TornadoDriver;
-import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 import java.util.Arrays;
 import java.util.OptionalDouble;
 import java.util.stream.IntStream;
 
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.matrices.MatrixMul1D
+ * </code>
+ *
+ */
 public class MatrixMul1D {
 
     public static final int WARMUP_ITERATIONS = 15;
@@ -44,7 +71,10 @@ public class MatrixMul1D {
             matrixB[idx] = 3.5f;
         });
 
-        TaskGraph scheduleCUDA = new TaskGraph("cuda_old_api").task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixCCUDA, N).transferToHost(matrixCCUDA);
+        TaskGraph scheduleCUDA = new TaskGraph("cuda_old_api") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
+                .task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixCCUDA, N) //
+                .transferToHost(matrixCCUDA);
 
         TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
@@ -72,7 +102,10 @@ public class MatrixMul1D {
         else
             throw new Exception("Could not get average execution time");
 
-        TaskGraph scheduleOCL = new TaskGraph("ocl_old_api").task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixCOCL, N).transferToHost(matrixCOCL);
+        TaskGraph scheduleOCL = new TaskGraph("ocl_old_api") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
+                .task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixCOCL, N) //
+                .transferToHost(matrixCOCL);
 
         // Get the same device but running the OCL backend
         TornadoDriver oclDriver = TornadoRuntime.getTornadoRuntime().getDriver(1);

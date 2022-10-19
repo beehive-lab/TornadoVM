@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,8 +27,15 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
-;
-
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.reductions.ReductionAddFloats
+ * </code>
+ *
+ */
 public class ReductionAddFloats {
 
     public static void reductionAddFloats(float[] input, @Reduce float[] result) {
@@ -47,12 +54,10 @@ public class ReductionAddFloats {
             input[i] = r.nextFloat();
         });
 
-        //@formatter:off
-        TaskGraph task = new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-            .task("t0", ReductionAddFloats::reductionAddFloats, input, result)
-            .transferToHost(result);
-        //@formatter:on
+        TaskGraph task = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//
+                .task("t0", ReductionAddFloats::reductionAddFloats, input, result)//
+                .transferToHost(result);
 
         ArrayList<Long> timers = new ArrayList<>();
         for (int i = 0; i < ConfigurationReduce.MAX_ITERATIONS; i++) {

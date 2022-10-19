@@ -24,17 +24,21 @@ import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Example of Matrix Multiplication for square matrices written in Java. This
  * implementation follows the OpenCL implementation description provided in
- * https://github.com/cnugteren/myGEMM.
+ * {@url https://github.com/cnugteren/myGEMM}.
  *
+ * <p>
  * In detail, it applies the following optimizations: (i) Thread attributes to
  * utilize two dimensions, and (ii) Local memory & Loop tiling.
+ * </p>
  *
+ * <p>
  * How to run:
- *
+ * </p>
  * <code>
  *     $ tornado --debug uk.ac.manchester.tornado.examples.kernelcontext.compute.MatrixMultiplication2DV2
  * </code>
@@ -120,11 +124,11 @@ public class MatrixMultiplication2DV2 {
         // The local work group is configured to be TSxTS, to match the Tile Size (TS)
         workerGrid.setLocalWork(TS, TS, 1);
 
-        //@formatter:off
         TaskGraph t = new TaskGraph("s0") //
+                .lockObjectsInMemory(matrixA, matrixB, matrixC) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", MatrixMultiplication2DV2::matrixMultiplication, context, matrixA, matrixB, matrixC, size) //
                 .transferToHost(matrixC);
-        //@formatter:on
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {

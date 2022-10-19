@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022 APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,6 +26,14 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *      $ tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.reductions.ReductionsGlobalMemory
+ * </code>
+ */
 public class ReductionsGlobalMemory {
 
     // Reduction in Global memory using KernelContext
@@ -74,8 +82,11 @@ public class ReductionsGlobalMemory {
         gridScheduler.setWorkerGrid("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskGraph s0 = new TaskGraph("s0").transferToDevice(DataTransferMode.EVERY_EXECUTION, input).task("t0", ReductionsGlobalMemory::reduction, input, reduce, context)
+        TaskGraph s0 = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t0", ReductionsGlobalMemory::reduction, input, reduce, context) //
                 .task("t1", ReductionsGlobalMemory::rAdd, reduce, size).transferToHost(reduce);
+
         s0.execute(gridScheduler);
 
         // Final SUM

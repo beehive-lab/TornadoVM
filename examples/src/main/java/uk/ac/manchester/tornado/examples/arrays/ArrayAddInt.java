@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,7 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 public class ArrayAddInt {
 
@@ -42,12 +43,11 @@ public class ArrayAddInt {
         Arrays.fill(b, 2);
         Arrays.fill(c, 0);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .task("t0", ArrayAddInt::add, a, b, c)
-                .transferToHost(c)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", ArrayAddInt::add, a, b, c) //
+                .transferToHost(c) //
                 .execute();
-        //@formatter:on
 
         System.out.println("a: " + Arrays.toString(a));
         System.out.println("b: " + Arrays.toString(b));

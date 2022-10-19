@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
@@ -26,15 +26,25 @@ import java.util.stream.IntStream;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.reductions.Integration
+ * </code>
+ *
+ */
 public class Integration {
 
     private static final int LOWER = 1;
     private static final int UPPER = 4;
 
     public static float f(float x) {
-        return (float) (1 / ((x + 1) * Math.sqrt(x * Math.exp(x))));
+        return (1 / ((x + 1) * TornadoMath.sqrt(x * TornadoMath.exp(x))));
     }
 
     public float integrationSequential(int size, final float a, final float b) {
@@ -86,12 +96,11 @@ public class Integration {
         final float b = UPPER;
 
         float finalValue = 0.0f;
-        //@formatter:off
-        TaskGraph task = new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-                .task("t0", Integration::integrationTornado, input, result, a, b)
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, a, b)//
+                .task("t0", Integration::integrationTornado, input, result, a, b) //
                 .transferToHost(result);
-        //@formatter:on
 
         ArrayList<Long> timers = new ArrayList<>();
         for (int i = 0; i < ConfigurationReduce.MAX_ITERATIONS; i++) {
@@ -101,7 +110,7 @@ public class Integration {
             });
 
             long start = System.nanoTime();
-            task.execute();
+            taskGraph.execute();
             long end = System.nanoTime();
 
             finalValue = ((b - a) / size) * result[0];
@@ -126,7 +135,7 @@ public class Integration {
         }
 
         // Run Sequential
-        new Integration().runIntegrationSequential(size);
+        // new Integration().runIntegrationSequential(size);
 
         // Run with Tornado
         new Integration().runTornado(size);
