@@ -495,4 +495,44 @@ public class TestReductionsFloats extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.01f);
     }
 
+    public static float f(float x) {
+        return (1 / ((x + 1) * TornadoMath.sqrt(x * TornadoMath.exp(x))));
+    }
+
+    public static void integrationTornado(float[] input, @Reduce float[] sum, final float a, final float b) {
+        final int size = input.length;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            float value = f(a + (((i + 1) - (1 / 2)) * ((b - a) / size)));
+            sum[0] += input[i] + value;
+        }
+    }
+
+    @Test
+    public void testIntegrate() {
+        int size = 8192;
+        float[] input = new float[size];
+        float[] result = new float[1];
+        float[] resultSeq = new float[1];
+        Arrays.fill(result, 0.0f);
+        final float a = -1;
+        final float b = 1;
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//
+                .task("t0", TestReductionsFloats::integrationTornado, input, result, a, b) //
+                .transferToHost(result);
+
+        IntStream.range(0, size).sequential().forEach(idx -> {
+            input[idx] = 0;
+        });
+
+        taskGraph.execute();
+        integrationTornado(input, resultSeq, a, b);
+
+        float finalValueTornado = ((b - a) / size) * result[0];
+        float finalValueSeq = ((b - a) / size) * resultSeq[0];
+
+        assertEquals(finalValueSeq, finalValueTornado, 0.01f);
+    }
+
 }

@@ -98,6 +98,7 @@ public class Integration {
         float finalValue = 0.0f;
 
         TaskGraph taskGraph = new TaskGraph("s0") //
+                .lockObjectsInMemory(input, result) //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, a, b)//
                 .task("t0", Integration::integrationTornado, input, result, a, b) //
                 .transferToHost(result);
@@ -125,12 +126,12 @@ public class Integration {
 
     public static void main(String[] args) {
 
-        int size = 33_554_432;
+        int size = 8192;
         if (args.length > 0) {
             try {
                 size = Integer.parseInt(args[0]);
             } catch (NumberFormatException e) {
-                size = 33_554_432;
+                size = 8192;
             }
         }
 
