@@ -98,7 +98,6 @@ public class Integration {
         float finalValue = 0.0f;
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .lockObjectsInMemory(input, result) //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, a, b)//
                 .task("t0", Integration::integrationTornado, input, result, a, b) //
                 .transferToHost(result);

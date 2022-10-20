@@ -526,7 +526,10 @@ public class TestReductionsFloats extends TornadoTestBase {
             input[idx] = 0;
         });
 
-        taskGraph.execute();
+        // We run for 10 times
+        for (int i = 0; i < 10; i++) {
+            taskGraph.execute();
+        }
         integrationTornado(input, resultSeq, a, b);
 
         float finalValueTornado = ((b - a) / size) * result[0];

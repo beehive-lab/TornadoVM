@@ -41,6 +41,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import java.util.HashSet;
 import java.util.function.Consumer;
 
 import uk.ac.manchester.tornado.api.common.Access;
@@ -133,4 +134,6 @@ public interface AbstractTaskGraph extends ProfileInterface {
     void useDefaultThreadScheduler(boolean use);
 
     boolean isFinished();
+
+    HashSet<Object> getArgumentsLookup();
 }

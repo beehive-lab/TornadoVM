@@ -39,12 +39,14 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.analyzer.CodeAnalysis;
@@ -592,7 +594,36 @@ class ReduceTaskSchedule {
         return rewrittenTaskGraph;
     }
 
+    private boolean checkAllArgumentsPerTask() {
+        for (TaskPackage task : taskPackages) {
+            Object[] taskParameters = task.getTaskParameters();
+            // Note: the first element in the object list is a lambda expression
+            // (computation)
+            for (int i = 1; i < (taskParameters.length - 1); i++) {
+                Object parameter = taskParameters[i];
+                if (parameter instanceof Number || parameter instanceof KernelContext) {
+                    continue;
+                }
+                if (!rewrittenTaskGraph.getArgumentsLookup().contains(parameter)) {
+                    throw new TornadoTaskRuntimeException(
+                            "Parameter #" + i + " <" + parameter + "> from task <" + task.getId() + "> not specified either in transferToDevice or transferToHost functions");
+                }
+            }
+        }
+        return true;
+    }
+
     void executeExpression() {
+
+        // check parameter list
+        if (TornadoOptions.FORCE_CHECK_PARAMETERS) {
+            try {
+                checkAllArgumentsPerTask();
+            } catch (TornadoTaskRuntimeException tre) {
+                throw tre;
+            }
+        }
+
         setNeutralElement();
         if (hybridMode && !hybridInitialized) {
             hybridInitialized = true;

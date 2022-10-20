@@ -497,4 +497,8 @@ public class TaskGraph implements TornadoAPI, ProfileInterface {
     public boolean isFinished() {
         return taskScheduleImpl.isFinished();
     }
+
+    public HashSet<Object> getArgumentsLookup() {
+        return taskScheduleImpl.getArgumentsLookup();
+    }
 }

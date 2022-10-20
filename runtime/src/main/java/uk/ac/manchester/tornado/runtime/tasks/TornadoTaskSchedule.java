@@ -400,6 +400,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @Override
+    public HashSet<Object> getArgumentsLookup() {
+        return argumentsLookUp;
+    }
+
+    @Override
     public SchedulableTask getTask(String id) {
         return executionContext.getTask(id);
     }
@@ -1061,15 +1066,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public AbstractTaskGraph schedule() {
 
-        // check parameter list
-        if (TornadoOptions.FORCE_CHECK_PARAMETERS) {
-            try {
-                checkAllArgumentsPerTask();
-            } catch (TornadoTaskRuntimeException tre) {
-                throw tre;
-            }
-        }
-
         if (bailout) {
             if (!TornadoOptions.RECOVER_BAILOUT) {
                 throw new TornadoBailoutRuntimeException("[TornadoVM] Error - Recover option disabled");
@@ -1090,6 +1086,16 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         if (executionGraph != null) {
             return executionGraph;
         }
+
+        // check parameter list
+        if (TornadoOptions.FORCE_CHECK_PARAMETERS) {
+            try {
+                checkAllArgumentsPerTask();
+            } catch (TornadoTaskRuntimeException tre) {
+                throw tre;
+            }
+        }
+
         analysisTaskSchedule = null;
         scheduleInner();
         cleanUp();
