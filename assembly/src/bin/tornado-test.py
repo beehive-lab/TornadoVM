@@ -125,7 +125,7 @@ __TEST_THE_WORLD__ = [
               testMethods=["testVirtualDeviceKernelGPU"],
               testParameters=[
                   "-Dtornado.device.desc=" + os.environ["TORNADO_SDK"] + "/examples/virtual-device-GPU.json",
-                  "-Dtornado.print.kernel=True", "-Dtornado.virtual.device=True",
+                  "-Dtornado.print.kernel=True", "-Dtornado.virtual.devxsice=True",
                   "-Dtornado.print.kernel.dir=" + os.environ["TORNADO_SDK"] + "/virtualKernelOut.out"]),
     TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel",
               testMethods=["testVirtualDeviceKernelCPU"],

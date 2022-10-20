@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,6 +45,14 @@ import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
+/**
+ * <p>
+ * How to run in isolation?
+ * </p>
+ * <code>
+ *    tornado -jar benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.addImage.JMHAddImage
+ * </code>
+ */
 public class JMHAddImage {
 
     @State(Scope.Thread)
@@ -100,9 +108,9 @@ public class JMHAddImage {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void addImageTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskGraph t = state.taskGraph;
-        t.execute();
-        blackhole.consume(t);
+        TaskGraph tg = state.taskGraph;
+        tg.execute();
+        blackhole.consume(tg);
     }
 
     public static void main(String[] args) throws RunnerException {
