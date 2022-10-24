@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -46,6 +46,14 @@ import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
+/**
+ * <p>
+ * How to run in isolation?
+ * </p>
+ * <code>
+ *    tornado -jar benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.convolveimage.JMHConvolveImage
+ * </code>
+ */
 public class JMHConvolveImage {
 
     @State(Scope.Thread)
@@ -70,7 +78,8 @@ public class JMHConvolveImage {
             createFilter(filter);
 
             taskGraph = new TaskGraph("benchmark") //
-                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, input).task("convolveImage", GraphicsKernels::convolveImage, input, filter, output) //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, filter) //
+                    .task("convolveImage", GraphicsKernels::convolveImage, input, filter, output) //
                     .transferToHost(output);
             taskGraph.warmup();
         }

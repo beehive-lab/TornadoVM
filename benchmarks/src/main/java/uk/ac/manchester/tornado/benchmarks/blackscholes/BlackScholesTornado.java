@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,9 +22,18 @@ import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.blackscholes;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner blackscholes
+ * </code>
+ */
 public class BlackScholesTornado extends BenchmarkDriver {
 
     private final int size;
@@ -48,6 +57,7 @@ public class BlackScholesTornado extends BenchmarkDriver {
         }
 
         taskGraph = new TaskGraph("benchmark") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, randArray) //
                 .task("t0", ComputeKernels::blackscholes, randArray, put, call) //
                 .transferToHost(put, call);
 
@@ -84,6 +94,7 @@ public class BlackScholesTornado extends BenchmarkDriver {
         }
 
         taskGraph = new TaskGraph("benchmark");
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, randArrayTor);
         taskGraph.task("t0", ComputeKernels::blackscholes, randArrayTor, putTor, callTor);
 
         taskGraph.warmup();

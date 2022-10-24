@@ -30,6 +30,14 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner dgemm
+ * </code>
+ */
 public class DgemmTornado extends BenchmarkDriver {
 
     private final int m;
@@ -79,16 +87,15 @@ public class DgemmTornado extends BenchmarkDriver {
                 }
             }
 
-            // @formatter:off
-            taskGraph.prebuiltTask("t0",
-                            "dgemm",
-                            filePath,
-                            new Object[]{m, n, n, a, b, c},
-                            new Access[]{Access.READ, Access.READ, Access.READ, Access.READ, Access.READ, Access.WRITE},
-                            device,
-                            new int[]{n, n})
-                    .transferToHost(c);
-            // @formatter:on
+            taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                    .prebuiltTask("t0", //
+                            "dgemm", //
+                            filePath, //
+                            new Object[] { m, n, n, a, b, c }, //
+                            new Access[] { Access.READ, Access.READ, Access.READ, Access.READ, Access.READ, Access.WRITE }, //
+                            device, //
+                            new int[] { n, n })//
+                    .transferToHost(c);//
         }
     }
 

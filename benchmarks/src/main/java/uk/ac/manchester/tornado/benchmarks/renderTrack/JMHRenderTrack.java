@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -42,13 +42,22 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
+/**
+ * <p>
+ * How to run in isolation?
+ * </p>
+ * <code>
+ *    tornado -jar benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.renderTrack.JMHRenderTrack
+ * </code>
+ */
 public class JMHRenderTrack {
     @State(Scope.Thread)
     public static class BenchmarkSetup {
 
-        private int size = Integer.parseInt(System.getProperty("x", "8192"));
+        private final int size = Integer.parseInt(System.getProperty("x", "8192"));
         private ImageFloat3 input;
         private ImageByte3 output;
 
@@ -66,6 +75,7 @@ public class JMHRenderTrack {
                 }
             }
             taskGraph = new TaskGraph("s0")//
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                     .task("t0", ComputeKernels::renderTrack, output, input) //
                     .transferToHost(output);
             taskGraph.warmup();

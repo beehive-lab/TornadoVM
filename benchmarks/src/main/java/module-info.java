@@ -15,7 +15,6 @@ module tornado.benchmarks {
     exports uk.ac.manchester.tornado.benchmarks.blurFilter;
     exports uk.ac.manchester.tornado.benchmarks.convolvearray;
     exports uk.ac.manchester.tornado.benchmarks.convolveimage;
-    exports uk.ac.manchester.tornado.benchmarks.corrmatrix;
     exports uk.ac.manchester.tornado.benchmarks.dft;
     exports uk.ac.manchester.tornado.benchmarks.dgemm;
     exports uk.ac.manchester.tornado.benchmarks.dotimage;
@@ -25,8 +24,6 @@ module tornado.benchmarks {
     exports uk.ac.manchester.tornado.benchmarks.mandelbrot;
     exports uk.ac.manchester.tornado.benchmarks.montecarlo;
     exports uk.ac.manchester.tornado.benchmarks.nbody;
-    exports uk.ac.manchester.tornado.benchmarks.rodinia.kmean;
-    exports uk.ac.manchester.tornado.benchmarks.rodinia.nw;
     exports uk.ac.manchester.tornado.benchmarks.rotateimage;
     exports uk.ac.manchester.tornado.benchmarks.rotatevector;
     exports uk.ac.manchester.tornado.benchmarks.saxpy;

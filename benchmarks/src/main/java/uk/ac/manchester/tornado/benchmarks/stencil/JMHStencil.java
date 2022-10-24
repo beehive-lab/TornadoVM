@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,11 +45,19 @@ import org.openjdk.jmh.runner.options.TimeValue;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
+/**
+ * <p>
+ * How to run in isolation?
+ * </p>
+ * <code>
+ *    tornado -jar benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.stencil.JMHStencil
+ * </code>
+ */
 public class JMHStencil {
     @State(Scope.Thread)
     public static class BenchmarkSetup {
 
-        private int size = Integer.parseInt(System.getProperty("x", "1048576"));
+        private final int size = Integer.parseInt(System.getProperty("x", "1048576"));
         int sz;
         int n;
         private final float FAC = 1 / 26;

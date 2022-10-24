@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,14 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner hilbert
+ * </code>
+ */
 public class HilbertTornado extends BenchmarkDriver {
 
     private int size;
@@ -35,11 +43,9 @@ public class HilbertTornado extends BenchmarkDriver {
     @Override
     public void setUp() {
         hilbertMatrix = new float[size * size];
-        // @formatter:off
-        taskGraph = new TaskGraph("benchmark")
-                .task("t0", ComputeKernels::hilbertComputation, hilbertMatrix, size, size)
+        taskGraph = new TaskGraph("benchmark") //
+                .task("t0", ComputeKernels::hilbertComputation, hilbertMatrix, size, size) //
                 .transferToHost(hilbertMatrix);
-        // @formatter:on
         taskGraph.warmup();
     }
 
@@ -55,11 +61,10 @@ public class HilbertTornado extends BenchmarkDriver {
     public boolean validate(TornadoDevice device) {
         boolean val = true;
         float[] testData = new float[size * size];
-        // @formatter:off
-        TaskGraph check = new TaskGraph("s0")
-                .task("t0", ComputeKernels::hilbertComputation, testData, size, size)
-                .transferToHost(testData);
-        // @formatter:on
+        TaskGraph check = new TaskGraph("s0") //
+                .task("t0", ComputeKernels::hilbertComputation, testData, size, size) //
+                .transferToHost(testData); //
+
         check.mapAllTo(device);
         check.execute();
         float[] seq = new float[size * size];

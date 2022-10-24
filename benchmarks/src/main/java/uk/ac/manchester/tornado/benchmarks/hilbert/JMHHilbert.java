@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,6 +40,14 @@ import org.openjdk.jmh.runner.options.TimeValue;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
+/**
+ * <p>
+ * How to run in isolation?
+ * </p>
+ * <code>
+ *    tornado -jar benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.hilbert.JMHHilbert
+ * </code>
+ */
 public class JMHHilbert {
 
     @State(Scope.Thread)
@@ -51,11 +59,9 @@ public class JMHHilbert {
         @Setup(Level.Trial)
         public void doSetup() {
             hilbertMatrix = new float[size * size];
-            // @formatter:off
-            taskGraph = new TaskGraph("s0")
-                    .task("t0", ComputeKernels::hilbertComputation, hilbertMatrix, size, size)
-                    .transferToHost(hilbertMatrix);
-            // @formatter:on
+            taskGraph = new TaskGraph("s0") //
+                    .task("t0", ComputeKernels::hilbertComputation, hilbertMatrix, size, size) //
+                    .transferToHost(hilbertMatrix); //
             taskGraph.warmup();
         }
     }
