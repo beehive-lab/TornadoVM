@@ -205,11 +205,11 @@ public class TornadoTaskGraph implements AbstractTaskGraph {
         vmTable = new HashMap<>();
     }
 
-    static void performStreamInThread(TaskGraph task, Object inputObject, final int dataTransferMode) {
+    static void performStreamInObject(TaskGraph task, Object inputObject, final int dataTransferMode) {
         task.transferToDevice(dataTransferMode, inputObject);
     }
 
-    static void performStreamInThread(TaskGraph task, ArrayList<Object> inputObjects, final int dataTransferMode) {
+    static void performStreamInObject(TaskGraph task, ArrayList<Object> inputObjects, final int dataTransferMode) {
         int numObjectsCopyIn = inputObjects.size();
         switch (numObjectsCopyIn) {
             case 0:
@@ -1297,7 +1297,7 @@ public class TornadoTaskGraph implements AbstractTaskGraph {
                 long start = timer.time();
 
                 for (StreamingObject streamingObject : streamingInputObjects) {
-                    performStreamInThread(task, streamingObject.object, streamingObject.mode);
+                    performStreamInObject(task, streamingObject.object, streamingObject.mode);
                 }
 
                 for (TaskPackage taskPackage : taskPackages) {
@@ -1393,7 +1393,7 @@ public class TornadoTaskGraph implements AbstractTaskGraph {
         // Force re-compilation in device <deviceWinnerIndex>
         String newTaskScheduleName = TASK_SCHEDULE_PREFIX + deviceWinnerIndex;
         TaskGraph taskToCompile = new TaskGraph(newTaskScheduleName);
-        performStreamInThread(taskToCompile, streamInObjects, DataTransferMode.EVERY_EXECUTION);
+        performStreamInObject(taskToCompile, streamInObjects, DataTransferMode.EVERY_EXECUTION);
         for (TaskPackage taskPackage : taskPackages) {
             String taskID = taskPackage.getId();
             TornadoRuntime.setProperty(newTaskScheduleName + "." + taskID + ".device", "0:" + deviceWinnerIndex);
@@ -1506,7 +1506,7 @@ public class TornadoTaskGraph implements AbstractTaskGraph {
 
             long start = timer.time();
             for (StreamingObject streamingObject : streamingInputObjects) {
-                performStreamInThread(task, streamingObject.object, streamingObject.mode);
+                performStreamInObject(task, streamingObject.object, streamingObject.mode);
             }
 
             boolean ignoreTask = false;

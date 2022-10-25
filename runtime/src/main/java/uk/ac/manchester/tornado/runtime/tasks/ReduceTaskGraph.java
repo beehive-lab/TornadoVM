@@ -329,11 +329,11 @@ class ReduceTaskGraph {
                 streamInObjects.add(reduceArray.getValue());
             }
 
-            TornadoTaskGraph.performStreamInThread(rewrittenTaskGraph, streamInObjects, DataTransferMode.EVERY_EXECUTION);
+            TornadoTaskGraph.performStreamInObject(rewrittenTaskGraph, streamInObjects, DataTransferMode.EVERY_EXECUTION);
 
             for (StreamingObject so : streamingObjects) {
                 if (so.getMode() == DataTransferMode.FIRST_EXECUTION) {
-                    TornadoTaskGraph.performStreamInThread(rewrittenTaskGraph, so.getObject(), DataTransferMode.FIRST_EXECUTION);
+                    TornadoTaskGraph.performStreamInObject(rewrittenTaskGraph, so.getObject(), DataTransferMode.FIRST_EXECUTION);
                 }
             }
 
