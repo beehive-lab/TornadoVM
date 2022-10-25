@@ -121,7 +121,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 /**
  * Implementation of the Tornado API for running on heterogeneous devices.
  */
-public class TornadoTaskSchedule implements AbstractTaskGraph {
+public class TornadoTaskGraph implements AbstractTaskGraph {
 
     /**
      * Options for Dynamic Reconfiguration
@@ -175,7 +175,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      * Options for new reductions - experimental
      */
     private boolean reduceExpressionRewritten = false;
-    private ReduceTaskSchedule reduceTaskScheduleMeta;
+    private ReduceTaskGraph reduceTaskScheduleMeta;
     private boolean reduceAnalysis = false;
     private TornadoProfiler timeProfiler;
     private boolean updateData;
@@ -188,7 +188,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      * @param taskScheduleName
      *            Task-Schedule name
      */
-    public TornadoTaskSchedule(String taskScheduleName) {
+    public TornadoTaskGraph(String taskScheduleName) {
         if (TornadoOptions.isProfilerEnabled()) {
             this.timeProfiler = new TimeProfiler();
         } else {
@@ -1014,7 +1014,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     private void rewriteTaskForReduceSkeleton(MetaReduceCodeAnalysis analysisTaskSchedule) {
-        reduceTaskScheduleMeta = new ReduceTaskSchedule(this.getId(), taskPackages, streamInObjects, streamingInputObjects, streamOutObjects, graph);
+        reduceTaskScheduleMeta = new ReduceTaskGraph(this.getId(), taskPackages, streamInObjects, streamingInputObjects, streamOutObjects, graph);
         reduceTaskScheduleMeta.scheduleWithReduction(analysisTaskSchedule);
         reduceExpressionRewritten = true;
     }

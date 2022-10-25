@@ -68,7 +68,7 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoGraphAssembler.TornadoVMByt
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
-import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule;
+import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 /**
@@ -78,9 +78,9 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
  * <p>
  * The JIT compiler extends the Graal JIT Compiler for OpenCL compilation.
  * <p>
- * There is an instance of the {@link TornadoVM} per
- * {@link TornadoTaskSchedule}. Each TornadoVM contains the logic to orchestrate
- * the execution on the parallel device (e.g., a GPU).
+ * There is an instance of the {@link TornadoVM} per {@link TornadoTaskGraph}.
+ * Each TornadoVM contains the logic to orchestrate the execution on the
+ * parallel device (e.g., a GPU).
  */
 public class TornadoVM extends TornadoLogger {
 

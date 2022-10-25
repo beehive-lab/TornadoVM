@@ -57,7 +57,7 @@ import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis.REDUCE_OPERA
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 
-class ReduceTaskSchedule {
+class ReduceTaskGraph {
 
     private static final String EXCEPTION_MESSAGE_ERROR = "[ERROR] reduce type not supported yet: ";
     private static final String OPERATION_NOT_SUPPORTED_MESSAGE = "Operation not supported";
@@ -88,7 +88,7 @@ class ReduceTaskSchedule {
     private HashMap<Object, REDUCE_OPERATION> hybridMergeTable;
     private boolean hybridInitialized;
 
-    ReduceTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<StreamingObject> streamingObjects, ArrayList<Object> streamOutObjects,
+    ReduceTaskGraph(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<StreamingObject> streamingObjects, ArrayList<Object> streamOutObjects,
             CachedGraph<?> graph) {
         this.taskPackages = taskPackages;
         this.idTaskGraph = taskScheduleID;
@@ -329,11 +329,11 @@ class ReduceTaskSchedule {
                 streamInObjects.add(reduceArray.getValue());
             }
 
-            TornadoTaskSchedule.performStreamInThread(rewrittenTaskGraph, streamInObjects, DataTransferMode.EVERY_EXECUTION);
+            TornadoTaskGraph.performStreamInThread(rewrittenTaskGraph, streamInObjects, DataTransferMode.EVERY_EXECUTION);
 
             for (StreamingObject so : streamingObjects) {
                 if (so.getMode() == DataTransferMode.FIRST_EXECUTION) {
-                    TornadoTaskSchedule.performStreamInThread(rewrittenTaskGraph, so.getObject(), DataTransferMode.FIRST_EXECUTION);
+                    TornadoTaskGraph.performStreamInThread(rewrittenTaskGraph, so.getObject(), DataTransferMode.FIRST_EXECUTION);
                 }
             }
 
@@ -585,7 +585,7 @@ class ReduceTaskSchedule {
                 }
             }
         }
-        TornadoTaskSchedule.performStreamOutThreads(rewrittenTaskGraph, streamOutObjects);
+        TornadoTaskGraph.performStreamOutThreads(rewrittenTaskGraph, streamOutObjects);
         executeExpression();
         counterName.incrementAndGet();
         return rewrittenTaskGraph;

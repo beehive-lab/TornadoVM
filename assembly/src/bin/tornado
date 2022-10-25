@@ -46,7 +46,7 @@ __TORNADOVM_ENABLE_PROFILER_SILENT__    = "-Dtornado.profiler=True -Dtornado.log
 __TORNADOVM_ENABLE_PROFILER_CONSOLE__   = "-Dtornado.profiler=True "
 
 __TORNADOVM_PROVIDERS__ = """\
--Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule \
+-Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph \
 -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime \
 -Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado \
 -Dtornado.load.device.implementation.opencl=uk.ac.manchester.tornado.drivers.opencl.runtime.OCLDeviceFactory \
