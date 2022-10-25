@@ -108,9 +108,9 @@ public class JMHAddImage {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void addImageTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskGraph tg = state.taskGraph;
-        tg.execute();
-        blackhole.consume(tg);
+        TaskGraph taskGraph = state.taskGraph;
+        taskGraph.execute();
+        blackhole.consume(taskGraph);
     }
 
     public static void main(String[] args) throws RunnerException {

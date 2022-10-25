@@ -36,6 +36,8 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  */
 public class MultipleTasks {
 
+    private static final int MAX_ITERATIONS = 100;
+
     private static void foo(float[] x, float[] y) {
         for (@Parallel int i = 0; i < y.length; i++) {
             y[i] = x[i] + 100;
@@ -68,9 +70,8 @@ public class MultipleTasks {
                 .task("bar", MultipleTasks::bar, y) //
                 .transferToHost(y);
 
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < MAX_ITERATIONS; i++) {
             taskGraph.execute();
         }
-
     }
 }

@@ -95,9 +95,9 @@ public class JMHSpmv {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void spmvTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskGraph t = state.taskGraph;
-        t.execute();
-        blackhole.consume(t);
+        TaskGraph taskGraph = state.taskGraph;
+        taskGraph.execute();
+        blackhole.consume(taskGraph);
     }
 
     public static void main(String[] args) throws RunnerException {

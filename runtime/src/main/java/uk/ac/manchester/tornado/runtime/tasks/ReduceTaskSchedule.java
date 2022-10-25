@@ -333,10 +333,7 @@ class ReduceTaskSchedule {
 
             for (StreamingObject so : streamingObjects) {
                 if (so.getMode() == DataTransferMode.FIRST_EXECUTION) {
-                    Object o = so.getObject();
-                    ArrayList<Object> dList = new ArrayList<>();
-                    dList.add(o);
-                    TornadoTaskSchedule.performStreamInThread(rewrittenTaskGraph, dList, DataTransferMode.FIRST_EXECUTION);
+                    TornadoTaskSchedule.performStreamInThread(rewrittenTaskGraph, so.getObject(), DataTransferMode.FIRST_EXECUTION);
                 }
             }
 

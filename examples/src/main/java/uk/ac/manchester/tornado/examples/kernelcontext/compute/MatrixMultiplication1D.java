@@ -94,7 +94,7 @@ public class MatrixMultiplication1D {
         // [Optional] Set the local work group
         workerGrid.setLocalWork(((size <= 1024) ? size : size / 2), 1, 1);
 
-        TaskGraph tg = new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .lockObjectsInMemory(matrixA, matrixB, matrixC) //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", MatrixMultiplication1D::matrixMultiplication, context, matrixA, matrixB, matrixC, size) //
@@ -102,12 +102,12 @@ public class MatrixMultiplication1D {
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
-            tg.execute(gridScheduler);
+            taskGraph.execute(gridScheduler);
         }
 
         // 2. Run parallel on the GPU with Tornado
         long start = System.currentTimeMillis();
-        tg.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
         long end = System.currentTimeMillis();
 
         // Run sequential

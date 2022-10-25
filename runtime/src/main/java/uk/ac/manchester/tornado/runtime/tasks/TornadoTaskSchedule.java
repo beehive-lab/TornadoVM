@@ -205,6 +205,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         vmTable = new HashMap<>();
     }
 
+    static void performStreamInThread(TaskGraph task, Object inputObject, final int dataTransferMode) {
+        task.transferToDevice(dataTransferMode, inputObject);
+    }
+
     static void performStreamInThread(TaskGraph task, ArrayList<Object> inputObjects, final int dataTransferMode) {
         int numObjectsCopyIn = inputObjects.size();
         switch (numObjectsCopyIn) {
@@ -1293,9 +1297,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 long start = timer.time();
 
                 for (StreamingObject streamingObject : streamingInputObjects) {
-                    ArrayList<Object> dList = new ArrayList<>();
-                    dList.add(streamingObject.object);
-                    performStreamInThread(task, dList, streamingObject.mode);
+                    performStreamInThread(task, streamingObject.object, streamingObject.mode);
                 }
 
                 for (TaskPackage taskPackage : taskPackages) {
@@ -1387,7 +1389,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private TaskGraph taskRecompilation(int deviceWinnerIndex) {
+    private TaskGraph recompileTask(int deviceWinnerIndex) {
         // Force re-compilation in device <deviceWinnerIndex>
         String newTaskScheduleName = TASK_SCHEDULE_PREFIX + deviceWinnerIndex;
         TaskGraph taskToCompile = new TaskGraph(newTaskScheduleName);
@@ -1414,7 +1416,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 // This is only if compilation is not using Partial Evaluation
                 task = globalTaskScheduleIndex.get(deviceWinnerIndex);
             } else {
-                task = taskRecompilation(deviceWinnerIndex);
+                task = recompileTask(deviceWinnerIndex);
                 // Save the TaskSchedule in cache
                 taskScheduleIndex.put(deviceWinnerIndex, task);
             }
@@ -1504,9 +1506,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
             long start = timer.time();
             for (StreamingObject streamingObject : streamingInputObjects) {
-                ArrayList<Object> dList = new ArrayList<>();
-                dList.add(streamingObject.object);
-                performStreamInThread(task, dList, streamingObject.mode);
+                performStreamInThread(task, streamingObject.object, streamingObject.mode);
             }
 
             boolean ignoreTask = false;
