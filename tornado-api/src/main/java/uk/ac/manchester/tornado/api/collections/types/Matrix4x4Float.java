@@ -43,7 +43,7 @@ package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.FloatBuffer;
 
-public class Matrix4x4Float extends Matrix2DType implements PrimitiveStorage<FloatBuffer> {
+public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
 
     /**
      * backing array
@@ -55,14 +55,26 @@ public class Matrix4x4Float extends Matrix2DType implements PrimitiveStorage<Flo
      */
     private static final int NUM_ELEMENTS = 16;
 
+    /**
+     * Number of rows
+     */
+    protected static final int ROWS = 4;
+
+    /**
+     * Number of columns
+     */
+    protected static final int COLUMNS = 4;
+
     public Matrix4x4Float() {
         this(new float[NUM_ELEMENTS]);
     }
 
     public Matrix4x4Float(float[] array) {
-        super(4, 4);
-        assert array.length == 16;
         storage = array;
+    }
+
+    public float[] getFlattenedArray() {
+        return storage;
     }
 
     private int toIndex(int i, int j) {
@@ -103,17 +115,35 @@ public class Matrix4x4Float extends Matrix2DType implements PrimitiveStorage<Flo
         storage[toIndex(i, j)] = value;
     }
 
+    /**
+     * Returns the number of rows in this matrix
+     *
+     * @return int
+     */
+    public int getNumRows() {
+        return ROWS;
+    }
+
+    /**
+     * Returns the number of columns in the matrix
+     *
+     * @return int
+     */
+    public int getNumColumns() {
+        return COLUMNS;
+    }
+
     public Float4 row(int row) {
-        int baseIndex = COLUMNS * row;
-        return Float4.loadFromArray(storage, baseIndex);
+        int offset = ROWS * row;
+        return Float4.loadFromArray(storage, offset);
     }
 
     public Float4 column(int col) {
-        return new Float4(get(col), get(col + COLUMNS), get(col + (2 * COLUMNS)), get(col + (3 * COLUMNS)));
+        return new Float4(get(col), get(col + ROWS), get(col + (2 * ROWS)), get(col + (3 * ROWS)));
     }
 
     public Float4 diag() {
-        return new Float4(get(0), get(1 + COLUMNS), get(2 + (2 * COLUMNS)), get(3 + (3 * COLUMNS)));
+        return new Float4(get(0), get(1 + ROWS), get(2 + (2 * ROWS)), get(3 + (3 * ROWS)));
     }
 
     public void fill(float value) {
@@ -130,8 +160,8 @@ public class Matrix4x4Float extends Matrix2DType implements PrimitiveStorage<Flo
 
     public void set(Matrix4x4Float m) {
         for (int i = 0; i < ROWS; i++) {
-            int index = ROWS * i;
-            m.row(i).storeToArray(storage, index);
+            int offset = ROWS * i;
+            m.row(i).storeToArray(storage, offset);
         }
     }
 
@@ -145,7 +175,7 @@ public class Matrix4x4Float extends Matrix2DType implements PrimitiveStorage<Flo
     }
 
     public String toString() {
-        String result = String.format("Matrix4x4Float <%d x %d>", ROWS, COLUMNS);
+        String result = String.format("MatrixFloat <%d x %d>", ROWS, COLUMNS);
         result += "\n" + toString(FloatOps.FMT_4_M);
         return result;
     }
@@ -205,4 +235,5 @@ public class Matrix4x4Float extends Matrix2DType implements PrimitiveStorage<Flo
 
         return new FloatingPointError(averageULP, minULP, maxULP, -1f);
     }
+
 }
