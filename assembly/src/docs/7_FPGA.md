@@ -17,7 +17,7 @@ We have also tested it on the AWS EC2 F1 instance with `xilinx_aws-vu9p-f1-04261
 * TornadoVM Version: >= 0.9
 * AWS AMI Version: 1.6.0
 
-If the OpenCL ICD loaders are installed correctly, the output of the ```clinfo``` it should be the following:
+If the OpenCL ICD loaders are installed correctly, the output of the ```clinfo``` should be the following:
 
 ```bash
 $ clinfo
