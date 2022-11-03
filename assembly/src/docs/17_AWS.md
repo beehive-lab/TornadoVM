@@ -160,8 +160,7 @@ This command will return the following message:
 
 ```
 
-When the state change from `pending` to `available`, the `awsxlcbin` binary code can be executed via TornadoVM to the
-AWS FPGA.
+When the state changes from `pending` to `available`, the `awsxlcbin` binary code can be executed via TornadoVM to the AWS FPGA.
 
 ### 6. Now that the AFI is available, you can execute the program and run the OpenCL kernel on the AWS FPGA.
 
