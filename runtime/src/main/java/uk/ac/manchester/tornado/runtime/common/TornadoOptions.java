@@ -221,6 +221,14 @@ public class TornadoOptions {
     public static final boolean LEVEL_ZERO_EXTENDED_MEMORY_MODE = getBooleanValue("tornado.spirv.levelzero.extended.memory", TRUE);
 
     /**
+     * If enabled, the TornadoVM will substitute the last READ (data transfer from
+     * the Device -> Host) using a blocking call for STREAM OUT.
+     *
+     * This is FALSE by default.
+     */
+    public static final boolean ENABLE_STREAM_OUT_BLOCKING = getBooleanValue("tornado.enable.streamOut.blocking", FALSE);;
+
+    /**
      * Option to load FPGA pre-compiled binaries.
      */
     public static StringBuilder FPGA_BINARIES = System.getProperty("tornado.precompiled.binary", null) != null ? new StringBuilder(System.getProperty("tornado.precompiled.binary", null)) : null;

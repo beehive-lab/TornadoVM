@@ -35,9 +35,9 @@ import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 
 /**
  * Test copies within TornadoVM and Level Zero driver.
- * 
+ *
  * How to run?
- * 
+ *
  * <code>
  *     $ tornado uk.ac.manchester.tornado.drivers.spirv.tests.TestVM
  * </code>
@@ -79,15 +79,22 @@ public class TestVM {
         GlobalObjectState stateC = new GlobalObjectState();
         DeviceObjectState objectStateC = stateC.getDeviceState(device);
 
-        // Copy-in buffer
+        // Allocate a
+        device.allocate(a, 0, objectStateA);
+
+        // Copy-in buffer A
         device.ensurePresent(a, objectStateA, null, 0, 0);
 
         // Allocate buffer B
         device.allocate(b, 0, objectStateB);
 
-        // Stream IN
+        // Allocate buffer c
+        device.allocate(c, 0, objectStateC);
+
+        // Stream IN buffer C
         device.streamIn(c, 0, 0, objectStateC, null);
 
+        // Copy
         // b <- device-buffer(regionA)
         device.moveDataFromDeviceBufferToHost(objectStateA, b);
 
@@ -95,12 +102,17 @@ public class TestVM {
         device.streamOutBlocking(a, 0, objectStateA, null);
 
         // Add a barrier
-        // device.enqueueBarrier();
+        device.enqueueBarrier();
 
         // Flush and execute all pending in the command queue
         device.flush();
 
         System.out.println(Arrays.toString(b));
+
+        // De-alloc
+        device.deallocate(objectStateA);
+        device.deallocate(objectStateB);
+        device.deallocate(objectStateC);
 
     }
 
@@ -112,6 +124,7 @@ public class TestVM {
 
         Arrays.fill(a, 100);
         Arrays.fill(b, 0);
+        Arrays.fill(c, 50);
 
         if (device instanceof SPIRVTornadoDevice) {
             runWithTornadoVM((SPIRVTornadoDevice) device, a, b, c);

@@ -123,7 +123,7 @@ public class TestSPIRVJITCompiler {
         GlobalObjectState stateC = new GlobalObjectState();
         DeviceObjectState objectStateC = stateC.getDeviceState(spirvTornadoDevice);
 
-        spirvTornadoDevice.allocateBulk(new Object[] { a, b, c }, 0, new TornadoDeviceObjectState[] { objectStateA, objectStateB, objectStateC });
+        spirvTornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new TornadoDeviceObjectState[] { objectStateA, objectStateB, objectStateC });
 
         // Copy-IN A
         spirvTornadoDevice.ensurePresent(a, objectStateA, null, 0, 0);
