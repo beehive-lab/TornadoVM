@@ -61,11 +61,8 @@ public class Matrix4x4Float extends Matrix2DType implements PrimitiveStorage<Flo
 
     public Matrix4x4Float(float[] array) {
         super(4, 4);
+        assert array.length == 16;
         storage = array;
-    }
-
-    public float[] getFlattenedArray() {
-        return storage;
     }
 
     private int toIndex(int i, int j) {
@@ -107,16 +104,16 @@ public class Matrix4x4Float extends Matrix2DType implements PrimitiveStorage<Flo
     }
 
     public Float4 row(int row) {
-        int offset = ROWS * row;
-        return Float4.loadFromArray(storage, offset);
+        int baseIndex = COLUMNS * row;
+        return Float4.loadFromArray(storage, baseIndex);
     }
 
     public Float4 column(int col) {
-        return new Float4(get(col), get(col + ROWS), get(col + (2 * ROWS)), get(col + (3 * ROWS)));
+        return new Float4(get(col), get(col + COLUMNS), get(col + (2 * COLUMNS)), get(col + (3 * COLUMNS)));
     }
 
     public Float4 diag() {
-        return new Float4(get(0), get(1 + ROWS), get(2 + (2 * ROWS)), get(3 + (3 * ROWS)));
+        return new Float4(get(0), get(1 + COLUMNS), get(2 + (2 * COLUMNS)), get(3 + (3 * COLUMNS)));
     }
 
     public void fill(float value) {
@@ -133,8 +130,8 @@ public class Matrix4x4Float extends Matrix2DType implements PrimitiveStorage<Flo
 
     public void set(Matrix4x4Float m) {
         for (int i = 0; i < ROWS; i++) {
-            int offset = ROWS * i;
-            m.row(i).storeToArray(storage, offset);
+            int index = ROWS * i;
+            m.row(i).storeToArray(storage, index);
         }
     }
 
@@ -148,7 +145,7 @@ public class Matrix4x4Float extends Matrix2DType implements PrimitiveStorage<Flo
     }
 
     public String toString() {
-        String result = String.format("MatrixFloat <%d x %d>", ROWS, COLUMNS);
+        String result = String.format("Matrix4x4Float <%d x %d>", ROWS, COLUMNS);
         result += "\n" + toString(FloatOps.FMT_4_M);
         return result;
     }
@@ -208,5 +205,4 @@ public class Matrix4x4Float extends Matrix2DType implements PrimitiveStorage<Flo
 
         return new FloatingPointError(averageULP, minULP, maxULP, -1f);
     }
-
 }

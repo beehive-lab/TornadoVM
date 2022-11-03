@@ -87,10 +87,6 @@ public class Matrix2DInt extends Matrix2DType implements PrimitiveStorage<IntBuf
         this(matrix.length, matrix[0].length, StorageFormats.toRowMajor(matrix));
     }
 
-    public int[] getFlattenedArray() {
-        return storage;
-    }
-
     public int get(int i, int j) {
         return storage[StorageFormats.toRowMajor(i, j, COLUMNS)];
     }

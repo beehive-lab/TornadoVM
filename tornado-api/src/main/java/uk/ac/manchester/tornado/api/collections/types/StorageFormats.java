@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -10,12 +10,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
- * 
+ *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with GNU Classpath; see the file COPYING.  If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
@@ -25,7 +25,7 @@
  * making a combined work based on this library.  Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
- * 
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent
@@ -48,7 +48,7 @@ public final class StorageFormats {
 
     /**
      * Converts a given i,j index to a column-major index
-     * 
+     *
      * @param i
      *            row index
      * @param j
@@ -63,7 +63,7 @@ public final class StorageFormats {
 
     /**
      * Converts a given i,j index to a row-major index
-     * 
+     *
      * @param i
      *            row index
      * @param j
@@ -76,8 +76,8 @@ public final class StorageFormats {
         return (i * yMax) + j;
     }
 
-    public static int toRowMajorVector(int i, int j, int xMax, int width) {
-        return (i * xMax * width) + j;
+    public static int toRowMajorVector(int i, int j, int numColumns, int vectorElements) {
+        return (i * numColumns * vectorElements) + j;
     }
 
     public static int toRowMajor3D(int i, int j, int k, int zMax, int yMax) {
@@ -90,7 +90,7 @@ public final class StorageFormats {
 
     /**
      * Converts a given i,j index to row-major index
-     * 
+     *
      * @param i
      *            row index
      * @param j
@@ -107,7 +107,7 @@ public final class StorageFormats {
 
     /**
      * Converts a given i,j,k index to row-major index
-     * 
+     *
      * @param i
      *            index in 1st dimension
      * @param j
@@ -128,7 +128,7 @@ public final class StorageFormats {
 
     /**
      * Converts a given i,j index to a row-major index
-     * 
+     *
      * @param i
      *            row index
      * @param j
@@ -147,7 +147,7 @@ public final class StorageFormats {
 
     /**
      * Converts a given i,j index to Fortran index
-     * 
+     *
      * @param i
      *            row index
      * @param j
@@ -162,18 +162,18 @@ public final class StorageFormats {
 
     /**
      * Converts a matrix stored in multi-dimensional arrays into Row-Major format
-     * 
+     *
      * @param matrix
      *            input matrix
      * @return double[]
      */
     public static double[] toRowMajor(double[][] matrix) {
-        final int N = matrix[0].length;
-        final int M = matrix.length;
-        double[] flattenMatrix = new double[M * N];
-        for (int i = 0; i < M; i++) {
-            for (int j = 0; j < N; j++) {
-                flattenMatrix[toRowMajor(i, j, N)] = matrix[i][j];
+        final int cols = matrix[0].length;
+        final int rows = matrix.length;
+        double[] flattenMatrix = new double[rows * cols];
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                flattenMatrix[toRowMajor(i, j, cols)] = matrix[i][j];
             }
         }
         return flattenMatrix;
@@ -181,7 +181,7 @@ public final class StorageFormats {
 
     /**
      * Converts a matrix stored in multi-dimensional arrays into Row-Major format
-     * 
+     *
      * @param matrix
      *            input matrix
      * @return float[]
@@ -220,7 +220,7 @@ public final class StorageFormats {
 
     /**
      * Converts a matrix stored in multi-dimensional arrays into Row-Major format
-     * 
+     *
      * @param matrix
      *            input matrix
      * @return int[]
@@ -240,7 +240,7 @@ public final class StorageFormats {
 
     /**
      * Converts a matrix stored in multi-dimensional arrays into Row-Major format
-     * 
+     *
      * @param matrix
      *            input matrix
      * @return byte[]

@@ -90,10 +90,6 @@ public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<Flo
         this(rows, columns, new float[rows * columns * VECTOR_ELEMENTS]);
     }
 
-    public float[] getFlattenedArray() {
-        return storage;
-    }
-
     public Float4 get(int i, int j) {
         int baseIndex = StorageFormats.toRowMajorVector(i, j, COLUMNS, VECTOR_ELEMENTS);
         return Float4.loadFromArray(storage, baseIndex);

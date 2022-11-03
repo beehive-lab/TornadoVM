@@ -51,6 +51,7 @@ import static uk.ac.manchester.tornado.api.collections.types.StorageFormats.toRo
 import java.nio.FloatBuffer;
 
 public class Matrix2DFloat extends Matrix2DType implements PrimitiveStorage<FloatBuffer> {
+
     /**
      * backing array
      */
@@ -94,10 +95,6 @@ public class Matrix2DFloat extends Matrix2DType implements PrimitiveStorage<Floa
         this(matrix.length, matrix[0].length, toRowMajor(matrix));
     }
 
-    public float[] getFlattenedArray() {
-        return storage;
-    }
-
     public float get(int i, int j) {
         return storage[toRowMajor(i, j, COLUMNS)];
     }
@@ -107,7 +104,7 @@ public class Matrix2DFloat extends Matrix2DType implements PrimitiveStorage<Floa
     }
 
     public VectorFloat row(int row) {
-        int index = toRowMajor(row, 0, ROWS);
+        int index = toRowMajor(row, 0, COLUMNS);
         return new VectorFloat(COLUMNS, copyOfRange(storage, index, COLUMNS));
     }
 
@@ -149,7 +146,7 @@ public class Matrix2DFloat extends Matrix2DType implements PrimitiveStorage<Floa
     /**
      * Transposes the matrix in-place
      *
-     * @param m
+     * @param matrix
      *            matrix to transpose
      */
     public static void transpose(Matrix2DFloat matrix) {

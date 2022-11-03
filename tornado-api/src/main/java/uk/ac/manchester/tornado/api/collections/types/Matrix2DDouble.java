@@ -88,10 +88,6 @@ public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<Dou
         this(matrix.length, matrix[0].length, StorageFormats.toRowMajor(matrix));
     }
 
-    public double[] getFlattenedArray() {
-        return storage;
-    }
-
     public double get(int i, int j) {
         return storage[StorageFormats.toRowMajor(i, j, COLUMNS)];
     }

@@ -91,10 +91,6 @@ public class Matrix3DFloat4 extends Matrix3DType implements PrimitiveStorage<Flo
         this(rows, columns, depth, new float[rows * columns * depth * VECTOR_ELEMENTS]);
     }
 
-    public float[] getFlattenedArray() {
-        return storage;
-    }
-
     public Float4 get(int i, int j, int k) {
         int baseIndex = StorageFormats.toRowMajor3DVector(i, j, k, DEPTH, COLUMNS, VECTOR_ELEMENTS);
         return Float4.loadFromArray(storage, baseIndex);
