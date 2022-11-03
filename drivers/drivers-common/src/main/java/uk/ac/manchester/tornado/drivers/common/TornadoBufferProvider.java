@@ -34,11 +34,11 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 /**
  * This class implements a cache of allocated buffers on the device and also
- * handles the logic to allocate and free buffers. It is extended for each
- * backend. It maintains a list of used buffers and another list of free
- * buffers. When performing an allocation, it first checks if memory is
- * available on the device. If it is not, then it will try to use a buffer from
- * the cache.
+ * handles the logic to allocate and free buffers. This class is extended for
+ * each backend. The logic is as follows: it maintains a list of used buffers
+ * and another list of free buffers. When performing an allocation, it first
+ * checks if memory is available on the device. If it is not, then it will try
+ * to reuse a buffer from the free list of buffers.
  */
 public abstract class TornadoBufferProvider {
 
@@ -115,7 +115,7 @@ public abstract class TornadoBufferProvider {
 
     /**
      * First check if there is an available buffer of a given size. Perform a
-     * sequential search through the freeBuffers to get the buffer with the lowest
+     * sequential search through the freeBuffers to get the buffer with the smaller
      * size than can fulfill the allocation. The number of allocated buffers is
      * usually low, so searching sequentially should not take a lot of time.
      *
@@ -153,9 +153,9 @@ public abstract class TornadoBufferProvider {
     }
 
     /**
-     * Method that finds a suitable space for a requested buffer size. If a free
-     * memory space is found, it performs the native buffer allocation on the target
-     * device. Otherwise, it throws an exception.
+     * Method that finds a suitable buffer for a requested buffer size. If a free
+     * memory buffer is found, it performs the native buffer allocation on the
+     * target device. Otherwise, it throws an exception.
      *
      * @param sizeInBytes
      *            Size in bytes for the requested buffer.
