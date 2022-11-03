@@ -41,14 +41,13 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.Math.min;
 import static java.lang.String.format;
 import static java.nio.FloatBuffer.wrap;
-import static java.util.Arrays.copyOfRange;
 import static uk.ac.manchester.tornado.api.collections.types.FloatOps.FMT;
 import static uk.ac.manchester.tornado.api.collections.types.StorageFormats.toRowMajor;
 
 import java.nio.FloatBuffer;
+import java.util.Arrays;
 
 public class Matrix2DFloat extends Matrix2DType implements PrimitiveStorage<FloatBuffer> {
 
@@ -105,7 +104,7 @@ public class Matrix2DFloat extends Matrix2DType implements PrimitiveStorage<Floa
 
     public VectorFloat row(int row) {
         int index = toRowMajor(row, 0, COLUMNS);
-        return new VectorFloat(COLUMNS, copyOfRange(storage, index, COLUMNS));
+        return new VectorFloat(COLUMNS, Arrays.copyOfRange(storage, index, COLUMNS));
     }
 
     public VectorFloat column(int col) {
@@ -118,7 +117,7 @@ public class Matrix2DFloat extends Matrix2DType implements PrimitiveStorage<Floa
     }
 
     public VectorFloat diag() {
-        final VectorFloat v = new VectorFloat(min(ROWS, COLUMNS));
+        final VectorFloat v = new VectorFloat(Math.min(ROWS, COLUMNS));
         for (int i = 0; i < ROWS; i++) {
             v.set(i, storage[i * (COLUMNS + 1)]);
         }

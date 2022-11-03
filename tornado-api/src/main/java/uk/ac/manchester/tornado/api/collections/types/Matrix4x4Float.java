@@ -73,10 +73,6 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
         storage = array;
     }
 
-    public float[] getFlattenedArray() {
-        return storage;
-    }
-
     private int toIndex(int i, int j) {
         return j + (i * COLUMNS);
     }

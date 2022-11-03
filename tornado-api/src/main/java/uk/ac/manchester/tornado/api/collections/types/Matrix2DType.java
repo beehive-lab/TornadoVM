@@ -41,7 +41,7 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-public abstract class Matrix2DType {
+public class Matrix2DType {
 
     /**
      * Number of rows
