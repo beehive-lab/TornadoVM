@@ -91,10 +91,10 @@ public class TestMatrixTypes extends TornadoTestBase {
     }
 
     public static void computeMatrixMultiplication(Matrix2DFloat a, Matrix2DFloat b, Matrix2DFloat c) {
-        for (@Parallel int i = 0; i < a.M(); i++) {
-            for (@Parallel int j = 0; j < a.N(); j++) {
+        for (@Parallel int i = 0; i < a.getNumRows(); i++) {
+            for (@Parallel int j = 0; j < a.getNumColumns(); j++) {
                 float sum = 0.0f;
-                for (int k = 0; k < a.N(); k++) {
+                for (int k = 0; k < a.getNumColumns(); k++) {
                     sum += a.get(i, k) + a.get(k, j);
                 }
                 c.set(i, j, sum);

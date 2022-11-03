@@ -46,7 +46,7 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
-public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
+public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
@@ -56,16 +56,6 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
      * number of elements in the storage
      */
     private final int numElements;
-
-    /**
-     * Number of rows
-     */
-    protected final int ROWS;
-
-    /**
-     * Number of columns
-     */
-    protected final int COLUMNS;
 
     /**
      * Vector-width each position in the matrix
@@ -83,9 +73,8 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
      *            array reference which contains data
      */
     public Matrix2DFloat4(int rows, int columns, float[] array) {
+        super(rows, columns);
         storage = array;
-        COLUMNS = columns;
-        ROWS = rows;
         numElements = columns * rows * VECTOR_ELEMENTS;
     }
 
@@ -113,14 +102,6 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
     public void set(int i, int j, Float4 value) {
         int baseIndex = StorageFormats.toRowMajorVector(i, j, COLUMNS, VECTOR_ELEMENTS);
         value.storeToArray(storage, baseIndex);
-    }
-
-    public int M() {
-        return ROWS;
-    }
-
-    public int N() {
-        return COLUMNS;
     }
 
     public VectorFloat row(int row) {
@@ -152,10 +133,10 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void multiply(Matrix2DFloat4 a, Matrix2DFloat4 b) {
-        for (int row = 0; row < M(); row++) {
-            for (int col = 0; col < N(); col++) {
+        for (int row = 0; row < getNumRows(); row++) {
+            for (int col = 0; col < getNumColumns(); col++) {
                 Float4 sum = new Float4();
-                for (int k = 0; k < b.M(); k++) {
+                for (int k = 0; k < b.getNumRows(); k++) {
                     Float4 fa = a.get(row, k);
                     Float4 fb = b.get(k, col);
                     Float4 fc = Float4.mult(fa, fb);

@@ -50,7 +50,7 @@ import static uk.ac.manchester.tornado.api.collections.types.StorageFormats.toRo
 
 import java.nio.FloatBuffer;
 
-public class Matrix2DFloat implements PrimitiveStorage<FloatBuffer> {
+public class Matrix2DFloat extends Matrix2DType implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
@@ -60,16 +60,6 @@ public class Matrix2DFloat implements PrimitiveStorage<FloatBuffer> {
      * number of elements in the storage
      */
     private final int numElements;
-
-    /**
-     * Number of rows
-     */
-    protected final int ROWS;
-
-    /**
-     * Number of columns
-     */
-    protected final int COLUMNS;
 
     /**
      * Storage format for matrix
@@ -82,9 +72,8 @@ public class Matrix2DFloat implements PrimitiveStorage<FloatBuffer> {
      *            array reference which contains data
      */
     public Matrix2DFloat(int rows, int columns, float[] array) {
+        super(rows, columns);
         storage = array;
-        COLUMNS = columns;
-        ROWS = rows;
         numElements = columns * rows;
     }
 
@@ -117,14 +106,6 @@ public class Matrix2DFloat implements PrimitiveStorage<FloatBuffer> {
         storage[toRowMajor(i, j, COLUMNS)] = value;
     }
 
-    public int M() {
-        return ROWS;
-    }
-
-    public int N() {
-        return COLUMNS;
-    }
-
     public VectorFloat row(int row) {
         int index = toRowMajor(row, 0, ROWS);
         return new VectorFloat(COLUMNS, copyOfRange(storage, index, COLUMNS));
@@ -154,10 +135,10 @@ public class Matrix2DFloat implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void multiply(Matrix2DFloat a, Matrix2DFloat b) {
-        for (int row = 0; row < M(); row++) {
-            for (int col = 0; col < N(); col++) {
+        for (int row = 0; row < getNumRows(); row++) {
+            for (int col = 0; col < getNumColumns(); col++) {
                 float sum = 0f;
-                for (int k = 0; k < b.M(); k++) {
+                for (int k = 0; k < b.getNumRows(); k++) {
                     sum += a.get(row, k) * b.get(k, col);
                 }
                 set(row, col, sum);

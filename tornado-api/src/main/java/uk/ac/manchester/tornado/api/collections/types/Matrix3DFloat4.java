@@ -43,7 +43,7 @@ package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.FloatBuffer;
 
-public class Matrix3DFloat4 implements PrimitiveStorage<FloatBuffer> {
+public class Matrix3DFloat4 extends Matrix3DType implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
@@ -53,21 +53,6 @@ public class Matrix3DFloat4 implements PrimitiveStorage<FloatBuffer> {
      * number of elements in the storage
      */
     private final int numElements;
-
-    /**
-     * Number of rows
-     */
-    protected final int ROWS;
-
-    /**
-     * Number of columns
-     */
-    protected final int COLUMNS;
-
-    /**
-     * Depth
-     */
-    protected final int DEPTH;
 
     /**
      * Vector-width each position in the matrix
@@ -87,10 +72,8 @@ public class Matrix3DFloat4 implements PrimitiveStorage<FloatBuffer> {
      *            array reference which contains data
      */
     public Matrix3DFloat4(int rows, int columns, int depth, float[] array) {
+        super(rows, columns, depth);
         storage = array;
-        ROWS = rows;
-        COLUMNS = columns;
-        DEPTH = depth;
         numElements = rows * columns * depth * VECTOR_ELEMENTS;
     }
 
@@ -120,18 +103,6 @@ public class Matrix3DFloat4 implements PrimitiveStorage<FloatBuffer> {
     public void set(int i, int j, int k, Float4 value) {
         int baseIndex = StorageFormats.toRowMajor3DVector(i, j, k, DEPTH, COLUMNS, VECTOR_ELEMENTS);
         value.storeToArray(storage, baseIndex);
-    }
-
-    public int X() {
-        return ROWS;
-    }
-
-    public int Y() {
-        return COLUMNS;
-    }
-
-    public int Z() {
-        return DEPTH;
     }
 
     public void fill(float value) {

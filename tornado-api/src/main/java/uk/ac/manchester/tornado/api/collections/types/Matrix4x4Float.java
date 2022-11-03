@@ -43,7 +43,7 @@ package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.FloatBuffer;
 
-public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
+public class Matrix4x4Float extends Matrix2DType implements PrimitiveStorage<FloatBuffer> {
 
     /**
      * backing array
@@ -55,21 +55,12 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
      */
     private static final int NUM_ELEMENTS = 16;
 
-    /**
-     * Number of rows
-     */
-    protected static final int ROWS = 4;
-
-    /**
-     * Number of columns
-     */
-    protected static final int COLUMNS = 4;
-
     public Matrix4x4Float() {
         this(new float[NUM_ELEMENTS]);
     }
 
     public Matrix4x4Float(float[] array) {
+        super(4, 4);
         storage = array;
     }
 
@@ -113,24 +104,6 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
      */
     public void set(int i, int j, float value) {
         storage[toIndex(i, j)] = value;
-    }
-
-    /**
-     * Returns the number of rows in this matrix
-     *
-     * @return int
-     */
-    public int M() {
-        return ROWS;
-    }
-
-    /**
-     * Returns the number of columns in the matrix
-     *
-     * @return int
-     */
-    public int N() {
-        return COLUMNS;
     }
 
     public Float4 row(int row) {

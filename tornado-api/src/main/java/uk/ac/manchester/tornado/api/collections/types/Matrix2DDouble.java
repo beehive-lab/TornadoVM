@@ -44,7 +44,7 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.DoubleBuffer;
 import java.util.Arrays;
 
-public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
+public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<DoubleBuffer> {
     /**
      * backing array
      */
@@ -54,16 +54,6 @@ public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
      * number of elements in the storage
      */
     private final int numElements;
-
-    /**
-     * Number of rows
-     */
-    protected final int ROWS;
-
-    /**
-     * Number of columns
-     */
-    protected final int COLUMNS;
 
     /**
      * Storage format for matrix
@@ -76,9 +66,8 @@ public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
      *            array reference which contains data
      */
     public Matrix2DDouble(int rows, int columns, double[] array) {
+        super(rows, columns);
         storage = array;
-        COLUMNS = columns;
-        ROWS = rows;
         numElements = columns * rows;
     }
 
@@ -111,14 +100,6 @@ public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
         storage[StorageFormats.toRowMajor(i, j, COLUMNS)] = value;
     }
 
-    public int M() {
-        return ROWS;
-    }
-
-    public int N() {
-        return COLUMNS;
-    }
-
     public VectorDouble row(int row) {
         int index = StorageFormats.toRowMajor(row, 0, COLUMNS);
         return new VectorDouble(COLUMNS, Arrays.copyOfRange(storage, index, COLUMNS));
@@ -148,10 +129,10 @@ public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public void multiply(Matrix2DDouble a, Matrix2DDouble b) {
-        for (int row = 0; row < M(); row++) {
-            for (int col = 0; col < N(); col++) {
+        for (int row = 0; row < getNumRows(); row++) {
+            for (int col = 0; col < getNumColumns(); col++) {
                 double sum = 0f;
-                for (int k = 0; k < b.M(); k++) {
+                for (int k = 0; k < b.getNumRows(); k++) {
                     sum += a.get(row, k) * b.get(k, col);
                 }
                 set(row, col, sum);

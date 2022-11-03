@@ -1,19 +1,19 @@
 /*
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.unittests.slam.graphics;
@@ -229,7 +229,7 @@ public class GraphicsTests extends TornadoTestBase {
         new TaskSchedule("s0")
             .task("t0", GraphicsTests::testRotate, matrix4, vector3, result)
             .streamOut(result)
-            .execute();        
+            .execute();
         // @formatter:on
 
         for (int i = 0; i < size; i++) {
@@ -273,7 +273,7 @@ public class GraphicsTests extends TornadoTestBase {
         new TaskSchedule("s0")
             .task("t0", GraphicsMath::depth2vertex, vertext, depth, matrix4)
             .streamOut(vertext)
-            .execute();        
+            .execute();
         // @formatter:on
 
         for (int i = 0; i < size; i++) {
@@ -338,8 +338,8 @@ public class GraphicsTests extends TornadoTestBase {
 
     private void fillMatrix4x4Float(Matrix4x4Float matrix, float min, float max) {
         Random r = new Random();
-        for (int i = 0; i < matrix.N(); i++) {
-            for (int j = 0; j < matrix.M(); j++) {
+        for (int i = 0; i < matrix.getNumColumns(); i++) {
+            for (int j = 0; j < matrix.getNumRows(); j++) {
                 float x = min + r.nextFloat() * (max - min);
                 matrix.set(i, j, x);
             }
@@ -515,7 +515,7 @@ public class GraphicsTests extends TornadoTestBase {
         new TaskSchedule("s0")
             .task("t0", GraphicsTests::testPhiNode, vertices, depth, matrix4)
             .streamOut(vertices)
-            .execute();        
+            .execute();
         // @formatter:on
 
         Float3 o = vertices.get(0);
@@ -556,7 +556,7 @@ public class GraphicsTests extends TornadoTestBase {
         new TaskSchedule("s0")
             .task("t0", GraphicsTests::testPhiNode2, vertices, depth, matrix4)
             .streamOut(vertices)
-            .execute();        
+            .execute();
         // @formatter:on
 
         Float3 o = vertices.get(0);
@@ -602,7 +602,7 @@ public class GraphicsTests extends TornadoTestBase {
         new TaskSchedule("s0")
             .task("t0", GraphicsTests::computeRigidTransform, matrix4, point, output)
             .streamOut(output)
-            .execute();        
+            .execute();
         // @formatter:on
 
         for (int i = 0; i < size; i++) {
@@ -736,7 +736,7 @@ public class GraphicsTests extends TornadoTestBase {
         new TaskSchedule("s0")
             .task("t0", GraphicsTests::raycast, verticies, normals, volume, volumeDims, view, nearPlane, farPlane, largeStep, smallStep)
             .streamOut(verticies, normals)
-            .execute();        
+            .execute();
         // @formatter:on
 
         for (int i = 0; i < size; i++) {
@@ -810,7 +810,7 @@ public class GraphicsTests extends TornadoTestBase {
         new TaskSchedule("s0")
             .task("t0", GraphicsTests::testRayCastPointIsolation, output, verticies, volume, volumeDims, view, nearPlane, farPlane, largeStep, smallStep)
             .streamOut(output)
-            .execute();        
+            .execute();
         // @formatter:on
 
         for (int i = 0; i < output.X(); i++) {
@@ -939,7 +939,7 @@ public class GraphicsTests extends TornadoTestBase {
         // @formatter:off
         TaskSchedule task = new TaskSchedule("s0")
             .task("t0", GraphicsTests::integrate, filteredDepthImage, invTrack, m2, volumeDims, volume, mu, maxW)
-            .streamOut(volume);        
+            .streamOut(volume);
         // @formatter:on
 
         int c = 0;
@@ -981,7 +981,7 @@ public class GraphicsTests extends TornadoTestBase {
         new TaskSchedule("s0")
             .task("t0", Renderer::renderTrack, output, track)
             .streamOut(output)
-            .execute();        
+            .execute();
         // @formatter:on
 
         for (int i = 0; i < size; i++) {
@@ -1084,11 +1084,11 @@ public class GraphicsTests extends TornadoTestBase {
         new TaskSchedule("s0")
             .task("t0", GraphicsTests::getCameraMatrix, f, m)
             .streamOut(m)
-            .execute();        
+            .execute();
         // @formatter:on
 
-        for (int i = 0; i < m.N(); i++) {
-            for (int j = 0; j < m.M(); j++) {
+        for (int i = 0; i < m.getNumColumns(); i++) {
+            for (int j = 0; j < m.getNumRows(); j++) {
                 Assert.assertEquals(seq.get(i, j), m.get(i, j), 0.01f);
             }
         }
@@ -1144,7 +1144,7 @@ public class GraphicsTests extends TornadoTestBase {
         new TaskSchedule("s0")
             .task("t0", Renderer::renderVolume, output, volume, volumeDims, scenePose, nearPlane, farPlane * 2f, smallStep, largeStep, light, ambient)
             .streamOut(output)
-            .execute();        
+            .execute();
         // @formatter:on
 
         for (int i = 0; i < output.X(); i++) {
@@ -1283,7 +1283,7 @@ public class GraphicsTests extends TornadoTestBase {
         new TaskSchedule("s0")
             .task("t0", GraphicsTests::mapReduce, output, image)
             .streamOut(output)
-            .execute();        
+            .execute();
         // @formatter:on
 
         Assert.assertArrayEquals(outputSeq, output, 0.1f);
@@ -1334,7 +1334,7 @@ public class GraphicsTests extends TornadoTestBase {
         new TaskSchedule("s0")
             .task("t0", GraphicsTests::mapReduce3, output, input)
             .streamOut(output)
-            .execute();        
+            .execute();
         // @formatter:on
     }
 
@@ -1377,7 +1377,7 @@ public class GraphicsTests extends TornadoTestBase {
         new TaskSchedule("s0")
             .task("t0", GraphicsTests::testVSKernel, x, y, z, volume, output)
             .streamOut(output)
-            .execute();        
+            .execute();
         // @formatter:on
 
         for (int i = 0; i < output.length; i++) {

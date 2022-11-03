@@ -1,19 +1,19 @@
 /*
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.matrix;
@@ -25,9 +25,9 @@ import static uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat.trans
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float6;
-import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DDouble;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
 
 public final class MatrixMath {
@@ -36,8 +36,7 @@ public final class MatrixMath {
     }
 
     /**
-     * SGEMM - performs matrix-matrix multiplication C = alpha*op(A)*op(B) +
-     * beta*C
+     * SGEMM - performs matrix-matrix multiplication C = alpha*op(A)*op(B) + beta*C
      *
      * @param transA
      * @param transB
@@ -58,10 +57,10 @@ public final class MatrixMath {
 
         scale(a, alpha);
 
-        for (int row = 0; row < c.M(); row++) {
-            for (int col = 0; col < c.N(); col++) {
+        for (int row = 0; row < c.getNumRows(); row++) {
+            for (int col = 0; col < c.getNumColumns(); col++) {
                 float sum = c.get(row, col) * beta;
-                for (int k = 0; k < b.M(); k++) {
+                for (int k = 0; k < b.getNumRows(); k++) {
                     sum += a.get(row, k) * b.get(k, col);
                 }
                 c.set(row, col, sum);
@@ -81,10 +80,10 @@ public final class MatrixMath {
     }
 
     public static final void sgemm(Matrix4x4Float a, Matrix4x4Float b, Matrix4x4Float c) {
-        for (@Parallel int row = 0; row < c.M(); row++) {
-            for (@Parallel int col = 0; col < c.N(); col++) {
+        for (@Parallel int row = 0; row < c.getNumRows(); row++) {
+            for (@Parallel int col = 0; col < c.getNumColumns(); col++) {
                 float sum = 0f;
-                for (int k = 0; k < b.M(); k++) {
+                for (int k = 0; k < b.getNumRows(); k++) {
                     sum += a.get(row, k) * b.get(k, col);
                 }
                 c.set(row, col, sum);
@@ -93,10 +92,10 @@ public final class MatrixMath {
     }
 
     public static final void dgemm(Matrix2DDouble a, Matrix2DDouble b, Matrix2DDouble c) {
-        for (@Parallel int row = 0; row < c.M(); row++) {
-            for (@Parallel int col = 0; col < c.N(); col++) {
+        for (@Parallel int row = 0; row < c.getNumRows(); row++) {
+            for (@Parallel int col = 0; col < c.getNumColumns(); col++) {
                 double sum = 0;
-                for (int k = 0; k < b.M(); k++) {
+                for (int k = 0; k < b.getNumRows(); k++) {
                     sum += a.get(row, k) * b.get(k, col);
                 }
                 c.set(row, col, sum);
@@ -225,7 +224,7 @@ public final class MatrixMath {
      *            vector
      */
     public static void multiply(VectorFloat y, Matrix2DFloat m, VectorFloat x) {
-        for (int i = 0; i < m.N(); i++) {
+        for (int i = 0; i < m.getNumColumns(); i++) {
             y.set(i, VectorFloat.dot(m.row(i), x));
         }
     }

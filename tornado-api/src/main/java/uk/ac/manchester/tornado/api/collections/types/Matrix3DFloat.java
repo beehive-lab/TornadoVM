@@ -43,7 +43,7 @@ package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.FloatBuffer;
 
-public class Matrix3DFloat implements PrimitiveStorage<FloatBuffer> {
+public class Matrix3DFloat extends Matrix3DType implements PrimitiveStorage<FloatBuffer> {
 
     /**
      * backing array
@@ -56,21 +56,6 @@ public class Matrix3DFloat implements PrimitiveStorage<FloatBuffer> {
     private final int numElements;
 
     /**
-     * Number of rows
-     */
-    protected final int ROWS;
-
-    /**
-     * Number of columns
-     */
-    protected final int COLUMNS;
-
-    /**
-     * Depth
-     */
-    protected final int DEPTH;
-
-    /**
      * Storage format for matrix
      *
      * @param rows
@@ -81,10 +66,8 @@ public class Matrix3DFloat implements PrimitiveStorage<FloatBuffer> {
      *            array reference which contains data
      */
     public Matrix3DFloat(int rows, int columns, int depth, float[] array) {
+        super(rows, columns, depth);
         storage = array;
-        ROWS = rows;
-        COLUMNS = columns;
-        DEPTH = depth;
         numElements = rows * columns * depth;
     }
 
@@ -114,18 +97,6 @@ public class Matrix3DFloat implements PrimitiveStorage<FloatBuffer> {
 
     public void set(int i, int j, int k, float value) {
         storage[StorageFormats.toRowMajor3D(i, j, k, DEPTH, COLUMNS)] = value;
-    }
-
-    public int X() {
-        return ROWS;
-    }
-
-    public int Y() {
-        return COLUMNS;
-    }
-
-    public int Z() {
-        return DEPTH;
     }
 
     public void fill(float value) {

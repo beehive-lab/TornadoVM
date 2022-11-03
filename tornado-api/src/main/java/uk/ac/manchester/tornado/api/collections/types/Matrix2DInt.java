@@ -44,7 +44,7 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.IntBuffer;
 import java.util.Arrays;
 
-public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
+public class Matrix2DInt extends Matrix2DType implements PrimitiveStorage<IntBuffer> {
     /**
      * backing array
      */
@@ -54,16 +54,6 @@ public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
      * number of elements in the storage
      */
     private final int numElements;
-
-    /**
-     * Number of rows
-     */
-    protected final int ROWS;
-
-    /**
-     * Number of columns
-     */
-    protected final int COLUMNS;
 
     /**
      * Storage format for matrix
@@ -76,9 +66,8 @@ public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
      *            array reference which contains data
      */
     public Matrix2DInt(int rows, int columns, int[] array) {
+        super(rows, columns);
         storage = array;
-        COLUMNS = columns;
-        ROWS = rows;
         numElements = columns * rows;
     }
 
@@ -110,14 +99,6 @@ public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
         storage[StorageFormats.toRowMajor(i, j, COLUMNS)] = value;
     }
 
-    public int M() {
-        return ROWS;
-    }
-
-    public int N() {
-        return COLUMNS;
-    }
-
     public VectorInt row(int row) {
         int index = StorageFormats.toRowMajor(row, 0, COLUMNS);
         return new VectorInt(COLUMNS, Arrays.copyOfRange(storage, index, COLUMNS));
@@ -147,10 +128,10 @@ public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
     }
 
     public void multiply(Matrix2DInt a, Matrix2DInt b) {
-        for (int row = 0; row < M(); row++) {
-            for (int col = 0; col < N(); col++) {
+        for (int row = 0; row < getNumRows(); row++) {
+            for (int col = 0; col < getNumColumns(); col++) {
                 int sum = 0;
-                for (int k = 0; k < b.M(); k++) {
+                for (int k = 0; k < b.getNumRows(); k++) {
                     sum += a.get(row, k) * b.get(k, col);
                 }
                 set(row, col, sum);
@@ -159,12 +140,12 @@ public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
     }
 
     public void tmultiply(Matrix2DInt a, Matrix2DInt b) {
-        System.out.printf("tmult: M=%d (expect %d)\n", M(), a.M());
-        System.out.printf("tmult: N=%d (expect %d)\n", N(), b.M());
-        for (int row = 0; row < M(); row++) {
-            for (int col = 0; col < b.M(); col++) {
+        System.out.printf("tmult: M=%d (expect %d)\n", getNumRows(), a.getNumRows());
+        System.out.printf("tmult: N=%d (expect %d)\n", getNumColumns(), b.getNumRows());
+        for (int row = 0; row < getNumRows(); row++) {
+            for (int col = 0; col < b.getNumRows(); col++) {
                 int sum = 0;
-                for (int k = 0; k < b.N(); k++) {
+                for (int k = 0; k < b.getNumColumns(); k++) {
                     sum += a.get(row, k) * b.get(col, k);
                 }
                 set(row, col, sum);

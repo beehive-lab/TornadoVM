@@ -56,7 +56,7 @@ public class MatrixVector {
     private static void computeMatrixVector(Matrix2DFloat matrix, VectorFloat vector, VectorFloat output) {
         for (@Parallel int i = 0; i < vector.size(); i++) {
             float sum = 0.0f;
-            for (int j = 0; j < matrix.N(); j++) {
+            for (int j = 0; j < matrix.getNumColumns(); j++) {
                 sum += vector.get(i) * matrix.get(i, i);
             }
             output.set(i, sum);
