@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2022, APT Group, Department of Computer Science,
@@ -52,20 +52,23 @@ public class DeallocateNode extends ContextOpNode {
         return value;
     }
 
+    @Override
     public String toString() {
         return String.format("[%d]: deallocate object %d after %d", id, value.getId(), dependent.getId());
     }
 
+    @Override
     public boolean hasInputs() {
         return value != null;
     }
 
+    @Override
     public List<AbstractNode> getInputs() {
         if (!hasInputs()) {
             return Collections.emptyList();
         }
 
-        final List<AbstractNode> result = new ArrayList<AbstractNode>();
+        final List<AbstractNode> result = new ArrayList<>();
         result.add(value);
         result.add(dependent);
         return result;

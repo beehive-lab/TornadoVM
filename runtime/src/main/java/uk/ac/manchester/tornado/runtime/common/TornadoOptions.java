@@ -164,6 +164,12 @@ public class TornadoOptions {
      * Use Level Zero as a dispatcher for SPIRV
      */
     public static final boolean USE_LEVELZERO_FOR_SPIRV = getBooleanValue("tornado.spirv.levelzero", TRUE);
+
+    /**
+     * Check I/O parameters for every task within a task-graph.
+     */
+    public static final boolean FORCE_CHECK_PARAMETERS = getBooleanValue("tornado.check.parameters", TRUE);
+
     /**
      * Select Shared Memory allocator for SPIRV-Level Zero implementation.
      */
@@ -220,9 +226,12 @@ public class TornadoOptions {
     public static final boolean LEVEL_ZERO_EXTENDED_MEMORY_MODE = getBooleanValue("tornado.spirv.levelzero.extended.memory", TRUE);
 
     /**
-     * Check I/O parameters for every task within a task-graph.
+     * If enabled, the TornadoVM will substitute the last READ (data transfer from
+     * the Device -> Host) using a blocking call for STREAM OUT.
+     *
+     * This is FALSE by default.
      */
-    public static final boolean FORCE_CHECK_PARAMETERS = getBooleanValue("tornado.check.parameters", TRUE);
+    public static final boolean ENABLE_STREAM_OUT_BLOCKING = getBooleanValue("tornado.enable.streamOut.blocking", FALSE);;
 
     /**
      * Option to load FPGA pre-compiled binaries.

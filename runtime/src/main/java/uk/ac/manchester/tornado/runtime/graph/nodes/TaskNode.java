@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -20,18 +20,17 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 package uk.ac.manchester.tornado.runtime.graph.nodes;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class TaskNode extends ContextOpNode {
 
-    private AbstractNode[] arguments;
-    private int taskIndex;
+    private final AbstractNode[] arguments;
+    private final int taskIndex;
 
     public TaskNode(ContextNode context, int index, AbstractNode[] arguments) {
         super(context);
@@ -50,17 +49,15 @@ public class TaskNode extends ContextOpNode {
     @Override
     public List<AbstractNode> getInputs() {
         final List<AbstractNode> inputs = new ArrayList<>();
-        for (AbstractNode input : arguments) {
-            inputs.add(input);
-        }
+        Collections.addAll(inputs, arguments);
         return inputs;
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("[" + id + "]: ");
-        sb.append("task=" + taskIndex);
+        sb.append("[").append(id).append("]: ");
+        sb.append("task=").append(taskIndex);
         sb.append(", args=[ ");
         for (AbstractNode arg : arguments) {
             sb.append("" + arg.getId() + " ");

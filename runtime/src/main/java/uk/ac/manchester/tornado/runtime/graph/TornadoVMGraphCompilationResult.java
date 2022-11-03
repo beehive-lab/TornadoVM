@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -20,8 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
@@ -29,6 +27,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateMultipleBuffersNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ConstantNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.CopyInNode;
@@ -36,7 +35,6 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.CopyOutNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.DeallocateNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.DependentReadNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ObjectNode;
-import uk.ac.manchester.tornado.runtime.graph.nodes.PersistNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.StreamInNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
 
@@ -44,8 +42,8 @@ public class TornadoVMGraphCompilationResult {
 
     public static final int MAX_TORNADO_VM_BYTECODE_SIZE = Integer.parseInt(getProperty("tornado.tvm.maxbytecodesize", "4096"));
 
-    private byte[] code;
-    private TornadoGraphAssembler bitcodeASM;
+    private final byte[] code;
+    private final TornadoGraphAssembler bitcodeASM;
     private int globalTaskID;
 
     public TornadoVMGraphCompilationResult() {
@@ -75,19 +73,19 @@ public class TornadoVMGraphCompilationResult {
     }
 
     void emitAsyncNode(AbstractNode node, int contextID, int dependencyBC, long offset, long batchSize, long nThreads) {
-        if (node instanceof PersistNode) {
-            bitcodeASM.persist(((PersistNode) node).getValues(), contextID, batchSize);
+        if (node instanceof AllocateMultipleBuffersNode) {
+            bitcodeASM.allocate(((AllocateMultipleBuffersNode) node).getValues(), contextID, batchSize);
         } else if (node instanceof CopyInNode) {
-            bitcodeASM.copyToContext(((CopyInNode) node).getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
+            bitcodeASM.transferToDeviceOnce(((CopyInNode) node).getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
         } else if (node instanceof AllocateNode) {
             TornadoLogger.info("[%s]: Skipping deprecated node %s", getClass().getSimpleName(), AllocateNode.class.getSimpleName());
         } else if (node instanceof CopyOutNode) {
             ObjectNode value = ((CopyOutNode) node).getValue().getValue();
             if (value != null) {
-                bitcodeASM.streamOutOfContext(value.getIndex(), contextID, dependencyBC, offset, batchSize);
+                bitcodeASM.transferToHost(value.getIndex(), contextID, dependencyBC, offset, batchSize);
             }
         } else if (node instanceof StreamInNode) {
-            bitcodeASM.streamInToContext(((StreamInNode) node).getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
+            bitcodeASM.transferToDeviceAlways(((StreamInNode) node).getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
         } else if (node instanceof DeallocateNode) {
             bitcodeASM.deallocate(((DeallocateNode) node).getValue().getIndex(), contextID);
         } else if (node instanceof TaskNode) {

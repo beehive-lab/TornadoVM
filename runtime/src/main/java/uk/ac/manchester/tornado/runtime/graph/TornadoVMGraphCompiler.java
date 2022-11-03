@@ -41,9 +41,10 @@ import org.graalvm.compiler.nodes.loop.LoopsData;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
-import uk.ac.manchester.tornado.runtime.graph.TornadoGraphAssembler.TornadoVMBytecodes;
+import uk.ac.manchester.tornado.runtime.graph.TornadoGraphAssembler.TornadoVMBytecode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextOpNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.DependentReadNode;
@@ -166,7 +167,7 @@ public class TornadoVMGraphCompiler {
             index++;
         }
 
-        // Generate BEGIN bytecode
+        // Generate Context + BEGIN bytecode
         result.begin(1, tasks.cardinality(), numDepLists + 1);
 
         BatchSizeMetaData sizeBatch = null;
@@ -197,7 +198,11 @@ public class TornadoVMGraphCompiler {
         }
 
         // Last operation -> perform synchronisation
-        synchronizeOperationLastByteCode(result, numDepLists);
+        if (TornadoOptions.ENABLE_STREAM_OUT_BLOCKING) {
+            synchronizeOperationLastByteCode(result, numDepLists);
+        } else {
+            result.barrier(numDepLists);
+        }
 
         // Generate END bytecode
         result.end();
@@ -205,20 +210,13 @@ public class TornadoVMGraphCompiler {
         return result;
     }
 
-    /**
-     * It replaces the last STREAM_OUT for STREAM_OUT_BLOCKING byte-code. Otherwise,
-     * it adds a barrier
-     *
-     * @param result
-     * @param numDepLists
-     */
     private static void synchronizeOperationLastByteCode(TornadoVMGraphCompilationResult result, int numDepLists) {
         final byte[] code = result.getCode();
         final int codeSize = result.getCodeSize();
-        if (code[codeSize - 13] == TornadoVMBytecodes.STREAM_OUT.value()) {
-            code[codeSize - 13] = TornadoVMBytecodes.STREAM_OUT_BLOCKING.value();
-        } else if (code[codeSize - 29] == TornadoVMBytecodes.STREAM_OUT.value()) {
-            code[codeSize - 29] = TornadoVMBytecodes.STREAM_OUT_BLOCKING.value();
+        if (code[codeSize - 13] == TornadoVMBytecode.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()) {
+            code[codeSize - 13] = TornadoVMBytecode.TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING.value();
+        } else if (code[codeSize - 29] == TornadoVMBytecode.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()) {
+            code[codeSize - 29] = TornadoVMBytecode.TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING.value();
         } else {
             result.barrier(numDepLists);
         }

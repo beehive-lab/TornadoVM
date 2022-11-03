@@ -56,7 +56,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoAPIException;
 public class TornadoAPIProvider {
 
     public static AbstractTaskGraph loadScheduleRuntime(String name) {
-        AbstractTaskGraph taskGraphImpl = null;
+        AbstractTaskGraph taskGraphImpl;
         try {
             String tornadoAPIImplementation = System.getProperty("tornado.load.api.implementation");
             Class<?> klass = Class.forName(tornadoAPIImplementation);
@@ -69,7 +69,7 @@ public class TornadoAPIProvider {
     }
 
     public static TornadoRuntimeInterface loadRuntime() {
-        TornadoRuntimeInterface runtime = null;
+        TornadoRuntimeInterface runtime;
         try {
             String tornadoRuntimeImplementation = System.getProperty("tornado.load.runtime.implementation");
             Class<?> klass = Class.forName(tornadoRuntimeImplementation);
@@ -82,7 +82,7 @@ public class TornadoAPIProvider {
     }
 
     public static TornadoCI loadTornado() {
-        TornadoCI tornado = null;
+        TornadoCI tornado;
         try {
             String tornadoImplementation = System.getProperty("tornado.load.tornado.implementation");
             Class<?> klass = Class.forName(tornadoImplementation);

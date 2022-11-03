@@ -26,9 +26,9 @@ package uk.ac.manchester.tornado.runtime.graph.nodes;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PersistNode extends ContextOpNode {
+public class AllocateMultipleBuffersNode extends ContextOpNode {
 
-    public PersistNode(ContextNode context) {
+    public AllocateMultipleBuffersNode(ContextNode context) {
         super(context);
         this.values = new ArrayList<>();
     }
@@ -43,14 +43,17 @@ public class PersistNode extends ContextOpNode {
         return values;
     }
 
+    @Override
     public String toString() {
         return String.format("[%d]: persist node", id);
     }
 
+    @Override
     public boolean hasInputs() {
         return !values.isEmpty();
     }
 
+    @Override
     public List<AbstractNode> getInputs() {
         return values;
     }
