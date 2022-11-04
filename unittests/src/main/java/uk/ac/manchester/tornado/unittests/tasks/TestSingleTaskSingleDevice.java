@@ -1,19 +1,19 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.unittests.tasks;
@@ -24,16 +24,23 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- * Testing Tornado with one task in the same device. The {@link TaskSchedule}
+ * Testing Tornado with one task in the same device. The {@link TaskGraph}
  * contains a single task. This task is executed on either on the default device
  * of the one selected.
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice
+ * </code>
  *
  */
 public class TestSingleTaskSingleDevice extends TornadoTestBase {
@@ -56,13 +63,11 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
             b[i] = (float) Math.random();
         });
 
-        //@formatter:off
-        new TaskSchedule("s0")
-            .streamIn(a, b)
-            .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)
-            .streamOut(c)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
+                .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)//
+                .transferToHost(c)//
+                .execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);
@@ -81,18 +86,16 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
             b[i] = (float) Math.random();
         });
 
-        TaskSchedule s0 = new TaskSchedule("s0");
+        TaskGraph taskGraph = new TaskGraph("s0");
         TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
 
         int deviceNumber = 0;
-        s0.setDevice(driver.getDevice(deviceNumber));
+        taskGraph.setDevice(driver.getDevice(deviceNumber));
 
-        //@formatter:off
-        s0.streamIn(a, b)
-            .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)
-            .streamOut(c)
-            .execute();
-        //@formatter:on
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
+                .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)//
+                .transferToHost(c)//
+                .execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);
@@ -111,7 +114,7 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
             b[i] = (float) Math.random();
         });
 
-        TaskSchedule s0 = new TaskSchedule("s0");
+        TaskGraph taskGraph = new TaskGraph("s0");
         TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
 
         // select device 1 it is available
@@ -120,14 +123,12 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
             deviceNumber = 1;
         }
 
-        s0.setDevice(driver.getDevice(deviceNumber));
+        taskGraph.setDevice(driver.getDevice(deviceNumber));
 
-        //@formatter:off
-		s0.streamIn(a, b)
-		  .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)
-		  .streamOut(c)
-		  .execute();
-	    //@formatter:on
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
+                .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)//
+                .transferToHost(c)//
+                .execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);

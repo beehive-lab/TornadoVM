@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,32 +23,40 @@ import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 /**
- * Example of Matrix Multiplication of two dimensional arrays using Local Memory
+ * Example of Matrix Multiplication of two-dimensional arrays using Local Memory
  * and Loop Tiling.
  *
+ * <p>
  * This program requires both OpenCL and PTX backends to be built. It compares
  * the following implementations against the Java functionally equivalent code.
- * 
+ * </p>
+ *
+ * <p>
  * a) CUDA/OpenCL Old API: using the TaskSchedule API and the @Parallel
  * annotations to express loop parallelism.
- * 
+ * </p>
+ *
+ * <p>
  * b) CUDA/OpenCL Advanced API: using a {@link KernelContext} to express
  * Threading Attributes, Local Memory Allocation and Loop Tiling.
+ * </p>
  *
+ * <p>
  * How to run:
- *
+ * </p>
  * <code>
  *     $ make BACKEND=opencl,ptx
- *     $ tornado --debug uk.ac.manchester.tornado.examples.kernelcontext.matrices.MatrixMul2DLocalMemory
+ *     $ tornado --debug -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.matrices.MatrixMul2DLocalMemory
  * </code>
  *
  */
@@ -145,7 +153,11 @@ public class MatrixMul2DLocalMemory {
 
         WorkerGrid workerCUDAOld = new WorkerGrid2D(N, N);
         GridScheduler gridSchedulerCUDAOld = new GridScheduler("cuda_old_api.t0", workerCUDAOld);
-        TaskSchedule scheduleCUDA = new TaskSchedule("cuda_old_api").task("t0", MatrixMul2DLocalMemory::matrixMultiplication, matrixA, matrixB, matrixCCUDA, N).streamOut(matrixCCUDA);
+        TaskGraph scheduleCUDA = new TaskGraph("cuda_old_api") //
+                .lockObjectsInMemory(matrixA, matrixB, matrixCCUDA)//
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
+                .task("t0", MatrixMul2DLocalMemory::matrixMultiplication, matrixA, matrixB, matrixCCUDA, N) //
+                .transferToHost(matrixCCUDA);
 
         TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
@@ -178,7 +190,11 @@ public class MatrixMul2DLocalMemory {
         WorkerGrid workerOpenCLOld = new WorkerGrid2D(N, N);
         GridScheduler gridSchedulerOpenCLOld = new GridScheduler("ocl_old_api.t0", workerOpenCLOld);
 
-        TaskSchedule scheduleOCL = new TaskSchedule("ocl_old_api").task("t0", MatrixMul2DLocalMemory::matrixMultiplication, matrixA, matrixB, matrixCOCL, N).streamOut(matrixCOCL);
+        TaskGraph scheduleOCL = new TaskGraph("ocl_old_api") //
+                .lockObjectsInMemory(matrixA, matrixB, matrixCOCL)//
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
+                .task("t0", MatrixMul2DLocalMemory::matrixMultiplication, matrixA, matrixB, matrixCOCL, N) //
+                .transferToHost(matrixCOCL);
 
         // Get the same device but running the OCL backend
         TornadoDriver oclDriver = TornadoRuntime.getTornadoRuntime().getDriver(1);
@@ -223,9 +239,12 @@ public class MatrixMul2DLocalMemory {
         GridScheduler gridSchedulerOpenCLNew = new GridScheduler("ocl_advanced_api.t0", workerOpenCLNew);
         KernelContext context = new KernelContext();
 
-        TaskSchedule oclNewApiTask = new TaskSchedule("ocl_advanced_api") //
+        TaskGraph oclNewApiTask = new TaskGraph("ocl_advanced_api") //
+                .lockObjectsInMemory(matrixA, matrixB, matrixCOCLNewApi)//
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", MatrixMul2DLocalMemory::matrixMultiplicationLocalMemory, context, matrixA, matrixB, matrixCOCLNewApi, N) //
-                .streamOut(matrixCOCLNewApi); //
+                .transferToHost(matrixCOCLNewApi); //
+
         // Change the Grid
         workerOpenCLNew.setGlobalWork(N, N, 1); // TS / WPT
         workerOpenCLNew.setLocalWork(local_x, local_y, 1);
@@ -258,9 +277,12 @@ public class MatrixMul2DLocalMemory {
         GridScheduler gridSchedulerCudaNew = new GridScheduler("cuda_advanced_api.t0", workerCudaNew);
         KernelContext contextCUDA = new KernelContext();
 
-        TaskSchedule cudaNewApiTask = new TaskSchedule("cuda_advanced_api") //
+        TaskGraph cudaNewApiTask = new TaskGraph("cuda_advanced_api") //
+                .lockObjectsInMemory(matrixA, matrixB, matrixCCUDANewApi)//
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", MatrixMul2DLocalMemory::matrixMultiplicationLocalMemory, contextCUDA, matrixA, matrixB, matrixCCUDANewApi, N) //
-                .streamOut(matrixCCUDANewApi); //
+                .transferToHost(matrixCCUDANewApi); //
+
         // Change the Grid
         workerCudaNew.setGlobalWork(N, N, 1);
         workerCudaNew.setLocalWork(local_x, local_y, 1);

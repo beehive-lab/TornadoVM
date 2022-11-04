@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022 APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,22 +21,26 @@ import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Example of Matrix Multiplication for square matrices written in Java. This
  * implementation follows the OpenCL implementation description provided in
- * https://github.com/cnugteren/myGEMM.
+ * {@url https://github.com/cnugteren/myGEMM}
  *
+ * <p>
  * In detail, it applies the following optimization: (i) Thread attributes to
  * utilize two dimensions.
+ * </p>
  *
+ * <p>
  * How to run:
- *
+ * </p>
  * <code>
- *     $ tornado --debug uk.ac.manchester.tornado.examples.kernelcontext.compute.MatrixMultiplication2DV1
+ *     $ tornado --debug -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.compute.MatrixMultiplication2DV1
  * </code>
  */
 public class MatrixMultiplication2DV1 {
@@ -91,23 +95,23 @@ public class MatrixMultiplication2DV1 {
         WorkerGrid workerGrid = new WorkerGrid2D(size, size);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
         KernelContext context = new KernelContext();
-        // The local work group is configured to be 32x32
-        workerGrid.setLocalWork(32, 32, 1);
+        // The local work group is configured to be 16x16
+        workerGrid.setLocalWork(16, 16, 1);
 
-        //@formatter:off        
-        TaskSchedule t = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .lockObjectsInMemory(matrixA, matrixB, matrixC) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", MatrixMultiplication2DV1::matrixMultiplication, context, matrixA, matrixB, matrixC, size) //
-                .streamOut(matrixC);
-        //@formatter:on
+                .transferToHost(matrixC);
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
-            t.execute(gridScheduler);
+            taskGraph.execute(gridScheduler);
         }
 
         // 2. Run parallel on the GPU with Tornado
         long start = System.currentTimeMillis();
-        t.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
         long end = System.currentTimeMillis();
 
         // Run sequential

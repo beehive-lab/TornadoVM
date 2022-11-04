@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,9 +23,18 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to test?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.foundation.MultipleRuns
+ * </code>
+ */
 public class MultipleRuns extends TornadoTestBase {
 
     @Test
@@ -39,13 +48,13 @@ public class MultipleRuns extends TornadoTestBase {
         int[] expectedResult = new int[numElements];
         Arrays.fill(expectedResult, iterations * 50);
 
-        TaskSchedule ts = new TaskSchedule("s0") //
-                .streamIn(a) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestKernels::addValue, a) //
-                .streamOut(a); //
+                .transferToHost(a); //
 
         for (int i = 0; i < iterations; i++) {
-            ts.execute();
+            taskGraph.execute();
         }
         assertArrayEquals(expectedResult, a);
     }

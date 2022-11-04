@@ -22,27 +22,32 @@ import java.util.LongSummaryStatistics;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Linear-Algebra example: Matrix-Vector.
  *
+ * <p>
  * How to run?
- *
+ * </p>
  * <code>
  *     $ # To run with level-zero and SPIR-V
  *     $ tornado --jvm="-Dla.mv.device=0:0 -Dtornado.device.memory=24GB" -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixVector
  * </code>
  *
+ * <p>
  * If this example is executed on a discrete GPU, then we need to decrease the
  * data size (maximum allocation size is usually 1/4 of total GPU memory's
  * capacity. How to run with the TornadoVM profiler?
+ * </p>
  *
+ * <p>
  * Run with the profiler:
- *
+ * </p>
  * <code>
  *     $ tornado --enableProfiler console -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixVector
  * </code>
@@ -98,11 +103,11 @@ public class MatrixVector {
             matrix2DFloat.set(idx, jdx, r.nextFloat());
         }));
 
-        TaskSchedule ts = new TaskSchedule("la") //
-                // .streamIn(matrix2DFloat, vectorFloat) //
+        TaskGraph ts = new TaskGraph("la") //
                 .lockObjectsInMemory(matrix2DFloat, vectorFloat, result) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, vectorFloat, matrix2DFloat) //
                 .task("mv", MatrixVector::computeMatrixVector, matrix2DFloat, vectorFloat, result) //
-                .streamOut(result);
+                .transferToHost(result);
 
         ts.warmup();
 

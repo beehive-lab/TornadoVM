@@ -1,19 +1,19 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.unittests.instances;
@@ -22,16 +22,18 @@ import static org.junit.Assert.assertArrayEquals;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
- * Execute:
- * 
+ * <p>
+ * How to run?
+ * </p>
  * <code>
- * tornado-test.py -V -pk --debug -J"-Dtornado.ignore.nullchecks=True" uk.ac.manchester.tornado.unittests.instances.LocalVariableInstance
+ *      tornado-test.py -V uk.ac.manchester.tornado.unittests.instances.LocalVariableInstance
  * </code>
- * 
+ *
  */
 public class LocalVariableInstance {
 
@@ -42,7 +44,7 @@ public class LocalVariableInstance {
         }
     }
 
-    public static abstract class MiddleMap {
+    public abstract static class MiddleMap {
         public abstract int mymapintint(int i);
     }
 
@@ -70,7 +72,7 @@ public class LocalVariableInstance {
 
     }
 
-    public int[] sequential(int in[]) {
+    public int[] sequential(int[] in) {
         int[] out = new int[in.length];
         int x;
         for (int i = 0; i < in.length; i++) {
@@ -91,16 +93,14 @@ public class LocalVariableInstance {
         }
 
         MyMap mm = new MyMap();
-        MapSkeleton msk = new MapSkeleton((MiddleMap) mm);
+        MapSkeleton msk = new MapSkeleton(mm);
 
-        // @formatter:off
-        TaskSchedule task = new TaskSchedule("s0")
-                .streamIn(in)
-                .task("t0", msk::map, in, out)
-                .streamOut(out);
-        // @formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, in) //
+                .task("t0", msk::map, in, out) //
+                .transferToHost(out);
 
-        task.execute();
+        taskGraph.execute();
 
         int[] seq = sequential(in);
 

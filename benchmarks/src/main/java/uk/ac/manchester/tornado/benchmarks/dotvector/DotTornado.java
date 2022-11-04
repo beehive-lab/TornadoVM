@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,14 +22,23 @@ import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPD
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner dotvector
+ * </code>
+ */
 public class DotTornado extends BenchmarkDriver {
 
     private final int numElements;
@@ -59,29 +68,29 @@ public class DotTornado extends BenchmarkDriver {
             b.set(i, new Float3(rb));
         }
 
-        ts = new TaskSchedule("benchmark");
-        ts.streamIn(a, b);
-        ts.task("dotVector", GraphicsKernels::dotVector, a, b, c);
-        ts.streamOut(c);
-        ts.warmup();
+        taskGraph = new TaskGraph("benchmark");
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b);
+        taskGraph.task("dotVector", GraphicsKernels::dotVector, a, b, c);
+        taskGraph.transferToHost(c);
+        taskGraph.warmup();
     }
 
     @Override
     public void tearDown() {
-        ts.dumpProfiles();
+        taskGraph.dumpProfiles();
 
         a = null;
         b = null;
         c = null;
 
-        ts.getDevice().reset();
+        taskGraph.getDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        ts.mapAllTo(device);
-        ts.execute();
+        taskGraph.mapAllTo(device);
+        taskGraph.execute();
     }
 
     @Override
@@ -90,7 +99,7 @@ public class DotTornado extends BenchmarkDriver {
         final float[] result = new float[numElements];
 
         benchmarkMethod(device);
-        ts.clearProfiles();
+        taskGraph.clearProfiles();
 
         GraphicsKernels.dotVector(a, b, result);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,8 @@
  *
  */
 package uk.ac.manchester.tornado.benchmarks.dft;
+
+import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -34,11 +36,19 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
-import java.util.concurrent.TimeUnit;
-
+/**
+ * <p>
+ * How to run in isolation?
+ * </p>
+ * <code>
+ *    tornado -jar benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.dft.JMHDFT
+ * </code>
+ */
 public class JMHDFT {
 
     @State(Scope.Thread)
@@ -50,7 +60,7 @@ public class JMHDFT {
         private double[] outReal;
         private double[] outImag;
 
-        private TaskSchedule ts;
+        private TaskGraph taskGraph;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -64,11 +74,11 @@ public class JMHDFT {
                 inImag[i] = 1 / (double) (i + 2);
             }
 
-            ts = new TaskSchedule("benchmark") //
-                    .streamIn(inReal, inImag) //
+            taskGraph = new TaskGraph("benchmark") //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, inReal, inImag) //
                     .task("t0", ComputeKernels::computeDFT, inReal, inImag, outReal, outImag) //
-                    .streamOut(outReal, outImag);
-            ts.warmup();
+                    .transferToHost(outReal, outImag);
+            taskGraph.warmup();
         }
     }
 
@@ -89,9 +99,9 @@ public class JMHDFT {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void dftTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskSchedule t = state.ts;
-        t.execute();
-        blackhole.consume(t);
+        TaskGraph taskGraph = state.taskGraph;
+        taskGraph.execute();
+        blackhole.consume(taskGraph);
     }
 
     public static void main(String[] args) throws RunnerException {

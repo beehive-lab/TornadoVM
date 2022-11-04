@@ -1,19 +1,19 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 package uk.ac.manchester.tornado.benchmarks.dotimage;
 
@@ -22,15 +22,24 @@ import static uk.ac.manchester.tornado.api.collections.types.FloatOps.findMaxULP
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner dotimage
+ * </code>
+ */
 public class DotTornado extends BenchmarkDriver {
 
     private final int numElementsX;
@@ -63,27 +72,27 @@ public class DotTornado extends BenchmarkDriver {
                 b.set(i, j, new Float3(rb));
             }
         }
-        ts = new TaskSchedule("benchmark") //
-                .streamIn(a, b) //
+        taskGraph = new TaskGraph("benchmark") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("dotVector", GraphicsKernels::dotImage, a, b, c) //
-                .streamOut(c);
-        ts.warmup();
+                .transferToHost(c);
+        taskGraph.warmup();
     }
 
     @Override
     public void tearDown() {
-        ts.dumpProfiles();
+        taskGraph.dumpProfiles();
         a = null;
         b = null;
         c = null;
-        ts.getDevice().reset();
+        taskGraph.getDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        ts.mapAllTo(device);
-        ts.execute();
+        taskGraph.mapAllTo(device);
+        taskGraph.execute();
     }
 
     @Override
@@ -92,8 +101,8 @@ public class DotTornado extends BenchmarkDriver {
         final ImageFloat result = new ImageFloat(numElementsX, numElementsX);
 
         benchmarkMethod(device);
-        ts.syncObjects(c);
-        ts.clearProfiles();
+        taskGraph.syncObjects(c);
+        taskGraph.clearProfiles();
 
         GraphicsKernels.dotImage(a, b, result);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,10 +26,11 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -38,6 +39,12 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * operation of some {@link KernelContext} features, such as global thread
  * identifiers, local thread identifiers, the local group size of the associated
  * WorkerGrid, barriers and allocation of local memory.
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsIntegersKernelContext
+ * </code>
  */
 public class TestReductionsIntegersKernelContext extends TornadoTestBase {
 
@@ -84,14 +91,14 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
-                .streamIn(input, localSize) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize) //
                 .task("t0", TestReductionsIntegersKernelContext::basicAccessThreadIds, context, input) //
-                .streamOut(input);
+                .transferToHost(input);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         for (int i = 0; i < size; i++) {
             assertEquals(i, input[i]);
@@ -123,14 +130,14 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
-                .streamIn(input, localSize) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize) //
                 .task("t0", TestReductionsIntegersKernelContext::basicAccessThreadIds02, context, input, output) //
-                .streamOut(output);
+                .transferToHost(output);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         for (int i = 0; i < size; i++) {
             assertEquals(input[i], output[i]);
@@ -163,14 +170,14 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
-                .streamIn(input, localSize) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize) //
                 .task("t0", TestReductionsIntegersKernelContext::basicAccessThreadIds03, context, input, output) //
-                .streamOut(output);
+                .transferToHost(output);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         for (int i = 0; i < size; i++) {
             assertEquals(input[i] * 2, output[i]);
@@ -205,14 +212,14 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
-                .streamIn(input, localSize) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize) //
                 .task("t0", TestReductionsIntegersKernelContext::basicAccessThreadIds04, context, input, output) //
-                .streamOut(output);
+                .transferToHost(output);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         for (int i = 0; i < size; i++) {
             assertEquals(2, output[i], 0.0);
@@ -247,14 +254,14 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
-                .streamIn(input, localSize) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize) //
                 .task("t0", TestReductionsIntegersKernelContext::basicAccessThreadIds05, context, input, output) //
-                .streamOut(output);
+                .transferToHost(output);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         for (int i = 0; i < size; i++) {
             assertEquals(2, output[i], 0.0);
@@ -274,14 +281,14 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
-                .streamIn(input) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestReductionsIntegersKernelContext::intReductionAddGlobalMemory, context, input, reduce) //
-                .streamOut(reduce, input);
+                .transferToHost(reduce, input);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final SUM
         int finalSum = 0;
@@ -326,14 +333,15 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
                 .task("t0", TestReductionsIntegersKernelContext::intReductionAddLocalMemory, context, input, reduce) //
-                .streamOut(reduce);
+                .transferToHost(reduce);
 
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final SUM
         int finalSum = 0;
@@ -383,14 +391,14 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
-                .streamIn(input, localSize) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize) //
                 .task("t0", TestReductionsIntegersKernelContext::intReductionMaxGlobalMemory, context, input, reduce) //
-                .streamOut(reduce);
+                .transferToHost(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final SUM
         int finalSum = 0;
@@ -434,14 +442,14 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
-                .streamIn(input, localSize) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize) //
                 .task("t0", TestReductionsIntegersKernelContext::intReductionMaxLocalMemory, context, input, reduce) //
-                .streamOut(reduce);
+                .transferToHost(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final SUM
         int finalSum = 0;
@@ -491,14 +499,14 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
-                .streamIn(input, localSize) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize) //
                 .task("t0", TestReductionsIntegersKernelContext::intReductionMinGlobalMemory, context, input, reduce) //
-                .streamOut(reduce);
+                .transferToHost(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final SUM
         int finalSum = 0;
@@ -542,14 +550,14 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
-                .streamIn(input, localSize) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestReductionsIntegersKernelContext::intReductionMinLocalMemory, context, input, reduce) //
-                .streamOut(reduce);
+                .transferToHost(reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         // Final SUM
         int finalSum = 0;

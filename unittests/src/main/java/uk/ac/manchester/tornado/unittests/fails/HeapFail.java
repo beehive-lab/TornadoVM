@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,13 +18,23 @@
 
 package uk.ac.manchester.tornado.unittests.fails;
 
-import org.junit.Test;
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
-
 import java.util.Arrays;
 
+import org.junit.Test;
+
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.fails.HeapFail
+ * </code>
+ */
 public class HeapFail {
 
     private static void validKernel(float[] a, float[] b) {
@@ -46,7 +56,7 @@ public class HeapFail {
     public void test03() throws TornadoOutOfMemoryException {
         // This test simulates small amount of memory on the target device and we
         // allocate more than available. We should get a concrete error message back
-        // with the steps to do to increase the device's heap size
+        // with the steps to take to increase the device's heap size
 
         // We allocate 64MB of data on the device
         float[] x = new float[16777216];
@@ -54,12 +64,11 @@ public class HeapFail {
 
         Arrays.fill(x, 2.0f);
 
-        // @formatter:off
-        TaskSchedule ts = new TaskSchedule("s0")
-                .streamIn(x)
-                .task("s0",HeapFail::validKernel,x,y)
-                .streamOut(y);
-        // @formatter:on
-        ts.execute();
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
+                .task("s0", HeapFail::validKernel, x, y) //
+                .transferToHost(y); //
+
+        taskGraph.execute();
     }
 }

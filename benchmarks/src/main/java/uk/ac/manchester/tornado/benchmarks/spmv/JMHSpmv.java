@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,11 @@
  *
  */
 package uk.ac.manchester.tornado.benchmarks.spmv;
+
+import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.spmv;
+import static uk.ac.manchester.tornado.benchmarks.spmv.Benchmark.initData;
+
+import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -34,15 +39,20 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 import uk.ac.manchester.tornado.matrix.SparseMatrixUtils;
 
-import java.util.concurrent.TimeUnit;
-
-import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.spmv;
-import static uk.ac.manchester.tornado.benchmarks.spmv.Benchmark.initData;
-
+/**
+ * <p>
+ * How to run in isolation?
+ * </p>
+ * <code>
+ *    tornado -jar benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.spmv.JMHSpmv
+ * </code>
+ */
 public class JMHSpmv {
 
     @State(Scope.Thread)
@@ -50,7 +60,7 @@ public class JMHSpmv {
         private SparseMatrixUtils.CSRMatrix<float[]> matrix;
         private float[] v;
         private float[] y;
-        private TaskSchedule ts;
+        private TaskGraph taskGraph;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -59,11 +69,11 @@ public class JMHSpmv {
             v = new float[matrix.size];
             y = new float[matrix.size];
             initData(v);
-            ts = new TaskSchedule("benchmark") //
-                    .streamIn(matrix.vals, matrix.cols, matrix.rows, v, y) //
+            taskGraph = new TaskGraph("benchmark") //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrix.vals, matrix.cols, matrix.rows, v, y) //
                     .task("spmv", LinearAlgebraArrays::spmv, matrix.vals, matrix.cols, matrix.rows, v, matrix.size, y) //
-                    .streamOut(y);
-            ts.warmup();
+                    .transferToHost(y);
+            taskGraph.warmup();
         }
     }
 
@@ -85,9 +95,9 @@ public class JMHSpmv {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void spmvTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskSchedule t = state.ts;
-        t.execute();
-        blackhole.consume(t);
+        TaskGraph taskGraph = state.taskGraph;
+        taskGraph.execute();
+        blackhole.consume(taskGraph);
     }
 
     public static void main(String[] args) throws RunnerException {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,21 +17,31 @@
  */
 package uk.ac.manchester.tornado.unittests.reductions;
 
-import org.junit.Test;
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.annotations.Reduce;
-import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
 import java.util.stream.IntStream;
 
+import org.junit.Test;
+
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.reductions.MultipleReductions
+ * </code>
+ */
 public class MultipleReductions extends TornadoTestBase {
 
     /**
      * Check multiple-reduce parameters can generate a correct OpenCL kernel. Note
      * that output2 variable is not used, but passed. This stresses the analysis
      * phase when using reductions, even if it is not used.
-     * 
+     *
      * @param input
      *            input data
      * @param output1
@@ -60,11 +70,11 @@ public class MultipleReductions extends TornadoTestBase {
             input[i] = i;
         });
 
-        TaskSchedule task = new TaskSchedule("s0") //
-                .streamIn(input) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", MultipleReductions::test, input, result1, result2) //
-                .streamOut(result1, result2); //
+                .transferToHost(result1, result2); //
 
-        task.execute();
+        taskGraph.execute();
     }
 }

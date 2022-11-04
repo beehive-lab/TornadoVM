@@ -122,7 +122,7 @@ public class TestPTXJITCompiler {
         GlobalObjectState stateC = new GlobalObjectState();
         DeviceObjectState objectStateC = stateC.getDeviceState(tornadoDevice);
 
-        tornadoDevice.allocateBulk(new Object[] { a, b, c }, 0, new TornadoDeviceObjectState[] { objectStateA, objectStateB, objectStateC });
+        tornadoDevice.allocateObjects(new Object[] { a, b, c }, 0, new TornadoDeviceObjectState[] { objectStateA, objectStateB, objectStateC });
 
         // Copy-IN A
         tornadoDevice.ensurePresent(a, objectStateA, null, 0, 0);

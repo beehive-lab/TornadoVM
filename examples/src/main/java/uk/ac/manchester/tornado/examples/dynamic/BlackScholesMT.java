@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,13 +21,20 @@ package uk.ac.manchester.tornado.examples.dynamic;
 import java.util.Random;
 
 import uk.ac.manchester.tornado.api.Policy;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * BlackScholes implementation adapted from AMD-OpenCL examples and Marawacc
  * compiler framework.
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.BlackScholesMT
+ * </code>
  */
 public class BlackScholesMT {
 
@@ -50,10 +57,10 @@ public class BlackScholesMT {
             final float r = R_LOWER_LIMIT * rand + R_UPPER_LIMIT * (1.0f - rand);
             final float v = SIGMA_LOWER_LIMIT * rand + SIGMA_UPPER_LIMIT * (1.0f - rand);
 
-            float d1 = (float) ((float) (TornadoMath.log(S / K) + ((r + (v * v / 2)) * T)) / v * TornadoMath.sqrt(T));
-            float d2 = (float) ((float) d1 - (v * TornadoMath.sqrt(T)));
-            callResult[idx] = (float) (S * cnd(d1) - K * TornadoMath.exp(T * (-1) * r) * cnd(d2));
-            putResult[idx] = (float) (K * TornadoMath.exp(T * -r) * cnd(-d2) - S * cnd(-d1));
+            float d1 = ((TornadoMath.log(S / K) + ((r + (v * v / 2)) * T)) / v * TornadoMath.sqrt(T));
+            float d2 = (d1 - (v * TornadoMath.sqrt(T)));
+            callResult[idx] = (S * cnd(d1) - K * TornadoMath.exp(T * (-1) * r) * cnd(d2));
+            putResult[idx] = (K * TornadoMath.exp(T * -r) * cnd(-d2) - S * cnd(-d1));
         }
     }
 
@@ -63,7 +70,7 @@ public class BlackScholesMT {
             final int current = i;
             int lowBound = current * balk;
             int upperBound = (current + 1) * balk;
-            if(current==threads-1) {
+            if (current == threads - 1) {
                 upperBound = callResult.length;
             }
             int finalUpperBound = upperBound;
@@ -115,7 +122,7 @@ public class BlackScholesMT {
         final float oneBySqrt2pi = 0.398942280f;
         float absX = TornadoMath.abs(X);
         float t = one / (one + temp4 * absX);
-        float y = (float) (one - oneBySqrt2pi * TornadoMath.exp(-X * X / two) * t * (c1 + t * (c2 + t * (c3 + t * (c4 + t * c5)))));
+        float y = (one - oneBySqrt2pi * TornadoMath.exp(-X * X / two) * t * (c1 + t * (c2 + t * (c3 + t * (c4 + t * c5)))));
         return (X < zero) ? (one - y) : y;
     }
 
@@ -142,7 +149,7 @@ public class BlackScholesMT {
         float[] putPrice = new float[size];
         float[] seqCall = new float[size];
         float[] seqPut = new float[size];
-        TaskSchedule graph = new TaskSchedule("s0");
+        TaskGraph graph = new TaskGraph("s0");
         long start,end;
 
         for (int i = 0; i < size; i++) {
@@ -152,11 +159,11 @@ public class BlackScholesMT {
 
         Thread[] th = new Thread[maxThreadCount];
 
-        if (executionType.equals("multi") || executionType.equals("sequential")) {
-            ;
-        } else {
+        if (!executionType.equals("multi") && !executionType.equals("sequential")) {
             long startInit = System.nanoTime();
-            graph.task("t0", BlackScholesMT::blackScholesKernel, input, callPrice, putPrice).streamOut(callPrice, putPrice);
+            graph.transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
+                    .task("t0", BlackScholesMT::blackScholesKernel, input, callPrice, putPrice) //
+                    .transferToHost(callPrice, putPrice);
             long stopInit = System.nanoTime();
             System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
         }

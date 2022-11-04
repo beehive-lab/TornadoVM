@@ -41,6 +41,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import java.util.HashSet;
 import java.util.function.Consumer;
 
 import uk.ac.manchester.tornado.api.common.Access;
@@ -82,11 +83,9 @@ public interface AbstractTaskGraph extends ProfileInterface {
 
     void waitOn();
 
-    void streamInInner(Object... objects);
+    void transferToDevice(final int mode, Object... objects);
 
-    void forceStreamInInner(Object... objects);
-
-    void streamOutInner(Object... objects);
+    void transferToHost(Object... objects);
 
     void dump();
 
@@ -130,9 +129,11 @@ public interface AbstractTaskGraph extends ProfileInterface {
 
     String getTaskScheduleName();
 
-    void updateReference(Object oldRef, Object newRef);
+    void replaceParameter(Object oldParameter, Object newParameter);
 
     void useDefaultThreadScheduler(boolean use);
 
     boolean isFinished();
+
+    HashSet<Object> getArgumentsLookup();
 }

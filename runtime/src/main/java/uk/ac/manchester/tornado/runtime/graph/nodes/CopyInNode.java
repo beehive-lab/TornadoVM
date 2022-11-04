@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -19,8 +19,6 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.runtime.graph.nodes;
@@ -45,14 +43,17 @@ public class CopyInNode extends ContextOpNode {
         return value;
     }
 
+    @Override
     public String toString() {
         return String.format("[%d]: copy in object %d", id, value.getIndex());
     }
 
+    @Override
     public boolean hasInputs() {
         return value != null;
     }
 
+    @Override
     public List<AbstractNode> getInputs() {
         if (!hasInputs()) {
             return Collections.emptyList();

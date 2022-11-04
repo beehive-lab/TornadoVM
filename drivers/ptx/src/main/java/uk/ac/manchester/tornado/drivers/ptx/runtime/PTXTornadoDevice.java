@@ -266,9 +266,9 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int allocateBulk(Object[] objects, long batchSize, TornadoDeviceObjectState[] states) {
+    public int allocateObjects(Object[] objects, long batchSize, TornadoDeviceObjectState[] states) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
-        if (!bufferProvider.canAllocate(objects.length)) {
+        if (!bufferProvider.checkBufferAvailability(objects.length)) {
             bufferProvider.resetBuffers();
         }
         for (int i = 0; i < objects.length; i++) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,12 @@
  *
  */
 package uk.ac.manchester.tornado.benchmarks.convolveimage;
+
+import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createFilter;
+import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createImage;
+import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.convolveImage;
+
+import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -34,17 +40,20 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
-import uk.ac.manchester.tornado.benchmarks.dft.JMHDFT;
 
-import java.util.concurrent.TimeUnit;
-
-import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createFilter;
-import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createImage;
-import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.convolveImage;
-
+/**
+ * <p>
+ * How to run in isolation?
+ * </p>
+ * <code>
+ *    tornado -jar benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.convolveimage.JMHConvolveImage
+ * </code>
+ */
 public class JMHConvolveImage {
 
     @State(Scope.Thread)
@@ -57,8 +66,7 @@ public class JMHConvolveImage {
         ImageFloat input;
         ImageFloat output;
         ImageFloat filter;
-
-        private TaskSchedule ts;
+        private TaskGraph taskGraph;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -69,10 +77,11 @@ public class JMHConvolveImage {
             createImage(input);
             createFilter(filter);
 
-            ts = new TaskSchedule("benchmark") //
-                    .streamIn(input).task("convolveImage", GraphicsKernels::convolveImage, input, filter, output) //
-                    .streamOut(output);
-            ts.warmup();
+            taskGraph = new TaskGraph("benchmark") //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, filter) //
+                    .task("convolveImage", GraphicsKernels::convolveImage, input, filter, output) //
+                    .transferToHost(output);
+            taskGraph.warmup();
         }
     }
 
@@ -93,9 +102,9 @@ public class JMHConvolveImage {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void convolveImageArrayTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskSchedule t = state.ts;
-        t.execute();
-        blackhole.consume(t);
+        TaskGraph taskGraph = state.taskGraph;
+        taskGraph.execute();
+        blackhole.consume(taskGraph);
     }
 
     public static void main(String[] args) throws RunnerException {

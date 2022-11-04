@@ -1,19 +1,19 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.examples.compute;
@@ -22,16 +22,21 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 /**
  * Parallel Implementation of the BFS: this is based on the Marawacc compiler
  * framework.
- * 
- * @author Juan Fumero
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.BFS
+ * </code>
  *
  */
 public class BFS {
@@ -52,11 +57,6 @@ public class BFS {
     /**
      * Set to one the connection between node from and node to into the adjacency
      * matrix.
-     *
-     * @param from
-     * @param to
-     * @param graph
-     * @param N
      */
     public static void connect(int from, int to, int[] graph, int N) {
         if (from != to && (graph[from * N + to] == 0)) {
@@ -66,11 +66,8 @@ public class BFS {
 
     /**
      * It builds a simple graph just for showing the example.
-     *
-     * @param adjacencyMatrix
-     * @param numNodes
      */
-    public static void initilizeAdjacencyMatrixSimpleGraph(int[] adjacencyMatrix, int numNodes) {
+    public static void initializeAdjacencyMatrixSimpleGraph(int[] adjacencyMatrix, int numNodes) {
         Arrays.fill(adjacencyMatrix, 0);
         connect(0, 1, adjacencyMatrix, numNodes);
         connect(0, 4, adjacencyMatrix, numNodes);
@@ -169,16 +166,16 @@ public class BFS {
         boolean validModifyResults = true;
 
         if (SAMPLE) {
-            initilizeAdjacencyMatrixSimpleGraph(adjacencyMatrix, numNodes);
+            initializeAdjacencyMatrixSimpleGraph(adjacencyMatrix, numNodes);
         } else {
             generateRandomGraph(adjacencyMatrix, numNodes, rootNode);
         }
 
         // Step 1: vertices initialisation
         initializeVertices(numNodes, vertices, rootNode);
-        TaskSchedule s0 = new TaskSchedule("s0");
-        s0.task("t0", BFS::initializeVertices, numNodes, vertices, rootNode);
-        s0.streamOut(vertices).execute();
+        TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.task("t0", BFS::initializeVertices, numNodes, vertices, rootNode);
+        taskGraph.transferToHost(vertices).execute();
 
         // initialization of Java vertices
         initializeVertices(numNodes, verticesJava, rootNode);
@@ -192,10 +189,12 @@ public class BFS {
         currentDepth = new int[] { 0 };
 
         TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
-        TaskSchedule s1 = new TaskSchedule("s1");
-        s1.streamIn(vertices, adjacencyMatrix, modify, currentDepth).mapAllTo(device);
-        s1.task("t1", BFS::runBFS, vertices, adjacencyMatrix, numNodes, modify, currentDepth);
-        s1.streamOut(vertices, modify);
+        TaskGraph taskGraph1 = new TaskGraph("s1") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, vertices, adjacencyMatrix, modify, currentDepth) //
+                .mapAllTo(device);
+
+        taskGraph1.task("t1", BFS::runBFS, vertices, adjacencyMatrix, numNodes, modify, currentDepth);
+        taskGraph1.transferToHost(vertices, modify);
 
         boolean done = false;
 
@@ -204,7 +203,7 @@ public class BFS {
             boolean allDone = true;
             System.out.println("Current Depth: " + currentDepth[0]);
             runBFS(verticesJava, adjacencyMatrix, numNodes, modifyJava, currentDepth);
-            s1.execute();
+            taskGraph1.execute();
             currentDepth[0]++;
 
             if (VALIDATION && !(validModifyResults = checkModify(modify, modifyJava))) {

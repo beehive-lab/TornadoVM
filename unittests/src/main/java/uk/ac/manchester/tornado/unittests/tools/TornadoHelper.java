@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -103,12 +103,6 @@ public class TornadoHelper {
             }
         }
         return new TestSuiteCollection(methodsToTest, unsupportedMethods, spirvNotSupportedMethods);
-    }
-
-    public static void printInfoTest(String buffer, int success, int fails, int notSupported) {
-        System.out.println(buffer);
-        System.out.print("\n\t");
-        printResult(success, fails, notSupported);
     }
 
     static void runTestVerbose(String klassName, String methodName) throws ClassNotFoundException {

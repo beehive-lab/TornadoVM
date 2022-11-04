@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,18 +25,26 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 /**
  * Testing TornadoVM with multiple independent tasks on different devices. The
- * {@link TaskSchedule} contains more than one task. If multiple devices are not
+ * {@link TaskGraph} contains more than one task. If multiple devices are not
  * specified by the user, then the default device is used.
- *
+ * <p>
  * The user needs to specify the target device for each task as follows:
- * <code>    
- *  -Ds0.t0.device=0:0 -Ds0.t0.device=0:1 
+ * </p>
+ * <code>
+ *  -Ds0.t0.device=0:0 -Ds0.t0.device=0:1
  *</code>
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices
+ * </code>
  **/
 public class TestMultipleTasksMultipleDevices {
 
@@ -60,12 +68,12 @@ public class TestMultipleTasksMultipleDevices {
             System.setProperty("s0.t1.device", "0:0");
         }
 
-        TaskSchedule ts = new TaskSchedule("s0")//
+        TaskGraph taskGraph = new TaskGraph("s0")//
                 .task("t0", TestMultipleTasksSingleDevice::task0Initialization, b) //
                 .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12) //
-                .streamOut(a, b); //
+                .transferToHost(a, b); //
 
-        ts.execute();
+        taskGraph.execute();
 
         for (int i = 0; i < a.length; i++) {
             assertEquals(360, a[i]);
@@ -97,14 +105,14 @@ public class TestMultipleTasksMultipleDevices {
             System.setProperty("s0.t2.device", "0:2");
         }
 
-        TaskSchedule ts = new TaskSchedule("s0")//
-                .streamIn(a, b)//
+        TaskGraph taskGraph = new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c) //
                 .task("t0", TestMultipleTasksSingleDevice::task0Initialization, b) //
                 .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12) //
                 .task("t2", TestMultipleTasksSingleDevice::task2Saxpy, c, c, d, 12) //
-                .streamOut(a, b, d); //
+                .transferToHost(a, b, d); //
 
-        ts.execute();
+        taskGraph.execute();
 
         for (int i = 0; i < a.length; i++) {
             assertEquals(360, a[i]);

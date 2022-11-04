@@ -21,8 +21,9 @@ package uk.ac.manchester.tornado.examples.polyglot;
 
 import java.util.stream.IntStream;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 public class MyCompute {
 
@@ -30,7 +31,7 @@ public class MyCompute {
 
     }
 
-    private static TaskSchedule ts;
+    private static TaskGraph taskGraph;
 
     private static void mxm(float[] a, float[] b, float[] c, int N) {
         for (@Parallel int i = 0; i < N; i++) {
@@ -55,14 +56,14 @@ public class MyCompute {
             b[i] = 1.4f;
         });
 
-        if (ts == null) {
-            ts = new TaskSchedule("s0") //
-                    .streamIn(a, b)//
+        if (taskGraph == null) {
+            taskGraph = new TaskGraph("s0") //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
                     .task("t0", MyCompute::mxm, a, b, c, N)//
-                    .streamOut(c);//
+                    .transferToHost(c);//
         }
 
-        ts.execute();
+        taskGraph.execute();
 
         return c;
     }

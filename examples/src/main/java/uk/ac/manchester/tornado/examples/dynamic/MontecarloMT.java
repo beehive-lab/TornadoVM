@@ -19,13 +19,19 @@
 package uk.ac.manchester.tornado.examples.dynamic;
 
 import uk.ac.manchester.tornado.api.Policy;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
 /**
  * Montecarlo algorithm to approximate the PI value. This version has been
  * adapted from Marawacc test-suite.
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.MontecarloMT
+ * </code>
  *
  */
 public class MontecarloMT {
@@ -103,11 +109,11 @@ public class MontecarloMT {
         long start,end;
 
         long startInit = System.nanoTime();
-        // @formatter:off
-        TaskSchedule s0 = new TaskSchedule("s0")
-                .task("t0", MontecarloMT::computeMontecarlo, output)
-                .streamOut(output);
-        // @formatter:on
+
+        TaskGraph s0 = new TaskGraph("s0") //
+                .task("t0", MontecarloMT::computeMontecarlo, output)//
+                .transferToHost(output);
+
         long stopInit = System.nanoTime();
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 

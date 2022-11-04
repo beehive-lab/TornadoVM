@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
 class ReduceFactory {
@@ -158,7 +158,7 @@ class ReduceFactory {
         array[0] = acc;
     }
 
-    static void handleAdd(Object newArray, TaskSchedule task, int sizeReduceArray, String taskName) {
+    static void handleAdd(Object newArray, TaskGraph task, int sizeReduceArray, String taskName) {
         switch (newArray.getClass().getTypeName()) {
             case "int[]":
                 task.task(taskName, ReduceFactory::rAdd, (int[]) newArray, sizeReduceArray);
@@ -177,7 +177,7 @@ class ReduceFactory {
         }
     }
 
-    static void handleMul(Object newArray, TaskSchedule task, int sizeReduceArray, String taskName) {
+    static void handleMul(Object newArray, TaskGraph task, int sizeReduceArray, String taskName) {
         switch (newArray.getClass().getTypeName()) {
             case "int[]":
                 task.task(taskName, ReduceFactory::rMul, (int[]) newArray, sizeReduceArray);
@@ -196,7 +196,7 @@ class ReduceFactory {
         }
     }
 
-    static void handleMax(Object newArray, TaskSchedule task, int sizeReduceArray, String taskName) {
+    static void handleMax(Object newArray, TaskGraph task, int sizeReduceArray, String taskName) {
         switch (newArray.getClass().getTypeName()) {
             case "int[]":
                 task.task(taskName, ReduceFactory::rMax, (int[]) newArray, sizeReduceArray);
@@ -215,7 +215,7 @@ class ReduceFactory {
         }
     }
 
-    static void handleMin(Object newArray, TaskSchedule task, int sizeReduceArray, String taskName) {
+    static void handleMin(Object newArray, TaskGraph task, int sizeReduceArray, String taskName) {
         switch (newArray.getClass().getTypeName()) {
             case "int[]":
                 task.task(taskName, ReduceFactory::rMin, (int[]) newArray, sizeReduceArray);
