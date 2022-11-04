@@ -1,25 +1,30 @@
 /*
  * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.unittests.vectortypes;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.Random;
+
 import org.junit.Test;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Int2;
 import uk.ac.manchester.tornado.api.collections.types.Int3;
@@ -30,12 +35,17 @@ import uk.ac.manchester.tornado.api.collections.types.VectorInt2;
 import uk.ac.manchester.tornado.api.collections.types.VectorInt3;
 import uk.ac.manchester.tornado.api.collections.types.VectorInt4;
 import uk.ac.manchester.tornado.api.collections.types.VectorInt8;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
-import java.util.Random;
-
-import static org.junit.Assert.assertEquals;
-
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.vectortypes.TestInts
+ * </code>
+ */
 public class TestInts extends TornadoTestBase {
 
     private static void addInt2(Int2 a, Int2 b, VectorInt results) {
@@ -51,12 +61,11 @@ public class TestInts extends TornadoTestBase {
         Int2 b = new Int2(3, 2);
         VectorInt output = new VectorInt(size);
 
-        //@formatter:off
-        new TaskSchedule("s0")
-            .task("t0", TestInts::addInt2, a, b, output)
-            .streamOut(output)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestInts::addInt2, a, b, output) //
+                .transferToHost(output) //
+                .execute();
 
         for (int i = 0; i < size; i++) {
             assertEquals(8, output.get(i));
@@ -76,12 +85,11 @@ public class TestInts extends TornadoTestBase {
         Int3 b = new Int3(3, 2, 1);
         VectorInt output = new VectorInt(size);
 
-        //@formatter:off
-        new TaskSchedule("s0")
-            .task("t0", TestInts::addInt3, a, b, output)
-            .streamOut(output)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestInts::addInt3, a, b, output) //
+                .transferToHost(output) //
+                .execute();
 
         for (int i = 0; i < size; i++) {
             assertEquals(12, output.get(i));
@@ -101,12 +109,11 @@ public class TestInts extends TornadoTestBase {
         Int8 b = new Int8(4, 3, 2, 1, 1, 2, 3, 4);
         VectorInt output = new VectorInt(size);
 
-        //@formatter:off
-        new TaskSchedule("s0")
-                .task("t0", TestInts::addInt8, a, b, output)
-                .streamOut(output)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestInts::addInt8, a, b, output) //
+                .transferToHost(output) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i++) {
             assertEquals(40, output.get(i));
@@ -126,12 +133,11 @@ public class TestInts extends TornadoTestBase {
         Int4 b = new Int4(4, 3, 2, 1);
         VectorInt output = new VectorInt(size);
 
-        //@formatter:off
-        new TaskSchedule("s0")
-            .task("t0", TestInts::addInt4, a, b, output)
-            .streamOut(output)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestInts::addInt4, a, b, output) //
+                .transferToHost(output) //
+                .execute(); //
 
         for (int i = 0; i < size; i++) {
             assertEquals(20, output.get(i));
@@ -158,12 +164,11 @@ public class TestInts extends TornadoTestBase {
             b[i] = i;
         }
 
-        //@formatter:off
-        new TaskSchedule("s0")
-            .task("t0", TestInts::addIntVectors, a, b, output)
-            .streamOut(output)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestInts::addIntVectors, a, b, output) //
+                .transferToHost(output) //
+                .execute();
 
         for (int i = 0; i < size; i++) {
             assertEquals(i + i, output[i]);
@@ -207,13 +212,11 @@ public class TestInts extends TornadoTestBase {
         dotProductFunctionMap(a, b, seqMap);
         dotProductFunctionReduce(seqMap, seqReduce);
 
-        //@formatter:off
-        new TaskSchedule("s0")
-            .task("t0-MAP", TestInts::dotProductFunctionMap, a, b, outputMap)
-            .task("t1-REDUCE", TestInts::dotProductFunctionReduce, outputMap, outputReduce)
-            .streamOut(outputReduce)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b, outputMap) //
+                .task("t0-MAP", TestInts::dotProductFunctionMap, a, b, outputMap) //
+                .task("t1-REDUCE", TestInts::dotProductFunctionReduce, outputMap, outputReduce) //
+                .transferToHost(outputReduce) //
+                .execute();
 
         assertEquals(seqReduce[0], outputReduce[0]);
     }
@@ -237,12 +240,11 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int2(size - i, size - i));
         }
 
-        //@formatter:off
-        new TaskSchedule("s0")
-                .task("t0", TestInts::addVectorInt2, a, b, output)
-                .streamOut(output)
-                .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestInts::addVectorInt2, a, b, output) //
+                .transferToHost(output) //
+                .execute(); //
 
         for (int i = 0; i < size; i++) {
             Int2 sequential = new Int2(i + (size - i), i + (size - i));
@@ -270,12 +272,11 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int2(size - i, size - i));
         }
 
-        //@formatter:off
-        new TaskSchedule("s0")
-                .task("t0", TestInts::subVectorInt2, a, b, output)
-                .streamOut(output)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestInts::subVectorInt2, a, b, output) //
+                .transferToHost(output) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i++) {
             Int2 sequential = new Int2(i - (size - i), i - (size - i));
@@ -303,12 +304,11 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int2(size - i, size - i));
         }
 
-        //@formatter:off
-        new TaskSchedule("s0")
-                .task("t0", TestInts::divVectorInt2, a, b, output)
-                .streamOut(output)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestInts::divVectorInt2, a, b, output) //
+                .transferToHost(output) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i++) {
             Int2 sequential = new Int2(i / (size - i), i / (size - i));
@@ -336,12 +336,11 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int3(size - i, size - i, size - i));
         }
 
-        //@formatter:off
-        new TaskSchedule("s0")
-                .task("t0", TestInts::addVectorInt3, a, b, output)
-                .streamOut(output)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestInts::addVectorInt3, a, b, output) //
+                .transferToHost(output) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i++) {
             Int3 sequential = new Int3(i + (size - i), i + (size - i), i + (size - i));
@@ -370,12 +369,11 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int3(size - i, size - i, size - i));
         }
 
-        //@formatter:off
-        new TaskSchedule("s0")
-                .task("t0", TestInts::subVectorInt3, a, b, output)
-                .streamOut(output)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestInts::subVectorInt3, a, b, output) //
+                .transferToHost(output) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i++) {
             Int3 sequential = new Int3(i - (size - i), i - (size - i), i - (size - i));
@@ -404,12 +402,11 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int3(size - i, size - i, size - i));
         }
 
-        //@formatter:off
-        new TaskSchedule("s0")
-                .task("t0", TestInts::divVectorInt3, a, b, output)
-                .streamOut(output)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestInts::divVectorInt3, a, b, output) //
+                .transferToHost(output) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i++) {
             Int3 sequential = new Int3(i / (size - i), i / (size - i), i / (size - i));
@@ -438,12 +435,11 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int4(size - i, size - i, size - i, size));
         }
 
-        //@formatter:off
-        new TaskSchedule("s0")
-                .task("t0", TestInts::addVectorInt4, a, b, output)
-                .streamOut(output)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestInts::addVectorInt4, a, b, output) //
+                .transferToHost(output) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i++) {
             Int4 sequential = new Int4(i + (size - i), i + (size - i), i + (size - i), i + size);
@@ -473,12 +469,11 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int4(size - i, size - i, size - i, size));
         }
 
-        //@formatter:off
-        new TaskSchedule("s0")
-                .task("t0", TestInts::subVectorInt4, a, b, output)
-                .streamOut(output)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestInts::subVectorInt4, a, b, output) //
+                .transferToHost(output) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i++) {
             Int4 sequential = new Int4(i - (size - i), i - (size - i), i - (size - i), i - size);
@@ -508,12 +503,11 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int4(size - i, size - i, size - i, size));
         }
 
-        //@formatter:off
-        new TaskSchedule("s0")
-                .task("t0", TestInts::divVectorInt4, a, b, output)
-                .streamOut(output)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestInts::divVectorInt4, a, b, output) //
+                .transferToHost(output) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i++) {
             Int4 sequential = new Int4(i / (size - i), i / (size - i), i / (size - i), i / size);
@@ -543,12 +537,11 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int8(size - i, size - i, size - i, size, size - i, size - i, size - i, size));
         }
 
-        //@formatter:off
-        new TaskSchedule("s0")
-                .task("t0", TestInts::addVectorInt8, a, b, output)
-                .streamOut(output)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestInts::addVectorInt8, a, b, output) //
+                .transferToHost(output) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i++) {
             Int8 sequential = new Int8(i + (size - i), i + (size - i), i + (size - i), i + size, i + (size - i), i + (size - i), i + (size - i), i + size);
@@ -582,12 +575,11 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int8(size - i, size - i, size - i, size, size - i, size - i, size - i, size));
         }
 
-        //@formatter:off
-        new TaskSchedule("s0")
-                .task("t0", TestInts::subVectorInt8, a, b, output)
-                .streamOut(output)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestInts::subVectorInt8, a, b, output) //
+                .transferToHost(output) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i++) {
             Int8 sequential = new Int8(i - (size - i), i - (size - i), i - (size - i), i - size, i - (size - i), i - (size - i), i - (size - i), i - size);
@@ -621,12 +613,11 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int8(size - i, size - i, size - i, size, size - i, size - i, size - i, size));
         }
 
-        //@formatter:off
-        new TaskSchedule("s0")
-                .task("t0", TestInts::divVectorInt8, a, b, output)
-                .streamOut(output)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestInts::divVectorInt8, a, b, output) //
+                .transferToHost(output) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < size; i++) {
             Int8 sequential = new Int8(i / (size - i), i / (size - i), i / (size - i), i / size, i / (size - i), i / (size - i), i / (size - i), i / size);
@@ -664,10 +655,10 @@ public class TestInts extends TornadoTestBase {
         VectorInt2 sequentialOutput = new VectorInt2(size);
         VectorInt2 tornadoOutput = new VectorInt2(size);
 
-        TaskSchedule ts = new TaskSchedule("s0");
-        ts.task("t0", TestInts::testPrivateVectorInt2, tornadoOutput);
-        ts.streamOut(tornadoOutput);
-        ts.execute();
+        TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.task("t0", TestInts::testPrivateVectorInt2, tornadoOutput);
+        taskGraph.transferToHost(tornadoOutput);
+        taskGraph.execute();
 
         testPrivateVectorInt2(sequentialOutput);
 
@@ -700,10 +691,10 @@ public class TestInts extends TornadoTestBase {
         VectorInt4 sequentialOutput = new VectorInt4(size);
         VectorInt4 tornadoOutput = new VectorInt4(size);
 
-        TaskSchedule ts = new TaskSchedule("s0");
-        ts.task("t0", TestInts::testPrivateVectorInt4, tornadoOutput);
-        ts.streamOut(tornadoOutput);
-        ts.execute();
+        TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.task("t0", TestInts::testPrivateVectorInt4, tornadoOutput);
+        taskGraph.transferToHost(tornadoOutput);
+        taskGraph.execute();
 
         testPrivateVectorInt4(sequentialOutput);
 
@@ -738,10 +729,10 @@ public class TestInts extends TornadoTestBase {
         VectorInt8 sequentialOutput = new VectorInt8(16);
         VectorInt8 tornadoOutput = new VectorInt8(16);
 
-        TaskSchedule ts = new TaskSchedule("s0");
-        ts.task("t0", TestInts::testPrivateVectorInt8, tornadoOutput);
-        ts.streamOut(tornadoOutput);
-        ts.execute();
+        TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.task("t0", TestInts::testPrivateVectorInt8, tornadoOutput);
+        taskGraph.transferToHost(tornadoOutput);
+        taskGraph.execute();
 
         testPrivateVectorInt8(sequentialOutput);
 

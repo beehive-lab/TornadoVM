@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -68,19 +68,19 @@ import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
 import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
 
 /**
- * Tornado Task Schedule API.
+ * Tornado Task Graph API.
  * <p>
- * Task-based parallel API to express methods to be accelerated
- * on any OpenCL, PTX or SPIRV compatible device.
+ * Task-based parallel API to express methods to be accelerated on any OpenCL,
+ * PTX or SPIRV compatible device.
  * </p>
  */
-public class TaskSchedule implements TornadoAPI, ProfileInterface {
+public class TaskGraph implements TornadoAPI, ProfileInterface {
 
     private final String taskScheduleName;
     private AbstractTaskGraph taskScheduleImpl;
     private HashSet<String> taskNames;
 
-    public TaskSchedule(String name) {
+    public TaskGraph(String name) {
         this.taskScheduleName = name;
         taskScheduleImpl = TornadoAPIProvider.loadScheduleRuntime(name);
         taskNames = new HashSet<>();
@@ -94,13 +94,13 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public TaskSchedule addTask(TaskPackage taskPackage) {
+    public TaskGraph addTask(TaskPackage taskPackage) {
         taskScheduleImpl.addTask(taskPackage);
         return this;
     }
 
     @Override
-    public TaskSchedule task(String id, Task code) {
+    public TaskGraph task(String id, Task code) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code);
         taskScheduleImpl.addTask(taskPackage);
@@ -108,7 +108,7 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public <T1> TaskSchedule task(String id, Task1<T1> code, T1 arg) {
+    public <T1> TaskGraph task(String id, Task1<T1> code, T1 arg) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg);
         taskScheduleImpl.addTask(taskPackage);
@@ -116,7 +116,7 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public <T1, T2> TaskSchedule task(String id, Task2<T1, T2> code, T1 arg1, T2 arg2) {
+    public <T1, T2> TaskGraph task(String id, Task2<T1, T2> code, T1 arg1, T2 arg2) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2);
         taskScheduleImpl.addTask(taskPackage);
@@ -124,7 +124,7 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public <T1, T2, T3> TaskSchedule task(String id, Task3<T1, T2, T3> code, T1 arg1, T2 arg2, T3 arg3) {
+    public <T1, T2, T3> TaskGraph task(String id, Task3<T1, T2, T3> code, T1 arg1, T2 arg2, T3 arg3) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3);
         taskScheduleImpl.addTask(taskPackage);
@@ -132,7 +132,7 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public <T1, T2, T3, T4> TaskSchedule task(String id, Task4<T1, T2, T3, T4> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4) {
+    public <T1, T2, T3, T4> TaskGraph task(String id, Task4<T1, T2, T3, T4> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4);
         taskScheduleImpl.addTask(taskPackage);
@@ -140,7 +140,7 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public <T1, T2, T3, T4, T5> TaskSchedule task(String id, Task5<T1, T2, T3, T4, T5> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) {
+    public <T1, T2, T3, T4, T5> TaskGraph task(String id, Task5<T1, T2, T3, T4, T5> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5);
         taskScheduleImpl.addTask(taskPackage);
@@ -148,7 +148,7 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6> TaskSchedule task(String id, Task6<T1, T2, T3, T4, T5, T6> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) {
+    public <T1, T2, T3, T4, T5, T6> TaskGraph task(String id, Task6<T1, T2, T3, T4, T5, T6> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6);
         taskScheduleImpl.addTask(taskPackage);
@@ -156,7 +156,7 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6, T7> TaskSchedule task(String id, Task7<T1, T2, T3, T4, T5, T6, T7> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) {
+    public <T1, T2, T3, T4, T5, T6, T7> TaskGraph task(String id, Task7<T1, T2, T3, T4, T5, T6, T7> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
         taskScheduleImpl.addTask(taskPackage);
@@ -164,7 +164,7 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6, T7, T8> TaskSchedule task(String id, Task8<T1, T2, T3, T4, T5, T6, T7, T8> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) {
+    public <T1, T2, T3, T4, T5, T6, T7, T8> TaskGraph task(String id, Task8<T1, T2, T3, T4, T5, T6, T7, T8> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
         taskScheduleImpl.addTask(taskPackage);
@@ -172,7 +172,7 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6, T7, T8, T9> TaskSchedule task(String id, Task9<T1, T2, T3, T4, T5, T6, T7, T8, T9> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8,
+    public <T1, T2, T3, T4, T5, T6, T7, T8, T9> TaskGraph task(String id, Task9<T1, T2, T3, T4, T5, T6, T7, T8, T9> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8,
             T9 arg9) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
@@ -181,7 +181,7 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> TaskSchedule task(String id, Task10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7,
+    public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> TaskGraph task(String id, Task10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7,
             T8 arg8, T9 arg9, T10 arg10) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
@@ -190,7 +190,7 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> TaskSchedule task(String id, Task11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6,
+    public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> TaskGraph task(String id, Task11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6,
             T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
@@ -199,7 +199,7 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> TaskSchedule task(String id, Task12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5,
+    public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> TaskGraph task(String id, Task12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5,
             T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
@@ -208,8 +208,8 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> TaskSchedule task(String id, Task13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> code, T1 arg1, T2 arg2, T3 arg3,
-            T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13) {
+    public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> TaskGraph task(String id, Task13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4,
+            T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13);
         taskScheduleImpl.addTask(taskPackage);
@@ -217,8 +217,8 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> TaskSchedule task(String id, Task14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> code, T1 arg1, T2 arg2,
-            T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14) {
+    public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> TaskGraph task(String id, Task14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> code, T1 arg1, T2 arg2, T3 arg3,
+            T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14);
         taskScheduleImpl.addTask(taskPackage);
@@ -226,8 +226,8 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> TaskSchedule task(String id, Task15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> code, T1 arg1,
-            T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15) {
+    public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> TaskGraph task(String id, Task15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> code, T1 arg1, T2 arg2,
+            T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15);
         taskScheduleImpl.addTask(taskPackage);
@@ -235,14 +235,14 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public TaskSchedule prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions) {
+    public TaskGraph prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions) {
         checkTaskName(id);
         taskScheduleImpl.addPrebuiltTask(id, entryPoint, filename, args, accesses, device, dimensions);
         return this;
     }
 
     @Override
-    public TaskSchedule prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions, int[] atomics) {
+    public TaskGraph prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions, int[] atomics) {
         checkTaskName(id);
         taskScheduleImpl.addPrebuiltTask(id, entryPoint, filename, args, accesses, device, dimensions, atomics);
         return this;
@@ -254,43 +254,37 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public TaskSchedule task(SchedulableTask task) {
+    public TaskGraph task(SchedulableTask task) {
         taskScheduleImpl.addInner(task);
         return this;
     }
 
     @Override
-    public TaskSchedule mapAllTo(TornadoDevice device) {
+    public TaskGraph mapAllTo(TornadoDevice device) {
         taskScheduleImpl.setDevice(device);
         return this;
     }
 
     @Override
-    public TaskSchedule streamIn(Object... objects) {
-        taskScheduleImpl.streamInInner(objects);
+    public TaskGraph transferToDevice(final int mode, Object... objects) {
+        taskScheduleImpl.transferToDevice(mode, objects);
         return this;
     }
 
     @Override
-    public TornadoAPI forceCopyIn(Object... objects) {
-        taskScheduleImpl.forceStreamInInner(objects);
+    public TaskGraph transferToHost(Object... objects) {
+        taskScheduleImpl.transferToHost(objects);
         return this;
     }
 
     @Override
-    public TaskSchedule streamOut(Object... objects) {
-        taskScheduleImpl.streamOutInner(objects);
-        return this;
-    }
-
-    @Override
-    public TaskSchedule schedule() {
+    public TaskGraph schedule() {
         taskScheduleImpl.scheduleInner();
         return this;
     }
 
     @Override
-    public TaskSchedule batch(String batchSize) {
+    public TaskGraph batch(String batchSize) {
         taskScheduleImpl.batch(batchSize);
         return this;
     }
@@ -346,25 +340,25 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public TaskSchedule lockObjectInMemory(Object object) {
+    public TaskGraph lockObjectInMemory(Object object) {
         taskScheduleImpl.lockObjectInMemory(object);
         return this;
     }
 
     @Override
-    public TaskSchedule lockObjectsInMemory(Object... objects) {
+    public TaskGraph lockObjectsInMemory(Object... objects) {
         taskScheduleImpl.lockObjectsInMemory(objects);
         return this;
     }
 
     @Override
-    public TaskSchedule unlockObjectsFromMemory(Object... objects) {
+    public TaskGraph unlockObjectsFromMemory(Object... objects) {
         taskScheduleImpl.unlockObjectsFromMemory(objects);
         return this;
     }
 
     @Override
-    public TaskSchedule unlockObjectFromMemory(Object object) {
+    public TaskGraph unlockObjectFromMemory(Object object) {
         taskScheduleImpl.unlockObjectFromMemory(object);
         return this;
     }
@@ -475,31 +469,36 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public TaskSchedule useDefaultThreadScheduler(boolean use) {
+    public TaskGraph useDefaultThreadScheduler(boolean use) {
         taskScheduleImpl.useDefaultThreadScheduler(use);
         return this;
     }
 
     /**
      * Update a data reference from one array to another within TornadoVM.
-     * 
+     *
      * Arrays can be of different sizes.
-     * 
+     *
      * If a {@link GridScheduler} is not passed in the {@link #execute()} method,
-     * then it will also trigger recompilation. Otherwise TornadoVM will not
+     * then it will also trigger recompilation. Otherwise, TornadoVM will not
      * recompile the code, since the first compilation was generic.
-     * 
-     * 
-     * @param oldRef
-     * @param newRef
+     *
+     *
+     * @param oldParameter
+     * @param newParameter
      */
     @Override
-    public void updateReference(Object oldRef, Object newRef) {
-        taskScheduleImpl.updateReference(oldRef, newRef);
+    public TaskGraph replaceParameter(Object oldParameter, Object newParameter) {
+        taskScheduleImpl.replaceParameter(oldParameter, newParameter);
+        return this;
     }
 
     @Override
     public boolean isFinished() {
         return taskScheduleImpl.isFinished();
+    }
+
+    public HashSet<Object> getArgumentsLookup() {
+        return taskScheduleImpl.getArgumentsLookup();
     }
 }

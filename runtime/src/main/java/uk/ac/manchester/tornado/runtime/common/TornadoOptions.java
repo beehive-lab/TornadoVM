@@ -164,6 +164,12 @@ public class TornadoOptions {
      * Use Level Zero as a dispatcher for SPIRV
      */
     public static final boolean USE_LEVELZERO_FOR_SPIRV = getBooleanValue("tornado.spirv.levelzero", TRUE);
+
+    /**
+     * Check I/O parameters for every task within a task-graph.
+     */
+    public static final boolean FORCE_CHECK_PARAMETERS = getBooleanValue("tornado.check.parameters", TRUE);
+
     /**
      * Select Shared Memory allocator for SPIRV-Level Zero implementation.
      */
@@ -201,7 +207,6 @@ public class TornadoOptions {
     /**
      * It optimizes loads and stores for the SPIRV backend. It uses less virtual
      * registers. Experimental Feature.
-     *
      */
     public static final boolean OPTIMIZE_LOAD_STORE_SPIRV = getBooleanValue("tornado.spirv.loadstore", TRUE);
     /**

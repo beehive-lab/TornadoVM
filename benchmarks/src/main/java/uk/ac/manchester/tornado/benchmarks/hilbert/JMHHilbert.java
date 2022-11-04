@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,8 @@
  *
  */
 package uk.ac.manchester.tornado.benchmarks.hilbert;
+
+import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -34,28 +36,33 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
-import java.util.concurrent.TimeUnit;
-
+/**
+ * <p>
+ * How to run in isolation?
+ * </p>
+ * <code>
+ *    tornado -jar benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.hilbert.JMHHilbert
+ * </code>
+ */
 public class JMHHilbert {
 
     @State(Scope.Thread)
     public static class BenchmarkSetup {
         private int size = Integer.parseInt(System.getProperty("x", "4096"));
         private float[] hilbertMatrix;
-        private TaskSchedule ts;
+        private TaskGraph taskGraph;
 
         @Setup(Level.Trial)
         public void doSetup() {
             hilbertMatrix = new float[size * size];
-            // @formatter:off
-            ts = new TaskSchedule("s0")
-                    .task("t0", ComputeKernels::hilbertComputation, hilbertMatrix, size, size)
-                    .streamOut(hilbertMatrix);
-            // @formatter:on
-            ts.warmup();
+            taskGraph = new TaskGraph("s0") //
+                    .task("t0", ComputeKernels::hilbertComputation, hilbertMatrix, size, size) //
+                    .transferToHost(hilbertMatrix); //
+            taskGraph.warmup();
         }
     }
 
@@ -76,9 +83,9 @@ public class JMHHilbert {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void hilbertTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskSchedule t = state.ts;
-        t.execute();
-        blackhole.consume(t);
+        TaskGraph taskGraph = state.taskGraph;
+        taskGraph.execute();
+        blackhole.consume(taskGraph);
     }
 
     public static void main(String[] args) throws RunnerException {

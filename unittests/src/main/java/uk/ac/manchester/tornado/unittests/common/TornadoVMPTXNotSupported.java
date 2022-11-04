@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,4 @@ public class TornadoVMPTXNotSupported extends RuntimeException {
         super(message);
     }
 
-    public TornadoVMPTXNotSupported(String message, Throwable cause) {
-        super(message, cause);
-    }
 }

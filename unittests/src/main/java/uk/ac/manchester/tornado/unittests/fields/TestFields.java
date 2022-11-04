@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,11 +26,20 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to test?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.fields.TestFields
+ * </code>
+ */
 public class TestFields extends TornadoTestBase {
 
     private static class Foo {
@@ -86,15 +95,15 @@ public class TestFields extends TornadoTestBase {
         final int N = 1024;
         Foo foo = new Foo(N);
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        assertNotNull(s0);
+        TaskGraph taskGraph = new TaskGraph("s0");
+        assertNotNull(taskGraph);
 
-        s0.lockObjectInMemory(foo);
+        taskGraph.lockObjectInMemory(foo);
+        taskGraph.task("t0", foo::computeInit);
+        taskGraph.execute();
 
-        s0.task("t0", foo::computeInit).execute();
-        s0.syncObject(foo.output);
-
-        s0.unlockObjectFromMemory(foo);
+        taskGraph.syncObject(foo.output);
+        taskGraph.unlockObjectFromMemory(foo);
 
         for (int i = 0; i < N; i++) {
             assertEquals(100, foo.output[i]);
@@ -107,15 +116,15 @@ public class TestFields extends TornadoTestBase {
         Foo foo = new Foo(N);
         foo.initRandom();
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        assertNotNull(s0);
+        TaskGraph taskGraph = new TaskGraph("s0");
+        assertNotNull(taskGraph);
 
-        s0.lockObjectInMemory(foo);
+        taskGraph.lockObjectInMemory(foo);
+        taskGraph.task("t0", foo::computeAdd);
+        taskGraph.unlockObjectFromMemory(foo);
+        taskGraph.execute();
 
-        s0.task("t0", foo::computeAdd).execute();
-        s0.syncObject(foo.output);
-
-        s0.unlockObjectFromMemory(foo);
+        taskGraph.syncObject(foo.output);
 
         for (int i = 0; i < N; i++) {
             assertEquals(foo.a[i] + foo.b[i], foo.output[i]);
@@ -127,15 +136,15 @@ public class TestFields extends TornadoTestBase {
         final int N = 1024;
         Bar bar = new Bar(N, 15);
 
-        TaskSchedule s0 = new TaskSchedule("Bar");
-        assertNotNull(s0);
+        TaskGraph taskGraph = new TaskGraph("Bar");
+        assertNotNull(taskGraph);
 
-        s0.lockObjectInMemory(bar);
+        taskGraph.lockObjectInMemory(bar);
 
-        s0.task("init", bar::computeInit).execute();
-        s0.syncObject(bar.output);
+        taskGraph.task("init", bar::computeInit).execute();
+        taskGraph.syncObject(bar.output);
 
-        s0.unlockObjectFromMemory(bar);
+        taskGraph.unlockObjectFromMemory(bar);
 
         for (int i = 0; i < N; i++) {
             assertEquals(15, bar.output[i]);
@@ -179,18 +188,20 @@ public class TestFields extends TornadoTestBase {
 
     @Test
     public void testSetField() {
-        // The reason this is not supported for SPIR-V is that the object fields are deserialized
-        // before flushing the command list. Check SPIRVObjectWrapper::deserialise and SPIRVTornadoDevice::flush.
+        // The reason this is not supported for SPIR-V is that the object fields are
+        // deserialized
+        // before flushing the command list. Check SPIRVObjectWrapper::deserialise and
+        // SPIRVTornadoDevice::flush.
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         B b = new B();
         final A a = new A(b);
 
-        TaskSchedule ts = new TaskSchedule("s0");
-        ts.streamIn(a);
-        ts.task("t0", TestFields::setField, a, 77f);
-        ts.streamOut(a);
-        ts.execute();
+        TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a);
+        taskGraph.task("t0", TestFields::setField, a, 77f);
+        taskGraph.transferToHost(a);
+        taskGraph.execute();
 
         assertEquals(77, a.someOtherField, 0.01f);
         assertEquals(-1, a.b.someField, 0.01f);
@@ -201,18 +212,20 @@ public class TestFields extends TornadoTestBase {
 
     @Test
     public void testSetNestedField() {
-        // The reason this is not supported for SPIR-V is that the object fields are deserialized
-        // before flushing the command list. Check SPIRVObjectWrapper::deserialise and SPIRVTornadoDevice::flush.
+        // The reason this is not supported for SPIR-V is that the object fields are
+        // deserialized
+        // before flushing the command list. Check SPIRVObjectWrapper::deserialise and
+        // SPIRVTornadoDevice::flush.
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         B b = new B();
         final A a = new A(b);
 
-        TaskSchedule ts = new TaskSchedule("s0");
-        ts.streamIn(a);
-        ts.task("t0", TestFields::setNestedField, a, 77f);
-        ts.streamOut(a);
-        ts.execute();
+        TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a);
+        taskGraph.task("t0", TestFields::setNestedField, a, 77f);
+        taskGraph.transferToHost(a);
+        taskGraph.execute();
 
         assertEquals(77, a.b.someField, 0.01f);
         assertEquals(-1, a.someOtherField, 0.01f);
@@ -229,11 +242,11 @@ public class TestFields extends TornadoTestBase {
         Arrays.fill(indexes, 1);
         Arrays.fill(b.someArray, 2);
 
-        TaskSchedule ts = new TaskSchedule("s0");
-        ts.streamIn(a);
-        ts.task("t0", TestFields::setNestedArray, a, indexes);
-        ts.streamOut(a);
-        ts.execute();
+        TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a);
+        taskGraph.task("t0", TestFields::setNestedArray, a, indexes);
+        taskGraph.transferToHost(a);
+        taskGraph.execute();
 
         for (int i = 0; i < b.someArray.length; i++) {
             assertEquals(6, a.b.someArray[i]);

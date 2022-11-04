@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2020, APT Group, Department of Computer Science,
@@ -138,7 +138,7 @@ public class TaskUtils {
      * contains the invocation to the actual code. The actual code is an INVOKE that
      * is inside the apply method of the lambda. This method searches for the nested
      * method with the actual code to be compiled.
-     * 
+     *
      * @param task
      *            Input Tornado task that corresponds to the user code.
      */
@@ -321,6 +321,10 @@ public class TaskUtils {
     private static CompilableTask createTask(ScheduleMetaData meta, String id, Method method, Object code, boolean extractCVs, Object... args) {
         final int numArgs;
         final Object[] cvs;
+
+        for (Object arg : args) {
+
+        }
 
         if (extractCVs) {
             cvs = extractCapturedVariables(code);

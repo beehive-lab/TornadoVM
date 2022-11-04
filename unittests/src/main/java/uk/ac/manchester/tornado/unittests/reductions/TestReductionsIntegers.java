@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,6 @@
  * limitations under the License.
  *
  */
-
 package uk.ac.manchester.tornado.unittests.reductions;
 
 import static org.junit.Assert.assertEquals;
@@ -27,12 +26,21 @@ import java.util.stream.IntStream;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers
+ * </code>
+ */
 public class TestReductionsIntegers extends TornadoTestBase {
 
     private static final int SMALL_SIZE = 512;
@@ -209,10 +217,10 @@ public class TestReductionsIntegers extends TornadoTestBase {
         });
 
         //@formatter:off
-        new TaskSchedule("s0")
-            .streamIn(input)
+        new TaskGraph("s0")
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsIntegers::reductionAnnotation, input, result)
-            .streamOut(result)
+            .transferToHost(result)
             .execute();
         //@formatter:on
 
@@ -236,10 +244,10 @@ public class TestReductionsIntegers extends TornadoTestBase {
         });
 
         //@formatter:off
-        new TaskSchedule("s0")
-                .streamIn(input)
+        new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
                 .task("t0", TestReductionsIntegers::reductionAnnotationLarge, input, result)
-                .streamOut(result)
+                .transferToHost(result)
                 .execute();
         //@formatter:on
 
@@ -260,10 +268,10 @@ public class TestReductionsIntegers extends TornadoTestBase {
         });
 
         //@formatter:off
-		new TaskSchedule("s0")
-			.streamIn(input)
+		new TaskGraph("s0")
+			.transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
 			.task("t0", TestReductionsIntegers::reductionAnnotation2, input, result)
-			.streamOut(result)
+			.transferToHost(result)
 			.execute();
 		//@formatter:on
 
@@ -283,10 +291,10 @@ public class TestReductionsIntegers extends TornadoTestBase {
             input[i] = 2;
         });
 
-        new TaskSchedule("s0") //
-                .streamIn(input) //
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestReductionsIntegers::reductionAnnotationConstant, input, result) //
-                .streamOut(result) //
+                .transferToHost(result) //
                 .execute(); //
 
         int[] sequential = new int[1];
@@ -306,10 +314,10 @@ public class TestReductionsIntegers extends TornadoTestBase {
         Arrays.fill(result, neutral);
 
         //@formatter:off
-        new TaskSchedule("s0")
-            .streamIn(input)
+        new TaskGraph("s0")
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsIntegers::multReductionAnnotation, input, result)
-            .streamOut(result)
+            .transferToHost(result)
             .execute();
         //@formatter:on
 
@@ -335,10 +343,10 @@ public class TestReductionsIntegers extends TornadoTestBase {
         Arrays.fill(result, neutral);
 
         //@formatter:off
-        new TaskSchedule("s0")
-            .streamIn(input)
+        new TaskGraph("s0")
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsIntegers::maxReductionAnnotation, input, result, neutral)
-            .streamOut(result)
+            .transferToHost(result)
             .execute();
         //@formatter:on
 
@@ -358,12 +366,11 @@ public class TestReductionsIntegers extends TornadoTestBase {
         int[] result = new int[1];
         Arrays.fill(result, Integer.MAX_VALUE);
 
-        //@formatter:off
-        new TaskSchedule("s0")
-            .task("t0", TestReductionsIntegers::minReductionAnnotation, input, result)
-            .streamOut(result)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
+                .task("t0", TestReductionsIntegers::minReductionAnnotation, input, result) //
+                .transferToHost(result) //
+                .execute();
 
         int[] sequential = new int[] { Integer.MAX_VALUE };
         minReductionAnnotation(input, sequential);
@@ -382,10 +389,10 @@ public class TestReductionsIntegers extends TornadoTestBase {
         });
 
         //@formatter:off
-        new TaskSchedule("s0")
-            .streamIn(input)
+        new TaskGraph("s0")
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsIntegers::reductionSequentialSmall, input, result)
-            .streamOut(result)
+            .transferToHost(result)
             .execute();
         //@formatter:on
 
@@ -406,10 +413,10 @@ public class TestReductionsIntegers extends TornadoTestBase {
         });
 
         //@formatter:off
-        new TaskSchedule("s0")
-            .streamIn(input)
+        new TaskGraph("s0")
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsIntegers::reduction01, input, result)
-            .streamOut(result)
+            .transferToHost(result)
             .execute();
         //@formatter:on
 
@@ -432,11 +439,11 @@ public class TestReductionsIntegers extends TornadoTestBase {
         });
 
         //@formatter:off
-        new TaskSchedule("s0")
-            .streamIn(a, b, c)
+        new TaskGraph("s0")
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c)
             .task("t0", TestReductionsIntegers::map01, a, b, c)
             .task("t1", TestReductionsIntegers::reduce01, c, result)
-            .streamOut(result)
+            .transferToHost(result)
             .execute();
         //@formatter:on
 
@@ -459,11 +466,11 @@ public class TestReductionsIntegers extends TornadoTestBase {
         });
 
         //@formatter:off
-        new TaskSchedule("s0")
-            .streamIn(a, b)
+        new TaskGraph("s0")
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
             .task("t0", TestReductionsIntegers::map02, a, b)
             .task("t1", TestReductionsIntegers::reduce02, b, result)
-            .streamOut(result)
+            .transferToHost(result)
             .execute();
         //@formatter:on
 
@@ -493,10 +500,10 @@ public class TestReductionsIntegers extends TornadoTestBase {
         });
 
         //@formatter:off
-        new TaskSchedule("s0")
-            .streamIn(a, b, c)
+        new TaskGraph("s0")
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c)
             .task("t0", TestReductionsIntegers::mapReduce01, a, b, c, result)
-            .streamOut(result)
+            .transferToHost(result)
             .execute();
         //@formatter:on
 
@@ -518,10 +525,10 @@ public class TestReductionsIntegers extends TornadoTestBase {
         });
 
         //@formatter:off
-	    new TaskSchedule("s0")
-	         .streamIn(a)
+	    new TaskGraph("s0")
+	         .transferToDevice(DataTransferMode.EVERY_EXECUTION, a)
 	         .task("t0", TestReductionsIntegers::mapReduce2, a, b, result)
-	         .streamOut(result)
+	         .transferToHost(result)
 	         .execute();
 	    //@formatter:on
 
@@ -541,13 +548,13 @@ public class TestReductionsIntegers extends TornadoTestBase {
         });
 
         //@formatter:off
-        TaskSchedule task = new TaskSchedule("s0")
-            .streamIn(input)
+        TaskGraph taskGraph = new TaskGraph("s0")
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
             .task("t0", TestReductionsIntegers::reductionAddInts2, input, result)
-            .streamOut(result);
+            .transferToHost(result);
         //@formatter:on
 
-        task.execute();
+        taskGraph.execute();
 
         int[] sequential = new int[1];
         reductionAddInts2(input, sequential);
@@ -568,13 +575,13 @@ public class TestReductionsIntegers extends TornadoTestBase {
         });
 
         //@formatter:off
-        TaskSchedule task = new TaskSchedule("s0")
-            .streamIn(inputA, inputB)
+        TaskGraph taskGraph = new TaskGraph("s0")
+            .transferToDevice(DataTransferMode.EVERY_EXECUTION, inputA, inputB)
             .task("t0", TestReductionsIntegers::reductionAddInts3, inputA, inputB, result)
-            .streamOut(result);
+            .transferToHost(result);
         //@formatter:on
 
-        task.execute();
+        taskGraph.execute();
 
         int[] sequential = new int[1];
         reductionAddInts3(inputA, inputB, sequential);
@@ -594,10 +601,10 @@ public class TestReductionsIntegers extends TornadoTestBase {
         Arrays.fill(result, neutral);
 
         //@formatter:off
-        new TaskSchedule("s0")
-                .streamIn(input)
+        new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
                 .task("t0", TestReductionsIntegers::maxReductionAnnotation2, input, result, neutral)
-                .streamOut(result)
+                .transferToHost(result)
                 .execute();
         //@formatter:on
 
@@ -619,10 +626,10 @@ public class TestReductionsIntegers extends TornadoTestBase {
         Arrays.fill(result, Integer.MAX_VALUE);
 
         //@formatter:off
-        new TaskSchedule("s0")
-                .streamIn(input)
+        new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
                 .task("t0", TestReductionsIntegers::minReductionAnnotation2, input, result, Integer.MAX_VALUE)
-                .streamOut(result)
+                .transferToHost(result)
                 .execute();
         //@formatter:on
 

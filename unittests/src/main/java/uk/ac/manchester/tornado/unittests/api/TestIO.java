@@ -17,15 +17,17 @@
  */
 package uk.ac.manchester.tornado.unittests.api;
 
-import org.junit.Test;
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.unittests.arrays.TestArrays;
-import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import org.junit.Test;
+
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.unittests.arrays.TestArrays;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestIO extends TornadoTestBase {
 
@@ -40,9 +42,9 @@ public class TestIO extends TornadoTestBase {
 
     /**
      * This test case uses the forceCopyIn method of the
-     * {@link uk.ac.manchester.tornado.api.TaskSchedule} API to pass input data to a
+     * {@link uk.ac.manchester.tornado.api.TaskGraph} API to pass input data to a
      * targeted device.
-     * 
+     *
      * This method is used to copy data once and reuse it in the next invocations.
      */
     @Test
@@ -53,12 +55,12 @@ public class TestIO extends TornadoTestBase {
         float[] arrayB = createAndInitializeArray(N);
         float[] arrayC = new float[N];
 
-        TaskSchedule s0 = new TaskSchedule("s0");
+        TaskGraph s0 = new TaskGraph("s0");
         assertNotNull(s0);
 
-        s0.forceCopyIn(arrayA, arrayB);
+        s0.transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA, arrayB);
         s0.task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC);
-        s0.streamOut(arrayC);
+        s0.transferToHost(arrayC);
 
         for (int i = 0; i < 4; i++) {
             s0.execute();
@@ -71,9 +73,9 @@ public class TestIO extends TornadoTestBase {
 
     /**
      * This test case uses the streamIn method of the
-     * {@link uk.ac.manchester.tornado.api.TaskSchedule} API to pass input data to a
+     * {@link uk.ac.manchester.tornado.api.TaskGraph} API to pass input data to a
      * targeted device.
-     * 
+     *
      * This method is used to stream data every time a method is launched for
      * execution.
      */
@@ -85,12 +87,12 @@ public class TestIO extends TornadoTestBase {
         float[] arrayB = createAndInitializeArray(N);
         float[] arrayC = new float[N];
 
-        TaskSchedule s0 = new TaskSchedule("s0");
+        TaskGraph s0 = new TaskGraph("s0");
         assertNotNull(s0);
 
-        s0.streamIn(arrayA, arrayB);
+        s0.transferToDevice(DataTransferMode.EVERY_EXECUTION, arrayA, arrayB);
         s0.task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC);
-        s0.streamOut(arrayC);
+        s0.transferToHost(arrayC);
 
         for (int i = 0; i < 4; i++) {
             s0.execute();
@@ -103,9 +105,9 @@ public class TestIO extends TornadoTestBase {
 
     /**
      * This test case uses the streamIn method of the
-     * {@link uk.ac.manchester.tornado.api.TaskSchedule} API to pass input data to a
+     * {@link uk.ac.manchester.tornado.api.TaskGraph} API to pass input data to a
      * targeted device.
-     * 
+     *
      * Additionally, the lockObjectsInMemory method is used to pin buffers used for
      * streaming data to a device. Buffers used for locked arguments will be created
      * and allocated once and will be reused in the next invocations. The pinned
@@ -119,13 +121,13 @@ public class TestIO extends TornadoTestBase {
         float[] arrayB = createAndInitializeArray(N);
         float[] arrayC = new float[N];
 
-        TaskSchedule s0 = new TaskSchedule("s0");
+        TaskGraph s0 = new TaskGraph("s0");
         assertNotNull(s0);
 
         s0.lockObjectsInMemory(arrayA, arrayB, arrayC);
-        s0.streamIn(arrayA, arrayB);
+        s0.transferToDevice(DataTransferMode.EVERY_EXECUTION, arrayA, arrayB);
         s0.task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC);
-        s0.streamOut(arrayC);
+        s0.transferToHost(arrayC);
 
         for (int i = 0; i < 4; i++) {
             s0.execute();
@@ -140,14 +142,14 @@ public class TestIO extends TornadoTestBase {
 
     /**
      * This test case uses the streamIn method of the
-     * {@link uk.ac.manchester.tornado.api.TaskSchedule} API to pass input data to a
+     * {@link uk.ac.manchester.tornado.api.TaskGraph} API to pass input data to a
      * targeted device.
      *
      * Additionally, the lockObjectsInMemory method is used to pin buffers used for
      * streaming data to a device. Buffers used for locked arguments will be created
      * and allocated once and will be reused in the next invocations. The pinned
      * buffers are released by the unlockObjectsFromMemory method.
-     * 
+     *
      * In this test case, arrayB2 is used to update the reference of the arrayB
      * parameter of the vectorAddFloat task. As arrayB is created once and reused by
      * the updateReference method, the buffer for this object is created and
@@ -166,18 +168,18 @@ public class TestIO extends TornadoTestBase {
             arrayB[idx] = 2 * idx;
         });
 
-        TaskSchedule s0 = new TaskSchedule("s0");
+        TaskGraph s0 = new TaskGraph("s0");
         assertNotNull(s0);
 
         s0.lockObjectsInMemory(arrayA, arrayB, arrayB2, arrayC);
-        s0.streamIn(arrayA, arrayB);
+        s0.transferToDevice(DataTransferMode.EVERY_EXECUTION, arrayA, arrayB);
         s0.task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC);
-        s0.streamOut(arrayC);
+        s0.transferToHost(arrayC);
 
         for (int i = 0; i < 4; i++) {
-            s0.updateReference(arrayB, arrayB2);
+            s0.replaceParameter(arrayB, arrayB2);
             s0.execute();
-            s0.updateReference(arrayB2, arrayB);
+            s0.replaceParameter(arrayB2, arrayB);
         }
 
         s0.unlockObjectsFromMemory(arrayA, arrayB, arrayC);
@@ -189,7 +191,7 @@ public class TestIO extends TornadoTestBase {
 
     /**
      * This test case uses the streamIn method of the
-     * {@link uk.ac.manchester.tornado.api.TaskSchedule} API to pass input data to a
+     * {@link uk.ac.manchester.tornado.api.TaskGraph} API to pass input data to a
      * targeted device.
      *
      * Additionally, the lockObjectsInMemory method is used to pin buffers used for
@@ -214,19 +216,19 @@ public class TestIO extends TornadoTestBase {
             arrayB[idx] = 2 * idx;
         });
 
-        TaskSchedule s0 = new TaskSchedule("s0");
+        TaskGraph s0 = new TaskGraph("s0");
         assertNotNull(s0);
 
         s0.lockObjectsInMemory(arrayA, arrayB, arrayC);
-        s0.streamIn(arrayA, arrayB);
+        s0.transferToDevice(DataTransferMode.EVERY_EXECUTION, arrayA, arrayB);
         s0.task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC);
-        s0.streamOut(arrayC);
+        s0.transferToHost(arrayC);
 
         for (int i = 0; i < 4; i++) {
             float[] arrayB2 = createAndInitializeArray(N);
-            s0.updateReference(arrayB, arrayB2);
+            s0.replaceParameter(arrayB, arrayB2);
             s0.execute();
-            s0.updateReference(arrayB2, arrayB);
+            s0.replaceParameter(arrayB2, arrayB);
         }
 
         s0.unlockObjectsFromMemory(arrayA, arrayB, arrayC);

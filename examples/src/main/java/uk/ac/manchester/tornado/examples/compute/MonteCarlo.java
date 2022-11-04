@@ -1,32 +1,38 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.examples.compute;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 /**
  * Montecarlo algorithm to approximate the PI value. This version has been
  * adapted from Marawacc test-suite.
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MonteCarlo
+ * </code>
  *
  */
-public class Montecarlo {
+public class MonteCarlo {
 
     private static void computeMontecarlo(float[] output, final int iterations) {
         for (@Parallel int j = 0; j < iterations; j++) {
@@ -56,10 +62,12 @@ public class Montecarlo {
         float[] output = new float[size];
         float[] seq = new float[size];
 
-        TaskSchedule t0 = new TaskSchedule("s0").task("t0", Montecarlo::computeMontecarlo, output, size).streamOut(output);
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .task("taskGraph", MonteCarlo::computeMontecarlo, output, size) //
+                .transferToHost(output);
 
         long start = System.nanoTime();
-        t0.execute();
+        taskGraph.execute();
         long end = System.nanoTime();
         long tornadoTime = (end - start);
 

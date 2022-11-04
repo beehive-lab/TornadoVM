@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,11 +17,20 @@
  */
 package uk.ac.manchester.tornado.benchmarks.euler;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner euler
+ * </code>
+ */
 public class EulerTornado extends BenchmarkDriver {
 
     private int size;
@@ -53,10 +62,10 @@ public class EulerTornado extends BenchmarkDriver {
         outputC = new long[size];
         outputD = new long[size];
         outputE = new long[size];
-        ts = new TaskSchedule("benchmark") //
-                .streamIn(input) //
+        taskGraph = new TaskGraph("benchmark") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("euler", ComputeKernels::euler, size, input, outputA, outputB, outputC, outputD, outputE) //
-                .streamOut(outputA, outputB, outputC, outputD, outputE);
+                .transferToHost(outputA, outputB, outputC, outputD, outputE);
     }
 
     @Override
@@ -85,11 +94,11 @@ public class EulerTornado extends BenchmarkDriver {
     }
 
     private void runParallel(int size, long[] input, long[] outputA, long[] outputB, long[] outputC, long[] outputD, long[] outputE, TornadoDevice device) {
-        TaskSchedule ts = new TaskSchedule("s0") //
+        TaskGraph graph = new TaskGraph("s0") //
                 .task("s0", ComputeKernels::euler, size, input, outputA, outputB, outputC, outputD, outputE) //
-                .streamOut(outputA, outputB, outputC, outputD, outputE);
-        ts.mapAllTo(device);
-        ts.execute();
+                .transferToHost(outputA, outputB, outputC, outputD, outputE);
+        graph.mapAllTo(device);
+        graph.execute();
     }
 
     @Override
@@ -133,7 +142,7 @@ public class EulerTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        ts.mapAllTo(device);
-        ts.execute();
+        taskGraph.mapAllTo(device);
+        taskGraph.execute();
     }
 }

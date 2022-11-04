@@ -1,19 +1,19 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 package uk.ac.manchester.tornado.unittests.logic;
 
@@ -24,10 +24,19 @@ import java.util.stream.IntStream;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to test?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.logic.TestLogic
+ * </code>
+ */
 public class TestLogic extends TornadoTestBase {
 
     public static void logic01(int[] data, int[] output) {
@@ -72,13 +81,12 @@ public class TestLogic extends TornadoTestBase {
 
         IntStream.range(0, data.length).sequential().forEach(i -> data[i] = i);
 
-        TaskSchedule s0 = new TaskSchedule("s0");
+        TaskGraph taskGraph = new TaskGraph("taskGraph") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestLogic::logic01, data, output) //
+                .transferToHost(output);
 
-        // @formatter:off
-        s0.task("t0", TestLogic::logic01, data, output)
-          .streamOut(output);
-        // @formatter:on
-        s0.execute();
+        taskGraph.execute();
 
         logic01(data, sequential);
 
@@ -97,13 +105,12 @@ public class TestLogic extends TornadoTestBase {
 
         IntStream.range(0, data.length).sequential().forEach(i -> data[i] = i);
 
-        TaskSchedule s0 = new TaskSchedule("s0");
+        TaskGraph taskGraph = new TaskGraph("taskGraph") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestLogic::logic02, data, output) //
+                .transferToHost(output);
 
-        // @formatter:off
-        s0.task("t0", TestLogic::logic02, data, output)
-          .streamOut(output);
-        // @formatter:on
-        s0.execute();
+        taskGraph.execute();
 
         logic02(data, sequential);
 
@@ -121,13 +128,12 @@ public class TestLogic extends TornadoTestBase {
 
         IntStream.range(0, data.length).sequential().forEach(i -> data[i] = i);
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-
-        // @formatter:off
-        s0.task("t0", TestLogic::logic03, data, output)
-                .streamOut(output);
+        TaskGraph taskGraph = new TaskGraph("taskGraph") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestLogic::logic03, data, output) //
+                .transferToHost(output);
         // @formatter:on
-        s0.execute();
+        taskGraph.execute();
 
         logic03(data, sequential);
 
@@ -145,20 +151,18 @@ public class TestLogic extends TornadoTestBase {
 
         IntStream.range(0, data.length).sequential().forEach(i -> data[i] = i);
 
-        TaskSchedule s0 = new TaskSchedule("s0");
+        TaskGraph taskGraph = new TaskGraph("taskGraph") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestLogic::logic04, data, output) //
+                .transferToHost(output);
 
-        // @formatter:off
-        s0.task("t0", TestLogic::logic04, data, output)
-          .streamOut(output);
-        // @formatter:on
-        s0.execute();
+        taskGraph.execute();
 
         logic04(data, sequential);
 
         for (int i = 0; i < data.length; i++) {
             assertEquals(sequential[i], output[i]);
         }
-
     }
 
 }

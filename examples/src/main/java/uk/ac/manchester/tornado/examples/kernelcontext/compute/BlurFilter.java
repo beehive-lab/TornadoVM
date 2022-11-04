@@ -17,14 +17,6 @@
  */
 package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 
-import uk.ac.manchester.tornado.api.GridScheduler;
-import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.WorkerGrid;
-import uk.ac.manchester.tornado.api.WorkerGrid2D;
-
-import javax.imageio.ImageIO;
-import javax.swing.JFrame;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -35,18 +27,29 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
+import javax.imageio.ImageIO;
+import javax.swing.JFrame;
+
+import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid2D;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+
 /**
  * It applies a Blur filter to an input image. Algorithm taken from CUDA course
  * CS344 in Udacity.
  *
+ * <p>
  * Example borrowed from the Marawacc parallel programming framework with the
  * permission from the author.
- *
- *
+ * </p>
+ * <p>
  * How to run?
- *
+ * </p>
  * <code>
- * $ tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.compute.BlurFilter 
+ *      $ tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.compute.BlurFilter
  * </code>
  *
  *
@@ -159,11 +162,12 @@ public class BlurFilter {
             gridScheduler.setWorkerGrid("blur.green", workerGrid);
             gridScheduler.setWorkerGrid("blur.blue", workerGrid);
             KernelContext context = new KernelContext();
-            TaskSchedule parallelFilter = new TaskSchedule("blur") //
+            TaskGraph parallelFilter = new TaskGraph("blur") //
+                    .transferToDevice(DataTransferMode.FIRST_EXECUTION, redChannel, greenChannel, blueChannel, filter) //
                     .task("red", BlurFilterImage::compute, context, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
                     .task("green", BlurFilterImage::compute, context, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
                     .task("blue", BlurFilterImage::compute, context, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
-                    .streamOut(redFilter, greenFilter, blueFilter) //
+                    .transferToHost(redFilter, greenFilter, blueFilter) //
                     .useDefaultThreadScheduler(true);
 
             workerGrid.setGlobalWork(h, w, 1);

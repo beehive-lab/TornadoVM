@@ -1,19 +1,19 @@
 /*
  * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.examples.compute;
@@ -22,9 +22,18 @@ import static uk.ac.manchester.tornado.api.profiler.ChromeEventTracer.enqueueTas
 
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.NBody
+ * </code>
+ */
 public class NBody {
 
     private static boolean VALIDATION = true;
@@ -135,19 +144,18 @@ public class NBody {
 
         long timeSequential = (end - start);
 
-        System.out.println(resultsIterations.toString());
+        System.out.println(resultsIterations);
 
-        // @formatter:off
-            final TaskSchedule t0 = new TaskSchedule("s0")
-                    .task("t0", NBody::nBody, numBodies, posTornadoVM, velTornadoVM, delT, espSqr);
-            // @formatter:on
+        final TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, posTornadoVM, velTornadoVM) //
+                .task("t0", NBody::nBody, numBodies, posTornadoVM, velTornadoVM, delT, espSqr);
 
         resultsIterations = new StringBuffer();
 
         for (int i = 0; i < iterations; i++) {
             // System.gc();
             start = System.nanoTime();
-            t0.execute();
+            taskGraph.execute();
             end = System.nanoTime();
             enqueueTaskIfEnabled("nbody accelerated", start, end);
             resultsIterations.append("\tTornado execution time of iteration " + i + " is: " + (end - start) + " ns");

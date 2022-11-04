@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,11 +24,17 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- * tornado-test.py -V uk.ac.manchester.tornado.unittests.foundation.TestIntegers
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *      tornado-test.py -V uk.ac.manchester.tornado.unittests.foundation.TestIntegers
+ * </code>
  */
 public class TestIntegers extends TornadoTestBase {
 
@@ -37,9 +43,9 @@ public class TestIntegers extends TornadoTestBase {
         final int numElements = 256;
         int[] a = new int[numElements];
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::copyTestZero, a) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         assertEquals(50, a[0]);
@@ -53,10 +59,10 @@ public class TestIntegers extends TornadoTestBase {
         int[] expectedResult = new int[numElements];
         Arrays.fill(expectedResult, 50);
 
-        new TaskSchedule("s1") //
-                .streamIn(a) //
+        new TaskGraph("s1") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t1", TestKernels::copyTest, a) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         assertArrayEquals(expectedResult, a);
@@ -70,9 +76,10 @@ public class TestIntegers extends TornadoTestBase {
 
         Arrays.fill(b, 100);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b) //
                 .task("t0", TestKernels::copyTest2, a, b) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         assertArrayEquals(b, a);
@@ -88,9 +95,10 @@ public class TestIntegers extends TornadoTestBase {
         int[] expectedResult = new int[numElements];
         Arrays.fill(expectedResult, 150);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, b) //
                 .task("t0", TestKernels::compute, a, b) //
-                .streamOut(a) //
+                .transferToHost(a) //
                 .execute(); //
 
         assertArrayEquals(expectedResult, a);
@@ -109,11 +117,10 @@ public class TestIntegers extends TornadoTestBase {
         Arrays.fill(expectedResultA, 100);
         Arrays.fill(expectedResultB, 500);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
                 .task("t0", TestKernels::init, a, b) //
-                .streamOut(a, b) //
+                .transferToHost(a, b) //
                 .execute(); //
-
         assertArrayEquals(expectedResultA, a);
         assertArrayEquals(expectedResultB, b);
     }

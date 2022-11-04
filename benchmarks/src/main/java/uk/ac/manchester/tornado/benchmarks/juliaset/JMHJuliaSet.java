@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022 APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,9 +37,17 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
+/**
+ * <p>
+ * How to run in isolation?
+ * </p>
+ * <code>
+ *    tornado -jar benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.juliaset.JMHJuliaSet
+ * </code>
+ */
 public class JMHJuliaSet {
 
     @State(Scope.Thread)
@@ -48,18 +56,17 @@ public class JMHJuliaSet {
         int size = Integer.parseInt(System.getProperty("x", "8192"));
         float[] hue;
         float[] brightness;
-        TaskSchedule ts;
+        TaskGraph taskGraph;
 
         @Setup(Level.Trial)
         public void doSetup() {
             hue = new float[size * size];
             brightness = new float[size * size];
 
-            ts = new TaskSchedule("benchmark") //
-                    .streamIn(hue, brightness) //
+            taskGraph = new TaskGraph("benchmark") //
                     .task("juliaset", GraphicsKernels::juliaSetTornado, size, hue, brightness) //
-                    .streamOut(hue, brightness);
-            ts.warmup();
+                    .transferToHost(hue, brightness);
+            taskGraph.warmup();
         }
     }
 
@@ -80,9 +87,9 @@ public class JMHJuliaSet {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void juliaSetTornado(JMHJuliaSet.BenchmarkSetup state, Blackhole blackhole) {
-        TaskSchedule t = state.ts;
-        t.execute();
-        blackhole.consume(t);
+        TaskGraph taskGraph = state.taskGraph;
+        taskGraph.execute();
+        blackhole.consume(taskGraph);
     }
 
     public static void main(String[] args) throws RunnerException {

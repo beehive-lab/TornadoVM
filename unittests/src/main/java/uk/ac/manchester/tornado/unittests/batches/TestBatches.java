@@ -26,15 +26,25 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
 
+/**
+ * How to test?
+ *
+ * <code>
+ *     tornado-test -V --fast uk.ac.manchester.tornado.unittests.batches.TestBatches
+ * </code>
+ */
 public class TestBatches extends TornadoTestBase {
 
     public static void compute(float[] array) {
         for (@Parallel int i = 0; i < array.length; i++) {
+            // This assignment is on purpose for testing the whole array after merging all
+            // batches.
             array[i] = array[i];
         }
     }
@@ -91,14 +101,13 @@ public class TestBatches extends TornadoTestBase {
 
         IntStream.range(0, arrayA.length).sequential().forEach(idx -> arrayA[idx] = idx);
 
-        TaskSchedule ts = new TaskSchedule("s0");
+        TaskGraph taskGraph = new TaskGraph("s0");
 
-        // @formatter:off
-        ts.batch("100MB")   // Slots of 100 MB
-                .task("t0", TestBatches::compute, arrayA, arrayB)
-                .streamOut((Object) arrayB)
+        taskGraph.batch("100MB") // Slots of 100 MB
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA) //
+                .task("t0", TestBatches::compute, arrayA, arrayB) //
+                .transferToHost(arrayB) //
                 .execute();
-        // @formatter:on
 
         for (int i = 0; i < arrayB.length; i++) {
             assertEquals(arrayA[i] + 100, arrayB[i], 0.1f);
@@ -122,14 +131,13 @@ public class TestBatches extends TornadoTestBase {
         Random r = new Random();
         IntStream.range(0, arrayA.length).sequential().forEach(idx -> arrayA[idx] = r.nextFloat());
 
-        TaskSchedule ts = new TaskSchedule("s0");
+        TaskGraph taskGraph = new TaskGraph("s0");
 
-        // @formatter:off
-        ts.batch("300MB")   // Slots of 300 MB
-                .task("t0", TestBatches::compute, arrayA, arrayB)
-                .streamOut((Object) arrayB)
+        taskGraph.batch("300MB") // Slots of 300 MB
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA) //
+                .task("t0", TestBatches::compute, arrayA, arrayB) //
+                .transferToHost(arrayB) //
                 .execute();
-        // @formatter:on
 
         for (int i = 0; i < arrayB.length; i++) {
             assertEquals(arrayA[i] + 100, arrayB[i], 1.0f);
@@ -151,14 +159,13 @@ public class TestBatches extends TornadoTestBase {
 
         IntStream.range(0, arrayA.length).sequential().forEach(idx -> arrayA[idx] = idx);
 
-        TaskSchedule ts = new TaskSchedule("s0");
+        TaskGraph taskGraph = new TaskGraph("s0");
 
-        // @formatter:off
-        ts.batch("512MB")   // Slots of 512 MB
-                .task("t0", TestBatches::compute, arrayA)
-                .streamOut((Object) arrayA)
+        taskGraph.batch("512MB") // Slots of 512 MB
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA) //
+                .task("t0", TestBatches::compute, arrayA) //
+                .transferToHost(arrayA) //
                 .execute();
-        // @formatter:on
 
         for (int i = 0; i < arrayA.length; i++) {
             assertEquals(i, arrayA[i], 0.1f);
@@ -185,14 +192,13 @@ public class TestBatches extends TornadoTestBase {
             arrayB[idx] = idx;
         });
 
-        TaskSchedule ts = new TaskSchedule("s0");
+        TaskGraph taskGraph = new TaskGraph("s0");
 
-        // @formatter:off
-        ts.batch("50MB")   // Process Slots of 50 MB
-                .task("t0", TestBatches::compute, arrayA, arrayB, arrayC)
-                .streamOut((Object) arrayC)
+        taskGraph.batch("50MB") // Process Slots of 50 MB
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA, arrayB) //
+                .task("t0", TestBatches::compute, arrayA, arrayB, arrayC) //
+                .transferToHost(arrayC) //
                 .execute();
-        // @formatter:on
 
         for (int i = 0; i < arrayA.length; i++) {
             assertEquals(arrayA[i] + arrayB[i], arrayC[i], 0.1f);
@@ -219,14 +225,13 @@ public class TestBatches extends TornadoTestBase {
             arrayB[idx] = idx;
         });
 
-        TaskSchedule ts = new TaskSchedule("s0");
+        TaskGraph taskGraph = new TaskGraph("s0");
 
-        // @formatter:off
-        ts.batch("50MB")   // Process Slots of 50 MB
-                .task("t0", TestBatches::compute, arrayA, arrayB, arrayC)
-                .streamOut((Object) arrayC)
+        taskGraph.batch("50MB") // Process Slots of 50 MB
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA, arrayB) //
+                .task("t0", TestBatches::compute, arrayA, arrayB, arrayC) //
+                .transferToHost(arrayC) //
                 .execute();
-        // @formatter:on
 
         for (int i = 0; i < arrayA.length; i++) {
             assertEquals(arrayA[i] + arrayB[i], arrayC[i]);
@@ -254,14 +259,13 @@ public class TestBatches extends TornadoTestBase {
             arrayB[idx] = (short) r.nextInt(Short.MAX_VALUE / 2);
         });
 
-        TaskSchedule ts = new TaskSchedule("s0");
+        TaskGraph taskGraph = new TaskGraph("s0");
 
-        // @formatter:off
-        ts.batch("50MB")   // Process Slots of 50 MB
-                .task("t0", TestBatches::compute, arrayA, arrayB, arrayC)
-                .streamOut((Object) arrayC)
+        taskGraph.batch("50MB") // Process Slots of 50 MB
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA, arrayB) //
+                .task("t0", TestBatches::compute, arrayA, arrayB, arrayC) //
+                .transferToHost(arrayC) //
                 .execute();
-        // @formatter:on
 
         for (int i = 0; i < arrayA.length; i++) {
             assertEquals(arrayA[i] + arrayB[i], arrayC[i]);
@@ -287,14 +291,13 @@ public class TestBatches extends TornadoTestBase {
             arrayB[idx] = idx;
         });
 
-        TaskSchedule ts = new TaskSchedule("s0");
+        TaskGraph taskGraph = new TaskGraph("s0");
 
-        // @formatter:off
-        ts.batch("50MB")   // Process Slots of 50 MB
-                .task("t0", TestBatches::compute, arrayA, arrayB, arrayC)
-                .streamOut((Object) arrayC)
+        taskGraph.batch("50MB") // Process Slots of 50 MB
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA, arrayB) //
+                .task("t0", TestBatches::compute, arrayA, arrayB, arrayC) //
+                .transferToHost(arrayC) //
                 .execute();
-        // @formatter:on
 
         for (int i = 0; i < arrayA.length; i++) {
             assertEquals(arrayA[i] + arrayB[i], arrayC[i], 0.01);
@@ -321,14 +324,13 @@ public class TestBatches extends TornadoTestBase {
             arrayB[idx] = idx;
         });
 
-        TaskSchedule ts = new TaskSchedule("s0");
+        TaskGraph taskGraph = new TaskGraph("s0");
 
-        // @formatter:off
-        ts.batch("50MB")   // Process Slots of 50 MB
-                .task("t0", TestBatches::compute, arrayA, arrayB, arrayC)
-                .streamOut((Object) arrayC)
+        taskGraph.batch("50MB") // Process Slots of 50 MB
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA, arrayB) //
+                .task("t0", TestBatches::compute, arrayA, arrayB, arrayC) //
+                .transferToHost(arrayC) //
                 .execute();
-        // @formatter:on
 
         for (int i = 0; i < arrayA.length; i++) {
             assertEquals(arrayA[i] + arrayB[i], arrayC[i]);
@@ -342,13 +344,13 @@ public class TestBatches extends TornadoTestBase {
 
         switch (memSize) {
             case GB:
-                memThreshold = size * 1024 * 1024 * 1024;
+                memThreshold = (long) size * 1024 * 1024 * 1024;
                 break;
             case MB:
-                memThreshold = size * 1024 * 1024;
+                memThreshold = (long) size * 1024 * 1024;
                 break;
             case TB:
-                memThreshold = size * 1024 * 1024 * 1024 * 1024;
+                memThreshold = (long) size * 1024 * 1024 * 1024 * 1024;
                 break;
 
         }

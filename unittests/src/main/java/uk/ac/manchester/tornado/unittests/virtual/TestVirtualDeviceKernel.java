@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,12 +29,21 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V --jvm="-Dtornado.device.desc=virtual-device-GPU.json -Dtornado.print.kernel=True -Dtornado.virtual.device=True -Dtornado.print.kernel.dir=virtualKernelOut.out" uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel
+ * </code>
+ */
 public class TestVirtualDeviceKernel extends TornadoTestBase {
 
     private static final String SOURCE_DIR = System.getProperty("tornado.print.kernel.dir");
@@ -65,13 +74,11 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
 
         Arrays.fill(result, Float.MIN_VALUE);
 
-        //@formatter:off
-        new TaskSchedule("s0")
-                .streamIn(input)
-                .task("t0", TestVirtualDeviceKernel::maxReduction, input, result)
-                .streamOut(result)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t0", TestVirtualDeviceKernel::maxReduction, input, result) //
+                .transferToHost(result) //
                 .execute();
-        //@formatter:on
 
         String tornadoSDK = System.getenv("TORNADO_SDK");
         String filePath = tornadoSDK + "/examples/generated/virtualDevice/" + expectedCodeFile;

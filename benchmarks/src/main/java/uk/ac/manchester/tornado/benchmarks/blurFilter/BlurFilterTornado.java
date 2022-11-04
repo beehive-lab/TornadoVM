@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,11 +20,20 @@ package uk.ac.manchester.tornado.benchmarks.blurFilter;
 
 import java.util.Random;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner blurFilter
+ * </code>
+ */
 public class BlurFilterTornado extends BenchmarkDriver {
 
     private int size;
@@ -75,18 +84,18 @@ public class BlurFilterTornado extends BenchmarkDriver {
             }
         }
 
-        ts = new TaskSchedule("benchmark") //
-                .streamIn(redChannel, greenChannel, blueChannel) //
+        taskGraph = new TaskGraph("benchmark") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, redChannel, greenChannel, blueChannel, filter) //
                 .task("blurRed", ComputeKernels::channelConvolution, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
                 .task("blurGreen", ComputeKernels::channelConvolution, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
                 .task("blurBlue", ComputeKernels::channelConvolution, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
-                .streamOut(redFilter, greenFilter, blueFilter) //
+                .transferToHost(redFilter, greenFilter, blueFilter) //
                 .useDefaultThreadScheduler(true);
     }
 
     @Override
     public void tearDown() {
-        ts.dumpProfiles();
+        taskGraph.dumpProfiles();
         redChannel = null;
         greenChannel = null;
         blueChannel = null;
@@ -134,12 +143,12 @@ public class BlurFilterTornado extends BenchmarkDriver {
             }
         }
 
-        TaskSchedule parallelFilter = new TaskSchedule("blur") //
-                .streamIn(redChannel, greenChannel, blueChannel) //
+        TaskGraph parallelFilter = new TaskGraph("blur") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, redChannel, greenChannel, blueChannel, filter) //
                 .task("red", ComputeKernels::channelConvolution, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
                 .task("green", ComputeKernels::channelConvolution, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
                 .task("blue", ComputeKernels::channelConvolution, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
-                .streamOut(redFilter, greenFilter, blueFilter);
+                .transferToHost(redFilter, greenFilter, blueFilter);
 
         parallelFilter.execute();
 
@@ -168,7 +177,7 @@ public class BlurFilterTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        ts.mapAllTo(device);
-        ts.execute();
+        taskGraph.mapAllTo(device);
+        taskGraph.execute();
     }
 }

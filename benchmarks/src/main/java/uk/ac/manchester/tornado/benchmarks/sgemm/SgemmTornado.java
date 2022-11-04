@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,15 +23,24 @@ import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.sgemm;
 import java.util.Random;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner sgemm
+ * </code>
+ */
 public class SgemmTornado extends BenchmarkDriver {
 
     private final int m;
@@ -73,12 +82,12 @@ public class SgemmTornado extends BenchmarkDriver {
             grid.setWorkerGrid("benchmark.sgemm", worker);
         }
 
-        ts = new TaskSchedule("benchmark");
+        taskGraph = new TaskGraph("benchmark");
         if (!USE_PREBUILT) {
-            ts.streamIn(a, b);
-            ts.task("sgemm", LinearAlgebraArrays::sgemm, m, n, n, a, b, c);
-            ts.streamOut(c);
-            ts.warmup();
+            taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b);
+            taskGraph.task("sgemm", LinearAlgebraArrays::sgemm, m, n, n, a, b, c);
+            taskGraph.transferToHost(c);
+            taskGraph.warmup();
         } else {
             String filePath = "/tmp/mxmFloat.spv";
 
@@ -91,38 +100,38 @@ public class SgemmTornado extends BenchmarkDriver {
                 }
             }
 
-            // @formatter:off
-            ts.prebuiltTask("t0",
-            "sgemm",
-                filePath,
-                new Object[]{m, n, n, a, b, c},
-                new Access[]{Access.READ, Access.READ,Access.READ,Access.READ, Access.READ, Access.WRITE},
-                device,
-                new int[]{ n, n })
-                .streamOut(c);
-            // @formatter:on
+            taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                    .prebuiltTask("t0", //
+                            "sgemm", //
+                            filePath, //
+                            new Object[] { m, n, n, a, b, c }, //
+                            new Access[] { Access.READ, Access.READ, Access.READ, Access.READ, Access.READ, Access.WRITE }, //
+                            device, //
+                            new int[] { n, n })//
+                    .transferToHost(c);
+
         }
     }
 
     @Override
     public void tearDown() {
-        ts.dumpProfiles();
+        taskGraph.dumpProfiles();
 
         a = null;
         b = null;
         c = null;
 
-        ts.getDevice().reset();
+        taskGraph.getDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        ts.mapAllTo(device);
+        taskGraph.mapAllTo(device);
         if (grid == null) {
-            ts.execute();
+            taskGraph.execute();
         } else {
-            ts.execute(grid);
+            taskGraph.execute(grid);
         }
     }
 
@@ -133,8 +142,8 @@ public class SgemmTornado extends BenchmarkDriver {
         boolean val = true;
 
         benchmarkMethod(device);
-        ts.syncObjects(c);
-        ts.clearProfiles();
+        taskGraph.syncObjects(c);
+        taskGraph.clearProfiles();
 
         sgemm(m, n, m, a, b, result);
 

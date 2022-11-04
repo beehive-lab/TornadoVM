@@ -113,11 +113,11 @@ public class Compute {
     }
 
     public void run(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
-        TaskSchedule ts = new TaskSchedule("s0")
+        TaskGraph taskGraph = new TaskGraph("s0")
                 .streamIn(A, B)                               // Stream data from host to device
                 .task("t0", Compute::mxmLoop, A, B, C, size)  // Each task points to an existing Java method
                 .streamOut(C);                                // sync arrays with the host side
-        ts.execute();   // It will execute the code on the default device (e.g. a GPU)
+        taskGraph.execute();   // It will execute the code on the default device (e.g. a GPU)
     }
 }
 ```
@@ -152,17 +152,17 @@ public class Compute {
         KernelContext context = new KernelContext();             // Create a context
         workerGrid.setLocalWork(32, 32, 1);                      // Set the local-group size
 
-        TaskSchedule ts = new TaskSchedule("s0")
+        TaskGraph taskGraph = new TaskGraph("s0")
                 .streamIn(A, B)                                 // Stream data from host to device
                 .task("t0", Compute::mxmKernel, context, A, B, C, size)  // Each task points to an existing Java method
                 .streamOut(C);                                  // sync arrays with the host side
-        ts.execute(gridScheduler);   // Execute with a GridScheduler
+        taskGraph.execute(gridScheduler);   // Execute with a GridScheduler
     }
 }
 ```
 
 Additionally, the two modes of expressing parallelism (kernel and loop parallelization) can be combined in the same
-task-schedule object.
+task graph object.
 
 ## 4. Dynamic Reconfiguration
 

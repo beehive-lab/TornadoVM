@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022 APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,14 +25,21 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * The unit-tests in this class check that the {@link KernelContext} parameter
  * can be passed in any sequence.
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test.py -V uk.ac.manchester.tornado.unittests.kernelcontext.api.TestVectorAdditionKernelContext
+ * </code>
  */
 public class TestVectorAdditionKernelContext extends TornadoTestBase {
     public static void vectorAddJava(int[] a, int[] b, int[] c) {
@@ -72,15 +79,15 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
-                .streamIn(a, b) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, context, a, b, cTornado) //
-                .streamOut(cTornado);
+                .transferToHost(cTornado);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWorkToNull();
 
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         vectorAddJava(a, b, cJava);
 
@@ -105,11 +112,11 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         gridScheduler.setWorkerGrid("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
-                .streamIn(a, b) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, a, context, b, cTornado) //
-                .streamOut(cTornado);
-        s0.execute(gridScheduler);
+                .transferToHost(cTornado);
+        taskGraph.execute(gridScheduler);
 
         vectorAddJava(a, b, cJava);
 
@@ -134,11 +141,11 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         gridScheduler.setWorkerGrid("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
-                .streamIn(a, b) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, a, b, context, cTornado) //
-                .streamOut(cTornado);
-        s0.execute(gridScheduler);
+                .transferToHost(cTornado);
+        taskGraph.execute(gridScheduler);
 
         vectorAddJava(a, b, cJava);
 
@@ -163,11 +170,11 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         gridScheduler.setWorkerGrid("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
-                .streamIn(a, b) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, a, b, cTornado, context) //
-                .streamOut(cTornado);
-        s0.execute(gridScheduler);
+                .transferToHost(cTornado);
+        taskGraph.execute(gridScheduler);
 
         vectorAddJava(a, b, cJava);
 
@@ -191,17 +198,17 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
-                .streamIn(a, b) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, context, a, b, cTornado) //
-                .streamOut(cTornado);
+                .transferToHost(cTornado);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWorkToNull();
 
-        s0.warmup();
+        taskGraph.warmup();
 
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         vectorAddJava(a, b, cJava);
 

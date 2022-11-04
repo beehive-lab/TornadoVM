@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,11 @@
  *
  */
 package uk.ac.manchester.tornado.benchmarks.dgemm;
+
+import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.dgemm;
+
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -34,14 +39,19 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-
-import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.dgemm;
-
+/**
+ * <p>
+ * How to run in isolation?
+ * </p>
+ * <code>
+ *    tornado -jar benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.dgemm.JMHGemm
+ * </code>
+ */
 public class JMHGemm {
     @State(Scope.Thread)
     public static class BenchmarkSetup {
@@ -50,7 +60,7 @@ public class JMHGemm {
         double[] a;
         double[] b;
         double[] c;
-        TaskSchedule ts;
+        TaskGraph taskGraph;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -69,11 +79,11 @@ public class JMHGemm {
                 b[i] = random.nextFloat();
             }
 
-            ts = new TaskSchedule("benchmark")//
-                    .streamIn(a, b) //
+            taskGraph = new TaskGraph("benchmark")//
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                     .task("dgemm", LinearAlgebraArrays::dgemm, m, n, n, a, b, c) //
-                    .streamOut(c);
-            ts.warmup();
+                    .transferToHost(c);
+            taskGraph.warmup();
 
         }
     }
@@ -95,9 +105,9 @@ public class JMHGemm {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void gemmTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskSchedule t = state.ts;
-        t.execute();
-        blackhole.consume(t);
+        TaskGraph taskGraph = state.taskGraph;
+        taskGraph.execute();
+        blackhole.consume(taskGraph);
     }
 
     public static void main(String[] args) throws RunnerException {

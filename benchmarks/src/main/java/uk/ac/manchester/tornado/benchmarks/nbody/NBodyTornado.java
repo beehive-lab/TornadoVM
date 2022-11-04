@@ -1,19 +1,19 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.benchmarks.nbody;
@@ -23,11 +23,20 @@ import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.nBody;
 
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner nbody
+ * </code>
+ */
 public class NBodyTornado extends BenchmarkDriver {
     private float delT;
     private float espSqr;
@@ -65,20 +74,20 @@ public class NBodyTornado extends BenchmarkDriver {
             System.arraycopy(auxVelocityZero, 0, velSeq, 0, auxVelocityZero.length);
         }
 
-        ts = new TaskSchedule("benchmark");
-        ts.streamIn(velSeq, posSeq) //
+        taskGraph = new TaskGraph("benchmark");
+        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, velSeq, posSeq) //
                 .task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
-        ts.warmup();
+        taskGraph.warmup();
     }
 
     @Override
     public void tearDown() {
-        ts.dumpProfiles();
+        taskGraph.dumpProfiles();
 
         posSeq = null;
         velSeq = null;
 
-        ts.getDevice().reset();
+        taskGraph.getDevice().reset();
         super.tearDown();
     }
 
@@ -111,13 +120,13 @@ public class NBodyTornado extends BenchmarkDriver {
             velSeq[i] = auxVelocityZero[i];
             velSeqSeq[i] = auxVelocityZero[i];
         }
-        ts = new TaskSchedule("benchmark");
-        ts.task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
-        ts.mapAllTo(device);
-        ts.warmup();
-        ts.execute();
-        ts.syncObjects(posSeq, velSeq);
-        ts.clearProfiles();
+        taskGraph = new TaskGraph("benchmark");
+        taskGraph.task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
+        taskGraph.mapAllTo(device);
+        taskGraph.warmup();
+        taskGraph.execute();
+        taskGraph.syncObjects(posSeq, velSeq);
+        taskGraph.clearProfiles();
 
         nBody(numBodies, posSeqSeq, velSeqSeq, delT, espSqr);
 
@@ -137,7 +146,7 @@ public class NBodyTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        ts.mapAllTo(device);
-        ts.execute();
+        taskGraph.mapAllTo(device);
+        taskGraph.execute();
     }
 }

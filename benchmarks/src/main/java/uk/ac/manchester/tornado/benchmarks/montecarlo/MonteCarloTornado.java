@@ -1,31 +1,39 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.benchmarks.montecarlo;
 
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner montecarlo
+ * </code>
+ */
 public class MonteCarloTornado extends BenchmarkDriver {
 
     private float[] output;
@@ -39,24 +47,24 @@ public class MonteCarloTornado extends BenchmarkDriver {
     @Override
     public void setUp() {
         output = new float[size];
-        ts = new TaskSchedule("benchmark") //
+        taskGraph = new TaskGraph("benchmark") //
                 .task("montecarlo", ComputeKernels::monteCarlo, output, size) //
-                .streamOut(output);
-        ts.warmup();
+                .transferToHost(output);
+        taskGraph.warmup();
     }
 
     @Override
     public void tearDown() {
-        ts.dumpProfiles();
+        taskGraph.dumpProfiles();
         output = null;
-        ts.getDevice().reset();
+        taskGraph.getDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        ts.mapAllTo(device);
-        ts.execute();
+        taskGraph.mapAllTo(device);
+        taskGraph.execute();
     }
 
     @Override
@@ -67,13 +75,13 @@ public class MonteCarloTornado extends BenchmarkDriver {
         result = new float[size];
 
         ComputeKernels.monteCarlo(result, size);
-        ts.warmup();
-        ts.mapAllTo(device);
+        taskGraph.warmup();
+        taskGraph.mapAllTo(device);
         for (int i = 0; i < 3; i++) {
-            ts.execute();
+            taskGraph.execute();
         }
-        ts.syncObjects(output);
-        ts.clearProfiles();
+        taskGraph.syncObjects(output);
+        taskGraph.clearProfiles();
 
         for (int i = 0; i < size; i++) {
             if (abs(output[i] - result[i]) > 0.01) {

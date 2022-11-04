@@ -32,7 +32,7 @@ import javax.imageio.ImageIO;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -43,6 +43,7 @@ import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -386,9 +387,10 @@ public class ComputeTests extends TornadoTestBase {
         workerGrid.setGlobalWork(numBodies, 1, 1);
         workerGrid.setLocalWork(32, 1, 1);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, posTornadoVM, velTornadoVM) //
                 .task("t0", ComputeTests::nBody, numBodies, posTornadoVM, velTornadoVM) //
-                .streamOut(posTornadoVM, velTornadoVM) //
+                .transferToHost(posTornadoVM, velTornadoVM) //
                 .execute(gridScheduler);
 
         validate(numBodies, posTornadoVM, velTornadoVM, posSeq, velSeq);
@@ -421,9 +423,10 @@ public class ComputeTests extends TornadoTestBase {
         workerGrid.setGlobalWork(numBodies, 1, 1);
         workerGrid.setLocalWork(32, 1, 1);
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, posTornadoVM, velTornadoVM) //
                 .task("t0", ComputeTests::nBody, numBodies, posTornadoVM, velTornadoVM) //
-                .streamOut(posTornadoVM, velTornadoVM) //
+                .transferToHost(posTornadoVM, velTornadoVM) //
                 .execute(gridScheduler);
 
         validate(numBodies, posTornadoVM, velTornadoVM, posSeq, velSeq);
@@ -451,9 +454,10 @@ public class ComputeTests extends TornadoTestBase {
         // Run Sequential
         nBody(numBodies, posSeq, velSeq);
 
-        new TaskSchedule("compute") //
+        new TaskGraph("compute") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, posTornadoVM, velTornadoVM) //
                 .task("nbody", ComputeTests::nBody, numBodies, posTornadoVM, velTornadoVM) //
-                .streamOut(posTornadoVM, velTornadoVM) //
+                .transferToHost(posTornadoVM, velTornadoVM) //
                 .execute();
 
         validate(numBodies, posTornadoVM, velTornadoVM, posSeq, velSeq);
@@ -472,7 +476,7 @@ public class ComputeTests extends TornadoTestBase {
     @Test
     public void testDFTDouble() {
         final int size = 4096;
-        TaskSchedule graph;
+        TaskGraph graph;
         float[] inReal = new float[size];
         float[] inImag = new float[size];
         float[] outReal = new float[size];
@@ -483,9 +487,10 @@ public class ComputeTests extends TornadoTestBase {
             inImag[i] = 1 / (float) (i + 2);
         }
 
-        graph = new TaskSchedule("s0") //
+        graph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, inReal, inImag) //
                 .task("t0", ComputeTests::computeDFT, inReal, inImag, outReal, outImag) //
-                .streamOut(outReal, outImag);
+                .transferToHost(outReal, outImag);
         graph.execute();
 
         validateDFT(size, inReal, inImag, outReal, outImag);
@@ -494,7 +499,7 @@ public class ComputeTests extends TornadoTestBase {
     @Test
     public void testDFTFloat() {
         final int size = 4096;
-        TaskSchedule graph;
+        TaskGraph taskGraph;
         float[] inReal = new float[size];
         float[] inImag = new float[size];
         float[] outReal = new float[size];
@@ -505,10 +510,11 @@ public class ComputeTests extends TornadoTestBase {
             inImag[i] = 1 / (float) (i + 2);
         }
 
-        graph = new TaskSchedule("s0") //
+        taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, inReal, inImag) //
                 .task("t0", ComputeTests::computeDFTFloat, inReal, inImag, outReal, outImag) //
-                .streamOut(outReal, outImag);
-        graph.execute();
+                .transferToHost(outReal, outImag);
+        taskGraph.execute();
 
         validateDFT(size, inReal, inImag, outReal, outImag);
     }
@@ -516,10 +522,10 @@ public class ComputeTests extends TornadoTestBase {
     @Test
     public void testHilbert() {
         float[] output = new float[NROWS * NCOLS];
-        TaskSchedule s0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", ComputeTests::hilbertComputation, output, NROWS, NCOLS) //
-                .streamOut(output);
-        s0.execute();
+                .transferToHost(output);
+        taskGraph.execute();
         float[] seq = new float[NROWS * NCOLS];
         hilbertComputation(seq, NROWS, NCOLS);
         for (int i = 0; i < NROWS; i++) {
@@ -541,12 +547,12 @@ public class ComputeTests extends TornadoTestBase {
 
         IntStream.range(0, size).forEach(i -> input[i] = random.nextFloat());
 
-        TaskSchedule graph = new TaskSchedule("s0") //
-                .streamIn(input) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", ComputeTests::blackScholesKernel, input, callPrice, putPrice) //
-                .streamOut(callPrice, putPrice);
+                .transferToHost(callPrice, putPrice);
 
-        graph.execute();
+        taskGraph.execute();
 
         blackScholesKernel(input, seqCall, seqPut);
 
@@ -561,11 +567,11 @@ public class ComputeTests extends TornadoTestBase {
         float[] output = new float[size];
         float[] seq = new float[size];
 
-        TaskSchedule t0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", ComputeTests::computeMontecarlo, output, size) //
-                .streamOut(output);
+                .transferToHost(output);
 
-        t0.execute();
+        taskGraph.execute();
 
         float sumTornado = 0;
         for (int j = 0; j < size; j++) {
@@ -600,11 +606,11 @@ public class ComputeTests extends TornadoTestBase {
         final int size = 512;
         short[] output = new short[size * size];
 
-        TaskSchedule t0 = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", ComputeTests::mandelbrotFractal, size, output) //
-                .streamOut(output);
+                .transferToHost(output);
 
-        t0.execute();
+        taskGraph.execute();
 
         validateMandelbrot(size, output);
     }
@@ -627,11 +633,11 @@ public class ComputeTests extends TornadoTestBase {
         long[] outputD = new long[size];
         long[] outputE = new long[size];
 
-        TaskSchedule ts = new TaskSchedule("s0") //
-                .streamIn(input) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("s0", ComputeTests::euler, size, input, outputA, outputB, outputC, outputD, outputE) //
-                .streamOut(outputA, outputB, outputC, outputD, outputE);
-        ts.execute();
+                .transferToHost(outputA, outputB, outputC, outputD, outputE);
+        taskGraph.execute();
 
         long[] outputAT = new long[size];
         long[] outputBT = new long[size];
@@ -666,11 +672,12 @@ public class ComputeTests extends TornadoTestBase {
             }
         }
 
-        TaskSchedule task = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", ComputeTests::renderTrack, outputTornadoVM, input) //
-                .streamOut(outputTornadoVM);
+                .transferToHost(outputTornadoVM);
 
-        task.execute();
+        taskGraph.execute();
 
         renderTrack(outputJava, input);
         for (int x = 0; x < n; x++) {
@@ -689,11 +696,11 @@ public class ComputeTests extends TornadoTestBase {
         float[] brightness = new float[size * size];
         int[] result = new int[size * size];
 
-        TaskSchedule ts = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", ComputeTests::juliaSetTornado, size, hue, brightness) //
-                .streamOut(hue, brightness);
+                .transferToHost(hue, brightness);
 
-        ts.execute();
+        taskGraph.execute();
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
@@ -750,12 +757,12 @@ public class ComputeTests extends TornadoTestBase {
             matrix2DFloat.set(idx, jdx, r.nextFloat());
         }));
 
-        TaskSchedule ts = new TaskSchedule("la") //
-                .streamIn(matrix2DFloat, vectorFloat) //
+        TaskGraph taskGraph = new TaskGraph("la") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrix2DFloat, vectorFloat) //
                 .lockObjectsInMemory(matrix2DFloat, vectorFloat, result) //
                 .task("mv", ComputeTests::computeMatrixVector, matrix2DFloat, vectorFloat, result) //
-                .streamOut(result);
-        ts.execute();
+                .transferToHost(result);
+        taskGraph.execute();
 
         computeMatrixVector(matrix2DFloat, vectorFloat, resultSeq);
         for (int i = 0; i < vectorFloat.size(); i++) {

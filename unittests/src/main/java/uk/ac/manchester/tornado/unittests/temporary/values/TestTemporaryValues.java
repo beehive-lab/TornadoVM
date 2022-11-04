@@ -18,16 +18,26 @@
 
 package uk.ac.manchester.tornado.unittests.temporary.values;
 
-import org.junit.Test;
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+
+/**
+ * <p>
+ * How to run
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.temporary.values.TestTemporaryValues
+ * </code>
+ */
 public class TestTemporaryValues extends TornadoTestBase {
     private static void computeWithTemporaryValues(float[] a, float[] b, float[] c) {
         for (@Parallel int i = 0; i < a.length; i++) {
@@ -58,12 +68,12 @@ public class TestTemporaryValues extends TornadoTestBase {
             bJava[idx] = bTornado[idx];
         });
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
-                .streamIn(aTornado, bTornado) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, aTornado, bTornado) //
                 .task("t0", TestTemporaryValues::computeWithTemporaryValues, aTornado, bTornado, cTornado) //
-                .streamOut(aTornado, bTornado, cTornado);
+                .transferToHost(aTornado, bTornado, cTornado);
 
-        s0.execute();
+        taskGraph.execute();
 
         computeWithTemporaryValues(aJava, bJava, cJava);
 

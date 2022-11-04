@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,11 +17,19 @@
  */
 package uk.ac.manchester.tornado.benchmarks.hilbert;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner hilbert
+ * </code>
+ */
 public class HilbertTornado extends BenchmarkDriver {
 
     private int size;
@@ -35,19 +43,17 @@ public class HilbertTornado extends BenchmarkDriver {
     @Override
     public void setUp() {
         hilbertMatrix = new float[size * size];
-        // @formatter:off
-        ts = new TaskSchedule("benchmark")
-                .task("t0", ComputeKernels::hilbertComputation, hilbertMatrix, size, size)
-                .streamOut(hilbertMatrix);
-        // @formatter:on
-        ts.warmup();
+        taskGraph = new TaskGraph("benchmark") //
+                .task("t0", ComputeKernels::hilbertComputation, hilbertMatrix, size, size) //
+                .transferToHost(hilbertMatrix);
+        taskGraph.warmup();
     }
 
     @Override
     public void tearDown() {
-        ts.dumpProfiles();
+        taskGraph.dumpProfiles();
         hilbertMatrix = null;
-        ts.getDevice().reset();
+        taskGraph.getDevice().reset();
         super.tearDown();
     }
 
@@ -55,11 +61,10 @@ public class HilbertTornado extends BenchmarkDriver {
     public boolean validate(TornadoDevice device) {
         boolean val = true;
         float[] testData = new float[size * size];
-        // @formatter:off
-        TaskSchedule check = new TaskSchedule("s0")
-                .task("t0", ComputeKernels::hilbertComputation, testData, size, size)
-                .streamOut(testData);
-        // @formatter:on
+        TaskGraph check = new TaskGraph("s0") //
+                .task("t0", ComputeKernels::hilbertComputation, testData, size, size) //
+                .transferToHost(testData); //
+
         check.mapAllTo(device);
         check.execute();
         float[] seq = new float[size * size];
@@ -77,7 +82,7 @@ public class HilbertTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        ts.mapAllTo(device);
-        ts.execute();
+        taskGraph.mapAllTo(device);
+        taskGraph.execute();
     }
 }

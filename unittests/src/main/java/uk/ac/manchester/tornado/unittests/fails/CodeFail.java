@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,10 +22,11 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -33,11 +34,17 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * Test to check TornadoVM is able to bailout to the Java sequential
  * implementation if there are errors during optimizations phases, code
  * generation, or runtime.
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.fails.CodeFail
+ * </code>
  */
 public class CodeFail extends TornadoTestBase {
 
     /**
-     * This case is not failing any more. This stresses the local memory allocator.
+     * This case is not failing anymore. This stresses the local memory allocator.
      */
     public static void foo(float[] a) {
         float[] x = new float[a.length % 10];
@@ -57,10 +64,11 @@ public class CodeFail extends TornadoTestBase {
             b[i] = a[i];
         });
 
-        TaskSchedule ts = new TaskSchedule("s0");
+        TaskGraph taskGraph = new TaskGraph("s0");
 
-        ts.task("t0", CodeFail::foo, a) //
-                .streamOut(a)//
+        taskGraph.task("t0", CodeFail::foo, a) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .transferToHost(a)//
                 .execute();
     }
 
@@ -87,10 +95,11 @@ public class CodeFail extends TornadoTestBase {
             b[i] = a[i];
         });
 
-        TaskSchedule ts = new TaskSchedule("s0");
+        TaskGraph taskGraph = new TaskGraph("s0");
 
-        ts.task("t0", CodeFail::bar, a) //
-                .streamOut(a) //
+        taskGraph.task("t0", CodeFail::bar, a) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .transferToHost(a) //
                 .execute();
     }
 
@@ -116,11 +125,11 @@ public class CodeFail extends TornadoTestBase {
             input[i] = i;
         });
 
-        TaskSchedule task = new TaskSchedule("s0") //
-                .streamIn(input) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", CodeFail::zoo, input, result1, result2) //
-                .streamOut(result1, result2); //
+                .transferToHost(result1, result2); //
 
-        task.execute();
+        taskGraph.execute();
     }
 }
