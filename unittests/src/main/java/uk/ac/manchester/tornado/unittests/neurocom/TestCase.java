@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,10 +18,20 @@
 package uk.ac.manchester.tornado.unittests.neurocom;
 
 import org.junit.Test;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.neurocom.TestCase
+ * </code>
+ */
 public class TestCase extends TornadoTestBase {
 
     private static final int N = 512;
@@ -48,7 +58,7 @@ public class TestCase extends TornadoTestBase {
             }
 
             for (int k = 0; k < V; k++) {
-                cache_kmeans[V * j + k] /= (float) kj_len;
+                cache_kmeans[V * j + k] /= kj_len;
             }
         }
     }
@@ -67,13 +77,13 @@ public class TestCase extends TornadoTestBase {
         float[] cache_dqtfidf = new float[total_len];
         int[] sizes = new int[6];
 
-        // @formatter:off
-        TaskSchedule task = new TaskSchedule("foo")
-                .task("bar", TestCase::KMeansCalculateCentroids, cache_dqsize, cache_dstart, cache_dqid, cache_dqtfidf, cache_kmeans, doc_group, sizes)
-                .streamOut(cache_dstart);
-        // @formatter:on
-        task.warmup();
-        task.execute();
+        TaskGraph taskGraph = new TaskGraph("foo") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, cache_dqsize, cache_dqid, cache_dqtfidf, cache_kmeans, doc_group) //
+                .task("bar", TestCase::KMeansCalculateCentroids, cache_dqsize, cache_dstart, cache_dqid, cache_dqtfidf, cache_kmeans, doc_group, sizes) //
+                .transferToHost(cache_dstart);
+
+        taskGraph.warmup();
+        taskGraph.execute();
     }
 
 }

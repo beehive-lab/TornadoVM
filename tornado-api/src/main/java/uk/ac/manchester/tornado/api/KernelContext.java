@@ -41,8 +41,6 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import uk.ac.manchester.tornado.api.annotations.TornadoVMIntrinsic;
-
 /**
  * Context of TornadoVM execution to exploit kernel-parallel applications, in
  * which the parallelism is implicit.
@@ -60,8 +58,8 @@ import uk.ac.manchester.tornado.api.annotations.TornadoVMIntrinsic;
  * to local/shared memory and barriers.</li>
  * <li>{@link KernelContext} provides a Java API that is transparently
  * translated to both OpenCL and PTX by the TornadoVM JIT compiler. The main
- * difference with the {@link TaskSchedule} API is that the tasks within a
- * {@link TaskSchedule} that use {@link KernelContext} must be
+ * difference with the {@link TaskGraph} API is that the tasks within a
+ * {@link TaskGraph} that use {@link KernelContext} must be
  * {@link GridScheduler}.</li>
  * </ul>
  * </p>

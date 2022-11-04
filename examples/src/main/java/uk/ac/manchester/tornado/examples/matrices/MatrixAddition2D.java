@@ -1,34 +1,41 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 package uk.ac.manchester.tornado.examples.matrices;
 
 import java.util.Random;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat4;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat4;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 /**
  * Full example to show to matrix addition with non vector types
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.matrices.MatrixAddition2D
+ * </code>
  *
  */
 public class MatrixAddition2D {
@@ -83,20 +90,20 @@ public class MatrixAddition2D {
             }
         }
 
-        //@formatter:off
-        TaskSchedule t = new TaskSchedule("s0")
-                .task("t0", MatrixAddition2D::matrixAddition, matrixA, matrixB, matrixC, size)
-                .streamOut(matrixC);
-        //@formatter:on
+        TaskGraph tg = new TaskGraph("s0") //
+                .lockObjectsInMemory(matrixA, matrixB, matrixC) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
+                .task("t0", MatrixAddition2D::matrixAddition, matrixA, matrixB, matrixC, size) //
+                .transferToHost(matrixC);
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
-            t.execute();
+            tg.execute();
         }
 
         // 2. Run parallel on the GPU with Tornado
         long start = System.nanoTime();
-        t.execute();
+        tg.execute();
         long end = System.nanoTime();
 
         reset();
@@ -114,11 +121,11 @@ public class MatrixAddition2D {
             }
         }
 
-        //@formatter:off
-        TaskSchedule t1 = new TaskSchedule("s1")
-                .task("t1", MatrixAddition2D::matrixAddition, matrixAV, matrixBV, matrixCV, (size* 2))
-                .streamOut(matrixCV);
-        //@formatter:on
+        TaskGraph t1 = new TaskGraph("s1") //
+                .lockObjectsInMemory(matrixAV, matrixBV, matrixCV) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixAV, matrixBV) //
+                .task("t1", MatrixAddition2D::matrixAddition, matrixAV, matrixBV, matrixCV, (size * 2)) //
+                .transferToHost(matrixCV);
 
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
             t1.execute();

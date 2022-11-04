@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,12 @@
  *
  */
 package uk.ac.manchester.tornado.benchmarks.dotvector;
+
+import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.dotVector;
+
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -34,17 +40,21 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
-
-import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.dotVector;
-
+/**
+ * <p>
+ * How to run in isolation?
+ * </p>
+ * <code>
+ *    tornado -jar benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.dotvector.JMHDotVector
+ * </code>
+ */
 public class JMHDotVector {
 
     @State(Scope.Thread)
@@ -53,7 +63,7 @@ public class JMHDotVector {
         private VectorFloat3 a;
         private VectorFloat3 b;
         private float[] c;
-        TaskSchedule ts;
+        TaskGraph taskGraph;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -70,11 +80,11 @@ public class JMHDotVector {
                 a.set(i, new Float3(ra));
                 b.set(i, new Float3(rb));
             }
-            ts = new TaskSchedule("benchmark")//
-                    .streamIn(a, b) //
+            taskGraph = new TaskGraph("benchmark")//
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                     .task("dotVector", GraphicsKernels::dotVector, a, b, c) //
-                    .streamOut(c);
-            ts.warmup();
+                    .transferToHost(c);
+            taskGraph.warmup();
         }
     }
 
@@ -95,9 +105,9 @@ public class JMHDotVector {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void dotVectorTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskSchedule t = state.ts;
-        t.execute();
-        blackhole.consume(t);
+        TaskGraph taskGraph = state.taskGraph;
+        taskGraph.execute();
+        blackhole.consume(taskGraph);
     }
 
     public static void main(String[] args) throws RunnerException {

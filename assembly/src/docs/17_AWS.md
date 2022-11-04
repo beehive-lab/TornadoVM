@@ -2,17 +2,21 @@
 
 # 1. Running on CPUs and GPUs
 
-The installation and execution instructions for running on AWS CPUs and GPUs is identical to those for [running locally](1_INSTALL.md).
+The installation and execution instructions for running on AWS CPUs and GPUs is identical to those
+for [running locally](1_INSTALL.md).
 
 # 2. Running on AWS EC2 F1 Xilinx FPGAs
 
 The following come with the AWS EC2 F1 instance:
-  * FPGA DEV AMI: 1.10.0
-  * Xilinx Vitis Tool: 2020.2
+
+* FPGA DEV AMI: 1.10.0
+* Xilinx Vitis Tool: 2020.2
 
 ### Pre-requisites:
-  * You need to have a storage bucket with: (s3_bucket, s3_dcp_key and s3_loogs_key) for Step 3.
-  * You need to clone the [aws-fpga repository](https://github.com/aws/aws-fpga) and checkout `v1.4.18`, as follows:
+
+* You need to have a storage bucket with: (s3_bucket, s3_dcp_key and s3_loogs_key) for Step 3.
+* You need to clone the [aws-fpga repository](https://github.com/aws/aws-fpga) and checkout `v1.4.18`, as follows:
+
   ```bash
   $ cd /home/centos
   $ git clone https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR
@@ -30,19 +34,22 @@ $ make
 ```
 
 ### 2. Follow these steps to get access to the Xilinx FPGA.
+
 a. Enter a bash shell as root.
 
 ```bash
 $ sudo -E /bin/bash
 ```
 
-**Note: If you face a failure regarding the generation of IP, try the patch [here](https://support.xilinx.com/s/article/76960?language=en_US).**
+**Note: If you face a failure regarding the generation of IP, try the
+patch [here](https://support.xilinx.com/s/article/76960?language=en_US).**
 
 b. Load the environment variables for Xilinx HLS and runtime.
 
 ```bash
 $ source $AWS_FPGA_REPO_DIR/vitis_setup.sh
 ```
+
 c. Load the environment variables of TornadoVM for root.
 
 ```bash
@@ -51,9 +58,12 @@ $ source etc/sources.env
 
 $ tornado --devices
 ```
+
 ### 3. Update the the FPGA Conguration file
 
-Update the `$TORNADO_SDK/etc/xilinx-fpga.conf` file or create your own (e.g. `$TORNADO_SDK/etc/aws-fpga.conf`), and append the necessary information (i.e. FPGA plarform name (DEVICE_NAME), HLS compiler flags (FLAGS), HLS directory (DIRECTORY_BITSTREAM), and AWS S3 configuration (s3_bucket, s3_dcp_key and s3_loogs_key)).
+Update the `$TORNADO_SDK/etc/xilinx-fpga.conf` file or create your own (e.g. `$TORNADO_SDK/etc/aws-fpga.conf`), and
+append the necessary information (i.e. FPGA plarform name (DEVICE_NAME), HLS compiler flags (FLAGS), HLS directory (
+DIRECTORY_BITSTREAM), and AWS S3 configuration (s3_bucket, s3_dcp_key and s3_loogs_key)).
 
 ```bash
 $ vim $TORNADO_SDK/etc/aws-fpga.conf
@@ -75,30 +85,44 @@ AWS_S3_BUCKET = tornadovm-fpga-bucket
 AWS_S3_DCP_KEY = outputfolder
 AWS_S3_LOGS_KEY = logfolder
 ```
-You can run TornadoVM with your configuration file, by using the `-Dtornado.fpga.conf.file=FILE` flag. If this flag is not used, the default configuration file is the `$TORNADO_SDK/etc/xilinx-fpga.conf`.
 
-### 4. Run a program that offloads a task on the FPGA. 
+You can run TornadoVM with your configuration file, by using the `-Dtornado.fpga.conf.file=FILE` flag. If this flag is
+not used, the default configuration file is the `$TORNADO_SDK/etc/xilinx-fpga.conf`.
+
+### 4. Run a program that offloads a task on the FPGA.
+
 ![image](https://user-images.githubusercontent.com/34061419/120612886-519ac700-c45e-11eb-9d6f-45f2aed99d7f.png)
 
 The following example uses a custom configuration file (`aws-fpga.conf`) to execute the DFT on the AWS F1 FPGA:
+
 ```bash
-$ tornado --jvm "-Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM/etc/aws-fpga.conf -Xmx20g -Xms20g" --printKernel --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic --params="256 default 1" >> output.log
+$ tornado --jvm "-Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM/etc/aws-fpga.conf -Xmx20g -Xms20g" --printKernel --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTMT --params="256 default 1" >> output.log
 $ Ctrl-Z (^Z)
 $ bg
 $ disown
 ```
-This command will trigger TornadoVM to automatically compile Java to OpenCL and use the AWS FPGA Hardware Development Kit (HDK) to generate a bitstream. You can also redirect the output from Standard OUT to a file (`output.log`) as the compilation may take a few hours and the connection may be terminated with a broken pipe (e.g. packet_write_wait: Connection to 174.129.48.160 port 22: Broken pipe).
 
-Read the `output.log` file in order to monitor the outcome of the TornadoVM execution. To monitor the outcome of the HLS compilation, read the `outputFPGA.log` file, which is automatically generated in the `DIRECTORY_BITSTREAM` (e.g. `fpga-source-comp`). 
-After the bitstream generation, TornadoVM will automatically invoke the creation of an Amazon FPGA Image (AFI) and upload a file related to the kernel to the Amazon S3 bucket (configured in the Step 3).
-The execution of the program will end up with an error as the bitstream is forwarded to be used, while the AFI image is not ready yet. E.g.: 
+This command will trigger TornadoVM to automatically compile Java to OpenCL and use the AWS FPGA Hardware Development
+Kit (HDK) to generate a bitstream. You can also redirect the output from Standard OUT to a file (`output.log`) as the
+compilation may take a few hours and the connection may be terminated with a broken pipe (e.g. packet_write_wait:
+Connection to 174.129.48.160 port 22: Broken pipe).
+
+Read the `output.log` file in order to monitor the outcome of the TornadoVM execution. To monitor the outcome of the HLS
+compilation, read the `outputFPGA.log` file, which is automatically generated in the `DIRECTORY_BITSTREAM` (
+e.g. `fpga-source-comp`).
+After the bitstream generation, TornadoVM will automatically invoke the creation of an Amazon FPGA Image (AFI) and
+upload a file related to the kernel to the Amazon S3 bucket (configured in the Step 3).
+The execution of the program will end up with an error as the bitstream is forwarded to be used, while the AFI image is
+not ready yet. E.g.:
+
 ```bash
 [TornadoVM-OCL-JNI] ERROR : clCreateProgramWithBinary -> Returned: -44
 ```
 
 ### 5. You can monitor the status of your Amazon FPGA Image.
 
-Instructions are given in `outputFPGA.log`. Ensure that you use the correct `FPGAImageId` (e.g. `afi-0c1bb6821ccc766fe`).
+Instructions are given in `outputFPGA.log`. Ensure that you use the correct `FPGAImageId` (e.g. `afi-0c1bb6821ccc766fe`)
+.
 
 ```bash
 $ cat fpga-source-comp/outputFPGA.log
@@ -106,50 +130,53 @@ $ aws ec2 describe-fpga-images --fpga-image-ids afi-0c1bb6821ccc766fe
 ```
 
 This command will return the following message:
+
 ```json
 {
-    "FpgaImages": [
-        {
-            "UpdateTime": "2021-05-27T23:55:15.000Z", 
-            "Name": "lookupBufferAddress", 
-            "Tags": [], 
-            "PciId": {
-                "SubsystemVendorId": "0xfedd", 
-                "VendorId": "0x1d0f", 
-                "DeviceId": "0xf010", 
-                "SubsystemId": "0x1d51"
-            }, 
-            "FpgaImageGlobalId": "agfi-045c5d8825f920edc", 
-            "Public": false, 
-            "State": {
-                "Code": "pending"
-            }, 
-            "ShellVersion": "0x04261818", 
-            "OwnerId": "813381863415", 
-            "FpgaImageId": "afi-0c1bb6821ccc766fe", 
-            "CreateTime": "2021-05-27T23:15:21.000Z", 
-            "Description": "lookupBufferAddress"
-        }
-    ]
+  "FpgaImages": [
+    {
+      "UpdateTime": "2021-05-27T23:55:15.000Z",
+      "Name": "lookupBufferAddress",
+      "Tags": [],
+      "PciId": {
+        "SubsystemVendorId": "0xfedd",
+        "VendorId": "0x1d0f",
+        "DeviceId": "0xf010",
+        "SubsystemId": "0x1d51"
+      },
+      "FpgaImageGlobalId": "agfi-045c5d8825f920edc",
+      "Public": false,
+      "State": {
+        "Code": "pending"
+      },
+      "ShellVersion": "0x04261818",
+      "OwnerId": "813381863415",
+      "FpgaImageId": "afi-0c1bb6821ccc766fe",
+      "CreateTime": "2021-05-27T23:15:21.000Z",
+      "Description": "lookupBufferAddress"
+    }
+  ]
 }
 
 ```
-When the state change from `pending` to `available`, the `awsxlcbin` binary code can be executed via TornadoVM to the AWS FPGA.
+
+When the state changes from `pending` to `available`, the `awsxlcbin` binary code can be executed via TornadoVM to the AWS FPGA.
 
 ### 6. Now that the AFI is available, you can execute the program and run the OpenCL kernel on the AWS FPGA.
 
 If you have logged out, ensure that you run (Steps 2 and 4).
 
 ```bash
-$ tornado --jvm="-Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM/etc/aws-fpga.conf -Xmx20g -Xms20g" --debug --printKernel -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic --params="256 default 1" >> output.log
+$ tornado --jvm="-Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM/etc/aws-fpga.conf -Xmx20g -Xms20g" --debug --printKernel -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTMT --params="256 default 1" >> output.log
 ```
 
 The result is the following:
 
 ```bash
-tornado --jvm="-Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM-Internal-feat-removeBufferCache/etc/aws-fpga.conf --threadInfo -Xmx20g -Xms20g" --printKernel -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic --parms "256 default 1"
+tornado --jvm="-Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM-Internal-feat-removeBufferCache/etc/aws-fpga.conf --threadInfo -Xmx20g -Xms20g" --printKernel -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTMT --parms "256 default 1"
 Initialization time:  705795966 ns
 ```
+
 ```c
 __attribute__((reqd_work_group_size(64, 1, 1)))
 __kernel void computeDft(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global uchar *inreal, __global uchar *inimag, __global uchar *outreal, __global uchar *outimag, __global uchar *inputSize)

@@ -22,13 +22,22 @@ import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.dgemm;
 
 import java.util.Random;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner dgemm
+ * </code>
+ */
 public class DgemmTornado extends BenchmarkDriver {
 
     private final int m;
@@ -60,13 +69,13 @@ public class DgemmTornado extends BenchmarkDriver {
             b[i] = random.nextFloat();
         }
 
-        ts = new TaskSchedule("benchmark");
+        taskGraph = new TaskGraph("benchmark");
         if (!USE_PREBUILT) {
 
-            ts.streamIn(a, b) //
+            taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                     .task("dgemm", LinearAlgebraArrays::dgemm, m, n, n, a, b, c) //
-                    .streamOut(c);
-            ts.warmup();
+                    .transferToHost(c);
+            taskGraph.warmup();
         } else {
             String filePath = "/tmp/mxmDouble.spv";
             TornadoDevice device = null;
@@ -78,35 +87,34 @@ public class DgemmTornado extends BenchmarkDriver {
                 }
             }
 
-            // @formatter:off
-            ts.prebuiltTask("t0",
-                            "dgemm",
-                            filePath,
-                            new Object[]{m, n, n, a, b, c},
-                            new Access[]{Access.READ, Access.READ, Access.READ, Access.READ, Access.READ, Access.WRITE},
-                            device,
-                            new int[]{n, n})
-                    .streamOut(c);
-            // @formatter:on
+            taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                    .prebuiltTask("t0", //
+                            "dgemm", //
+                            filePath, //
+                            new Object[] { m, n, n, a, b, c }, //
+                            new Access[] { Access.READ, Access.READ, Access.READ, Access.READ, Access.READ, Access.WRITE }, //
+                            device, //
+                            new int[] { n, n })//
+                    .transferToHost(c);//
         }
     }
 
     @Override
     public void tearDown() {
-        ts.dumpProfiles();
+        taskGraph.dumpProfiles();
 
         a = null;
         b = null;
         c = null;
 
-        ts.getDevice().reset();
+        taskGraph.getDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        ts.mapAllTo(device);
-        ts.execute();
+        taskGraph.mapAllTo(device);
+        taskGraph.execute();
     }
 
     @Override
@@ -115,7 +123,7 @@ public class DgemmTornado extends BenchmarkDriver {
         final double[] result = new double[m * n];
 
         benchmarkMethod(device);
-        ts.clearProfiles();
+        taskGraph.clearProfiles();
 
         dgemm(m, n, m, a, b, result);
 

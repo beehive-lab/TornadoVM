@@ -103,6 +103,14 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     private ObjectBuffer reuseBuffer;
     private ConcurrentHashMap<Object, Integer> mappingAtomics;
 
+    /**
+     * Constructor used also in SLAMBench/KFusion
+     *
+     * @param platformIndex
+     *            OpenCL Platform index
+     * @param deviceIndex
+     *            OpenCL Device Index
+     */
     public OCLTornadoDevice(final int platformIndex, final int deviceIndex) {
         this.platformIndex = platformIndex;
         this.deviceIndex = deviceIndex;
@@ -521,9 +529,9 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int allocateBulk(Object[] objects, long batchSize, TornadoDeviceObjectState[] states) {
+    public int allocateObjects(Object[] objects, long batchSize, TornadoDeviceObjectState[] states) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
-        if (!bufferProvider.canAllocate(objects.length)) {
+        if (!bufferProvider.checkBufferAvailability(objects.length)) {
             bufferProvider.resetBuffers();
         }
         for (int i = 0; i < objects.length; i++) {

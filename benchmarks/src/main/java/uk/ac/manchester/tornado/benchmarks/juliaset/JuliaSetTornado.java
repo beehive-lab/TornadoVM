@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022 APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,11 +17,19 @@
  */
 package uk.ac.manchester.tornado.benchmarks.juliaset;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner juliaset
+ * </code>
+ */
 public class JuliaSetTornado extends BenchmarkDriver {
 
     private final int size;
@@ -41,18 +49,18 @@ public class JuliaSetTornado extends BenchmarkDriver {
         hue = new float[size * size];
         brightness = new float[size * size];
 
-        ts = new TaskSchedule("benchmark") //
+        taskGraph = new TaskGraph("benchmark") //
                 .task("juliaSet", GraphicsKernels::juliaSetTornado, size, hue, brightness) //
-                .streamOut(hue, brightness);
-        ts.warmup();
+                .transferToHost(hue, brightness);
+        taskGraph.warmup();
     }
 
     @Override
     public void tearDown() {
-        ts.dumpProfiles();
+        taskGraph.dumpProfiles();
         hue = null;
         brightness = null;
-        ts.getDevice().reset();
+        taskGraph.getDevice().reset();
         super.tearDown();
     }
 
@@ -62,7 +70,7 @@ public class JuliaSetTornado extends BenchmarkDriver {
         final float[] brightnessSeq = new float[size * size];
 
         benchmarkMethod(device);
-        ts.clearProfiles();
+        taskGraph.clearProfiles();
 
         GraphicsKernels.juliaSetTornado(size, hueSeq, brightnessSeq);
 
@@ -82,13 +90,13 @@ public class JuliaSetTornado extends BenchmarkDriver {
     }
 
     @Override
-    public TaskSchedule getTaskSchedule() {
-        return ts;
+    public TaskGraph getTaskSchedule() {
+        return taskGraph;
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        ts.mapAllTo(device);
-        ts.execute();
+        taskGraph.mapAllTo(device);
+        taskGraph.execute();
     }
 }

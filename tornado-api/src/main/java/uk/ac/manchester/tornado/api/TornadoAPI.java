@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -10,12 +10,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
- * 
+ *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with GNU Classpath; see the file COPYING.  If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
@@ -25,7 +25,7 @@
  * making a combined work based on this library.  Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
- * 
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent
@@ -68,7 +68,7 @@ public interface TornadoAPI {
 
     /**
      * It adds a task by using a {@link TaskPackage}.
-     * 
+     *
      * @param taskPackage
      *            {@link uk.ac.manchester.tornado.api.common.TaskPackage}
      * @return {@link @TornadoAPI}
@@ -77,7 +77,7 @@ public interface TornadoAPI {
 
     /**
      * Add task with no parameter.
-     * 
+     *
      * @param id
      *            Task-id
      * @param code
@@ -88,7 +88,7 @@ public interface TornadoAPI {
 
     /**
      * Add task with one parameter.
-     * 
+     *
      * @param id
      *            Task-id
      * @param code
@@ -101,7 +101,7 @@ public interface TornadoAPI {
 
     /**
      * Add task with two parameters.
-     * 
+     *
      * @param id
      *            Task-id
      * @param code
@@ -116,7 +116,7 @@ public interface TornadoAPI {
 
     /**
      * Add task with three parameters.
-     * 
+     *
      * @param id
      *            Task-id
      * @param code
@@ -133,7 +133,7 @@ public interface TornadoAPI {
 
     /**
      * Add task with four parameters.
-     * 
+     *
      * @param id
      *            Task-id
      * @param code
@@ -457,7 +457,7 @@ public interface TornadoAPI {
 
     /**
      * It creates a task with 15 parameters.
-     * 
+     *
      * @param id
      *            Task-id
      * @param code
@@ -499,7 +499,7 @@ public interface TornadoAPI {
 
     /**
      * Add a pre-built OpenCL task into a task-schedule
-     * 
+     *
      * @param id
      *            Task-Id
      * @param entryPoint
@@ -521,7 +521,7 @@ public interface TornadoAPI {
 
     /**
      * Add a pre-built OpenCL task into a task-schedule with atomics region
-     * 
+     *
      * @param id
      *            Task-id
      * @param entryPoint
@@ -539,19 +539,19 @@ public interface TornadoAPI {
      * @param atomics
      *            Atomics region.
      * @return {@link TornadoAPI}
-     * 
+     *
      */
     TornadoAPI prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions, int[] atomics);
 
     /**
      * Obtains the task-schedule name that was assigned.
-     * 
+     *
      * @return {@link String}
      */
     String getTaskScheduleName();
 
     /**
-     * 
+     *
      * @param task
      *            {@link SchedulableTask}
      * @return {@link TornadoAPI}
@@ -560,36 +560,27 @@ public interface TornadoAPI {
 
     TornadoAPI mapAllTo(TornadoDevice device);
 
-    /**
-     * Open a stream channel between the host and the target device.
-     * 
-     * @param objects
-     *            list of input objects to be streamed.
-     * @return link to the {@TornadoAPI} to allow function composition.
-     */
-    TornadoAPI streamIn(Object... objects);
-
-    TornadoAPI forceCopyIn(Object... objects);
+    TornadoAPI transferToDevice(final int mode, Object... objects);
 
     /**
      * Open a stream channel between the device and the host.
-     * 
+     *
      * @param objects
      *            list of input objects to be streamed.
      * @return link to the {@TornadoAPI} to allow function composition.
      */
-    TornadoAPI streamOut(Object... objects);
+    TornadoAPI transferToHost(Object... objects);
 
     /**
      * Internal call to run the task-schedule
-     * 
+     *
      * @return {@link TornadoAPI}
      */
     TornadoAPI schedule();
 
     /**
      * It enables batch processing on the target device.
-     * 
+     *
      * @param batchSize
      *            size of the batch represented as a string. For example "512MB",
      *            "1GB". If the batchSize is <= 0 the whole array is computed
@@ -607,7 +598,7 @@ public interface TornadoAPI {
 
     /**
      * Run with dynamic reconfiguration with an input policy
-     * 
+     *
      * @param policy
      *            Input policy, See {@link Policy}
      */
@@ -646,16 +637,18 @@ public interface TornadoAPI {
     void clearProfiles();
 
     /**
-     * Locks this object on the device memory. If a {@link TaskSchedule} is executed multiple times, then
-     * this object will be copied in only for the first execution.
+     * Locks this object on the device memory. If a {@link TaskGraph} is executed
+     * multiple times, then this object will be copied in only for the first
+     * execution.
      */
     TornadoAPI lockObjectInMemory(Object object);
 
     TornadoAPI lockObjectsInMemory(Object... objects);
 
     /**
-     * Unlocks this object from the device memory. The object must have been previously locked in order to unlock it.
-     * Once the object has been unlocked, it will be copied in on every subsequent execution of the {@link TaskSchedule}.
+     * Unlocks this object from the device memory. The object must have been
+     * previously locked in order to unlock it. Once the object has been unlocked,
+     * it will be copied in on every subsequent execution of the {@link TaskGraph}.
      */
     TornadoAPI unlockObjectFromMemory(Object object);
 
@@ -677,9 +670,9 @@ public interface TornadoAPI {
 
     void waitOn();
 
-    TaskSchedule useDefaultThreadScheduler(boolean use);
+    TaskGraph useDefaultThreadScheduler(boolean use);
 
-    void updateReference(Object oldRef, Object newRef);
+    TaskGraph replaceParameter(Object oldRef, Object newRef);
 
     boolean isFinished();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022 APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,12 +24,12 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -134,15 +134,14 @@ public class TestNewArrays extends TornadoTestBase {
         Arrays.fill(a, 10);
         Arrays.fill(b, 20);
 
-        //@formatter:off
-        TaskSchedule schedule = new TaskSchedule("s0")
-                .streamIn(a, b)
-                .task("t0", TestNewArrays::vectorAdd, a, b, c)
-                .streamOut(c);
-        //@formatter:on
-        schedule.execute();
-        vectorAdd(a, b, sequentialResult);
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("t0", TestNewArrays::vectorAdd, a, b, c) //
+                .transferToHost(c);
 
+        taskGraph.execute();
+
+        vectorAdd(a, b, sequentialResult);
         for (int i = 0; i < size; i++) {
             assertEquals(sequentialResult[i], c[i]);
         }
@@ -160,15 +159,14 @@ public class TestNewArrays extends TornadoTestBase {
         Arrays.fill(a, 10);
         Arrays.fill(b, 20);
 
-        //@formatter:off
-        TaskSchedule schedule = new TaskSchedule("s0")
-                .streamIn(a, b)
-                .task("t0", TestNewArrays::vectorAddComplexConditions, a, b, c)
-                .streamOut(c);
-        //@formatter:on
-        schedule.execute();
-        vectorAddComplexConditions(a, b, sequentialResult);
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("t0", TestNewArrays::vectorAddComplexConditions, a, b, c) //
+                .transferToHost(c);
 
+        taskGraph.execute();
+
+        vectorAddComplexConditions(a, b, sequentialResult);
         for (int i = 0; i < size; i++) {
             assertEquals(sequentialResult[i], c[i]);
         }
@@ -180,17 +178,18 @@ public class TestNewArrays extends TornadoTestBase {
         int[] data = new int[N];
         int[] dataSeq = new int[N];
 
-        IntStream.range(0, N).parallel().forEach(i -> {
-            data[i] = (int) Math.random();
+        Random r = new Random();
+        IntStream.range(0, N).forEach(i -> {
+            data[i] = r.nextInt();
             dataSeq[i] = data[i];
         });
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        assertNotNull(s0);
+        TaskGraph taskGraph = new TaskGraph("s0");
+        assertNotNull(taskGraph);
 
-        s0.task("t0", TestNewArrays::initializeToOne, data);
-        s0.streamOut(data);
-        s0.execute();
+        taskGraph.task("t0", TestNewArrays::initializeToOne, data);
+        taskGraph.transferToHost(data);
+        taskGraph.execute();
 
         initializeToOne(dataSeq);
 
@@ -205,17 +204,18 @@ public class TestNewArrays extends TornadoTestBase {
         float[] data = new float[N];
         float[] dataSeq = new float[N];
 
-        IntStream.range(0, N).parallel().forEach(i -> {
-            data[i] = (float) Math.random();
+        Random r = new Random();
+        IntStream.range(0, N).forEach(i -> {
+            data[i] = r.nextFloat();
             dataSeq[i] = data[i];
         });
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        assertNotNull(s0);
+        TaskGraph taskGraph = new TaskGraph("s0");
+        assertNotNull(taskGraph);
 
-        s0.task("t0", TestNewArrays::initializeToOneParallelScope, data);
-        s0.streamOut(data);
-        s0.execute();
+        taskGraph.task("t0", TestNewArrays::initializeToOneParallelScope, data);
+        taskGraph.transferToHost(data);
+        taskGraph.execute();
 
         initializeToOneParallelScope(dataSeq);
 
@@ -230,17 +230,18 @@ public class TestNewArrays extends TornadoTestBase {
         float[] data = new float[N];
         float[] dataSeq = new float[N];
 
+        Random r = new Random();
         IntStream.range(0, N).parallel().forEach(i -> {
-            data[i] = (float) Math.random();
+            data[i] = r.nextFloat();
             dataSeq[i] = data[i];
         });
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        assertNotNull(s0);
+        TaskGraph taskGraph = new TaskGraph("s0");
+        assertNotNull(taskGraph);
 
-        s0.task("t0", TestNewArrays::initializeToOneParallelScopeComplex, data);
-        s0.streamOut(data);
-        s0.execute();
+        taskGraph.task("t0", TestNewArrays::initializeToOneParallelScopeComplex, data);
+        taskGraph.transferToHost(data);
+        taskGraph.execute();
 
         initializeToOneParallelScopeComplex(dataSeq);
 
@@ -249,23 +250,24 @@ public class TestNewArrays extends TornadoTestBase {
         }
     }
 
-    @Ignore
+    @TornadoNotSupported
     public void testInitNewArrayParallel() {
         final int N = 128;
         float[] data = new float[N];
         float[] dataSeq = new float[N];
 
+        Random r = new Random();
         IntStream.range(0, N).parallel().forEach(i -> {
-            data[i] = (int) Math.random();
+            data[i] = r.nextInt();
             dataSeq[i] = data[i];
         });
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        assertNotNull(s0);
+        TaskGraph taskGraph = new TaskGraph("s0");
+        assertNotNull(taskGraph);
 
-        s0.task("t0", TestNewArrays::initializeToOneParallel, data);
-        s0.streamOut(data);
-        s0.execute();
+        taskGraph.task("t0", TestNewArrays::initializeToOneParallel, data);
+        taskGraph.transferToHost(data);
+        taskGraph.execute();
 
         initializeToOneParallel(dataSeq);
 
@@ -286,12 +288,12 @@ public class TestNewArrays extends TornadoTestBase {
             input[i] = r.nextFloat();
         });
 
-        TaskSchedule task = new TaskSchedule("s0") //
-                .streamIn(input) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestNewArrays::reductionAddFloats, input, result) //
-                .streamOut(result); //
+                .transferToHost(result); //
 
-        task.execute();
+        taskGraph.execute();
 
         float[] sequential = new float[1];
         reductionAddFloats(input, sequential);

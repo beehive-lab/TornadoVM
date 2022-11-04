@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,19 +18,29 @@
 
 package uk.ac.manchester.tornado.unittests.dynsize;
 
-import org.junit.Test;
-import uk.ac.manchester.tornado.api.GridScheduler;
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.WorkerGrid;
-import uk.ac.manchester.tornado.api.WorkerGrid1D;
-import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+
+/**
+ * How to run?
+ * <p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.dynsize.Resize
+ * </code>
+ * </p>
+ */
 public class Resize extends TornadoTestBase {
 
     public static void resize01(float[] a) {
@@ -57,18 +67,19 @@ public class Resize extends TornadoTestBase {
     public void testDynamicSize01() {
         float[] a = createArray(256);
 
-        TaskSchedule ts = new TaskSchedule("s0") //
-                .streamIn(a) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize01, a) //
-                .streamOut(a); //
+                .transferToHost(a); //
 
-        ts.execute();
+        taskGraph.execute();
         // Resize data
         float[] b = createArray(512);
 
-        // Update old reference for a new reference
-        ts.updateReference(a, b);
-        ts.execute();
+        // Replace parameter a of the task-graph for b
+        taskGraph.replaceParameter(a, b);
+
+        taskGraph.execute();
 
         for (float v : b) {
             assertEquals(1.0f, v, 0.001f);
@@ -79,27 +90,27 @@ public class Resize extends TornadoTestBase {
     public void testDynamicSize02() {
         float[] a = createArray(256);
 
-        TaskSchedule ts = new TaskSchedule("s0") //
-                .streamIn(a) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize01, a) //
-                .streamOut(a); //
-        ts.execute();
+                .transferToHost(a); //
+        taskGraph.execute();
 
         // Resize data
         float[] b = createArray(512);
 
         // Update old reference for a new reference
-        ts.updateReference(a, b);
+        taskGraph.replaceParameter(a, b);
 
-        ts.execute();
-        ts.execute();
-        ts.execute();
-        ts.execute();
+        taskGraph.execute();
+        taskGraph.execute();
+        taskGraph.execute();
+        taskGraph.execute();
 
         // Update old reference for a new reference
         float[] c = createArray(2048);
-        ts.updateReference(b, c);
-        ts.execute();
+        taskGraph.replaceParameter(b, c);
+        taskGraph.execute();
 
         for (float v : c) {
             assertEquals(1.0f, v, 0.001f);
@@ -111,21 +122,21 @@ public class Resize extends TornadoTestBase {
         float[] a = createArray(1024);
         float[] b = createArray(1024);
 
-        TaskSchedule ts = new TaskSchedule("s0") //
-                .streamIn(a) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize02, a, b) //
-                .streamOut(b); //
-        ts.execute();
+                .transferToHost(b); //
+        taskGraph.execute();
 
         // Resize data
         float[] c = createArray(512);
         float[] d = createArray(512);
 
         // Update multiple references
-        ts.updateReference(a, c);
-        ts.updateReference(b, d);
+        taskGraph.replaceParameter(a, c);
+        taskGraph.replaceParameter(b, d);
 
-        ts.execute();
+        taskGraph.execute();
 
         for (float v : d) {
             assertEquals(20.0f, v, 0.001f);
@@ -137,25 +148,25 @@ public class Resize extends TornadoTestBase {
         float[] a = createArray(256);
         float[] b = createArray(256);
 
-        TaskSchedule ts = new TaskSchedule("s0") //
-                .streamIn(a) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize02, a, b) //
-                .streamOut(b); //
-        ts.execute();
+                .transferToHost(b); //
+        taskGraph.execute();
 
         float[] aux = createArray(256);
 
         // Interchange
-        ts.updateReference(b, aux);
-        ts.updateReference(a, b);
-        ts.updateReference(aux, a);
-        ts.execute();
+        taskGraph.replaceParameter(b, aux);
+        taskGraph.replaceParameter(a, b);
+        taskGraph.replaceParameter(aux, a);
+        taskGraph.execute();
 
         // Interchange again
-        ts.updateReference(b, aux);
-        ts.updateReference(a, b);
-        ts.updateReference(aux, a);
-        ts.execute();
+        taskGraph.replaceParameter(b, aux);
+        taskGraph.replaceParameter(a, b);
+        taskGraph.replaceParameter(aux, a);
+        taskGraph.execute();
 
         for (float v : b) {
             assertEquals(40.0f, v, 0.001f);
@@ -170,25 +181,25 @@ public class Resize extends TornadoTestBase {
         WorkerGrid workerGrid = new WorkerGrid1D(256);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
 
-        TaskSchedule ts = new TaskSchedule("s0") //
-                .streamIn(a) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize02, a, b) //
-                .streamOut(b); //
-        ts.execute(gridScheduler);
+                .transferToHost(b); //
+        taskGraph.execute(gridScheduler);
 
         float[] aux = createArray(256);
 
         // Interchange
-        ts.updateReference(b, aux);
-        ts.updateReference(a, b);
-        ts.updateReference(aux, a);
-        ts.execute(gridScheduler);
+        taskGraph.replaceParameter(b, aux);
+        taskGraph.replaceParameter(a, b);
+        taskGraph.replaceParameter(aux, a);
+        taskGraph.execute(gridScheduler);
 
         // Interchange again
-        ts.updateReference(b, aux);
-        ts.updateReference(a, b);
-        ts.updateReference(aux, a);
-        ts.execute(gridScheduler);
+        taskGraph.replaceParameter(b, aux);
+        taskGraph.replaceParameter(a, b);
+        taskGraph.replaceParameter(aux, a);
+        taskGraph.execute(gridScheduler);
 
         for (float v : b) {
             assertEquals(40.0f, v, 0.001f);
@@ -203,19 +214,19 @@ public class Resize extends TornadoTestBase {
         WorkerGrid workerGrid = new WorkerGrid1D(256);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
 
-        // Do not stream in 'a'
-        TaskSchedule ts = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", Resize::resize02, a, b) //
-                .streamOut(b); //
-        ts.execute(gridScheduler);
+                .transferToHost(b); //
+        taskGraph.execute(gridScheduler);
 
         float[] aux = createArray(256);
         Arrays.fill(aux, 15);
 
         // Update copy in variable 'a'. It should invalidate the buffer state on the
         // device and copy in the 'aux' array.
-        ts.updateReference(a, aux);
-        ts.execute(gridScheduler);
+        taskGraph.replaceParameter(a, aux);
+        taskGraph.execute(gridScheduler);
 
         for (float v : b) {
             assertEquals(25.0f, v, 0.001f);

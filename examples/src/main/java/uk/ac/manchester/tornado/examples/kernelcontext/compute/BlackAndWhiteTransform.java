@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,9 @@
 
 package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 
-import java.awt.*;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -26,25 +28,30 @@ import java.io.File;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
-import javax.swing.*;
+import javax.swing.JFrame;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Program taken from the Marawacc parallel programming framework with the
  * permission from the author.
  *
+ * <p>
  * It takes an input coloured input image and transforms it into a grey-scale
  * image.
+ * </p>
  *
+ * <p>
  * How to run?
+ * </p>
  *
  * <code>
- * $ tornado uk.ac.manchester.tornado.examples.kernelcontext.compute.BlackAndWhiteTransform 
+ * $ tornado -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.compute.BlackAndWhiteTransform
  * </code>
  *
  *
@@ -62,7 +69,7 @@ public class BlackAndWhiteTransform {
 
         private static final String IMAGE_FILE = "/tmp/image.jpg";
 
-        private static TaskSchedule tornadoTask;
+        private static TaskGraph tornadoTask;
 
         private static WorkerGrid workerGrid;
         private static GridScheduler gridScheduler;
@@ -139,8 +146,10 @@ public class BlackAndWhiteTransform {
                     gridScheduler = new GridScheduler("s0.t0", workerGrid);
                     KernelContext context = new KernelContext();
 
-                    tornadoTask = new TaskSchedule("s0");
-                    tornadoTask.streamIn(imageRGB).task("t0", LoadImage::compute2D, context, imageRGB, w, s).streamOut(imageRGB);
+                    tornadoTask = new TaskGraph("s0");
+                    tornadoTask.transferToDevice(DataTransferMode.EVERY_EXECUTION, imageRGB) //
+                            .task("t0", LoadImage::compute2D, context, imageRGB, w, s) //
+                            .transferToHost(imageRGB);
 
                 }
                 // [Optional] Set the global work group

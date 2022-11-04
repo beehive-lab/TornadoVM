@@ -1,19 +1,19 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 package uk.ac.manchester.tornado.unittests.reductions;
 
@@ -24,11 +24,20 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.reductions.InstanceReduction
+ * </code>
+ */
 public class InstanceReduction extends TornadoTestBase {
 
     public static final int N = 1024;
@@ -54,19 +63,17 @@ public class InstanceReduction extends TornadoTestBase {
             input[i] = rand.nextFloat();
         });
 
-        for (int i = 0; i < input.length; i++) {
-            expected[0] += input[i];
+        for (float v : input) {
+            expected[0] += v;
         }
 
         ReduceTest rd = new ReduceTest();
 
-        // @formatter:off
-        new TaskSchedule("ts")
-                .streamIn(input)
-                .task("reduce", rd::reduce, input, result)
-                .streamOut(result)
+        new TaskGraph("ts") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//
+                .task("reduce", rd::reduce, input, result)//
+                .transferToHost(result)//
                 .execute();
-        // @formatter:on
 
         assertEquals(expected[0], result[0], 0.1f);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022 APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,10 +22,19 @@ import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *      $ tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.compute.MatrixMultiplication1D
+ * </code>
+ */
 public class MatrixMultiplication1D {
 
     private static final int WARMING_UP_ITERATIONS = 15;
@@ -85,20 +94,20 @@ public class MatrixMultiplication1D {
         // [Optional] Set the local work group
         workerGrid.setLocalWork(((size <= 1024) ? size : size / 2), 1, 1);
 
-        //@formatter:off
-        TaskSchedule t = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .lockObjectsInMemory(matrixA, matrixB, matrixC) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", MatrixMultiplication1D::matrixMultiplication, context, matrixA, matrixB, matrixC, size) //
-                .streamOut(matrixC);
-        //@formatter:on
+                .transferToHost(matrixC);
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
-            t.execute(gridScheduler);
+            taskGraph.execute(gridScheduler);
         }
 
         // 2. Run parallel on the GPU with Tornado
         long start = System.currentTimeMillis();
-        t.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
         long end = System.currentTimeMillis();
 
         // Run sequential

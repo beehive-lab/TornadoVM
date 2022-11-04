@@ -1,27 +1,36 @@
 /*
- * Copyright (c) 2019-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2019-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.examples.dynamic;
 
 import uk.ac.manchester.tornado.api.Policy;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.SaxpyMT
+ * </code>
+ */
 public class SaxpyMT {
 
     public static void saxpy(float alpha, float[] x, float[] y, float[] b) {
@@ -36,7 +45,7 @@ public class SaxpyMT {
             final int current = i;
             int lowBound = current * balk;
             int upperBound = (current + 1) * balk;
-            if(current==threads-1) {
+            if (current == threads - 1) {
                 upperBound = y.length;
             }
             int finalUpperBound = upperBound;
@@ -64,7 +73,7 @@ public class SaxpyMT {
         int numElements = Integer.parseInt(args[0]);
         String executionType = args[1];
         int iterations = Integer.parseInt(args[2]);
-        TaskSchedule graph;
+        TaskGraph graph;
         long start,end;
         float alpha = 2f;
 
@@ -78,12 +87,14 @@ public class SaxpyMT {
             b[i] = 20;
         }
 
-        graph = new TaskSchedule("s0");
-        if (executionType.equals("multi") || executionType.equals("sequential")) {
-            ;
-        } else {
+        graph = new TaskGraph("s0");
+        if (!executionType.equals("multi") && !executionType.equals("sequential")) {
             long startInit = System.nanoTime();
-            graph.task("t0", SaxpyMT::saxpy, alpha, x, y, b).streamOut(y);
+
+            graph.transferToDevice(DataTransferMode.FIRST_EXECUTION, x, b) //
+                    .task("t0", SaxpyMT::saxpy, alpha, x, y, b) //
+                    .transferToHost(y);
+
             long stopInit = System.nanoTime();
             System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
         }

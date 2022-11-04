@@ -22,10 +22,9 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float2;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
@@ -37,9 +36,18 @@ import uk.ac.manchester.tornado.api.collections.types.VectorFloat2;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat8;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.vectortypes.TestFloats
+ * </code>
+ */
 public class TestFloats extends TornadoTestBase {
 
     public static final double DELTA = 0.001;
@@ -239,9 +247,10 @@ public class TestFloats extends TornadoTestBase {
         VectorFloat output = new VectorFloat(1);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::dotMethodFloat2, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -255,9 +264,10 @@ public class TestFloats extends TornadoTestBase {
         VectorFloat output = new VectorFloat(1);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::dotMethodFloat3, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -271,9 +281,10 @@ public class TestFloats extends TornadoTestBase {
         VectorFloat output = new VectorFloat(1);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::dotMethodFloat4, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -287,9 +298,10 @@ public class TestFloats extends TornadoTestBase {
         VectorFloat output = new VectorFloat(1);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::dotMethodFloat6, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -303,9 +315,10 @@ public class TestFloats extends TornadoTestBase {
         VectorFloat output = new VectorFloat(1);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::dotMethodFloat8, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -320,9 +333,10 @@ public class TestFloats extends TornadoTestBase {
         VectorFloat3 output = new VectorFloat3(size);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::testFloat3Add, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -347,9 +361,10 @@ public class TestFloats extends TornadoTestBase {
         }
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::addFloat, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -372,9 +387,10 @@ public class TestFloats extends TornadoTestBase {
         }
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::addFloat2, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -399,9 +415,10 @@ public class TestFloats extends TornadoTestBase {
         }
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::addVectorFloat2, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -426,9 +443,10 @@ public class TestFloats extends TornadoTestBase {
         }
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::addVectorFloat3, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -453,9 +471,10 @@ public class TestFloats extends TornadoTestBase {
             b.set(i, new Float3((float) size - i, (float) size - i, (float) size - i));
         }
 
-        new TaskSchedule("s0") //
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::addVectorFloat3, a, b, output)//
-                .streamOut(output)//
+                .transferToHost(output)//
                 .execute();
     }
 
@@ -474,9 +493,10 @@ public class TestFloats extends TornadoTestBase {
         }
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::addVectorFloat4, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -503,9 +523,10 @@ public class TestFloats extends TornadoTestBase {
         }
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::addVectorFloat8, a, b, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -534,9 +555,10 @@ public class TestFloats extends TornadoTestBase {
         }
 
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestFloats::addVectorFloat8Storage, a, output)
-                .streamOut(output)
+                .transferToHost(output)
                 .execute();
         //@formatter:on
 
@@ -578,10 +600,11 @@ public class TestFloats extends TornadoTestBase {
 
         // Parallel computation with Tornado
         //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b, outputMap) //
                 .task("t0-MAP", TestFloats::dotProductFunctionMap, a, b, outputMap)
                 .task("t1-REDUCE", TestFloats::dotProductFunctionReduce, outputMap, outputReduce)
-                .streamOut(outputReduce)
+                .transferToHost(outputReduce)
                 .execute();
         //@formatter:on
 
@@ -596,12 +619,11 @@ public class TestFloats extends TornadoTestBase {
 
         input.fill(1f);
 
-        //@formatter:off
-        new TaskSchedule("s0")
-                .task("t0", TestFloats::vectorPhiTest, input, output)
-                .streamOut(output)
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
+                .task("t0", TestFloats::vectorPhiTest, input, output) //
+                .transferToHost(output) //
                 .execute();
-        //@formatter:on
 
         assertEquals(8.0f, output.get(0).getS0(), DELTA);
         assertEquals(8.0f, output.get(0).getS1(), DELTA);
@@ -615,10 +637,10 @@ public class TestFloats extends TornadoTestBase {
         VectorFloat2 sequentialOutput = new VectorFloat2(size);
         VectorFloat2 tornadoOutput = new VectorFloat2(size);
 
-        TaskSchedule ts = new TaskSchedule("s0");
-        ts.task("t0", TestFloats::testPrivateVectorFloat2, tornadoOutput);
-        ts.streamOut(tornadoOutput);
-        ts.execute();
+        TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.task("t0", TestFloats::testPrivateVectorFloat2, tornadoOutput);
+        taskGraph.transferToHost(tornadoOutput);
+        taskGraph.execute();
 
         testPrivateVectorFloat2(sequentialOutput);
 
@@ -634,10 +656,10 @@ public class TestFloats extends TornadoTestBase {
         VectorFloat4 sequentialOutput = new VectorFloat4(size);
         VectorFloat4 tornadoOutput = new VectorFloat4(size);
 
-        TaskSchedule ts = new TaskSchedule("s0");
-        ts.task("t0", TestFloats::testPrivateVectorFloat4, tornadoOutput);
-        ts.streamOut(tornadoOutput);
-        ts.execute();
+        TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.task("t0", TestFloats::testPrivateVectorFloat4, tornadoOutput);
+        taskGraph.transferToHost(tornadoOutput);
+        taskGraph.execute();
 
         testPrivateVectorFloat4(sequentialOutput);
 
@@ -655,10 +677,10 @@ public class TestFloats extends TornadoTestBase {
         VectorFloat8 sequentialOutput = new VectorFloat8(16);
         VectorFloat8 tornadoOutput = new VectorFloat8(16);
 
-        TaskSchedule ts = new TaskSchedule("s0");
-        ts.task("t0", TestFloats::testPrivateVectorFloat8, tornadoOutput);
-        ts.streamOut(tornadoOutput);
-        ts.execute();
+        TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.task("t0", TestFloats::testPrivateVectorFloat8, tornadoOutput);
+        taskGraph.transferToHost(tornadoOutput);
+        taskGraph.execute();
 
         testPrivateVectorFloat8(sequentialOutput);
 
@@ -680,10 +702,10 @@ public class TestFloats extends TornadoTestBase {
         VectorFloat4 sequentialOutput = new VectorFloat4(size);
         VectorFloat4 output = new VectorFloat4(size);
 
-        TaskSchedule ts = new TaskSchedule("s0");
-        ts.task("t0", TestFloats::vectorFloatUnary, output);
-        ts.streamOut(output);
-        ts.execute();
+        TaskGraph taskGraph = new TaskGraph("s0");
+        taskGraph.task("t0", TestFloats::vectorFloatUnary, output);
+        taskGraph.transferToHost(output);
+        taskGraph.execute();
 
         vectorFloatUnary(sequentialOutput);
 

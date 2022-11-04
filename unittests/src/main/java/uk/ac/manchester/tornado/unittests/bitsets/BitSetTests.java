@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,18 +18,26 @@
 
 package uk.ac.manchester.tornado.unittests.bitsets;
 
-import org.apache.lucene.util.LongBitSet;
-import org.junit.Test;
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Random;
 
-import static org.junit.Assert.assertEquals;
+import org.apache.lucene.util.LongBitSet;
+import org.junit.Test;
+
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * Test accelerating the Lucene library.
+ *
+ * How to test?
+ *
+ * <code>
+ *     tornado-test -V --fast uk.ac.manchester.tornado.unittests.bitsets.BitSetTests
+ * </code>
  */
 public class BitSetTests extends TornadoTestBase {
 
@@ -59,10 +67,11 @@ public class BitSetTests extends TornadoTestBase {
             bBits[i] = rand.nextLong();
         }
 
-        TaskSchedule ts = new TaskSchedule("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", BitSetTests::intersectionCount, numWords, a, b, result) //
-                .streamOut(result);
-        ts.execute();
+                .transferToHost(result);
+        taskGraph.execute();
 
         intersectionCount(numWords, a, b, seq);
 

@@ -21,10 +21,8 @@
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 import java.io.File;
-import java.util.Arrays;
-import java.util.stream.IntStream;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 import javax.imageio.ImageIO;
@@ -98,10 +96,10 @@ public class Mandelbrot {
 
     public static short[] compute() {
         short[] result = new short[SIZE * SIZE];
-        
-        new TaskSchedule("s0")
+
+        new TaskGraph("s0")
             .task("t0", Mandelbrot::mandelbrot, SIZE, result)
-            .streamOut(result)
+            .transferToHost(result)
             .execute();
 
         writeFile(result, SIZE);

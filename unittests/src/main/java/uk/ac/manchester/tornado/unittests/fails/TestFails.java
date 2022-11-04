@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,15 +18,12 @@
 
 package uk.ac.manchester.tornado.unittests.fails;
 
-import java.util.Arrays;
-
-import org.junit.Ignore;
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -35,6 +32,12 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 /**
  * Test bad uses of the TornadoVM API. It should throw exceptions when possible
  * with the concrete problem.
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.fails.TestFails
+ * </code>
  */
 public class TestFails extends TornadoTestBase {
 
@@ -61,16 +64,19 @@ public class TestFails extends TornadoTestBase {
         float[] x = new float[100];
         float[] y = new float[100];
 
-        TaskSchedule ts = new TaskSchedule("s0").streamIn(x).task("s0", (a, b) -> {
-            for (int i = 0; i < 100; i++) {
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
+                .task("s0", (a, b) -> {
+                    for (int i = 0; i < 100; i++) {
 
-            }
-        }, x, y).streamOut(y);
+                    }
+                }, x, y) //
+                .transferToHost(y);
 
         // How to provoke the failure
-        ts.warmup();
+        taskGraph.warmup();
         reset();
-        ts.execute();
+        taskGraph.execute();
     }
 
     private static void kernel(float[] a, float[] b) {
@@ -87,15 +93,13 @@ public class TestFails extends TornadoTestBase {
         float[] x = new float[100];
         float[] y = new float[100];
 
-        // @formatter:off
-        TaskSchedule ts = new TaskSchedule("s0")
-                .streamIn(x)
-                .task("s0", TestFails::kernel, x, y)
-                .streamOut(y);
-        // @formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
+                .task("s0", TestFails::kernel, x, y) //
+                .transferToHost(y);
 
         // How to provoke the failure
-        ts.execute();
+        taskGraph.execute();
     }
 
 }

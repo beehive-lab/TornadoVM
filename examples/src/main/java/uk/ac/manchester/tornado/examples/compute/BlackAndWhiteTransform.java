@@ -1,19 +1,19 @@
 /*
- * Copyright (c) 2020, 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.examples.compute;
@@ -30,23 +30,23 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Program taken from the Marawacc parallel programming framework with the
  * permission from the author.
- * 
+ * <p>
  * It takes an input coloured input image and transforms it into a grey-scale
  * image.
- * 
+ * </p>
+ * <p>
  * How to run?
- * 
+ * </p>
  * <code>
- * $ tornado uk.ac.manchester.tornado.examples.compute.BlackAndWhiteTransform 
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.BlackAndWhiteTransform
  * </code>
- * 
- *
  */
 public class BlackAndWhiteTransform {
 
@@ -61,7 +61,7 @@ public class BlackAndWhiteTransform {
 
         private static final String IMAGE_FILE = "/tmp/image.jpg";
 
-        private static TaskSchedule tornadoTask;
+        private static TaskGraph taskGraph;
 
         LoadImage() {
             try {
@@ -85,21 +85,6 @@ public class BlackAndWhiteTransform {
 
                     image[i * s + j] = gray;
                 }
-            }
-        }
-
-        private static void compute1D(int[] image, final int w, final int s) {
-            for (@Parallel int i = 0; i < w * s; i++) {
-                int rgb = image[i];
-                int alpha = (rgb >> 24) & 0xff;
-                int red = (rgb >> 16) & 0xFF;
-                int green = (rgb >> 8) & 0xFF;
-                int blue = (rgb & 0xFF);
-
-                int grayLevel = (red + green + blue) / 3;
-                int gray = (alpha << 24) | (grayLevel << 16) | (grayLevel << 8) | grayLevel;
-
-                image[i] = gray;
             }
         }
 
@@ -128,14 +113,15 @@ public class BlackAndWhiteTransform {
                     }
                 }
 
-                if (tornadoTask == null) {
-                    tornadoTask = new TaskSchedule("s0");
-                    tornadoTask.streamIn(imageRGB).task("t0", LoadImage::compute, imageRGB, w, s).streamOut(imageRGB);
-
+                if (taskGraph == null) {
+                    taskGraph = new TaskGraph("s0");
+                    taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, imageRGB) //
+                            .task("t0", LoadImage::compute, imageRGB, w, s) //
+                            .transferToHost(imageRGB);
                 }
 
                 taskStart = System.nanoTime();
-                tornadoTask.execute();
+                taskGraph.execute();
                 taskEnd = System.nanoTime();
 
                 // unmarshall

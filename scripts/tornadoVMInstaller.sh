@@ -45,7 +45,7 @@ function downloadOpenJDK17() {
     elif [[ "$platform" == 'darwin' ]]; then
         wget https://download.java.net/java/GA/jdk17.0.1/2a2082e5a09d4267845be086888add4f/12/GPL/openjdk-17.0.1_macos-x64_bin.tar.gz
         tar -xf openjdk-17.0.1_macos-x64_bin.tar.gz
-        export JAVA_HOME=$PWD/jdk-17.0.1/Contents/Home/
+        export JAVA_HOME=$PWD/jdk-17.0.1.jdk/Contents/Home/
     fi
 }
 

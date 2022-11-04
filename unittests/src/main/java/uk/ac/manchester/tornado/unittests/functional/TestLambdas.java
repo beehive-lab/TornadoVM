@@ -1,19 +1,19 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.unittests.functional;
@@ -25,10 +25,19 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *      tornado-test.py -V uk.ac.manchester.tornado.unittests.functional.TestLambdas
+ * </code>
+ */
 public class TestLambdas extends TornadoTestBase {
 
     @Test
@@ -43,17 +52,16 @@ public class TestLambdas extends TornadoTestBase {
             b[i] = Math.random();
         });
 
-        //@formatter:off
-        new TaskSchedule("s0")
-            .task("t0", (x, y, z) -> {	 
-                // Computation in a lambda expression
-                for (@Parallel int i = 0; i < z.length; i++) {
-                    z[i] = x[i] + y[i];
-                }    	 
-            }, a, b, c)
-            .streamOut(c)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", (x, y, z) -> {
+                    // Computation in a lambda expression
+                    for (@Parallel int i = 0; i < z.length; i++) {
+                        z[i] = x[i] + y[i];
+                    }
+                }, a, b, c) //
+                .transferToHost(c) //
+                .execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);
@@ -74,17 +82,16 @@ public class TestLambdas extends TornadoTestBase {
             b[i] = r.nextInt(1000);
         });
 
-        //@formatter:off
-        new TaskSchedule("s0")
-            .task("t0", (x, y, z) -> {   
-                // Computation in a lambda expression
-                for (@Parallel int i = 0; i < z.length; i++) {
-                    z[i] = x[i] * y[i];
-                }        
-            }, a, b, c)
-            .streamOut(c)
-            .execute();
-        //@formatter:on
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", (x, y, z) -> {
+                    // Computation in a lambda expression
+                    for (@Parallel int i = 0; i < z.length; i++) {
+                        z[i] = x[i] * y[i];
+                    }
+                }, a, b, c) //
+                .transferToHost(c) //
+                .execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] * b[i], c[i], 0.001);
@@ -105,17 +112,16 @@ public class TestLambdas extends TornadoTestBase {
             b[i] = r.nextInt(1000);
         });
 
-        //@formatter:off
-        new TaskSchedule("s0")
+        new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", (x, y, z) -> {
                     // Computation in a lambda expression
                     for (@Parallel int i = 0; i < z.length; i++) {
                         z[i] = x[i] * y[i];
                     }
-                }, a, b, c)
-                .streamOut(c)
+                }, a, b, c) //
+                .transferToHost(c) //
                 .execute();
-        //@formatter:on
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] * b[i], c[i], 0.001);

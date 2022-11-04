@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,8 @@
 package uk.ac.manchester.tornado.unittests.tools.Exceptions;
 
 /**
- * This exception should be thrown if the current system configuration is not suitable for running the test.
+ * This exception should be thrown if the current system configuration is not
+ * suitable for running the test.
  *
  * Created by Dmitry Alexandrov
  */
@@ -29,15 +30,4 @@ public class UnsupportedConfigurationException extends RuntimeException {
         super(message);
     }
 
-    public UnsupportedConfigurationException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public UnsupportedConfigurationException(Throwable cause) {
-        super(cause);
-    }
-
-    public UnsupportedConfigurationException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
-    }
 }

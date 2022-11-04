@@ -21,10 +21,19 @@ package uk.ac.manchester.tornado.examples.dynamic;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.Policy;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.NBodyMT
+ * </code>
+ */
 public class NBodyMT {
     private static boolean VALIDATION = true;
 
@@ -182,12 +191,14 @@ public class NBodyMT {
 
         System.out.println("Version running: " + executionType + " ! ");
 
-        final TaskSchedule graph = new TaskSchedule("s0");
-        if (executionType.equals("multi") || executionType.equals("sequential")) {
-            ;
-        } else {
+        final TaskGraph graph = new TaskGraph("s0");
+        if (!executionType.equals("multi") && !executionType.equals("sequential")) {
             long startInit = System.nanoTime();
-            graph.task("t0", NBodyMT::nBody, numBodies, positions, velocity, delT, espSqr, inputSize).streamOut(positions, velocity);
+
+            graph.transferToDevice(DataTransferMode.FIRST_EXECUTION, positions, velocity, inputSize) //
+                    .task("t0", NBodyMT::nBody, numBodies, positions, velocity, delT, espSqr, inputSize) //
+                    .transferToHost(positions, velocity);
+
             long stopInit = System.nanoTime();
             System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
         }

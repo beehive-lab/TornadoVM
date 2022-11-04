@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022 APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,17 +26,26 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
+ * <p>
  * The unit-tests in this class implement the Matrix Multiplication to check the
  * functional operation of some {@link KernelContext} features, such as global
  * thread identifiers, local thread identifiers, barriers and allocation of
  * local memory.
+ * </p>
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test.py -V uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext
+ * </code>
  */
 public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
 
@@ -84,11 +93,11 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
-                .streamIn(a, b) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication1D, context, a, b, cTornado, size) //
-                .streamOut(cTornado);
-        s0.execute(gridScheduler);
+                .transferToHost(cTornado);
+        taskGraph.execute(gridScheduler);
 
         matrixMultiplicationJava(a, b, cJava, size);
 
@@ -127,11 +136,11 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         gridScheduler.setWorkerGrid("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
-                .streamIn(a, b) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication2D01, context, a, b, cTornado, size) //
-                .streamOut(cTornado);
-        s0.execute(gridScheduler);
+                .transferToHost(cTornado);
+        taskGraph.execute(gridScheduler);
 
         matrixMultiplicationJava(a, b, cJava, size);
 
@@ -195,12 +204,12 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         gridScheduler.setWorkerGrid("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskSchedule s0 = new TaskSchedule("s0") //
-                .streamIn(a, b) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication2D02, context, a, b, cTornado, size) //
-                .streamOut(cTornado);
+                .transferToHost(cTornado);
         worker.setLocalWork(TS, TS, 1);
-        s0.execute(gridScheduler);
+        taskGraph.execute(gridScheduler);
 
         matrixMultiplicationJava(a, b, cJava, size);
 

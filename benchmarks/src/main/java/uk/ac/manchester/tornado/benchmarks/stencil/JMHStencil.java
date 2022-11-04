@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,13 @@
  *
  */
 package uk.ac.manchester.tornado.benchmarks.stencil;
+
+import static uk.ac.manchester.tornado.benchmarks.stencil.Stencil.copy;
+import static uk.ac.manchester.tornado.benchmarks.stencil.Stencil.stencil3d;
+
+import java.util.Arrays;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -34,20 +41,23 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
-import uk.ac.manchester.tornado.api.TaskSchedule;
 
-import java.util.Arrays;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
-import static uk.ac.manchester.tornado.benchmarks.stencil.Stencil.copy;
-import static uk.ac.manchester.tornado.benchmarks.stencil.Stencil.stencil3d;
-
+/**
+ * <p>
+ * How to run in isolation?
+ * </p>
+ * <code>
+ *    tornado -jar benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.stencil.JMHStencil
+ * </code>
+ */
 public class JMHStencil {
     @State(Scope.Thread)
     public static class BenchmarkSetup {
 
-        private int size = Integer.parseInt(System.getProperty("x", "1048576"));
+        private final int size = Integer.parseInt(System.getProperty("x", "1048576"));
         int sz;
         int n;
         private final float FAC = 1 / 26;
@@ -55,7 +65,7 @@ public class JMHStencil {
         private float[] a1;
         private float[] ainit;
 
-        private TaskSchedule ts;
+        private TaskGraph taskGraph;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -76,13 +86,13 @@ public class JMHStencil {
                 }
             }
             copy(sz, ainit, a0);
-            ts = new TaskSchedule("benchmark") //
-                    .streamIn(a0, a1) //
+            taskGraph = new TaskGraph("benchmark") //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, a0, a1) //
                     .task("stencil", Stencil::stencil3d, n, sz, a0, a1, FAC) //
                     .task("copy", Stencil::copy, sz, a1, a0) //
-                    .streamOut(a0);
-            ts.getTask("stencil");
-            ts.warmup();
+                    .transferToHost(a0);
+            taskGraph.getTask("stencil");
+            taskGraph.warmup();
         }
     }
 
@@ -104,9 +114,9 @@ public class JMHStencil {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void stencilTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskSchedule t = state.ts;
-        t.execute();
-        blackhole.consume(t);
+        TaskGraph taskGraph = state.taskGraph;
+        taskGraph.execute();
+        blackhole.consume(taskGraph);
     }
 
     public static void main(String[] args) throws RunnerException {
