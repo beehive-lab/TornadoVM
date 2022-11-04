@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -10,12 +10,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
- * 
+ *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with GNU Classpath; see the file COPYING.  If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
@@ -25,7 +25,7 @@
  * making a combined work based on this library.  Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
- * 
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent
@@ -58,12 +58,12 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     /**
      * Number of rows
      */
-    protected static final int M = 4;
+    protected static final int ROWS = 4;
 
     /**
      * Number of columns
      */
-    protected static final int N = 4;
+    protected static final int COLUMNS = 4;
 
     public Matrix4x4Float() {
         this(new float[NUM_ELEMENTS]);
@@ -73,12 +73,8 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
         storage = array;
     }
 
-    public float[] getFlattenedArray() {
-        return storage;
-    }
-
     private int toIndex(int i, int j) {
-        return j + (i * N);
+        return j + (i * COLUMNS);
     }
 
     private float get(int index) {
@@ -91,7 +87,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
 
     /**
      * Returns the value
-     * 
+     *
      * @param i
      *            row index
      * @param j
@@ -104,7 +100,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
 
     /**
      * Sets the value
-     * 
+     *
      * @param i
      *            row index
      * @param j
@@ -117,33 +113,33 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
 
     /**
      * Returns the number of rows in this matrix
-     * 
+     *
      * @return int
      */
-    public int M() {
-        return M;
+    public int getNumRows() {
+        return ROWS;
     }
 
     /**
      * Returns the number of columns in the matrix
-     * 
+     *
      * @return int
      */
-    public int N() {
-        return N;
+    public int getNumColumns() {
+        return COLUMNS;
     }
 
     public Float4 row(int row) {
-        int offset = M * row;
+        int offset = ROWS * row;
         return Float4.loadFromArray(storage, offset);
     }
 
     public Float4 column(int col) {
-        return new Float4(get(col), get(col + M), get(col + (2 * M)), get(col + (3 * M)));
+        return new Float4(get(col), get(col + ROWS), get(col + (2 * ROWS)), get(col + (3 * ROWS)));
     }
 
     public Float4 diag() {
-        return new Float4(get(0), get(1 + M), get(2 + (2 * M)), get(3 + (3 * M)));
+        return new Float4(get(0), get(1 + ROWS), get(2 + (2 * ROWS)), get(3 + (3 * ROWS)));
     }
 
     public void fill(float value) {
@@ -159,8 +155,8 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void set(Matrix4x4Float m) {
-        for (int i = 0; i < M; i++) {
-            int offset = M * i;
+        for (int i = 0; i < ROWS; i++) {
+            int offset = ROWS * i;
             m.row(i).storeToArray(storage, offset);
         }
     }
@@ -168,14 +164,14 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     public String toString(String fmt) {
         StringBuilder str = new StringBuilder("");
 
-        for (int i = 0; i < M; i++) {
+        for (int i = 0; i < ROWS; i++) {
             str.append(row(i).toString(fmt) + "\n");
         }
         return str.toString().trim();
     }
 
     public String toString() {
-        String result = String.format("MatrixFloat <%d x %d>", M, N);
+        String result = String.format("MatrixFloat <%d x %d>", ROWS, COLUMNS);
         result += "\n" + toString(FloatOps.FMT_4_M);
         return result;
     }
@@ -186,9 +182,9 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     public void identity() {
         fill(0f);
         set(0, 1f);
-        set(1 + M, 1f);
-        set(2 + (2 * M), 1f);
-        set(3 + (3 * M), 1f);
+        set(1 + ROWS, 1f);
+        set(2 + (2 * ROWS), 1f);
+        set(3 + (3 * ROWS), 1f);
     }
 
     @Override
@@ -214,12 +210,12 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
         /*
          * check to make sure dimensions match
          */
-        if (ref.M != M && ref.N != N) {
+        if (ref.ROWS != ROWS && ref.COLUMNS != COLUMNS) {
             return new FloatingPointError(-1f, 0f, 0f, 0f);
         }
 
-        for (int j = 0; j < M; j++) {
-            for (int i = 0; i < N; i++) {
+        for (int j = 0; j < ROWS; j++) {
+            for (int i = 0; i < COLUMNS; i++) {
                 final float v = get(i, j);
                 final float r = ref.get(i, j);
 
@@ -231,7 +227,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
             }
         }
 
-        averageULP /= (float) M * N;
+        averageULP /= (float) ROWS * COLUMNS;
 
         return new FloatingPointError(averageULP, minULP, maxULP, -1f);
     }

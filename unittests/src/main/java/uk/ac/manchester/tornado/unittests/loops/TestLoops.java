@@ -118,8 +118,8 @@ public class TestLoops extends TornadoTestBase {
                 .task("t0", TestLoops::forConstant04, m, (size - 1)) //
                 .transferToHost(m) //
                 .execute();
-        for (int i = 0; i < m.M(); i++) {
-            for (int j = 0; j < m.N(); j++) {
+        for (int i = 0; i < m.getNumRows(); i++) {
+            for (int j = 0; j < m.getNumColumns(); j++) {
                 assertEquals(10.0f, m.get(i, j), 0.001f);
             }
         }
@@ -141,8 +141,8 @@ public class TestLoops extends TornadoTestBase {
                 .task("t0", TestLoops::forConstant05, m, size) //
                 .transferToHost(m) //
                 .execute();
-        for (int i = 0; i < m.M(); i++) {
-            for (int j = 0; j < m.N(); j++) {
+        for (int i = 0; i < m.getNumRows(); i++) {
+            for (int j = 0; j < m.getNumColumns(); j++) {
                 assertEquals(10.0f, m.get(i, j), 0.001f);
             }
         }
@@ -165,8 +165,8 @@ public class TestLoops extends TornadoTestBase {
                 .task("t0", TestLoops::forConstant06, m2, (m - 1), (n - 1)) //
                 .transferToHost(m2) //
                 .execute();
-        for (int i = 0; i < m2.M(); i++) {
-            for (int j = 0; j < m2.N(); j++) {
+        for (int i = 0; i < m2.getNumRows(); i++) {
+            for (int j = 0; j < m2.getNumColumns(); j++) {
                 assertEquals(10.0f, m2.get(i, j), 0.001f);
             }
         }

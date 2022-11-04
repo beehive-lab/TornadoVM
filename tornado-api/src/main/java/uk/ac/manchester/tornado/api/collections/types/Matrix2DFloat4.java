@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -10,12 +10,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
- * 
+ *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with GNU Classpath; see the file COPYING.  If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
@@ -25,7 +25,7 @@
  * making a combined work based on this library.  Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
- * 
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent
@@ -41,12 +41,12 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-
 import java.nio.FloatBuffer;
 import java.util.Arrays;
 
-public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+
+public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
@@ -58,89 +58,66 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
     private final int numElements;
 
     /**
-     * Number of rows
-     */
-    protected final int M;
-
-    /**
-     * Number of columns
-     */
-    protected final int N;
-
-    /**
      * Vector-width each position in the matrix
      */
     private static final int VECTOR_ELEMENTS = 4;
 
     /**
      * Storage format for matrix
-     * 
-     * @param width
-     *            number of columns
-     * @param height
+     *
+     * @param rows
      *            number of rows
+     * @param columns
+     *            number of columns
      * @param array
      *            array reference which contains data
      */
-    public Matrix2DFloat4(int width, int height, float[] array) {
+    public Matrix2DFloat4(int rows, int columns, float[] array) {
+        super(rows, columns);
         storage = array;
-        N = width;
-        M = height;
-        numElements = width * height * VECTOR_ELEMENTS;
+        numElements = columns * rows * VECTOR_ELEMENTS;
     }
 
     /**
      * Storage format for matrix
-     * 
-     * @param width
-     *            number of columns
-     * @param height
+     *
+     * @param rows
      *            number of rows
+     * @param columns
+     *            number of columns
      */
-    public Matrix2DFloat4(int width, int height) {
-        this(width, height, new float[width * height * VECTOR_ELEMENTS]);
-    }
-
-    public float[] getFlattenedArray() {
-        return storage;
+    public Matrix2DFloat4(int rows, int columns) {
+        this(rows, columns, new float[rows * columns * VECTOR_ELEMENTS]);
     }
 
     public Float4 get(int i, int j) {
-        int baseIndex = StorageFormats.toRowMajorVector(i, j, M, VECTOR_ELEMENTS);
+        int baseIndex = StorageFormats.toRowMajorVector(i, j, COLUMNS, VECTOR_ELEMENTS);
         return Float4.loadFromArray(storage, baseIndex);
     }
 
     public void set(int i, int j, Float4 value) {
-        int baseIndex = StorageFormats.toRowMajorVector(i, j, M, VECTOR_ELEMENTS);
+        int baseIndex = StorageFormats.toRowMajorVector(i, j, COLUMNS, VECTOR_ELEMENTS);
         value.storeToArray(storage, baseIndex);
     }
 
-    public int M() {
-        return M;
-    }
-
-    public int N() {
-        return N;
-    }
-
     public VectorFloat row(int row) {
-        int index = StorageFormats.toRowMajor(row, 0, N);
-        return new VectorFloat(N, Arrays.copyOfRange(storage, index, N));
+        int index = StorageFormats.toRowMajor(row, 0, COLUMNS);
+        return new VectorFloat(COLUMNS, Arrays.copyOfRange(storage, index, COLUMNS));
     }
 
     public VectorFloat column(int col) {
-        int index = StorageFormats.toRowMajor(0, col, N);
-        final VectorFloat v = new VectorFloat(M);
-        for (int i = 0; i < M; i++) {
-            v.set(i, storage[index + (i * N)]);
+        int index = StorageFormats.toRowMajor(0, col, COLUMNS);
+        final VectorFloat v = new VectorFloat(ROWS);
+        for (int i = 0; i < ROWS; i++) {
+            v.set(i, storage[index + (i * COLUMNS)]);
         }
         return v;
     }
 
     public VectorFloat diag() {
-        final VectorFloat v = new VectorFloat(Math.min(M, N));
-        for (int i = 0; i < M; i++) {
-            v.set(i, storage[i * (N + 1)]);
+        final VectorFloat v = new VectorFloat(Math.min(ROWS, COLUMNS));
+        for (int i = 0; i < ROWS; i++) {
+            v.set(i, storage[i * (COLUMNS + 1)]);
         }
         return v;
     }
@@ -152,10 +129,10 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void multiply(Matrix2DFloat4 a, Matrix2DFloat4 b) {
-        for (int row = 0; row < M(); row++) {
-            for (int col = 0; col < N(); col++) {
+        for (int row = 0; row < getNumRows(); row++) {
+            for (int col = 0; col < getNumColumns(); col++) {
                 Float4 sum = new Float4();
-                for (int k = 0; k < b.M(); k++) {
+                for (int k = 0; k < b.getNumRows(); k++) {
                     Float4 fa = a.get(row, k);
                     Float4 fb = b.get(k, col);
                     Float4 fc = Float4.mult(fa, fb);
@@ -168,13 +145,13 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
 
     /**
      * Transposes the matrix in-place
-     * 
+     *
      * @param matrix
      *            matrix to transpose
      */
     public static void transpose(Matrix2DFloat4 matrix) {
-        if (matrix.N == matrix.M) {
-            for (int i = 0; i < matrix.M; i++) {
+        if (matrix.COLUMNS == matrix.ROWS) {
+            for (int i = 0; i < matrix.ROWS; i++) {
                 for (int j = 0; j < i; j++) {
                     final Float4 tmp = matrix.get(i, j);
                     matrix.set(i, j, matrix.get(j, i));
@@ -187,7 +164,7 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public Matrix2DFloat4 duplicate() {
-        Matrix2DFloat4 matrix = new Matrix2DFloat4(N, M);
+        Matrix2DFloat4 matrix = new Matrix2DFloat4(ROWS, COLUMNS);
         matrix.set(this);
         return matrix;
     }
@@ -201,8 +178,8 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
     public String toString(String fmt) {
         StringBuilder str = new StringBuilder("");
 
-        for (int i = 0; i < M; i++) {
-            for (int j = 0; j < N; j++) {
+        for (int i = 0; i < ROWS; i++) {
+            for (int j = 0; j < COLUMNS; j++) {
                 str.append(String.format(fmt, get(i, j)) + " ");
             }
             str.append("\n");
@@ -218,8 +195,8 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public String toString() {
-        String result = String.format("MatrixFloat <%d x %d>", M, N);
-        if (M < 16 && N < 16) {
+        String result = String.format("MatrixFloat <%d x %d>", ROWS, COLUMNS);
+        if (ROWS < 16 && COLUMNS < 16) {
             result += "\n" + toString(FloatOps.FMT);
         }
         return result;
