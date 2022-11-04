@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -10,12 +10,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
- * 
+ *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with GNU Classpath; see the file COPYING.  If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
@@ -25,7 +25,7 @@
  * making a combined work based on this library.  Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
- * 
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent
@@ -44,7 +44,7 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.DoubleBuffer;
 import java.util.Arrays;
 
-public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
+public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<DoubleBuffer> {
     /**
      * backing array
      */
@@ -56,87 +56,64 @@ public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
     private final int numElements;
 
     /**
-     * Number of rows
-     */
-    protected final int M;
-
-    /**
-     * Number of columns
-     */
-    protected final int N;
-
-    /**
      * Storage format for matrix
-     * 
-     * @param width
+     *
+     * @param rows
      *            number of rows
-     * @param height
+     * @param columns
      *            number of columns
      * @param array
      *            array reference which contains data
      */
-    public Matrix2DDouble(int width, int height, double[] array) {
+    public Matrix2DDouble(int rows, int columns, double[] array) {
+        super(rows, columns);
         storage = array;
-        N = width;
-        M = height;
-        numElements = width * height;
+        numElements = columns * rows;
     }
 
     /**
      * Storage format for matrix
-     * 
-     * @param width
+     *
+     * @param rows
      *            number of rows
-     * @param height
+     * @param columns
      *            number of columns
-     * 
+     *
      */
-    public Matrix2DDouble(int width, int height) {
-        this(width, height, new double[width * height]);
+    public Matrix2DDouble(int rows, int columns) {
+        this(rows, columns, new double[rows * columns]);
     }
 
     public Matrix2DDouble(double[][] matrix) {
         this(matrix.length, matrix[0].length, StorageFormats.toRowMajor(matrix));
     }
 
-    public double[] getFlattenedArray() {
-        return storage;
-    }
-
     public double get(int i, int j) {
-        return storage[StorageFormats.toRowMajor(i, j, M)];
+        return storage[StorageFormats.toRowMajor(i, j, COLUMNS)];
     }
 
     public void set(int i, int j, double value) {
-        storage[StorageFormats.toRowMajor(i, j, M)] = value;
-    }
-
-    public int M() {
-        return M;
-    }
-
-    public int N() {
-        return N;
+        storage[StorageFormats.toRowMajor(i, j, COLUMNS)] = value;
     }
 
     public VectorDouble row(int row) {
-        int index = StorageFormats.toRowMajor(row, 0, N);
-        return new VectorDouble(N, Arrays.copyOfRange(storage, index, N));
+        int index = StorageFormats.toRowMajor(row, 0, COLUMNS);
+        return new VectorDouble(COLUMNS, Arrays.copyOfRange(storage, index, COLUMNS));
     }
 
     public VectorDouble column(int col) {
-        int index = StorageFormats.toRowMajor(0, col, N);
-        final VectorDouble v = new VectorDouble(M);
-        for (int i = 0; i < M; i++) {
-            v.set(i, storage[index + (i * N)]);
+        int index = StorageFormats.toRowMajor(0, col, COLUMNS);
+        final VectorDouble v = new VectorDouble(ROWS);
+        for (int i = 0; i < ROWS; i++) {
+            v.set(i, storage[index + (i * COLUMNS)]);
         }
         return v;
     }
 
     public VectorDouble diag() {
-        final VectorDouble v = new VectorDouble(Math.min(M, N));
-        for (int i = 0; i < M; i++) {
-            v.set(i, storage[i * (N + 1)]);
+        final VectorDouble v = new VectorDouble(Math.min(ROWS, COLUMNS));
+        for (int i = 0; i < ROWS; i++) {
+            v.set(i, storage[i * (COLUMNS + 1)]);
         }
         return v;
     }
@@ -148,10 +125,10 @@ public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public void multiply(Matrix2DDouble a, Matrix2DDouble b) {
-        for (int row = 0; row < M(); row++) {
-            for (int col = 0; col < N(); col++) {
+        for (int row = 0; row < getNumRows(); row++) {
+            for (int col = 0; col < getNumColumns(); col++) {
                 double sum = 0f;
-                for (int k = 0; k < b.M(); k++) {
+                for (int k = 0; k < b.getNumRows(); k++) {
                     sum += a.get(row, k) * b.get(k, col);
                 }
                 set(row, col, sum);
@@ -161,14 +138,14 @@ public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
 
     /**
      * Transposes the matrix in-place
-     * 
+     *
      * @param matrix
      *            matrix to transpose
      */
     public static void transpose(Matrix2DDouble matrix) {
-        if (matrix.N == matrix.M) {
+        if (matrix.COLUMNS == matrix.ROWS) {
             // transpose square matrix
-            for (int i = 0; i < matrix.M; i++) {
+            for (int i = 0; i < matrix.ROWS; i++) {
                 for (int j = 0; j < i; j++) {
                     final double tmp = matrix.get(i, j);
                     matrix.set(i, j, matrix.get(j, i));
@@ -179,7 +156,7 @@ public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public Matrix2DDouble duplicate() {
-        Matrix2DDouble matrix = new Matrix2DDouble(N, M);
+        Matrix2DDouble matrix = new Matrix2DDouble(ROWS, COLUMNS);
         matrix.set(this);
         return matrix;
     }
@@ -192,8 +169,8 @@ public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
 
     public String toString(String fmt) {
         StringBuilder str = new StringBuilder("");
-        for (int i = 0; i < M; i++) {
-            for (int j = 0; j < N; j++) {
+        for (int i = 0; i < ROWS; i++) {
+            for (int j = 0; j < COLUMNS; j++) {
                 str.append(String.format(fmt, get(i, j)) + " ");
             }
             str.append("\n");
@@ -203,8 +180,8 @@ public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public String toString() {
-        String result = String.format("MatrixDouble <%d x %d>", M, N);
-        if (M < 16 && N < 16) {
+        String result = String.format("MatrixDouble <%d x %d>", ROWS, COLUMNS);
+        if (ROWS < 16 && COLUMNS < 16) {
             result += "\n" + toString(DoubleOps.FMT);
         }
         return result;

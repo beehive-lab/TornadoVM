@@ -100,10 +100,10 @@ public class TestMatrixTypes extends TornadoTestBase {
     }
 
     public static void computeMatrixMultiplication(Matrix2DFloat a, Matrix2DFloat b, Matrix2DFloat c) {
-        for (@Parallel int i = 0; i < a.M(); i++) {
-            for (@Parallel int j = 0; j < a.N(); j++) {
+        for (@Parallel int i = 0; i < a.getNumRows(); i++) {
+            for (@Parallel int j = 0; j < a.getNumColumns(); j++) {
                 float sum = 0.0f;
-                for (int k = 0; k < a.N(); k++) {
+                for (int k = 0; k < a.getNumColumns(); k++) {
                     sum += a.get(i, k) + a.get(k, j);
                 }
                 c.set(i, j, sum);
@@ -133,6 +133,25 @@ public class TestMatrixTypes extends TornadoTestBase {
                 }
             }
         }
+    }
+
+    @Test
+    public void testMatrix00() {
+        Matrix2DInt matrix = new Matrix2DInt(2, 3);
+        matrix.set(0, 0, 1);
+        matrix.set(0, 1, 2);
+        matrix.set(0, 2, 3);
+
+        matrix.set(1, 0, 4);
+        matrix.set(1, 1, 5);
+        matrix.set(1, 2, 6);
+
+        assertEquals(1, matrix.get(0, 0));
+        assertEquals(2, matrix.get(0, 1));
+        assertEquals(3, matrix.get(0, 2));
+        assertEquals(4, matrix.get(1, 0));
+        assertEquals(5, matrix.get(1, 1));
+        assertEquals(6, matrix.get(1, 2));
     }
 
     @Test

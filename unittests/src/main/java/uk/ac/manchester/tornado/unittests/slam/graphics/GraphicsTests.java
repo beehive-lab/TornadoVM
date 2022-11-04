@@ -350,8 +350,8 @@ public class GraphicsTests extends TornadoTestBase {
 
     private void fillMatrix4x4Float(Matrix4x4Float matrix, float min, float max) {
         Random r = new Random();
-        for (int i = 0; i < matrix.N(); i++) {
-            for (int j = 0; j < matrix.M(); j++) {
+        for (int i = 0; i < matrix.getNumRows(); i++) {
+            for (int j = 0; j < matrix.getNumColumns(); j++) {
                 float x = min + r.nextFloat() * (max - min);
                 matrix.set(i, j, x);
             }
@@ -1090,8 +1090,8 @@ public class GraphicsTests extends TornadoTestBase {
                 .transferToHost(m) //
                 .execute();
 
-        for (int i = 0; i < m.N(); i++) {
-            for (int j = 0; j < m.M(); j++) {
+        for (int i = 0; i < m.getNumRows(); i++) {
+            for (int j = 0; j < m.getNumColumns(); j++) {
                 Assert.assertEquals(seq.get(i, j), m.get(i, j), 0.01f);
             }
         }
