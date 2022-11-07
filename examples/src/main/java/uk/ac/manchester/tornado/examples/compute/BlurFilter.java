@@ -32,9 +32,7 @@ import javax.swing.JFrame;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 /**
  * It applies a Blur filter to an input image. Algorithm taken from CUDA course
@@ -157,8 +155,6 @@ public class BlurFilter {
 
             long start = System.nanoTime();
 
-            TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(2);
-
             TaskGraph parallelFilter = new TaskGraph("blur") //
                     .transferToDevice(DataTransferMode.FIRST_EXECUTION, redChannel, greenChannel, blueChannel, filter) //
                     .lockObjectsInMemory(redChannel, greenChannel, blueChannel, redFilter, greenFilter, blueFilter, filter) //
@@ -167,8 +163,6 @@ public class BlurFilter {
                     .task("blue", BlurFilterImage::compute, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
                     .transferToHost(redFilter, greenFilter, blueFilter) //
                     .useDefaultThreadScheduler(true);
-
-            parallelFilter.mapAllTo(device);
 
             parallelFilter.execute();
 
