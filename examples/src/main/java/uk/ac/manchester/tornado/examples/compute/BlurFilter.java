@@ -32,7 +32,9 @@ import javax.swing.JFrame;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 /**
  * It applies a Blur filter to an input image. Algorithm taken from CUDA course
@@ -72,7 +74,7 @@ public class BlurFilter {
             }
         }
 
-        private static void channelConvolutionSequential(int[] channel, int[] channelBlurred, final int numRows, final int numCols, float[] filter, final int filterWidth) {
+        private static void channelConvolutionSequential(int[] rgbChannel, int[] channelBlurred, final int numRows, final int numCols, float[] filter, final int filterWidth) {
             // Dealing with an even width filter is trickier
             assert (filterWidth % 2 == 1);
 
@@ -89,7 +91,7 @@ public class BlurFilter {
                             int image_r = Math.min(Math.max(r + filter_r, 0), (numRows - 1));
                             int image_c = Math.min(Math.max(c + filter_c, 0), (numCols - 1));
 
-                            float image_value = (channel[image_r * numCols + image_c]);
+                            float image_value = (rgbChannel[image_r * numCols + image_c]);
                             float filter_value = filter[(filter_r + filterWidth / 2) * filterWidth + filter_c + filterWidth / 2];
 
                             result += image_value * filter_value;
@@ -100,7 +102,7 @@ public class BlurFilter {
             }
         }
 
-        private static void compute(int[] channel, int[] channelBlurred, final int numRows, final int numCols, float[] filter, final int filterWidth) {
+        private static void compute(int[] rgbChannel, int[] channelBlurred, final int numRows, final int numCols, float[] filter, final int filterWidth) {
             // For every pixel in the image
             assert (filterWidth % 2 == 1);
 
@@ -111,7 +113,7 @@ public class BlurFilter {
                         for (int filter_c = -filterWidth / 2; filter_c <= filterWidth / 2; filter_c++) {
                             int image_r = Math.min(Math.max(r + filter_r, 0), (numRows - 1));
                             int image_c = Math.min(Math.max(c + filter_c, 0), (numCols - 1));
-                            float image_value = (channel[image_r * numCols + image_c]);
+                            float image_value = (rgbChannel[image_r * numCols + image_c]);
                             float filter_value = filter[(filter_r + filterWidth / 2) * filterWidth + filter_c + filterWidth / 2];
                             result += image_value * filter_value;
                         }
@@ -155,6 +157,8 @@ public class BlurFilter {
 
             long start = System.nanoTime();
 
+            TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(2);
+
             TaskGraph parallelFilter = new TaskGraph("blur") //
                     .transferToDevice(DataTransferMode.FIRST_EXECUTION, redChannel, greenChannel, blueChannel, filter) //
                     .lockObjectsInMemory(redChannel, greenChannel, blueChannel, redFilter, greenFilter, blueFilter, filter) //
@@ -163,6 +167,8 @@ public class BlurFilter {
                     .task("blue", BlurFilterImage::compute, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
                     .transferToHost(redFilter, greenFilter, blueFilter) //
                     .useDefaultThreadScheduler(true);
+
+            parallelFilter.mapAllTo(device);
 
             parallelFilter.execute();
 
