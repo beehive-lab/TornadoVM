@@ -230,7 +230,7 @@ public class ComputeKernels {
         }
     }
 
-    public static void channelConvolution(int[] channel, int[] channelBlurred, final int numRows, final int numCols, float[] filter, final int filterWidth) {
+    public static void channelConvolution(int[] rgbChannel, int[] channelBlurred, final int numRows, final int numCols, float[] filter, final int filterWidth) {
         // Dealing with an even width filter is trickier
         assert (filterWidth % 2 == 1);
         // For every pixel in the image
@@ -246,7 +246,7 @@ public class ComputeKernels {
                         int image_r = Math.min(Math.max(r + filter_r, 0), (numRows - 1));
                         int image_c = Math.min(Math.max(c + filter_c, 0), (numCols - 1));
 
-                        float image_value = (channel[image_r * numCols + image_c]);
+                        float image_value = (rgbChannel[image_r * numCols + image_c]);
                         float filter_value = filter[(filter_r + filterWidth / 2) * filterWidth + filter_c + filterWidth / 2];
 
                         result += image_value * filter_value;
