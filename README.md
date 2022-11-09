@@ -50,10 +50,10 @@ Help:
   * `--spirv`: Enables the SPIRV backend (requires Intel Level Zero drivers)
 
 Alternatively, TornadoVM can be installed either manually [from source](INSTALL.md#b-manual-installation) or 
-by [using Docker](assembly/src/docs/13_INSTALL_WITH_DOCKER.md).
+by [using Docker](tornado-assembly/src/docs/13_INSTALL_WITH_DOCKER.md).
 
 You can also run TornadoVM on Amazon AWS CPUs, GPUs, and FPGAs following the
-instructions [here](assembly/src/docs/17_AWS.md).
+instructions [here](tornado-assembly/src/docs/17_AWS.md).
 
 ## 2. Usage Instructions
 
@@ -69,17 +69,17 @@ that includes NBody, DFT, KMeans computation and matrix computations.
 
 **Additional Information**
 
-[Documentation](assembly/src/docs)
+[Documentation](tornado-assembly/src/docs)
 
-[Benchmarks](assembly/src/docs/4_BENCHMARKS.md)
+[Benchmarks](tornado-assembly/src/docs/4_BENCHMARKS.md)
 
-[Reductions](assembly/src/docs/5_REDUCTIONS.md)
+[Reductions](tornado-assembly/src/docs/5_REDUCTIONS.md)
 
-[Execution Flags](assembly/src/docs/6_TORNADO_FLAGS.md)
+[Execution Flags](tornado-assembly/src/docs/6_TORNADO_FLAGS.md)
 
-[FPGA execution](assembly/src/docs/7_FPGA.md)
+[FPGA execution](tornado-assembly/src/docs/7_FPGA.md)
 
-[Profiler Usage](assembly/src/docs/9_PROFILER.md)
+[Profiler Usage](tornado-assembly/src/docs/9_PROFILER.md)
 
 ## 3. Programming Model
 
@@ -216,11 +216,11 @@ You can import the API and start using TornadoVM. Set this in the `pom.xml` file
 ```
 
 To run TornadoVM, you need to either install the TornadoVM extension for GraalVM/OpenJDK, or run with our
-Docker [images](assembly/src/docs/12_INSTALL_WITH_DOCKER.md).
+Docker [images](tornado-assembly/src/docs/12_INSTALL_WITH_DOCKER.md).
 
 ## 6. Additional Resources
 
-[Here](assembly/src/docs/16_RESOURCES.md) you can find videos, presentations, and articles and artefacts describing
+[Here](tornado-assembly/src/docs/16_RESOURCES.md) you can find videos, presentations, and articles and artefacts describing
 TornadoVM and how to use it.
 
 ## 7. Academic Publications
@@ -265,7 +265,7 @@ If you are using **Tornado 0.1** (Initial release), please use the following cit
 
 ```
 
-Selected publications can be found [here](assembly/src/docs/14_PUBLICATIONS.md).
+Selected publications can be found [here](tornado-assembly/src/docs/14_PUBLICATIONS.md).
 
 ## 8. Acknowledgments
 
