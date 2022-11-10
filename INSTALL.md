@@ -34,7 +34,7 @@ Note: The SPIR-V backend is only supported for Linux OS. Besides, the SPIR-V bac
 
 TornadoVM can be built with three compiler backends and is able to generate OpenCL, PTX and SPIR-V code. 
 
-**Important [SPIR-V Backend Configuration]** Prior to the built with the SPIR-V backend, users have to ensure that Level Zero is installed in their system. Please follow the guidelines [here](assembly/src/docs/11_SPIRV_BACKEND_INSTALL.md).
+**Important [SPIR-V Backend Configuration]** Prior to the built with the SPIR-V backend, users have to ensure that Level Zero is installed in their system. Please follow the guidelines [here](tornado-assembly/src/docs/11_SPIRV_BACKEND_INSTALL.md).
 
 There are two ways to install TornadoVM: 
 
@@ -103,12 +103,12 @@ $ source source.sh
 
 TornadoVM can be executed with the following three configurations:
 
-  * TornadoVM with GraalVM (JDK 11 and JDK 17): see the installation guide [here](assembly/src/docs/10_INSTALL_WITH_GRAALVM.md).
-  * TornadoVM with JDK11+ (e.g. OpenJDK [11-17], Red Hat Mandrel, Amazon Corretto): see the installation guide [here](assembly/src/docs/12_INSTALL_WITH_JDK11_PLUS.md).
+  * TornadoVM with GraalVM (JDK 11 and JDK 17): see the installation guide [here](tornado-assembly/src/docs/10_INSTALL_WITH_GRAALVM.md).
+  * TornadoVM with JDK11+ (e.g. OpenJDK [11-17], Red Hat Mandrel, Amazon Corretto): see the installation guide [here](tornado-assembly/src/docs/12_INSTALL_WITH_JDK11_PLUS.md).
 
-_Note 1_: To run TornadoVM on **Windows OS**, install TornadoVM with GraalVM. More information [here](assembly/src/docs/20_INSTALL_WINDOWS_WITH_GRAALVM.md).
+_Note 1_: To run TornadoVM on **Windows OS**, install TornadoVM with GraalVM. More information [here](tornado-assembly/src/docs/20_INSTALL_WINDOWS_WITH_GRAALVM.md).
 
-_Note 2_: To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 11. More information [here](assembly/src/docs/18_MALI.md).
+_Note 2_: To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 11. More information [here](tornado-assembly/src/docs/18_MALI.md).
 
 
 This installation type requires users to manually install the dependencies, therefore it is recommended for developing the TornadoVM.
