@@ -66,4 +66,15 @@ public class Matrix2DType {
         return COLUMNS;
     }
 
+    /**
+     * It returns the final index of the range to be copied, starting from the input
+     * parameter.
+     * 
+     * @param fromIndex
+     * @return int
+     */
+    public int getFinalIndexOfRange(int fromIndex) {
+        return fromIndex + COLUMNS;
+    }
+
 }

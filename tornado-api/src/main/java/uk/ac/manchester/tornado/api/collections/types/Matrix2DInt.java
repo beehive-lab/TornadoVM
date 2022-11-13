@@ -97,7 +97,7 @@ public class Matrix2DInt extends Matrix2DType implements PrimitiveStorage<IntBuf
 
     public VectorInt row(int row) {
         int index = StorageFormats.toRowMajor(row, 0, COLUMNS);
-        return new VectorInt(COLUMNS, Arrays.copyOfRange(storage, index, COLUMNS));
+        return new VectorInt(COLUMNS, Arrays.copyOfRange(storage, index, getFinalIndexOfRange(index)));
     }
 
     public VectorInt column(int col) {

@@ -104,7 +104,7 @@ public class Matrix2DFloat extends Matrix2DType implements PrimitiveStorage<Floa
 
     public VectorFloat row(int row) {
         int index = toRowMajor(row, 0, COLUMNS);
-        return new VectorFloat(COLUMNS, Arrays.copyOfRange(storage, index, COLUMNS));
+        return new VectorFloat(COLUMNS, Arrays.copyOfRange(storage, index, getFinalIndexOfRange(index)));
     }
 
     public VectorFloat column(int col) {
