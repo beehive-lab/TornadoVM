@@ -34,6 +34,9 @@ import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat4;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DInt;
 import uk.ac.manchester.tornado.api.collections.types.Matrix3DFloat;
 import uk.ac.manchester.tornado.api.collections.types.Matrix3DFloat4;
+import uk.ac.manchester.tornado.api.collections.types.VectorDouble;
+import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
+import uk.ac.manchester.tornado.api.collections.types.VectorInt;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -133,6 +136,170 @@ public class TestMatrixTypes extends TornadoTestBase {
                 }
             }
         }
+    }
+
+    @Test
+    public void testMatrixRowInt01() {
+        int[][] array = new int[3][2];
+        array[0][0] = 1;
+        array[0][1] = 2;
+        array[1][0] = 3;
+        array[1][1] = 4;
+        array[2][0] = 5;
+        array[2][1] = 6;
+
+        Matrix2DInt matrix = new Matrix2DInt(array);
+
+        VectorInt row0 = matrix.row(0);
+        VectorInt row1 = matrix.row(1);
+        VectorInt row2 = matrix.row(2);
+
+        assertEquals(1, row0.getArray()[0]);
+        assertEquals(2, row0.getArray()[1]);
+        assertEquals(3, row1.getArray()[0]);
+        assertEquals(4, row1.getArray()[1]);
+        assertEquals(5, row2.getArray()[0]);
+        assertEquals(6, row2.getArray()[1]);
+    }
+
+    @Test
+    public void testMatrixRowInt02() {
+        int[][] array = new int[2][3];
+        array[0][0] = 1;
+        array[0][1] = 2;
+        array[0][2] = 3;
+        array[1][0] = 4;
+        array[1][1] = 5;
+        array[1][2] = 6;
+
+        Matrix2DInt matrix = new Matrix2DInt(array);
+
+        VectorInt row0 = matrix.row(0);
+        VectorInt row1 = matrix.row(1);
+
+        assertEquals(1, row0.getArray()[0]);
+        assertEquals(2, row0.getArray()[1]);
+        assertEquals(3, row0.getArray()[2]);
+        assertEquals(4, row1.getArray()[0]);
+        assertEquals(5, row1.getArray()[1]);
+        assertEquals(6, row1.getArray()[2]);
+    }
+
+    @Test
+    public void testMatrixRowFloat01() {
+        float[][] array = new float[3][2];
+        array[0][0] = 1.0f;
+        array[0][1] = 2.0f;
+        array[1][0] = 3.0f;
+        array[1][1] = 4.0f;
+        array[2][0] = 5.0f;
+        array[2][1] = 6.0f;
+
+        Matrix2DFloat matrix = new Matrix2DFloat(array);
+
+        VectorFloat row0 = matrix.row(0);
+        VectorFloat row1 = matrix.row(1);
+        VectorFloat row2 = matrix.row(2);
+
+        assertEquals(1, row0.getArray()[0], 0.01f);
+        assertEquals(2, row0.getArray()[1], 0.01f);
+        assertEquals(3, row1.getArray()[0], 0.01f);
+        assertEquals(4, row1.getArray()[1], 0.01f);
+        assertEquals(5, row2.getArray()[0], 0.01f);
+        assertEquals(6, row2.getArray()[1], 0.01f);
+    }
+
+    @Test
+    public void testMatrixRowFloat02() {
+        float[][] array = new float[2][3];
+        array[0][0] = 1.0f;
+        array[0][1] = 2.0f;
+        array[0][2] = 3.0f;
+        array[1][0] = 4.0f;
+        array[1][1] = 5.0f;
+        array[1][2] = 6.0f;
+
+        Matrix2DFloat matrix = new Matrix2DFloat(array);
+
+        VectorFloat row0 = matrix.row(0);
+        VectorFloat row1 = matrix.row(1);
+
+        assertEquals(1, row0.getArray()[0], 0.01f);
+        assertEquals(2, row0.getArray()[1], 0.01f);
+        assertEquals(3, row0.getArray()[2], 0.01f);
+        assertEquals(4, row1.getArray()[0], 0.01f);
+        assertEquals(5, row1.getArray()[1], 0.01f);
+        assertEquals(6, row1.getArray()[2], 0.01f);
+    }
+
+    @Test
+    public void testMatrixRowFloat4() {
+        float[] array = new float[6];
+        array[0] = 1.0f;
+        array[1] = 2.0f;
+        array[2] = 3.0f;
+        array[3] = 4.0f;
+        array[4] = 5.0f;
+        array[5] = 6.0f;
+
+        Matrix2DFloat4 matrix = new Matrix2DFloat4(2, 3, array);
+
+        VectorFloat row0 = matrix.row(0);
+        VectorFloat row1 = matrix.row(1);
+
+        assertEquals(1, row0.getArray()[0], 0.01f);
+        assertEquals(2, row0.getArray()[1], 0.01f);
+        assertEquals(3, row0.getArray()[2], 0.01f);
+        assertEquals(4, row1.getArray()[0], 0.01f);
+        assertEquals(5, row1.getArray()[1], 0.01f);
+        assertEquals(6, row1.getArray()[2], 0.01f);
+    }
+
+    @Test
+    public void testMatrixRowDouble01() {
+        double[][] array = new double[3][2];
+        array[0][0] = 1.0f;
+        array[0][1] = 2.0f;
+        array[1][0] = 3.0f;
+        array[1][1] = 4.0f;
+        array[2][0] = 5.0f;
+        array[2][1] = 6.0f;
+
+        Matrix2DDouble matrix = new Matrix2DDouble(array);
+
+        VectorDouble row0 = matrix.row(0);
+        VectorDouble row1 = matrix.row(1);
+        VectorDouble row2 = matrix.row(2);
+
+        assertEquals(1.0f, row0.getArray()[0], 0.01f);
+        assertEquals(2.0f, row0.getArray()[1], 0.01f);
+        assertEquals(3.0f, row1.getArray()[0], 0.01f);
+        assertEquals(4.0f, row1.getArray()[1], 0.01f);
+        assertEquals(5.0f, row2.getArray()[0], 0.01f);
+        assertEquals(6.0f, row2.getArray()[1], 0.01f);
+    }
+
+    @Test
+    public void testMatrixRowDouble02() {
+        double[][] array = new double[2][3];
+        array[0][0] = 1.0f;
+        array[0][1] = 2.0f;
+        array[0][2] = 3.0f;
+        array[1][0] = 4.0f;
+        array[1][1] = 5.0f;
+        array[1][2] = 6.0f;
+
+        Matrix2DDouble matrix = new Matrix2DDouble(array);
+
+        VectorDouble row0 = matrix.row(0);
+        VectorDouble row1 = matrix.row(1);
+
+        assertEquals(1.0f, row0.getArray()[0], 0.01f);
+        assertEquals(2.0f, row0.getArray()[1], 0.01f);
+        assertEquals(3.0f, row0.getArray()[2], 0.01f);
+        assertEquals(4.0f, row1.getArray()[0], 0.01f);
+        assertEquals(5.0f, row1.getArray()[1], 0.01f);
+        assertEquals(6.0f, row1.getArray()[2], 0.01f);
     }
 
     @Test

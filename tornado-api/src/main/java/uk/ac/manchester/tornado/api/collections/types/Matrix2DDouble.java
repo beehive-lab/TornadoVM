@@ -98,7 +98,7 @@ public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<Dou
 
     public VectorDouble row(int row) {
         int index = StorageFormats.toRowMajor(row, 0, COLUMNS);
-        return new VectorDouble(COLUMNS, Arrays.copyOfRange(storage, index, COLUMNS));
+        return new VectorDouble(COLUMNS, Arrays.copyOfRange(storage, index, getFinalIndexOfRange(index)));
     }
 
     public VectorDouble column(int col) {
