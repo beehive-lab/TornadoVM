@@ -14,11 +14,11 @@ Developers can chose which backends to install and run.
 
 **Website**: [tornadovm.org](https://www.tornadovm.org)
 
-For a quick introduction please read the following [FAQ](assembly/src/docs/15_FAQ.md).
+For a quick introduction please read the following [FAQ](tornado-assembly/src/docs/15_FAQ.md).
 
-**Latest Release:** TornadoVM 0.14.1 - 29/09/2022 : See [CHANGELOG](assembly/src/docs/CHANGELOG.md#tornadovm-0.14.1)
+**Latest Release:** TornadoVM 0.14.1 - 29/09/2022 : See [CHANGELOG](tornado-assembly/src/docs/CHANGELOG.md#tornadovm-0.14.1)
 
-Information about previous releases can be found [here](assembly/src/docs/Releases.md)
+Information about previous releases can be found [here](tornado-assembly/src/docs/Releases.md)
 
 ----------------------
 
@@ -68,7 +68,7 @@ $ ./scripts/tornadovmInstaller.sh --jdk17 --opencl --spirv --ptx
 
 Alternatively, TornadoVM can be installed either manually [from source](INSTALL.md#b-manual-installation) or by [using Docker](tornado-assembly/src/docs/13_INSTALL_WITH_DOCKER.md).
 
-If you are planing to use Docker with TornadoVM on GPUs, you can also follow [this](https://github.com/beehive-lab/docker-tornado#docker-for-tornadovm) guidelines.
+If you are planing to use Docker with TornadoVM on GPUs, you can also follow [these](https://github.com/beehive-lab/docker-tornado#docker-for-tornadovm) guidelines.
 
 You can also run TornadoVM on Amazon AWS CPUs, GPUs, and FPGAs following the instructions [here](tornado-assembly/src/docs/17_AWS.md).
 
@@ -272,8 +272,10 @@ Selected publications can be found [here](tornado-assembly/src/docs/14_PUBLICATI
 This work is partially funded by [Intel corporation](https://www.intel.com/content/www/us/en/homepage.html)
 the [EU Horizon 2020 ELEGANT 957286](https://www.elegant-h2020.eu/) grant. In addition, it has been supported
 by [EU Horizon 2020 E2Data 780245](https://e2data.eu), 
-by [EU Horizon 2020 ELEGANT 957286](https://www.elegant-h2020.eu/),
-the [EU Horizon 2020 ACTiCLOUD 732366](https://acticloud.eu),
+[EU Horizon 2020 ELEGANT 957286](https://www.elegant-h2020.eu/),
+[EU Horizon 2020 ACTiCLOUD 732366](https://acticloud.eu),
+[EU Horizon ENCRYPT 101070670](https://encrypt-project.eu),
+[EU Horizon TANGO 101070052](https://cordis.europa.eu/project/id/101070052),
 and [EPSRC PAMELA EP/K008730/1](http://apt.cs.manchester.ac.uk/projects/PAMELA/), and AnyScale Apps EP/L000725/1 grants.
 
 ## 9. Contributions and Collaborations
