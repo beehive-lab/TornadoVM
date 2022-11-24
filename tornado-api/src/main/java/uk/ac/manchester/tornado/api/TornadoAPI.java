@@ -567,9 +567,17 @@ public interface TornadoAPI {
      *
      * @param objects
      *            list of input objects to be streamed.
-     * @return link to the {@TornadoAPI} to allow function composition.
+     * @return link to the {@link TornadoAPI} to allow function composition.
      */
     TornadoAPI transferToHost(Object... objects);
+
+    /**
+     * Function that closes a task-graph definition and creates an immutable
+     * task-graph ready for execution.
+     *
+     * @return {@link ImmutableTaskGraph}
+     */
+    ImmutableTaskGraph close();
 
     /**
      * Internal call to run the task-schedule

@@ -278,6 +278,11 @@ public class TaskGraph implements TornadoAPI, ProfileInterface {
     }
 
     @Override
+    public ImmutableTaskGraph close() {
+        return new ImmutableTaskGraph(this);
+    }
+
+    @Override
     public TaskGraph schedule() {
         taskScheduleImpl.scheduleInner();
         return this;
