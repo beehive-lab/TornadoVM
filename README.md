@@ -26,7 +26,7 @@ Information about previous releases can be found [here](tornado-assembly/src/doc
 
 In Linux and Mac OSx, TornadoVM can be installed automatically with the [installation script](INSTALL.md#a-automatic-installation). For example:
 ```bash
-$ ./scripts/tornadovmInstaller.sh 
+$ ./scripts/tornadoVMInstaller.sh 
 TornadoVM installer for Linux and OSx
 $ ./scripts/tornadoVMInstaller.sh <JDK> <BACKENDS>
 JDK (select one):
@@ -60,10 +60,10 @@ Example of installation:
 
 ```bash
 # Install the OpenCL backend with OpenJDK 17
-$ ./scripts/tornadovmInstaller.sh --jdk17 --opencl 
+$ ./scripts/tornadoVMInstaller.sh --jdk17 --opencl 
 
 # It is also possible to combine different backends:
-$ ./scripts/tornadovmInstaller.sh --jdk17 --opencl --spirv --ptx
+$ ./scripts/tornadoVMInstaller.sh --jdk17 --opencl --spirv --ptx
 ```
 
 Alternatively, TornadoVM can be installed either manually [from source](INSTALL.md#b-manual-installation) or by [using Docker](tornado-assembly/src/docs/13_INSTALL_WITH_DOCKER.md).
