@@ -77,7 +77,7 @@ public class TestExecutor extends TornadoTestBase {
     }
 
     /**
-     * Try to break mutability
+     * Test to launch multiple times the same executor
      */
     @Test
     public void test02() {
@@ -101,30 +101,58 @@ public class TestExecutor extends TornadoTestBase {
         // 3. Create an executor and build an execution plan
         TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
 
-        // 4. Add optimizations to the execution plan
-        executorPlan.withReusableBuffers() //
-                .withDynamicReconfiguration();//
+        // 4. Execute all Immutable Task Graphs associated with an executor
+        for (int i = 0; i < 10; i++) {
+            executorPlan.execute();
+        }
 
-        // 5. Execute all Immutable Task Graphs associated with an executor
-        executorPlan.execute();
-
-        // 6. We check for the result
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i]);
         }
 
-        // 7. We try to modify the mutable task-graph before execution
+    }
+
+    /**
+     * Test to try to break mutability.
+     */
+    @Test
+    public void test03() {
+        int numElements = 16;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+        int[] c = new int[numElements];
+
+        Arrays.fill(a, 1);
+        Arrays.fill(b, 2);
+
+        // 1. Task Graph Definition
+        TaskGraph tg = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestHello::add, a, b, c) //
+                .transferToHost(c);
+
+        // 2. Create an immutable task graph
+        ImmutableTaskGraph immutableTaskGraph = tg.freeze();
+
+        // 3. Create an executor and build an execution plan
+        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
+
+        // 4. Execute all Immutable Task Graphs associated with an executor
+        executorPlan.execute();
+
+        // 5. We check for the result
+        for (int i = 0; i < c.length; i++) {
+            assertEquals(a[i] + b[i], c[i]);
+        }
+
+        // 6. We try to modify the mutable task-graph before execution
         int[] d = new int[numElements];
         Arrays.fill(d, 10);
         tg.replaceParameter(a, d);
 
-        // 8. Run the executor but with the already declared immutable task-graph. It
-        // should not be any recompilation
+        // 7. Run the executor but with the already declared immutable task-graph. It
+        // should not be any recompilation.
         executorPlan.execute();
-
-        System.out.println(Arrays.toString(a));
-        System.out.println(Arrays.toString(b));
-        System.out.println(Arrays.toString(c));
 
         // 8. We check for the result. It should be the same as in step 6.
         for (int i = 0; i < c.length; i++) {

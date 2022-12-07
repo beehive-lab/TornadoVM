@@ -403,9 +403,23 @@ public class TornadoExecutionContext {
     }
 
     public void createImmutableExecutionContext(TornadoExecutionContext executionContext) {
-        executionContext.tasks = Collections.unmodifiableList(tasks);
-        executionContext.constants = Collections.unmodifiableList(constants);
-        executionContext.objectMap = Collections.unmodifiableMap(objectMap);
+        List<SchedulableTask> schedulableTasksCopy = new ArrayList<>();
+        for (SchedulableTask task : tasks) {
+            schedulableTasksCopy.add(task);
+        }
+        executionContext.tasks = schedulableTasksCopy;
+
+        List<Object> constantCopy = new ArrayList<>();
+        for (Object constant : constants) {
+            constantCopy.add(constant);
+        }
+        executionContext.constants = constantCopy;
+
+        Map<Integer, Integer> objectsMapCopy = new HashMap<>();
+        objectMap.forEach((k, v) -> {
+            objectsMapCopy.put(k, v);
+        });
+        executionContext.objectMap = objectsMapCopy;
 
         List<Object> objectsCopy = new ArrayList<>();
         for (Object o : objects) {

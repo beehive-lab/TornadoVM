@@ -373,8 +373,9 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         int kernelContextWriteEventId = callWrapper.enqueueWrite();
         updateProfilerKernelContextWrite(kernelContextWriteEventId, meta, callWrapper);
 
-        guarantee(kernel != null, "kernel is null");
+        System.out.println("META?? " + meta);
         if (meta == null) {
+            System.out.println("META IS NULL???");
             executeSingleThread();
         } else {
             launchKernel(callWrapper, meta, batchThreads);
