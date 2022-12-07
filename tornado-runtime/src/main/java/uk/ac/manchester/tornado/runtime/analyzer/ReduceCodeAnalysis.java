@@ -29,6 +29,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 
 import org.graalvm.compiler.graph.CachedGraph;
@@ -338,7 +339,7 @@ public class ReduceCodeAnalysis {
      *
      * @return {@link MetaReduceTasks}
      */
-    public static MetaReduceCodeAnalysis analysisTaskSchedule(ArrayList<TaskPackage> taskPackages) {
+    public static MetaReduceCodeAnalysis analysisTaskSchedule(List<TaskPackage> taskPackages) {
         int taskIndex = 0;
         int inputSize = 0;
 

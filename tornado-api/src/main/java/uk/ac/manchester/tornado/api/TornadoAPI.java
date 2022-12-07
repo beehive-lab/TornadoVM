@@ -577,7 +577,7 @@ public interface TornadoAPI {
      *
      * @return {@link ImmutableTaskGraph}
      */
-    ImmutableTaskGraph close();
+    ImmutableTaskGraph freeze();
 
     /**
      * Internal call to run the task-schedule

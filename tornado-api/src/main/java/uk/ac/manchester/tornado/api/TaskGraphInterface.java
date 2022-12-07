@@ -41,7 +41,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import uk.ac.manchester.tornado.api.common.Access;
@@ -51,7 +51,7 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
 
-public interface AbstractTaskGraph extends ProfileInterface {
+public interface TaskGraphInterface extends ProfileInterface {
 
     SchedulableTask getTask(String taskNameID);
 
@@ -109,15 +109,15 @@ public interface AbstractTaskGraph extends ProfileInterface {
 
     TaskMetaDataInterface meta();
 
-    AbstractTaskGraph schedule();
+    TaskGraphInterface schedule();
 
-    AbstractTaskGraph schedule(GridScheduler gridScheduler);
+    TaskGraphInterface schedule(GridScheduler gridScheduler);
 
-    AbstractTaskGraph scheduleWithProfile(Policy policy);
+    TaskGraphInterface scheduleWithProfile(Policy policy);
 
-    AbstractTaskGraph scheduleWithProfileSequential(Policy policy);
+    TaskGraphInterface scheduleWithProfileSequential(Policy policy);
 
-    AbstractTaskGraph scheduleWithProfileSequentialGlobal(Policy policy);
+    TaskGraphInterface scheduleWithProfileSequentialGlobal(Policy policy);
 
     void addTask(TaskPackage taskPackage);
 
@@ -135,5 +135,7 @@ public interface AbstractTaskGraph extends ProfileInterface {
 
     boolean isFinished();
 
-    HashSet<Object> getArgumentsLookup();
+    Set<Object> getArgumentsLookup();
+
+    TaskGraphInterface createImmutableTaskGraph();
 }

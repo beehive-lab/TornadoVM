@@ -58,7 +58,7 @@ public class TestExecutor extends TornadoTestBase {
                 .transferToHost(c);
 
         // 2. Create an immutable task graph
-        ImmutableTaskGraph immutableTaskGraph = tg.close();
+        ImmutableTaskGraph immutableTaskGraph = tg.freeze();
 
         // 3. Create an executor and build an execution plan
         TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
@@ -71,7 +71,7 @@ public class TestExecutor extends TornadoTestBase {
         executorPlan.execute();
 
         for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.001);
+            assertEquals(a[i] + b[i], c[i]);
         }
 
     }
@@ -96,7 +96,7 @@ public class TestExecutor extends TornadoTestBase {
                 .transferToHost(c);
 
         // 2. Create an immutable task graph
-        ImmutableTaskGraph immutableTaskGraph = tg.close();
+        ImmutableTaskGraph immutableTaskGraph = tg.freeze();
 
         // 3. Create an executor and build an execution plan
         TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
@@ -110,7 +110,7 @@ public class TestExecutor extends TornadoTestBase {
 
         // 6. We check for the result
         for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.001);
+            assertEquals(a[i] + b[i], c[i]);
         }
 
         // 7. We try to modify the mutable task-graph before execution
@@ -122,9 +122,13 @@ public class TestExecutor extends TornadoTestBase {
         // should not be any recompilation
         executorPlan.execute();
 
+        System.out.println(Arrays.toString(a));
+        System.out.println(Arrays.toString(b));
+        System.out.println(Arrays.toString(c));
+
         // 8. We check for the result. It should be the same as in step 6.
         for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.001);
+            assertEquals(a[i] + b[i], c[i]);
         }
 
     }

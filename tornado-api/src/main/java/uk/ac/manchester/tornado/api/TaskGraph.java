@@ -42,6 +42,7 @@
 package uk.ac.manchester.tornado.api;
 
 import java.util.HashSet;
+import java.util.Set;
 
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
@@ -76,9 +77,11 @@ import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
  */
 public class TaskGraph implements TornadoAPI, ProfileInterface {
 
+    private static final String ERROR_TASK_NAME_DUPLICATION = "[TornadoVM ERROR]. There are more than 1 tasks with the same task-name. Use different a different task name for each task within a TaskGraph.";
+
     private final String taskScheduleName;
-    private AbstractTaskGraph taskScheduleImpl;
-    private HashSet<String> taskNames;
+    protected TaskGraphInterface taskScheduleImpl;
+    protected HashSet<String> taskNames;
 
     public TaskGraph(String name) {
         this.taskScheduleName = name;
@@ -88,7 +91,7 @@ public class TaskGraph implements TornadoAPI, ProfileInterface {
 
     private void checkTaskName(String id) {
         if (taskNames.contains(id)) {
-            throw new TornadoTaskRuntimeException("Error. More than 1 task with the same task-name");
+            throw new TornadoTaskRuntimeException(ERROR_TASK_NAME_DUPLICATION);
         }
         taskNames.add(id);
     }
@@ -278,8 +281,11 @@ public class TaskGraph implements TornadoAPI, ProfileInterface {
     }
 
     @Override
-    public ImmutableTaskGraph close() {
-        return new ImmutableTaskGraph(this);
+    public ImmutableTaskGraph freeze() {
+        LockTaskGraph lockedTaskGraph = new LockTaskGraph(this.getTaskScheduleName());
+        lockedTaskGraph.taskScheduleImpl = this.taskScheduleImpl.createImmutableTaskGraph();
+        lockedTaskGraph.taskNames = this.taskNames;
+        return new ImmutableTaskGraph(lockedTaskGraph);
     }
 
     @Override
@@ -503,7 +509,7 @@ public class TaskGraph implements TornadoAPI, ProfileInterface {
         return taskScheduleImpl.isFinished();
     }
 
-    public HashSet<Object> getArgumentsLookup() {
+    public Set<Object> getArgumentsLookup() {
         return taskScheduleImpl.getArgumentsLookup();
     }
 }

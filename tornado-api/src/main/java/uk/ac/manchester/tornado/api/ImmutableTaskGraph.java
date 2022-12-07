@@ -53,9 +53,9 @@ public class ImmutableTaskGraph {
      * state.
      * </p>
      */
-    private final TaskGraph taskGraph;
+    private final LockTaskGraph taskGraph;
 
-    public ImmutableTaskGraph(TaskGraph taskGraph) {
+    public ImmutableTaskGraph(LockTaskGraph taskGraph) {
         this.taskGraph = taskGraph;
     }
 

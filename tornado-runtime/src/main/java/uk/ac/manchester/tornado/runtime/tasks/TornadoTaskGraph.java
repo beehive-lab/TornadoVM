@@ -33,6 +33,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -50,11 +51,11 @@ import org.graalvm.compiler.graph.CachedGraph;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.api.AbstractTaskGraph;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TaskGraphInterface;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -116,7 +117,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 /**
  * Implementation of the Tornado API for running on heterogeneous devices.
  */
-public class TornadoTaskGraph implements AbstractTaskGraph {
+public class TornadoTaskGraph implements TaskGraphInterface {
 
     /**
      * Options for Dynamic Reconfiguration
@@ -153,13 +154,13 @@ public class TornadoTaskGraph implements AbstractTaskGraph {
     private Map<TornadoAcceleratorDevice, TornadoVM> vmTable;
     private Event event;
     private String taskScheduleName;
-    private ArrayList<TaskPackage> taskPackages = new ArrayList<>();
-    private ArrayList<Object> streamOutObjects = new ArrayList<>();
-    private ArrayList<Object> streamInObjects = new ArrayList<>();
+    private List<TaskPackage> taskPackages = new ArrayList<>();
+    private List<Object> streamOutObjects = new ArrayList<>();
+    private List<Object> streamInObjects = new ArrayList<>();
 
-    private HashSet<Object> argumentsLookUp = new HashSet<>();
+    private Set<Object> argumentsLookUp = new HashSet<>();
 
-    private ArrayList<StreamingObject> streamingInputObjects = new ArrayList<>();
+    private List<StreamingObject> streamingInputObjects = new ArrayList<>();
     private ConcurrentHashMap<Policy, Integer> policyTimeTable = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerOutputs = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerInputs = new ConcurrentHashMap<>();
@@ -270,7 +271,7 @@ public class TornadoTaskGraph implements AbstractTaskGraph {
         }
     }
 
-    static void performStreamOutThreads(TaskGraph task, ArrayList<Object> outputArrays) {
+    static void performStreamOutThreads(TaskGraph task, List<Object> outputArrays) {
         int numObjectsCopyOut = outputArrays.size();
         switch (numObjectsCopyOut) {
             case 0:
@@ -399,8 +400,38 @@ public class TornadoTaskGraph implements AbstractTaskGraph {
     }
 
     @Override
-    public HashSet<Object> getArgumentsLookup() {
+    public Set<Object> getArgumentsLookup() {
         return argumentsLookUp;
+    }
+
+    public TornadoTaskGraph createImmutableTaskGraph() {
+
+        TornadoTaskGraph tornadoTaskGraph = new TornadoTaskGraph(this.taskScheduleName);
+
+        tornadoTaskGraph.streamingInputObjects = Collections.unmodifiableList(this.streamingInputObjects);
+        tornadoTaskGraph.streamInObjects = Collections.unmodifiableList(this.streamInObjects);
+
+        tornadoTaskGraph.streamOutObjects = Collections.unmodifiableList(this.streamOutObjects);
+        tornadoTaskGraph.hlBuffer = this.hlBuffer;
+
+        this.executionContext.createImmutableExecutionContext(tornadoTaskGraph.executionContext);
+
+        tornadoTaskGraph.taskPackages = Collections.unmodifiableList(this.taskPackages);
+        tornadoTaskGraph.argumentsLookUp = Collections.unmodifiableSet(this.argumentsLookUp);
+
+        tornadoTaskGraph.analysisTaskSchedule = this.analysisTaskSchedule;
+        tornadoTaskGraph.highLevelCode = this.highLevelCode;
+        // tornadoTaskGraph.result = this.result;
+        // tornadoTaskGraph.batchSizeBytes = this.batchSizeBytes;
+        // tornadoTaskGraph.bailout = this.bailout;
+        // tornadoTaskGraph.vm = this.vm;
+        // tornadoTaskGraph.vmTable = Collections.unmodifiableMap(this.vmTable);
+        // tornadoTaskGraph.event = this.event;
+        // tornadoTaskGraph.graph = this.graph;
+        tornadoTaskGraph.timeProfiler = this.timeProfiler;
+        tornadoTaskGraph.gridScheduler = this.gridScheduler;
+
+        return tornadoTaskGraph;
     }
 
     @Override
@@ -580,7 +611,7 @@ public class TornadoTaskGraph implements AbstractTaskGraph {
         return tornadoVM;
     }
 
-    private boolean compareDevices(HashSet<TornadoAcceleratorDevice> lastDevices, TornadoAcceleratorDevice device2) {
+    private boolean compareDevices(Set<TornadoAcceleratorDevice> lastDevices, TornadoAcceleratorDevice device2) {
         return lastDevices.contains(device2);
     }
 
@@ -1015,8 +1046,8 @@ public class TornadoTaskGraph implements AbstractTaskGraph {
         reduceExpressionRewritten = true;
     }
 
-    private AbstractTaskGraph reduceAnalysis() {
-        AbstractTaskGraph abstractTaskGraph = null;
+    private TaskGraphInterface reduceAnalysis() {
+        TaskGraphInterface abstractTaskGraph = null;
         if (analysisTaskSchedule == null && !reduceAnalysis) {
             analysisTaskSchedule = ReduceCodeAnalysis.analysisTaskSchedule(taskPackages);
             reduceAnalysis = true;
@@ -1028,8 +1059,8 @@ public class TornadoTaskGraph implements AbstractTaskGraph {
         return abstractTaskGraph;
     }
 
-    private AbstractTaskGraph analyzeSkeletonAndRun() {
-        AbstractTaskGraph abstractTaskGraph;
+    private TaskGraphInterface analyzeSkeletonAndRun() {
+        TaskGraphInterface abstractTaskGraph;
         if (!reduceExpressionRewritten) {
             abstractTaskGraph = reduceAnalysis();
         } else {
@@ -1064,7 +1095,7 @@ public class TornadoTaskGraph implements AbstractTaskGraph {
     }
 
     @Override
-    public AbstractTaskGraph schedule() {
+    public TaskGraphInterface schedule() {
 
         if (bailout) {
             if (!TornadoOptions.RECOVER_BAILOUT) {
@@ -1078,7 +1109,7 @@ public class TornadoTaskGraph implements AbstractTaskGraph {
         timeProfiler.clean();
         timeProfiler.start(ProfilerType.TOTAL_TASK_SCHEDULE_TIME);
 
-        AbstractTaskGraph executionGraph = null;
+        TaskGraphInterface executionGraph = null;
         if (TornadoOptions.EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_SCHEDULE_PREFIX))) {
             executionGraph = analyzeSkeletonAndRun();
         }
@@ -1103,7 +1134,7 @@ public class TornadoTaskGraph implements AbstractTaskGraph {
     }
 
     @Override
-    public AbstractTaskGraph schedule(GridScheduler gridScheduler) {
+    public TaskGraphInterface schedule(GridScheduler gridScheduler) {
         this.gridScheduler = gridScheduler;
         return schedule();
     }
@@ -1421,7 +1452,7 @@ public class TornadoTaskGraph implements AbstractTaskGraph {
     }
 
     @Override
-    public AbstractTaskGraph scheduleWithProfile(Policy policy) {
+    public TaskGraphInterface scheduleWithProfile(Policy policy) {
         if (policyTimeTable.get(policy) == null) {
             runScheduleWithParallelProfiler(policy);
         } else {
@@ -1701,7 +1732,7 @@ public class TornadoTaskGraph implements AbstractTaskGraph {
     }
 
     @Override
-    public AbstractTaskGraph scheduleWithProfileSequentialGlobal(Policy policy) {
+    public TaskGraphInterface scheduleWithProfileSequentialGlobal(Policy policy) {
         int numDevices = TornadoRuntime.getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX).getDeviceCount();
 
         if (!executionHistoryPolicy.containsKey(policy)) {
@@ -1754,7 +1785,7 @@ public class TornadoTaskGraph implements AbstractTaskGraph {
     }
 
     @Override
-    public AbstractTaskGraph scheduleWithProfileSequential(Policy policy) {
+    public TaskGraphInterface scheduleWithProfileSequential(Policy policy) {
         int numDevices = TornadoRuntime.getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX).getDeviceCount();
 
         if (policyTimeTable.get(policy) == null) {

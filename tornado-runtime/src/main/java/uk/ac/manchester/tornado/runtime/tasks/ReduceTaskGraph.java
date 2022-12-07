@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -69,12 +70,12 @@ class ReduceTaskGraph {
     private static final int DEFAULT_DEVICE_INDEX = 0;
     private static AtomicInteger counterName = new AtomicInteger(0);
     private static AtomicInteger counterSeqName = new AtomicInteger(0);
-    private final ArrayList<StreamingObject> streamingObjects;
+    private final List<StreamingObject> streamingObjects;
 
     private String idTaskGraph;
-    private ArrayList<TaskPackage> taskPackages;
-    private ArrayList<Object> streamOutObjects;
-    private ArrayList<Object> streamInObjects;
+    private List<TaskPackage> taskPackages;
+    private List<Object> streamOutObjects;
+    private List<Object> streamInObjects;
     private HashMap<Object, Object> originalReduceVariables;
     private HashMap<Object, Object> hostHybridVariables;
     private ArrayList<Thread> threadSequentialExecution;
@@ -88,8 +89,7 @@ class ReduceTaskGraph {
     private HashMap<Object, REDUCE_OPERATION> hybridMergeTable;
     private boolean hybridInitialized;
 
-    ReduceTaskGraph(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<StreamingObject> streamingObjects, ArrayList<Object> streamOutObjects,
-            CachedGraph<?> graph) {
+    ReduceTaskGraph(String taskScheduleID, List<TaskPackage> taskPackages, List<Object> streamInObjects, List<StreamingObject> streamingObjects, List<Object> streamOutObjects, CachedGraph<?> graph) {
         this.taskPackages = taskPackages;
         this.idTaskGraph = taskScheduleID;
         this.streamInObjects = streamInObjects;
