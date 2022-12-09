@@ -272,15 +272,15 @@ Selected publications can be found [here](tornado-assembly/src/docs/14_PUBLICATI
 ## 8. Acknowledgments
 
 This work is partially funded by [Intel corporation](https://www.intel.com/content/www/us/en/homepage.html).
-In addition, it has been supported by the following EU grants (most recent first):
-- [EU Horizon ENCRYPT 101070670](https://encrypt-project.eu).
-- [EU Horizon TANGO 101070052](https://cordis.europa.eu/project/id/101070052).
-- [EU Horizon 2020 ELEGANT 957286](https://www.elegant-h2020.eu/).
-- [EU Horizon 2020 E2Data 780245](https://e2data.eu).
-- [EU Horizon 2020 ACTiCLOUD 732366](https://acticloud.eu).
+In addition, it has been supported by the following EU & UKRI grants (most recent first):
+- EU Horizon Europe & UKRI [ENCRYPT 101070670](https://encrypt-project.eu).
+- EU Horizon Europe & UKRI [TANGO 101070052](https://cordis.europa.eu/project/id/101070052).
+- EU Horizon 2020 [ELEGANT 957286](https://www.elegant-h2020.eu/).
+- EU Horizon 2020 [E2Data 780245](https://e2data.eu).
+- EU Horizon 2020 [ACTiCLOUD 732366](https://acticloud.eu).
 
 Furthermore, TornadoVM has been supported by the following [EPSRC](https://www.ukri.org/councils/epsrc/) grants:
-- [EPSRC PAMELA EP/K008730/1](http://apt.cs.manchester.ac.uk/projects/PAMELA/).
+- [PAMELA EP/K008730/1](http://apt.cs.manchester.ac.uk/projects/PAMELA/).
 - [AnyScale Apps EP/L000725/1](https://gow.epsrc.ukri.org/NGBOViewGrant.aspx?GrantRef=EP/L000725/1).
 
 
