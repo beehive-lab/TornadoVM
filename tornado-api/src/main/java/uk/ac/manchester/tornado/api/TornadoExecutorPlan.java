@@ -48,7 +48,7 @@ public class TornadoExecutorPlan implements ProfileInterface {
     private final TornadoExecutor tornadoExecutor;
     private boolean isReusableBuffer;
 
-    public TornadoExecutorPlan(TornadoExecutor tornadoExecutor) {
+    TornadoExecutorPlan(TornadoExecutor tornadoExecutor) {
         this.tornadoExecutor = tornadoExecutor;
     }
 
