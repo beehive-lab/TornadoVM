@@ -326,6 +326,7 @@ public class TaskGraph implements TornadoAPI {
     }
 
     @Override
+    @Deprecated(forRemoval = true)
     public void warmup() {
         taskScheduleImpl.warmup();
     }

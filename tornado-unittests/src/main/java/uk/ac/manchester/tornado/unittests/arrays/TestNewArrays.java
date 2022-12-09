@@ -26,13 +26,23 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * How to test?
+ *
+ * <code>
+ *     tornado-test -V --fast uk.ac.manchester.tornado.unittests.arrays.TestNewArrays
+ * </code>
+ */
 public class TestNewArrays extends TornadoTestBase {
 
     private static void vectorAdd(int[] a, int[] b, int[] c) {
@@ -139,7 +149,9 @@ public class TestNewArrays extends TornadoTestBase {
                 .task("t0", TestNewArrays::vectorAdd, a, b, c) //
                 .transferToHost(c);
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         vectorAdd(a, b, sequentialResult);
         for (int i = 0; i < size; i++) {
@@ -164,7 +176,9 @@ public class TestNewArrays extends TornadoTestBase {
                 .task("t0", TestNewArrays::vectorAddComplexConditions, a, b, c) //
                 .transferToHost(c);
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         vectorAddComplexConditions(a, b, sequentialResult);
         for (int i = 0; i < size; i++) {
@@ -189,7 +203,10 @@ public class TestNewArrays extends TornadoTestBase {
 
         taskGraph.task("t0", TestNewArrays::initializeToOne, data);
         taskGraph.transferToHost(data);
-        taskGraph.execute();
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         initializeToOne(dataSeq);
 
@@ -215,7 +232,10 @@ public class TestNewArrays extends TornadoTestBase {
 
         taskGraph.task("t0", TestNewArrays::initializeToOneParallelScope, data);
         taskGraph.transferToHost(data);
-        taskGraph.execute();
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         initializeToOneParallelScope(dataSeq);
 
@@ -241,7 +261,10 @@ public class TestNewArrays extends TornadoTestBase {
 
         taskGraph.task("t0", TestNewArrays::initializeToOneParallelScopeComplex, data);
         taskGraph.transferToHost(data);
-        taskGraph.execute();
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         initializeToOneParallelScopeComplex(dataSeq);
 
@@ -267,7 +290,10 @@ public class TestNewArrays extends TornadoTestBase {
 
         taskGraph.task("t0", TestNewArrays::initializeToOneParallel, data);
         taskGraph.transferToHost(data);
-        taskGraph.execute();
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         initializeToOneParallel(dataSeq);
 
@@ -293,7 +319,9 @@ public class TestNewArrays extends TornadoTestBase {
                 .task("t0", TestNewArrays::reductionAddFloats, input, result) //
                 .transferToHost(result); //
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         float[] sequential = new float[1];
         reductionAddFloats(input, sequential);

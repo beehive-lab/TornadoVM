@@ -65,6 +65,10 @@ public class ImmutableTaskGraph implements ProfileInterface {
         this.taskGraph.execute();
     }
 
+    public void warmup() {
+        taskGraph.warmup();
+    }
+
     @Override
     public long getTotalTime() {
         return taskGraph.getTotalTime();
@@ -129,4 +133,5 @@ public class ImmutableTaskGraph implements ProfileInterface {
     public String getProfileLog() {
         return taskGraph.getProfileLog();
     }
+
 }

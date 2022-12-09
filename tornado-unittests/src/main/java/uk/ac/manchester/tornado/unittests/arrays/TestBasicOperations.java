@@ -24,11 +24,21 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * How to test?
+ *
+ * <code>
+ *     tornado-test -V --fast uk.ac.manchester.tornado.unittests.arrays.TestBasicOperations
+ * </code>
+ */
 public class TestBasicOperations extends TornadoTestBase {
 
     public static void vectorAddDouble(double[] a, double[] b, double[] c) {
@@ -187,11 +197,14 @@ public class TestBasicOperations extends TornadoTestBase {
             b[i] = (float) Math.random();
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorAddDouble, a, b, c) //
-                .transferToHost(c) //
-                .execute(); //
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.01);
@@ -210,11 +223,14 @@ public class TestBasicOperations extends TornadoTestBase {
             b[i] = (float) Math.random();
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorSubDouble, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] - b[i], c[i], 0.01);
@@ -233,11 +249,14 @@ public class TestBasicOperations extends TornadoTestBase {
             b[i] = (float) Math.random();
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorMulDouble, a, b, c) //
-                .transferToHost(c) //
-                .execute(); //
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] * b[i], c[i], 0.01);
@@ -256,11 +275,14 @@ public class TestBasicOperations extends TornadoTestBase {
             b[i] = (float) Math.random();
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorDivDouble, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] / b[i], c[i], 0.01);
@@ -279,11 +301,14 @@ public class TestBasicOperations extends TornadoTestBase {
             b[i] = (float) Math.random();
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorAddFloat, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.01f);
@@ -302,11 +327,14 @@ public class TestBasicOperations extends TornadoTestBase {
             b[i] = (float) Math.random();
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorSubFloat, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] - b[i], c[i], 0.01f);
@@ -325,11 +353,14 @@ public class TestBasicOperations extends TornadoTestBase {
             b[i] = (float) Math.random();
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorMulFloat, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] * b[i], c[i], 0.01f);
@@ -348,11 +379,14 @@ public class TestBasicOperations extends TornadoTestBase {
             b[i] = (float) Math.random();
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorDivFloat, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] / b[i], c[i], 0.01f);
@@ -372,11 +406,14 @@ public class TestBasicOperations extends TornadoTestBase {
             b[i] = r.nextInt();
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorAddInteger, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i]);
@@ -396,11 +433,14 @@ public class TestBasicOperations extends TornadoTestBase {
             b[i] = r.nextInt();
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorSubInteger, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] - b[i], c[i]);
@@ -420,11 +460,14 @@ public class TestBasicOperations extends TornadoTestBase {
             b[i] = r.nextInt();
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorMulInteger, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] * b[i], c[i]);
@@ -444,11 +487,13 @@ public class TestBasicOperations extends TornadoTestBase {
             b[i] = r.nextInt();
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorDivInteger, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] / b[i], c[i]);
@@ -468,11 +513,14 @@ public class TestBasicOperations extends TornadoTestBase {
             b[i] = r.nextLong();
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorAddLong, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i]);
@@ -492,11 +540,14 @@ public class TestBasicOperations extends TornadoTestBase {
             b[i] = r.nextLong();
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorSubLong, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] - b[i], c[i]);
@@ -516,11 +567,14 @@ public class TestBasicOperations extends TornadoTestBase {
             b[i] = r.nextLong();
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorMulLong, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] * b[i], c[i]);
@@ -540,11 +594,14 @@ public class TestBasicOperations extends TornadoTestBase {
             b[i] = r.nextLong();
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorDivLong, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] / b[i], c[i]);
@@ -563,11 +620,13 @@ public class TestBasicOperations extends TornadoTestBase {
             b[idx] = 34;
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorAddShort, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals((short) (a[i] + b[i]), c[i]);
@@ -586,11 +645,13 @@ public class TestBasicOperations extends TornadoTestBase {
             b[idx] = 34;
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorSubShort, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals((short) (a[i] - b[i]), c[i]);
@@ -609,11 +670,14 @@ public class TestBasicOperations extends TornadoTestBase {
             b[idx] = 34;
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorMulShort, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals((short) (a[i] * b[i]), c[i]);
@@ -632,11 +696,14 @@ public class TestBasicOperations extends TornadoTestBase {
             b[idx] = 34;
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorDivShort, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals((short) (a[i] / b[i]), c[i]);
@@ -655,11 +722,14 @@ public class TestBasicOperations extends TornadoTestBase {
             b[idx] = 34;
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorAddChar, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals((char) (a[i] + b[i]), c[i]);
@@ -678,11 +748,14 @@ public class TestBasicOperations extends TornadoTestBase {
             b[idx] = 34;
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorSubChar, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals((char) (a[i] - b[i]), c[i]);
@@ -701,11 +774,14 @@ public class TestBasicOperations extends TornadoTestBase {
             b[idx] = 34;
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorMulChar, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals((char) (a[i] * b[i]), c[i]);
@@ -724,11 +800,14 @@ public class TestBasicOperations extends TornadoTestBase {
             b[idx] = 34;
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestBasicOperations::vectorDivChar, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals((char) (a[i] / b[i]), c[i]);

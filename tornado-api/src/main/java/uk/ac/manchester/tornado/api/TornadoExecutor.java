@@ -66,6 +66,12 @@ public class TornadoExecutor implements ProfileInterface {
         }
     }
 
+    public void warmup() {
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            immutableTaskGraph.warmup();
+        }
+    }
+
     @Override
     public long getTotalTime() {
         return immutableTaskGraphList.stream().map(itg -> itg.getTotalTime()).mapToLong(Long::longValue).sum();
@@ -130,4 +136,5 @@ public class TornadoExecutor implements ProfileInterface {
     public String getProfileLog() {
         return null;
     }
+
 }

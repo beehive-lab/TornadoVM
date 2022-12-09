@@ -62,8 +62,14 @@ public class TornadoExecutorPlan implements ProfileInterface {
         return this;
     }
 
-    public void execute() {
+    public TornadoExecutorPlan warmup() {
+        tornadoExecutor.warmup();
+        return this;
+    }
+
+    public TornadoExecutorPlan execute() {
         tornadoExecutor.execute();
+        return this;
     }
 
     @Override
@@ -130,4 +136,5 @@ public class TornadoExecutorPlan implements ProfileInterface {
     public String getProfileLog() {
         return tornadoExecutor.getProfileLog();
     }
+
 }
