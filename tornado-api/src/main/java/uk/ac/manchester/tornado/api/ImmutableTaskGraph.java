@@ -55,9 +55,9 @@ public class ImmutableTaskGraph implements ProfileInterface {
      * state.
      * </p>
      */
-    private final LockTaskGraph taskGraph;
+    private final TaskGraph taskGraph;
 
-    public ImmutableTaskGraph(LockTaskGraph taskGraph) {
+    public ImmutableTaskGraph(TaskGraph taskGraph) {
         this.taskGraph = taskGraph;
     }
 

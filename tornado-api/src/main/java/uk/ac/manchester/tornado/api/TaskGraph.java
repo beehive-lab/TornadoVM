@@ -281,10 +281,10 @@ public class TaskGraph implements TornadoAPI {
 
     @Override
     public ImmutableTaskGraph freeze() {
-        LockTaskGraph lockedTaskGraph = new LockTaskGraph(this.getTaskScheduleName());
-        lockedTaskGraph.taskScheduleImpl = this.taskScheduleImpl.createImmutableTaskGraph();
-        lockedTaskGraph.taskNames = this.taskNames;
-        return new ImmutableTaskGraph(lockedTaskGraph);
+        TaskGraph cloneTaskGraph = new TaskGraph(this.getTaskScheduleName());
+        cloneTaskGraph.taskScheduleImpl = this.taskScheduleImpl.createImmutableTaskGraph();
+        cloneTaskGraph.taskNames = this.taskNames;
+        return new ImmutableTaskGraph(cloneTaskGraph);
     }
 
     @Override
