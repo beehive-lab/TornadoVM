@@ -65,7 +65,7 @@ public class HilbertTornado extends BenchmarkDriver {
                 .task("t0", ComputeKernels::hilbertComputation, testData, size, size) //
                 .transferToHost(testData); //
 
-        check.mapAllTo(device);
+        check.setDevice(device);
         check.execute();
         float[] seq = new float[size * size];
         ComputeKernels.hilbertComputation(seq, size, size);
@@ -82,7 +82,7 @@ public class HilbertTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.mapAllTo(device);
+        taskGraph.setDevice(device);
         taskGraph.execute();
     }
 }

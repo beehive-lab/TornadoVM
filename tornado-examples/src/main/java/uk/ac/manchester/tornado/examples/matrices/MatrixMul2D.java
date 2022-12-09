@@ -106,7 +106,7 @@ public class MatrixMul2D {
 
         TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
-        cudaTask.mapAllTo(cudaDevice);
+        cudaTask.setDevice(cudaDevice);
 
         // Warm up CUDA
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
@@ -141,7 +141,7 @@ public class MatrixMul2D {
             System.err.println("There is no device with both OpenCL and CUDA-PTX support");
             System.exit(1);
         }
-        oclTask.mapAllTo(oclDevice);
+        oclTask.setDevice(oclDevice);
 
         // Warmup OPENCL
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {

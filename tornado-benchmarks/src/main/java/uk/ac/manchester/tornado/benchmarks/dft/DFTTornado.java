@@ -74,7 +74,7 @@ public class DFTTornado extends BenchmarkDriver {
         double[] outImagTor = new double[size];
 
         taskGraph.warmup();
-        taskGraph.mapAllTo(device);
+        taskGraph.setDevice(device);
         taskGraph.execute();
         taskGraph.transferToHost(outReal, outImag);
 
@@ -107,7 +107,7 @@ public class DFTTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.mapAllTo(device);
+        taskGraph.setDevice(device);
         taskGraph.execute();
 
     }

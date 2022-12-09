@@ -63,7 +63,7 @@ public class MonteCarloTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.mapAllTo(device);
+        taskGraph.setDevice(device);
         taskGraph.execute();
     }
 
@@ -76,7 +76,7 @@ public class MonteCarloTornado extends BenchmarkDriver {
 
         ComputeKernels.monteCarlo(result, size);
         taskGraph.warmup();
-        taskGraph.mapAllTo(device);
+        taskGraph.setDevice(device);
         for (int i = 0; i < 3; i++) {
             taskGraph.execute();
         }

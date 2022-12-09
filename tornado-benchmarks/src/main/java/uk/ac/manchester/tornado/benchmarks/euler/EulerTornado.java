@@ -97,7 +97,7 @@ public class EulerTornado extends BenchmarkDriver {
         TaskGraph graph = new TaskGraph("s0") //
                 .task("s0", ComputeKernels::euler, size, input, outputA, outputB, outputC, outputD, outputE) //
                 .transferToHost(outputA, outputB, outputC, outputD, outputE);
-        graph.mapAllTo(device);
+        graph.setDevice(device);
         graph.execute();
     }
 
@@ -142,7 +142,7 @@ public class EulerTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.mapAllTo(device);
+        taskGraph.setDevice(device);
         taskGraph.execute();
     }
 }

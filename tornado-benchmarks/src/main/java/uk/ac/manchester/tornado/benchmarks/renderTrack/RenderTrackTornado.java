@@ -102,7 +102,7 @@ public class RenderTrackTornado extends BenchmarkDriver {
         TaskGraph s0 = new TaskGraph("s0")//
                 .task("t0", ComputeKernels::renderTrack, outputTornado, inputValidation) //
                 .transferToHost(outputTornado);
-        s0.mapAllTo(device);
+        s0.setDevice(device);
         s0.execute();
 
         return validate(inputValidation, outputTornado);
@@ -110,7 +110,7 @@ public class RenderTrackTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.mapAllTo(device);
+        taskGraph.setDevice(device);
         taskGraph.execute();
     }
 }

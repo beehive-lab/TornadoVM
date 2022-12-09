@@ -134,7 +134,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
 
-        taskGraph.mapAllTo(driver.getDevice(0));
+        taskGraph.setDevice(driver.getDevice(0));
         taskGraph.execute();
 
         for (int i = 0; i < numElements; i++) {
@@ -143,7 +143,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
         initValue += numKernels;
 
-        taskGraph.mapAllTo(driver.getDevice(1));
+        taskGraph.setDevice(driver.getDevice(1));
         taskGraph.execute();
 
         for (int i = 0; i < numElements; i++) {
@@ -170,14 +170,14 @@ public class TestsVirtualLayer extends TornadoTestBase {
         taskGraph.task("t0", TestsVirtualLayer::saxpy, alpha, x, y).transferToHost(y);
         taskGraph.transferToHost(y);
 
-        taskGraph.mapAllTo(driver.getDevice(0));
+        taskGraph.setDevice(driver.getDevice(0));
         taskGraph.execute();
 
         for (int i = 0; i < numElements; i++) {
             assertEquals((alpha * 450), y[i], 0.001f);
         }
 
-        taskGraph.mapAllTo(driver.getDevice(1));
+        taskGraph.setDevice(driver.getDevice(1));
         taskGraph.execute();
 
         for (int i = 0; i < numElements; i++) {

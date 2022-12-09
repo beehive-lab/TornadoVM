@@ -88,7 +88,7 @@ public class StencilTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.mapAllTo(device).execute();
+        taskGraph.setDevice(device).execute();
     }
 
     @Override

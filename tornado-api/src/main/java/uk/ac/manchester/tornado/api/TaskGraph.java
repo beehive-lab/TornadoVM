@@ -262,7 +262,7 @@ public class TaskGraph implements TornadoAPI {
     }
 
     @Override
-    public TaskGraph mapAllTo(TornadoDevice device) {
+    public TaskGraph setDevice(TornadoDevice device) {
         taskScheduleImpl.setDevice(device);
         return this;
     }
@@ -397,11 +397,6 @@ public class TaskGraph implements TornadoAPI {
     @Override
     public TornadoDevice getDevice() {
         return taskScheduleImpl.getDevice();
-    }
-
-    @Override
-    public void setDevice(TornadoDevice device) {
-        taskScheduleImpl.setDevice(device);
     }
 
     @Override

@@ -163,7 +163,7 @@ public class MatrixMul2DLocalMemory {
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
         workerCUDAOld.setGlobalWork(N, N, 1);
         workerCUDAOld.setLocalWork(local_x, local_y, 1);
-        scheduleCUDA.mapAllTo(cudaDevice);
+        scheduleCUDA.setDevice(cudaDevice);
 
         // Warm up CUDA
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
@@ -211,7 +211,7 @@ public class MatrixMul2DLocalMemory {
         }
         workerOpenCLOld.setGlobalWork(N, N, 1);
         workerOpenCLOld.setLocalWork(local_x, local_y, 1);
-        scheduleOCL.mapAllTo(oclDevice);
+        scheduleOCL.setDevice(oclDevice);
 
         // Warm up OpenCL
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
@@ -248,7 +248,7 @@ public class MatrixMul2DLocalMemory {
         // Change the Grid
         workerOpenCLNew.setGlobalWork(N, N, 1); // TS / WPT
         workerOpenCLNew.setLocalWork(local_x, local_y, 1);
-        oclNewApiTask.mapAllTo(oclDevice);
+        oclNewApiTask.setDevice(oclDevice);
 
         // Warmup New Api OPENCL
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
@@ -286,7 +286,7 @@ public class MatrixMul2DLocalMemory {
         // Change the Grid
         workerCudaNew.setGlobalWork(N, N, 1);
         workerCudaNew.setLocalWork(local_x, local_y, 1);
-        cudaNewApiTask.mapAllTo(cudaDevice);
+        cudaNewApiTask.setDevice(cudaDevice);
 
         // Warmup New Api OPENCL
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {

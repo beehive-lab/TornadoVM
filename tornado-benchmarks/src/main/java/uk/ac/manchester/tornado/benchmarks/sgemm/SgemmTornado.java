@@ -127,7 +127,7 @@ public class SgemmTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.mapAllTo(device);
+        taskGraph.setDevice(device);
         if (grid == null) {
             taskGraph.execute();
         } else {

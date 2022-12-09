@@ -558,7 +558,7 @@ public interface TornadoAPI {
      */
     TornadoAPI task(SchedulableTask task);
 
-    TornadoAPI mapAllTo(TornadoDevice device);
+    TornadoAPI setDevice(TornadoDevice device);
 
     TornadoAPI transferToDevice(final int mode, Object... objects);
 
@@ -672,8 +672,6 @@ public interface TornadoAPI {
     SchedulableTask getTask(String id);
 
     TornadoDevice getDevice();
-
-    void setDevice(TornadoDevice device);
 
     TornadoDevice getDeviceForTask(String id);
 

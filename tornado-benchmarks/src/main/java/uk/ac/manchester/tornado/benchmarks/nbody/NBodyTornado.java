@@ -122,7 +122,7 @@ public class NBodyTornado extends BenchmarkDriver {
         }
         taskGraph = new TaskGraph("benchmark");
         taskGraph.task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
-        taskGraph.mapAllTo(device);
+        taskGraph.setDevice(device);
         taskGraph.warmup();
         taskGraph.execute();
         taskGraph.syncObjects(posSeq, velSeq);
@@ -146,7 +146,7 @@ public class NBodyTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.mapAllTo(device);
+        taskGraph.setDevice(device);
         taskGraph.execute();
     }
 }
