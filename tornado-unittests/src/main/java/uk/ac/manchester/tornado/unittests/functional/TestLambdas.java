@@ -88,7 +88,7 @@ public class TestLambdas extends TornadoTestBase {
             b[i] = r.nextInt(1000);
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", (x, y, z) -> {
                     // Computation in a lambda expression
@@ -96,8 +96,11 @@ public class TestLambdas extends TornadoTestBase {
                         z[i] = x[i] * y[i];
                     }
                 }, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] * b[i], c[i], 0.001);
@@ -118,7 +121,7 @@ public class TestLambdas extends TornadoTestBase {
             b[i] = r.nextInt(1000);
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", (x, y, z) -> {
                     // Computation in a lambda expression
@@ -126,8 +129,11 @@ public class TestLambdas extends TornadoTestBase {
                         z[i] = x[i] * y[i];
                     }
                 }, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] * b[i], c[i], 0.001);
