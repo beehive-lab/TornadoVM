@@ -299,8 +299,8 @@ public class TaskGraph implements TornadoAPI {
         return this;
     }
 
-    @Deprecated
     @Override
+    @Deprecated(forRemoval = true)
     public void execute() {
         taskScheduleImpl.schedule().waitOn();
     }

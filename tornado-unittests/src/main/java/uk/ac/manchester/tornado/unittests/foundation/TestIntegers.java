@@ -24,7 +24,10 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -43,10 +46,13 @@ public class TestIntegers extends TornadoTestBase {
         final int numElements = 256;
         int[] a = new int[numElements];
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestKernels::copyTestZero, a) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         assertEquals(50, a[0]);
     }
@@ -59,11 +65,14 @@ public class TestIntegers extends TornadoTestBase {
         int[] expectedResult = new int[numElements];
         Arrays.fill(expectedResult, 50);
 
-        new TaskGraph("s1") //
+        TaskGraph taskGraph = new TaskGraph("s1") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t1", TestKernels::copyTest, a) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         assertArrayEquals(expectedResult, a);
     }
@@ -76,11 +85,14 @@ public class TestIntegers extends TornadoTestBase {
 
         Arrays.fill(b, 100);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, b) //
                 .task("t0", TestKernels::copyTest2, a, b) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         assertArrayEquals(b, a);
     }
@@ -95,11 +107,14 @@ public class TestIntegers extends TornadoTestBase {
         int[] expectedResult = new int[numElements];
         Arrays.fill(expectedResult, 150);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, b) //
                 .task("t0", TestKernels::compute, a, b) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         assertArrayEquals(expectedResult, a);
     }
@@ -117,10 +132,14 @@ public class TestIntegers extends TornadoTestBase {
         Arrays.fill(expectedResultA, 100);
         Arrays.fill(expectedResultB, 500);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestKernels::init, a, b) //
-                .transferToHost(a, b) //
-                .execute(); //
+                .transferToHost(a, b);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
+
         assertArrayEquals(expectedResultA, a);
         assertArrayEquals(expectedResultB, b);
     }
