@@ -72,6 +72,11 @@ public class TornadoExecutorPlan implements ProfileInterface {
         return this;
     }
 
+    public TornadoExecutorPlan execute(GridScheduler gridScheduler) {
+        tornadoExecutor.execute(gridScheduler);
+        return this;
+    }
+
     @Override
     public long getTotalTime() {
         return tornadoExecutor.getTotalTime();

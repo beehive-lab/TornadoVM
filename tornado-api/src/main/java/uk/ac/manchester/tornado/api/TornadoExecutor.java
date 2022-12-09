@@ -66,6 +66,12 @@ public class TornadoExecutor implements ProfileInterface {
         }
     }
 
+    public void execute(GridScheduler gridScheduler) {
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            immutableTaskGraph.execute(gridScheduler);
+        }
+    }
+
     public void warmup() {
         for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
             immutableTaskGraph.warmup();

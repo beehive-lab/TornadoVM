@@ -65,6 +65,10 @@ public class ImmutableTaskGraph implements ProfileInterface {
         this.taskGraph.execute();
     }
 
+    public void execute(GridScheduler gridScheduler) {
+        taskGraph.execute(gridScheduler);
+    }
+
     public void warmup() {
         taskGraph.warmup();
     }
