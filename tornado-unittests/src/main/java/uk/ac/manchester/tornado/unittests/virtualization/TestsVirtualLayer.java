@@ -113,8 +113,6 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
     /**
      * Test to change execution from one device to another (migration).
-     *
-     * @throws Exception
      */
     @Test
     public void testArrayMigration() {
