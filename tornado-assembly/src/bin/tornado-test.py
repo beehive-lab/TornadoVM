@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# set tasbstop=4
+# vim: set tasbstop=4
 
 #
 # This file is part of Tornado: A heterogeneous programming framework:
@@ -190,7 +190,7 @@ __VERBOSE_OPTION__                  = "-Dtornado.unittests.verbose="
 TORNADO_CMD = "tornado "
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "0.14_14092022"
+__VERSION__ = "0.15_09122022"
 
 JDK_8_VERSION = "1.8"
 try:
