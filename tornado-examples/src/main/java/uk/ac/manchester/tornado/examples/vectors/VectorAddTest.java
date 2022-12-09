@@ -18,7 +18,10 @@
 
 package uk.ac.manchester.tornado.examples.vectors;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
@@ -57,24 +60,27 @@ public class VectorAddTest {
         System.out.printf("vector<float3>: %s\n", a);
         System.out.printf("vector<float3>: %s\n", b);
 
-        TaskGraph s0 = new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", VectorAddTest::test, a, b, results) //
                 .transferToHost(results);
 
-        s0.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
 
-        System.out.println("Profiler kernel: " + s0.getDeviceKernelTime());
-        System.out.println("Profiler copyOut: " + s0.getDeviceReadTime());
-        System.out.println("Profiler copyIn: " + s0.getDeviceWriteTime());
+        executorPlan.execute();
+
+        System.out.println("Profiler kernel: " + executorPlan.getDeviceKernelTime());
+        System.out.println("Profiler copyOut: " + executorPlan.getDeviceReadTime());
+        System.out.println("Profiler copyIn: " + executorPlan.getDeviceWriteTime());
 
         System.out.printf("result: %s\n", results);
 
-        s0.execute();
+        executorPlan.execute();
 
-        System.out.println("Profiler kernel: " + s0.getDeviceKernelTime());
-        System.out.println("Profiler copyOut: " + s0.getDeviceReadTime());
-        System.out.println("Profiler copyIn: " + s0.getDeviceWriteTime());
+        System.out.println("Profiler kernel: " + executorPlan.getDeviceKernelTime());
+        System.out.println("Profiler copyOut: " + executorPlan.getDeviceReadTime());
+        System.out.println("Profiler copyIn: " + executorPlan.getDeviceWriteTime());
 
     }
 }

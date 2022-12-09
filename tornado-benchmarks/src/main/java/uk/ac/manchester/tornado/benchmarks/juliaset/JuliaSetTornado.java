@@ -90,7 +90,7 @@ public class JuliaSetTornado extends BenchmarkDriver {
     }
 
     @Override
-    public TaskGraph getTaskSchedule() {
+    public TaskGraph getTaskGraph() {
         return taskGraph;
     }
 

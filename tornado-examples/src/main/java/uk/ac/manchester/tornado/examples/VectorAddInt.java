@@ -19,7 +19,10 @@ package uk.ac.manchester.tornado.examples;
 
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
@@ -53,10 +56,14 @@ public class VectorAddInt {
                 .task("t0", VectorAddInt::vectorAdd, a, b, c) //
                 .transferToHost(c);
 
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+
+        TornadoExecutorPlan tornadoExecutor = new TornadoExecutor(immutableTaskGraph).build();
+
         boolean wrongResult;
         for (int idx = 0; idx < 10; idx++) {
             // Parallel
-            taskGraph.execute();
+            tornadoExecutor.execute();
             // Sequential
             vectorAdd(a, b, result);
 
@@ -71,10 +78,10 @@ public class VectorAddInt {
             if (wrongResult) {
                 System.out.println("Result is wrong");
             } else {
-                System.out.println("Result is correct. Total time: " + taskGraph.getTotalTime() + " (ns)");
+                System.out.println("Result is correct. Total time: " + tornadoExecutor.getTotalTime() + " (ns)");
             }
         }
 
-        System.out.println(taskGraph.getProfileLog());
+        System.out.println(tornadoExecutor.getProfileLog());
     }
 }

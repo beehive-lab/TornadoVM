@@ -65,7 +65,6 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
-import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
 import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
 
 /**
@@ -75,7 +74,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
  * PTX or SPIRV compatible device.
  * </p>
  */
-public class TaskGraph implements TornadoAPI, ProfileInterface {
+public class TaskGraph implements TornadoAPI {
 
     private static final String ERROR_TASK_NAME_DUPLICATION = "[TornadoVM ERROR]. There are more than 1 tasks with the same task-name. Use different a different task name for each task within a TaskGraph.";
 
@@ -300,6 +299,7 @@ public class TaskGraph implements TornadoAPI, ProfileInterface {
         return this;
     }
 
+    @Deprecated
     @Override
     public void execute() {
         taskScheduleImpl.schedule().waitOn();
@@ -414,70 +414,61 @@ public class TaskGraph implements TornadoAPI, ProfileInterface {
         taskScheduleImpl.waitOn();
     }
 
-    @Override
-    public long getTotalTime() {
+    // *************************************************
+    // Profiler Interface
+    // *************************************************
+    long getTotalTime() {
         return taskScheduleImpl.getTotalTime();
     }
 
-    @Override
-    public long getCompileTime() {
+    long getCompileTime() {
         return taskScheduleImpl.getCompileTime();
     }
 
-    @Override
-    public long getTornadoCompilerTime() {
+    long getTornadoCompilerTime() {
         return taskScheduleImpl.getTornadoCompilerTime();
     }
 
-    @Override
-    public long getDriverInstallTime() {
+    long getDriverInstallTime() {
         return taskScheduleImpl.getDriverInstallTime();
     }
 
-    @Override
-    public long getDataTransfersTime() {
+    long getDataTransfersTime() {
         return taskScheduleImpl.getDataTransfersTime();
     }
 
-    @Override
-    public long getWriteTime() {
+    long getWriteTime() {
         return taskScheduleImpl.getWriteTime();
     }
 
-    @Override
-    public long getReadTime() {
+    long getReadTime() {
         return taskScheduleImpl.getReadTime();
     }
 
-    @Override
-    public long getDataTransferDispatchTime() {
+    long getDataTransferDispatchTime() {
         return taskScheduleImpl.getDataTransferDispatchTime();
     }
 
-    @Override
-    public long getKernelDispatchTime() {
+    long getKernelDispatchTime() {
         return taskScheduleImpl.getKernelDispatchTime();
     }
 
-    @Override
-    public long getDeviceWriteTime() {
+    long getDeviceWriteTime() {
         return taskScheduleImpl.getDeviceWriteTime();
     }
 
-    @Override
-    public long getDeviceKernelTime() {
+    long getDeviceKernelTime() {
         return taskScheduleImpl.getDeviceKernelTime();
     }
 
-    @Override
-    public long getDeviceReadTime() {
+    long getDeviceReadTime() {
         return taskScheduleImpl.getDeviceReadTime();
     }
 
-    @Override
-    public String getProfileLog() {
+    protected String getProfileLog() {
         return taskScheduleImpl.getProfileLog();
     }
+    // ************************************************************************
 
     @Override
     public TaskGraph useDefaultThreadScheduler(boolean use) {

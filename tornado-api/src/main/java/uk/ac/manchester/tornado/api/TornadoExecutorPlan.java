@@ -41,7 +41,9 @@
  */
 package uk.ac.manchester.tornado.api;
 
-public class TornadoExecutorPlan {
+import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
+
+public class TornadoExecutorPlan implements ProfileInterface {
 
     private final TornadoExecutor tornadoExecutor;
     private boolean isReusableBuffer;
@@ -62,5 +64,70 @@ public class TornadoExecutorPlan {
 
     public void execute() {
         tornadoExecutor.execute();
+    }
+
+    @Override
+    public long getTotalTime() {
+        return tornadoExecutor.getTotalTime();
+    }
+
+    @Override
+    public long getCompileTime() {
+        return tornadoExecutor.getCompileTime();
+    }
+
+    @Override
+    public long getTornadoCompilerTime() {
+        return tornadoExecutor.getTornadoCompilerTime();
+    }
+
+    @Override
+    public long getDriverInstallTime() {
+        return tornadoExecutor.getDriverInstallTime();
+    }
+
+    @Override
+    public long getDataTransfersTime() {
+        return tornadoExecutor.getDataTransfersTime();
+    }
+
+    @Override
+    public long getWriteTime() {
+        return tornadoExecutor.getWriteTime();
+    }
+
+    @Override
+    public long getReadTime() {
+        return tornadoExecutor.getReadTime();
+    }
+
+    @Override
+    public long getDataTransferDispatchTime() {
+        return tornadoExecutor.getDataTransferDispatchTime();
+    }
+
+    @Override
+    public long getKernelDispatchTime() {
+        return tornadoExecutor.getKernelDispatchTime();
+    }
+
+    @Override
+    public long getDeviceWriteTime() {
+        return tornadoExecutor.getDeviceWriteTime();
+    }
+
+    @Override
+    public long getDeviceKernelTime() {
+        return tornadoExecutor.getDeviceKernelTime();
+    }
+
+    @Override
+    public long getDeviceReadTime() {
+        return tornadoExecutor.getDeviceReadTime();
+    }
+
+    @Override
+    public String getProfileLog() {
+        return tornadoExecutor.getProfileLog();
     }
 }

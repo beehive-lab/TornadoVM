@@ -41,7 +41,9 @@
  */
 package uk.ac.manchester.tornado.api;
 
-public class ImmutableTaskGraph {
+import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
+
+public class ImmutableTaskGraph implements ProfileInterface {
 
     /**
      * The idea is a task-graph is encapsulated in this class and all actions over a
@@ -61,5 +63,70 @@ public class ImmutableTaskGraph {
 
     public void execute() {
         this.taskGraph.execute();
+    }
+
+    @Override
+    public long getTotalTime() {
+        return taskGraph.getTotalTime();
+    }
+
+    @Override
+    public long getCompileTime() {
+        return taskGraph.getCompileTime();
+    }
+
+    @Override
+    public long getTornadoCompilerTime() {
+        return taskGraph.getTornadoCompilerTime();
+    }
+
+    @Override
+    public long getDriverInstallTime() {
+        return taskGraph.getDriverInstallTime();
+    }
+
+    @Override
+    public long getDataTransfersTime() {
+        return taskGraph.getDataTransfersTime();
+    }
+
+    @Override
+    public long getWriteTime() {
+        return taskGraph.getWriteTime();
+    }
+
+    @Override
+    public long getReadTime() {
+        return taskGraph.getReadTime();
+    }
+
+    @Override
+    public long getDataTransferDispatchTime() {
+        return taskGraph.getDataTransferDispatchTime();
+    }
+
+    @Override
+    public long getKernelDispatchTime() {
+        return taskGraph.getKernelDispatchTime();
+    }
+
+    @Override
+    public long getDeviceWriteTime() {
+        return taskGraph.getDeviceWriteTime();
+    }
+
+    @Override
+    public long getDeviceKernelTime() {
+        return taskGraph.getDeviceKernelTime();
+    }
+
+    @Override
+    public long getDeviceReadTime() {
+        return taskGraph.getDeviceReadTime();
+    }
+
+    @Override
+    public String getProfileLog() {
+        return taskGraph.getProfileLog();
     }
 }

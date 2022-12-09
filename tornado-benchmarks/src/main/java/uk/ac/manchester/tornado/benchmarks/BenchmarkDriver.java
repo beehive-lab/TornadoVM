@@ -69,7 +69,7 @@ public abstract class BenchmarkDriver {
 
     public abstract void benchmarkMethod(TornadoDevice device);
 
-    public TaskGraph getTaskSchedule() {
+    public TaskGraph getTaskGraph() {
         return taskGraph;
     }
 
@@ -117,15 +117,16 @@ public abstract class BenchmarkDriver {
                 if (isProfilerEnabled) {
 
                     // Ensure the execution was correct, so we can count for general stats.
-                    if (getTaskSchedule().getDeviceKernelTime() != 0) {
-                        deviceKernelTimers.add(getTaskSchedule().getDeviceKernelTime());
-                    }
-                    if (getTaskSchedule().getDeviceWriteTime() != 0) {
-                        deviceCopyIn.add(getTaskSchedule().getDeviceWriteTime());
-                    }
-                    if (getTaskSchedule().getDeviceReadTime() != 0) {
-                        deviceCopyOut.add(getTaskSchedule().getDeviceReadTime());
-                    }
+                    throw new RuntimeException("[UNIMPLEMENT] TIME METRICS FOR BENCHMARKS");
+                    // if (getTaskGraph().getDeviceKernelTime() != 0) {
+                    // deviceKernelTimers.add(getTaskGraph().getDeviceKernelTime());
+                    // }
+                    // if (getTaskGraph().getDeviceWriteTime() != 0) {
+                    // deviceCopyIn.add(getTaskGraph().getDeviceWriteTime());
+                    // }
+                    // if (getTaskGraph().getDeviceReadTime() != 0) {
+                    // deviceCopyOut.add(getTaskGraph().getDeviceReadTime());
+                    // }
                 }
 
                 timers[toIntExact(i)] = (end - start);

@@ -45,7 +45,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class TornadoExecutor {
+import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
+
+public class TornadoExecutor implements ProfileInterface {
 
     private List<ImmutableTaskGraph> immutableTaskGraphList;
 
@@ -62,5 +64,70 @@ public class TornadoExecutor {
         for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
             immutableTaskGraph.execute();
         }
+    }
+
+    @Override
+    public long getTotalTime() {
+        return immutableTaskGraphList.stream().map(itg -> itg.getTotalTime()).mapToLong(Long::longValue).sum();
+    }
+
+    @Override
+    public long getCompileTime() {
+        return immutableTaskGraphList.stream().map(itg -> itg.getCompileTime()).mapToLong(Long::longValue).sum();
+    }
+
+    @Override
+    public long getTornadoCompilerTime() {
+        return immutableTaskGraphList.stream().map(itg -> itg.getTornadoCompilerTime()).mapToLong(Long::longValue).sum();
+    }
+
+    @Override
+    public long getDriverInstallTime() {
+        return immutableTaskGraphList.stream().map(itg -> itg.getDriverInstallTime()).mapToLong(Long::longValue).sum();
+    }
+
+    @Override
+    public long getDataTransfersTime() {
+        return immutableTaskGraphList.stream().map(itg -> itg.getDataTransfersTime()).mapToLong(Long::longValue).sum();
+    }
+
+    @Override
+    public long getWriteTime() {
+        return immutableTaskGraphList.stream().map(itg -> itg.getWriteTime()).mapToLong(Long::longValue).sum();
+    }
+
+    @Override
+    public long getReadTime() {
+        return immutableTaskGraphList.stream().map(itg -> itg.getReadTime()).mapToLong(Long::longValue).sum();
+    }
+
+    @Override
+    public long getDataTransferDispatchTime() {
+        return immutableTaskGraphList.stream().map(itg -> itg.getDataTransferDispatchTime()).mapToLong(Long::longValue).sum();
+    }
+
+    @Override
+    public long getKernelDispatchTime() {
+        return immutableTaskGraphList.stream().map(itg -> itg.getKernelDispatchTime()).mapToLong(Long::longValue).sum();
+    }
+
+    @Override
+    public long getDeviceWriteTime() {
+        return immutableTaskGraphList.stream().map(itg -> itg.getDeviceWriteTime()).mapToLong(Long::longValue).sum();
+    }
+
+    @Override
+    public long getDeviceKernelTime() {
+        return immutableTaskGraphList.stream().map(itg -> itg.getDeviceKernelTime()).mapToLong(Long::longValue).sum();
+    }
+
+    @Override
+    public long getDeviceReadTime() {
+        return immutableTaskGraphList.stream().map(itg -> itg.getDeviceReadTime()).mapToLong(Long::longValue).sum();
+    }
+
+    @Override
+    public String getProfileLog() {
+        return null;
     }
 }

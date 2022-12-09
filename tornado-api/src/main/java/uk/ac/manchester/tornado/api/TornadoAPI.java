@@ -600,6 +600,7 @@ public interface TornadoAPI {
     /**
      * Execute the task-schedule
      */
+    @Deprecated
     void execute();
 
     void execute(GridScheduler gridScheduler);
