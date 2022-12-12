@@ -24,7 +24,10 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -66,7 +69,9 @@ public class TestReductionsAutomatic extends TornadoTestBase {
                 .task("t0", TestReductionsAutomatic::test, input, result)//
                 .transferToHost(result);
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         int[] sequential = new int[1];
         test(input, sequential);
@@ -90,7 +95,9 @@ public class TestReductionsAutomatic extends TornadoTestBase {
                 .task("t0", TestReductionsAutomatic::testFloat, input, result)//
                 .transferToHost(result);
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         float[] sequential = new float[1];
         testFloat(input, sequential);
@@ -138,7 +145,9 @@ public class TestReductionsAutomatic extends TornadoTestBase {
                 .task("t0", TestReductionsAutomatic::testDouble, input, result)//
                 .transferToHost(result);
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         double[] sequential = new double[1];
         testDouble(input, sequential);
