@@ -22,13 +22,16 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- * Testing Tornado with multiple tasks in the same device. The {@link TaskGraph}
+ * Testing Tornado with multiple tasks at the same device. The {@link TaskGraph}
  * contains more than one task.
  * <p>
  * How to run?
@@ -64,12 +67,15 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
         int[] a = new int[numElements];
         int[] b = new int[numElements];
 
-        new TaskGraph("s0")//
+        TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
                 .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)//
                 .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)//
-                .transferToHost(a) //
-                .execute();
+                .transferToHost(a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int j : a) {
             assertEquals(120, j);
@@ -82,13 +88,16 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
         int[] a = new int[numElements];
         int[] b = new int[numElements];
 
-        new TaskGraph("s0")//
+        TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
                 .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)//
                 .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)//
                 .task("t3", TestMultipleTasksSingleDevice::task2Saxpy, a, a, b, 12)//
-                .transferToHost(b)//
-                .execute();
+                .transferToHost(b);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         int val = (12 * 120) + 120;
         for (int i = 0; i < a.length; i++) {
@@ -103,14 +112,17 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
         int[] b = new int[numElements];
         int[] c = new int[numElements];
 
-        new TaskGraph("s0")//
+        TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
                 .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)//
                 .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)//
                 .task("t2", TestMultipleTasksSingleDevice::task0Initialization, b)//
                 .task("t3", TestMultipleTasksSingleDevice::task2Saxpy, a, b, c, 12)//
-                .transferToHost(c)//
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         int val = (12 * 120) + 10;
         for (int i = 0; i < a.length; i++) {
@@ -125,15 +137,18 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
         int[] b = new int[numElements];
         int[] c = new int[numElements];
 
-        new TaskGraph("s0")//
+        TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
                 .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)//
                 .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)//
                 .task("t2", TestMultipleTasksSingleDevice::task0Initialization, b)//
                 .task("t3", TestMultipleTasksSingleDevice::task2Saxpy, a, b, b, 12)//
                 .task("t4", TestMultipleTasksSingleDevice::task2Saxpy, b, a, c, 12)//
-                .transferToHost(c)//
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         int val = (12 * 120) + 10;
         val = (12 * val) + (120);
