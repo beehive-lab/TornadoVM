@@ -22,7 +22,10 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -50,10 +53,13 @@ public class TestInstances extends TornadoTestBase {
         Foo f = new Foo();
         double[] array = new double[1000];
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", f::compute, array, 2.1) //
-                .transferToHost(array) //
-                .execute();
+                .transferToHost(array);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (double v : array) {
             assertEquals(2.1, v, 0.001);
@@ -70,10 +76,12 @@ public class TestInstances extends TornadoTestBase {
     public void testThis() {
         double[] array = new double[1000];
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", this::compute, array, 2.1) //
-                .transferToHost(array) //
-                .execute();
+                .transferToHost(array);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (double v : array) {
             assertEquals(2.1, v, 0.001);
