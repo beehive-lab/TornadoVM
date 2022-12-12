@@ -47,6 +47,9 @@ import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
 public class TornadoExecutorPlan implements ProfileInterface {
 
     private final TornadoExecutor tornadoExecutor;
+
+    private GridScheduler gridScheduler;
+
     private boolean isReusableBuffer;
 
     TornadoExecutorPlan(TornadoExecutor tornadoExecutor) {
@@ -69,12 +72,11 @@ public class TornadoExecutorPlan implements ProfileInterface {
     }
 
     public TornadoExecutorPlan execute() {
-        tornadoExecutor.execute();
-        return this;
-    }
-
-    public TornadoExecutorPlan execute(GridScheduler gridScheduler) {
-        tornadoExecutor.execute(gridScheduler);
+        if (gridScheduler != null) {
+            tornadoExecutor.execute(gridScheduler);
+        } else {
+            tornadoExecutor.execute();
+        }
         return this;
     }
 
@@ -100,6 +102,11 @@ public class TornadoExecutorPlan implements ProfileInterface {
 
     public TornadoExecutorPlan replaceParameter(Object oldParameter, Object newParameter) {
         tornadoExecutor.replaceParameter(oldParameter, newParameter);
+        return this;
+    }
+
+    public TornadoExecutorPlan withGridScheduler(GridScheduler gridScheduler) {
+        this.gridScheduler = gridScheduler;
         return this;
     }
 

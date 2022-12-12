@@ -188,7 +188,9 @@ public class PrebuiltTest extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.execute(gridScheduler);
+
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
 
         // Final SUM
         float finalSum = 0;
@@ -237,7 +239,8 @@ public class PrebuiltTest extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.execute(gridScheduler);
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
 
         // Final SUM
         float finalSum = 0;

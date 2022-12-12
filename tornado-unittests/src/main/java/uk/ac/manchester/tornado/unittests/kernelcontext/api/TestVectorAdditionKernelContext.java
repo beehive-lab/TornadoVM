@@ -24,8 +24,11 @@ import java.util.Arrays;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -83,11 +86,16 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, context, a, b, cTornado) //
                 .transferToHost(cTornado);
+
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWorkToNull();
 
-        taskGraph.execute(gridScheduler);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
 
         vectorAddJava(a, b, cJava);
 
@@ -116,7 +124,11 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, a, context, b, cTornado) //
                 .transferToHost(cTornado);
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
 
         vectorAddJava(a, b, cJava);
 
@@ -145,7 +157,11 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, a, b, context, cTornado) //
                 .transferToHost(cTornado);
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
 
         vectorAddJava(a, b, cJava);
 
@@ -174,7 +190,11 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, a, b, cTornado, context) //
                 .transferToHost(cTornado);
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
 
         vectorAddJava(a, b, cJava);
 
@@ -206,9 +226,11 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWorkToNull();
 
-        taskGraph.warmup();
-
-        taskGraph.execute(gridScheduler);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.warmup() //
+                .withGridScheduler(gridScheduler) //
+                .execute();
 
         vectorAddJava(a, b, cJava);
 
