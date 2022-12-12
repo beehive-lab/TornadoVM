@@ -180,4 +180,8 @@ public class TornadoExecutorPlan implements ProfileInterface {
         return tornadoExecutor.getProfileLog();
     }
 
+    public boolean isFinished() {
+        return tornadoExecutor.isFinished();
+    }
+
 }

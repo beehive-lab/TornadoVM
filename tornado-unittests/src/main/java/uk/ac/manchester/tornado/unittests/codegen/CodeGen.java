@@ -25,7 +25,10 @@ import java.util.stream.IntStream;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -116,7 +119,9 @@ public class CodeGen extends TornadoTestBase {
                 .task("bar", CodeGen::cascadeKernel, grayIntegralImage, imageWidth, imageHeight, resultsXY) //
                 .transferToHost(resultsXY);
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
     }
 
     private boolean isRunningOnCPU() {
@@ -131,7 +136,9 @@ public class CodeGen extends TornadoTestBase {
         }
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", CodeGen::badCascadeKernel2);
-        taskGraph.warmup();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.warmup().execute();
     }
 
     @Test
@@ -142,7 +149,9 @@ public class CodeGen extends TornadoTestBase {
         }
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", CodeGen::badCascadeKernel3);
-        taskGraph.warmup();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.warmup().execute();
     }
 
     @Test
@@ -153,7 +162,10 @@ public class CodeGen extends TornadoTestBase {
         }
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", CodeGen::badCascadeKernel4);
-        taskGraph.warmup();
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.warmup().execute();
     }
 
     @Test
@@ -165,11 +177,14 @@ public class CodeGen extends TornadoTestBase {
         int[] serial = Arrays.copyOf(a, a.length);
         breakStatement(serial);
 
-        new TaskGraph("break") //
+        TaskGraph taskGraph = new TaskGraph("break") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("task", CodeGen::breakStatement, a) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         assertArrayEquals(serial, a);
     }

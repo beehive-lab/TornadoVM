@@ -26,7 +26,10 @@ import java.util.stream.IntStream;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -72,14 +75,16 @@ public class Resize extends TornadoTestBase {
                 .task("t0", Resize::resize01, a) //
                 .transferToHost(a); //
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build().execute();
+
         // Resize data
         float[] b = createArray(512);
 
         // Replace parameter a of the task-graph for b
-        taskGraph.replaceParameter(a, b);
+        executorPlan.replaceParameter(a, b);
 
-        taskGraph.execute();
+        executorPlan.execute();
 
         for (float v : b) {
             assertEquals(1.0f, v, 0.001f);
@@ -94,23 +99,24 @@ public class Resize extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize01, a) //
                 .transferToHost(a); //
-        taskGraph.execute();
 
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build().execute();
         // Resize data
         float[] b = createArray(512);
 
         // Update old reference for a new reference
-        taskGraph.replaceParameter(a, b);
+        executorPlan.replaceParameter(a, b);
 
-        taskGraph.execute();
-        taskGraph.execute();
-        taskGraph.execute();
-        taskGraph.execute();
+        executorPlan.execute();
+        executorPlan.execute();
+        executorPlan.execute();
+        executorPlan.execute();
 
         // Update old reference for a new reference
         float[] c = createArray(2048);
-        taskGraph.replaceParameter(b, c);
-        taskGraph.execute();
+        executorPlan.replaceParameter(b, c);
+        executorPlan.execute();
 
         for (float v : c) {
             assertEquals(1.0f, v, 0.001f);
@@ -126,17 +132,17 @@ public class Resize extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize02, a, b) //
                 .transferToHost(b); //
-        taskGraph.execute();
-
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build().execute();
         // Resize data
         float[] c = createArray(512);
         float[] d = createArray(512);
 
         // Update multiple references
-        taskGraph.replaceParameter(a, c);
-        taskGraph.replaceParameter(b, d);
+        executorPlan.replaceParameter(a, c);
+        executorPlan.replaceParameter(b, d);
 
-        taskGraph.execute();
+        executorPlan.execute();
 
         for (float v : d) {
             assertEquals(20.0f, v, 0.001f);
@@ -152,21 +158,21 @@ public class Resize extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize02, a, b) //
                 .transferToHost(b); //
-        taskGraph.execute();
-
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build().execute();
         float[] aux = createArray(256);
 
         // Interchange
-        taskGraph.replaceParameter(b, aux);
-        taskGraph.replaceParameter(a, b);
-        taskGraph.replaceParameter(aux, a);
-        taskGraph.execute();
+        executorPlan.replaceParameter(b, aux);
+        executorPlan.replaceParameter(a, b);
+        executorPlan.replaceParameter(aux, a);
+        executorPlan.execute();
 
         // Interchange again
-        taskGraph.replaceParameter(b, aux);
-        taskGraph.replaceParameter(a, b);
-        taskGraph.replaceParameter(aux, a);
-        taskGraph.execute();
+        executorPlan.replaceParameter(b, aux);
+        executorPlan.replaceParameter(a, b);
+        executorPlan.replaceParameter(aux, a);
+        executorPlan.execute();
 
         for (float v : b) {
             assertEquals(40.0f, v, 0.001f);
@@ -185,21 +191,25 @@ public class Resize extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize02, a, b) //
                 .transferToHost(b); //
-        taskGraph.execute(gridScheduler);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph) //
+                .build() //
+                .withGridScheduler(gridScheduler) //
+                .execute(); //
 
         float[] aux = createArray(256);
 
         // Interchange
-        taskGraph.replaceParameter(b, aux);
-        taskGraph.replaceParameter(a, b);
-        taskGraph.replaceParameter(aux, a);
-        taskGraph.execute(gridScheduler);
+        executorPlan.replaceParameter(b, aux);
+        executorPlan.replaceParameter(a, b);
+        executorPlan.replaceParameter(aux, a);
+        executorPlan.execute();
 
         // Interchange again
-        taskGraph.replaceParameter(b, aux);
-        taskGraph.replaceParameter(a, b);
-        taskGraph.replaceParameter(aux, a);
-        taskGraph.execute(gridScheduler);
+        executorPlan.replaceParameter(b, aux);
+        executorPlan.replaceParameter(a, b);
+        executorPlan.replaceParameter(aux, a);
+        executorPlan.execute();
 
         for (float v : b) {
             assertEquals(40.0f, v, 0.001f);
@@ -218,15 +228,20 @@ public class Resize extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", Resize::resize02, a, b) //
                 .transferToHost(b); //
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph) //
+                .build() //
+                .withGridScheduler(gridScheduler) //
+                .execute(); //
 
         float[] aux = createArray(256);
         Arrays.fill(aux, 15);
 
         // Update copy in variable 'a'. It should invalidate the buffer state on the
         // device and copy in the 'aux' array.
-        taskGraph.replaceParameter(a, aux);
-        taskGraph.execute(gridScheduler);
+        executorPlan.replaceParameter(a, aux);
+        executorPlan.execute();
 
         for (float v : b) {
             assertEquals(25.0f, v, 0.001f);

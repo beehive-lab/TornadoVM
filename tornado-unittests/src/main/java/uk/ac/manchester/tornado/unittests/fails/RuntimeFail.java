@@ -21,7 +21,10 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
@@ -73,7 +76,11 @@ public class RuntimeFail extends TornadoTestBase {
                 .task("t0", RuntimeFail::vectorAdd, x, y, z) //
                 .task("t0", RuntimeFail::square, z) //
                 .transferToHost(z);
-        taskGraph.execute();
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
+        executorPlan.execute();
+
     }
 
 }

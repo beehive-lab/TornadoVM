@@ -20,8 +20,11 @@ package uk.ac.manchester.tornado.unittests.fails;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
@@ -73,10 +76,13 @@ public class TestFails extends TornadoTestBase {
                 }, x, y) //
                 .transferToHost(y);
 
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
+
         // How to provoke the failure
-        taskGraph.warmup();
+        executorPlan.warmup();
         reset();
-        taskGraph.execute();
+        executorPlan.execute();
     }
 
     private static void kernel(float[] a, float[] b) {
@@ -99,7 +105,9 @@ public class TestFails extends TornadoTestBase {
                 .transferToHost(y);
 
         // How to provoke the failure
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
+        executorPlan.execute();
     }
 
 }

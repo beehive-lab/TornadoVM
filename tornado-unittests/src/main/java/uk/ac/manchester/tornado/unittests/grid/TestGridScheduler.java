@@ -24,7 +24,10 @@ import java.util.stream.IntStream;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -88,7 +91,11 @@ public class TestGridScheduler {
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(1, 1, 1);
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
 
         // Final SUM
         float finalSum = tornadoC[0];
@@ -117,13 +124,22 @@ public class TestGridScheduler {
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(1, 1, 1);
-        s0.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = s0.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
 
         TaskGraph s1 = new TaskGraph("s1") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, tornadoC, size) //
                 .task("t0", TestGridScheduler::reduceAdd, tornadoC, size) //
                 .transferToHost(tornadoC);
-        s1.execute();
+
+        ImmutableTaskGraph immutableTaskGraph1 = s1.freeze();
+        TornadoExecutorPlan executor1 = new TornadoExecutor(immutableTaskGraph1).build();
+        executor1.withGridScheduler(gridScheduler) //
+                .execute();
+
         // Final SUM
         float finalSum = tornadoC[0];
         assertEquals(sequential, finalSum, 0);

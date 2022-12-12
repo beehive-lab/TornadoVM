@@ -24,7 +24,10 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
@@ -98,11 +101,14 @@ public class Types extends TornadoTestBase {
         Random r = new Random(System.nanoTime());
         IntStream.range(0, input.length).forEach(x -> input[x] = (byte) r.nextInt(127));
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", Types::b2b, input, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         b2b(input, seq);
         for (int i = 0; i < seq.length; i++) {
@@ -120,11 +126,14 @@ public class Types extends TornadoTestBase {
         Random r = new Random(System.nanoTime());
         IntStream.range(0, input.length).forEach(x -> input[x] = (byte) r.nextInt(127));
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", Types::b2b, input, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         b2b(input, seq);
         for (int i = 0; i < seq.length; i++) {
@@ -142,11 +151,14 @@ public class Types extends TornadoTestBase {
         Random r = new Random(System.nanoTime());
         IntStream.range(0, input.length).forEach(x -> input[x] = (byte) r.nextInt(127));
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", Types::b2i, input, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         b2i(input, seq);
         for (int i = 0; i < seq.length; i++) {
@@ -164,11 +176,13 @@ public class Types extends TornadoTestBase {
         Random r = new Random(System.nanoTime());
         IntStream.range(0, input.length).forEach(x -> input[x] = (byte) r.nextInt(127));
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", Types::b2s, input, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(output);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         b2s(input, seq);
         for (int i = 0; i < seq.length; i++) {
@@ -186,11 +200,15 @@ public class Types extends TornadoTestBase {
         Random r = new Random(System.nanoTime());
         IntStream.range(0, input.length).forEach(x -> input[x] = (byte) r.nextInt(127));
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", Types::b2l, input, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
+
         b2l(input, seq);
         for (int i = 0; i < seq.length; i++) {
             assertEquals(seq[i], output[i]);
@@ -207,11 +225,14 @@ public class Types extends TornadoTestBase {
         Random r = new Random(System.nanoTime());
         IntStream.range(0, input.length).forEach(x -> input[x] = r.nextInt());
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", Types::i2l, input, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         i2l(input, seq);
         for (int i = 0; i < seq.length; i++) {
@@ -229,11 +250,14 @@ public class Types extends TornadoTestBase {
         Random r = new Random(System.nanoTime());
         IntStream.range(0, input.length).forEach(x -> input[x] = (short) r.nextInt(256));
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", Types::s2i, input, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         s2i(input, seq);
         for (int i = 0; i < seq.length; i++) {
@@ -251,11 +275,14 @@ public class Types extends TornadoTestBase {
         Random r = new Random(System.nanoTime());
         IntStream.range(0, input.length).forEach(x -> input[x] = r.nextFloat());
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", Types::f2d, input, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         f2d(input, seq);
         for (int i = 0; i < seq.length; i++) {
@@ -273,11 +300,14 @@ public class Types extends TornadoTestBase {
         Random r = new Random(System.nanoTime());
         IntStream.range(0, input.length).forEach(x -> input[x] = r.nextInt());
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", Types::i2d, input, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         i2d(input, seq);
         for (int i = 0; i < seq.length; i++) {

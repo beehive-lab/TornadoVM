@@ -22,7 +22,10 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
@@ -68,8 +71,10 @@ public class CodeFail extends TornadoTestBase {
 
         taskGraph.task("t0", CodeFail::foo, a) //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
-                .transferToHost(a)//
-                .execute();
+                .transferToHost(a);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
     }
 
     /**
@@ -99,8 +104,10 @@ public class CodeFail extends TornadoTestBase {
 
         taskGraph.task("t0", CodeFail::bar, a) //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
-                .transferToHost(a) //
-                .execute();
+                .transferToHost(a);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
     }
 
     /**
@@ -130,6 +137,8 @@ public class CodeFail extends TornadoTestBase {
                 .task("t0", CodeFail::zoo, input, result1, result2) //
                 .transferToHost(result1, result2); //
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
     }
 }

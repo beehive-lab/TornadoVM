@@ -163,4 +163,7 @@ public class ImmutableTaskGraph implements ProfileInterface {
         return taskGraph.getProfileLog();
     }
 
+    public boolean isFinished() {
+        return taskGraph.isFinished();
+    }
 }
