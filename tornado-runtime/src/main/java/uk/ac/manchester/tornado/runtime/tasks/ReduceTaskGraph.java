@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -76,26 +77,30 @@ class ReduceTaskGraph {
     private List<TaskPackage> taskPackages;
     private List<Object> streamOutObjects;
     private List<Object> streamInObjects;
-    private HashMap<Object, Object> originalReduceVariables;
-    private HashMap<Object, Object> hostHybridVariables;
-    private ArrayList<Thread> threadSequentialExecution;
-    private ArrayList<HybridThreadMeta> hybridThreadMetas;
-    private HashMap<Object, Object> neutralElementsNew = new HashMap<>();
-    private HashMap<Object, Object> neutralElementsOriginal = new HashMap<>();
+    private Map<Object, Object> originalReduceVariables;
+    private Map<Object, Object> hostHybridVariables;
+    private List<Thread> threadSequentialExecution;
+    private List<HybridThreadMeta> hybridThreadMetas;
+    private Map<Object, Object> neutralElementsNew = new HashMap<>();
+    private Map<Object, Object> neutralElementsOriginal = new HashMap<>();
     private TaskGraph rewrittenTaskGraph;
-    private HashMap<Object, LinkedList<Integer>> reduceOperandTable;
+    private Map<Object, List<Integer>> reduceOperandTable;
     private CachedGraph<?> sketchGraph;
     private boolean hybridMode;
-    private HashMap<Object, REDUCE_OPERATION> hybridMergeTable;
+    private Map<Object, REDUCE_OPERATION> hybridMergeTable;
     private boolean hybridInitialized;
 
     ReduceTaskGraph(String taskScheduleID, List<TaskPackage> taskPackages, List<Object> streamInObjects, List<StreamingObject> streamingObjects, List<Object> streamOutObjects, CachedGraph<?> graph) {
-        this.taskPackages = taskPackages;
         this.idTaskGraph = taskScheduleID;
-        this.streamInObjects = streamInObjects;
-        this.streamingObjects = streamingObjects;
-        this.streamOutObjects = streamOutObjects;
         this.sketchGraph = graph;
+
+        // We need to make all lists mutable again in order to re-write the expressions
+        // and the data IN/OUT the tasks. Task-Graph rewriting is the mechanism of
+        // TornadoVM for performing full parallel reductions from Java sequential code.
+        this.taskPackages = new ArrayList<>(taskPackages);
+        this.streamInObjects = new ArrayList<>(streamInObjects);
+        this.streamingObjects = new ArrayList<>(streamingObjects);
+        this.streamOutObjects = new ArrayList<>(streamOutObjects);
     }
 
     /**
@@ -302,7 +307,7 @@ class ReduceTaskGraph {
         return new CompilationThread(codeTask, sizeTargetDevice);
     }
 
-    private void updateStreamInOutVariables(HashMap<Integer, MetaReduceTasks> tableReduce) {
+    private void updateStreamInOutVariables(Map<Integer, MetaReduceTasks> tableReduce) {
         // Update Stream IN and Stream OUT
         for (int taskNumber = 0; taskNumber < taskPackages.size(); taskNumber++) {
 
@@ -389,12 +394,12 @@ class ReduceTaskGraph {
 
         assert metaReduceTable != null;
 
-        HashMap<Integer, MetaReduceTasks> tableReduce = metaReduceTable.getTable();
+        Map<Integer, MetaReduceTasks> tableReduce = metaReduceTable.getTable();
 
         String taskScheduleReduceName = TASK_SCHEDULE_PREFIX + counterName.get();
         String graphName = idTaskGraph;
 
-        HashMap<Integer, ArrayList<Object>> streamReduceTable = new HashMap<>();
+        HashMap<Integer, List<Object>> streamReduceTable = new HashMap<>();
         ArrayList<Integer> sizesReductionArray = new ArrayList<>();
         if (originalReduceVariables == null) {
             originalReduceVariables = new HashMap<>();
@@ -411,10 +416,10 @@ class ReduceTaskGraph {
         // streamOut
         for (int taskNumber = 0; taskNumber < taskPackages.size(); taskNumber++) {
 
-            ArrayList<Integer> listOfReduceIndexParameters;
+            List<Integer> listOfReduceIndexParameters;
             TaskPackage taskPackage = taskPackages.get(taskNumber);
 
-            ArrayList<Object> streamReduceList = new ArrayList<>();
+            List<Object> streamReduceList = new ArrayList<>();
 
             int[] driverAndDevice = changeDriverAndDeviceIfNeeded(taskScheduleReduceName, graphName, taskPackage.getId());
             if (driverAndDevice != null) {
@@ -537,16 +542,16 @@ class ReduceTaskGraph {
             if (tableReduce.containsKey(taskNumber)) {
 
                 MetaReduceTasks metaReduceTasks = tableReduce.get(taskNumber);
-                ArrayList<Integer> listOfReduceParameters = metaReduceTasks.getListOfReduceParameters(taskNumber);
+                List<Integer> listOfReduceParameters = metaReduceTasks.getListOfReduceParameters(taskNumber);
                 StructuredGraph graph = metaReduceTasks.getGraph();
-                ArrayList<REDUCE_OPERATION> operations = ReduceCodeAnalysis.getReduceOperation(graph, listOfReduceParameters);
+                List<REDUCE_OPERATION> operations = ReduceCodeAnalysis.getReduceOperation(graph, listOfReduceParameters);
 
                 if (operations.isEmpty()) {
                     // perform analysis with cached graph (after sketch phase)
                     operations = ReduceCodeAnalysis.getReduceOperatorFromSketch(sketchGraph, listOfReduceParameters);
                 }
 
-                ArrayList<Object> streamUpdateList = streamReduceTable.get(taskNumber);
+                List<Object> streamUpdateList = streamReduceTable.get(taskNumber);
 
                 for (int i = 0; i < streamUpdateList.size(); i++) {
                     Object newArray = streamUpdateList.get(i);
@@ -558,7 +563,7 @@ class ReduceTaskGraph {
                         inspectBinariesFPGA(taskScheduleReduceName, graphName, taskPackage.getId(), true);
 
                         switch (operation) {
-                            case ADD:
+                            case SUM:
                                 ReduceFactory.handleAdd(newArray, rewrittenTaskGraph, sizeReduceArray, newTaskSequentialName);
                                 break;
                             case MUL:
@@ -603,7 +608,7 @@ class ReduceTaskGraph {
                 }
                 if (!rewrittenTaskGraph.getArgumentsLookup().contains(parameter)) {
                     throw new TornadoTaskRuntimeException(
-                            "Parameter #" + i + " <" + parameter + "> from task <" + task.getId() + "> not specified either in transferToDevice or transferToHost functions");
+                            "Parameter #" + i + " <" + parameter + "> from task <" + task.getId() + "> not specified either in `transferToDevice` or `transferToHost` functions");
                 }
             }
         }
@@ -614,11 +619,7 @@ class ReduceTaskGraph {
 
         // check parameter list
         if (TornadoOptions.FORCE_CHECK_PARAMETERS) {
-            try {
-                checkAllArgumentsPerTask();
-            } catch (TornadoTaskRuntimeException tre) {
-                throw tre;
-            }
+            checkAllArgumentsPerTask();
         }
 
         setNeutralElement();
@@ -657,7 +658,7 @@ class ReduceTaskGraph {
 
     private int operateFinalReduction(int a, int b, REDUCE_OPERATION operation) {
         switch (operation) {
-            case ADD:
+            case SUM:
                 return a + b;
             case MUL:
                 return a * b;
@@ -672,7 +673,7 @@ class ReduceTaskGraph {
 
     private float operateFinalReduction(float a, float b, REDUCE_OPERATION operation) {
         switch (operation) {
-            case ADD:
+            case SUM:
                 return a + b;
             case MUL:
                 return a * b;
@@ -687,7 +688,7 @@ class ReduceTaskGraph {
 
     private double operateFinalReduction(double a, double b, REDUCE_OPERATION operation) {
         switch (operation) {
-            case ADD:
+            case SUM:
                 return a + b;
             case MUL:
                 return a * b;
@@ -702,7 +703,7 @@ class ReduceTaskGraph {
 
     private long operateFinalReduction(long a, long b, REDUCE_OPERATION operation) {
         switch (operation) {
-            case ADD:
+            case SUM:
                 return a + b;
             case MUL:
                 return a * b;
@@ -826,9 +827,9 @@ class ReduceTaskGraph {
 
         final CompilationThread compilationThread;
         private TaskPackage taskPackage;
-        private HashMap<Object, Object> hostHybridVariables;
+        private Map<Object, Object> hostHybridVariables;
 
-        SequentialExecutionThread(CompilationThread compilationThread, TaskPackage taskPackage, HashMap<Object, Object> hostHybridVariables) {
+        SequentialExecutionThread(CompilationThread compilationThread, TaskPackage taskPackage, Map<Object, Object> hostHybridVariables) {
             this.compilationThread = compilationThread;
             this.taskPackage = taskPackage;
             this.hostHybridVariables = hostHybridVariables;
@@ -844,7 +845,7 @@ class ReduceTaskGraph {
          * @param hostHybridVariables
          *            HashMap that relates the GPU buffer with the new CPU buffer.
          */
-        private void runBinaryCodeForReduction(TaskPackage taskPackage, InstalledCode code, HashMap<Object, Object> hostHybridVariables) {
+        private void runBinaryCodeForReduction(TaskPackage taskPackage, InstalledCode code, Map<Object, Object> hostHybridVariables) {
             try {
                 // Execute the generated binary with Graal with
                 // the host loop-bound

@@ -69,14 +69,12 @@ import uk.ac.manchester.tornado.runtime.graal.phases.MarkIntIntrinsicNode;
  */
 public class ReduceCodeAnalysis {
 
-    // @formatter:off
-    public enum REDUCE_OPERATION {
-        ADD,
-        MUL,
-        MIN,
-        MAX
+    public enum REDUCE_OPERATION { //
+        SUM, //
+        MUL, //
+        MIN, //
+        MAX //
     }
-    // @formatter:on
 
     private static boolean checkIfVarIsInLoop(StoreIndexedNode store) {
         Node node = store.predecessor();
@@ -97,14 +95,14 @@ public class ReduceCodeAnalysis {
         return false;
     }
 
-    public static ArrayList<REDUCE_OPERATION> getReduceOperation(ArrayList<ValueNode> reduceOperation) {
+    public static List<REDUCE_OPERATION> getReduceOperation(List<ValueNode> reduceOperation) {
         // Match VALUE_NODE with OPERATION
-        ArrayList<REDUCE_OPERATION> operations = new ArrayList<>();
+        List<REDUCE_OPERATION> operations = new ArrayList<>();
         for (ValueNode operation : reduceOperation) {
             if (operation instanceof TornadoReduceAddNode) {
-                operations.add(REDUCE_OPERATION.ADD);
+                operations.add(REDUCE_OPERATION.SUM);
             } else if (operation instanceof AddNode) {
-                operations.add(REDUCE_OPERATION.ADD);
+                operations.add(REDUCE_OPERATION.SUM);
             } else if (operation instanceof MulNode) {
                 operations.add(REDUCE_OPERATION.MUL);
             } else if (operation instanceof InvokeNode) {
@@ -148,8 +146,8 @@ public class ReduceCodeAnalysis {
         return graph.method().isStatic() && index >= getNumberOfParameterNodes(graph);
     }
 
-    public static ArrayList<REDUCE_OPERATION> getReduceOperation(StructuredGraph graph, ArrayList<Integer> reduceIndices) {
-        ArrayList<ValueNode> reduceOperation = new ArrayList<>();
+    public static List<REDUCE_OPERATION> getReduceOperation(StructuredGraph graph, List<Integer> reduceIndices) {
+        List<ValueNode> reduceOperation = new ArrayList<>();
         for (Integer paramIndex : reduceIndices) {
 
             if (!graph.method().isStatic()) {
@@ -184,8 +182,8 @@ public class ReduceCodeAnalysis {
         return getReduceOperation(reduceOperation);
     }
 
-    public static ArrayList<REDUCE_OPERATION> getReduceOperatorFromSketch(CachedGraph<?> graph, ArrayList<Integer> reduceIndices) {
-        ArrayList<ValueNode> reduceOperation = new ArrayList<>();
+    public static List<REDUCE_OPERATION> getReduceOperatorFromSketch(CachedGraph<?> graph, List<Integer> reduceIndices) {
+        List<ValueNode> reduceOperation = new ArrayList<>();
         final StructuredGraph sg = (StructuredGraph) graph.getMutableCopy(null);
 
         for (Integer paramIndex : reduceIndices) {

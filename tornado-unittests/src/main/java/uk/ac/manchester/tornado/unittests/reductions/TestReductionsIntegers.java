@@ -26,7 +26,10 @@ import java.util.stream.IntStream;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
@@ -216,13 +219,14 @@ public class TestReductionsIntegers extends TornadoTestBase {
             input[i] = 2;
         });
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-            .task("t0", TestReductionsIntegers::reductionAnnotation, input, result)
-            .transferToHost(result)
-            .execute();
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t0", TestReductionsIntegers::reductionAnnotation, input, result) //
+                .transferToHost(result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         int[] sequential = new int[1];
         reductionAnnotation(input, sequential);
@@ -243,13 +247,14 @@ public class TestReductionsIntegers extends TornadoTestBase {
             input[i] = 2;
         });
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-                .task("t0", TestReductionsIntegers::reductionAnnotationLarge, input, result)
-                .transferToHost(result)
-                .execute();
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t0", TestReductionsIntegers::reductionAnnotationLarge, input, result) //
+                .transferToHost(result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         int[] sequential = new int[1];
         reductionAnnotationLarge(input, sequential);
@@ -267,13 +272,13 @@ public class TestReductionsIntegers extends TornadoTestBase {
             input[i] = 2;
         });
 
-        //@formatter:off
-		new TaskGraph("s0")
-			.transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-			.task("t0", TestReductionsIntegers::reductionAnnotation2, input, result)
-			.transferToHost(result)
-			.execute();
-		//@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t0", TestReductionsIntegers::reductionAnnotation2, input, result) //
+                .transferToHost(result);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         int[] sequential = new int[1];
         reductionAnnotation2(input, sequential);
@@ -291,11 +296,13 @@ public class TestReductionsIntegers extends TornadoTestBase {
             input[i] = 2;
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestReductionsIntegers::reductionAnnotationConstant, input, result) //
-                .transferToHost(result) //
-                .execute(); //
+                .transferToHost(result);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         int[] sequential = new int[1];
         reductionAnnotationConstant(input, sequential);
@@ -313,13 +320,14 @@ public class TestReductionsIntegers extends TornadoTestBase {
         final int neutral = 1;
         Arrays.fill(result, neutral);
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-            .task("t0", TestReductionsIntegers::multReductionAnnotation, input, result)
-            .transferToHost(result)
-            .execute();
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t0", TestReductionsIntegers::multReductionAnnotation, input, result) //
+                .transferToHost(result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         int[] sequential = new int[] { 1 };
         multReductionAnnotation(input, sequential);
@@ -342,13 +350,13 @@ public class TestReductionsIntegers extends TornadoTestBase {
         int neutral = Integer.MIN_VALUE + 1;
         Arrays.fill(result, neutral);
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-            .task("t0", TestReductionsIntegers::maxReductionAnnotation, input, result, neutral)
-            .transferToHost(result)
-            .execute();
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t0", TestReductionsIntegers::maxReductionAnnotation, input, result, neutral) //
+                .transferToHost(result);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         int[] sequential = new int[1];
         maxReductionAnnotation(input, sequential, neutral);
@@ -366,11 +374,13 @@ public class TestReductionsIntegers extends TornadoTestBase {
         int[] result = new int[1];
         Arrays.fill(result, Integer.MAX_VALUE);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
                 .task("t0", TestReductionsIntegers::minReductionAnnotation, input, result) //
-                .transferToHost(result) //
-                .execute();
+                .transferToHost(result);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         int[] sequential = new int[] { Integer.MAX_VALUE };
         minReductionAnnotation(input, sequential);
@@ -388,13 +398,13 @@ public class TestReductionsIntegers extends TornadoTestBase {
             input[i] = r.nextInt();
         });
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-            .task("t0", TestReductionsIntegers::reductionSequentialSmall, input, result)
-            .transferToHost(result)
-            .execute();
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t0", TestReductionsIntegers::reductionSequentialSmall, input, result) //
+                .transferToHost(result);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         int[] sequential = new int[1];
         reductionSequentialSmall(input, sequential);
@@ -412,13 +422,13 @@ public class TestReductionsIntegers extends TornadoTestBase {
             input[i] = r.nextInt();
         });
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-            .task("t0", TestReductionsIntegers::reduction01, input, result)
-            .transferToHost(result)
-            .execute();
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t0", TestReductionsIntegers::reduction01, input, result) //
+                .transferToHost(result);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         int[] sequential = new int[1];
         reduction01(input, sequential);
@@ -438,14 +448,14 @@ public class TestReductionsIntegers extends TornadoTestBase {
             b[i] = 2;
         });
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c)
-            .task("t0", TestReductionsIntegers::map01, a, b, c)
-            .task("t1", TestReductionsIntegers::reduce01, c, result)
-            .transferToHost(result)
-            .execute();
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c) //
+                .task("t0", TestReductionsIntegers::map01, a, b, c) //
+                .task("t1", TestReductionsIntegers::reduce01, c, result) //
+                .transferToHost(result);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         int[] sequential = new int[BIG_SIZE];
         mapReduce01(a, b, c, sequential);
@@ -465,14 +475,14 @@ public class TestReductionsIntegers extends TornadoTestBase {
             b[i] = 2;
         });
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
-            .task("t0", TestReductionsIntegers::map02, a, b)
-            .task("t1", TestReductionsIntegers::reduce02, b, result)
-            .transferToHost(result)
-            .execute();
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("t0", TestReductionsIntegers::map02, a, b) //
+                .task("t1", TestReductionsIntegers::reduce02, b, result) //
+                .transferToHost(result);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         int[] sequential = new int[BIG_SIZE];
         map02(a, seq);
@@ -499,13 +509,13 @@ public class TestReductionsIntegers extends TornadoTestBase {
             b[i] = r.nextInt();
         });
 
-        //@formatter:off
-        new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c)
-            .task("t0", TestReductionsIntegers::mapReduce01, a, b, c, result)
-            .transferToHost(result)
-            .execute();
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c) //
+                .task("t0", TestReductionsIntegers::mapReduce01, a, b, c, result) //
+                .transferToHost(result);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         int[] sequential = new int[BIG_SIZE];
         mapReduce01(a, b, c, sequential);
@@ -524,13 +534,13 @@ public class TestReductionsIntegers extends TornadoTestBase {
             b[i] = 2;
         });
 
-        //@formatter:off
-	    new TaskGraph("s0")
-	         .transferToDevice(DataTransferMode.EVERY_EXECUTION, a)
-	         .task("t0", TestReductionsIntegers::mapReduce2, a, b, result)
-	         .transferToHost(result)
-	         .execute();
-	    //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
+                .task("t0", TestReductionsIntegers::mapReduce2, a, b, result) //
+                .transferToHost(result);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         int[] sequential = new int[BIG_SIZE];
         mapReduce2(a, b, sequential);
@@ -547,14 +557,14 @@ public class TestReductionsIntegers extends TornadoTestBase {
             input[i] = 2;
         });
 
-        //@formatter:off
-        TaskGraph taskGraph = new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-            .task("t0", TestReductionsIntegers::reductionAddInts2, input, result)
-            .transferToHost(result);
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t0", TestReductionsIntegers::reductionAddInts2, input, result) //
+                .transferToHost(result);
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         int[] sequential = new int[1];
         reductionAddInts2(input, sequential);
@@ -574,14 +584,14 @@ public class TestReductionsIntegers extends TornadoTestBase {
             inputB[i] = r.nextInt();
         });
 
-        //@formatter:off
-        TaskGraph taskGraph = new TaskGraph("s0")
-            .transferToDevice(DataTransferMode.EVERY_EXECUTION, inputA, inputB)
-            .task("t0", TestReductionsIntegers::reductionAddInts3, inputA, inputB, result)
-            .transferToHost(result);
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, inputA, inputB) //
+                .task("t0", TestReductionsIntegers::reductionAddInts3, inputA, inputB, result) //
+                .transferToHost(result);
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         int[] sequential = new int[1];
         reductionAddInts3(inputA, inputB, sequential);
@@ -600,13 +610,14 @@ public class TestReductionsIntegers extends TornadoTestBase {
         int neutral = Integer.MIN_VALUE + 1;
         Arrays.fill(result, neutral);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-                .task("t0", TestReductionsIntegers::maxReductionAnnotation2, input, result, neutral)
-                .transferToHost(result)
-                .execute();
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t0", TestReductionsIntegers::maxReductionAnnotation2, input, result, neutral) //
+                .transferToHost(result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         int[] sequential = new int[] { neutral };
         maxReductionAnnotation2(input, sequential, neutral);
@@ -625,18 +636,17 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         Arrays.fill(result, Integer.MAX_VALUE);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-                .task("t0", TestReductionsIntegers::minReductionAnnotation2, input, result, Integer.MAX_VALUE)
-                .transferToHost(result)
-                .execute();
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t0", TestReductionsIntegers::minReductionAnnotation2, input, result, Integer.MAX_VALUE) //
+                .transferToHost(result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         int[] sequential = new int[1];
         minReductionAnnotation2(input, sequential, Integer.MAX_VALUE);
-
         assertEquals(sequential[0], result[0]);
     }
-
 }

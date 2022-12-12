@@ -154,13 +154,13 @@ public class TornadoTaskGraph implements TaskGraphInterface {
     private Map<TornadoAcceleratorDevice, TornadoVM> vmTable;
     private Event event;
     private String taskScheduleName;
-    private List<TaskPackage> taskPackages = new ArrayList<>();
-    private List<Object> streamOutObjects = new ArrayList<>();
-    private List<Object> streamInObjects = new ArrayList<>();
+    private List<TaskPackage> taskPackages;
+    private List<Object> streamOutObjects;
+    private List<Object> streamInObjects;
 
-    private Set<Object> argumentsLookUp = new HashSet<>();
+    private Set<Object> argumentsLookUp;
 
-    private List<StreamingObject> streamingInputObjects = new ArrayList<>();
+    private List<StreamingObject> streamingInputObjects;
     private ConcurrentHashMap<Policy, Integer> policyTimeTable = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerOutputs = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerInputs = new ConcurrentHashMap<>();
@@ -171,7 +171,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
      * Options for new reductions - experimental
      */
     private boolean reduceExpressionRewritten = false;
-    private ReduceTaskGraph reduceTaskScheduleMeta;
+    private ReduceTaskGraph reduceTaskGraph;
     private boolean reduceAnalysis = false;
     private TornadoProfiler timeProfiler;
     private boolean updateData;
@@ -199,13 +199,18 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         event = null;
         this.taskScheduleName = taskScheduleName;
         vmTable = new HashMap<>();
+        argumentsLookUp = new HashSet<>();
+        taskPackages = new ArrayList<>();
+        streamOutObjects = new ArrayList<>();
+        streamInObjects = new ArrayList<>();
+        streamingInputObjects = new ArrayList<>();
     }
 
     static void performStreamInObject(TaskGraph task, Object inputObject, final int dataTransferMode) {
         task.transferToDevice(dataTransferMode, inputObject);
     }
 
-    static void performStreamInObject(TaskGraph task, ArrayList<Object> inputObjects, final int dataTransferMode) {
+    static void performStreamInObject(TaskGraph task, List<Object> inputObjects, final int dataTransferMode) {
         int numObjectsCopyIn = inputObjects.size();
         switch (numObjectsCopyIn) {
             case 0:
@@ -419,17 +424,15 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         tornadoTaskGraph.taskPackages = Collections.unmodifiableList(this.taskPackages);
         tornadoTaskGraph.argumentsLookUp = Collections.unmodifiableSet(this.argumentsLookUp);
 
+        tornadoTaskGraph.reduceTaskGraph = this.reduceTaskGraph;
         tornadoTaskGraph.analysisTaskSchedule = this.analysisTaskSchedule;
         tornadoTaskGraph.highLevelCode = this.highLevelCode;
-        // tornadoTaskGraph.result = this.result;
-        // tornadoTaskGraph.batchSizeBytes = this.batchSizeBytes;
-        // tornadoTaskGraph.bailout = this.bailout;
-        // tornadoTaskGraph.vm = this.vm;
-        // tornadoTaskGraph.vmTable = Collections.unmodifiableMap(this.vmTable);
-        // tornadoTaskGraph.event = this.event;
-        // tornadoTaskGraph.graph = this.graph;
+
         tornadoTaskGraph.timeProfiler = this.timeProfiler;
         tornadoTaskGraph.gridScheduler = this.gridScheduler;
+
+        // The graph object is used when rewriting task-graphs (e.g., reductions)
+        tornadoTaskGraph.graph = this.graph;
 
         return tornadoTaskGraph;
     }
@@ -823,29 +826,29 @@ public class TornadoTaskGraph implements TaskGraphInterface {
 
     @Override
     public void transferToDevice(final int mode, Object... objects) {
-        for (Object object : objects) {
-            if (object == null) {
-                Tornado.warn("null object passed into streamIn() in schedule %s", executionContext.getId());
-                continue;
+        for (Object functionParameter : objects) {
+            if (functionParameter == null) {
+                throw new TornadoRuntimeException("[ERROR] null object passed into streamIn() in schedule " + executionContext.getId());
             }
 
-            if (object instanceof Number) {
+            if (functionParameter instanceof Number) {
                 continue;
             }
 
             // Only add the object is the streamIn list if the data transfer mode is set to
             // EVERY_EXECUTION
+            boolean isObjectForStreaming = false;
             if (mode == DataTransferMode.EVERY_EXECUTION) {
-                streamInObjects.add(object);
-                executionContext.getObjectState(object).setStreamIn(true);
-            } else {
-                // Add to COPY-ONLY list
-                executionContext.getObjectState(object).setStreamIn(false);
+                streamInObjects.add(functionParameter);
+                isObjectForStreaming = true;
             }
-            argumentsLookUp.add(object);
+
+            executionContext.getObjectState(functionParameter).setStreamIn(isObjectForStreaming);
+
+            argumentsLookUp.add(functionParameter);
 
             // List of input objects for the dynamic reconfiguration
-            streamingInputObjects.add(new StreamingObject(mode, object));
+            streamingInputObjects.add(new StreamingObject(mode, functionParameter));
         }
     }
 
@@ -1038,12 +1041,12 @@ public class TornadoTaskGraph implements TaskGraphInterface {
     }
 
     private void runReduceTaskSchedule() {
-        this.reduceTaskScheduleMeta.executeExpression();
+        this.reduceTaskGraph.executeExpression();
     }
 
     private void rewriteTaskForReduceSkeleton(MetaReduceCodeAnalysis analysisTaskSchedule) {
-        reduceTaskScheduleMeta = new ReduceTaskGraph(this.getId(), taskPackages, streamInObjects, streamingInputObjects, streamOutObjects, graph);
-        reduceTaskScheduleMeta.scheduleWithReduction(analysisTaskSchedule);
+        reduceTaskGraph = new ReduceTaskGraph(this.getId(), taskPackages, streamInObjects, streamingInputObjects, streamOutObjects, graph);
+        reduceTaskGraph.scheduleWithReduction(analysisTaskSchedule);
         reduceExpressionRewritten = true;
     }
 

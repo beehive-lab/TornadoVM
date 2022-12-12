@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -23,13 +23,13 @@
  */
 package uk.ac.manchester.tornado.runtime.analyzer;
 
-import java.util.HashMap;
+import java.util.Map;
 
 public class MetaReduceCodeAnalysis {
 
-    private HashMap<Integer, MetaReduceTasks> analysisTaskScheduleTable;
+    private Map<Integer, MetaReduceTasks> analysisTaskScheduleTable;
 
-    MetaReduceCodeAnalysis(HashMap<Integer, MetaReduceTasks> analysisTaskSchedule) {
+    MetaReduceCodeAnalysis(Map<Integer, MetaReduceTasks> analysisTaskSchedule) {
         this.analysisTaskScheduleTable = analysisTaskSchedule;
     }
 
@@ -37,7 +37,7 @@ public class MetaReduceCodeAnalysis {
         return (analysisTaskScheduleTable != null) && !(analysisTaskScheduleTable.isEmpty());
     }
 
-    public HashMap<Integer, MetaReduceTasks> getTable() {
+    public Map<Integer, MetaReduceTasks> getTable() {
         return analysisTaskScheduleTable;
     }
 
