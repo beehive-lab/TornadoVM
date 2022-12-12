@@ -115,6 +115,10 @@ public class TornadoExecutorPlan implements ProfileInterface {
         return this;
     }
 
+    public boolean isFinished() {
+        return tornadoExecutor.isFinished();
+    }
+
     @Override
     public long getTotalTime() {
         return tornadoExecutor.getTotalTime();
@@ -178,10 +182,6 @@ public class TornadoExecutorPlan implements ProfileInterface {
     @Override
     public String getProfileLog() {
         return tornadoExecutor.getProfileLog();
-    }
-
-    public boolean isFinished() {
-        return tornadoExecutor.isFinished();
     }
 
 }

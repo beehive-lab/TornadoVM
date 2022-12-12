@@ -504,8 +504,7 @@ public class TaskGraph implements TornadoAPI {
         return this;
     }
 
-    @Override
-    public boolean isFinished() {
+    boolean isFinished() {
         return taskScheduleImpl.isFinished();
     }
 

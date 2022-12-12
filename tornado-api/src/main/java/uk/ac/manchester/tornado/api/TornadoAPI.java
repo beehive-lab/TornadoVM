@@ -681,5 +681,4 @@ public interface TornadoAPI {
 
     TaskGraph replaceParameter(Object oldRef, Object newRef);
 
-    boolean isFinished();
 }

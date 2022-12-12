@@ -235,7 +235,7 @@ public class TestAtomics extends TornadoTestBase {
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
-        if (!taskGraph.isFinished()) {
+        if (!executor.isFinished()) {
             assertTrue(false);
         }
 
@@ -309,7 +309,7 @@ public class TestAtomics extends TornadoTestBase {
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
-        if (!taskGraph.isFinished()) {
+        if (!executor.isFinished()) {
             assertTrue(false);
         }
 
@@ -337,7 +337,7 @@ public class TestAtomics extends TornadoTestBase {
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
-        if (!taskGraph.isFinished()) {
+        if (!executor.isFinished()) {
             assertTrue(false);
         }
         boolean repeated = isValueRepeated(a);
@@ -362,7 +362,7 @@ public class TestAtomics extends TornadoTestBase {
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
-        if (!taskGraph.isFinished()) {
+        if (!executor.isFinished()) {
             assertTrue(false);
         }
         boolean repeated = isValueRepeated(a);
