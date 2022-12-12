@@ -41,6 +41,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
 
 public class TornadoExecutorPlan implements ProfileInterface {
@@ -74,6 +75,11 @@ public class TornadoExecutorPlan implements ProfileInterface {
 
     public TornadoExecutorPlan execute(GridScheduler gridScheduler) {
         tornadoExecutor.execute(gridScheduler);
+        return this;
+    }
+
+    public TornadoExecutorPlan setDevice(TornadoDevice device) {
+        tornadoExecutor.setDevice(device);
         return this;
     }
 

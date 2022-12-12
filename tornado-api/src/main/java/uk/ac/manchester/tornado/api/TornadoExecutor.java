@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
 
 public class TornadoExecutor implements ProfileInterface {
@@ -75,6 +76,18 @@ public class TornadoExecutor implements ProfileInterface {
     public void warmup() {
         for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
             immutableTaskGraph.warmup();
+        }
+    }
+
+    /**
+     * For all task-graphs contained in an Executor, update the device
+     *
+     * @param device
+     *            {@link TornadoDevice} object
+     */
+    public void setDevice(TornadoDevice device) {
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            immutableTaskGraph.setDevice(device);
         }
     }
 

@@ -60,9 +60,9 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestDoubles"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestInts"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestVectorAllocation"),
-    TestEntry("uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest"),              ## ================ EXECUTOR
-    TestEntry("uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer"),
-    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice"),
+    TestEntry("uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer"),   
+    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice"),     ## 
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice"),
     TestEntry("uk.ac.manchester.tornado.unittests.temporary.values.TestTemporaryValues"),
     TestEntry("uk.ac.manchester.tornado.unittests.images.TestImages"),

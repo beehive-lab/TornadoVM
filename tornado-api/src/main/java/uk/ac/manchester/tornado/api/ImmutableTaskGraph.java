@@ -41,6 +41,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
 
 public class ImmutableTaskGraph implements ProfileInterface {
@@ -71,6 +72,10 @@ public class ImmutableTaskGraph implements ProfileInterface {
 
     public void warmup() {
         taskGraph.warmup();
+    }
+
+    public void setDevice(TornadoDevice device) {
+        taskGraph.setDevice(device);
     }
 
     @Override

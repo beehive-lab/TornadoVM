@@ -454,6 +454,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
 
     @Override
     public void setDevice(TornadoDevice device) {
+
         TornadoDevice oldDevice = meta().getLogicDevice();
 
         meta().setDevice(device);
@@ -516,8 +517,8 @@ public class TornadoTaskGraph implements TaskGraphInterface {
             final TaskMetaData taskMetaData = compilableTask.meta();
             new SketchRequest(resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex()).run();
 
-            Sketch lookup = TornadoSketcher.lookup(resolvedMethod, taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex());
-            this.graph = lookup.getGraph();
+            Sketch sketchGraph = TornadoSketcher.lookup(resolvedMethod, taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex());
+            this.graph = sketchGraph.getGraph();
         }
     }
 

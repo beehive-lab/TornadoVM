@@ -29,7 +29,6 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -54,7 +53,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 public class TornadoExecutionContext {
 
-    private final int MAX_TASKS = 128;
+    private final int MAX_TASKS = 256;
     private final int INITIAL_DEVICE_CAPACITY = 16;
 
     private final String name;
@@ -403,46 +402,30 @@ public class TornadoExecutionContext {
     }
 
     public void createImmutableExecutionContext(TornadoExecutionContext executionContext) {
-        List<SchedulableTask> schedulableTasksCopy = new ArrayList<>();
-        for (SchedulableTask task : tasks) {
-            schedulableTasksCopy.add(task);
-        }
+        List<SchedulableTask> schedulableTasksCopy = new ArrayList<>(tasks);
         executionContext.tasks = schedulableTasksCopy;
 
-        List<Object> constantCopy = new ArrayList<>();
-        for (Object constant : constants) {
-            constantCopy.add(constant);
-        }
+        List<Object> constantCopy = new ArrayList<>(constants);
         executionContext.constants = constantCopy;
 
-        Map<Integer, Integer> objectsMapCopy = new HashMap<>();
-        objectMap.forEach((k, v) -> {
-            objectsMapCopy.put(k, v);
-        });
+        Map<Integer, Integer> objectsMapCopy = new HashMap<>(objectMap);
         executionContext.objectMap = objectsMapCopy;
 
-        List<Object> objectsCopy = new ArrayList<>();
-        for (Object o : objects) {
-            objectsCopy.add(o);
-        }
+        List<Object> objectsCopy = new ArrayList<>(objects);
         executionContext.objects = objectsCopy;
 
-        executionContext.objectState = Collections.unmodifiableList(objectState);
+        List<LocalObjectState> objectStateCopy = new ArrayList<>(objectState);
+        executionContext.objectState = objectStateCopy;
 
-        List<TornadoAcceleratorDevice> devicesCopy = new ArrayList<>();
-        for (TornadoAcceleratorDevice dev : devices) {
-            devicesCopy.add(dev);
-        }
+        List<TornadoAcceleratorDevice> devicesCopy = new ArrayList<>(devices);
 
         executionContext.devices = devicesCopy;
         executionContext.taskToDevice = this.taskToDevice.clone();
 
-        Set<TornadoAcceleratorDevice> lastDeviceCopy = new HashSet<>();
-        for (TornadoAcceleratorDevice dev : lastDevices) {
-            lastDeviceCopy.add(dev);
-        }
+        Set<TornadoAcceleratorDevice> lastDeviceCopy = new HashSet<>(lastDevices);
 
         executionContext.lastDevices = lastDeviceCopy;
         executionContext.profiler = this.profiler;
+        executionContext.nextTask = this.nextTask;
     }
 }

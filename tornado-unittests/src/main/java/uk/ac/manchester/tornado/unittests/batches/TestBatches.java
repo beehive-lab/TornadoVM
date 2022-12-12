@@ -19,7 +19,6 @@
 package uk.ac.manchester.tornado.unittests.batches;
 
 import static org.junit.Assert.assertEquals;
-import static uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer.getTornadoRuntime;
 
 import java.util.Random;
 import java.util.stream.IntStream;
@@ -34,10 +33,12 @@ import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurat
 
 /**
  * How to test?
- *
+ * 
+ * <p>
  * <code>
  *     tornado-test -V --fast uk.ac.manchester.tornado.unittests.batches.TestBatches
  * </code>
+ * </p>
  */
 public class TestBatches extends TornadoTestBase {
 
