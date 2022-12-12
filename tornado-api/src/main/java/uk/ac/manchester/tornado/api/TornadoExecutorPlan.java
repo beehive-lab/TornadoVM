@@ -98,6 +98,11 @@ public class TornadoExecutorPlan implements ProfileInterface {
         return this;
     }
 
+    public TornadoExecutorPlan replaceParameter(Object oldParameter, Object newParameter) {
+        tornadoExecutor.replaceParameter(oldParameter, newParameter);
+        return this;
+    }
+
     @Override
     public long getTotalTime() {
         return tornadoExecutor.getTotalTime();

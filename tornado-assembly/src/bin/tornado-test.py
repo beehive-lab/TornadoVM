@@ -78,9 +78,9 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.MultipleReductions"),
     TestEntry("uk.ac.manchester.tornado.unittests.instances.TestInstances"),  
     TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes"),
-    TestEntry("uk.ac.manchester.tornado.unittests.api.TestAPI"), ##
-    TestEntry("uk.ac.manchester.tornado.unittests.api.TestIO"),
-    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestCombinedTaskGraph"),
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestAPI"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestIO"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestCombinedTaskGraph"),  ##
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestVectorAdditionKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.KernelContextWorkGroupTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext"),

@@ -498,6 +498,7 @@ public class TaskGraph implements TornadoAPI {
      * @param newParameter
      */
     @Override
+    @Deprecated(forRemoval = true)
     public TaskGraph replaceParameter(Object oldParameter, Object newParameter) {
         taskScheduleImpl.replaceParameter(oldParameter, newParameter);
         return this;

@@ -109,6 +109,12 @@ public class TornadoExecutor implements ProfileInterface {
         }
     }
 
+    public void replaceParameter(Object oldParameter, Object newParameter) {
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            immutableTaskGraph.replaceParameter(oldParameter, newParameter);
+        }
+    }
+
     @Override
     public long getTotalTime() {
         return immutableTaskGraphList.stream().map(itg -> itg.getTotalTime()).mapToLong(Long::longValue).sum();

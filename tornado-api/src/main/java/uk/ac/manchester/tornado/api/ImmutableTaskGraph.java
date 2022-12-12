@@ -90,6 +90,10 @@ public class ImmutableTaskGraph implements ProfileInterface {
         taskGraph.syncObjects(objects);
     }
 
+    public void replaceParameter(Object oldParameter, Object newParameter) {
+        taskGraph.replaceParameter(oldParameter, newParameter);
+    }
+
     @Override
     public long getTotalTime() {
         return taskGraph.getTotalTime();
