@@ -76,24 +76,24 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsLong"),  
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.InstanceReduction"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.MultipleReductions"),
+    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsAutomatic"),
     TestEntry("uk.ac.manchester.tornado.unittests.instances.TestInstances"),  
     TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestAPI"), 
-    TestEntry("uk.ac.manchester.tornado.unittests.api.TestIO"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestIO"),  ## PENDING 
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestCombinedTaskGraph"),  
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestVectorAdditionKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.KernelContextWorkGroupTests"),
-    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext"), ##
-    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsIntegersKernelContext"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsIntegersKernelContext"), 
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsFloatsKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsDoublesKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsLongKernelContext"),
-    TestEntry("uk.ac.manchester.tornado.unittests.math.TestMath"),
-    TestEntry("uk.ac.manchester.tornado.unittests.batches.TestBatches"),
-    TestEntry("uk.ac.manchester.tornado.unittests.lambdas.TestLambdas"),
-    TestEntry("uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap"),
-    TestEntry("uk.ac.manchester.tornado.unittests.logic.TestLogic"),
-    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsAutomatic"),
+    TestEntry("uk.ac.manchester.tornado.unittests.math.TestMath"),        
+    TestEntry("uk.ac.manchester.tornado.unittests.batches.TestBatches"),  ## PENDING 
+    TestEntry("uk.ac.manchester.tornado.unittests.lambdas.TestLambdas"), ## OK
+    TestEntry("uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap"), ## OK
+    TestEntry("uk.ac.manchester.tornado.unittests.logic.TestLogic"),     ## OK
     TestEntry("uk.ac.manchester.tornado.unittests.fields.TestFields"),
     TestEntry("uk.ac.manchester.tornado.unittests.profiler.TestProfiler"),
     TestEntry("uk.ac.manchester.tornado.unittests.bitsets.BitSetTests"),

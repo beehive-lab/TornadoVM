@@ -24,7 +24,10 @@ import java.util.stream.IntStream;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -86,7 +89,9 @@ public class TestLogic extends TornadoTestBase {
                 .task("t0", TestLogic::logic01, data, output) //
                 .transferToHost(output);
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         logic01(data, sequential);
 
@@ -110,7 +115,9 @@ public class TestLogic extends TornadoTestBase {
                 .task("t0", TestLogic::logic02, data, output) //
                 .transferToHost(output);
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         logic02(data, sequential);
 
@@ -132,8 +139,10 @@ public class TestLogic extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestLogic::logic03, data, output) //
                 .transferToHost(output);
-        // @formatter:on
-        taskGraph.execute();
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         logic03(data, sequential);
 
@@ -156,7 +165,9 @@ public class TestLogic extends TornadoTestBase {
                 .task("t0", TestLogic::logic04, data, output) //
                 .transferToHost(output);
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         logic04(data, sequential);
 

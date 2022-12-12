@@ -99,7 +99,7 @@ public interface TaskGraphInterface extends ProfileInterface {
 
     void unlockObjectsFromMemory(Object[] objects);
 
-    void syncObject(Object object);
+    void syncField(Object object);
 
     void syncObjects();
 

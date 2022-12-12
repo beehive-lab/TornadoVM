@@ -103,9 +103,15 @@ public class TornadoExecutor implements ProfileInterface {
         }
     }
 
-    public void syncObject(Object... objects) {
+    public void syncObjects(Object... objects) {
         for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
             immutableTaskGraph.syncObject(objects);
+        }
+    }
+
+    public void syncField(Object object) {
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            immutableTaskGraph.syncField(object);
         }
     }
 

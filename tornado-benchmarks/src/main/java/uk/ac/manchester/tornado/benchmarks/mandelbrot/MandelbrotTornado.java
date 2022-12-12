@@ -63,7 +63,7 @@ public class MandelbrotTornado extends BenchmarkDriver {
         boolean val = true;
         short[] result = new short[size * size];
 
-        taskGraph.syncObject(output);
+        taskGraph.syncField(output);
         taskGraph.clearProfiles();
 
         ComputeKernels.mandelbrot(size, result);

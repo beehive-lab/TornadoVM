@@ -94,7 +94,7 @@ public class ConvolveImageTornado extends BenchmarkDriver {
         final ImageFloat result = new ImageFloat(imageSizeX, imageSizeY);
 
         benchmarkMethod(device);
-        taskGraph.syncObject(output);
+        taskGraph.syncField(output);
         taskGraph.clearProfiles();
 
         GraphicsKernels.convolveImage(input, filter, result);

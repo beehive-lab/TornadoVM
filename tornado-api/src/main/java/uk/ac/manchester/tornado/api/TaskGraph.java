@@ -392,8 +392,8 @@ public class TaskGraph implements TornadoAPI {
 
     @Override
     @Deprecated(forRemoval = true)
-    public void syncObject(Object object) {
-        taskScheduleImpl.syncObject(object);
+    public void syncField(Object object) {
+        taskScheduleImpl.syncField(object);
     }
 
     @Override

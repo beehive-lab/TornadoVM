@@ -101,7 +101,7 @@ public class AddTornado extends BenchmarkDriver {
         final ImageFloat4 result = new ImageFloat4(numElementsX, numElementsY);
 
         benchmarkMethod(device);
-        taskGraph.syncObject(c);
+        taskGraph.syncField(c);
         taskGraph.clearProfiles();
 
         GraphicsKernels.addImage(a, b, result);

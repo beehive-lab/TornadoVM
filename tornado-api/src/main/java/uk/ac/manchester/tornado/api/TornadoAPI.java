@@ -665,7 +665,7 @@ public interface TornadoAPI {
 
     void syncObjects();
 
-    void syncObject(Object object);
+    void syncField(Object object);
 
     void syncObjects(Object... objects);
 

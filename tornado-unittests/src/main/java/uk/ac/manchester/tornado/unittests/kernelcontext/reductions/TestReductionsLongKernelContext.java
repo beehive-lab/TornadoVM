@@ -24,8 +24,11 @@ import java.util.stream.IntStream;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
@@ -92,7 +95,11 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
 
         // Final SUM
         long finalSum = 0;
@@ -143,7 +150,11 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
 
         // Final SUM
         long finalSum = 0;
@@ -199,7 +210,11 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
 
         // Final SUM
         long finalSum = 0;
@@ -249,7 +264,11 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
 
         // Final SUM
         long finalSum = 0;
@@ -305,7 +324,11 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
 
         // Final SUM
         long finalSum = 0;
@@ -355,7 +378,11 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
 
         // Final SUM
         long finalSum = 0;

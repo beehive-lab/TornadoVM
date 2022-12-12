@@ -945,7 +945,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
     }
 
     @Override
-    public void syncObject(Object object) {
+    public void syncField(Object object) {
         if (vm == null) {
             return;
         }
