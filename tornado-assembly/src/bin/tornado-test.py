@@ -63,12 +63,12 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest"), 
     TestEntry("uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer"),   
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice"),     
-    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice"), ##
-    TestEntry("uk.ac.manchester.tornado.unittests.temporary.values.TestTemporaryValues"),
-    TestEntry("uk.ac.manchester.tornado.unittests.images.TestImages"),
-    TestEntry("uk.ac.manchester.tornado.unittests.images.TestResizeImage"),
-    TestEntry("uk.ac.manchester.tornado.unittests.branching.TestConditionals"),
-    TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoops"),
+    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.temporary.values.TestTemporaryValues"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.images.TestImages"),  
+    TestEntry("uk.ac.manchester.tornado.unittests.images.TestResizeImage"),  
+    TestEntry("uk.ac.manchester.tornado.unittests.branching.TestConditionals"),  
+    TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoops"),  ## 
     TestEntry("uk.ac.manchester.tornado.unittests.loops.TestParallelDimensions"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats"),

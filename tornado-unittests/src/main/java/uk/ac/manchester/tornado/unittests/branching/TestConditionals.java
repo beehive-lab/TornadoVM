@@ -26,7 +26,10 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -196,11 +199,14 @@ public class TestConditionals extends TornadoTestBase {
         int[] a = new int[size];
         Arrays.fill(a, 5);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::ifStatement, a) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         assertEquals(10, a[0]);
     }
@@ -211,11 +217,14 @@ public class TestConditionals extends TornadoTestBase {
         int[] a = new int[size];
         Arrays.fill(a, 5);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::ifElseStatement, a) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         assertEquals(10, a[0]);
     }
@@ -233,11 +242,14 @@ public class TestConditionals extends TornadoTestBase {
 
         nestedIfElseStatement(serial);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::nestedIfElseStatement, a) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         assertArrayEquals(serial, a);
     }
@@ -250,11 +262,13 @@ public class TestConditionals extends TornadoTestBase {
 
         Arrays.fill(a, 20);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::switchStatement, a) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(a);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         assertEquals(10, a[0]);
     }
@@ -267,11 +281,13 @@ public class TestConditionals extends TornadoTestBase {
 
         Arrays.fill(a, 23);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::switchStatement, a) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(a);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         assertEquals(20, a[0]);
     }
@@ -284,11 +300,13 @@ public class TestConditionals extends TornadoTestBase {
 
         Arrays.fill(a, 20);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::switchStatement2, a) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(a);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         assertEquals(10, a[0]);
     }
@@ -301,11 +319,14 @@ public class TestConditionals extends TornadoTestBase {
 
         Arrays.fill(a, 20);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::switchStatement3, a) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int value : a) {
             assertEquals(10, value);
@@ -320,11 +341,14 @@ public class TestConditionals extends TornadoTestBase {
 
         Arrays.fill(a, 20);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::switchStatement4, a) //
-                .transferToHost(a) //
-                .execute();//
+                .transferToHost(a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int value : a) {
             assertEquals(10, value);
@@ -338,11 +362,14 @@ public class TestConditionals extends TornadoTestBase {
 
         Arrays.fill(a, 12);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::switchStatement5, a) //
-                .transferToHost(a) //
-                .execute();//
+                .transferToHost(a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int value : a) {
             assertEquals(10, value);
@@ -357,11 +384,14 @@ public class TestConditionals extends TornadoTestBase {
 
         Arrays.fill(a, 20);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::ternaryCondition, a) //
-                .transferToHost(a) //
-                .execute();
+                .transferToHost(a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int value : a) {
             assertEquals(10, value);
@@ -378,11 +408,13 @@ public class TestConditionals extends TornadoTestBase {
         Arrays.fill(a, 20);
         Arrays.fill(b, 30);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::ternaryComplexCondition, a, b) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(a);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int value : a) {
             assertEquals(20, value);
@@ -398,11 +430,14 @@ public class TestConditionals extends TornadoTestBase {
         Arrays.fill(a, 20);
         Arrays.fill(b, 30);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::ternaryComplexCondition2, a, b) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int value : a) {
             assertEquals(50, value);
@@ -416,11 +451,13 @@ public class TestConditionals extends TornadoTestBase {
 
         Arrays.fill(a, 42);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::switchStatement6, a) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(a);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int value : a) {
             assertEquals(30, value);
@@ -434,11 +471,13 @@ public class TestConditionals extends TornadoTestBase {
 
         Arrays.fill(a, 12);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::switchStatement6, a) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(a);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int value : a) {
             assertEquals(10, value);
@@ -452,11 +491,13 @@ public class TestConditionals extends TornadoTestBase {
 
         Arrays.fill(a, 22);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::switchStatement6, a) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(a);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int value : a) {
             assertEquals(10, value);
@@ -477,7 +518,9 @@ public class TestConditionals extends TornadoTestBase {
         taskGraph.task("t0", TestConditionals::integerTestMove, output, N) //
                 .transferToHost(output);
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         integerTestMove(sequential, N);
 

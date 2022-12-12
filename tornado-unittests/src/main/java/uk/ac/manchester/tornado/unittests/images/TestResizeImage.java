@@ -26,7 +26,10 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
@@ -80,9 +83,10 @@ public class TestResizeImage extends TornadoTestBase {
                 .task("t0", TestResizeImage::resize, imageDst, imageSource, 2) //
                 .transferToHost(imageDst);
 
-        taskGraph.warmup();
-
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.warmup() //
+                .execute();
 
         final int scale = 2;
 
