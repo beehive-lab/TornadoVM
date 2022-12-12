@@ -109,8 +109,8 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Types"),    ## OK
     TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Inlining"), ## OK
     TestEntry("uk.ac.manchester.tornado.unittests.fails.CodeFail"),        ## OK
-    TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGen"),       ## OK NOOOOOO
-    TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),
+    TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGen"),       ## OK
+    TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),   ## OK
     TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions"),
