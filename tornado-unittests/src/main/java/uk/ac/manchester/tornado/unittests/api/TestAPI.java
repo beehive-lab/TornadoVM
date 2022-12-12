@@ -25,7 +25,10 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.arrays.TestArrays;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -52,16 +55,19 @@ public class TestAPI extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0");
         assertNotNull(taskGraph);
 
-        taskGraph.lockObjectInMemory(data) //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
-                .task("t0", TestArrays::addAccumulator, data, 1) //
-                .execute(); //
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestArrays::addAccumulator, data, 1);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.lockObjectsInMemory(data) //
+                .execute();
 
         // Force data transfers from D->H after the execution of a task-graph
-        taskGraph.syncObject(data);
+        executor.syncObjects(data);
 
         // Mark objects associated with the task-graph for reusing memory
-        taskGraph.unlockObjectFromMemory(data);
+        executor.unlockObjectsFromMemory(data);
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data[i]);
@@ -79,16 +85,19 @@ public class TestAPI extends TornadoTestBase {
             data[idx] = size;
         });
 
-        TaskGraph tg = new TaskGraph("s0");
-        assertNotNull(tg);
+        TaskGraph taskGraph = new TaskGraph("s0");
+        assertNotNull(taskGraph);
 
-        tg.lockObjectInMemory(data);
-        tg.transferToDevice(DataTransferMode.FIRST_EXECUTION, data);
-        tg.task("t0", TestArrays::addAccumulator, data, 1);
-        tg.execute();
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data);
+        taskGraph.task("t0", TestArrays::addAccumulator, data, 1);
 
-        tg.syncObjects(data);
-        tg.unlockObjectFromMemory(data);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build() //
+                .lockObjectsInMemory(data) //
+                .execute();
+
+        executor.syncObjects(data);
+        executor.unlockObjectsFromMemory(data);
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data[i]);
@@ -109,16 +118,17 @@ public class TestAPI extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0");
         assertNotNull(taskGraph);
 
-        taskGraph.lockObjectInMemory(data);
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestArrays::addAccumulator, data, 1) //
+                .transferToHost(data);
 
-        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data);
-        taskGraph.task("t0", TestArrays::addAccumulator, data, 1);
-        taskGraph.transferToHost(data);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.warmup() //
+                .lockObjectsInMemory(data) //
+                .execute();
 
-        taskGraph.warmup();
-
-        taskGraph.execute();
-        taskGraph.unlockObjectFromMemory(data);
+        executor.unlockObjectsFromMemory(data);
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data[i]);

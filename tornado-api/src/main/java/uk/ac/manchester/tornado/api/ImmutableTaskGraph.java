@@ -78,6 +78,18 @@ public class ImmutableTaskGraph implements ProfileInterface {
         taskGraph.setDevice(device);
     }
 
+    public void lockObjectsInMemory(Object... objects) {
+        taskGraph.lockObjectsInMemory(objects);
+    }
+
+    public void unlockObjectFromMemory(Object[] objects) {
+        taskGraph.unlockObjectFromMemory(objects);
+    }
+
+    public void syncObject(Object... objects) {
+        taskGraph.syncObjects(objects);
+    }
+
     @Override
     public long getTotalTime() {
         return taskGraph.getTotalTime();

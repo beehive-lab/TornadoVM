@@ -83,6 +83,21 @@ public class TornadoExecutorPlan implements ProfileInterface {
         return this;
     }
 
+    public TornadoExecutorPlan lockObjectsInMemory(Object... objects) {
+        tornadoExecutor.lockObjectsInMemory(objects);
+        return this;
+    }
+
+    public TornadoExecutorPlan unlockObjectsFromMemory(Object... objects) {
+        tornadoExecutor.unlockObjectFromMemory(objects);
+        return this;
+    }
+
+    public TornadoExecutorPlan syncObjects(Object... objects) {
+        tornadoExecutor.syncObject(objects);
+        return this;
+    }
+
     @Override
     public long getTotalTime() {
         return tornadoExecutor.getTotalTime();

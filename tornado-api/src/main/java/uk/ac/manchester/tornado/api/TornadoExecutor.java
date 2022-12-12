@@ -91,6 +91,24 @@ public class TornadoExecutor implements ProfileInterface {
         }
     }
 
+    public void lockObjectsInMemory(Object... objects) {
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            immutableTaskGraph.lockObjectsInMemory(objects);
+        }
+    }
+
+    public void unlockObjectFromMemory(Object... objects) {
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            immutableTaskGraph.unlockObjectFromMemory(objects);
+        }
+    }
+
+    public void syncObject(Object... objects) {
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            immutableTaskGraph.syncObject(objects);
+        }
+    }
+
     @Override
     public long getTotalTime() {
         return immutableTaskGraphList.stream().map(itg -> itg.getTotalTime()).mapToLong(Long::longValue).sum();

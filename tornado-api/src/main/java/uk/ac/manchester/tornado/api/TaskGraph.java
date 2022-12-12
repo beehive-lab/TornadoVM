@@ -358,24 +358,28 @@ public class TaskGraph implements TornadoAPI {
     }
 
     @Override
+    @Deprecated(forRemoval = true)
     public TaskGraph lockObjectInMemory(Object object) {
         taskScheduleImpl.lockObjectInMemory(object);
         return this;
     }
 
     @Override
+    @Deprecated(forRemoval = true)
     public TaskGraph lockObjectsInMemory(Object... objects) {
         taskScheduleImpl.lockObjectsInMemory(objects);
         return this;
     }
 
     @Override
+    @Deprecated(forRemoval = true)
     public TaskGraph unlockObjectsFromMemory(Object... objects) {
         taskScheduleImpl.unlockObjectsFromMemory(objects);
         return this;
     }
 
     @Override
+    @Deprecated(forRemoval = true)
     public TaskGraph unlockObjectFromMemory(Object object) {
         taskScheduleImpl.unlockObjectFromMemory(object);
         return this;
@@ -387,11 +391,13 @@ public class TaskGraph implements TornadoAPI {
     }
 
     @Override
+    @Deprecated(forRemoval = true)
     public void syncObject(Object object) {
         taskScheduleImpl.syncObject(object);
     }
 
     @Override
+    @Deprecated(forRemoval = true)
     public void syncObjects(Object... objects) {
         taskScheduleImpl.syncObjects(objects);
     }
