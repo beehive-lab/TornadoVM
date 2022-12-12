@@ -81,8 +81,8 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestAPI"), 
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestIO"),  ## PENDING (replace parameter)
-    TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),         ## OK
-    TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"), ## OK
+    TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),         
+    TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"), 
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestCombinedTaskGraph"),  
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestVectorAdditionKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.KernelContextWorkGroupTests"),
@@ -93,26 +93,26 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsLongKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.math.TestMath"),        
     TestEntry("uk.ac.manchester.tornado.unittests.batches.TestBatches"),  ## PENDING 
-    TestEntry("uk.ac.manchester.tornado.unittests.lambdas.TestLambdas"), ## OK
-    TestEntry("uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap"), ## OK
-    TestEntry("uk.ac.manchester.tornado.unittests.logic.TestLogic"),     ## OK
-    TestEntry("uk.ac.manchester.tornado.unittests.fields.TestFields"),   ## OK
-    TestEntry("uk.ac.manchester.tornado.unittests.profiler.TestProfiler"), ## OK
-    TestEntry("uk.ac.manchester.tornado.unittests.bitsets.BitSetTests"),   ## OK
-    TestEntry("uk.ac.manchester.tornado.unittests.fails.TestFails"),       ## OK
-    TestEntry("uk.ac.manchester.tornado.unittests.fails.RuntimeFail"),     ## OK
-    TestEntry("uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection"), ## OK
-    TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestNewArrays"),  ## OK
+    TestEntry("uk.ac.manchester.tornado.unittests.lambdas.TestLambdas"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.logic.TestLogic"),     
+    TestEntry("uk.ac.manchester.tornado.unittests.fields.TestFields"),   
+    TestEntry("uk.ac.manchester.tornado.unittests.profiler.TestProfiler"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.bitsets.BitSetTests"),   
+    TestEntry("uk.ac.manchester.tornado.unittests.fails.TestFails"),       
+    TestEntry("uk.ac.manchester.tornado.unittests.fails.RuntimeFail"),     
+    TestEntry("uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestNewArrays"),  
     TestEntry("uk.ac.manchester.tornado.unittests.dynsize.Resize"),        ## PENDING  (replace parameter)
-    TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations"),   ## OK
-    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion"), ## OK
-    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Types"),    ## OK
-    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Inlining"), ## OK
-    TestEntry("uk.ac.manchester.tornado.unittests.fails.CodeFail"),        ## OK
-    TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGen"),       ## OK
-    TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),   ## OK
-    TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),
-    TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"),
+    TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations"),   
+    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Types"),    
+    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Inlining"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.fails.CodeFail"),        
+    TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGen"),       
+    TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),   
+    TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),  
+    TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"),   ## >> 
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions"),
 
     ## Test for function calls - We force not to inline methods
