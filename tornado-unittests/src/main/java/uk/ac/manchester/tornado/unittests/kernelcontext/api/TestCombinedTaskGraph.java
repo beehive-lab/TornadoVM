@@ -24,8 +24,11 @@ import java.util.stream.IntStream;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -182,7 +185,11 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(size, 1, 1);
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
 
         vectorAddV1(a, b, cJava);
         vectorMulV1(cJava, b, cJava);
@@ -222,7 +229,11 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
                 .task("t1", TestCombinedTaskGraph::vectorMulV2, context, cTornado, b, cTornado) //
                 .task("t2", TestCombinedTaskGraph::vectorSubV2, context, cTornado, b, cTornado) //
                 .transferToHost(cTornado);
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
 
         vectorAddV1(a, b, cJava);
         vectorMulV1(cJava, b, cJava);
@@ -261,7 +272,11 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
                 .task("t1", TestCombinedTaskGraph::vectorMulV2, context, cTornado, b, cTornado) //
                 .task("t2", TestCombinedTaskGraph::vectorSubV2, context, cTornado, b, cTornado) //
                 .transferToHost(cTornado);
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
 
         vectorAddV1(a, b, cJava);
         vectorMulV1(cJava, b, cJava);
@@ -300,7 +315,11 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
                 .task("t1", TestCombinedTaskGraph::vectorMulV2, context, cTornado, b, cTornado) //
                 .task("t2", TestCombinedTaskGraph::vectorSubV1, cTornado, b, cTornado) //
                 .transferToHost(cTornado);
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
 
         vectorAddV1(a, b, cJava);
         vectorMulV1(cJava, b, cJava);
@@ -346,7 +365,11 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
         workerT0.setLocalWork(size / 2, 1, 1);
         workerT1.setGlobalWork(size, 1, 1);
         workerT1.setLocalWorkToNull();
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
 
         vectorAddV1(a, b, cJava);
         vectorMulV1(cJava, b, cJava);

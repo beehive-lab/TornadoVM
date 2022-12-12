@@ -222,6 +222,7 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, context, a, b, cTornado) //
                 .transferToHost(cTornado);
+
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWorkToNull();
