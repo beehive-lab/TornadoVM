@@ -131,6 +131,11 @@ public class TornadoExecutorPlan implements ProfileInterface {
         return this;
     }
 
+    public TornadoExecutorPlan withBatch(String batchSize) {
+        tornadoExecutor.withBatch(batchSize);
+        return this;
+    }
+
     public TornadoExecutorPlan dumpProfiles() {
         tornadoExecutor.dumpProfiles();
         return this;

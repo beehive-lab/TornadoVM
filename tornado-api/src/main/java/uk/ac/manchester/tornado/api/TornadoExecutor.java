@@ -85,6 +85,12 @@ public class TornadoExecutor implements ProfileInterface {
         }
     }
 
+    public void withBatch(String batchSize) {
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            immutableTaskGraph.withBatch(batchSize);
+        }
+    }
+
     /**
      * For all task-graphs contained in an Executor, update the device
      *
@@ -222,4 +228,5 @@ public class TornadoExecutor implements ProfileInterface {
             immutableTaskGraph.useDefaultScheduler(useDefaultScheduler);
         }
     }
+
 }

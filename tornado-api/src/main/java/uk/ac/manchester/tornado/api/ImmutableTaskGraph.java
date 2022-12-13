@@ -208,4 +208,8 @@ public class ImmutableTaskGraph implements ProfileInterface {
     public void useDefaultScheduler(boolean useDefaultScheduler) {
         taskGraph.useDefaultThreadScheduler(useDefaultScheduler);
     }
+
+    public void withBatch(String batchSize) {
+        taskGraph.batch(batchSize);
+    }
 }
