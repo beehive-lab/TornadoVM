@@ -558,8 +558,6 @@ public interface TornadoAPI {
      */
     TornadoAPI task(SchedulableTask task);
 
-    TornadoAPI setDevice(TornadoDevice device);
-
     TornadoAPI transferToDevice(final int mode, Object... objects);
 
     /**
@@ -597,11 +595,11 @@ public interface TornadoAPI {
      */
     TornadoAPI batch(String batchSize);
 
+     void execute();
+
     /**
      * Execute the task-schedule
      */
-    @Deprecated
-    void execute();
 
     void execute(GridScheduler gridScheduler);
 

@@ -261,9 +261,7 @@ public class TaskGraph implements TornadoAPI {
         return this;
     }
 
-    @Override
-    @Deprecated(forRemoval = true)
-    public TaskGraph setDevice(TornadoDevice device) {
+    TaskGraph setDevice(TornadoDevice device) {
         taskScheduleImpl.setDevice(device);
         return this;
     }

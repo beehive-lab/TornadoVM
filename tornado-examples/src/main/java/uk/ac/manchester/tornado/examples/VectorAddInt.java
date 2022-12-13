@@ -50,7 +50,7 @@ public class VectorAddInt {
         Arrays.fill(a, 10);
         Arrays.fill(b, 20);
 
-        TaskGraph taskGraph = new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") // T
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", VectorAddInt::vectorAdd, a, b, c) //
                 .transferToHost(c);
