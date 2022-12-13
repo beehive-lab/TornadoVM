@@ -18,7 +18,7 @@
 
 package uk.ac.manchester.tornado.examples.dynamic;
 
-import uk.ac.manchester.tornado.api.Policy;
+import uk.ac.manchester.tornado.api.DynamicReconfigurationPolicy;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
@@ -28,7 +28,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTMT 
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTMT
  * </code>
  */
 public class DFTMT {
@@ -157,12 +157,12 @@ public class DFTMT {
             switch (executionType) {
                 case "performance":
                     start = System.nanoTime();
-                    graph.executeWithProfilerSequential(Policy.PERFORMANCE);
+                    graph.executeWithProfilerSequential(DynamicReconfigurationPolicy.PERFORMANCE);
                     end = System.nanoTime();
                     break;
                 case "end":
                     start = System.nanoTime();
-                    graph.executeWithProfilerSequential(Policy.END_2_END);
+                    graph.executeWithProfilerSequential(DynamicReconfigurationPolicy.END_2_END);
                     end = System.nanoTime();
                     break;
                 case "sequential":

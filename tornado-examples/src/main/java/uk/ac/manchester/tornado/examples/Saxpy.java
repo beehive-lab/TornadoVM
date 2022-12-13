@@ -19,7 +19,7 @@ package uk.ac.manchester.tornado.examples;
 
 import java.util.stream.IntStream;
 
-import uk.ac.manchester.tornado.api.Policy;
+import uk.ac.manchester.tornado.api.DynamicReconfigurationPolicy;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -61,7 +61,7 @@ public class Saxpy {
                 .task("t0", Saxpy::saxpy, alpha, x, y)//
                 .transferToHost(y);
 
-        s0.executeWithProfilerSequentialGlobal(Policy.PERFORMANCE);
+        s0.executeWithProfilerSequentialGlobal(DynamicReconfigurationPolicy.PERFORMANCE);
 
         numElements = 512 * 2;
 
@@ -72,9 +72,9 @@ public class Saxpy {
 
         TaskGraph s1 = new TaskGraph("s1").task("t0", Saxpy::saxpy, alpha, a, b).transferToHost(a);
 
-        s1.executeWithProfilerSequentialGlobal(Policy.PERFORMANCE);
+        s1.executeWithProfilerSequentialGlobal(DynamicReconfigurationPolicy.PERFORMANCE);
 
-        s1.executeWithProfilerSequentialGlobal(Policy.PERFORMANCE);
+        s1.executeWithProfilerSequentialGlobal(DynamicReconfigurationPolicy.PERFORMANCE);
 
         boolean wrongResult = false;
         for (int i = 0; i < y.length; i++) {

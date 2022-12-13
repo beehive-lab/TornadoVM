@@ -315,19 +315,19 @@ public class TaskGraph implements TornadoAPI {
 
     @Override
     @Deprecated(forRemoval = true)
-    public void executeWithProfiler(Policy policy) {
+    public void executeWithProfiler(DynamicReconfigurationPolicy policy) {
         taskScheduleImpl.scheduleWithProfile(policy).waitOn();
     }
 
     @Override
     @Deprecated(forRemoval = true)
-    public void executeWithProfilerSequential(Policy policy) {
+    public void executeWithProfilerSequential(DynamicReconfigurationPolicy policy) {
         taskScheduleImpl.scheduleWithProfileSequential(policy).waitOn();
     }
 
     @Override
     @Deprecated(forRemoval = true)
-    public void executeWithProfilerSequentialGlobal(Policy policy) {
+    public void executeWithProfilerSequentialGlobal(DynamicReconfigurationPolicy policy) {
         taskScheduleImpl.scheduleWithProfileSequentialGlobal(policy).waitOn();
     }
 

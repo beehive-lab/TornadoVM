@@ -51,9 +51,9 @@ import org.graalvm.compiler.graph.CachedGraph;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.DynamicReconfigurationPolicy;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraphInterface;
 import uk.ac.manchester.tornado.api.TornadoDriver;
@@ -127,7 +127,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
     private static final int PERFORMANCE_WARMUP = 3;
     private static final boolean TIME_IN_NANOSECONDS = Tornado.TIME_IN_NANOSECONDS;
     private static final String TASK_SCHEDULE_PREFIX = "XXX";
-    private static final ConcurrentHashMap<Policy, ConcurrentHashMap<String, HistoryTable>> executionHistoryPolicy = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<DynamicReconfigurationPolicy, ConcurrentHashMap<String, HistoryTable>> executionHistoryPolicy = new ConcurrentHashMap<>();
     private static final int HISTORY_POINTS_PREDICTION = 5;
     private static final boolean USE_GLOBAL_TASK_CACHE = false;
 
@@ -161,7 +161,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
     private Set<Object> argumentsLookUp;
 
     private List<StreamingObject> streamingInputObjects;
-    private ConcurrentHashMap<Policy, Integer> policyTimeTable = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<DynamicReconfigurationPolicy, Integer> policyTimeTable = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerOutputs = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerInputs = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, TaskGraph> taskScheduleIndex = new ConcurrentHashMap<>();
@@ -1239,10 +1239,10 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         }
     }
 
-    private int synchronizeWithPolicy(Policy policy, long[] totalTimers) {
+    private int synchronizeWithPolicy(DynamicReconfigurationPolicy policy, long[] totalTimers) {
         // Set the Performance policy by default;
         if (policy == null) {
-            policy = Policy.PERFORMANCE;
+            policy = DynamicReconfigurationPolicy.PERFORMANCE;
         }
 
         int deviceWinnerIndex = -1;
@@ -1298,11 +1298,11 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         }
     }
 
-    private void runParallelSequential(Policy policy, Thread[] threads, int indexSequential, Timer timer, long[] totalTimers) {
+    private void runParallelSequential(DynamicReconfigurationPolicy policy, Thread[] threads, int indexSequential, Timer timer, long[] totalTimers) {
         // Last Thread runs the sequential code
         threads[indexSequential] = new Thread(() -> {
             long start = System.currentTimeMillis();
-            if (policy == Policy.PERFORMANCE) {
+            if (policy == DynamicReconfigurationPolicy.PERFORMANCE) {
                 for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
                     runAllTasksJavaSequential();
                 }
@@ -1318,7 +1318,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         });
     }
 
-    private void runParallelTaskSchedules(int numDevices, Thread[] threads, Timer timer, Policy policy, long[] totalTimers) {
+    private void runParallelTaskSchedules(int numDevices, Thread[] threads, Timer timer, DynamicReconfigurationPolicy policy, long[] totalTimers) {
         for (int i = 0; i < numDevices; i++) {
             final int taskScheduleNumber = i;
             threads[i] = new Thread(() -> {
@@ -1343,7 +1343,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
                 }
                 performStreamOutThreads(task, streamOutObjects);
 
-                if (policy == Policy.PERFORMANCE) {
+                if (policy == DynamicReconfigurationPolicy.PERFORMANCE) {
                     // first warm up
                     for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
                         task.execute();
@@ -1367,7 +1367,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
 
     }
 
-    private void runScheduleWithParallelProfiler(Policy policy) {
+    private void runScheduleWithParallelProfiler(DynamicReconfigurationPolicy policy) {
 
         final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MilliSecTimer();
         TornadoDriver tornadoDriver = TornadoCoreRuntime.getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX);
@@ -1392,7 +1392,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         }
 
         // Define the winner, based on the first thread to finish
-        if (policy == Policy.LATENCY) {
+        if (policy == DynamicReconfigurationPolicy.LATENCY) {
             int deviceWinnerIndex = syncWinner(threads);
             policyTimeTable.put(policy, deviceWinnerIndex);
         }
@@ -1406,7 +1406,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
             }
         }
 
-        if ((policy == Policy.PERFORMANCE || policy == Policy.END_2_END) && (masterThreadID == Thread.currentThread().getId())) {
+        if ((policy == DynamicReconfigurationPolicy.PERFORMANCE || policy == DynamicReconfigurationPolicy.END_2_END) && (masterThreadID == Thread.currentThread().getId())) {
             int deviceWinnerIndex = synchronizeWithPolicy(policy, totalTimers);
             policyTimeTable.put(policy, deviceWinnerIndex);
             if (TornadoOptions.DEBUG_POLICY) {
@@ -1458,7 +1458,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
     }
 
     @Override
-    public TaskGraphInterface scheduleWithProfile(Policy policy) {
+    public TaskGraphInterface scheduleWithProfile(DynamicReconfigurationPolicy policy) {
         if (policyTimeTable.get(policy) == null) {
             runScheduleWithParallelProfiler(policy);
         } else {
@@ -1516,9 +1516,9 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         }
     }
 
-    private void runSequentialTaskSchedule(Policy policy, Timer timer, long[] totalTimers, int indexSequential) {
+    private void runSequentialTaskSchedule(DynamicReconfigurationPolicy policy, Timer timer, long[] totalTimers, int indexSequential) {
         long startSequential = timer.time();
-        if (policy == Policy.PERFORMANCE) {
+        if (policy == DynamicReconfigurationPolicy.PERFORMANCE) {
             for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
                 runAllTasksJavaSequential();
             }
@@ -1529,7 +1529,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         totalTimers[indexSequential] = (endSequentialCode - startSequential);
     }
 
-    private void runAllTaskSchedulesInAcceleratorsSequentially(int numDevices, Timer timer, Policy policy, long[] totalTimers) {
+    private void runAllTaskSchedulesInAcceleratorsSequentially(int numDevices, Timer timer, DynamicReconfigurationPolicy policy, long[] totalTimers) {
         String[] ignoreTaskNames = System.getProperties().getProperty("tornado.ignore.tasks", "").split(",");
 
         // Running sequentially for all the devices
@@ -1567,7 +1567,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
             }
             performStreamOutThreads(task, streamOutObjects);
 
-            if (policy == Policy.PERFORMANCE) {
+            if (policy == DynamicReconfigurationPolicy.PERFORMANCE) {
                 for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
                     task.execute();
                 }
@@ -1590,7 +1590,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         }
     }
 
-    private void updateHistoryTables(Policy policy, int deviceWinnerIndex) {
+    private void updateHistoryTables(DynamicReconfigurationPolicy policy, int deviceWinnerIndex) {
         // Matching the name
         for (TaskPackage taskPackage : taskPackages) {
             Object code = taskPackage.getTaskParameters()[0];
@@ -1656,7 +1656,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         return str.toString();
     }
 
-    private void runWithSequentialProfiler(Policy policy) {
+    private void runWithSequentialProfiler(DynamicReconfigurationPolicy policy) {
         final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MilliSecTimer();
         int numDevices = TornadoCoreRuntime.getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX).getDeviceCount();
         final int totalTornadoDevices = numDevices + 1;
@@ -1668,7 +1668,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         // Run Task Schedules on the accelerator
         runAllTaskSchedulesInAcceleratorsSequentially(numDevices, timer, policy, totalTimers);
 
-        if (policy == Policy.PERFORMANCE || policy == Policy.END_2_END) {
+        if (policy == DynamicReconfigurationPolicy.PERFORMANCE || policy == DynamicReconfigurationPolicy.END_2_END) {
             int deviceWinnerIndex = synchronizeWithPolicy(policy, totalTimers);
             policyTimeTable.put(policy, deviceWinnerIndex);
 
@@ -1690,7 +1690,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
      * @param numDevices
      *            number of devices
      */
-    private void restoreVarsIntoJavaHeap(Policy policy, int numDevices) {
+    private void restoreVarsIntoJavaHeap(DynamicReconfigurationPolicy policy, int numDevices) {
         if (policyTimeTable.get(policy) < numDevices) {
             // link output
             int deviceWinnerIndex = policyTimeTable.get(policy);
@@ -1738,7 +1738,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
     }
 
     @Override
-    public TaskGraphInterface scheduleWithProfileSequentialGlobal(Policy policy) {
+    public TaskGraphInterface scheduleWithProfileSequentialGlobal(DynamicReconfigurationPolicy policy) {
         int numDevices = TornadoRuntime.getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX).getDeviceCount();
 
         if (!executionHistoryPolicy.containsKey(policy)) {
@@ -1791,7 +1791,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
     }
 
     @Override
-    public TaskGraphInterface scheduleWithProfileSequential(Policy policy) {
+    public TaskGraphInterface scheduleWithProfileSequential(DynamicReconfigurationPolicy policy) {
         int numDevices = TornadoRuntime.getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX).getDeviceCount();
 
         if (policyTimeTable.get(policy) == null) {

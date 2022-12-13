@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2022, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2018, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,33 +41,16 @@
  */
 package uk.ac.manchester.tornado.api;
 
-/**
- * Enum with the different policies for the dynamic reconfiguration (live task
- * migration). TornadoVM offers two flavours for each policy: one synchronous
- * (sync) and one asynchronous (async).
- *
- * <p>
- * Synchronous policies will execute dynamic reconfiguration in sequential order
- * one device after another, and then TornadoVM will take the final decision.
- * </p>
- *
- * <p>
- * Asynchronous policies will evaluate all accessible devices in parallel.
- * </p>
- */
-public enum Policy {
-    SYNC_PERFORMANCE("SYNC Performance"), //
-    ASYNC_PERFORMANCE("ASYNC Performance"), //
-    SYNC_END_2_END("SYNC End_2_End"), //
-    ASYNC_END_2_END("ASYNC End_2_End"), //
-    SYNC_LATENCY("SYNC Latency"), //
-    ASYNC_LATENCY("ASYNC Latency"), //
-    SYNC_ENERGY("SYNC Energy"), //
-    ASYNC_ENERGY("ASYNC Energy"); //
+public enum DynamicReconfigurationPolicy {
+
+    PERFORMANCE("Performance"), //
+    END_2_END("End_2_End"), //
+    LATENCY("Latency"), //
+    ENERGY("Energy"); //
 
     private final String policyName;
 
-    Policy(String policyName) {
+    DynamicReconfigurationPolicy(String policyName) {
         this.policyName = policyName;
     }
 

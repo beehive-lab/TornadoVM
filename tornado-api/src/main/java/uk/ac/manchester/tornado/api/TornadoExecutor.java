@@ -73,6 +73,12 @@ public class TornadoExecutor implements ProfileInterface {
         }
     }
 
+    public void executeWithDynamicReconfiguration(Policy policy) {
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            immutableTaskGraph.executeWithDynamicReconfiguration(policy);
+        }
+    }
+
     public void warmup() {
         for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
             immutableTaskGraph.warmup();

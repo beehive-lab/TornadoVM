@@ -611,7 +611,7 @@ public interface TornadoAPI {
      * @param policy
      *            Input policy, See {@link Policy}
      */
-    void executeWithProfiler(Policy policy);
+    void executeWithProfiler(DynamicReconfigurationPolicy policy);
 
     /**
      * Run with dynamic reconfiguration with an input policy. All combinations run
@@ -620,7 +620,7 @@ public interface TornadoAPI {
      * @param policy
      *            Input policy, See {@link Policy}
      */
-    void executeWithProfilerSequential(Policy policy);
+    void executeWithProfilerSequential(DynamicReconfigurationPolicy policy);
 
     /**
      * Run with dynamic reconfiguration with an input policy. All combinations run
@@ -630,7 +630,7 @@ public interface TornadoAPI {
      * @param policy
      *            Input policy, See {@link Policy}
      */
-    void executeWithProfilerSequentialGlobal(Policy policy);
+    void executeWithProfilerSequentialGlobal(DynamicReconfigurationPolicy policy);
 
     /**
      * It performs JIT compilation without running the task-schedule

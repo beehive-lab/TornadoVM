@@ -20,7 +20,7 @@ package uk.ac.manchester.tornado.examples.dynamic;
 
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.Policy;
+import uk.ac.manchester.tornado.api.DynamicReconfigurationPolicy;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
@@ -208,12 +208,12 @@ public class NBodyMT {
             switch (executionType) {
                 case "performance":
                     start = System.nanoTime();
-                    graph.executeWithProfilerSequential(Policy.PERFORMANCE);
+                    graph.executeWithProfilerSequential(DynamicReconfigurationPolicy.PERFORMANCE);
                     end = System.nanoTime();
                     break;
                 case "end":
                     start = System.nanoTime();
-                    graph.executeWithProfilerSequential(Policy.END_2_END);
+                    graph.executeWithProfilerSequential(DynamicReconfigurationPolicy.END_2_END);
                     end = System.nanoTime();
                     break;
                 case "sequential":
