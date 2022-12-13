@@ -109,7 +109,7 @@ public class AddTornado extends BenchmarkDriver {
 
         benchmarkMethod(device);
         executor.syncField(c);
-        taskGraph.clearProfiles();
+        executor.clearProfiles();
 
         GraphicsKernels.addImage(a, b, result);
 

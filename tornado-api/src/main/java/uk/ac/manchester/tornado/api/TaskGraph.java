@@ -286,15 +286,12 @@ public class TaskGraph implements TornadoAPI {
         return new ImmutableTaskGraph(cloneTaskGraph);
     }
 
-    @Override
-    public TaskGraph schedule() {
+    TaskGraph schedule() {
         taskScheduleImpl.scheduleInner();
         return this;
     }
 
-    @Override
-    @Deprecated(forRemoval = true)
-    public TaskGraph batch(String batchSize) {
+    TaskGraph batch(String batchSize) {
         taskScheduleImpl.batch(batchSize);
         return this;
     }
@@ -305,21 +302,15 @@ public class TaskGraph implements TornadoAPI {
         taskScheduleImpl.schedule().waitOn();
     }
 
-    @Override
-    @Deprecated(forRemoval = true)
-    public void execute(GridScheduler gridScheduler) {
+    void execute(GridScheduler gridScheduler) {
         taskScheduleImpl.schedule(gridScheduler).waitOn();
     }
 
-    @Override
-    @Deprecated(forRemoval = true)
-    public void executeWithProfiler(DynamicReconfigurationPolicy policy) {
+    void executeWithProfiler(DynamicReconfigurationPolicy policy) {
         taskScheduleImpl.scheduleWithProfile(policy).waitOn();
     }
 
-    @Override
-    @Deprecated(forRemoval = true)
-    public void executeWithProfilerSequential(DynamicReconfigurationPolicy policy) {
+    void executeWithProfilerSequential(DynamicReconfigurationPolicy policy) {
         taskScheduleImpl.scheduleWithProfileSequential(policy).waitOn();
     }
 
@@ -329,76 +320,45 @@ public class TaskGraph implements TornadoAPI {
         taskScheduleImpl.scheduleWithProfileSequentialGlobal(policy).waitOn();
     }
 
-    @Override
-    @Deprecated(forRemoval = true)
-    public void warmup() {
+    void warmup() {
         taskScheduleImpl.warmup();
     }
 
-    @Override
-    public void dumpEvents() {
+    void dumpEvents() {
         taskScheduleImpl.dumpEvents();
     }
 
-    @Override
-    public void dumpTimes() {
+    void dumpTimes() {
         taskScheduleImpl.dumpTimes();
     }
 
-    @Override
-    @Deprecated(forRemoval = true)
-    public void dumpProfiles() {
+    void dumpProfiles() {
         taskScheduleImpl.dumpProfiles();
     }
 
-    @Override
-    @Deprecated(forRemoval = true)
-    public void clearProfiles() {
+    void clearProfiles() {
         taskScheduleImpl.clearProfiles();
     }
 
-    @Override
-    @Deprecated(forRemoval = true)
-    public TaskGraph lockObjectInMemory(Object object) {
-        taskScheduleImpl.lockObjectInMemory(object);
-        return this;
-    }
-
-    @Override
-    @Deprecated(forRemoval = true)
-    public TaskGraph lockObjectsInMemory(Object... objects) {
+    TaskGraph lockObjectsInMemory(Object... objects) {
         taskScheduleImpl.lockObjectsInMemory(objects);
         return this;
     }
 
-    @Override
-    @Deprecated(forRemoval = true)
-    public TaskGraph unlockObjectsFromMemory(Object... objects) {
-        taskScheduleImpl.unlockObjectsFromMemory(objects);
-        return this;
-    }
-
-    @Override
-    @Deprecated(forRemoval = true)
-    public TaskGraph unlockObjectFromMemory(Object object) {
+    TaskGraph unlockObjectFromMemory(Object object) {
         taskScheduleImpl.unlockObjectFromMemory(object);
         return this;
     }
 
-    @Override
-    public void syncObjects() {
+    void syncObjects() {
         taskScheduleImpl.syncObjects();
     }
 
-    @Override
-    @Deprecated(forRemoval = true)
-    public void syncField(Object object) {
+    void syncField(Object object) {
         taskScheduleImpl.syncField(object);
     }
 
-    @Override
-    @Deprecated(forRemoval = true)
-    public void syncObjects(Object... objects) {
+    void syncObjects(Object... objects) {
         taskScheduleImpl.syncObjects(objects);
     }
 
@@ -479,9 +439,7 @@ public class TaskGraph implements TornadoAPI {
     }
     // ************************************************************************
 
-    @Override
-    @Deprecated(forRemoval = true)
-    public TaskGraph useDefaultThreadScheduler(boolean use) {
+    TaskGraph useDefaultThreadScheduler(boolean use) {
         taskScheduleImpl.useDefaultThreadScheduler(use);
         return this;
     }

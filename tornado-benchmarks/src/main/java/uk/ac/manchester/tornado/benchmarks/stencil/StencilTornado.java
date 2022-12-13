@@ -119,7 +119,7 @@ public class StencilTornado extends BenchmarkDriver {
 
     @Override
     protected void barrier() {
-        taskGraph.syncObjects();
+        executor.syncObjects();
     }
 
     public void printSummary() {

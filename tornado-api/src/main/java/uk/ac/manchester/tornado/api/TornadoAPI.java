@@ -577,48 +577,7 @@ public interface TornadoAPI {
      */
     ImmutableTaskGraph freeze();
 
-    /**
-     * Internal call to run the task-schedule
-     *
-     * @return {@link TornadoAPI}
-     */
-    TornadoAPI schedule();
-
-    /**
-     * It enables batch processing on the target device.
-     *
-     * @param batchSize
-     *            size of the batch represented as a string. For example "512MB",
-     *            "1GB". If the batchSize is <= 0 the whole array is computed
-     *            without splitting in smaller batches.
-     * @return link to the {@TornadoAPI} to allow function composition.
-     */
-    TornadoAPI batch(String batchSize);
-
-     void execute();
-
-    /**
-     * Execute the task-schedule
-     */
-
-    void execute(GridScheduler gridScheduler);
-
-    /**
-     * Run with dynamic reconfiguration with an input policy
-     *
-     * @param policy
-     *            Input policy, See {@link Policy}
-     */
-    void executeWithProfiler(DynamicReconfigurationPolicy policy);
-
-    /**
-     * Run with dynamic reconfiguration with an input policy. All combinations run
-     * in sequential.
-     *
-     * @param policy
-     *            Input policy, See {@link Policy}
-     */
-    void executeWithProfilerSequential(DynamicReconfigurationPolicy policy);
+    void execute();
 
     /**
      * Run with dynamic reconfiguration with an input policy. All combinations run
@@ -630,43 +589,6 @@ public interface TornadoAPI {
      */
     void executeWithProfilerSequentialGlobal(DynamicReconfigurationPolicy policy);
 
-    /**
-     * It performs JIT compilation without running the task-schedule
-     */
-    void warmup();
-
-    void dumpEvents();
-
-    void dumpTimes();
-
-    void dumpProfiles();
-
-    void clearProfiles();
-
-    /**
-     * Locks this object on the device memory. If a {@link TaskGraph} is executed
-     * multiple times, then this object will be copied in only for the first
-     * execution.
-     */
-    TornadoAPI lockObjectInMemory(Object object);
-
-    TornadoAPI lockObjectsInMemory(Object... objects);
-
-    /**
-     * Unlocks this object from the device memory. The object must have been
-     * previously locked in order to unlock it. Once the object has been unlocked,
-     * it will be copied in on every subsequent execution of the {@link TaskGraph}.
-     */
-    TornadoAPI unlockObjectFromMemory(Object object);
-
-    TornadoAPI unlockObjectsFromMemory(Object... objects);
-
-    void syncObjects();
-
-    void syncField(Object object);
-
-    void syncObjects(Object... objects);
-
     SchedulableTask getTask(String id);
 
     TornadoDevice getDevice();
@@ -674,8 +596,6 @@ public interface TornadoAPI {
     TornadoDevice getDeviceForTask(String id);
 
     void waitOn();
-
-    TaskGraph useDefaultThreadScheduler(boolean use);
 
     TaskGraph replaceParameter(Object oldRef, Object newRef);
 
