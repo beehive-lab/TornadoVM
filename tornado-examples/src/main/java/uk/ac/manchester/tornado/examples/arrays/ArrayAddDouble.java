@@ -20,7 +20,10 @@ package uk.ac.manchester.tornado.examples.arrays;
 
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
@@ -51,11 +54,14 @@ public class ArrayAddDouble {
         Arrays.fill(b, 2);
         Arrays.fill(c, 0);
 
-        new TaskGraph("s0")//
+        TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", ArrayAddDouble::add, a, b, c)//
-                .transferToHost(c)//
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         System.out.println("a: " + Arrays.toString(a));
         System.out.println("b: " + Arrays.toString(b));

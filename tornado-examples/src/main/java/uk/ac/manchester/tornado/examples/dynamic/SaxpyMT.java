@@ -18,8 +18,11 @@
 
 package uk.ac.manchester.tornado.examples.dynamic;
 
-import uk.ac.manchester.tornado.api.DynamicReconfigurationPolicy;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
@@ -88,12 +91,16 @@ public class SaxpyMT {
         }
 
         graph = new TaskGraph("s0");
+        TornadoExecutorPlan executor = null;
         if (!executionType.equals("multi") && !executionType.equals("sequential")) {
             long startInit = System.nanoTime();
 
             graph.transferToDevice(DataTransferMode.FIRST_EXECUTION, x, b) //
                     .task("t0", SaxpyMT::saxpy, alpha, x, y, b) //
                     .transferToHost(y);
+
+            ImmutableTaskGraph immutableTaskGraph = graph.freeze();
+            executor = new TornadoExecutor(immutableTaskGraph).build();
 
             long stopInit = System.nanoTime();
             System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
@@ -105,12 +112,12 @@ public class SaxpyMT {
             switch (executionType) {
                 case "performance":
                     start = System.nanoTime();
-                    graph.executeWithProfilerSequential(DynamicReconfigurationPolicy.PERFORMANCE);
+                    executor.withDynamicReconfiguration(Policy.SYNC_PERFORMANCE).execute();
                     end = System.nanoTime();
                     break;
                 case "end":
                     start = System.nanoTime();
-                    graph.executeWithProfilerSequential(DynamicReconfigurationPolicy.END_2_END);
+                    executor.withDynamicReconfiguration(Policy.SYNC_END_2_END).execute();
                     end = System.nanoTime();
                     break;
                 case "sequential":
@@ -131,7 +138,7 @@ public class SaxpyMT {
                     break;
                 default:
                     start = System.nanoTime();
-                    graph.execute();
+                    executor.execute();
                     end = System.nanoTime();
             }
             System.out.println("Total Time:" + (end - start) + " ns");

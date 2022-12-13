@@ -18,7 +18,10 @@
 
 package uk.ac.manchester.tornado.examples.compute;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 /**
@@ -66,8 +69,11 @@ public class MonteCarlo {
                 .task("taskGraph", MonteCarlo::computeMontecarlo, output, size) //
                 .transferToHost(output);
 
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+
         long start = System.nanoTime();
-        taskGraph.execute();
+        executor.execute();
         long end = System.nanoTime();
         long tornadoTime = (end - start);
 

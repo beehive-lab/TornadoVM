@@ -20,7 +20,10 @@ package uk.ac.manchester.tornado.examples;
 
 import java.math.BigDecimal;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -64,7 +67,10 @@ public class Init {
 
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.task("t0", Init::compute, array).transferToHost((Object) array);
-        taskGraph.execute();
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         if (CHECK) {
             boolean check = true;

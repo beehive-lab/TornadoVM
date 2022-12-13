@@ -51,14 +51,13 @@ public class VectorAddInt {
         Arrays.fill(b, 20);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .lockObjectsInMemory(a, b, c) //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", VectorAddInt::vectorAdd, a, b, c) //
                 .transferToHost(c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
-
         TornadoExecutorPlan tornadoExecutor = new TornadoExecutor(immutableTaskGraph).build();
+        tornadoExecutor.lockObjectsInMemory(a, b, c);
 
         boolean wrongResult;
         for (int idx = 0; idx < 10; idx++) {

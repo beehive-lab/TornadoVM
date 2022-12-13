@@ -18,8 +18,11 @@
 
 package uk.ac.manchester.tornado.examples.dynamic;
 
-import uk.ac.manchester.tornado.api.DynamicReconfigurationPolicy;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
@@ -110,9 +113,12 @@ public class MontecarloMT {
 
         long startInit = System.nanoTime();
 
-        TaskGraph s0 = new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", MontecarloMT::computeMontecarlo, output)//
                 .transferToHost(output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         long stopInit = System.nanoTime();
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
@@ -124,12 +130,12 @@ public class MontecarloMT {
             switch (executionType) {
                 case "performance":
                     start = System.nanoTime();
-                    s0.executeWithProfilerSequential(DynamicReconfigurationPolicy.PERFORMANCE);
+                    executor.withDynamicReconfiguration(Policy.SYNC_PERFORMANCE).execute();
                     end = System.nanoTime();
                     break;
                 case "end":
                     start = System.nanoTime();
-                    s0.executeWithProfilerSequential(DynamicReconfigurationPolicy.END_2_END);
+                    executor.withDynamicReconfiguration(Policy.SYNC_END_2_END).execute();
                     end = System.nanoTime();
                     break;
                 case "sequential":
@@ -146,7 +152,7 @@ public class MontecarloMT {
                     break;
                 default:
                     start = System.nanoTime();
-                    s0.execute();
+                    executor.execute();
                     end = System.nanoTime();
             }
             System.out.println("Total time:  " + (end - start) + " ns" + "\n");

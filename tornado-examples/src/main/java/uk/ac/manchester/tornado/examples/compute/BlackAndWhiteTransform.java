@@ -30,7 +30,10 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
@@ -62,6 +65,8 @@ public class BlackAndWhiteTransform {
         private static final String IMAGE_FILE = "/tmp/image.jpg";
 
         private static TaskGraph taskGraph;
+
+        private static TornadoExecutorPlan executor;
 
         LoadImage() {
             try {
@@ -113,15 +118,20 @@ public class BlackAndWhiteTransform {
                     }
                 }
 
-                if (taskGraph == null) {
+                if (executor == null) {
                     taskGraph = new TaskGraph("s0");
                     taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, imageRGB) //
                             .task("t0", LoadImage::compute, imageRGB, w, s) //
                             .transferToHost(imageRGB);
+
+                    ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+                    executor = new TornadoExecutor(immutableTaskGraph).build();
+                    executor.execute();
+
                 }
 
                 taskStart = System.nanoTime();
-                taskGraph.execute();
+                executor.execute();
                 taskEnd = System.nanoTime();
 
                 // unmarshall

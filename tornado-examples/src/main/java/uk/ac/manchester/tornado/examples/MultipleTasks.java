@@ -21,7 +21,10 @@ package uk.ac.manchester.tornado.examples;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
@@ -70,8 +73,12 @@ public class MultipleTasks {
                 .task("bar", MultipleTasks::bar, y) //
                 .transferToHost(y);
 
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
+
         for (int i = 0; i < MAX_ITERATIONS; i++) {
-            taskGraph.execute();
+            executor.execute();
         }
     }
 }

@@ -21,7 +21,10 @@ package uk.ac.manchester.tornado.examples.flatmap;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
@@ -58,7 +61,10 @@ public class FlatMapExample {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", FlatMapExample::computeFlatMap, input, output, SIZE) //
                 .transferToHost(output);
-        taskGraph.execute();
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
+        executorPlan.execute();
 
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {

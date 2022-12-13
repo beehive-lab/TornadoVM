@@ -64,8 +64,7 @@ public class TestExecutor extends TornadoTestBase {
         TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
 
         // 4. Add optimizations to the execution plan
-        executorPlan.withReusableBuffers() //
-                .withDynamicReconfiguration();//
+        executorPlan.withReusableBuffers();
 
         // 5. Execute all Immutable Task Graphs associated with an executor
         executorPlan.execute();

@@ -22,7 +22,10 @@ import java.util.LongSummaryStatistics;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
@@ -103,13 +106,15 @@ public class MatrixVector {
             matrix2DFloat.set(idx, jdx, r.nextFloat());
         }));
 
-        TaskGraph ts = new TaskGraph("la") //
-                .lockObjectsInMemory(matrix2DFloat, vectorFloat, result) //
+        TaskGraph taskGraph = new TaskGraph("la") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, vectorFloat, matrix2DFloat) //
                 .task("mv", MatrixVector::computeMatrixVector, matrix2DFloat, vectorFloat, result) //
                 .transferToHost(result);
 
-        ts.warmup();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.lockObjectsInMemory(vectorFloat, matrix2DFloat, result) //
+                .warmup();
 
         for (int i = 0; i < WARM_UP_ITERATIONS; i++) {
             computeMatrixVector(matrix2DFloat, vectorFloat, resultSeq);
@@ -124,12 +129,12 @@ public class MatrixVector {
         }
 
         for (int i = 0; i < WARM_UP_ITERATIONS; i++) {
-            ts.execute();
+            executor.execute();
         }
 
         for (int i = 0; i < MAX_ITERATIONS; i++) {
             long start = System.nanoTime();
-            ts.execute();
+            executor.execute();
             long end = System.nanoTime();
             tornadoTimers.add((end - start));
             System.out.println("PARALLEL-TIME: " + (end - start));

@@ -22,7 +22,10 @@ import static uk.ac.manchester.tornado.api.profiler.ChromeEventTracer.enqueueTas
 
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
@@ -150,12 +153,15 @@ public class NBody {
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, posTornadoVM, velTornadoVM) //
                 .task("t0", NBody::nBody, numBodies, posTornadoVM, velTornadoVM, delT, espSqr);
 
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build().warmup();
+
         resultsIterations = new StringBuffer();
 
         for (int i = 0; i < iterations; i++) {
             // System.gc();
             start = System.nanoTime();
-            taskGraph.execute();
+            executor.execute();
             end = System.nanoTime();
             enqueueTaskIfEnabled("nbody accelerated", start, end);
             resultsIterations.append("\tTornado execution time of iteration " + i + " is: " + (end - start) + " ns");

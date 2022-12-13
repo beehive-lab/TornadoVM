@@ -20,8 +20,11 @@ package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -99,19 +102,23 @@ public class MatrixMultiplication2DV1 {
         workerGrid.setLocalWork(16, 16, 1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .lockObjectsInMemory(matrixA, matrixB, matrixC) //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", MatrixMultiplication2DV1::matrixMultiplication, context, matrixA, matrixB, matrixC, size) //
                 .transferToHost(matrixC);
 
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.withGridScheduler(gridScheduler) //
+                .lockObjectsInMemory(matrixA, matrixB, matrixC);
+
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
-            taskGraph.execute(gridScheduler);
+            executor.execute();
         }
 
         // 2. Run parallel on the GPU with Tornado
         long start = System.currentTimeMillis();
-        taskGraph.execute(gridScheduler);
+        executor.execute();
         long end = System.currentTimeMillis();
 
         // Run sequential

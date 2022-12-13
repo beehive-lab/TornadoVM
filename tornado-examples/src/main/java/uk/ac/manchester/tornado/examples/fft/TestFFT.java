@@ -19,7 +19,10 @@ package uk.ac.manchester.tornado.examples.fft;
 
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
@@ -99,11 +102,14 @@ public class TestFFT {
         int dummyFac = 2;
         int[] seq = new int[] { input[0], input[1] };
 
-        TaskGraph s0 = new TaskGraph("x0");
-        s0.transferToDevice(DataTransferMode.FIRST_EXECUTION, factors, dimArr);
-        s0.task("t0", TestFFT::nesting, input, dim, factors, size, dummyFac, dimArr);
-        s0.transferToHost(input);
-        s0.execute();
+        TaskGraph taskGraph = new TaskGraph("x0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, factors, dimArr) //
+                .task("t0", TestFFT::nesting, input, dim, factors, size, dummyFac, dimArr) //
+                .transferToHost(input);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
+        executorPlan.execute();
 
         nesting(seq, dim, factors, size, dummyFac, dimArr);
 

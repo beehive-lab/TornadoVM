@@ -31,8 +31,11 @@ import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 
@@ -156,10 +159,15 @@ public class Mandelbrot {
                 // [Optional] Set the local work group
                 workerGrid.setLocalWork(32, 32, 1);
 
-                TaskGraph s0 = new TaskGraph("s0");
+                TaskGraph taskGraph = new TaskGraph("s0") //
+                        .task("t0", MandelbrotImage::mandelbrotTornado, context, SIZE, result) //
+                        .transferToHost(result);
 
-                s0.task("t0", MandelbrotImage::mandelbrotTornado, context, SIZE, result);
-                s0.transferToHost(result).execute(gridScheduler);
+                ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+                TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+                executor.withGridScheduler(gridScheduler) //
+                        .execute();
+
                 this.image = writeFile(result, SIZE);
             }
             // draw the image

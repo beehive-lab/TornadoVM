@@ -67,7 +67,6 @@ public class VectorAddTest {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
-
         executorPlan.execute();
 
         System.out.println("Profiler kernel: " + executorPlan.getDeviceKernelTime());

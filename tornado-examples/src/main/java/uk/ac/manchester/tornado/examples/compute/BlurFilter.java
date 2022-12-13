@@ -30,7 +30,10 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
@@ -157,14 +160,16 @@ public class BlurFilter {
 
             TaskGraph parallelFilter = new TaskGraph("blur") //
                     .transferToDevice(DataTransferMode.FIRST_EXECUTION, redChannel, greenChannel, blueChannel, filter) //
-                    .lockObjectsInMemory(redChannel, greenChannel, blueChannel, redFilter, greenFilter, blueFilter, filter) //
                     .task("red", BlurFilterImage::compute, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
                     .task("green", BlurFilterImage::compute, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
                     .task("blue", BlurFilterImage::compute, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
-                    .transferToHost(redFilter, greenFilter, blueFilter) //
-                    .useDefaultThreadScheduler(true);
+                    .transferToHost(redFilter, greenFilter, blueFilter);
 
-            parallelFilter.execute();
+            ImmutableTaskGraph immutableTaskGraph = parallelFilter.freeze();
+            TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+            executor.withDefaultScheduler() //
+                    .lockObjectsInMemory(redChannel, greenChannel, blueChannel, redFilter, greenFilter, blueFilter, filter) //
+                    .execute();
 
             // now recombine into the output image - Alpha is 255 for no
             // transparency

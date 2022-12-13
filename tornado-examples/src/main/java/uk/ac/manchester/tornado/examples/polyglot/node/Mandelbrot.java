@@ -22,10 +22,13 @@ import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 import java.io.File;
 
-import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.annotations.Parallel;
-
 import javax.imageio.ImageIO;
+
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class Mandelbrot {
 
@@ -97,10 +100,13 @@ public class Mandelbrot {
     public static short[] compute() {
         short[] result = new short[SIZE * SIZE];
 
-        new TaskGraph("s0")
-            .task("t0", Mandelbrot::mandelbrot, SIZE, result)
-            .transferToHost(result)
-            .execute();
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .task("t0", Mandelbrot::mandelbrot, SIZE, result) //
+                .transferToHost(result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         writeFile(result, SIZE);
 

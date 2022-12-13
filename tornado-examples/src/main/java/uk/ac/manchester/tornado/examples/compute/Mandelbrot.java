@@ -30,7 +30,10 @@ import java.io.File;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 /**
@@ -145,10 +148,15 @@ public class Mandelbrot {
                 this.image = writeFile(mandelbrotSequential, SIZE);
             } else {
                 short[] result = new short[SIZE * SIZE];
-                TaskGraph taskGraph = new TaskGraph("s0");
-                taskGraph.lockObjectsInMemory(result);
-                taskGraph.task("t0", MandelbrotImage::mandelbrotTornado, SIZE, result);
-                taskGraph.transferToHost(result).execute();
+                TaskGraph taskGraph = new TaskGraph("s0") //
+                        .task("t0", MandelbrotImage::mandelbrotTornado, SIZE, result) //
+                        .transferToHost(result);
+
+                ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+                TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+                executor.lockObjectsInMemory(result) //
+                        .execute();
+
                 this.image = writeFile(result, SIZE);
             }
             // draw the image

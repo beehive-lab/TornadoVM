@@ -20,10 +20,21 @@ package uk.ac.manchester.tornado.examples.arrays;
 
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.arrays.ArrayAddInt
+ * </code>
+ */
 public class ArrayAddInt {
 
     public static void add(int[] a, int[] b, int[] c) {
@@ -43,11 +54,14 @@ public class ArrayAddInt {
         Arrays.fill(b, 2);
         Arrays.fill(c, 0);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", ArrayAddInt::add, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         System.out.println("a: " + Arrays.toString(a));
         System.out.println("b: " + Arrays.toString(b));

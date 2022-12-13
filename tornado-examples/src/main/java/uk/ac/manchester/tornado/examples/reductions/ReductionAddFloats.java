@@ -22,7 +22,10 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -54,16 +57,20 @@ public class ReductionAddFloats {
             input[i] = r.nextFloat();
         });
 
-        TaskGraph task = new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//
                 .task("t0", ReductionAddFloats::reductionAddFloats, input, result)//
                 .transferToHost(result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.lockObjectsInMemory(input, result);
 
         ArrayList<Long> timers = new ArrayList<>();
         for (int i = 0; i < ConfigurationReduce.MAX_ITERATIONS; i++) {
 
             long start = System.nanoTime();
-            task.execute();
+            executor.execute();
             long end = System.nanoTime();
 
             timers.add((end - start));

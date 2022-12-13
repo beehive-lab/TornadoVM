@@ -20,7 +20,10 @@ package uk.ac.manchester.tornado.examples.compute;
 
 import java.util.Random;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -114,11 +117,15 @@ public class BlackScholes {
                 .task("t0", BlackScholes::blackScholesKernel, input, callPrice, putPrice) //
                 .transferToHost(callPrice, putPrice);
 
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
+
         for (int i = 0; i < WARM_UP_ITERATIONS; i++) {
-            taskGraph.execute();
+            executor.execute();
         }
         long start = System.nanoTime();
-        taskGraph.execute();
+        executor.execute();
         long end = System.nanoTime();
 
         for (int i = 0; i < WARM_UP_ITERATIONS; i++) {

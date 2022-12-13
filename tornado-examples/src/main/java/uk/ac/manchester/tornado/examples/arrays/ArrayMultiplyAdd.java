@@ -20,7 +20,10 @@ package uk.ac.manchester.tornado.examples.arrays;
 
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.collections.math.SimpleMath;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
@@ -61,7 +64,9 @@ public class ArrayMultiplyAdd {
                 .task("t1", SimpleMath::vectorAdd, c, b, d) //
                 .transferToHost(d);
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         /*
          * Check to make sure result is correct

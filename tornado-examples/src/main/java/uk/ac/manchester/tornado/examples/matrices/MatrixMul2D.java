@@ -20,8 +20,11 @@ package uk.ac.manchester.tornado.examples.matrices;
 import java.util.Arrays;
 import java.util.Random;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -99,18 +102,22 @@ public class MatrixMul2D {
             }
         }
 
-        TaskGraph cudaTask = new TaskGraph("cuda_s0") //
+        TaskGraph cudaTaskGraph = new TaskGraph("cuda_s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", MatrixMul2D::matrixMultiplication, matrixA, matrixB, matrixCCUDA, size) //
                 .transferToHost(matrixCCUDA); //
 
+        ImmutableTaskGraph immutableTaskGraph = cudaTaskGraph.freeze();
+        TornadoExecutorPlan executorCUDA = new TornadoExecutor(immutableTaskGraph).build();
+
         TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
-        cudaTask.setDevice(cudaDevice);
+        executorCUDA.lockObjectsInMemory(matrixA, matrixB, matrixCCUDA) //
+                .setDevice(cudaDevice);
 
         // Warm up CUDA
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
-            cudaTask.execute();
+            executorCUDA.execute();
         }
 
         // Time CUDA
@@ -119,15 +126,19 @@ public class MatrixMul2D {
 
         for (int i = 0; i < TIMING_ITERATIONS; i++) {
             start = System.currentTimeMillis();
-            cudaTask.execute();
+            executorCUDA.execute();
             stop = System.currentTimeMillis();
             execTimesCUDA[i] = stop - start;
         }
 
-        TaskGraph oclTask = new TaskGraph("ocl_s0") //
+        TaskGraph oclTaskGraph = new TaskGraph("ocl_s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", MatrixMul2D::matrixMultiplication, matrixA, matrixB, matrixCOCL, size) //
                 .transferToHost(matrixCOCL); //
+
+        ImmutableTaskGraph immutableTaskGraph1 = oclTaskGraph.freeze();
+        TornadoExecutorPlan executorOCL = new TornadoExecutor(immutableTaskGraph1).build();
+        executorOCL.lockObjectsInMemory(matrixA, matrixB, matrixCOCL);
 
         TornadoDriver oclDriver = TornadoRuntime.getTornadoRuntime().getDriver(1);
         TornadoDevice oclDevice = null;
@@ -141,11 +152,11 @@ public class MatrixMul2D {
             System.err.println("There is no device with both OpenCL and CUDA-PTX support");
             System.exit(1);
         }
-        oclTask.setDevice(oclDevice);
+        executorOCL.setDevice(oclDevice);
 
         // Warmup OPENCL
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
-            oclTask.execute();
+            executorOCL.execute();
         }
 
         // Time OPENCL
@@ -153,7 +164,7 @@ public class MatrixMul2D {
 
         for (int i = 0; i < TIMING_ITERATIONS; i++) {
             start = System.currentTimeMillis();
-            oclTask.execute();
+            executorOCL.execute();
             stop = System.currentTimeMillis();
             execTimesOCL[i] = stop - start;
         }
