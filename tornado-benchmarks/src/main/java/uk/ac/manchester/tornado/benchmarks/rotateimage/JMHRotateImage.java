@@ -39,7 +39,10 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
@@ -51,7 +54,7 @@ import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
  * How to run in isolation?
  * </p>
  * <code>
- *    tornado -jar benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.rotateimage.JMHRotateImage
+ *    tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.rotateimage.JMHRotateImage
  * </code>
  */
 public class JMHRotateImage {
@@ -63,7 +66,7 @@ public class JMHRotateImage {
         private ImageFloat3 input;
         private ImageFloat3 output;
         private Matrix4x4Float m;
-        private TaskGraph taskGraph;
+        private TornadoExecutorPlan executor;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -79,11 +82,14 @@ public class JMHRotateImage {
                 }
             }
 
-            taskGraph = new TaskGraph("benchmark") //
+            TaskGraph taskGraph = new TaskGraph("benchmark") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                     .task("rotateImage", GraphicsKernels::rotateImage, output, m, input) //
                     .transferToHost(output);
-            taskGraph.warmup();
+
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+            executor = new TornadoExecutor(immutableTaskGraph).build();
+            executor.warmup();
         }
     }
 
@@ -104,9 +110,9 @@ public class JMHRotateImage {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void rotateImageTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskGraph taskGraph = state.taskGraph;
-        taskGraph.execute();
-        blackhole.consume(taskGraph);
+        TornadoExecutorPlan executor = state.executor;
+        executor.execute();
+        blackhole.consume(executor);
     }
 
     public static void main(String[] args) throws RunnerException {

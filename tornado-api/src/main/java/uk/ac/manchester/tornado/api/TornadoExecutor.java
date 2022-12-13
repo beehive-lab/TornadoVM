@@ -135,6 +135,12 @@ public class TornadoExecutor implements ProfileInterface {
         return result;
     }
 
+    public void resetDevices() {
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            immutableTaskGraph.resetDevices();
+        }
+    }
+
     @Override
     public long getTotalTime() {
         return immutableTaskGraphList.stream().map(itg -> itg.getTotalTime()).mapToLong(Long::longValue).sum();
@@ -200,4 +206,20 @@ public class TornadoExecutor implements ProfileInterface {
         return null;
     }
 
+    public void dumpProfiles() {
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList)
+            immutableTaskGraph.dumpProfiles();
+    }
+
+    public void clearProfiles() {
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            immutableTaskGraph.clearProfiles();
+        }
+    }
+
+    public void useDefaultScheduler(boolean useDefaultScheduler) {
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            immutableTaskGraph.useDefaultScheduler(useDefaultScheduler);
+        }
+    }
 }

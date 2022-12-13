@@ -38,7 +38,10 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -47,7 +50,7 @@ import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
  * How to run in isolation?
  * </p>
  * <code>
- *    tornado -jar benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.blurFilter.JMHBlurFilter
+ *    tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.blurFilter.JMHBlurFilter
  * </code>
  */
 public class JMHBlurFilter {
@@ -64,7 +67,7 @@ public class JMHBlurFilter {
         int[] greenFilter;
         int[] blueFilter;
         float[] filter;
-        TaskGraph taskGraph;
+        TornadoExecutorPlan executor;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -98,14 +101,16 @@ public class JMHBlurFilter {
                 }
             }
 
-            taskGraph = new TaskGraph("blur") //
+            TaskGraph taskGraph = new TaskGraph("blur") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, redChannel, greenChannel, blueChannel, filter) //
                     .task("red", ComputeKernels::channelConvolution, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
                     .task("green", ComputeKernels::channelConvolution, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
                     .task("blue", ComputeKernels::channelConvolution, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
-                    .transferToHost(redFilter, greenFilter, blueFilter) //
-                    .useDefaultThreadScheduler(true);
-            taskGraph.warmup();
+                    .transferToHost(redFilter, greenFilter, blueFilter);
+
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+            executor = new TornadoExecutor(immutableTaskGraph).build();
+            executor.withDefaultScheduler().warmup();
         }
     }
 
@@ -128,9 +133,9 @@ public class JMHBlurFilter {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void blurFilterTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskGraph taskGraph = state.taskGraph;
-        taskGraph.execute();
-        blackhole.consume(taskGraph);
+        TornadoExecutorPlan executor = state.executor;
+        executor.execute();
+        blackhole.consume(executor);
     }
 
     public static void main(String[] args) throws RunnerException {

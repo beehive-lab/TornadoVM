@@ -23,6 +23,7 @@ import java.util.Random;
 import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
@@ -76,23 +77,25 @@ public class DotTornado extends BenchmarkDriver {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("dotVector", GraphicsKernels::dotImage, a, b, c) //
                 .transferToHost(c);
-        taskGraph.warmup();
+
+        immutableTaskGraph = taskGraph.freeze();
+        executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.warmup();
     }
 
     @Override
     public void tearDown() {
-        taskGraph.dumpProfiles();
+        executor.dumpProfiles();
         a = null;
         b = null;
         c = null;
-        taskGraph.getDevice().reset();
+        executor.dumpProfiles();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.setDevice(device);
-        taskGraph.execute();
+        executor.setDevice(device).execute();
     }
 
     @Override
@@ -101,8 +104,8 @@ public class DotTornado extends BenchmarkDriver {
         final ImageFloat result = new ImageFloat(numElementsX, numElementsX);
 
         benchmarkMethod(device);
-        taskGraph.syncObjects(c);
-        taskGraph.clearProfiles();
+        executor.syncObjects(c);
+        executor.clearProfiles();
 
         GraphicsKernels.dotImage(a, b, result);
 

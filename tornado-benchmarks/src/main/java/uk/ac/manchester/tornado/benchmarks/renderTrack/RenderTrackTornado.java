@@ -19,7 +19,10 @@ package uk.ac.manchester.tornado.benchmarks.renderTrack;
 
 import java.util.Random;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
@@ -62,15 +65,18 @@ public class RenderTrackTornado extends BenchmarkDriver {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("renderTrack", ComputeKernels::renderTrack, output, input) //
                 .transferToHost(output);
-        taskGraph.warmup();
+
+        immutableTaskGraph = taskGraph.freeze();
+        executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.warmup();
     }
 
     @Override
     public void tearDown() {
-        taskGraph.dumpProfiles();
+        executor.dumpProfiles();
         input = null;
         output = null;
-        taskGraph.getDevice().reset();
+        executor.resetDevices();
         super.tearDown();
     }
 
@@ -102,15 +108,16 @@ public class RenderTrackTornado extends BenchmarkDriver {
         TaskGraph s0 = new TaskGraph("s0")//
                 .task("t0", ComputeKernels::renderTrack, outputTornado, inputValidation) //
                 .transferToHost(outputTornado);
-        s0.setDevice(device);
-        s0.execute();
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.setDevice(device).execute();
 
         return validate(inputValidation, outputTornado);
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.setDevice(device);
-        taskGraph.execute();
+        executor.setDevice(device).execute();
     }
 }

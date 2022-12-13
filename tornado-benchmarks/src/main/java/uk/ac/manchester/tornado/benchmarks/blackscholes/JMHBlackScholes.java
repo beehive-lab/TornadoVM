@@ -37,7 +37,10 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -46,7 +49,7 @@ import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
  * How to run in isolation?
  * </p>
  * <code>
- *    tornado -jar benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.blackscholes.JMHBlackScholes
+ *    tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.blackscholes.JMHBlackScholes
  * </code>
  */
 public class JMHBlackScholes {
@@ -59,6 +62,7 @@ public class JMHBlackScholes {
         float[] call;
         float[] put;
         TaskGraph taskGraph;
+        TornadoExecutorPlan executor;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -75,7 +79,9 @@ public class JMHBlackScholes {
                     .task("t0", ComputeKernels::blackscholes, randArray, put, call) //
                     .transferToHost(put, call);
 
-            taskGraph.warmup();
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+            executor = new TornadoExecutor(immutableTaskGraph).build();
+            executor.warmup();
         }
     }
 
@@ -96,9 +102,9 @@ public class JMHBlackScholes {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void blachcholesTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskGraph t = state.taskGraph;
-        t.execute();
-        blackhole.consume(t);
+        TornadoExecutorPlan executor = state.executor;
+        executor.execute();
+        blackhole.consume(executor);
     }
 
     public static void main(String[] args) throws RunnerException {

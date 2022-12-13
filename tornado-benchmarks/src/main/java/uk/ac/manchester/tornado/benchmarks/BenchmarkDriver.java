@@ -24,7 +24,9 @@ import static uk.ac.manchester.tornado.api.utils.TornadoUtilities.humanReadableB
 import java.util.ArrayList;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
@@ -49,7 +51,11 @@ public abstract class BenchmarkDriver {
 
     protected TaskGraph taskGraph;
 
-    public BenchmarkDriver(long iterations) {
+    protected TornadoExecutorPlan executor;
+
+    protected ImmutableTaskGraph immutableTaskGraph;
+
+    protected BenchmarkDriver(long iterations) {
         this.iterations = iterations;
     }
 
@@ -57,8 +63,6 @@ public abstract class BenchmarkDriver {
 
     public void tearDown() {
         final Runtime runtime = Runtime.getRuntime();
-        // BUG - this potentially triggers a crash
-        // runtime.gc();
         if (PRINT_MEM_USAGE) {
             System.out.printf("memory: free=%s, total=%s, max=%s\n", humanReadableByteCount(runtime.freeMemory(), false), humanReadableByteCount(runtime.totalMemory(), false),
                     humanReadableByteCount(runtime.maxMemory(), false));

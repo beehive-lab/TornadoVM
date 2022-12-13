@@ -24,6 +24,7 @@ import java.util.Random;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -87,7 +88,11 @@ public class SgemmTornado extends BenchmarkDriver {
             taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b);
             taskGraph.task("sgemm", LinearAlgebraArrays::sgemm, m, n, n, a, b, c);
             taskGraph.transferToHost(c);
-            taskGraph.warmup();
+
+            immutableTaskGraph = taskGraph.freeze();
+            executor = new TornadoExecutor(immutableTaskGraph).build();
+            executor.warmup();
+
         } else {
             String filePath = "/tmp/mxmFloat.spv";
 
@@ -110,29 +115,30 @@ public class SgemmTornado extends BenchmarkDriver {
                             new int[] { n, n })//
                     .transferToHost(c);
 
+            immutableTaskGraph = taskGraph.freeze();
+            executor = new TornadoExecutor(immutableTaskGraph).build();
+
         }
     }
 
     @Override
     public void tearDown() {
-        taskGraph.dumpProfiles();
+        executor.dumpProfiles();
 
         a = null;
         b = null;
         c = null;
 
-        taskGraph.getDevice().reset();
+        executor.resetDevices();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.setDevice(device);
-        if (grid == null) {
-            taskGraph.execute();
-        } else {
-            taskGraph.execute(grid);
+        if (grid != null) {
+            executor.withGridScheduler(grid);
         }
+        executor.setDevice(device).execute();
     }
 
     @Override
@@ -142,8 +148,7 @@ public class SgemmTornado extends BenchmarkDriver {
         boolean val = true;
 
         benchmarkMethod(device);
-        taskGraph.syncObjects(c);
-        taskGraph.clearProfiles();
+        executor.syncObjects(c).clearProfiles();
 
         sgemm(m, n, m, a, b, result);
 

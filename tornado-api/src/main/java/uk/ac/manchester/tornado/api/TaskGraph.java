@@ -348,11 +348,13 @@ public class TaskGraph implements TornadoAPI {
     }
 
     @Override
+    @Deprecated(forRemoval = true)
     public void dumpProfiles() {
         taskScheduleImpl.dumpProfiles();
     }
 
     @Override
+    @Deprecated(forRemoval = true)
     public void clearProfiles() {
         taskScheduleImpl.clearProfiles();
     }
@@ -408,6 +410,7 @@ public class TaskGraph implements TornadoAPI {
     }
 
     @Override
+    @Deprecated(forRemoval = true)
     public TornadoDevice getDevice() {
         return taskScheduleImpl.getDevice();
     }
@@ -479,6 +482,7 @@ public class TaskGraph implements TornadoAPI {
     // ************************************************************************
 
     @Override
+    @Deprecated(forRemoval = true)
     public TaskGraph useDefaultThreadScheduler(boolean use) {
         taskScheduleImpl.useDefaultThreadScheduler(use);
         return this;

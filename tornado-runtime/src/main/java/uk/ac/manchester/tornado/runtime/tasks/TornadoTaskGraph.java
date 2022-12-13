@@ -434,8 +434,6 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         // The graph object is used when rewriting task-graphs (e.g., reductions)
         tornadoTaskGraph.graph = this.graph;
 
-        tornadoTaskGraph.offsetGlobalIndex = offsetGlobalIndex;
-
         return tornadoTaskGraph;
     }
 

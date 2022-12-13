@@ -402,6 +402,7 @@ public class TornadoExecutionContext {
     }
 
     public void createImmutableExecutionContext(TornadoExecutionContext executionContext) {
+
         List<SchedulableTask> schedulableTasksCopy = new ArrayList<>(tasks);
         executionContext.tasks = schedulableTasksCopy;
 
@@ -418,13 +419,13 @@ public class TornadoExecutionContext {
         executionContext.objectState = objectStateCopy;
 
         List<TornadoAcceleratorDevice> devicesCopy = new ArrayList<>(devices);
-
         executionContext.devices = devicesCopy;
+
         executionContext.taskToDevice = this.taskToDevice.clone();
 
         Set<TornadoAcceleratorDevice> lastDeviceCopy = new HashSet<>(lastDevices);
-
         executionContext.lastDevices = lastDeviceCopy;
+
         executionContext.profiler = this.profiler;
         executionContext.nextTask = this.nextTask;
     }

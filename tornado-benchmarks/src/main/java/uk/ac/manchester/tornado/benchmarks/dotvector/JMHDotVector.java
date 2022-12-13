@@ -41,7 +41,10 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -52,7 +55,7 @@ import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
  * How to run in isolation?
  * </p>
  * <code>
- *    tornado -jar benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.dotvector.JMHDotVector
+ *    tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.dotvector.JMHDotVector
  * </code>
  */
 public class JMHDotVector {
@@ -63,7 +66,7 @@ public class JMHDotVector {
         private VectorFloat3 a;
         private VectorFloat3 b;
         private float[] c;
-        TaskGraph taskGraph;
+        TornadoExecutorPlan executor;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -80,11 +83,14 @@ public class JMHDotVector {
                 a.set(i, new Float3(ra));
                 b.set(i, new Float3(rb));
             }
-            taskGraph = new TaskGraph("benchmark")//
+            TaskGraph taskGraph = new TaskGraph("benchmark")//
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                     .task("dotVector", GraphicsKernels::dotVector, a, b, c) //
                     .transferToHost(c);
-            taskGraph.warmup();
+
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+            executor = new TornadoExecutor(immutableTaskGraph).build();
+            executor.warmup();
         }
     }
 
@@ -105,9 +111,9 @@ public class JMHDotVector {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void dotVectorTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskGraph taskGraph = state.taskGraph;
-        taskGraph.execute();
-        blackhole.consume(taskGraph);
+        TornadoExecutorPlan executor = state.executor;
+        executor.execute();
+        blackhole.consume(executor);
     }
 
     public static void main(String[] args) throws RunnerException {

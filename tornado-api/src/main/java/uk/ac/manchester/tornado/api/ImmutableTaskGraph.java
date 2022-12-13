@@ -193,4 +193,19 @@ public class ImmutableTaskGraph implements ProfileInterface {
         return taskGraph.isFinished();
     }
 
+    public void dumpProfiles() {
+        taskGraph.dumpProfiles();
+    }
+
+    public void resetDevices() {
+        taskGraph.getDevice().reset();
+    }
+
+    public void clearProfiles() {
+        taskGraph.clearProfiles();
+    }
+
+    public void useDefaultScheduler(boolean useDefaultScheduler) {
+        taskGraph.useDefaultThreadScheduler(useDefaultScheduler);
+    }
 }

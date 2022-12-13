@@ -24,6 +24,7 @@ import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.nBody;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -77,17 +78,18 @@ public class NBodyTornado extends BenchmarkDriver {
         taskGraph = new TaskGraph("benchmark");
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, velSeq, posSeq) //
                 .task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
-        taskGraph.warmup();
+
+        immutableTaskGraph = taskGraph.freeze();
+        executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.warmup();
     }
 
     @Override
     public void tearDown() {
-        taskGraph.dumpProfiles();
-
+        executor.dumpProfiles();
         posSeq = null;
         velSeq = null;
-
-        taskGraph.getDevice().reset();
+        executor.resetDevices();
         super.tearDown();
     }
 
@@ -122,11 +124,16 @@ public class NBodyTornado extends BenchmarkDriver {
         }
         taskGraph = new TaskGraph("benchmark");
         taskGraph.task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
-        taskGraph.setDevice(device);
-        taskGraph.warmup();
-        taskGraph.execute();
-        taskGraph.syncObjects(posSeq, velSeq);
-        taskGraph.clearProfiles();
+
+        immutableTaskGraph = taskGraph.freeze();
+        executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.warmup();
+
+        executor.warmup() //
+                .setDevice(device) //
+                .execute() //
+                .syncObjects(posSeq, velSeq) //
+                .clearProfiles();
 
         nBody(numBodies, posSeqSeq, velSeqSeq, delT, espSqr);
 
@@ -146,7 +153,6 @@ public class NBodyTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.setDevice(device);
-        taskGraph.execute();
+        executor.setDevice(device).execute();
     }
 }

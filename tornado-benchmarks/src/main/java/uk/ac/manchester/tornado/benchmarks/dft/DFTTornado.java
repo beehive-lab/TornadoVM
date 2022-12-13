@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.benchmarks.dft;
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -64,7 +65,10 @@ public class DFTTornado extends BenchmarkDriver {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, inReal, inImag) //
                 .task("t0", ComputeKernels::computeDFT, inReal, inImag, outReal, outImag) //
                 .transferToHost(outReal, outImag);
-        taskGraph.warmup();
+
+        immutableTaskGraph = taskGraph.freeze();
+        executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.warmup();
     }
 
     @Override
@@ -73,10 +77,11 @@ public class DFTTornado extends BenchmarkDriver {
         double[] outRealTor = new double[size];
         double[] outImagTor = new double[size];
 
-        taskGraph.warmup();
-        taskGraph.setDevice(device);
-        taskGraph.execute();
-        taskGraph.transferToHost(outReal, outImag);
+        executor.setDevice(device) //
+                .warmup() //
+                .execute();
+
+        executor.syncObjects(outReal, outImag);
 
         ComputeKernels.computeDFT(inReal, inImag, outRealTor, outImagTor);
 
@@ -96,19 +101,17 @@ public class DFTTornado extends BenchmarkDriver {
 
     @Override
     public void tearDown() {
-        taskGraph.dumpProfiles();
+        executor.dumpProfiles();
 
         outImag = null;
         outReal = null;
 
-        taskGraph.getDevice().reset();
+        executor.resetDevices();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.setDevice(device);
-        taskGraph.execute();
-
+        executor.setDevice(device).execute();
     }
 }

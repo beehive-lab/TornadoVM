@@ -129,8 +129,7 @@ public class TornadoVM extends TornadoLogger {
 
         TornadoInternalError.guarantee(buffer.get() == TornadoVMBytecode.INIT.value(), "invalid code");
 
-        contexts = new ArrayList<>();
-        contexts.addAll(graphContext.getDevices());
+        contexts = new ArrayList<>(graphContext.getDevices());
         buffer.getInt();
         int taskCount = buffer.getInt();
         callWrappers = graphContext.getCallWrappers().clone();

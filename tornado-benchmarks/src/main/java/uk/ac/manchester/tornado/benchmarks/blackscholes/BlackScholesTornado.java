@@ -21,6 +21,7 @@ import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.blackscholes;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -61,18 +62,18 @@ public class BlackScholesTornado extends BenchmarkDriver {
                 .task("t0", ComputeKernels::blackscholes, randArray, put, call) //
                 .transferToHost(put, call);
 
-        taskGraph.warmup();
+        immutableTaskGraph = taskGraph.freeze();
+        executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.warmup();
     }
 
     @Override
     public void tearDown() {
-        taskGraph.dumpProfiles();
-
+        executor.dumpProfiles();
         randArray = null;
         call = null;
         put = null;
-
-        taskGraph.getDevice().reset();
+        executor.resetDevices();
         super.tearDown();
     }
 
@@ -97,10 +98,12 @@ public class BlackScholesTornado extends BenchmarkDriver {
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, randArrayTor);
         taskGraph.task("t0", ComputeKernels::blackscholes, randArrayTor, putTor, callTor);
 
-        taskGraph.warmup();
-        taskGraph.execute();
-        taskGraph.syncObjects(putTor, callTor);
-        taskGraph.clearProfiles();
+        immutableTaskGraph = taskGraph.freeze();
+        executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.warmup().execute();
+
+        executor.syncObjects(putTor, callTor);
+        executor.clearProfiles();
 
         blackscholes(randArrayTor, putSeq, calSeq);
 
@@ -120,7 +123,7 @@ public class BlackScholesTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.setDevice(device);
-        taskGraph.execute();
+        executor.setDevice(device) //
+                .execute();
     }
 }

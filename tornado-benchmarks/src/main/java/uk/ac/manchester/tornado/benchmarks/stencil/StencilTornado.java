@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -74,12 +75,15 @@ public class StencilTornado extends BenchmarkDriver {
                 .task("stencil", Stencil::stencil3d, n, sz, a0, a1, FAC) //
                 .task("copy", Stencil::copy, sz, a1, a0) //
                 .transferToHost(a0);
-        taskGraph.warmup();
+
+        immutableTaskGraph = taskGraph.freeze();
+        executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.warmup();
     }
 
     @Override
     public void tearDown() {
-        taskGraph.dumpProfiles();
+        executor.dumpProfiles();
         a0 = null;
         a1 = null;
         ainit = null;
@@ -88,7 +92,7 @@ public class StencilTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.setDevice(device).execute();
+        executor.setDevice(device).execute();
     }
 
     @Override
@@ -102,7 +106,7 @@ public class StencilTornado extends BenchmarkDriver {
             benchmarkMethod(device);
         }
         barrier();
-        taskGraph.clearProfiles();
+        executor.clearProfiles();
 
         for (int i = 0; i < iterations; i++) {
             stencil3d(n, sz, b0, b1, FAC);

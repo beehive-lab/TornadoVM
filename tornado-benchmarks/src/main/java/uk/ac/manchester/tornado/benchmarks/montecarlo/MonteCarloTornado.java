@@ -21,6 +21,7 @@ package uk.ac.manchester.tornado.benchmarks.montecarlo;
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -50,21 +51,22 @@ public class MonteCarloTornado extends BenchmarkDriver {
         taskGraph = new TaskGraph("benchmark") //
                 .task("montecarlo", ComputeKernels::monteCarlo, output, size) //
                 .transferToHost(output);
-        taskGraph.warmup();
+        immutableTaskGraph = taskGraph.freeze();
+        executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.warmup();
     }
 
     @Override
     public void tearDown() {
-        taskGraph.dumpProfiles();
+        executor.dumpProfiles();
         output = null;
-        taskGraph.getDevice().reset();
+        executor.resetDevices();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.setDevice(device);
-        taskGraph.execute();
+        executor.setDevice(device).execute();
     }
 
     @Override
@@ -75,13 +77,12 @@ public class MonteCarloTornado extends BenchmarkDriver {
         result = new float[size];
 
         ComputeKernels.monteCarlo(result, size);
-        taskGraph.warmup();
-        taskGraph.setDevice(device);
+        executor.setDevice(device).warmup();
         for (int i = 0; i < 3; i++) {
-            taskGraph.execute();
+            executor.execute();
         }
-        taskGraph.syncObjects(output);
-        taskGraph.clearProfiles();
+        executor.syncObjects(output) //
+                .clearProfiles();
 
         for (int i = 0; i < size; i++) {
             if (abs(output[i] - result[i]) > 0.01) {

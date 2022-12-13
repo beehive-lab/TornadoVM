@@ -37,7 +37,10 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -46,7 +49,7 @@ import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
  * How to run in isolation?
  * </p>
  * <code>
- *    tornado -jar benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.dft.JMHDFT
+ *    tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.dft.JMHDFT
  * </code>
  */
 public class JMHDFT {
@@ -60,7 +63,7 @@ public class JMHDFT {
         private double[] outReal;
         private double[] outImag;
 
-        private TaskGraph taskGraph;
+        private TornadoExecutorPlan executor;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -74,11 +77,14 @@ public class JMHDFT {
                 inImag[i] = 1 / (double) (i + 2);
             }
 
-            taskGraph = new TaskGraph("benchmark") //
+            TaskGraph taskGraph = new TaskGraph("benchmark") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, inReal, inImag) //
                     .task("t0", ComputeKernels::computeDFT, inReal, inImag, outReal, outImag) //
                     .transferToHost(outReal, outImag);
-            taskGraph.warmup();
+
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+            executor = new TornadoExecutor(immutableTaskGraph).build();
+            executor.warmup();
         }
     }
 
@@ -99,9 +105,9 @@ public class JMHDFT {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void dftTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskGraph taskGraph = state.taskGraph;
-        taskGraph.execute();
-        blackhole.consume(taskGraph);
+        TornadoExecutorPlan executor = state.executor;
+        executor.execute();
+        blackhole.consume(executor);
     }
 
     public static void main(String[] args) throws RunnerException {

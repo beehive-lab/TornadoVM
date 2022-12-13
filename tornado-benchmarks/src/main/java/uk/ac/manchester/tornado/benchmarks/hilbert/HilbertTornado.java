@@ -17,7 +17,10 @@
  */
 package uk.ac.manchester.tornado.benchmarks.hilbert;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
@@ -46,14 +49,17 @@ public class HilbertTornado extends BenchmarkDriver {
         taskGraph = new TaskGraph("benchmark") //
                 .task("t0", ComputeKernels::hilbertComputation, hilbertMatrix, size, size) //
                 .transferToHost(hilbertMatrix);
-        taskGraph.warmup();
+
+        immutableTaskGraph = taskGraph.freeze();
+        executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.warmup();
     }
 
     @Override
     public void tearDown() {
-        taskGraph.dumpProfiles();
+        executor.dumpProfiles();
         hilbertMatrix = null;
-        taskGraph.getDevice().reset();
+        executor.resetDevices();
         super.tearDown();
     }
 
@@ -61,12 +67,14 @@ public class HilbertTornado extends BenchmarkDriver {
     public boolean validate(TornadoDevice device) {
         boolean val = true;
         float[] testData = new float[size * size];
-        TaskGraph check = new TaskGraph("s0") //
+        TaskGraph taskGraph1 = new TaskGraph("s0") //
                 .task("t0", ComputeKernels::hilbertComputation, testData, size, size) //
                 .transferToHost(testData); //
 
-        check.setDevice(device);
-        check.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph1.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.setDevice(device).execute();
+
         float[] seq = new float[size * size];
         ComputeKernels.hilbertComputation(seq, size, size);
         for (int i = 0; i < size; i++) {
@@ -82,7 +90,6 @@ public class HilbertTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.setDevice(device);
-        taskGraph.execute();
+        executor.setDevice(device).execute();
     }
 }

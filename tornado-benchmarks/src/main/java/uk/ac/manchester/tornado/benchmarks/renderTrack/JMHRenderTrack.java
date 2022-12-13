@@ -38,7 +38,10 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
@@ -50,7 +53,7 @@ import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
  * How to run in isolation?
  * </p>
  * <code>
- *    tornado -jar benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.renderTrack.JMHRenderTrack
+ *    tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.renderTrack.JMHRenderTrack
  * </code>
  */
 public class JMHRenderTrack {
@@ -61,7 +64,7 @@ public class JMHRenderTrack {
         private ImageFloat3 input;
         private ImageByte3 output;
 
-        private TaskGraph taskGraph;
+        private TornadoExecutorPlan executor;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -74,11 +77,13 @@ public class JMHRenderTrack {
                     input.set(i, j, new Float3(i, j, value));
                 }
             }
-            taskGraph = new TaskGraph("s0")//
+            TaskGraph taskGraph = new TaskGraph("s0")//
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                     .task("t0", ComputeKernels::renderTrack, output, input) //
                     .transferToHost(output);
-            taskGraph.warmup();
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+            executor = new TornadoExecutor(immutableTaskGraph).build();
+            executor.warmup();
         }
     }
 
@@ -99,9 +104,9 @@ public class JMHRenderTrack {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void renderTrackTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskGraph taskGraph = state.taskGraph;
-        taskGraph.execute();
-        blackhole.consume(taskGraph);
+        TornadoExecutorPlan executor = state.executor;
+        executor.execute();
+        blackhole.consume(executor);
     }
 
     public static void main(String[] args) throws RunnerException {

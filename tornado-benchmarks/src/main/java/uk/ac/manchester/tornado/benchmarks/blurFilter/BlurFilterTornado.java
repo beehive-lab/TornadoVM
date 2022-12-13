@@ -20,7 +20,10 @@ package uk.ac.manchester.tornado.benchmarks.blurFilter;
 
 import java.util.Random;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -89,13 +92,17 @@ public class BlurFilterTornado extends BenchmarkDriver {
                 .task("blurRed", ComputeKernels::channelConvolution, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
                 .task("blurGreen", ComputeKernels::channelConvolution, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
                 .task("blurBlue", ComputeKernels::channelConvolution, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
-                .transferToHost(redFilter, greenFilter, blueFilter) //
-                .useDefaultThreadScheduler(true);
+                .transferToHost(redFilter, greenFilter, blueFilter);
+
+        immutableTaskGraph = taskGraph.freeze();
+        executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.withDefaultScheduler() //
+                .warmup();
     }
 
     @Override
     public void tearDown() {
-        taskGraph.dumpProfiles();
+        executor.dumpProfiles();
         redChannel = null;
         greenChannel = null;
         blueChannel = null;
@@ -150,7 +157,9 @@ public class BlurFilterTornado extends BenchmarkDriver {
                 .task("blue", ComputeKernels::channelConvolution, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
                 .transferToHost(redFilter, greenFilter, blueFilter);
 
-        parallelFilter.execute();
+        ImmutableTaskGraph immutableTaskGraph1 = parallelFilter.freeze();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph1).build();
+        executor.withDefaultScheduler().execute();
 
         // Sequential
         ComputeKernels.channelConvolution(redChannel, redFilterSeq, size, size, filter, FILTER_WIDTH);
@@ -177,7 +186,6 @@ public class BlurFilterTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.setDevice(device);
-        taskGraph.execute();
+        executor.setDevice(device).execute();
     }
 }

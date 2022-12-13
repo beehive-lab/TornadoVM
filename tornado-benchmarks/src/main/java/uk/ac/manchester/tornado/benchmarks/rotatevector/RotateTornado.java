@@ -21,6 +21,7 @@ import static uk.ac.manchester.tornado.api.collections.types.FloatOps.findMaxULP
 import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.rotateVector;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
@@ -67,23 +68,25 @@ public class RotateTornado extends BenchmarkDriver {
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, input);
         taskGraph.task("rotateVector", GraphicsKernels::rotateVector, output, m, input);
         taskGraph.transferToHost(output);
-        taskGraph.warmup();
+
+        immutableTaskGraph = taskGraph.freeze();
+        executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.warmup();
     }
 
     @Override
     public void tearDown() {
-        taskGraph.dumpProfiles();
+        executor.dumpProfiles();
         input = null;
         output = null;
         m = null;
-        taskGraph.getDevice().reset();
+        executor.resetDevices();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.setDevice(device);
-        taskGraph.execute();
+        executor.setDevice(device).execute();
     }
 
     @Override
@@ -92,8 +95,7 @@ public class RotateTornado extends BenchmarkDriver {
         final VectorFloat3 result = new VectorFloat3(numElements);
 
         benchmarkMethod(device);
-        taskGraph.syncObjects(output);
-        taskGraph.clearProfiles();
+        executor.syncObjects(output).clearProfiles();
 
         rotateVector(result, m, input);
 

@@ -53,6 +53,8 @@ public class TornadoExecutorPlan implements ProfileInterface {
     private boolean isReusableBuffer;
     private Policy policy = null;
 
+    private boolean useDefaultScheduler;
+
     TornadoExecutorPlan(TornadoExecutor tornadoExecutor) {
         this.tornadoExecutor = tornadoExecutor;
     }
@@ -118,8 +120,29 @@ public class TornadoExecutorPlan implements ProfileInterface {
         return this;
     }
 
+    public TornadoExecutorPlan withDefaultScheduler() {
+        this.useDefaultScheduler = true;
+        tornadoExecutor.useDefaultScheduler(useDefaultScheduler);
+        return this;
+    }
+
     public TornadoExecutorPlan withDynamicReconfiguration(Policy policy) {
         this.policy = policy;
+        return this;
+    }
+
+    public TornadoExecutorPlan dumpProfiles() {
+        tornadoExecutor.dumpProfiles();
+        return this;
+    }
+
+    public TornadoExecutorPlan resetDevices() {
+        tornadoExecutor.resetDevices();
+        return this;
+    }
+
+    public TornadoExecutorPlan clearProfiles() {
+        tornadoExecutor.clearProfiles();
         return this;
     }
 
