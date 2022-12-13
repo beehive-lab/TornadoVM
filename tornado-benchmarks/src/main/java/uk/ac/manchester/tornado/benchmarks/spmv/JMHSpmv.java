@@ -78,7 +78,7 @@ public class JMHSpmv {
                     .transferToHost(y);
             ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
             executor = new TornadoExecutor(immutableTaskGraph).build();
-            executor.warmup();
+            executor.withWarmUp();
         }
     }
 

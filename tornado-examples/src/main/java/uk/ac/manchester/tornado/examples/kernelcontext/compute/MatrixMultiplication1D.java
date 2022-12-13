@@ -105,7 +105,7 @@ public class MatrixMultiplication1D {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler) //
-                .lockObjectsInMemory(matrixA, matrixB, matrixC);
+                .withLockObjectsInMemory(matrixA, matrixB, matrixC);
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {

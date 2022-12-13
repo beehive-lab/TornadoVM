@@ -52,7 +52,7 @@ public class HilbertTornado extends BenchmarkDriver {
 
         immutableTaskGraph = taskGraph.freeze();
         executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.warmup();
+        executor.withWarmUp();
     }
 
     @Override
@@ -73,7 +73,7 @@ public class HilbertTornado extends BenchmarkDriver {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph1.freeze();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.setDevice(device).execute();
+        executor.withDevice(device).execute();
 
         float[] seq = new float[size * size];
         ComputeKernels.hilbertComputation(seq, size, size);
@@ -90,6 +90,6 @@ public class HilbertTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.setDevice(device).execute();
+        executor.withDevice(device).execute();
     }
 }

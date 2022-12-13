@@ -139,7 +139,7 @@ public class TestArrays extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         new TornadoExecutor(immutableTaskGraph) //
                 .build() //
-                .warmup() //
+                .withWarmUp() //
                 .execute();
 
         for (int i = 0; i < N; i++) {
@@ -162,7 +162,7 @@ public class TestArrays extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         new TornadoExecutor(immutableTaskGraph) //
                 .build() //
-                .warmup() //
+                .withWarmUp() //
                 .execute();
 
         for (int i = 0; i < N; i++) {
@@ -186,7 +186,7 @@ public class TestArrays extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         new TornadoExecutor(immutableTaskGraph) //
                 .build() //
-                .warmup() //
+                .withWarmUp() //
                 .execute();
 
         for (int i = 0; i < N; i++) {
@@ -210,7 +210,7 @@ public class TestArrays extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         new TornadoExecutor(immutableTaskGraph) //
                 .build() //
-                .warmup() //
+                .withWarmUp() //
                 .execute();
 
         for (int i = 0; i < N; i++) {

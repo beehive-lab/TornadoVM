@@ -61,7 +61,7 @@ public class SpmvTornado extends BenchmarkDriver {
 
         immutableTaskGraph = taskGraph.freeze();
         executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.warmup();
+        executor.withWarmUp();
     }
 
     @Override
@@ -77,7 +77,7 @@ public class SpmvTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.setDevice(device).execute();
+        executor.withDevice(device).execute();
     }
 
     @Override

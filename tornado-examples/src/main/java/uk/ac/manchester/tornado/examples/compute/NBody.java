@@ -154,7 +154,7 @@ public class NBody {
                 .task("t0", NBody::nBody, numBodies, posTornadoVM, velTornadoVM, delT, espSqr);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build().warmup();
+        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build().withWarmUp();
 
         resultsIterations = new StringBuffer();
 

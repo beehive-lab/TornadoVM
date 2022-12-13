@@ -78,7 +78,7 @@ public class StencilTornado extends BenchmarkDriver {
 
         immutableTaskGraph = taskGraph.freeze();
         executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.warmup();
+        executor.withWarmUp();
     }
 
     @Override
@@ -92,7 +92,7 @@ public class StencilTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.setDevice(device).execute();
+        executor.withDevice(device).execute();
     }
 
     @Override
@@ -119,7 +119,7 @@ public class StencilTornado extends BenchmarkDriver {
 
     @Override
     protected void barrier() {
-        executor.syncObjects();
+        executor.withSyncObjects();
     }
 
     public void printSummary() {

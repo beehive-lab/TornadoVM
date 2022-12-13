@@ -79,7 +79,7 @@ public class DgemmTornado extends BenchmarkDriver {
 
             immutableTaskGraph = taskGraph.freeze();
             executor = new TornadoExecutor(immutableTaskGraph).build();
-            executor.warmup();
+            executor.withWarmUp();
 
         } else {
             String filePath = "/tmp/mxmDouble.spv";
@@ -120,7 +120,7 @@ public class DgemmTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.setDevice(device).execute();
+        executor.withDevice(device).execute();
     }
 
     @Override

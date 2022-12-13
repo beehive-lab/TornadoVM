@@ -145,13 +145,13 @@ public class TestIO extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
-        executor.lockObjectsInMemory(arrayA, arrayB, arrayC);
+        executor.withLockObjectsInMemory(arrayA, arrayB, arrayC);
 
         for (int i = 0; i < 4; i++) {
             executor.execute();
         }
 
-        executor.unlockObjectsFromMemory(arrayA, arrayB, arrayC);
+        executor.withUnlockObjectsFromMemory(arrayA, arrayB, arrayC);
 
         for (int i = 0; i < N; i++) {
             assertEquals(2 * i, arrayC[i], 0.0f);
@@ -198,7 +198,7 @@ public class TestIO extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
-        executor.lockObjectsInMemory(arrayA, arrayB, arrayB2, arrayC);
+        executor.withLockObjectsInMemory(arrayA, arrayB, arrayB2, arrayC);
 
         for (int i = 0; i < 4; i++) {
             executor.replaceParameter(arrayB, arrayB2) //
@@ -207,7 +207,7 @@ public class TestIO extends TornadoTestBase {
         }
 
         // Free memory
-        executor.unlockObjectsFromMemory(arrayA, arrayB, arrayC);
+        executor.withUnlockObjectsFromMemory(arrayA, arrayB, arrayC);
 
         for (int i = 0; i < N; i++) {
             assertEquals(2 * i, arrayC[i], 0.0f);
@@ -252,7 +252,7 @@ public class TestIO extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.lockObjectsInMemory(arrayA, arrayB, arrayC);
+        executor.withLockObjectsInMemory(arrayA, arrayB, arrayC);
 
         for (int i = 0; i < 4; i++) {
             float[] arrayB2 = createAndInitializeArray(N);
@@ -261,7 +261,7 @@ public class TestIO extends TornadoTestBase {
                     .replaceParameter(arrayB2, arrayB);
         }
 
-        executor.unlockObjectsFromMemory(arrayA, arrayB, arrayC);
+        executor.withUnlockObjectsFromMemory(arrayA, arrayB, arrayC);
 
         for (int i = 0; i < N; i++) {
             assertEquals(2 * i, arrayC[i], 0.0f);

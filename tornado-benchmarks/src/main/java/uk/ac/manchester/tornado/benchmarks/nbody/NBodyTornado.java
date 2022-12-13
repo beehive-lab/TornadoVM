@@ -81,7 +81,7 @@ public class NBodyTornado extends BenchmarkDriver {
 
         immutableTaskGraph = taskGraph.freeze();
         executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.warmup();
+        executor.withWarmUp();
     }
 
     @Override
@@ -127,12 +127,12 @@ public class NBodyTornado extends BenchmarkDriver {
 
         immutableTaskGraph = taskGraph.freeze();
         executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.warmup();
+        executor.withWarmUp();
 
-        executor.warmup() //
-                .setDevice(device) //
+        executor.withWarmUp() //
+                .withDevice(device) //
                 .execute() //
-                .syncObjects(posSeq, velSeq) //
+                .withSyncObjects(posSeq, velSeq) //
                 .clearProfiles();
 
         nBody(numBodies, posSeqSeq, velSeqSeq, delT, espSqr);
@@ -153,6 +153,6 @@ public class NBodyTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.setDevice(device).execute();
+        executor.withDevice(device).execute();
     }
 }

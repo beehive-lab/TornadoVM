@@ -64,12 +64,7 @@ public class TornadoExecutorPlan implements ProfileInterface {
         return this;
     }
 
-    public TornadoExecutorPlan withDynamicReconfiguration() {
-        // empty implementation for now
-        return this;
-    }
-
-    public TornadoExecutorPlan warmup() {
+    public TornadoExecutorPlan withWarmUp() {
         tornadoExecutor.warmup();
         return this;
     }
@@ -85,27 +80,27 @@ public class TornadoExecutorPlan implements ProfileInterface {
         return this;
     }
 
-    public TornadoExecutorPlan setDevice(TornadoDevice device) {
+    public TornadoExecutorPlan withDevice(TornadoDevice device) {
         tornadoExecutor.setDevice(device);
         return this;
     }
 
-    public TornadoExecutorPlan lockObjectsInMemory(Object... objects) {
+    public TornadoExecutorPlan withLockObjectsInMemory(Object... objects) {
         tornadoExecutor.lockObjectsInMemory(objects);
         return this;
     }
 
-    public TornadoExecutorPlan unlockObjectsFromMemory(Object... objects) {
+    public TornadoExecutorPlan withUnlockObjectsFromMemory(Object... objects) {
         tornadoExecutor.unlockObjectFromMemory(objects);
         return this;
     }
 
-    public TornadoExecutorPlan syncObjects(Object... objects) {
+    public TornadoExecutorPlan withSyncObjects(Object... objects) {
         tornadoExecutor.syncObjects(objects);
         return this;
     }
 
-    public TornadoExecutorPlan syncField(Object object) {
+    public TornadoExecutorPlan withSyncField(Object object) {
         tornadoExecutor.syncField(object);
         return this;
     }

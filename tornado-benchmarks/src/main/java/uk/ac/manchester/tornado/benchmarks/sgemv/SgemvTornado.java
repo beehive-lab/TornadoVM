@@ -73,7 +73,7 @@ public class SgemvTornado extends BenchmarkDriver {
                 .transferToHost(y);
         immutableTaskGraph = taskGraph.freeze();
         executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.warmup();
+        executor.withWarmUp();
     }
 
     @Override
@@ -90,7 +90,7 @@ public class SgemvTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.setDevice(device).execute();
+        executor.withDevice(device).execute();
     }
 
     @Override
@@ -99,7 +99,7 @@ public class SgemvTornado extends BenchmarkDriver {
         final float[] result = new float[n];
 
         benchmarkMethod(device);
-        executor.syncObjects(y).clearProfiles();
+        executor.withSyncObjects(y).clearProfiles();
 
         sgemv(m, n, a, x, result);
 

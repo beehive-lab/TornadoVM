@@ -55,7 +55,7 @@ public class JuliaSetTornado extends BenchmarkDriver {
                 .transferToHost(hue, brightness);
         immutableTaskGraph = taskGraph.freeze();
         executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.warmup();
+        executor.withWarmUp();
     }
 
     @Override
@@ -99,6 +99,6 @@ public class JuliaSetTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.setDevice(device).execute();
+        executor.withDevice(device).execute();
     }
 }

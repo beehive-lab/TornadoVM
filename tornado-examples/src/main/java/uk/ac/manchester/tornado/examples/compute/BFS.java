@@ -204,7 +204,7 @@ public class BFS {
         ImmutableTaskGraph immutableTaskGraph1 = taskGraph1.freeze();
         TornadoExecutorPlan executor1 = new TornadoExecutor(immutableTaskGraph1) //
                 .build() //
-                .setDevice(device);
+                .withDevice(device);
 
         boolean done = false;
 

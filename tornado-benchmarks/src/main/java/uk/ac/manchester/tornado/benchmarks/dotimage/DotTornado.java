@@ -80,7 +80,7 @@ public class DotTornado extends BenchmarkDriver {
 
         immutableTaskGraph = taskGraph.freeze();
         executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.warmup();
+        executor.withWarmUp();
     }
 
     @Override
@@ -95,7 +95,7 @@ public class DotTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.setDevice(device).execute();
+        executor.withDevice(device).execute();
     }
 
     @Override
@@ -104,7 +104,7 @@ public class DotTornado extends BenchmarkDriver {
         final ImageFloat result = new ImageFloat(numElementsX, numElementsX);
 
         benchmarkMethod(device);
-        executor.syncObjects(c);
+        executor.withSyncObjects(c);
         executor.clearProfiles();
 
         GraphicsKernels.dotImage(a, b, result);

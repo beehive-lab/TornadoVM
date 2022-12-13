@@ -82,7 +82,7 @@ public class AddTornado extends BenchmarkDriver {
 
         immutableTaskGraph = taskGraph.freeze();
         executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.warmup();
+        executor.withWarmUp();
 
     }
 
@@ -98,7 +98,7 @@ public class AddTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.setDevice(device) //
+        executor.withDevice(device) //
                 .execute();
     }
 
@@ -108,7 +108,7 @@ public class AddTornado extends BenchmarkDriver {
         final ImageFloat4 result = new ImageFloat4(numElementsX, numElementsY);
 
         benchmarkMethod(device);
-        executor.syncField(c);
+        executor.withSyncField(c);
         executor.clearProfiles();
 
         GraphicsKernels.addImage(a, b, result);

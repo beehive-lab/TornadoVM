@@ -64,7 +64,7 @@ public class BlackScholesTornado extends BenchmarkDriver {
 
         immutableTaskGraph = taskGraph.freeze();
         executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.warmup();
+        executor.withWarmUp();
     }
 
     @Override
@@ -100,9 +100,9 @@ public class BlackScholesTornado extends BenchmarkDriver {
 
         immutableTaskGraph = taskGraph.freeze();
         executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.warmup().execute();
+        executor.withWarmUp().execute();
 
-        executor.syncObjects(putTor, callTor);
+        executor.withSyncObjects(putTor, callTor);
         executor.clearProfiles();
 
         blackscholes(randArrayTor, putSeq, calSeq);
@@ -123,7 +123,7 @@ public class BlackScholesTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.setDevice(device) //
+        executor.withDevice(device) //
                 .execute();
     }
 }

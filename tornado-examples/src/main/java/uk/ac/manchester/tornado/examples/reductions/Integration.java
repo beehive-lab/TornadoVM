@@ -107,7 +107,7 @@ public class Integration {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.lockObjectsInMemory(input, result);
+        executor.withLockObjectsInMemory(input, result);
 
         ArrayList<Long> timers = new ArrayList<>();
         for (int i = 0; i < ConfigurationReduce.MAX_ITERATIONS; i++) {

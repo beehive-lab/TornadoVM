@@ -90,7 +90,7 @@ public class JMHDotVector {
 
             ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
             executor = new TornadoExecutor(immutableTaskGraph).build();
-            executor.warmup();
+            executor.withWarmUp();
         }
     }
 

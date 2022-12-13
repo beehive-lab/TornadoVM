@@ -87,7 +87,7 @@ public class TestCase extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.warmup().execute();
+        executor.withWarmUp().execute();
 
     }
 

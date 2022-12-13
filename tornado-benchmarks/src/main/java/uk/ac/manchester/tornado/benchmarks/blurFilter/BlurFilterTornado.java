@@ -97,7 +97,7 @@ public class BlurFilterTornado extends BenchmarkDriver {
         immutableTaskGraph = taskGraph.freeze();
         executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withDefaultScheduler() //
-                .warmup();
+                .withWarmUp();
     }
 
     @Override
@@ -186,6 +186,6 @@ public class BlurFilterTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.setDevice(device).execute();
+        executor.withDevice(device).execute();
     }
 }

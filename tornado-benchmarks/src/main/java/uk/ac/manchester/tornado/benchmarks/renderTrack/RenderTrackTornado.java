@@ -68,7 +68,7 @@ public class RenderTrackTornado extends BenchmarkDriver {
 
         immutableTaskGraph = taskGraph.freeze();
         executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.warmup();
+        executor.withWarmUp();
     }
 
     @Override
@@ -111,13 +111,13 @@ public class RenderTrackTornado extends BenchmarkDriver {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.setDevice(device).execute();
+        executor.withDevice(device).execute();
 
         return validate(inputValidation, outputTornado);
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.setDevice(device).execute();
+        executor.withDevice(device).execute();
     }
 }

@@ -91,7 +91,7 @@ public class SgemmTornado extends BenchmarkDriver {
 
             immutableTaskGraph = taskGraph.freeze();
             executor = new TornadoExecutor(immutableTaskGraph).build();
-            executor.warmup();
+            executor.withWarmUp();
 
         } else {
             String filePath = "/tmp/mxmFloat.spv";
@@ -138,7 +138,7 @@ public class SgemmTornado extends BenchmarkDriver {
         if (grid != null) {
             executor.withGridScheduler(grid);
         }
-        executor.setDevice(device).execute();
+        executor.withDevice(device).execute();
     }
 
     @Override
@@ -148,7 +148,7 @@ public class SgemmTornado extends BenchmarkDriver {
         boolean val = true;
 
         benchmarkMethod(device);
-        executor.syncObjects(c).clearProfiles();
+        executor.withSyncObjects(c).clearProfiles();
 
         sgemm(m, n, m, a, b, result);
 

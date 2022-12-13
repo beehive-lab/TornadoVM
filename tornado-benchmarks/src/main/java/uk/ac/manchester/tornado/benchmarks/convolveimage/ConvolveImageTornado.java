@@ -71,7 +71,7 @@ public class ConvolveImageTornado extends BenchmarkDriver {
 
         immutableTaskGraph = taskGraph.freeze();
         executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.warmup();
+        executor.withWarmUp();
 
     }
 
@@ -89,7 +89,7 @@ public class ConvolveImageTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.setDevice(device).execute();
+        executor.withDevice(device).execute();
     }
 
     @Override
@@ -99,7 +99,7 @@ public class ConvolveImageTornado extends BenchmarkDriver {
 
         benchmarkMethod(device);
 
-        executor.syncField(output) //
+        executor.withSyncField(output) //
                 .clearProfiles();
 
         GraphicsKernels.convolveImage(input, filter, result);

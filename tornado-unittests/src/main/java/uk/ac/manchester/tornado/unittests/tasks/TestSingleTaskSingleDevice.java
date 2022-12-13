@@ -102,7 +102,7 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.setDevice(driver.getDevice(deviceNumber)) //
+        executor.withDevice(driver.getDevice(deviceNumber)) //
                 .execute();
 
         for (int i = 0; i < c.length; i++) {
@@ -137,7 +137,7 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.setDevice(driver.getDevice(deviceNumber)) //
+        executor.withDevice(driver.getDevice(deviceNumber)) //
                 .execute();
 
         for (int i = 0; i < c.length; i++) {

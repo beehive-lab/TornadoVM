@@ -65,7 +65,7 @@ public class SaxpyTornado extends BenchmarkDriver {
 
         immutableTaskGraph = taskGraph.freeze();
         executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.warmup();
+        executor.withWarmUp();
     }
 
     @Override
@@ -81,7 +81,7 @@ public class SaxpyTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.setDevice(device).execute();
+        executor.withDevice(device).execute();
     }
 
     @Override
@@ -90,7 +90,7 @@ public class SaxpyTornado extends BenchmarkDriver {
         final float[] result = new float[numElements];
 
         benchmarkMethod(device);
-        executor.syncObjects(y).clearProfiles();
+        executor.withSyncObjects(y).clearProfiles();
 
         saxpy(alpha, x, result);
 

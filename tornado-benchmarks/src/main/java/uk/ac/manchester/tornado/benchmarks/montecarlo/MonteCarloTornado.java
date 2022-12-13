@@ -53,7 +53,7 @@ public class MonteCarloTornado extends BenchmarkDriver {
                 .transferToHost(output);
         immutableTaskGraph = taskGraph.freeze();
         executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.warmup();
+        executor.withWarmUp();
     }
 
     @Override
@@ -66,7 +66,7 @@ public class MonteCarloTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.setDevice(device).execute();
+        executor.withDevice(device).execute();
     }
 
     @Override
@@ -77,11 +77,11 @@ public class MonteCarloTornado extends BenchmarkDriver {
         result = new float[size];
 
         ComputeKernels.monteCarlo(result, size);
-        executor.setDevice(device).warmup();
+        executor.withDevice(device).withWarmUp();
         for (int i = 0; i < 3; i++) {
             executor.execute();
         }
-        executor.syncObjects(output) //
+        executor.withSyncObjects(output) //
                 .clearProfiles();
 
         for (int i = 0; i < size; i++) {

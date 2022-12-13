@@ -71,7 +71,7 @@ public class RotateTornado extends BenchmarkDriver {
 
         immutableTaskGraph = taskGraph.freeze();
         executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.warmup();
+        executor.withWarmUp();
     }
 
     @Override
@@ -86,7 +86,7 @@ public class RotateTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.setDevice(device).execute();
+        executor.withDevice(device).execute();
     }
 
     @Override
@@ -95,7 +95,7 @@ public class RotateTornado extends BenchmarkDriver {
         final VectorFloat3 result = new VectorFloat3(numElements);
 
         benchmarkMethod(device);
-        executor.syncObjects(output).clearProfiles();
+        executor.withSyncObjects(output).clearProfiles();
 
         rotateVector(result, m, input);
 

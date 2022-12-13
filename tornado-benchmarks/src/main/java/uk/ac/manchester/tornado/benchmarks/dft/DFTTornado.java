@@ -68,7 +68,7 @@ public class DFTTornado extends BenchmarkDriver {
 
         immutableTaskGraph = taskGraph.freeze();
         executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.warmup();
+        executor.withWarmUp();
     }
 
     @Override
@@ -77,11 +77,11 @@ public class DFTTornado extends BenchmarkDriver {
         double[] outRealTor = new double[size];
         double[] outImagTor = new double[size];
 
-        executor.setDevice(device) //
-                .warmup() //
+        executor.withDevice(device) //
+                .withWarmUp() //
                 .execute();
 
-        executor.syncObjects(outReal, outImag);
+        executor.withSyncObjects(outReal, outImag);
 
         ComputeKernels.computeDFT(inReal, inImag, outRealTor, outImagTor);
 
@@ -112,6 +112,6 @@ public class DFTTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.setDevice(device).execute();
+        executor.withDevice(device).execute();
     }
 }

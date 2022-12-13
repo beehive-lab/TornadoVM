@@ -229,7 +229,7 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.warmup() //
+        executor.withWarmUp() //
                 .withGridScheduler(gridScheduler) //
                 .execute();
 

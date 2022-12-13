@@ -112,8 +112,8 @@ public class MatrixMul2D {
 
         TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
-        executorCUDA.lockObjectsInMemory(matrixA, matrixB, matrixCCUDA) //
-                .setDevice(cudaDevice);
+        executorCUDA.withLockObjectsInMemory(matrixA, matrixB, matrixCCUDA) //
+                .withDevice(cudaDevice);
 
         // Warm up CUDA
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
@@ -138,7 +138,7 @@ public class MatrixMul2D {
 
         ImmutableTaskGraph immutableTaskGraph1 = oclTaskGraph.freeze();
         TornadoExecutorPlan executorOCL = new TornadoExecutor(immutableTaskGraph1).build();
-        executorOCL.lockObjectsInMemory(matrixA, matrixB, matrixCOCL);
+        executorOCL.withLockObjectsInMemory(matrixA, matrixB, matrixCOCL);
 
         TornadoDriver oclDriver = TornadoRuntime.getTornadoRuntime().getDriver(1);
         TornadoDevice oclDevice = null;
@@ -152,7 +152,7 @@ public class MatrixMul2D {
             System.err.println("There is no device with both OpenCL and CUDA-PTX support");
             System.exit(1);
         }
-        executorOCL.setDevice(oclDevice);
+        executorOCL.withDevice(oclDevice);
 
         // Warmup OPENCL
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {

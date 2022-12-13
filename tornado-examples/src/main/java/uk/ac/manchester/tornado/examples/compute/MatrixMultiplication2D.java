@@ -85,7 +85,7 @@ public class MatrixMultiplication2D {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.lockObjectsInMemory(matrixA, matrixB, matrixC).warmup();
+        executor.withLockObjectsInMemory(matrixA, matrixB, matrixC).withWarmUp();
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {

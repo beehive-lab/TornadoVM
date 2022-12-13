@@ -69,7 +69,7 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
 
         immutableTaskGraph = taskGraph.freeze();
         executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.warmup();
+        executor.withWarmUp();
     }
 
     @Override
@@ -86,7 +86,7 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.setDevice(device).execute();
+        executor.withDevice(device).execute();
     }
 
     @Override
@@ -95,7 +95,7 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
         final float[] result = new float[imageSizeX * imageSizeY];
 
         benchmarkMethod(device);
-        executor.syncField(output);
+        executor.withSyncField(output);
         executor.clearProfiles();
 
         GraphicsKernels.convolveImageArray(input, filter, result, imageSizeX, imageSizeY, filterSize, filterSize);

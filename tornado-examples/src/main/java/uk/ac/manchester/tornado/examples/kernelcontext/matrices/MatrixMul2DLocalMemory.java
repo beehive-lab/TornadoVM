@@ -169,8 +169,8 @@ public class MatrixMul2DLocalMemory {
         workerCUDAOld.setGlobalWork(N, N, 1);
         workerCUDAOld.setLocalWork(local_x, local_y, 1);
 
-        executorCUDA.lockObjectsInMemory(matrixA, matrixB, matrixCCUDA) //
-                .setDevice(cudaDevice) //
+        executorCUDA.withLockObjectsInMemory(matrixA, matrixB, matrixCCUDA) //
+                .withDevice(cudaDevice) //
                 .withGridScheduler(gridSchedulerCUDAOld);
 
         // Warm up CUDA
@@ -205,7 +205,7 @@ public class MatrixMul2DLocalMemory {
 
         ImmutableTaskGraph immutableTaskGraph1 = scheduleOCL.freeze();
         TornadoExecutorPlan executorOCL = new TornadoExecutor(immutableTaskGraph1).build();
-        executorOCL.lockObjectsInMemory(matrixA, matrixB, matrixCOCL) //
+        executorOCL.withLockObjectsInMemory(matrixA, matrixB, matrixCOCL) //
                 .withGridScheduler(gridSchedulerOpenCLOld);
 
         // Get the same device but running the OCL backend
@@ -223,7 +223,7 @@ public class MatrixMul2DLocalMemory {
         }
         workerOpenCLOld.setGlobalWork(N, N, 1);
         workerOpenCLOld.setLocalWork(local_x, local_y, 1);
-        executorOCL.setDevice(oclDevice);
+        executorOCL.withDevice(oclDevice);
 
         // Warm up OpenCL
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
@@ -262,9 +262,9 @@ public class MatrixMul2DLocalMemory {
         // Change the Grid
         workerOpenCLNew.setGlobalWork(N, N, 1); // TS / WPT
         workerOpenCLNew.setLocalWork(local_x, local_y, 1);
-        executorOCLNewAPI.lockObjectsInMemory(matrixA, matrixB, matrixCOCLNewApi) //
+        executorOCLNewAPI.withLockObjectsInMemory(matrixA, matrixB, matrixCOCLNewApi) //
                 .withGridScheduler(gridSchedulerOpenCLNew) //
-                .setDevice(oclDevice);
+                .withDevice(oclDevice);
 
         // Warmup New Api OPENCL
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
@@ -300,13 +300,13 @@ public class MatrixMul2DLocalMemory {
 
         ImmutableTaskGraph immutableTaskGraph3 = cudaNewApiTask.freeze();
         TornadoExecutorPlan executorCUDANewAPI = new TornadoExecutor(immutableTaskGraph3).build();
-        executorCUDANewAPI.lockObjectsInMemory(matrixA, matrixB, matrixCCUDANewApi) //
+        executorCUDANewAPI.withLockObjectsInMemory(matrixA, matrixB, matrixCCUDANewApi) //
                 .withGridScheduler(gridSchedulerCudaNew);
 
         // Change the Grid
         workerCudaNew.setGlobalWork(N, N, 1);
         workerCudaNew.setLocalWork(local_x, local_y, 1);
-        executorCUDANewAPI.setDevice(cudaDevice);
+        executorCUDANewAPI.withDevice(cudaDevice);
 
         // Warmup New Api OPENCL
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {

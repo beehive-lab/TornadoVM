@@ -102,11 +102,11 @@ public class TestFields extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.lockObjectsInMemory(foo) //
+        executor.withLockObjectsInMemory(foo) //
                 .execute();
 
-        executor.syncField(foo.output);
-        executor.unlockObjectsFromMemory(foo);
+        executor.withSyncField(foo.output);
+        executor.withUnlockObjectsFromMemory(foo);
 
         for (int i = 0; i < N; i++) {
             assertEquals(100, foo.output[i]);
@@ -124,11 +124,11 @@ public class TestFields extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.lockObjectsInMemory(foo) //
+        executor.withLockObjectsInMemory(foo) //
                 .execute() //
-                .unlockObjectsFromMemory(foo);
+                .withUnlockObjectsFromMemory(foo);
 
-        executor.syncField(foo.output);
+        executor.withSyncField(foo.output);
 
         for (int i = 0; i < N; i++) {
             assertEquals(foo.a[i] + foo.b[i], foo.output[i]);
@@ -145,11 +145,11 @@ public class TestFields extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.lockObjectsInMemory(bar).execute();
+        executor.withLockObjectsInMemory(bar).execute();
 
-        executor.syncField(bar.output);
+        executor.withSyncField(bar.output);
 
-        executor.unlockObjectsFromMemory(bar);
+        executor.withUnlockObjectsFromMemory(bar);
 
         for (int i = 0; i < N; i++) {
             assertEquals(15, bar.output[i]);
