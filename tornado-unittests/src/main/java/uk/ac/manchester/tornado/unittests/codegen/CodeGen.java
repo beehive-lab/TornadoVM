@@ -138,7 +138,7 @@ public class CodeGen extends TornadoTestBase {
                 .task("t0", CodeGen::badCascadeKernel2);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.warmup();
+        executor.withWarmUp();
     }
 
     @Test
@@ -151,7 +151,7 @@ public class CodeGen extends TornadoTestBase {
                 .task("t0", CodeGen::badCascadeKernel3);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.warmup();
+        executor.withWarmUp();
     }
 
     @Test
@@ -165,7 +165,7 @@ public class CodeGen extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.warmup();
+        executor.withWarmUp();
     }
 
     @Test
