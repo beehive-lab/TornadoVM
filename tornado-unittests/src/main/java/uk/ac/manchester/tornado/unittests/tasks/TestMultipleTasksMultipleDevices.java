@@ -25,7 +25,10 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
@@ -73,7 +76,9 @@ public class TestMultipleTasksMultipleDevices {
                 .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12) //
                 .transferToHost(a, b); //
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < a.length; i++) {
             assertEquals(360, a[i]);
@@ -112,7 +117,9 @@ public class TestMultipleTasksMultipleDevices {
                 .task("t2", TestMultipleTasksSingleDevice::task2Saxpy, c, c, d, 12) //
                 .transferToHost(a, b, d); //
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
 
         for (int i = 0; i < a.length; i++) {
             assertEquals(360, a[i]);

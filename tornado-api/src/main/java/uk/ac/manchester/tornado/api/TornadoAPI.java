@@ -577,8 +577,6 @@ public interface TornadoAPI {
      */
     ImmutableTaskGraph snapshot();
 
-    void execute();
-
     SchedulableTask getTask(String id);
 
     TornadoDevice getDevice();

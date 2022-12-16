@@ -41,8 +41,11 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -89,6 +92,7 @@ class ReduceTaskGraph {
     private boolean hybridMode;
     private Map<Object, REDUCE_OPERATION> hybridMergeTable;
     private boolean hybridInitialized;
+    private TornadoExecutionPlan executor;
 
     ReduceTaskGraph(String taskScheduleID, List<TaskPackage> taskPackages, List<Object> streamInObjects, List<StreamingObject> streamingObjects, List<Object> streamOutObjects, CachedGraph<?> graph) {
         this.idTaskGraph = taskScheduleID;
@@ -591,6 +595,9 @@ class ReduceTaskGraph {
             }
         }
         TornadoTaskGraph.performStreamOutThreads(rewrittenTaskGraph, streamOutObjects);
+        ImmutableTaskGraph immutableTaskGraph = rewrittenTaskGraph.snapshot();
+        this.executor = new TornadoExecutor(immutableTaskGraph).build();
+
         executeExpression();
         counterName.incrementAndGet();
         return rewrittenTaskGraph;
@@ -631,7 +638,9 @@ class ReduceTaskGraph {
             }
             threadSequentialExecution.stream().forEach(Thread::start);
         }
-        rewrittenTaskGraph.execute();
+        // rewrittenTaskGraph.execute();
+        executor.execute();
+
         updateOutputArrays();
     }
 

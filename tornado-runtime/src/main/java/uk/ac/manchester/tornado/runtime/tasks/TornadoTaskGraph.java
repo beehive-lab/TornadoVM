@@ -52,11 +52,14 @@ import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraphInterface;
 import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
@@ -1344,14 +1347,18 @@ public class TornadoTaskGraph implements TaskGraphInterface {
                 }
                 performStreamOutThreads(task, streamOutObjects);
 
+                ImmutableTaskGraph immutableTaskGraph = task.snapshot();
+                TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+                executor.execute();
+
                 if (policy == Policy.PERFORMANCE) {
                     // first warm up
                     for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
-                        task.execute();
+                        executor.execute();
                     }
                     start = timer.time();
                 }
-                task.execute();
+                executor.execute();
                 final long end = timer.time();
                 taskScheduleIndex.put(taskScheduleNumber, task);
 
@@ -1455,7 +1462,10 @@ public class TornadoTaskGraph implements TaskGraphInterface {
                 taskScheduleIndex.put(deviceWinnerIndex, task);
             }
         }
-        task.execute();
+
+        ImmutableTaskGraph immutableTaskGraph = task.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        executor.execute();
     }
 
     @Override
@@ -1568,14 +1578,18 @@ public class TornadoTaskGraph implements TaskGraphInterface {
             }
             performStreamOutThreads(task, streamOutObjects);
 
+            ImmutableTaskGraph immutableTaskGraph = task.snapshot();
+            TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+            executor.execute();
+
             if (policy == Policy.PERFORMANCE) {
                 for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
-                    task.execute();
+                    executor.execute();
                 }
                 start = timer.time();
             }
 
-            task.execute();
+            executor.execute();
             taskScheduleIndex.put(taskNumber, task);
 
             // TaskSchedules Global
