@@ -32,8 +32,8 @@ import javax.swing.JFrame;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
@@ -66,7 +66,7 @@ public class BlackAndWhiteTransform {
 
         private static TaskGraph taskGraph;
 
-        private static TornadoExecutorPlan executor;
+        private static TornadoExecutionPlan executor;
 
         LoadImage() {
             try {

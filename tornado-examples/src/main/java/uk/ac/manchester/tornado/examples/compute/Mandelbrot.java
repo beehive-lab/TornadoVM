@@ -32,8 +32,8 @@ import javax.swing.JFrame;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 /**
@@ -153,7 +153,7 @@ public class Mandelbrot {
                         .transferToHost(result);
 
                 ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-                TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+                TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
                 executor.execute();
 
                 this.image = writeFile(result, SIZE);

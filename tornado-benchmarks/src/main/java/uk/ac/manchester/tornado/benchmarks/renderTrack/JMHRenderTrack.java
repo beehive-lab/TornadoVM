@@ -40,8 +40,8 @@ import org.openjdk.jmh.runner.options.TimeValue;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
@@ -64,7 +64,7 @@ public class JMHRenderTrack {
         private ImageFloat3 input;
         private ImageByte3 output;
 
-        private TornadoExecutorPlan executor;
+        private TornadoExecutionPlan executor;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -104,7 +104,7 @@ public class JMHRenderTrack {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void renderTrackTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TornadoExecutorPlan executor = state.executor;
+        TornadoExecutionPlan executor = state.executor;
         executor.execute();
         blackhole.consume(executor);
     }

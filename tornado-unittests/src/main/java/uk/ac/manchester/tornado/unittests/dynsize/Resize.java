@@ -28,8 +28,8 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -76,7 +76,7 @@ public class Resize extends TornadoTestBase {
                 .transferToHost(a); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build().execute();
+        TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build().execute();
 
         // Resize data
         float[] b = createArray(512);
@@ -101,7 +101,7 @@ public class Resize extends TornadoTestBase {
                 .transferToHost(a); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build().execute();
+        TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build().execute();
         // Resize data
         float[] b = createArray(512);
 
@@ -133,7 +133,7 @@ public class Resize extends TornadoTestBase {
                 .task("t0", Resize::resize02, a, b) //
                 .transferToHost(b); //
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build().execute();
+        TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build().execute();
         // Resize data
         float[] c = createArray(512);
         float[] d = createArray(512);
@@ -159,7 +159,7 @@ public class Resize extends TornadoTestBase {
                 .task("t0", Resize::resize02, a, b) //
                 .transferToHost(b); //
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build().execute();
+        TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build().execute();
         float[] aux = createArray(256);
 
         // Interchange
@@ -192,7 +192,7 @@ public class Resize extends TornadoTestBase {
                 .task("t0", Resize::resize02, a, b) //
                 .transferToHost(b); //
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph) //
+        TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph) //
                 .build() //
                 .withGridScheduler(gridScheduler) //
                 .execute(); //
@@ -230,7 +230,7 @@ public class Resize extends TornadoTestBase {
                 .transferToHost(b); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph) //
+        TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph) //
                 .build() //
                 .withGridScheduler(gridScheduler) //
                 .execute(); //

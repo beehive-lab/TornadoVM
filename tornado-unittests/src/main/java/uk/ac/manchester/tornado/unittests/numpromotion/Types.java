@@ -26,8 +26,8 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
@@ -107,7 +107,7 @@ public class Types extends TornadoTestBase {
                 .transferToHost(output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         b2b(input, seq);
@@ -132,7 +132,7 @@ public class Types extends TornadoTestBase {
                 .transferToHost(output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         b2b(input, seq);
@@ -157,7 +157,7 @@ public class Types extends TornadoTestBase {
                 .transferToHost(output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         b2i(input, seq);
@@ -181,7 +181,7 @@ public class Types extends TornadoTestBase {
                 .task("t0", Types::b2s, input, output) //
                 .transferToHost(output);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         b2s(input, seq);
@@ -206,7 +206,7 @@ public class Types extends TornadoTestBase {
                 .transferToHost(output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         b2l(input, seq);
@@ -231,7 +231,7 @@ public class Types extends TornadoTestBase {
                 .transferToHost(output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         i2l(input, seq);
@@ -256,7 +256,7 @@ public class Types extends TornadoTestBase {
                 .transferToHost(output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         s2i(input, seq);
@@ -281,7 +281,7 @@ public class Types extends TornadoTestBase {
                 .transferToHost(output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         f2d(input, seq);
@@ -306,7 +306,7 @@ public class Types extends TornadoTestBase {
                 .transferToHost(output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         i2d(input, seq);

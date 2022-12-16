@@ -27,8 +27,8 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -120,7 +120,7 @@ public class CodeGen extends TornadoTestBase {
                 .transferToHost(resultsXY);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
     }
 
@@ -137,7 +137,7 @@ public class CodeGen extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", CodeGen::badCascadeKernel2);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withWarmUp();
     }
 
@@ -150,7 +150,7 @@ public class CodeGen extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", CodeGen::badCascadeKernel3);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withWarmUp();
     }
 
@@ -164,7 +164,7 @@ public class CodeGen extends TornadoTestBase {
                 .task("t0", CodeGen::badCascadeKernel4);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withWarmUp();
     }
 
@@ -183,7 +183,7 @@ public class CodeGen extends TornadoTestBase {
                 .transferToHost(a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         assertArrayEquals(serial, a);

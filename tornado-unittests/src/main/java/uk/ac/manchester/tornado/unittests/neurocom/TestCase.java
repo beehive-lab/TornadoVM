@@ -21,8 +21,8 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -86,7 +86,7 @@ public class TestCase extends TornadoTestBase {
                 .transferToHost(cache_dstart);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withWarmUp().execute();
 
     }

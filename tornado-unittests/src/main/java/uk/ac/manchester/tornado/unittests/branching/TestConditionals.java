@@ -28,8 +28,8 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -205,7 +205,7 @@ public class TestConditionals extends TornadoTestBase {
                 .transferToHost(a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         assertEquals(10, a[0]);
@@ -223,7 +223,7 @@ public class TestConditionals extends TornadoTestBase {
                 .transferToHost(a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         assertEquals(10, a[0]);
@@ -248,7 +248,7 @@ public class TestConditionals extends TornadoTestBase {
                 .transferToHost(a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         assertArrayEquals(serial, a);
@@ -267,7 +267,7 @@ public class TestConditionals extends TornadoTestBase {
                 .task("t0", TestConditionals::switchStatement, a) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         assertEquals(10, a[0]);
@@ -286,7 +286,7 @@ public class TestConditionals extends TornadoTestBase {
                 .task("t0", TestConditionals::switchStatement, a) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         assertEquals(20, a[0]);
@@ -305,7 +305,7 @@ public class TestConditionals extends TornadoTestBase {
                 .task("t0", TestConditionals::switchStatement2, a) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         assertEquals(10, a[0]);
@@ -325,7 +325,7 @@ public class TestConditionals extends TornadoTestBase {
                 .transferToHost(a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int value : a) {
@@ -347,7 +347,7 @@ public class TestConditionals extends TornadoTestBase {
                 .transferToHost(a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int value : a) {
@@ -368,7 +368,7 @@ public class TestConditionals extends TornadoTestBase {
                 .transferToHost(a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int value : a) {
@@ -390,7 +390,7 @@ public class TestConditionals extends TornadoTestBase {
                 .transferToHost(a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int value : a) {
@@ -413,7 +413,7 @@ public class TestConditionals extends TornadoTestBase {
                 .task("t0", TestConditionals::ternaryComplexCondition, a, b) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int value : a) {
@@ -436,7 +436,7 @@ public class TestConditionals extends TornadoTestBase {
                 .transferToHost(a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int value : a) {
@@ -456,7 +456,7 @@ public class TestConditionals extends TornadoTestBase {
                 .task("t0", TestConditionals::switchStatement6, a) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int value : a) {
@@ -476,7 +476,7 @@ public class TestConditionals extends TornadoTestBase {
                 .task("t0", TestConditionals::switchStatement6, a) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int value : a) {
@@ -496,7 +496,7 @@ public class TestConditionals extends TornadoTestBase {
                 .task("t0", TestConditionals::switchStatement6, a) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int value : a) {
@@ -519,7 +519,7 @@ public class TestConditionals extends TornadoTestBase {
                 .transferToHost(output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         integerTestMove(sequential, N);

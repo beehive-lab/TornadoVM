@@ -43,8 +43,8 @@ import org.openjdk.jmh.runner.options.TimeValue;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
@@ -68,7 +68,7 @@ public class JMHDotImage {
         private ImageFloat3 a;
         private ImageFloat3 b;
         private ImageFloat c;
-        TornadoExecutorPlan executor;
+        TornadoExecutionPlan executor;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -113,7 +113,7 @@ public class JMHDotImage {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void dotImageTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TornadoExecutorPlan executor = state.executor;
+        TornadoExecutionPlan executor = state.executor;
         executor.execute();
         blackhole.consume(executor);
     }

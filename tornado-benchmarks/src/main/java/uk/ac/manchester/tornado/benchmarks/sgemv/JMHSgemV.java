@@ -42,8 +42,8 @@ import org.openjdk.jmh.runner.options.TimeValue;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
@@ -64,7 +64,7 @@ public class JMHSgemV {
         private float[] a;
         private float[] x;
         private float[] y;
-        private TornadoExecutorPlan executor;
+        private TornadoExecutionPlan executor;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -110,7 +110,7 @@ public class JMHSgemV {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void sgemVTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TornadoExecutorPlan executor = state.executor;
+        TornadoExecutionPlan executor = state.executor;
         executor.execute();
         blackhole.consume(executor);
     }

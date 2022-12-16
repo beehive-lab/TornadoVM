@@ -24,8 +24,8 @@ import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -59,7 +59,7 @@ public class ReductionIrregular {
                 .transferToHost(result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         ArrayList<Long> timers = new ArrayList<>();
         for (int i = 0; i < ConfigurationReduce.MAX_ITERATIONS; i++) {

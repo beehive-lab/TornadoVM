@@ -28,8 +28,8 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -240,7 +240,7 @@ public class TestArrays extends TornadoTestBase {
         taskGraph.transferToHost(data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
         executorPlan.execute();
 
         for (int i = 0; i < N; i++) {
@@ -266,7 +266,7 @@ public class TestArrays extends TornadoTestBase {
                 .transferToHost(c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < c.length; i++) {
@@ -292,7 +292,7 @@ public class TestArrays extends TornadoTestBase {
                 .transferToHost(c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < c.length; i++) {
@@ -319,7 +319,7 @@ public class TestArrays extends TornadoTestBase {
                 .transferToHost(c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < c.length; i++) {
@@ -345,7 +345,7 @@ public class TestArrays extends TornadoTestBase {
                 .transferToHost(c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < c.length; i++) {
@@ -371,7 +371,7 @@ public class TestArrays extends TornadoTestBase {
                 .transferToHost(c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < c.length; i++) {
@@ -397,7 +397,7 @@ public class TestArrays extends TornadoTestBase {
                 .transferToHost(c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (char value : c) {
@@ -423,7 +423,7 @@ public class TestArrays extends TornadoTestBase {
                 .transferToHost(c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (byte value : c) {
@@ -456,7 +456,7 @@ public class TestArrays extends TornadoTestBase {
                 .transferToHost(a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         assertEquals('w', a[0]);

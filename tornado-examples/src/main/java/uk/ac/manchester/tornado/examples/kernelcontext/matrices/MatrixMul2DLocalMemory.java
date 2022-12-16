@@ -26,8 +26,8 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -162,7 +162,7 @@ public class MatrixMul2DLocalMemory {
                 .transferToHost(matrixCCUDA);
 
         ImmutableTaskGraph immutableTaskGraph = scheduleCUDA.snapshot();
-        TornadoExecutorPlan executorCUDA = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executorCUDA = new TornadoExecutor(immutableTaskGraph).build();
 
         TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
@@ -203,7 +203,7 @@ public class MatrixMul2DLocalMemory {
                 .transferToHost(matrixCOCL);
 
         ImmutableTaskGraph immutableTaskGraph1 = scheduleOCL.snapshot();
-        TornadoExecutorPlan executorOCL = new TornadoExecutor(immutableTaskGraph1).build();
+        TornadoExecutionPlan executorOCL = new TornadoExecutor(immutableTaskGraph1).build();
         executorOCL.withGridScheduler(gridSchedulerOpenCLOld);
 
         // Get the same device but running the OCL backend
@@ -255,7 +255,7 @@ public class MatrixMul2DLocalMemory {
                 .transferToHost(matrixCOCLNewApi); //
 
         ImmutableTaskGraph immutableTaskGraph2 = oclNewApiTask.snapshot();
-        TornadoExecutorPlan executorOCLNewAPI = new TornadoExecutor(immutableTaskGraph2).build();
+        TornadoExecutionPlan executorOCLNewAPI = new TornadoExecutor(immutableTaskGraph2).build();
 
         // Change the Grid
         workerOpenCLNew.setGlobalWork(N, N, 1); // TS / WPT
@@ -296,7 +296,7 @@ public class MatrixMul2DLocalMemory {
                 .transferToHost(matrixCCUDANewApi); //
 
         ImmutableTaskGraph immutableTaskGraph3 = cudaNewApiTask.snapshot();
-        TornadoExecutorPlan executorCUDANewAPI = new TornadoExecutor(immutableTaskGraph3).build();
+        TornadoExecutionPlan executorCUDANewAPI = new TornadoExecutor(immutableTaskGraph3).build();
         executorCUDANewAPI.withGridScheduler(gridSchedulerCudaNew);
 
         // Change the Grid

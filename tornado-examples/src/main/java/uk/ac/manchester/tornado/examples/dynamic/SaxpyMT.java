@@ -22,8 +22,8 @@ import uk.ac.manchester.tornado.api.DRMode;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
@@ -92,7 +92,7 @@ public class SaxpyMT {
         }
 
         graph = new TaskGraph("s0");
-        TornadoExecutorPlan executor = null;
+        TornadoExecutionPlan executor = null;
         if (!executionType.equals("multi") && !executionType.equals("sequential")) {
             long startInit = System.nanoTime();
 

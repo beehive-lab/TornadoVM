@@ -27,8 +27,8 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -61,7 +61,7 @@ public class TestLoops extends TornadoTestBase {
                 .transferToHost(a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int value : a) {
@@ -84,7 +84,7 @@ public class TestLoops extends TornadoTestBase {
                 .task("t0", TestLoops::forConstant02, a, (size - 1)) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int value : a) {
@@ -108,7 +108,7 @@ public class TestLoops extends TornadoTestBase {
                 .transferToHost(a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int value : a) {
@@ -133,7 +133,7 @@ public class TestLoops extends TornadoTestBase {
                 .transferToHost(m);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < m.getNumRows(); i++) {
@@ -160,7 +160,7 @@ public class TestLoops extends TornadoTestBase {
                 .transferToHost(m);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < m.getNumRows(); i++) {
@@ -188,7 +188,7 @@ public class TestLoops extends TornadoTestBase {
                 .transferToHost(m2);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < m2.getNumRows(); i++) {
@@ -216,7 +216,7 @@ public class TestLoops extends TornadoTestBase {
                 .task("t0", TestLoops::forLoopOneD, a) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int j : a) {
@@ -242,7 +242,7 @@ public class TestLoops extends TornadoTestBase {
                 .task("t0", TestLoops::steppedLoop, a, size) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < size; i += 2) {
@@ -269,7 +269,7 @@ public class TestLoops extends TornadoTestBase {
                 .task("t0", TestLoops::steppedLoop2, a, size) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < size; i++) {
@@ -297,7 +297,7 @@ public class TestLoops extends TornadoTestBase {
                 .transferToHost(a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < size; i++) {
@@ -322,7 +322,7 @@ public class TestLoops extends TornadoTestBase {
                 .task("t0", TestLoops::steppedLoop4, a, size) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < size; i += 4) {
@@ -351,7 +351,7 @@ public class TestLoops extends TornadoTestBase {
                 .transferToHost(a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < size; i += 3) {
@@ -379,7 +379,7 @@ public class TestLoops extends TornadoTestBase {
                 .task("t0", TestLoops::steppedLoop7, a, size) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < size; i += 7) {
@@ -407,7 +407,7 @@ public class TestLoops extends TornadoTestBase {
                 .task("t0", TestLoops::steppedLoop10, a, size) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < size; i += 10) {
@@ -442,7 +442,7 @@ public class TestLoops extends TornadoTestBase {
                 .transferToHost(a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < a.length; i++) {
@@ -475,7 +475,7 @@ public class TestLoops extends TornadoTestBase {
                 .task("t0", TestLoops::conditionalInLoop2, a) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < a.length; i++) {
@@ -508,7 +508,7 @@ public class TestLoops extends TornadoTestBase {
                 .task("t0", TestLoops::conditionalIfElseLoop, a) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < a.length; i++) {
@@ -540,7 +540,7 @@ public class TestLoops extends TornadoTestBase {
                 .task("t0", TestLoops::twoDLoop, a) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int[] ints : a) {
@@ -569,7 +569,7 @@ public class TestLoops extends TornadoTestBase {
                 .task("t0", TestLoops::nestedForLoopOneDArray, a, size) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < size; i++) {
@@ -601,7 +601,7 @@ public class TestLoops extends TornadoTestBase {
                 .task("t0", TestLoops::nestedForLoopTwoDArray, a, size) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int[] ints : a) {
@@ -645,7 +645,7 @@ public class TestLoops extends TornadoTestBase {
                 .task("t0", TestLoops::controlFlowBreak, a) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < a.length; i++) {
@@ -671,7 +671,7 @@ public class TestLoops extends TornadoTestBase {
                 .task("t0", TestLoops::controlFlowBreak2, a) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < a.length; i++) {
@@ -702,7 +702,7 @@ public class TestLoops extends TornadoTestBase {
                 .task("t0", TestLoops::controlFlowContinue, foo) //
                 .transferToHost(foo);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < foo.length; i++) {
@@ -734,7 +734,7 @@ public class TestLoops extends TornadoTestBase {
                 .task("t0", TestLoops::nested2ParallelLoops, a, size) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < size; i++) {
@@ -766,7 +766,7 @@ public class TestLoops extends TornadoTestBase {
                 .task("t0", TestLoops::whileLoop, a, size) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < size; i++) {
@@ -800,7 +800,7 @@ public class TestLoops extends TornadoTestBase {
                 .task("t0", TestLoops::dowWhileLoop, a, size) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < size; i++) {
@@ -837,7 +837,7 @@ public class TestLoops extends TornadoTestBase {
                 .transferToHost(c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int i = 0; i < size; i++) {
@@ -864,7 +864,7 @@ public class TestLoops extends TornadoTestBase {
                 .task("t0", TestLoops::reverseLoop, a) //
                 .transferToHost(a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         for (int j = 0; j < size; j++) {
@@ -918,7 +918,7 @@ public class TestLoops extends TornadoTestBase {
                 .transferToHost(inTor, outTor);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         testSingleThreadLoopCond(inSeq, outSeq);
@@ -964,7 +964,7 @@ public class TestLoops extends TornadoTestBase {
                 .transferToHost(inTor, outTor); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         testMultipleThreadLoopCond(inSeq, outSeq);

@@ -34,8 +34,8 @@ import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -173,7 +173,7 @@ public class BlurFilter {
                     .transferToHost(redFilter, greenFilter, blueFilter);
 
             ImmutableTaskGraph immutableTaskGraph = parallelFilter.snapshot();
-            TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+            TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
             workerGrid.setGlobalWork(h, w, 1);
             workerGrid.setLocalWorkToNull();

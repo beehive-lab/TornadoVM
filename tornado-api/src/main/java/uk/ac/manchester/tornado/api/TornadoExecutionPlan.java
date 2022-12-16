@@ -44,7 +44,7 @@ package uk.ac.manchester.tornado.api;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
 
-public class TornadoExecutorPlan implements ProfileInterface {
+public class TornadoExecutionPlan implements ProfileInterface {
 
     private final TornadoExecutor tornadoExecutor;
 
@@ -56,21 +56,21 @@ public class TornadoExecutorPlan implements ProfileInterface {
     private boolean useDefaultScheduler;
     private DRMode dynamicReconfigurationMode;
 
-    TornadoExecutorPlan(TornadoExecutor tornadoExecutor) {
+    TornadoExecutionPlan(TornadoExecutor tornadoExecutor) {
         this.tornadoExecutor = tornadoExecutor;
     }
 
-    public TornadoExecutorPlan withReusableBuffers() {
+    public TornadoExecutionPlan withReusableBuffers() {
         this.isReusableBuffer = true;
         return this;
     }
 
-    public TornadoExecutorPlan withWarmUp() {
+    public TornadoExecutionPlan withWarmUp() {
         tornadoExecutor.warmup();
         return this;
     }
 
-    public TornadoExecutorPlan execute() {
+    public TornadoExecutionPlan execute() {
         if (this.policy != null) {
             tornadoExecutor.executeWithDynamicReconfiguration(this.policy, this.dynamicReconfigurationMode);
         } else if (gridScheduler != null) {
@@ -81,64 +81,64 @@ public class TornadoExecutorPlan implements ProfileInterface {
         return this;
     }
 
-    public TornadoExecutorPlan withDevice(TornadoDevice device) {
+    public TornadoExecutionPlan withDevice(TornadoDevice device) {
         tornadoExecutor.setDevice(device);
         return this;
     }
 
-    public TornadoExecutorPlan freeDeviceMemory() {
+    public TornadoExecutionPlan freeDeviceMemory() {
         tornadoExecutor.freeDeviceMemory();
         return this;
     }
 
-    public TornadoExecutorPlan withSyncObjects(Object... objects) {
+    public TornadoExecutionPlan withSyncObjects(Object... objects) {
         tornadoExecutor.syncObjects(objects);
         return this;
     }
 
-    public TornadoExecutorPlan withSyncField(Object object) {
+    public TornadoExecutionPlan withSyncField(Object object) {
         tornadoExecutor.syncField(object);
         return this;
     }
 
-    public TornadoExecutorPlan replaceParameter(Object oldParameter, Object newParameter) {
+    public TornadoExecutionPlan replaceParameter(Object oldParameter, Object newParameter) {
         tornadoExecutor.replaceParameter(oldParameter, newParameter);
         return this;
     }
 
-    public TornadoExecutorPlan withGridScheduler(GridScheduler gridScheduler) {
+    public TornadoExecutionPlan withGridScheduler(GridScheduler gridScheduler) {
         this.gridScheduler = gridScheduler;
         return this;
     }
 
-    public TornadoExecutorPlan withDefaultScheduler() {
+    public TornadoExecutionPlan withDefaultScheduler() {
         this.useDefaultScheduler = true;
         tornadoExecutor.useDefaultScheduler(useDefaultScheduler);
         return this;
     }
 
-    public TornadoExecutorPlan withDynamicReconfiguration(Policy policy, DRMode mode) {
+    public TornadoExecutionPlan withDynamicReconfiguration(Policy policy, DRMode mode) {
         this.policy = policy;
         this.dynamicReconfigurationMode = mode;
         return this;
     }
 
-    public TornadoExecutorPlan withBatch(String batchSize) {
+    public TornadoExecutionPlan withBatch(String batchSize) {
         tornadoExecutor.withBatch(batchSize);
         return this;
     }
 
-    public TornadoExecutorPlan dumpProfiles() {
+    public TornadoExecutionPlan dumpProfiles() {
         tornadoExecutor.dumpProfiles();
         return this;
     }
 
-    public TornadoExecutorPlan resetDevices() {
+    public TornadoExecutionPlan resetDevices() {
         tornadoExecutor.resetDevices();
         return this;
     }
 
-    public TornadoExecutorPlan clearProfiles() {
+    public TornadoExecutionPlan clearProfiles() {
         tornadoExecutor.clearProfiles();
         return this;
     }

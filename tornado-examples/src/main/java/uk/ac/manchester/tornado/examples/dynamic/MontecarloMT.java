@@ -22,8 +22,8 @@ import uk.ac.manchester.tornado.api.DRMode;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
@@ -119,7 +119,7 @@ public class MontecarloMT {
                 .transferToHost(output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         long stopInit = System.nanoTime();
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");

@@ -19,8 +19,8 @@ package uk.ac.manchester.tornado.benchmarks.hilbert;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
@@ -72,7 +72,7 @@ public class HilbertTornado extends BenchmarkDriver {
                 .transferToHost(testData); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph1.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withDevice(device).execute();
 
         float[] seq = new float[size * size];

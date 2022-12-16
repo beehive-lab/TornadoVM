@@ -24,8 +24,8 @@ import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
@@ -112,7 +112,7 @@ public class MatrixVector {
                 .transferToHost(result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withWarmUp();
 
         for (int i = 0; i < WARM_UP_ITERATIONS; i++) {

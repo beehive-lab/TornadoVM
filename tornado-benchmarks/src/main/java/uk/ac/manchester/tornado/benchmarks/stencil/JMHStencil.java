@@ -44,8 +44,8 @@ import org.openjdk.jmh.runner.options.TimeValue;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
@@ -68,7 +68,7 @@ public class JMHStencil {
         private float[] a1;
         private float[] ainit;
 
-        private TornadoExecutorPlan executor;
+        private TornadoExecutionPlan executor;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -119,7 +119,7 @@ public class JMHStencil {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void stencilTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TornadoExecutorPlan executor = state.executor;
+        TornadoExecutionPlan executor = state.executor;
         executor.execute();
         blackhole.consume(executor);
     }

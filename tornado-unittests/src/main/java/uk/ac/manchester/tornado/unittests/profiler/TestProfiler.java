@@ -26,8 +26,8 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -86,7 +86,7 @@ public class TestProfiler extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Build Executor
-        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
 
         // Execute the plan (default TornadoVM optimization choices)
         executorPlan.execute();
@@ -135,7 +135,7 @@ public class TestProfiler extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Build Executor
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         // Execute the plan (default TornadoVM optimization choices)
         executor.execute();

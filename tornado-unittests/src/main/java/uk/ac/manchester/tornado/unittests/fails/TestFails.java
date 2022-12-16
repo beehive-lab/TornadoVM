@@ -23,8 +23,8 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
@@ -77,7 +77,7 @@ public class TestFails extends TornadoTestBase {
                 .transferToHost(y);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
 
         // How to provoke the failure
         executorPlan.withWarmUp();
@@ -106,7 +106,7 @@ public class TestFails extends TornadoTestBase {
 
         // How to provoke the failure
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
         executorPlan.execute();
     }
 

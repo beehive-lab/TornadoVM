@@ -28,8 +28,8 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
@@ -74,7 +74,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
                 .transferToHost(result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         double[] sequential = new double[1];
@@ -110,7 +110,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
                 .transferToHost(result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         double[] sequential = new double[1];
@@ -141,7 +141,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
                 .transferToHost(result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         double[] sequential = new double[1];
@@ -189,7 +189,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
                 .transferToHost(result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         double[] sequential = new double[1];
@@ -213,7 +213,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
                 .transferToHost(result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         double[] sequential = new double[1];
@@ -239,7 +239,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
                 .task("t0", TestReductionsDoubles::reductionAddDoubles4, inputA, inputB, result) //
                 .transferToHost(result);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         double[] sequential = new double[1];
@@ -275,7 +275,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
                 .transferToHost(result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         double[] sequential = new double[1];
@@ -307,7 +307,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
                 .task("t0", TestReductionsDoubles::maxReductionAnnotation, input, result) //
                 .transferToHost(result);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         double[] sequential = new double[] { Double.MIN_VALUE };
@@ -340,7 +340,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
                 .task("t0", TestReductionsDoubles::minReductionAnnotation, input, result) //
                 .transferToHost(result);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         double[] sequential = new double[] { Double.MAX_VALUE };
@@ -378,7 +378,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
                 .transferToHost(result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         double[] sequential = new double[1];
@@ -419,7 +419,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
                 .transferToHost(reduceResult, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         prepareTornadoSumForMeanComputation(sequentialResult, sequentialReduce);
@@ -463,7 +463,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
                 .transferToHost(resultSum, resultStd);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         prepareTornadoSumForMeanComputation(sequentialData, sequentialSum);
@@ -513,7 +513,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
                 .transferToHost(resultSum, resultStd);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         prepareTornadoSum(sequentialData, sequentialSum);
@@ -563,7 +563,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
                 .transferToHost(resultStd1, resultStd2);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         compute2(sequentialData1, sequentialStd1);
@@ -616,7 +616,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
                 .transferToHost(resultStd1, resultStd2, resultStd3);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         compute2(sequentialData1, sequentialStd1);
@@ -644,7 +644,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
                 .task("t0", TestReductionsDoubles::maxReductionAnnotation2, input, result, neutral) //
                 .transferToHost(result);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         double[] sequential = new double[] { neutral };
@@ -676,7 +676,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
                 .task("t0", TestReductionsDoubles::minReductionAnnotation2, input, result, Double.MAX_VALUE) //
                 .transferToHost(result);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         double[] sequential = new double[1];

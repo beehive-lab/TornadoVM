@@ -21,8 +21,8 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
@@ -108,7 +108,7 @@ public class TestFFT {
                 .transferToHost(input);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
         executorPlan.execute();
 
         nesting(seq, dim, factors, size, dummyFac, dimArr);

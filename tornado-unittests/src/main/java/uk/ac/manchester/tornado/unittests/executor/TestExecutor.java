@@ -25,8 +25,8 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.TestHello;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -61,7 +61,7 @@ public class TestExecutor extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = tg.snapshot();
 
         // 3. Create an executor and build an execution plan
-        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
 
         // 4. Add optimizations to the execution plan
         executorPlan.withReusableBuffers();
@@ -98,7 +98,7 @@ public class TestExecutor extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = tg.snapshot();
 
         // 3. Create an executor and build an execution plan
-        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
 
         // 4. Execute all Immutable Task Graphs associated with an executor
         for (int i = 0; i < 10; i++) {
@@ -137,7 +137,7 @@ public class TestExecutor extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = tg.snapshot();
 
         // 3. Create an executor and build an execution plan
-        TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
 
         // 4. Execute all Immutable Task Graphs associated with an executor
         executorPlan.execute();

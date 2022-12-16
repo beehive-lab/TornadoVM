@@ -27,8 +27,8 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.arrays.TestArrays;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -59,7 +59,7 @@ public class TestAPI extends TornadoTestBase {
                 .task("t0", TestArrays::addAccumulator, data, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         // Force data transfers from D->H after the execution of a task-graph
@@ -91,7 +91,7 @@ public class TestAPI extends TornadoTestBase {
         taskGraph.task("t0", TestArrays::addAccumulator, data, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build() //
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build() //
                 .execute();
 
         executor.withSyncObjects(data).freeDeviceMemory();
@@ -120,7 +120,7 @@ public class TestAPI extends TornadoTestBase {
                 .transferToHost(data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withWarmUp() //
                 .execute();
 

@@ -22,8 +22,8 @@ import java.util.Random;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -158,7 +158,7 @@ public class BlurFilterTornado extends BenchmarkDriver {
                 .transferToHost(redFilter, greenFilter, blueFilter);
 
         ImmutableTaskGraph immutableTaskGraph1 = parallelFilter.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph1).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph1).build();
         executor.withDefaultScheduler().execute();
 
         // Sequential

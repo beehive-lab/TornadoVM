@@ -26,8 +26,8 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -93,7 +93,7 @@ public class TestGridScheduler {
         worker.setLocalWork(1, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler) //
                 .execute();
 
@@ -126,7 +126,7 @@ public class TestGridScheduler {
         worker.setLocalWork(1, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = s0.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler) //
                 .execute();
 
@@ -136,7 +136,7 @@ public class TestGridScheduler {
                 .transferToHost(tornadoC);
 
         ImmutableTaskGraph immutableTaskGraph1 = s1.snapshot();
-        TornadoExecutorPlan executor1 = new TornadoExecutor(immutableTaskGraph1).build();
+        TornadoExecutionPlan executor1 = new TornadoExecutor(immutableTaskGraph1).build();
         executor1.withGridScheduler(gridScheduler) //
                 .execute();
 

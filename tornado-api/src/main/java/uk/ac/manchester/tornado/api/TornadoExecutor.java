@@ -57,8 +57,8 @@ public class TornadoExecutor implements ProfileInterface {
         Collections.addAll(immutableTaskGraphList, immutableTaskGraphs);
     }
 
-    public TornadoExecutorPlan build() {
-        return new TornadoExecutorPlan(this);
+    public TornadoExecutionPlan build() {
+        return new TornadoExecutionPlan(this);
     }
 
     public void execute() {

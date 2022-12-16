@@ -41,8 +41,8 @@ import org.openjdk.jmh.runner.options.TimeValue;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -65,7 +65,7 @@ public class JMHAddImage {
         int numElementsY = Integer.parseInt(System.getProperty("y", "2048"));
         TaskGraph taskGraph;
 
-        TornadoExecutorPlan executor;
+        TornadoExecutionPlan executor;
 
         ImageFloat4 a;
         ImageFloat4 b;
@@ -116,7 +116,7 @@ public class JMHAddImage {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void addImageTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TornadoExecutorPlan executor = state.executor;
+        TornadoExecutionPlan executor = state.executor;
         executor.execute();
         blackhole.consume(executor);
     }

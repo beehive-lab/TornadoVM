@@ -24,8 +24,8 @@ import uk.ac.manchester.tornado.api.DRMode;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -162,7 +162,7 @@ public class BlackScholesMT {
         int maxThreadCount = Runtime.getRuntime().availableProcessors();
 
         Thread[] th = new Thread[maxThreadCount];
-        TornadoExecutorPlan executor = null;
+        TornadoExecutionPlan executor = null;
         if (!executionType.equals("multi") && !executionType.equals("sequential")) {
             long startInit = System.nanoTime();
             graph.transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //

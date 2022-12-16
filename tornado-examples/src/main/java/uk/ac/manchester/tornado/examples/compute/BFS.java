@@ -24,8 +24,8 @@ import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -181,7 +181,7 @@ public class BFS {
                 .transferToHost(vertices);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
         // initialization of Java vertices
@@ -202,7 +202,7 @@ public class BFS {
                 .transferToHost(vertices, modify);
 
         ImmutableTaskGraph immutableTaskGraph1 = taskGraph1.snapshot();
-        TornadoExecutorPlan executor1 = new TornadoExecutor(immutableTaskGraph1) //
+        TornadoExecutionPlan executor1 = new TornadoExecutor(immutableTaskGraph1) //
                 .build() //
                 .withDevice(device);
 

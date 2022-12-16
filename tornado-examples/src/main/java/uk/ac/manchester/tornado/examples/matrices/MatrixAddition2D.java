@@ -22,8 +22,8 @@ import java.util.Random;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
-import uk.ac.manchester.tornado.api.TornadoExecutorPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
@@ -99,7 +99,7 @@ public class MatrixAddition2D {
                 .transferToHost(matrixC);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
@@ -132,7 +132,7 @@ public class MatrixAddition2D {
                 .transferToHost(matrixCV);
 
         ImmutableTaskGraph immutableTaskGraph1 = taskGraph1.snapshot();
-        TornadoExecutorPlan executor1 = new TornadoExecutor(immutableTaskGraph1).build();
+        TornadoExecutionPlan executor1 = new TornadoExecutor(immutableTaskGraph1).build();
 
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
             executor1.execute();
