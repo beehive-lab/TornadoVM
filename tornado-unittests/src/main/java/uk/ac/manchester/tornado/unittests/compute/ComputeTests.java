@@ -53,7 +53,9 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * Test to check functionality of benchmarks available in the compute-benchmark
  * package.
  *
+ * <p>
  * How to run?
+ * </p>
  *
  * <code>
  *     tornado-test.py -V --fast uk.ac.manchester.tornado.unittests.compute.ComputeTests

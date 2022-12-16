@@ -121,8 +121,11 @@ public class TestExecutor extends TornadoTestBase {
         int[] b = new int[numElements];
         int[] c = new int[numElements];
 
-        Arrays.fill(a, 1);
-        Arrays.fill(b, 2);
+        final int INIT_A = 1;
+        final int INIT_B = 2;
+
+        Arrays.fill(a, INIT_A);
+        Arrays.fill(b, INIT_B);
 
         // 1. Task Graph Definition
         TaskGraph tg = new TaskGraph("s0") //
@@ -155,7 +158,7 @@ public class TestExecutor extends TornadoTestBase {
 
         // 8. We check for the result. It should be the same as in step 6.
         for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i]);
+            assertEquals(INIT_A + INIT_B, c[i]);
         }
 
     }

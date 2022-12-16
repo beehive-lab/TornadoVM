@@ -378,8 +378,7 @@ public class TaskGraph implements TornadoAPI {
         return taskScheduleImpl.getDeviceForTask(id);
     }
 
-    @Override
-    public void waitOn() {
+    void waitOn() {
         taskScheduleImpl.waitOn();
     }
 

@@ -595,8 +595,6 @@ public interface TornadoAPI {
 
     TornadoDevice getDeviceForTask(String id);
 
-    void waitOn();
-
     TaskGraph replaceParameter(Object oldRef, Object newRef);
 
 }
