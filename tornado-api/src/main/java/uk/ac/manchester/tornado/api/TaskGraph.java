@@ -261,11 +261,6 @@ public class TaskGraph implements TornadoAPI {
         return this;
     }
 
-    TaskGraph setDevice(TornadoDevice device) {
-        taskScheduleImpl.setDevice(device);
-        return this;
-    }
-
     @Override
     public TaskGraph transferToDevice(final int mode, Object... objects) {
         taskScheduleImpl.transferToDevice(mode, objects);
@@ -286,8 +281,8 @@ public class TaskGraph implements TornadoAPI {
         return new ImmutableTaskGraph(cloneTaskGraph);
     }
 
-    TaskGraph schedule() {
-        taskScheduleImpl.scheduleInner();
+    TaskGraph setDevice(TornadoDevice device) {
+        taskScheduleImpl.setDevice(device);
         return this;
     }
 
@@ -312,12 +307,6 @@ public class TaskGraph implements TornadoAPI {
 
     void executeWithProfilerSequential(Policy policy) {
         taskScheduleImpl.scheduleWithProfileSequential(policy).waitOn();
-    }
-
-    @Override
-    @Deprecated(forRemoval = true)
-    public void executeWithProfilerSequentialGlobal(Policy policy) {
-        taskScheduleImpl.scheduleWithProfileSequentialGlobal(policy).waitOn();
     }
 
     void warmup() {
@@ -350,10 +339,6 @@ public class TaskGraph implements TornadoAPI {
         return this;
     }
 
-    void syncObjects() {
-        taskScheduleImpl.syncObjects();
-    }
-
     void syncField(Object object) {
         taskScheduleImpl.syncField(object);
     }
@@ -376,10 +361,6 @@ public class TaskGraph implements TornadoAPI {
     @Override
     public TornadoDevice getDeviceForTask(String id) {
         return taskScheduleImpl.getDeviceForTask(id);
-    }
-
-    void waitOn() {
-        taskScheduleImpl.waitOn();
     }
 
     // *************************************************

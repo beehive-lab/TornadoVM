@@ -579,16 +579,6 @@ public interface TornadoAPI {
 
     void execute();
 
-    /**
-     * Run with dynamic reconfiguration with an input policy. All combinations run
-     * in sequential. It uses an internal table based on history to predict the
-     * device to run.
-     *
-     * @param policy
-     *            Input policy, See {@link Policy}
-     */
-    void executeWithProfilerSequentialGlobal(Policy policy);
-
     SchedulableTask getTask(String id);
 
     TornadoDevice getDevice();

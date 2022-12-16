@@ -117,8 +117,6 @@ public interface TaskGraphInterface extends ProfileInterface {
 
     TaskGraphInterface scheduleWithProfileSequential(Policy policy);
 
-    TaskGraphInterface scheduleWithProfileSequentialGlobal(Policy policy);
-
     void addTask(TaskPackage taskPackage);
 
     void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions);
