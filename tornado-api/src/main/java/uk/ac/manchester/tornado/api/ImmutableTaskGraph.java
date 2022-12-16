@@ -88,8 +88,8 @@ public class ImmutableTaskGraph implements ProfileInterface {
         taskGraph.setDevice(device);
     }
 
-    public void freeDeviceMemory(Object... objects) {
-        taskGraph.unlockObjectFromMemory(objects);
+    public void freeDeviceMemory() {
+        taskGraph.freeDeviceMemory();
     }
 
     public void syncObject(Object... objects) {

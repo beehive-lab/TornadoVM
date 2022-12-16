@@ -103,9 +103,9 @@ public class TornadoExecutor implements ProfileInterface {
         }
     }
 
-    public void unlockObjectFromMemory(Object... objects) {
+    public void freeDeviceMemory() {
         for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
-            immutableTaskGraph.freeDeviceMemory(objects);
+            immutableTaskGraph.freeDeviceMemory();
         }
     }
 

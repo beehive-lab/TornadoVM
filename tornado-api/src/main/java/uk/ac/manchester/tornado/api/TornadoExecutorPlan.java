@@ -86,8 +86,8 @@ public class TornadoExecutorPlan implements ProfileInterface {
         return this;
     }
 
-    public TornadoExecutorPlan withUnlockObjectsFromMemory(Object... objects) {
-        tornadoExecutor.unlockObjectFromMemory(objects);
+    public TornadoExecutorPlan freeDeviceMemory() {
+        tornadoExecutor.freeDeviceMemory();
         return this;
     }
 

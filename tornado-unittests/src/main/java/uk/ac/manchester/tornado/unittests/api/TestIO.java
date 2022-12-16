@@ -149,7 +149,7 @@ public class TestIO extends TornadoTestBase {
             executor.execute();
         }
 
-        executor.withUnlockObjectsFromMemory(arrayA, arrayB, arrayC);
+        executor.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
             assertEquals(2 * i, arrayC[i], 0.0f);
@@ -203,7 +203,7 @@ public class TestIO extends TornadoTestBase {
         }
 
         // Free memory
-        executor.withUnlockObjectsFromMemory(arrayA, arrayB, arrayC);
+        executor.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
             assertEquals(2 * i, arrayC[i], 0.0f);
@@ -256,7 +256,7 @@ public class TestIO extends TornadoTestBase {
                     .replaceParameter(arrayB2, arrayB);
         }
 
-        executor.withUnlockObjectsFromMemory(arrayA, arrayB, arrayC);
+        executor.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
             assertEquals(2 * i, arrayC[i], 0.0f);

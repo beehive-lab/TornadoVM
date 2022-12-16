@@ -66,7 +66,7 @@ public class TestAPI extends TornadoTestBase {
         executor.withSyncObjects(data);
 
         // Mark objects associated with the task-graph for reusing memory
-        executor.withUnlockObjectsFromMemory(data);
+        executor.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data[i]);
@@ -94,8 +94,7 @@ public class TestAPI extends TornadoTestBase {
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build() //
                 .execute();
 
-        executor.withSyncObjects(data);
-        executor.withUnlockObjectsFromMemory(data);
+        executor.withSyncObjects(data).freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data[i]);
@@ -125,7 +124,7 @@ public class TestAPI extends TornadoTestBase {
         executor.withWarmUp() //
                 .execute();
 
-        executor.withUnlockObjectsFromMemory(data);
+        executor.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data[i]);

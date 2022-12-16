@@ -921,13 +921,8 @@ public class TornadoTaskGraph implements TaskGraphInterface {
     }
 
     @Override
-    public void unlockObjectFromMemory(Object object) {
-        if (vm == null) {
-            return;
-        }
-
-        final LocalObjectState localState = executionContext.getObjectState(object);
-        releaseObjectFromDeviceMemory(localState, meta().getLogicDevice());
+    public void freeDeviceMemory() {
+        free();
     }
 
     private void free() {
@@ -949,13 +944,6 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         deviceState.setLockBuffer(false);
         if (deviceState.hasObjectBuffer()) {
             device.deallocate(deviceState);
-        }
-    }
-
-    @Override
-    public void unlockObjectsFromMemory(Object[] objects) {
-        for (Object obj : objects) {
-            unlockObjectFromMemory(obj);
         }
     }
 

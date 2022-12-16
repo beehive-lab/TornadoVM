@@ -329,8 +329,8 @@ public class TaskGraph implements TornadoAPI {
         taskScheduleImpl.clearProfiles();
     }
 
-    TaskGraph unlockObjectFromMemory(Object object) {
-        taskScheduleImpl.unlockObjectFromMemory(object);
+    TaskGraph freeDeviceMemory() {
+        taskScheduleImpl.freeDeviceMemory();
         return this;
     }
 

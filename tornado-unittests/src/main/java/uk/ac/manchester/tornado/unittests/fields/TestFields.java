@@ -105,7 +105,7 @@ public class TestFields extends TornadoTestBase {
         executor.execute();
 
         executor.withSyncField(foo.output);
-        executor.withUnlockObjectsFromMemory(foo);
+        executor.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
             assertEquals(100, foo.output[i]);
@@ -124,7 +124,7 @@ public class TestFields extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute() //
-                .withUnlockObjectsFromMemory(foo);
+                .freeDeviceMemory();
 
         executor.withSyncField(foo.output);
 
@@ -147,7 +147,7 @@ public class TestFields extends TornadoTestBase {
 
         executor.withSyncField(bar.output);
 
-        executor.withUnlockObjectsFromMemory(bar);
+        executor.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
             assertEquals(15, bar.output[i]);
