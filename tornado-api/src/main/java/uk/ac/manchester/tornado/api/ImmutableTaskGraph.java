@@ -41,6 +41,8 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import java.util.Objects;
+
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
 
@@ -71,13 +73,10 @@ public class ImmutableTaskGraph implements ProfileInterface {
     }
 
     public void executeWithDynamicReconfiguration(Policy policy, DRMode mode) {
-        switch (mode) {
-            case SERIAL:
-                taskGraph.executeWithProfilerSequential(policy);
-                break;
-            case PARALLEL:
-                taskGraph.executeWithProfiler(policy);
-                break;
+        if (Objects.requireNonNull(mode) == DRMode.SERIAL) {
+            taskGraph.executeWithProfilerSequential(policy);
+        } else if (mode == DRMode.PARALLEL) {
+            taskGraph.executeWithProfiler(policy);
         }
     }
 
@@ -89,11 +88,7 @@ public class ImmutableTaskGraph implements ProfileInterface {
         taskGraph.setDevice(device);
     }
 
-    public void lockObjectsInMemory(Object... objects) {
-        taskGraph.lockObjectsInMemory(objects);
-    }
-
-    public void unlockObjectFromMemory(Object[] objects) {
+    public void freeDeviceMemory(Object... objects) {
         taskGraph.unlockObjectFromMemory(objects);
     }
 

@@ -167,9 +167,7 @@ public class BlurFilter {
 
             ImmutableTaskGraph immutableTaskGraph = parallelFilter.snapshot();
             TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-            executor.withDefaultScheduler() //
-                    .withLockObjectsInMemory(redChannel, greenChannel, blueChannel, redFilter, greenFilter, blueFilter, filter) //
-                    .execute();
+            executor.withDefaultScheduler().execute();
 
             // now recombine into the output image - Alpha is 255 for no
             // transparency

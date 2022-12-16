@@ -261,6 +261,11 @@ public class TaskGraph implements TornadoAPI {
         return this;
     }
 
+    TaskGraph setDevice(TornadoDevice device) {
+        taskScheduleImpl.setDevice(device);
+        return this;
+    }
+
     @Override
     public TaskGraph transferToDevice(final int mode, Object... objects) {
         taskScheduleImpl.transferToDevice(mode, objects);
@@ -279,11 +284,6 @@ public class TaskGraph implements TornadoAPI {
         cloneTaskGraph.taskScheduleImpl = this.taskScheduleImpl.createImmutableTaskGraph();
         cloneTaskGraph.taskNames = this.taskNames;
         return new ImmutableTaskGraph(cloneTaskGraph);
-    }
-
-    TaskGraph setDevice(TornadoDevice device) {
-        taskScheduleImpl.setDevice(device);
-        return this;
     }
 
     TaskGraph batch(String batchSize) {
@@ -327,11 +327,6 @@ public class TaskGraph implements TornadoAPI {
 
     void clearProfiles() {
         taskScheduleImpl.clearProfiles();
-    }
-
-    TaskGraph lockObjectsInMemory(Object... objects) {
-        taskScheduleImpl.lockObjectsInMemory(objects);
-        return this;
     }
 
     TaskGraph unlockObjectFromMemory(Object object) {

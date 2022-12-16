@@ -84,8 +84,7 @@ public class MatrixMul1D {
 
         ImmutableTaskGraph immutableTaskGraph = cudaTaskGraph.snapshot();
         TornadoExecutorPlan executorCUDA = new TornadoExecutor(immutableTaskGraph).build();
-        executorCUDA.withLockObjectsInMemory(matrixA, matrixB, matrixCCUDA) //
-                .withDevice(cudaDevice);
+        executorCUDA.withDevice(cudaDevice);
 
         // Warm up CUDA
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
@@ -130,8 +129,7 @@ public class MatrixMul1D {
 
         ImmutableTaskGraph immutableTaskGraph1 = oclTaskGraph.snapshot();
         TornadoExecutorPlan executorOCL = new TornadoExecutor(immutableTaskGraph1).build();
-        executorOCL.withDevice(oclDevice) //
-                .withLockObjectsInMemory(matrixA, matrixB, matrixCOCL);
+        executorOCL.withDevice(oclDevice);
 
         // Warm up OpenCL
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {

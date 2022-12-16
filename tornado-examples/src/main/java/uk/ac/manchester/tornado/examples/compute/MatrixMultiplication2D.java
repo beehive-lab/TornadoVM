@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
  * How to run?
  * </p>
  * <code>
- *     $ tornado --threadInfo  -Ds0.t0.device=0:0 -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D
+ *     $ tornado --threadInfo  --jvm="-Ds0.t0.device=0:0" -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D
  * </code>
  */
 public class MatrixMultiplication2D {
@@ -85,7 +85,7 @@ public class MatrixMultiplication2D {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.withLockObjectsInMemory(matrixA, matrixB, matrixC).withWarmUp();
+        executor.withWarmUp();
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {

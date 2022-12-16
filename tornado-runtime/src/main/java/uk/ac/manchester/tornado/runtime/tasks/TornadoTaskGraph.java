@@ -479,8 +479,8 @@ public class TornadoTaskGraph implements TaskGraphInterface {
             final GlobalObjectState globalState = localState.getGlobalState();
             final DeviceObjectState deviceState = globalState.getDeviceState(oldDevice);
             if (deviceState.isLockedBuffer()) {
-                unlockObjectFromDevice(localState, oldDevice);
-                lockObjectInMemoryOnDevice(localState, device);
+                releaseObjectFromDeviceMemory(localState, oldDevice);
+                reuseDeviceBufferObject(localState, device);
             }
         }
     }
@@ -849,19 +849,23 @@ public class TornadoTaskGraph implements TaskGraphInterface {
 
             // List of input objects for the dynamic reconfiguration
             streamingInputObjects.add(new StreamingObject(mode, functionParameter));
+
+            lockObjectsInMemory(functionParameter);
         }
     }
 
     @Override
     public void transferToHost(Object... objects) {
-        for (Object object : objects) {
-            if (object == null) {
+        for (Object functionParameter : objects) {
+            if (functionParameter == null) {
                 Tornado.warn("null object passed into streamIn() in schedule %s", executionContext.getId());
                 continue;
             }
-            streamOutObjects.add(object);
-            executionContext.getObjectState(object).setStreamOut(true);
-            argumentsLookUp.add(object);
+            streamOutObjects.add(functionParameter);
+            executionContext.getObjectState(functionParameter).setStreamOut(true);
+            argumentsLookUp.add(functionParameter);
+
+            lockObjectsInMemory(functionParameter);
         }
     }
 
@@ -899,22 +903,20 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         }
     }
 
-    @Override
-    public void lockObjectInMemory(Object object) {
+    private void reuseDeviceBufferObject(Object object) {
         final LocalObjectState localState = executionContext.getObjectState(object);
-        lockObjectInMemoryOnDevice(localState, meta().getLogicDevice());
+        reuseDeviceBufferObject(localState, meta().getLogicDevice());
     }
 
-    private void lockObjectInMemoryOnDevice(final LocalObjectState localState, final TornadoDevice device) {
+    private void reuseDeviceBufferObject(final LocalObjectState localState, final TornadoDevice device) {
         final GlobalObjectState globalState = localState.getGlobalState();
         final DeviceObjectState deviceState = globalState.getDeviceState(device);
         deviceState.setLockBuffer(true);
     }
 
-    @Override
-    public void lockObjectsInMemory(Object[] objects) {
+    void lockObjectsInMemory(Object... objects) {
         for (Object obj : objects) {
-            lockObjectInMemory(obj);
+            reuseDeviceBufferObject(obj);
         }
     }
 
@@ -925,10 +927,23 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         }
 
         final LocalObjectState localState = executionContext.getObjectState(object);
-        unlockObjectFromDevice(localState, meta().getLogicDevice());
+        releaseObjectFromDeviceMemory(localState, meta().getLogicDevice());
     }
 
-    private void unlockObjectFromDevice(final LocalObjectState localState, final TornadoDevice device) {
+    private void free() {
+        if (vm == null) {
+            return;
+        }
+        streamInObjects.stream().forEach(object -> freeDeviceMemoryObject(object));
+        streamOutObjects.stream().forEach(object -> freeDeviceMemoryObject(object));
+    }
+
+    private void freeDeviceMemoryObject(Object object) {
+        final LocalObjectState localState = executionContext.getObjectState(object);
+        releaseObjectFromDeviceMemory(localState, meta().getLogicDevice());
+    }
+
+    private void releaseObjectFromDeviceMemory(final LocalObjectState localState, final TornadoDevice device) {
         final GlobalObjectState globalState = localState.getGlobalState();
         final DeviceObjectState deviceState = globalState.getDeviceState(device);
         deviceState.setLockBuffer(false);

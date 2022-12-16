@@ -169,8 +169,7 @@ public class MatrixMul2DLocalMemory {
         workerCUDAOld.setGlobalWork(N, N, 1);
         workerCUDAOld.setLocalWork(local_x, local_y, 1);
 
-        executorCUDA.withLockObjectsInMemory(matrixA, matrixB, matrixCCUDA) //
-                .withDevice(cudaDevice) //
+        executorCUDA.withDevice(cudaDevice) //
                 .withGridScheduler(gridSchedulerCUDAOld);
 
         // Warm up CUDA
@@ -205,8 +204,7 @@ public class MatrixMul2DLocalMemory {
 
         ImmutableTaskGraph immutableTaskGraph1 = scheduleOCL.snapshot();
         TornadoExecutorPlan executorOCL = new TornadoExecutor(immutableTaskGraph1).build();
-        executorOCL.withLockObjectsInMemory(matrixA, matrixB, matrixCOCL) //
-                .withGridScheduler(gridSchedulerOpenCLOld);
+        executorOCL.withGridScheduler(gridSchedulerOpenCLOld);
 
         // Get the same device but running the OCL backend
         TornadoDriver oclDriver = TornadoRuntime.getTornadoRuntime().getDriver(1);
@@ -262,8 +260,7 @@ public class MatrixMul2DLocalMemory {
         // Change the Grid
         workerOpenCLNew.setGlobalWork(N, N, 1); // TS / WPT
         workerOpenCLNew.setLocalWork(local_x, local_y, 1);
-        executorOCLNewAPI.withLockObjectsInMemory(matrixA, matrixB, matrixCOCLNewApi) //
-                .withGridScheduler(gridSchedulerOpenCLNew) //
+        executorOCLNewAPI.withGridScheduler(gridSchedulerOpenCLNew) //
                 .withDevice(oclDevice);
 
         // Warmup New Api OPENCL
@@ -300,8 +297,7 @@ public class MatrixMul2DLocalMemory {
 
         ImmutableTaskGraph immutableTaskGraph3 = cudaNewApiTask.snapshot();
         TornadoExecutorPlan executorCUDANewAPI = new TornadoExecutor(immutableTaskGraph3).build();
-        executorCUDANewAPI.withLockObjectsInMemory(matrixA, matrixB, matrixCCUDANewApi) //
-                .withGridScheduler(gridSchedulerCudaNew);
+        executorCUDANewAPI.withGridScheduler(gridSchedulerCudaNew);
 
         // Change the Grid
         workerCudaNew.setGlobalWork(N, N, 1);

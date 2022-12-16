@@ -60,7 +60,7 @@ public class ArrayAccInt {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.withLockObjectsInMemory(a).execute();
+        executor.execute();
 
         // The result must be the initial value for the array plus the number of tasks
         // composed in the task-graph.

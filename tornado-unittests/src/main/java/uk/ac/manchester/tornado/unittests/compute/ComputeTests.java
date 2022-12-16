@@ -803,8 +803,7 @@ public class ComputeTests extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.withLockObjectsInMemory(matrix2DFloat, vectorFloat, resultSeq) //
-                .execute();
+        executor.execute();
 
         computeMatrixVector(matrix2DFloat, vectorFloat, resultSeq);
         for (int i = 0; i < vectorFloat.size(); i++) {

@@ -145,8 +145,6 @@ public class TestIO extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
-        executor.withLockObjectsInMemory(arrayA, arrayB, arrayC);
-
         for (int i = 0; i < 4; i++) {
             executor.execute();
         }
@@ -197,8 +195,6 @@ public class TestIO extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-
-        executor.withLockObjectsInMemory(arrayA, arrayB, arrayB2, arrayC);
 
         for (int i = 0; i < 4; i++) {
             executor.replaceParameter(arrayB, arrayB2) //
@@ -252,7 +248,6 @@ public class TestIO extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.withLockObjectsInMemory(arrayA, arrayB, arrayC);
 
         for (int i = 0; i < 4; i++) {
             float[] arrayB2 = createAndInitializeArray(N);

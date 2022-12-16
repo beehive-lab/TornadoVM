@@ -91,10 +91,6 @@ public interface TaskGraphInterface extends ProfileInterface {
 
     void warmup();
 
-    void lockObjectInMemory(Object object);
-
-    void lockObjectsInMemory(Object[] objects);
-
     void unlockObjectFromMemory(Object object);
 
     void unlockObjectsFromMemory(Object[] objects);

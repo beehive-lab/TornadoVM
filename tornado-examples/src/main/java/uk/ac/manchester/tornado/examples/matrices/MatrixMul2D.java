@@ -112,8 +112,7 @@ public class MatrixMul2D {
 
         TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
-        executorCUDA.withLockObjectsInMemory(matrixA, matrixB, matrixCCUDA) //
-                .withDevice(cudaDevice);
+        executorCUDA.withDevice(cudaDevice);
 
         // Warm up CUDA
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
@@ -138,7 +137,6 @@ public class MatrixMul2D {
 
         ImmutableTaskGraph immutableTaskGraph1 = oclTaskGraph.snapshot();
         TornadoExecutorPlan executorOCL = new TornadoExecutor(immutableTaskGraph1).build();
-        executorOCL.withLockObjectsInMemory(matrixA, matrixB, matrixCOCL);
 
         TornadoDriver oclDriver = TornadoRuntime.getTornadoRuntime().getDriver(1);
         TornadoDevice oclDevice = null;

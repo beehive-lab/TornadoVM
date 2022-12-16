@@ -60,8 +60,7 @@ public class TestAPI extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.withLockObjectsInMemory(data) //
-                .execute();
+        executor.execute();
 
         // Force data transfers from D->H after the execution of a task-graph
         executor.withSyncObjects(data);
@@ -93,7 +92,6 @@ public class TestAPI extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build() //
-                .withLockObjectsInMemory(data) //
                 .execute();
 
         executor.withSyncObjects(data);
@@ -125,7 +123,6 @@ public class TestAPI extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withWarmUp() //
-                .withLockObjectsInMemory(data) //
                 .execute();
 
         executor.withUnlockObjectsFromMemory(data);

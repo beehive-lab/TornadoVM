@@ -154,8 +154,7 @@ public class Mandelbrot {
 
                 ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
                 TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-                executor.withLockObjectsInMemory(result) //
-                        .execute();
+                executor.execute();
 
                 this.image = writeFile(result, SIZE);
             }

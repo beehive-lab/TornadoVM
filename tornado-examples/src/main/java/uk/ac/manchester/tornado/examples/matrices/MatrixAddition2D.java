@@ -100,7 +100,6 @@ public class MatrixAddition2D {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.withLockObjectsInMemory(matrixA, matrixB, matrixC);
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
@@ -134,7 +133,6 @@ public class MatrixAddition2D {
 
         ImmutableTaskGraph immutableTaskGraph1 = taskGraph1.snapshot();
         TornadoExecutorPlan executor1 = new TornadoExecutor(immutableTaskGraph1).build();
-        executor1.withLockObjectsInMemory(matrixAV, matrixBV, matrixCV);
 
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
             executor1.execute();

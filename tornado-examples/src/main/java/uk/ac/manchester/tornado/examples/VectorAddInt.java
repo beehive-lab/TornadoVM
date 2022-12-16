@@ -57,7 +57,6 @@ public class VectorAddInt {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan tornadoExecutor = new TornadoExecutor(immutableTaskGraph).build();
-        tornadoExecutor.withLockObjectsInMemory(a, b, c);
 
         boolean wrongResult;
         for (int idx = 0; idx < 10; idx++) {

@@ -86,11 +86,6 @@ public class TornadoExecutorPlan implements ProfileInterface {
         return this;
     }
 
-    public TornadoExecutorPlan withLockObjectsInMemory(Object... objects) {
-        tornadoExecutor.lockObjectsInMemory(objects);
-        return this;
-    }
-
     public TornadoExecutorPlan withUnlockObjectsFromMemory(Object... objects) {
         tornadoExecutor.unlockObjectFromMemory(objects);
         return this;

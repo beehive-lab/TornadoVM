@@ -102,8 +102,7 @@ public class TestFields extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.withLockObjectsInMemory(foo) //
-                .execute();
+        executor.execute();
 
         executor.withSyncField(foo.output);
         executor.withUnlockObjectsFromMemory(foo);
@@ -124,8 +123,7 @@ public class TestFields extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.withLockObjectsInMemory(foo) //
-                .execute() //
+        executor.execute() //
                 .withUnlockObjectsFromMemory(foo);
 
         executor.withSyncField(foo.output);
@@ -145,7 +143,7 @@ public class TestFields extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.withLockObjectsInMemory(bar).execute();
+        executor.execute();
 
         executor.withSyncField(bar.output);
 

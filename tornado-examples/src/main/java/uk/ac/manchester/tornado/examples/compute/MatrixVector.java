@@ -113,8 +113,7 @@ public class MatrixVector {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.withLockObjectsInMemory(vectorFloat, matrix2DFloat, result) //
-                .withWarmUp();
+        executor.withWarmUp();
 
         for (int i = 0; i < WARM_UP_ITERATIONS; i++) {
             computeMatrixVector(matrix2DFloat, vectorFloat, resultSeq);
