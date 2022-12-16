@@ -23,6 +23,7 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.DRMode;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -77,7 +78,7 @@ public class TestDynamic extends TornadoTestBase {
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         // Run first time to obtain the best performance device
-        executor.withDynamicReconfiguration(Policy.SYNC_PERFORMANCE) //
+        executor.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL) //
                 .execute();
 
         // Run a few iterations to get the device.
@@ -107,7 +108,7 @@ public class TestDynamic extends TornadoTestBase {
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         // Run first time to obtain the best performance device
-        executor.withDynamicReconfiguration(Policy.SYNC_END_2_END) //
+        executor.withDynamicReconfiguration(Policy.END_2_END, DRMode.PARALLEL) //
                 .execute();
 
         // Run a few iterations to get the device.
@@ -138,7 +139,7 @@ public class TestDynamic extends TornadoTestBase {
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         // Run first time to obtain the best performance device
-        executor.withDynamicReconfiguration(Policy.SYNC_PERFORMANCE) //
+        executor.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL) //
                 .execute();
 
         for (int i = 0; i < b.length; i++) {
@@ -166,7 +167,7 @@ public class TestDynamic extends TornadoTestBase {
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         // Run first time to obtain the best performance device
-        executor.withDynamicReconfiguration(Policy.SYNC_PERFORMANCE) //
+        executor.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL) //
                 .execute();
 
         // Run a few iterations to get the device.
@@ -201,7 +202,7 @@ public class TestDynamic extends TornadoTestBase {
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         // Run first time to obtain the best performance device
-        executor.withDynamicReconfiguration(Policy.SYNC_PERFORMANCE) //
+        executor.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL) //
                 .execute();
 
         // Run a few iterations to get the device.
@@ -231,7 +232,7 @@ public class TestDynamic extends TornadoTestBase {
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         // Run first time to obtain the best performance device
-        executor.withDynamicReconfiguration(Policy.ASYNC_LATENCY) //
+        executor.withDynamicReconfiguration(Policy.LATENCY, DRMode.PARALLEL) //
                 .execute();
         // Run a few iterations to get the device.
         for (int i = 0; i < 10; i++) {

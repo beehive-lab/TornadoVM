@@ -113,11 +113,11 @@ public interface TaskGraphInterface extends ProfileInterface {
 
     TaskGraphInterface schedule(GridScheduler gridScheduler);
 
-    TaskGraphInterface scheduleWithProfile(DynamicReconfigurationPolicy policy);
+    TaskGraphInterface scheduleWithProfile(Policy policy);
 
-    TaskGraphInterface scheduleWithProfileSequential(DynamicReconfigurationPolicy policy);
+    TaskGraphInterface scheduleWithProfileSequential(Policy policy);
 
-    TaskGraphInterface scheduleWithProfileSequentialGlobal(DynamicReconfigurationPolicy policy);
+    TaskGraphInterface scheduleWithProfileSequentialGlobal(Policy policy);
 
     void addTask(TaskPackage taskPackage);
 

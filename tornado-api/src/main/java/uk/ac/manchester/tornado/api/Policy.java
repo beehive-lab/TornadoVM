@@ -56,14 +56,13 @@ package uk.ac.manchester.tornado.api;
  * </p>
  */
 public enum Policy {
-    SYNC_PERFORMANCE("SYNC Performance"), //
+    PERFORMANCE("SYNC Performance"), //
     ASYNC_PERFORMANCE("ASYNC Performance"), //
-    SYNC_END_2_END("SYNC End_2_End"), //
+    END_2_END("SYNC End_2_End"), //
     ASYNC_END_2_END("ASYNC End_2_End"), //
-    SYNC_LATENCY("SYNC Latency"), //
+    LATENCY("SYNC Latency"), //
     ASYNC_LATENCY("ASYNC Latency"), //
-    SYNC_ENERGY("SYNC Energy"), //
-    ASYNC_ENERGY("ASYNC Energy"); //
+    ENERGY("SYNC Energy");
 
     private final String policyName;
 

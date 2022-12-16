@@ -18,6 +18,7 @@
 
 package uk.ac.manchester.tornado.examples.dynamic;
 
+import uk.ac.manchester.tornado.api.DRMode;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -164,12 +165,12 @@ public class DFTMT {
             switch (executionType) {
                 case "performance":
                     start = System.nanoTime();
-                    executor.withDynamicReconfiguration(Policy.SYNC_PERFORMANCE).execute();
+                    executor.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL).execute();
                     end = System.nanoTime();
                     break;
                 case "end":
                     start = System.nanoTime();
-                    executor.withDynamicReconfiguration(Policy.SYNC_END_2_END).execute();
+                    executor.withDynamicReconfiguration(Policy.END_2_END, DRMode.SERIAL).execute();
                     end = System.nanoTime();
                     break;
                 case "sequential":

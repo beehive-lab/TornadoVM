@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.examples.dynamic;
 
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.DRMode;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -59,7 +60,7 @@ public class DynamicReconfiguration {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         new TornadoExecutor(immutableTaskGraph) //
                 .build() //
-                .withDynamicReconfiguration(Policy.ASYNC_PERFORMANCE) //
+                .withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.PARALLEL) //
                 .execute();
 
     }

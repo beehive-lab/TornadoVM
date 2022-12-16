@@ -19,7 +19,7 @@ package uk.ac.manchester.tornado.examples;
 
 import java.util.stream.IntStream;
 
-import uk.ac.manchester.tornado.api.DynamicReconfigurationPolicy;
+import uk.ac.manchester.tornado.api.DRMode;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -67,7 +67,7 @@ public class Saxpy {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.withDynamicReconfiguration(Policy.SYNC_PERFORMANCE);
+        executor.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL).execute();
 
         numElements = 512 * 2;
 
@@ -76,11 +76,11 @@ public class Saxpy {
 
         IntStream.range(0, numElements).parallel().forEach(i -> a[i] = 450);
 
-        TaskGraph s1 = new TaskGraph("s1").task("t0", Saxpy::saxpy, alpha, a, b).transferToHost(a);
+        TaskGraph taskGraph1 = new TaskGraph("s1").task("t0", Saxpy::saxpy, alpha, a, b).transferToHost(a);
 
-        s1.executeWithProfilerSequentialGlobal(DynamicReconfigurationPolicy.PERFORMANCE);
-
-        s1.executeWithProfilerSequentialGlobal(DynamicReconfigurationPolicy.PERFORMANCE);
+        ImmutableTaskGraph immutableTaskGraph1 = taskGraph1.snapshot();
+        TornadoExecutorPlan executor1 = new TornadoExecutor(immutableTaskGraph1).build();
+        executor1.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.PARALLEL).execute();
 
         boolean wrongResult = false;
         for (int i = 0; i < y.length; i++) {

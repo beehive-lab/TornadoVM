@@ -54,6 +54,7 @@ public class TornadoExecutorPlan implements ProfileInterface {
     private Policy policy = null;
 
     private boolean useDefaultScheduler;
+    private DRMode dynamicReconfigurationMode;
 
     TornadoExecutorPlan(TornadoExecutor tornadoExecutor) {
         this.tornadoExecutor = tornadoExecutor;
@@ -71,7 +72,7 @@ public class TornadoExecutorPlan implements ProfileInterface {
 
     public TornadoExecutorPlan execute() {
         if (this.policy != null) {
-            tornadoExecutor.executeWithDynamicReconfiguration(this.policy);
+            tornadoExecutor.executeWithDynamicReconfiguration(this.policy, this.dynamicReconfigurationMode);
         } else if (gridScheduler != null) {
             tornadoExecutor.execute(gridScheduler);
         } else {
@@ -121,8 +122,9 @@ public class TornadoExecutorPlan implements ProfileInterface {
         return this;
     }
 
-    public TornadoExecutorPlan withDynamicReconfiguration(Policy policy) {
+    public TornadoExecutorPlan withDynamicReconfiguration(Policy policy, DRMode mode) {
         this.policy = policy;
+        this.dynamicReconfigurationMode = mode;
         return this;
     }
 

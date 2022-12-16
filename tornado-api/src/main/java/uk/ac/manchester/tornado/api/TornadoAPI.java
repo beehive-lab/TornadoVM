@@ -587,7 +587,7 @@ public interface TornadoAPI {
      * @param policy
      *            Input policy, See {@link Policy}
      */
-    void executeWithProfilerSequentialGlobal(DynamicReconfigurationPolicy policy);
+    void executeWithProfilerSequentialGlobal(Policy policy);
 
     SchedulableTask getTask(String id);
 

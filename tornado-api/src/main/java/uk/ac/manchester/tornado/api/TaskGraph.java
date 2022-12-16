@@ -306,17 +306,17 @@ public class TaskGraph implements TornadoAPI {
         taskScheduleImpl.schedule(gridScheduler).waitOn();
     }
 
-    void executeWithProfiler(DynamicReconfigurationPolicy policy) {
+    void executeWithProfiler(Policy policy) {
         taskScheduleImpl.scheduleWithProfile(policy).waitOn();
     }
 
-    void executeWithProfilerSequential(DynamicReconfigurationPolicy policy) {
+    void executeWithProfilerSequential(Policy policy) {
         taskScheduleImpl.scheduleWithProfileSequential(policy).waitOn();
     }
 
     @Override
     @Deprecated(forRemoval = true)
-    public void executeWithProfilerSequentialGlobal(DynamicReconfigurationPolicy policy) {
+    public void executeWithProfilerSequentialGlobal(Policy policy) {
         taskScheduleImpl.scheduleWithProfileSequentialGlobal(policy).waitOn();
     }
 

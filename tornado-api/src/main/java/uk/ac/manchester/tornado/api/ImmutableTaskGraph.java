@@ -42,7 +42,6 @@
 package uk.ac.manchester.tornado.api;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
 
 public class ImmutableTaskGraph implements ProfileInterface {
@@ -71,28 +70,14 @@ public class ImmutableTaskGraph implements ProfileInterface {
         taskGraph.execute(gridScheduler);
     }
 
-    public void executeWithDynamicReconfiguration(Policy policy) {
-        switch (policy) {
-            case SYNC_PERFORMANCE:
-                taskGraph.executeWithProfilerSequential(DynamicReconfigurationPolicy.PERFORMANCE);
+    public void executeWithDynamicReconfiguration(Policy policy, DRMode mode) {
+        switch (mode) {
+            case SERIAL:
+                taskGraph.executeWithProfilerSequential(policy);
                 break;
-            case SYNC_END_2_END:
-                taskGraph.executeWithProfilerSequential(DynamicReconfigurationPolicy.END_2_END);
+            case PARALLEL:
+                taskGraph.executeWithProfiler(policy);
                 break;
-            case SYNC_LATENCY:
-                taskGraph.executeWithProfilerSequential(DynamicReconfigurationPolicy.LATENCY);
-                break;
-            case ASYNC_PERFORMANCE:
-                taskGraph.executeWithProfiler(DynamicReconfigurationPolicy.PERFORMANCE);
-                break;
-            case ASYNC_END_2_END:
-                taskGraph.executeWithProfiler(DynamicReconfigurationPolicy.END_2_END);
-                break;
-            case ASYNC_LATENCY:
-                taskGraph.executeWithProfiler(DynamicReconfigurationPolicy.LATENCY);
-                break;
-            default:
-                throw new TornadoRuntimeException("[ERROR] Dynamic Reconfiguration Policy [" + policy.name() + "] not implemented yet");
         }
     }
 
