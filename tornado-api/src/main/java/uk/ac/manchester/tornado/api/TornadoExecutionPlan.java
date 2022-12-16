@@ -50,7 +50,6 @@ public class TornadoExecutionPlan implements ProfileInterface {
 
     private GridScheduler gridScheduler;
 
-    private boolean isReusableBuffer;
     private Policy policy = null;
 
     private boolean useDefaultScheduler;
@@ -58,11 +57,6 @@ public class TornadoExecutionPlan implements ProfileInterface {
 
     TornadoExecutionPlan(TornadoExecutor tornadoExecutor) {
         this.tornadoExecutor = tornadoExecutor;
-    }
-
-    public TornadoExecutionPlan withReusableBuffers() {
-        this.isReusableBuffer = true;
-        return this;
     }
 
     public TornadoExecutionPlan withWarmUp() {
@@ -114,6 +108,11 @@ public class TornadoExecutionPlan implements ProfileInterface {
     public TornadoExecutionPlan withDefaultScheduler() {
         this.useDefaultScheduler = true;
         tornadoExecutor.useDefaultScheduler(useDefaultScheduler);
+        return this;
+    }
+
+    public TornadoExecutionPlan withDefaultDevice() {
+        // pending implementation
         return this;
     }
 
