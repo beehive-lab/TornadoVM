@@ -117,7 +117,7 @@ public class MontecarloMT {
                 .task("t0", MontecarloMT::computeMontecarlo, output)//
                 .transferToHost(output);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         long stopInit = System.nanoTime();

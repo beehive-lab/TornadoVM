@@ -101,7 +101,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
                 .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication1D, context, a, b, cTornado, size) //
                 .transferToHost(cTornado);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler) //
                 .execute();
@@ -148,7 +148,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
                 .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication2D01, context, a, b, cTornado, size) //
                 .transferToHost(cTornado);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler) //
                 .execute();
@@ -221,7 +221,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
                 .transferToHost(cTornado);
         worker.setLocalWork(TS, TS, 1);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler) //
                 .execute();

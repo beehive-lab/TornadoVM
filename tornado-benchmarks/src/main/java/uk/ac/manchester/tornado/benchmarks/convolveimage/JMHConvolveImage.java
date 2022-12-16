@@ -85,7 +85,7 @@ public class JMHConvolveImage {
                     .task("convolveImage", GraphicsKernels::convolveImage, input, filter, output) //
                     .transferToHost(output);
 
-            ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
             executor.withWarmUp();
         }

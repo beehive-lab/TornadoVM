@@ -79,7 +79,7 @@ public class JMHSaxpy {
                     .task("saxpy", LinearAlgebraArrays::saxpy, alpha, x, y) //
                     .transferToHost(y);
 
-            ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
             executor.withWarmUp();
         }

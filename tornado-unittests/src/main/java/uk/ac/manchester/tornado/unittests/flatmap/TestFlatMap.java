@@ -71,7 +71,7 @@ public class TestFlatMap extends TornadoTestBase {
                 .task("t0", TestFlatMap::computeFlatMap, input, output, SIZE) //
                 .transferToHost(output);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 

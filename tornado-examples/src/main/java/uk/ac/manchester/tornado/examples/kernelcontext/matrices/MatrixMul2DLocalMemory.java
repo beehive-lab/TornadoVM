@@ -161,7 +161,7 @@ public class MatrixMul2DLocalMemory {
                 .task("t0", MatrixMul2DLocalMemory::matrixMultiplication, matrixA, matrixB, matrixCCUDA, N) //
                 .transferToHost(matrixCCUDA);
 
-        ImmutableTaskGraph immutableTaskGraph = scheduleCUDA.freeze();
+        ImmutableTaskGraph immutableTaskGraph = scheduleCUDA.snapshot();
         TornadoExecutorPlan executorCUDA = new TornadoExecutor(immutableTaskGraph).build();
 
         TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
@@ -203,7 +203,7 @@ public class MatrixMul2DLocalMemory {
                 .task("t0", MatrixMul2DLocalMemory::matrixMultiplication, matrixA, matrixB, matrixCOCL, N) //
                 .transferToHost(matrixCOCL);
 
-        ImmutableTaskGraph immutableTaskGraph1 = scheduleOCL.freeze();
+        ImmutableTaskGraph immutableTaskGraph1 = scheduleOCL.snapshot();
         TornadoExecutorPlan executorOCL = new TornadoExecutor(immutableTaskGraph1).build();
         executorOCL.withLockObjectsInMemory(matrixA, matrixB, matrixCOCL) //
                 .withGridScheduler(gridSchedulerOpenCLOld);
@@ -256,7 +256,7 @@ public class MatrixMul2DLocalMemory {
                 .task("t0", MatrixMul2DLocalMemory::matrixMultiplicationLocalMemory, context, matrixA, matrixB, matrixCOCLNewApi, N) //
                 .transferToHost(matrixCOCLNewApi); //
 
-        ImmutableTaskGraph immutableTaskGraph2 = oclNewApiTask.freeze();
+        ImmutableTaskGraph immutableTaskGraph2 = oclNewApiTask.snapshot();
         TornadoExecutorPlan executorOCLNewAPI = new TornadoExecutor(immutableTaskGraph2).build();
 
         // Change the Grid
@@ -298,7 +298,7 @@ public class MatrixMul2DLocalMemory {
                 .task("t0", MatrixMul2DLocalMemory::matrixMultiplicationLocalMemory, contextCUDA, matrixA, matrixB, matrixCCUDANewApi, N) //
                 .transferToHost(matrixCCUDANewApi); //
 
-        ImmutableTaskGraph immutableTaskGraph3 = cudaNewApiTask.freeze();
+        ImmutableTaskGraph immutableTaskGraph3 = cudaNewApiTask.snapshot();
         TornadoExecutorPlan executorCUDANewAPI = new TornadoExecutor(immutableTaskGraph3).build();
         executorCUDANewAPI.withLockObjectsInMemory(matrixA, matrixB, matrixCCUDANewApi) //
                 .withGridScheduler(gridSchedulerCudaNew);

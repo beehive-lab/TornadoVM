@@ -70,7 +70,7 @@ public class JMHJuliaSet {
                     .task("juliaset", GraphicsKernels::juliaSetTornado, size, hue, brightness) //
                     .transferToHost(hue, brightness);
 
-            ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
             executor.withWarmUp();
         }

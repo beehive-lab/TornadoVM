@@ -90,7 +90,7 @@ public class ReductionsGlobalMemory {
                 .task("t0", ReductionsGlobalMemory::reduction, input, reduce, context) //
                 .task("t1", ReductionsGlobalMemory::rAdd, reduce, size).transferToHost(reduce);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler).execute();
 

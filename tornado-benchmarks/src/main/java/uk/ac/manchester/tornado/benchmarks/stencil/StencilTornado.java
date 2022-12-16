@@ -76,7 +76,7 @@ public class StencilTornado extends BenchmarkDriver {
                 .task("copy", Stencil::copy, sz, a1, a0) //
                 .transferToHost(a0);
 
-        immutableTaskGraph = taskGraph.freeze();
+        immutableTaskGraph = taskGraph.snapshot();
         executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withWarmUp();
     }

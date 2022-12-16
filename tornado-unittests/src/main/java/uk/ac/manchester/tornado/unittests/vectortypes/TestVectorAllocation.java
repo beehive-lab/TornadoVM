@@ -75,7 +75,7 @@ public class TestVectorAllocation extends TornadoTestBase {
                 .task("t0", TestVectorAllocation::testVectorAlloc, a, output) //
                 .transferToHost(output);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -114,7 +114,7 @@ public class TestVectorAllocation extends TornadoTestBase {
                 .task("t0", TestVectorAllocation::testVectorAlloc2, a, output) //
                 .transferToHost(output);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -157,7 +157,7 @@ public class TestVectorAllocation extends TornadoTestBase {
                 .task("t0", TestVectorAllocation::testVectorAlloc3, a, output) //
                 .transferToHost(output);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 

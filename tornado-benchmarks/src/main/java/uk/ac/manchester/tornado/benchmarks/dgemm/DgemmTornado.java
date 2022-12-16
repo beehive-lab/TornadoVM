@@ -77,7 +77,7 @@ public class DgemmTornado extends BenchmarkDriver {
                     .task("dgemm", LinearAlgebraArrays::dgemm, m, n, n, a, b, c) //
                     .transferToHost(c);
 
-            immutableTaskGraph = taskGraph.freeze();
+            immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
             executor.withWarmUp();
 
@@ -101,7 +101,7 @@ public class DgemmTornado extends BenchmarkDriver {
                             device, //
                             new int[] { n, n })//
                     .transferToHost(c);//
-            immutableTaskGraph = taskGraph.freeze();
+            immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
         }
     }

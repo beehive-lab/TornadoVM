@@ -168,7 +168,7 @@ public class BlackScholesMT {
                     .task("t0", BlackScholesMT::blackScholesKernel, input, callPrice, putPrice) //
                     .transferToHost(callPrice, putPrice);
 
-            ImmutableTaskGraph immutableTaskGraph = graph.freeze();
+            ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
 
             long stopInit = System.nanoTime();

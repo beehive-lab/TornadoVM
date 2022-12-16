@@ -63,7 +63,7 @@ public class SaxpyTornado extends BenchmarkDriver {
         taskGraph.task("saxpy", LinearAlgebraArrays::saxpy, alpha, x, y);
         taskGraph.transferToHost(y);
 
-        immutableTaskGraph = taskGraph.freeze();
+        immutableTaskGraph = taskGraph.snapshot();
         executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withWarmUp();
     }

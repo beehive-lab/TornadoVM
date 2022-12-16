@@ -80,7 +80,7 @@ public class AddTornado extends BenchmarkDriver {
                 .task("addImage", GraphicsKernels::addImage, a, b, c) //
                 .transferToHost(c);
 
-        immutableTaskGraph = taskGraph.freeze();
+        immutableTaskGraph = taskGraph.snapshot();
         executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withWarmUp();
 

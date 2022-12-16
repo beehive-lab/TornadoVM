@@ -54,7 +54,7 @@ public class TestLong extends TornadoTestBase {
                 .task("t0", TestKernels::testLongsCopy, a) //
                 .transferToHost(a);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -83,7 +83,7 @@ public class TestLong extends TornadoTestBase {
                 .task("t0", TestKernels::vectorSumLongCompute, a, b, c) //
                 .transferToHost(a);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 

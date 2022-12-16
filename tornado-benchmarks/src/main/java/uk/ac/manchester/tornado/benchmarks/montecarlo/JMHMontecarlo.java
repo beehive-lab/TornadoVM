@@ -67,7 +67,7 @@ public class JMHMontecarlo {
             TaskGraph taskGraph = new TaskGraph("benchmark") //
                     .task("montecarlo", ComputeKernels::monteCarlo, output, size) //
                     .transferToHost(output);
-            ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
             executor.withWarmUp();
         }

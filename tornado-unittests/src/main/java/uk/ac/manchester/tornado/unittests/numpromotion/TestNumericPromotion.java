@@ -155,7 +155,7 @@ public class TestNumericPromotion extends TornadoTestBase {
                 .task("t0", TestNumericPromotion::bitwiseOr, result, input, elements) //
                 .transferToHost(result);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -178,7 +178,7 @@ public class TestNumericPromotion extends TornadoTestBase {
                 .task("t0", TestNumericPromotion::bitwiseAnd, result, input, elements)//
                 .transferToHost(result);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -201,7 +201,7 @@ public class TestNumericPromotion extends TornadoTestBase {
                 .task("t0", TestNumericPromotion::bitwiseXor, result, input, elements)//
                 .transferToHost(result);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -225,7 +225,7 @@ public class TestNumericPromotion extends TornadoTestBase {
                 .task("t0", TestNumericPromotion::bitwiseNot, result, input)//
                 .transferToHost(result);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -248,7 +248,7 @@ public class TestNumericPromotion extends TornadoTestBase {
                 .task("t0", TestNumericPromotion::addition, result, input, elements)//
                 .transferToHost(result);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -271,7 +271,7 @@ public class TestNumericPromotion extends TornadoTestBase {
                 .task("t0", TestNumericPromotion::subtraction, result, input, elements)//
                 .transferToHost(result);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -294,7 +294,7 @@ public class TestNumericPromotion extends TornadoTestBase {
                 .task("t0", TestNumericPromotion::multiplication, result, input, elements)//
                 .transferToHost(result);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -317,7 +317,7 @@ public class TestNumericPromotion extends TornadoTestBase {
                 .task("t0", TestNumericPromotion::division, result, input, elements)//
                 .transferToHost(result);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -340,7 +340,7 @@ public class TestNumericPromotion extends TornadoTestBase {
                 .task("t0", TestNumericPromotion::signedLeftShift, result, input, elements)//
                 .transferToHost(result);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -363,7 +363,7 @@ public class TestNumericPromotion extends TornadoTestBase {
                 .task("t0", TestNumericPromotion::signedRightShift, result, input, elements)//
                 .transferToHost(result);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -386,7 +386,7 @@ public class TestNumericPromotion extends TornadoTestBase {
                 .task("t0", TestNumericPromotion::unsignedRightShift, result, input, elements)//
                 .transferToHost(result);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 

@@ -75,7 +75,7 @@ public class BitSetTests extends TornadoTestBase {
                 .task("t0", BitSetTests::intersectionCount, numWords, a, b, result) //
                 .transferToHost(result);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 

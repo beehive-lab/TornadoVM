@@ -73,7 +73,7 @@ public class ArrayAddIntPrebuilt {
                         new int[] { numElements }) //
                 .transferToHost(c);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 

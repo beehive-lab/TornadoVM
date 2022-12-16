@@ -50,7 +50,7 @@ public class HilbertTornado extends BenchmarkDriver {
                 .task("t0", ComputeKernels::hilbertComputation, hilbertMatrix, size, size) //
                 .transferToHost(hilbertMatrix);
 
-        immutableTaskGraph = taskGraph.freeze();
+        immutableTaskGraph = taskGraph.snapshot();
         executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withWarmUp();
     }
@@ -71,7 +71,7 @@ public class HilbertTornado extends BenchmarkDriver {
                 .task("t0", ComputeKernels::hilbertComputation, testData, size, size) //
                 .transferToHost(testData); //
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph1.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph1.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withDevice(device).execute();
 

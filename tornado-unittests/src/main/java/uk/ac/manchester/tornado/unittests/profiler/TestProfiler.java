@@ -83,7 +83,7 @@ public class TestProfiler extends TornadoTestBase {
         int driverIndex = TornadoRuntime.getTornadoRuntime().getDefaultDevice().getDriverIndex();
 
         // Build ImmutableTaskGraph
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Build Executor
         TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
@@ -132,7 +132,7 @@ public class TestProfiler extends TornadoTestBase {
                 .transferToHost(c);
 
         // Build ImmutableTaskGraph
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Build Executor
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();

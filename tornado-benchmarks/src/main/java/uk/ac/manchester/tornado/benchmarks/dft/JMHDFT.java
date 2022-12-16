@@ -82,7 +82,7 @@ public class JMHDFT {
                     .task("t0", ComputeKernels::computeDFT, inReal, inImag, outReal, outImag) //
                     .transferToHost(outReal, outImag);
 
-            ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
             executor.withWarmUp();
         }

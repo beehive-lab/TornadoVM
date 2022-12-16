@@ -111,7 +111,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
 
         worker.setLocalWork(localSize, 1, 1);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler) //
                 .execute();
@@ -190,7 +190,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler) //
                 .execute();
@@ -250,7 +250,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler) //
                 .execute();
@@ -304,7 +304,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler) //
                 .execute();
@@ -364,7 +364,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler) //
                 .execute();
@@ -418,7 +418,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler) //
                 .execute();

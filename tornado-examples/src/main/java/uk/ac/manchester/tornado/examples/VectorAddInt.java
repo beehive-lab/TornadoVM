@@ -55,7 +55,7 @@ public class VectorAddInt {
                 .task("t0", VectorAddInt::vectorAdd, a, b, c) //
                 .transferToHost(c);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan tornadoExecutor = new TornadoExecutor(immutableTaskGraph).build();
         tornadoExecutor.withLockObjectsInMemory(a, b, c);
 

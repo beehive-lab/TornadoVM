@@ -65,7 +65,7 @@ public class Saxpy {
                 .task("t0", Saxpy::saxpy, alpha, x, y)//
                 .transferToHost(y);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withDynamicReconfiguration(Policy.SYNC_PERFORMANCE);
 

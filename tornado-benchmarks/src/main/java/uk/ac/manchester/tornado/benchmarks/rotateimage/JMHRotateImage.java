@@ -87,7 +87,7 @@ public class JMHRotateImage {
                     .task("rotateImage", GraphicsKernels::rotateImage, output, m, input) //
                     .transferToHost(output);
 
-            ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
             executor.withWarmUp();
         }

@@ -56,7 +56,7 @@ public class DynamicReconfiguration {
                 .task("t0", DynamicReconfiguration::saxpy, 2.0f, a, b) //
                 .transferToHost(b);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         new TornadoExecutor(immutableTaskGraph) //
                 .build() //
                 .withDynamicReconfiguration(Policy.ASYNC_PERFORMANCE) //

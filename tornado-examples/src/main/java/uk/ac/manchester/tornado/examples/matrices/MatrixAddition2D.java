@@ -98,7 +98,7 @@ public class MatrixAddition2D {
                 .task("t0", MatrixAddition2D::matrixAddition, matrixA, matrixB, matrixC, size) //
                 .transferToHost(matrixC);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withLockObjectsInMemory(matrixA, matrixB, matrixC);
 
@@ -132,7 +132,7 @@ public class MatrixAddition2D {
                 .task("t1", MatrixAddition2D::matrixAddition, matrixAV, matrixBV, matrixCV, (size * 2)) //
                 .transferToHost(matrixCV);
 
-        ImmutableTaskGraph immutableTaskGraph1 = taskGraph1.freeze();
+        ImmutableTaskGraph immutableTaskGraph1 = taskGraph1.snapshot();
         TornadoExecutorPlan executor1 = new TornadoExecutor(immutableTaskGraph1).build();
         executor1.withLockObjectsInMemory(matrixAV, matrixBV, matrixCV);
 

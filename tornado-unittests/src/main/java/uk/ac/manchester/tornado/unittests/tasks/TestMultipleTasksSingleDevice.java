@@ -73,7 +73,7 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
                 .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)//
                 .transferToHost(a);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -95,7 +95,7 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
                 .task("t3", TestMultipleTasksSingleDevice::task2Saxpy, a, a, b, 12)//
                 .transferToHost(b);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -120,7 +120,7 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
                 .task("t3", TestMultipleTasksSingleDevice::task2Saxpy, a, b, c, 12)//
                 .transferToHost(c);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -146,7 +146,7 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
                 .task("t4", TestMultipleTasksSingleDevice::task2Saxpy, b, a, c, 12)//
                 .transferToHost(c);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 

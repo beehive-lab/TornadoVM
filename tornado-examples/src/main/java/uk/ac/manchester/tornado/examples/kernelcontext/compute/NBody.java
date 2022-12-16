@@ -190,7 +190,7 @@ public class NBody {
                 .task("t0", NBody::nBody, context, numBodies, posTornadoVM, velTornadoVM) //
                 .transferToHost(posTornadoVM, velTornadoVM);
 
-        ImmutableTaskGraph immutableTaskGraph = t0.freeze();
+        ImmutableTaskGraph immutableTaskGraph = t0.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler);
 

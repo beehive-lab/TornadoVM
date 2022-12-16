@@ -111,7 +111,7 @@ public class MatrixVector {
                 .task("mv", MatrixVector::computeMatrixVector, matrix2DFloat, vectorFloat, result) //
                 .transferToHost(result);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withLockObjectsInMemory(vectorFloat, matrix2DFloat, result) //
                 .withWarmUp();

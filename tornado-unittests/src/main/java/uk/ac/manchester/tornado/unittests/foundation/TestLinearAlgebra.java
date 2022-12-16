@@ -58,7 +58,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
                 .task("t0", TestKernels::vectorAddCompute, a, b, c) //
                 .transferToHost(a);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -84,7 +84,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
                 .task("t0", TestKernels::vectorMul, a, b, c) //
                 .transferToHost(a);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -110,7 +110,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
                 .task("t0", TestKernels::vectorSub, a, b, c) //
                 .transferToHost(a);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -135,7 +135,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
                 .task("t0", TestKernels::vectorDiv, a, b, c) //
                 .transferToHost(a);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -161,7 +161,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
                 .task("t0", TestKernels::vectorSquare, a, b) //
                 .transferToHost(a);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -189,7 +189,7 @@ public class TestLinearAlgebra extends TornadoTestBase {
                 .task("t0", TestKernels::saxpy, a, b, c, 2) //
                 .transferToHost(a);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 

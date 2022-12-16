@@ -107,7 +107,7 @@ public class MatrixMul2D {
                 .task("t0", MatrixMul2D::matrixMultiplication, matrixA, matrixB, matrixCCUDA, size) //
                 .transferToHost(matrixCCUDA); //
 
-        ImmutableTaskGraph immutableTaskGraph = cudaTaskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = cudaTaskGraph.snapshot();
         TornadoExecutorPlan executorCUDA = new TornadoExecutor(immutableTaskGraph).build();
 
         TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
@@ -136,7 +136,7 @@ public class MatrixMul2D {
                 .task("t0", MatrixMul2D::matrixMultiplication, matrixA, matrixB, matrixCOCL, size) //
                 .transferToHost(matrixCOCL); //
 
-        ImmutableTaskGraph immutableTaskGraph1 = oclTaskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph1 = oclTaskGraph.snapshot();
         TornadoExecutorPlan executorOCL = new TornadoExecutor(immutableTaskGraph1).build();
         executorOCL.withLockObjectsInMemory(matrixA, matrixB, matrixCOCL);
 

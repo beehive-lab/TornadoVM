@@ -58,7 +58,7 @@ public class Inlining extends TornadoTestBase {
                 .task("t0", Inlining::bitwiseOr, result, input, elements) //
                 .transferToHost(result);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -127,7 +127,7 @@ public class Inlining extends TornadoTestBase {
                 .task("grey", Inlining::rgbToGreyKernel, rgbBytes, greyInts)//
                 .transferToHost(greyInts);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -154,7 +154,7 @@ public class Inlining extends TornadoTestBase {
                 .task("grey", Inlining::rgbToGreyKernelInt, rgbBytes, greyInts)//
                 .transferToHost(greyInts);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -182,7 +182,7 @@ public class Inlining extends TornadoTestBase {
                 .task("t0", Inlining::rgbToGreyKernelSmall, rgbBytes, greyInts)//
                 .transferToHost(greyInts);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -207,7 +207,7 @@ public class Inlining extends TornadoTestBase {
                 .task("t0", Inlining::b2i, rgbBytes, greyInts)//
                 .transferToHost(greyInts);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 

@@ -124,7 +124,7 @@ public class BlackAndWhiteTransform {
                             .task("t0", LoadImage::compute, imageRGB, w, s) //
                             .transferToHost(imageRGB);
 
-                    ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+                    ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
                     executor = new TornadoExecutor(immutableTaskGraph).build();
                     executor.execute();
 

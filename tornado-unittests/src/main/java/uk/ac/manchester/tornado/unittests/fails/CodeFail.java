@@ -72,7 +72,7 @@ public class CodeFail extends TornadoTestBase {
         taskGraph.task("t0", CodeFail::foo, a) //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .transferToHost(a);
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
     }
@@ -105,7 +105,7 @@ public class CodeFail extends TornadoTestBase {
         taskGraph.task("t0", CodeFail::bar, a) //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .transferToHost(a);
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
     }
@@ -137,7 +137,7 @@ public class CodeFail extends TornadoTestBase {
                 .task("t0", CodeFail::zoo, input, result1, result2) //
                 .transferToHost(result1, result2); //
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
     }

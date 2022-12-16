@@ -92,7 +92,7 @@ public class TestGridScheduler {
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(1, 1, 1);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler) //
                 .execute();
@@ -125,7 +125,7 @@ public class TestGridScheduler {
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(1, 1, 1);
 
-        ImmutableTaskGraph immutableTaskGraph = s0.freeze();
+        ImmutableTaskGraph immutableTaskGraph = s0.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler) //
                 .execute();
@@ -135,7 +135,7 @@ public class TestGridScheduler {
                 .task("t0", TestGridScheduler::reduceAdd, tornadoC, size) //
                 .transferToHost(tornadoC);
 
-        ImmutableTaskGraph immutableTaskGraph1 = s1.freeze();
+        ImmutableTaskGraph immutableTaskGraph1 = s1.snapshot();
         TornadoExecutorPlan executor1 = new TornadoExecutor(immutableTaskGraph1).build();
         executor1.withGridScheduler(gridScheduler) //
                 .execute();

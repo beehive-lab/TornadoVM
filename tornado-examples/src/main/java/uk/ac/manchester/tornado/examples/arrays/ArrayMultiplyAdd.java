@@ -64,7 +64,7 @@ public class ArrayMultiplyAdd {
                 .task("t1", SimpleMath::vectorAdd, c, b, d) //
                 .transferToHost(d);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 

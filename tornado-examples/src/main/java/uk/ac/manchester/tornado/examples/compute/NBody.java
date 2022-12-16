@@ -153,7 +153,7 @@ public class NBody {
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, posTornadoVM, velTornadoVM) //
                 .task("t0", NBody::nBody, numBodies, posTornadoVM, velTornadoVM, delT, espSqr);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build().withWarmUp();
 
         resultsIterations = new StringBuffer();

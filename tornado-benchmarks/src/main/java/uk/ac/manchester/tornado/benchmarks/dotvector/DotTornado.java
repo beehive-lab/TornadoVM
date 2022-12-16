@@ -74,7 +74,7 @@ public class DotTornado extends BenchmarkDriver {
         taskGraph.task("dotVector", GraphicsKernels::dotVector, a, b, c);
         taskGraph.transferToHost(c);
 
-        immutableTaskGraph = taskGraph.freeze();
+        immutableTaskGraph = taskGraph.snapshot();
         executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withWarmUp();
 

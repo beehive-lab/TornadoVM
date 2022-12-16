@@ -46,7 +46,7 @@ public class MandelbrotTornado extends BenchmarkDriver {
         taskGraph = new TaskGraph("benchmark") //
                 .task("t0", ComputeKernels::mandelbrot, size, output) //
                 .transferToHost(output);
-        immutableTaskGraph = taskGraph.freeze();
+        immutableTaskGraph = taskGraph.snapshot();
         executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withWarmUp();
     }

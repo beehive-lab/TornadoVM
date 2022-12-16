@@ -91,7 +91,7 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWorkToNull();
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         executor.withGridScheduler(gridScheduler) //
@@ -125,7 +125,7 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, a, context, b, cTornado) //
                 .transferToHost(cTornado);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler) //
                 .execute();
@@ -158,7 +158,7 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, a, b, context, cTornado) //
                 .transferToHost(cTornado);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler) //
                 .execute();
@@ -191,7 +191,7 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, a, b, cTornado, context) //
                 .transferToHost(cTornado);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler) //
                 .execute();
@@ -227,7 +227,7 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWorkToNull();
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withWarmUp() //
                 .withGridScheduler(gridScheduler) //

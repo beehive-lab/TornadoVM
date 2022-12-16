@@ -68,7 +68,7 @@ public class Init {
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.task("t0", Init::compute, array).transferToHost((Object) array);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 

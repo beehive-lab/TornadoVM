@@ -58,7 +58,7 @@ public class ReductionIrregular {
                 .task("t0", ReductionIrregular::reduceFloats, input, result)//
                 .transferToHost(result);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withLockObjectsInMemory(input, result);
 

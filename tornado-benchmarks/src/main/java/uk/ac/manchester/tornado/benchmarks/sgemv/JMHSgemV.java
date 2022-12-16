@@ -87,7 +87,7 @@ public class JMHSgemV {
                     .task("sgemv", LinearAlgebraArrays::sgemv, m, n, a, x, y) //
                     .transferToHost(y);
 
-            ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
             executor.withWarmUp();
         }

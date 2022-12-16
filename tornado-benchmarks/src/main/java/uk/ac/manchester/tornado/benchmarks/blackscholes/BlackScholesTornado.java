@@ -62,7 +62,7 @@ public class BlackScholesTornado extends BenchmarkDriver {
                 .task("t0", ComputeKernels::blackscholes, randArray, put, call) //
                 .transferToHost(put, call);
 
-        immutableTaskGraph = taskGraph.freeze();
+        immutableTaskGraph = taskGraph.snapshot();
         executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withWarmUp();
     }
@@ -98,7 +98,7 @@ public class BlackScholesTornado extends BenchmarkDriver {
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, randArrayTor);
         taskGraph.task("t0", ComputeKernels::blackscholes, randArrayTor, putTor, callTor);
 
-        immutableTaskGraph = taskGraph.freeze();
+        immutableTaskGraph = taskGraph.snapshot();
         executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withWarmUp().execute();
 

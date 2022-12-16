@@ -341,7 +341,7 @@ public class TestMatrixTypes extends TornadoTestBase {
                 .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, N) //
                 .transferToHost(matrixB);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -370,7 +370,7 @@ public class TestMatrixTypes extends TornadoTestBase {
                 .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, N) //
                 .transferToHost(matrixB);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -401,7 +401,7 @@ public class TestMatrixTypes extends TornadoTestBase {
                 .task("t0", TestMatrixTypes::computeMatrixMultiplication, matrixA, matrixB, matrixC) //
                 .transferToHost(matrixC);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -433,7 +433,7 @@ public class TestMatrixTypes extends TornadoTestBase {
                 .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, N) //
                 .transferToHost(matrixB);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -465,7 +465,7 @@ public class TestMatrixTypes extends TornadoTestBase {
                 .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
                 .transferToHost(matrixB);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -522,7 +522,7 @@ public class TestMatrixTypes extends TornadoTestBase {
                 .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y, Z) //
                 .transferToHost(matrixB);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -589,7 +589,7 @@ public class TestMatrixTypes extends TornadoTestBase {
                 .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, SMALL_SIZE, SMALL_SIZE, SMALL_SIZE) //
                 .transferToHost(matrixB);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -626,7 +626,7 @@ public class TestMatrixTypes extends TornadoTestBase {
                 .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y, Z) //
                 .transferToHost(matrixB);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -655,7 +655,7 @@ public class TestMatrixTypes extends TornadoTestBase {
                 .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
                 .transferToHost(matrixB);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -702,7 +702,7 @@ public class TestMatrixTypes extends TornadoTestBase {
                 .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
                 .transferToHost(matrixB);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -744,7 +744,7 @@ public class TestMatrixTypes extends TornadoTestBase {
                 .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
                 .transferToHost(matrixB);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -789,7 +789,7 @@ public class TestMatrixTypes extends TornadoTestBase {
                 .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
                 .transferToHost(matrixB);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -820,7 +820,7 @@ public class TestMatrixTypes extends TornadoTestBase {
                 .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
                 .transferToHost(matrixB);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 

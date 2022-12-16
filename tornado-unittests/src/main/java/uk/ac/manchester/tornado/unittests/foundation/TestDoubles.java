@@ -49,7 +49,7 @@ public class TestDoubles extends TornadoTestBase {
                 .task("t0", TestKernels::testDoublesCopy, a) //
                 .transferToHost(a);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -77,7 +77,7 @@ public class TestDoubles extends TornadoTestBase {
                 .task("t0", TestKernels::vectorAddDoubleCompute, a, b, c) //
                 .transferToHost(a);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -107,7 +107,7 @@ public class TestDoubles extends TornadoTestBase {
                 .task("t0", TestKernels::vectorSubDoubleCompute, a, b, c) //
                 .transferToHost(a);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -136,7 +136,7 @@ public class TestDoubles extends TornadoTestBase {
                 .task("t0", TestKernels::vectorMulDoubleCompute, a, b, c) //
                 .transferToHost(a);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -165,7 +165,7 @@ public class TestDoubles extends TornadoTestBase {
                 .task("t0", TestKernels::vectorDivDoubleCompute, a, b, c) //
                 .transferToHost(a);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 

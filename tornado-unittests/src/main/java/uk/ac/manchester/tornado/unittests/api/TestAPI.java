@@ -58,7 +58,7 @@ public class TestAPI extends TornadoTestBase {
         taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestArrays::addAccumulator, data, 1);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withLockObjectsInMemory(data) //
                 .execute();
@@ -91,7 +91,7 @@ public class TestAPI extends TornadoTestBase {
         taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data);
         taskGraph.task("t0", TestArrays::addAccumulator, data, 1);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build() //
                 .withLockObjectsInMemory(data) //
                 .execute();
@@ -122,7 +122,7 @@ public class TestAPI extends TornadoTestBase {
                 .task("t0", TestArrays::addAccumulator, data, 1) //
                 .transferToHost(data);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withWarmUp() //
                 .withLockObjectsInMemory(data) //

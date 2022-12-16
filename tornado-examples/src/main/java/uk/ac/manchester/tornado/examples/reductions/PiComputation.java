@@ -60,7 +60,7 @@ public class PiComputation {
                 .task("t0", PiComputation::computePi, input, result) //
                 .transferToHost(result);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withLockObjectsInMemory(input, result);
 

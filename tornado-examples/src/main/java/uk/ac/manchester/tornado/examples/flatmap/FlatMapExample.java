@@ -62,7 +62,7 @@ public class FlatMapExample {
                 .task("t0", FlatMapExample::computeFlatMap, input, output, SIZE) //
                 .transferToHost(output);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
         executorPlan.execute();
 

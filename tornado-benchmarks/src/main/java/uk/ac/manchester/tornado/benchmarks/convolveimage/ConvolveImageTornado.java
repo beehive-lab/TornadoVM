@@ -69,7 +69,7 @@ public class ConvolveImageTornado extends BenchmarkDriver {
         taskGraph.task("convolveImage", GraphicsKernels::convolveImage, input, filter, output);
         taskGraph.transferToHost(output);
 
-        immutableTaskGraph = taskGraph.freeze();
+        immutableTaskGraph = taskGraph.snapshot();
         executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withWarmUp();
 

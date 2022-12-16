@@ -110,7 +110,7 @@ public class TestBatches extends TornadoTestBase {
                 .task("t0", TestBatches::compute, arrayA, arrayB) //
                 .transferToHost(arrayB);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withBatch("100MB") // Slots of 100 MB
                 .execute();
@@ -142,7 +142,7 @@ public class TestBatches extends TornadoTestBase {
                 .task("t0", TestBatches::compute, arrayA, arrayB) //
                 .transferToHost(arrayB);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withBatch("300MB") // Slots of 300 MB
                 .execute();
@@ -172,7 +172,7 @@ public class TestBatches extends TornadoTestBase {
                 .task("t0", TestBatches::compute, arrayA) //
                 .transferToHost(arrayA);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withBatch("512MB") // Slots of 512 MB
                 .execute();
@@ -207,7 +207,7 @@ public class TestBatches extends TornadoTestBase {
                 .task("t0", TestBatches::compute, arrayA, arrayB, arrayC) //
                 .transferToHost(arrayC);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withBatch("50MB") // Slots of 50 MB
                 .execute();
@@ -242,7 +242,7 @@ public class TestBatches extends TornadoTestBase {
                 .task("t0", TestBatches::compute, arrayA, arrayB, arrayC) //
                 .transferToHost(arrayC);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withBatch("50MB") // Slots of 50 MB
                 .execute();
@@ -278,7 +278,7 @@ public class TestBatches extends TornadoTestBase {
                 .task("t0", TestBatches::compute, arrayA, arrayB, arrayC) //
                 .transferToHost(arrayC);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withBatch("50MB") // Slots of 50 MB
                 .execute();
@@ -312,7 +312,7 @@ public class TestBatches extends TornadoTestBase {
                 .task("t0", TestBatches::compute, arrayA, arrayB, arrayC) //
                 .transferToHost(arrayC);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withBatch("50MB") // Slots of 50 MB
                 .execute();
@@ -347,7 +347,7 @@ public class TestBatches extends TornadoTestBase {
                 .task("t0", TestBatches::compute, arrayA, arrayB, arrayC) //
                 .transferToHost(arrayC);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withBatch("50MB") // Slots of 50 MB
                 .execute();

@@ -65,7 +65,7 @@ public class VectorAddTest {
                 .task("t0", VectorAddTest::test, a, b, results) //
                 .transferToHost(results);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
         executorPlan.execute();
 

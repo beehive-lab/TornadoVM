@@ -88,7 +88,7 @@ public class JMHDotVector {
                     .task("dotVector", GraphicsKernels::dotVector, a, b, c) //
                     .transferToHost(c);
 
-            ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
             executor.withWarmUp();
         }

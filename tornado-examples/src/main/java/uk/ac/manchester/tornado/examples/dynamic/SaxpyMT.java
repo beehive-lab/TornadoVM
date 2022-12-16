@@ -99,7 +99,7 @@ public class SaxpyMT {
                     .task("t0", SaxpyMT::saxpy, alpha, x, y, b) //
                     .transferToHost(y);
 
-            ImmutableTaskGraph immutableTaskGraph = graph.freeze();
+            ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
 
             long stopInit = System.nanoTime();

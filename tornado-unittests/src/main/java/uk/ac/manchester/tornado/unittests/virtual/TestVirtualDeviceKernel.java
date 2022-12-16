@@ -82,7 +82,7 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
                 .task("t0", TestVirtualDeviceKernel::maxReduction, input, result) //
                 .transferToHost(result);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 

@@ -94,7 +94,7 @@ public class BlurFilterTornado extends BenchmarkDriver {
                 .task("blurBlue", ComputeKernels::channelConvolution, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
                 .transferToHost(redFilter, greenFilter, blueFilter);
 
-        immutableTaskGraph = taskGraph.freeze();
+        immutableTaskGraph = taskGraph.snapshot();
         executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withDefaultScheduler() //
                 .withWarmUp();
@@ -157,7 +157,7 @@ public class BlurFilterTornado extends BenchmarkDriver {
                 .task("blue", ComputeKernels::channelConvolution, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
                 .transferToHost(redFilter, greenFilter, blueFilter);
 
-        ImmutableTaskGraph immutableTaskGraph1 = parallelFilter.freeze();
+        ImmutableTaskGraph immutableTaskGraph1 = parallelFilter.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph1).build();
         executor.withDefaultScheduler().execute();
 

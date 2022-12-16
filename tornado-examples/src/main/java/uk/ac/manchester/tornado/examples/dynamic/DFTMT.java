@@ -149,7 +149,7 @@ public class DFTMT {
                     .task("t0", DFTMT::computeDFT, inReal, inImag, outReal, outImag, inputSize) //
                     .transferToHost(outReal, outImag);
 
-            ImmutableTaskGraph immutableTaskGraph = graph.freeze();
+            ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
             long stopInit = System.nanoTime();
             System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");

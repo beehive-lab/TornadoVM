@@ -575,7 +575,7 @@ public interface TornadoAPI {
      *
      * @return {@link ImmutableTaskGraph}
      */
-    ImmutableTaskGraph freeze();
+    ImmutableTaskGraph snapshot();
 
     void execute();
 

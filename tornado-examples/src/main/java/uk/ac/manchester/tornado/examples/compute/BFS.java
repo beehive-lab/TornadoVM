@@ -180,7 +180,7 @@ public class BFS {
                 .task("t0", BFS::initializeVertices, numNodes, vertices, rootNode) //
                 .transferToHost(vertices);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -201,7 +201,7 @@ public class BFS {
                 .task("t1", BFS::runBFS, vertices, adjacencyMatrix, numNodes, modify, currentDepth) //
                 .transferToHost(vertices, modify);
 
-        ImmutableTaskGraph immutableTaskGraph1 = taskGraph1.freeze();
+        ImmutableTaskGraph immutableTaskGraph1 = taskGraph1.snapshot();
         TornadoExecutorPlan executor1 = new TornadoExecutor(immutableTaskGraph1) //
                 .build() //
                 .withDevice(device);

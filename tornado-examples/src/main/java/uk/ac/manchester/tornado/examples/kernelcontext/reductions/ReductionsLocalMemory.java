@@ -97,7 +97,7 @@ public class ReductionsLocalMemory {
         // Change the Grid
         worker.setLocalWork(localSize, 1, 1);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler).execute();
 

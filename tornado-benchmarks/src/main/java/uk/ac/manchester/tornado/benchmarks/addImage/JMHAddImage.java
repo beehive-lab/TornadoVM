@@ -93,7 +93,7 @@ public class JMHAddImage {
                     .task("addImage", GraphicsKernels::addImage, a, b, c) //
                     .transferToHost(c);
 
-            ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
             executor.withWarmUp();
         }

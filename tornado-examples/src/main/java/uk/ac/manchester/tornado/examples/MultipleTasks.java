@@ -73,7 +73,7 @@ public class MultipleTasks {
                 .task("bar", MultipleTasks::bar, y) //
                 .transferToHost(y);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 

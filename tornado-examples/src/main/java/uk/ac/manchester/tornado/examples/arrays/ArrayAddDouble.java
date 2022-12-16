@@ -59,7 +59,7 @@ public class ArrayAddDouble {
                 .task("t0", ArrayAddDouble::add, a, b, c)//
                 .transferToHost(c);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 

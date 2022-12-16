@@ -69,7 +69,7 @@ public class TestReductionsAutomatic extends TornadoTestBase {
                 .task("t0", TestReductionsAutomatic::test, input, result)//
                 .transferToHost(result);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -95,7 +95,7 @@ public class TestReductionsAutomatic extends TornadoTestBase {
                 .task("t0", TestReductionsAutomatic::testFloat, input, result)//
                 .transferToHost(result);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -145,7 +145,7 @@ public class TestReductionsAutomatic extends TornadoTestBase {
                 .task("t0", TestReductionsAutomatic::testDouble, input, result)//
                 .transferToHost(result);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 

@@ -73,7 +73,7 @@ public class TestDynamic extends TornadoTestBase {
                 .task("t0", TestDynamic::compute, a, b) //
                 .transferToHost(b); //
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         // Run first time to obtain the best performance device
@@ -103,7 +103,7 @@ public class TestDynamic extends TornadoTestBase {
                 .task("tt0", TestDynamic::compute, a, b) //
                 .transferToHost(b); //
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         // Run first time to obtain the best performance device
@@ -134,7 +134,7 @@ public class TestDynamic extends TornadoTestBase {
                 .task("t0", TestDynamic::saxpy, 2.0f, a, b) //
                 .transferToHost(b); //
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         // Run first time to obtain the best performance device
@@ -162,7 +162,7 @@ public class TestDynamic extends TornadoTestBase {
                 .task("task", TestDynamic::compute2, a, b) //
                 .transferToHost(b);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         // Run first time to obtain the best performance device
@@ -197,7 +197,7 @@ public class TestDynamic extends TornadoTestBase {
                 .task("t1", TestDynamic::compute2, b, b) //
                 .transferToHost(b);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         // Run first time to obtain the best performance device
@@ -227,7 +227,7 @@ public class TestDynamic extends TornadoTestBase {
                 .task("t0", TestDynamic::compute, a, b) //
                 .transferToHost(b);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         // Run first time to obtain the best performance device

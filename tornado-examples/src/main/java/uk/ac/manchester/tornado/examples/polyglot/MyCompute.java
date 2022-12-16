@@ -65,7 +65,7 @@ public class MyCompute {
                     .task("t0", MyCompute::mxm, a, b, c, N)//
                     .transferToHost(c);//
 
-            ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
         }
 

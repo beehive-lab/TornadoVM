@@ -78,7 +78,7 @@ public class MultipleReductions extends TornadoTestBase {
                 .task("t0", MultipleReductions::test, input, result1, result2) //
                 .transferToHost(result1, result2); //
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
     }

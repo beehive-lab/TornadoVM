@@ -82,7 +82,7 @@ public class JMHConvolveArray {
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, filter) //
                     .task("convolveImageArray", GraphicsKernels::convolveImageArray, input, filter, output, imageSizeX, imageSizeY, filterSize, filterSize) //
                     .transferToHost(output);
-            ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
             executor.withDefaultScheduler().withWarmUp();
         }

@@ -203,7 +203,7 @@ public class NBodyMT {
                     .task("t0", NBodyMT::nBody, numBodies, positions, velocity, delT, espSqr, inputSize) //
                     .transferToHost(positions, velocity);
 
-            ImmutableTaskGraph immutableTaskGraph = graph.freeze();
+            ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
 
             long stopInit = System.nanoTime();

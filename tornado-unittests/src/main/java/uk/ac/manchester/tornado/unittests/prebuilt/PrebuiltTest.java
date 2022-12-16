@@ -91,7 +91,7 @@ public class PrebuiltTest extends TornadoTestBase {
                         new int[] { numElements })//
                 .transferToHost(c);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -142,7 +142,7 @@ public class PrebuiltTest extends TornadoTestBase {
                         new int[] { numElements })//
                 .transferToHost(c);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -186,7 +186,7 @@ public class PrebuiltTest extends TornadoTestBase {
                         new int[] { size })//
                 .transferToHost(reduce);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         executor.withGridScheduler(gridScheduler) //
@@ -237,7 +237,7 @@ public class PrebuiltTest extends TornadoTestBase {
                         new int[] { size })//
                 .transferToHost(reduce);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler) //
                 .execute();

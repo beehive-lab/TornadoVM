@@ -79,7 +79,7 @@ public class JMHBlackScholes {
                     .task("t0", ComputeKernels::blackscholes, randArray, put, call) //
                     .transferToHost(put, call);
 
-            ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
             executor.withWarmUp();
         }

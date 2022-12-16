@@ -58,7 +58,7 @@ public class TestExecutor extends TornadoTestBase {
                 .transferToHost(c);
 
         // 2. Create an immutable task graph
-        ImmutableTaskGraph immutableTaskGraph = tg.freeze();
+        ImmutableTaskGraph immutableTaskGraph = tg.snapshot();
 
         // 3. Create an executor and build an execution plan
         TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
@@ -95,7 +95,7 @@ public class TestExecutor extends TornadoTestBase {
                 .transferToHost(c);
 
         // 2. Create an immutable task graph
-        ImmutableTaskGraph immutableTaskGraph = tg.freeze();
+        ImmutableTaskGraph immutableTaskGraph = tg.snapshot();
 
         // 3. Create an executor and build an execution plan
         TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
@@ -134,7 +134,7 @@ public class TestExecutor extends TornadoTestBase {
                 .transferToHost(c);
 
         // 2. Create an immutable task graph
-        ImmutableTaskGraph immutableTaskGraph = tg.freeze();
+        ImmutableTaskGraph immutableTaskGraph = tg.snapshot();
 
         // 3. Create an executor and build an execution plan
         TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();

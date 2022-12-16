@@ -117,7 +117,7 @@ public class BlackScholes {
                 .task("t0", BlackScholes::blackScholesKernel, input, callPrice, putPrice) //
                 .transferToHost(callPrice, putPrice);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 

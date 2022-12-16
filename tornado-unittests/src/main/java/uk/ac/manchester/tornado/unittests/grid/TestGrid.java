@@ -83,7 +83,7 @@ public class TestGrid extends TornadoTestBase {
         WorkerGrid1D worker = new WorkerGrid1D(4096);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler) //
                 .execute();
@@ -117,7 +117,7 @@ public class TestGrid extends TornadoTestBase {
 
         WorkerGrid2D worker = new WorkerGrid2D(numElements, numElements);
         GridScheduler gridScheduler = new GridScheduler("s0.t1", worker);
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler) //
                 .execute();
@@ -153,7 +153,7 @@ public class TestGrid extends TornadoTestBase {
         WorkerGrid2D worker = new WorkerGrid2D(X, Y);
         GridScheduler gridScheduler = new GridScheduler("foo.bar", worker);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler) //
                 .execute();
@@ -195,7 +195,7 @@ public class TestGrid extends TornadoTestBase {
         WorkerGrid1D worker = new WorkerGrid1D(4096);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         gridScheduler.setWorkerGrid("s0.t1", worker); // share the same worker
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler) //
                 .execute();
@@ -232,7 +232,7 @@ public class TestGrid extends TornadoTestBase {
         worker.setGlobalWork(N, N, 1);
         worker.setLocalWork(256, 256, 1);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler) //
                 .execute();

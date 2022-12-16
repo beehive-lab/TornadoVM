@@ -82,7 +82,7 @@ public class MatrixMul1D {
         TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
 
-        ImmutableTaskGraph immutableTaskGraph = cudaTaskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = cudaTaskGraph.snapshot();
         TornadoExecutorPlan executorCUDA = new TornadoExecutor(immutableTaskGraph).build();
         executorCUDA.withLockObjectsInMemory(matrixA, matrixB, matrixCCUDA) //
                 .withDevice(cudaDevice);
@@ -128,7 +128,7 @@ public class MatrixMul1D {
             System.exit(1);
         }
 
-        ImmutableTaskGraph immutableTaskGraph1 = oclTaskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph1 = oclTaskGraph.snapshot();
         TornadoExecutorPlan executorOCL = new TornadoExecutor(immutableTaskGraph1).build();
         executorOCL.withDevice(oclDevice) //
                 .withLockObjectsInMemory(matrixA, matrixB, matrixCOCL);

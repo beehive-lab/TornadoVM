@@ -104,7 +104,7 @@ public class Montecarlo {
                 .task("t0", Montecarlo::computeMontecarlo, context, output, size) //
                 .transferToHost(output);
 
-        ImmutableTaskGraph immutableTaskGraph = t0.freeze();
+        ImmutableTaskGraph immutableTaskGraph = t0.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(gridScheduler);
 

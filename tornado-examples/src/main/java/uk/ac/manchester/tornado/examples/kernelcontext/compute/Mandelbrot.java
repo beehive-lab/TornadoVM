@@ -163,7 +163,7 @@ public class Mandelbrot {
                         .task("t0", MandelbrotImage::mandelbrotTornado, context, SIZE, result) //
                         .transferToHost(result);
 
-                ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+                ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
                 TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
                 executor.withGridScheduler(gridScheduler) //
                         .execute();

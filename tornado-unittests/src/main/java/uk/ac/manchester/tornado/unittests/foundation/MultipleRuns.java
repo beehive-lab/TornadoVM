@@ -56,7 +56,7 @@ public class MultipleRuns extends TornadoTestBase {
                 .task("t0", TestKernels::addValue, a) //
                 .transferToHost(a);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         for (int i = 0; i < iterations; i++) {

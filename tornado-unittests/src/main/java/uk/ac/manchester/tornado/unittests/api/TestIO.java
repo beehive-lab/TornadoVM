@@ -72,7 +72,7 @@ public class TestIO extends TornadoTestBase {
                 .task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC) //
                 .transferToHost(arrayC);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         for (int i = 0; i < 4; i++) {
@@ -105,7 +105,7 @@ public class TestIO extends TornadoTestBase {
                 .task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC) //
                 .transferToHost(arrayC);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         for (int i = 0; i < 4; i++) {
@@ -142,7 +142,7 @@ public class TestIO extends TornadoTestBase {
                 .task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC) //
                 .transferToHost(arrayC);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         executor.withLockObjectsInMemory(arrayA, arrayB, arrayC);
@@ -195,7 +195,7 @@ public class TestIO extends TornadoTestBase {
                 .task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC)//
                 .transferToHost(arrayC);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         executor.withLockObjectsInMemory(arrayA, arrayB, arrayB2, arrayC);
@@ -250,7 +250,7 @@ public class TestIO extends TornadoTestBase {
                 .task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC) //
                 .transferToHost(arrayC);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withLockObjectsInMemory(arrayA, arrayB, arrayC);
 

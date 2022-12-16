@@ -71,7 +71,7 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
                 .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)//
                 .transferToHost(c);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -100,7 +100,7 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
                 .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)//
                 .transferToHost(c);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withDevice(driver.getDevice(deviceNumber)) //
                 .execute();
@@ -135,7 +135,7 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
                 .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)//
                 .transferToHost(c);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withDevice(driver.getDevice(deviceNumber)) //
                 .execute();

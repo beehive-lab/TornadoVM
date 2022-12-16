@@ -95,7 +95,7 @@ public class JMHStencil {
                     .task("copy", Stencil::copy, sz, a1, a0) //
                     .transferToHost(a0);
 
-            ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
             executor.withWarmUp();
         }

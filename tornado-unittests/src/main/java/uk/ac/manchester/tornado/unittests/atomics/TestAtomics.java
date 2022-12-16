@@ -179,7 +179,7 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestAtomics::atomic03, a) //
                 .transferToHost(a);
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -202,7 +202,7 @@ public class TestAtomics extends TornadoTestBase {
                 .task("t0", TestAtomics::atomic04, a) //
                 .transferToHost(a); //
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -231,7 +231,7 @@ public class TestAtomics extends TornadoTestBase {
                 .task("t0", TestAtomics::atomic04Get, a) //
                 .transferToHost(a); //
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -281,7 +281,7 @@ public class TestAtomics extends TornadoTestBase {
                         new int[] { 155 } // Atomics - Initial Value
                 )//
                 .transferToHost(a);
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -305,7 +305,7 @@ public class TestAtomics extends TornadoTestBase {
                 .task("t0", TestAtomics::atomic06, a, b) //
                 .transferToHost(a, b); //
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -333,7 +333,7 @@ public class TestAtomics extends TornadoTestBase {
                 .task("t0", TestAtomics::atomic07, a) //
                 .transferToHost(a); //
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -358,7 +358,7 @@ public class TestAtomics extends TornadoTestBase {
                 .task("t0", TestAtomics::atomic08, a) //
                 .transferToHost(a); //
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -401,7 +401,7 @@ public class TestAtomics extends TornadoTestBase {
                 .task("t0", TestAtomics::atomic09, a, ai) //
                 .transferToHost(a, ai);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -430,7 +430,7 @@ public class TestAtomics extends TornadoTestBase {
                 .task("t0", TestAtomics::atomic09, a, ai) //
                 .transferToHost(a, ai);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -459,7 +459,7 @@ public class TestAtomics extends TornadoTestBase {
                 .task("t0", TestAtomics::atomic09, a, ai) //
                 .transferToHost(ai, a);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -490,7 +490,7 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestAtomics::atomic10, a, ai, bi) //
                 .transferToHost(ai, a, bi);
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -522,7 +522,7 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestAtomics::atomic13, a, ai) //
                 .transferToHost(ai, a);
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -553,7 +553,7 @@ public class TestAtomics extends TornadoTestBase {
                 .task("t0", TestAtomics::atomic14, a, ai, bi) //
                 .transferToHost(ai, a, bi);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -581,7 +581,7 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestAtomics::atomic15, a, ai) //
                 .transferToHost(ai, a);
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -610,7 +610,7 @@ public class TestAtomics extends TornadoTestBase {
                 .task("t0", TestAtomics::atomic16, a, ai) //
                 .transferToHost(ai, a);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         final int iterations = 50;

@@ -108,7 +108,7 @@ public class JMHBlurFilter {
                     .task("blue", ComputeKernels::channelConvolution, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
                     .transferToHost(redFilter, greenFilter, blueFilter);
 
-            ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
             executor.withDefaultScheduler().withWarmUp();
         }

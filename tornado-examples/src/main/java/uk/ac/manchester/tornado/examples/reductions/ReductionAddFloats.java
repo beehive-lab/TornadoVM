@@ -62,7 +62,7 @@ public class ReductionAddFloats {
                 .task("t0", ReductionAddFloats::reductionAddFloats, input, result)//
                 .transferToHost(result);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withLockObjectsInMemory(input, result);
 

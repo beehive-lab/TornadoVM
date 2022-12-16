@@ -100,7 +100,7 @@ public class TestFields extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.task("t0", foo::computeInit);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withLockObjectsInMemory(foo) //
                 .execute();
@@ -122,7 +122,7 @@ public class TestFields extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.task("t0", foo::computeAdd);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withLockObjectsInMemory(foo) //
                 .execute() //
@@ -143,7 +143,7 @@ public class TestFields extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("Bar");
         taskGraph.task("init", bar::computeInit);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withLockObjectsInMemory(bar).execute();
 
@@ -207,7 +207,7 @@ public class TestFields extends TornadoTestBase {
         taskGraph.task("t0", TestFields::setField, a, 77f);
         taskGraph.transferToHost(a);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -234,7 +234,7 @@ public class TestFields extends TornadoTestBase {
         taskGraph.task("t0", TestFields::setNestedField, a, 77f);
         taskGraph.transferToHost(a);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
@@ -258,7 +258,7 @@ public class TestFields extends TornadoTestBase {
         taskGraph.task("t0", TestFields::setNestedArray, a, indexes);
         taskGraph.transferToHost(a);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 

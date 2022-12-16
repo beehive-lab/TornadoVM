@@ -83,7 +83,7 @@ public class TestResizeImage extends TornadoTestBase {
                 .task("t0", TestResizeImage::resize, imageDst, imageSource, 2) //
                 .transferToHost(imageDst);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withWarmUp() //
                 .execute();

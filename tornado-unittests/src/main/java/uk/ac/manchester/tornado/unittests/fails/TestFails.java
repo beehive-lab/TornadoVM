@@ -76,7 +76,7 @@ public class TestFails extends TornadoTestBase {
                 }, x, y) //
                 .transferToHost(y);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
 
         // How to provoke the failure
@@ -105,7 +105,7 @@ public class TestFails extends TornadoTestBase {
                 .transferToHost(y);
 
         // How to provoke the failure
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
         executorPlan.execute();
     }

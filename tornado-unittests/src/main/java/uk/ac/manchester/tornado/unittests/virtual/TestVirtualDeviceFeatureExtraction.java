@@ -84,7 +84,7 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
                 .task("t0", TestVirtualDeviceFeatureExtraction::maxReduction, input, result) //
                 .transferToHost(result);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutorPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 

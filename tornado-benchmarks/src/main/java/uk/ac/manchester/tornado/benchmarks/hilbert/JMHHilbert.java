@@ -65,7 +65,7 @@ public class JMHHilbert {
             TaskGraph taskGraph = new TaskGraph("s0") //
                     .task("t0", ComputeKernels::hilbertComputation, hilbertMatrix, size, size) //
                     .transferToHost(hilbertMatrix); //
-            ImmutableTaskGraph immutableTaskGraph = taskGraph.freeze();
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
             executor.withWarmUp();
         }
