@@ -98,7 +98,7 @@ public class SaxpyMT {
 
             graph.transferToDevice(DataTransferMode.FIRST_EXECUTION, x, b) //
                     .task("t0", SaxpyMT::saxpy, alpha, x, y, b) //
-                    .transferToHost(y);
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
 
             ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();

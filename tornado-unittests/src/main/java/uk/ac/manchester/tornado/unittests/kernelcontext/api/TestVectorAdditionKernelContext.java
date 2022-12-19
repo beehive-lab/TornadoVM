@@ -85,7 +85,7 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, context, a, b, cTornado) //
-                .transferToHost(cTornado);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, cTornado);
 
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
@@ -123,7 +123,7 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, a, context, b, cTornado) //
-                .transferToHost(cTornado);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, cTornado);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -156,7 +156,7 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, a, b, context, cTornado) //
-                .transferToHost(cTornado);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, cTornado);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -189,7 +189,7 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, a, b, cTornado, context) //
-                .transferToHost(cTornado);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, cTornado);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -221,7 +221,7 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, context, a, b, cTornado) //
-                .transferToHost(cTornado);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, cTornado);
 
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);

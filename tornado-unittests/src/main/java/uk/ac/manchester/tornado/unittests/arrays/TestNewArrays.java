@@ -147,7 +147,7 @@ public class TestNewArrays extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestNewArrays::vectorAdd, a, b, c) //
-                .transferToHost(c);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -174,7 +174,7 @@ public class TestNewArrays extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestNewArrays::vectorAddComplexConditions, a, b, c) //
-                .transferToHost(c);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -202,7 +202,7 @@ public class TestNewArrays extends TornadoTestBase {
         assertNotNull(taskGraph);
 
         taskGraph.task("t0", TestNewArrays::initializeToOne, data);
-        taskGraph.transferToHost(data);
+        taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -231,7 +231,7 @@ public class TestNewArrays extends TornadoTestBase {
         assertNotNull(taskGraph);
 
         taskGraph.task("t0", TestNewArrays::initializeToOneParallelScope, data);
-        taskGraph.transferToHost(data);
+        taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -260,7 +260,7 @@ public class TestNewArrays extends TornadoTestBase {
         assertNotNull(taskGraph);
 
         taskGraph.task("t0", TestNewArrays::initializeToOneParallelScopeComplex, data);
-        taskGraph.transferToHost(data);
+        taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -289,7 +289,7 @@ public class TestNewArrays extends TornadoTestBase {
         assertNotNull(taskGraph);
 
         taskGraph.task("t0", TestNewArrays::initializeToOneParallel, data);
-        taskGraph.transferToHost(data);
+        taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -317,7 +317,7 @@ public class TestNewArrays extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestNewArrays::reductionAddFloats, input, result) //
-                .transferToHost(result); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

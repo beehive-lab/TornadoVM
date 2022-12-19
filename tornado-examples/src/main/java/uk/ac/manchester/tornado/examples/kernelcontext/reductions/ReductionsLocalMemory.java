@@ -92,7 +92,7 @@ public class ReductionsLocalMemory {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize)//
                 .task("t0", ReductionsLocalMemory::reductionLocal, input, reduce, localSize, context) //
                 .task("t1", ReductionsLocalMemory::rAdd, reduce, (size / localSize)) //
-                .transferToHost(reduce);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
 
         // Change the Grid
         worker.setLocalWork(localSize, 1, 1);

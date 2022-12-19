@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.WorkerGrid3D;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -58,7 +59,7 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", KernelContextWorkGroupTests::apiTestGlobalGroupSizeX, context, data) //
-                .transferToHost(data);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -82,7 +83,7 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         int[] data = new int[16];
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", KernelContextWorkGroupTests::apiTestGlobalGroupSizeY, context, data) //
-                .transferToHost(data);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -106,7 +107,7 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         int[] data = new int[16];
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", KernelContextWorkGroupTests::apiTestGlobalGroupSizeZ, context, data)//
-                .transferToHost(data);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withGridScheduler(grid) //
@@ -129,7 +130,7 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         int[] data = new int[1024];
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", KernelContextWorkGroupTests::apiTestLocalGroupSizeX, context, data) //
-                .transferToHost(data);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -153,7 +154,7 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         int[] data = new int[1024];
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", KernelContextWorkGroupTests::apiTestLocalGroupSizeY, context, data) //
-                .transferToHost(data);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -177,7 +178,7 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         int[] data = new int[1024];
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", KernelContextWorkGroupTests::apiTestLocalGroupSizeZ, context, data) //
-                .transferToHost(data);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

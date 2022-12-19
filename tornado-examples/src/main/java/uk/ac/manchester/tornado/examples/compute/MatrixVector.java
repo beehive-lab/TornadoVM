@@ -109,7 +109,7 @@ public class MatrixVector {
         TaskGraph taskGraph = new TaskGraph("la") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, vectorFloat, matrix2DFloat) //
                 .task("mv", MatrixVector::computeMatrixVector, matrix2DFloat, vectorFloat, result) //
-                .transferToHost(result);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

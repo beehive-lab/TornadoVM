@@ -22,6 +22,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -48,7 +49,7 @@ public class HilbertTornado extends BenchmarkDriver {
         hilbertMatrix = new float[size * size];
         taskGraph = new TaskGraph("benchmark") //
                 .task("t0", ComputeKernels::hilbertComputation, hilbertMatrix, size, size) //
-                .transferToHost(hilbertMatrix);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, hilbertMatrix);
 
         immutableTaskGraph = taskGraph.snapshot();
         executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -69,7 +70,7 @@ public class HilbertTornado extends BenchmarkDriver {
         float[] testData = new float[size * size];
         TaskGraph taskGraph1 = new TaskGraph("s0") //
                 .task("t0", ComputeKernels::hilbertComputation, testData, size, size) //
-                .transferToHost(testData); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, testData); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph1.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

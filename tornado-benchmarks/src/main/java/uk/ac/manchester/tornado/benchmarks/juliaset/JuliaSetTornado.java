@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.benchmarks.juliaset;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
@@ -52,7 +53,7 @@ public class JuliaSetTornado extends BenchmarkDriver {
 
         taskGraph = new TaskGraph("benchmark") //
                 .task("juliaSet", GraphicsKernels::juliaSetTornado, size, hue, brightness) //
-                .transferToHost(hue, brightness);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, hue, brightness);
         immutableTaskGraph = taskGraph.snapshot();
         executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withWarmUp();

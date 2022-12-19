@@ -178,7 +178,7 @@ public class BFS {
         initializeVertices(numNodes, vertices, rootNode);
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", BFS::initializeVertices, numNodes, vertices, rootNode) //
-                .transferToHost(vertices);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, vertices);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -199,7 +199,7 @@ public class BFS {
         TaskGraph taskGraph1 = new TaskGraph("s1") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, vertices, adjacencyMatrix, modify, currentDepth) //
                 .task("t1", BFS::runBFS, vertices, adjacencyMatrix, numNodes, modify, currentDepth) //
-                .transferToHost(vertices, modify);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, vertices, modify);
 
         ImmutableTaskGraph immutableTaskGraph1 = taskGraph1.snapshot();
         TornadoExecutionPlan executor1 = new TornadoExecutor(immutableTaskGraph1) //

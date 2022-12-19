@@ -45,18 +45,20 @@ package uk.ac.manchester.tornado.api.enums;
  * Enumerate to specify the mode in which data will be copied to/from the host
  * to/from the device.
  */
-public class DataTransferMode {
+public enum DataTransferMode {
 
     /**
      * Flag to copy data between host <-> device only during the first execution. If
      * the task-graph is executed multiple times, all data set with this flag will
      * remain on the device as a Read-Only data.
      */
-    public static final int FIRST_EXECUTION = 0;
+    FIRST_EXECUTION, //
 
     /**
      * Flag to copy data between host <-> device every time the execute method of a
      * task-graph ({@link uk.ac.manchester.tornado.api.TaskGraph}) is invoked.
      */
-    public static final int EVERY_EXECUTION = 1;
+    EVERY_EXECUTION,
+
+    LAST;
 }

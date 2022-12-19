@@ -53,7 +53,7 @@ public class VectorAddInt {
         TaskGraph taskGraph = new TaskGraph("s0") // T
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", VectorAddInt::vectorAdd, a, b, c) //
-                .transferToHost(c);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan tornadoExecutor = new TornadoExecutor(immutableTaskGraph).build();

@@ -64,7 +64,7 @@ public class DFTTornado extends BenchmarkDriver {
         taskGraph = new TaskGraph("benchmark") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, inReal, inImag) //
                 .task("t0", ComputeKernels::computeDFT, inReal, inImag, outReal, outImag) //
-                .transferToHost(outReal, outImag);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outReal, outImag);
 
         immutableTaskGraph = taskGraph.snapshot();
         executor = new TornadoExecutor(immutableTaskGraph).build();

@@ -71,7 +71,7 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
                 .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)//
                 .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)//
-                .transferToHost(a);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -93,7 +93,7 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
                 .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)//
                 .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)//
                 .task("t3", TestMultipleTasksSingleDevice::task2Saxpy, a, a, b, 12)//
-                .transferToHost(b);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -118,7 +118,7 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
                 .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)//
                 .task("t2", TestMultipleTasksSingleDevice::task0Initialization, b)//
                 .task("t3", TestMultipleTasksSingleDevice::task2Saxpy, a, b, c, 12)//
-                .transferToHost(c);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -144,7 +144,7 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
                 .task("t2", TestMultipleTasksSingleDevice::task0Initialization, b)//
                 .task("t3", TestMultipleTasksSingleDevice::task2Saxpy, a, b, b, 12)//
                 .task("t4", TestMultipleTasksSingleDevice::task2Saxpy, b, a, c, 12)//
-                .transferToHost(c);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

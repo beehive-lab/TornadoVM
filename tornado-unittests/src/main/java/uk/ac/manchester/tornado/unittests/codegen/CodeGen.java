@@ -117,7 +117,7 @@ public class CodeGen extends TornadoTestBase {
 
         taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, grayIntegralImage) //
                 .task("bar", CodeGen::cascadeKernel, grayIntegralImage, imageWidth, imageHeight, resultsXY) //
-                .transferToHost(resultsXY);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, resultsXY);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -180,7 +180,7 @@ public class CodeGen extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("break") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("task", CodeGen::breakStatement, a) //
-                .transferToHost(a);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

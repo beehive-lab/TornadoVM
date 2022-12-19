@@ -41,6 +41,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
 /**
@@ -68,7 +69,7 @@ public class JMHJuliaSet {
 
             TaskGraph taskGraph = new TaskGraph("benchmark") //
                     .task("juliaset", GraphicsKernels::juliaSetTornado, size, hue, brightness) //
-                    .transferToHost(hue, brightness);
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, hue, brightness);
 
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();

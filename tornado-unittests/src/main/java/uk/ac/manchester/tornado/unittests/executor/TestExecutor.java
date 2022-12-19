@@ -55,7 +55,7 @@ public class TestExecutor extends TornadoTestBase {
         TaskGraph tg = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestHello::add, a, b, c) //
-                .transferToHost(c);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         // 2. Create an immutable task graph
         ImmutableTaskGraph immutableTaskGraph = tg.snapshot();
@@ -94,7 +94,7 @@ public class TestExecutor extends TornadoTestBase {
         TaskGraph tg = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestHello::add, a, b, c) //
-                .transferToHost(c);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         // 2. Create an immutable task graph
         ImmutableTaskGraph immutableTaskGraph = tg.snapshot();
@@ -133,7 +133,7 @@ public class TestExecutor extends TornadoTestBase {
         TaskGraph tg = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestHello::add, a, b, c) //
-                .transferToHost(c);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         // 2. Create an immutable task graph
         ImmutableTaskGraph immutableTaskGraph = tg.snapshot();

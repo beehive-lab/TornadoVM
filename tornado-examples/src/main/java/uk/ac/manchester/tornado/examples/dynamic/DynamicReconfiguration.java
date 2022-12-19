@@ -55,7 +55,7 @@ public class DynamicReconfiguration {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", DynamicReconfiguration::saxpy, 2.0f, a, b) //
-                .transferToHost(b);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         new TornadoExecutor(immutableTaskGraph) //

@@ -56,7 +56,7 @@ public class ArrayAccInt {
         for (int i = 0; i < numKernels; i++) {
             taskGraph.task("t" + i, ArrayAccInt::acc, a, 1);
         }
-        taskGraph.transferToHost(a);
+        taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

@@ -58,6 +58,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Base interface of the Tornado API. It exposes the set of operations within a
@@ -558,16 +559,9 @@ public interface TornadoAPI {
      */
     TornadoAPI task(SchedulableTask task);
 
-    TornadoAPI transferToDevice(final int mode, Object... objects);
+    TornadoAPI transferToDevice(DataTransferMode mode, Object... objects);
 
-    /**
-     * Open a stream channel between the device and the host.
-     *
-     * @param objects
-     *            list of input objects to be streamed.
-     * @return link to the {@link TornadoAPI} to allow function composition.
-     */
-    TornadoAPI transferToHost(Object... objects);
+    TornadoAPI transferToHost(DataTransferMode mode, Object... objects);
 
     /**
      * Function that closes a task-graph definition and creates an immutable

@@ -163,7 +163,9 @@ public class TornadoTaskGraph implements TaskGraphInterface {
 
     private Set<Object> argumentsLookUp;
 
-    private List<StreamingObject> streamingInputObjects;
+    private List<StreamingObject> inputModesObjects; // List of objects with its data transfer mode (IN)
+
+    private List<StreamingObject> outputModeObjects; // List of objects with its data transfer mode (OUT)
     private ConcurrentHashMap<Policy, Integer> policyTimeTable = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerOutputs = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerInputs = new ConcurrentHashMap<>();
@@ -206,14 +208,15 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         taskPackages = new ArrayList<>();
         streamOutObjects = new ArrayList<>();
         streamInObjects = new ArrayList<>();
-        streamingInputObjects = new ArrayList<>();
+        inputModesObjects = new ArrayList<>();
+        outputModeObjects = new ArrayList<>();
     }
 
-    static void performStreamInObject(TaskGraph task, Object inputObject, final int dataTransferMode) {
+    static void performStreamInObject(TaskGraph task, Object inputObject, DataTransferMode dataTransferMode) {
         task.transferToDevice(dataTransferMode, inputObject);
     }
 
-    static void performStreamInObject(TaskGraph task, List<Object> inputObjects, final int dataTransferMode) {
+    static void performStreamInObject(TaskGraph task, List<Object> inputObjects, DataTransferMode dataTransferMode) {
         int numObjectsCopyIn = inputObjects.size();
         switch (numObjectsCopyIn) {
             case 0:
@@ -279,62 +282,66 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         }
     }
 
-    static void performStreamOutThreads(TaskGraph task, List<Object> outputArrays) {
+    static void performStreamOutThreads(DataTransferMode mode, TaskGraph task, Object outputObject) {
+        task.transferToHost(mode, outputObject);
+    }
+
+    static void performStreamOutThreads(DataTransferMode mode, TaskGraph task, List<Object> outputArrays) {
         int numObjectsCopyOut = outputArrays.size();
         switch (numObjectsCopyOut) {
             case 0:
                 break;
             case 1:
-                task.transferToHost(outputArrays.get(0));
+                task.transferToHost(mode, outputArrays.get(0));
                 break;
             case 2:
-                task.transferToHost(outputArrays.get(0), outputArrays.get(1));
+                task.transferToHost(mode, outputArrays.get(0), outputArrays.get(1));
                 break;
             case 3:
-                task.transferToHost(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2));
+                task.transferToHost(mode, outputArrays.get(0), outputArrays.get(1), outputArrays.get(2));
                 break;
             case 4:
-                task.transferToHost(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3));
+                task.transferToHost(mode, outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3));
                 break;
             case 5:
-                task.transferToHost(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4));
+                task.transferToHost(mode, outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4));
                 break;
             case 6:
-                task.transferToHost(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5));
+                task.transferToHost(mode, outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5));
                 break;
             case 7:
-                task.transferToHost(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6));
+                task.transferToHost(mode, outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6));
                 break;
             case 8:
-                task.transferToHost(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6),
+                task.transferToHost(mode, outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6),
                         outputArrays.get(7));
                 break;
             case 9:
-                task.transferToHost(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6),
+                task.transferToHost(mode, outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6),
                         outputArrays.get(7), outputArrays.get(8));
                 break;
             case 10:
-                task.transferToHost(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6),
+                task.transferToHost(mode, outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6),
                         outputArrays.get(7), outputArrays.get(8), outputArrays.get(9));
                 break;
             case 11:
-                task.transferToHost(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6),
+                task.transferToHost(mode, outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6),
                         outputArrays.get(7), outputArrays.get(8), outputArrays.get(9), outputArrays.get(10));
                 break;
             case 12:
-                task.transferToHost(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6),
+                task.transferToHost(mode, outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6),
                         outputArrays.get(7), outputArrays.get(8), outputArrays.get(9), outputArrays.get(10), outputArrays.get(11));
                 break;
             case 13:
-                task.transferToHost(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6),
+                task.transferToHost(mode, outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6),
                         outputArrays.get(7), outputArrays.get(8), outputArrays.get(9), outputArrays.get(10), outputArrays.get(11), outputArrays.get(12));
                 break;
             case 14:
-                task.transferToHost(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6),
+                task.transferToHost(mode, outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6),
                         outputArrays.get(7), outputArrays.get(8), outputArrays.get(9), outputArrays.get(10), outputArrays.get(11), outputArrays.get(12), outputArrays.get(13));
                 break;
             case 15:
-                task.transferToHost(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6),
+                task.transferToHost(mode, outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6),
                         outputArrays.get(7), outputArrays.get(8), outputArrays.get(9), outputArrays.get(10), outputArrays.get(11), outputArrays.get(12), outputArrays.get(13), outputArrays.get(14));
                 break;
             default:
@@ -416,8 +423,9 @@ public class TornadoTaskGraph implements TaskGraphInterface {
 
         TornadoTaskGraph tornadoTaskGraph = new TornadoTaskGraph(this.taskScheduleName);
 
-        tornadoTaskGraph.streamingInputObjects = Collections.unmodifiableList(this.streamingInputObjects);
+        tornadoTaskGraph.inputModesObjects = Collections.unmodifiableList(this.inputModesObjects);
         tornadoTaskGraph.streamInObjects = Collections.unmodifiableList(this.streamInObjects);
+        tornadoTaskGraph.outputModeObjects = Collections.unmodifiableList(this.outputModeObjects);
 
         tornadoTaskGraph.streamOutObjects = Collections.unmodifiableList(this.streamOutObjects);
         tornadoTaskGraph.hlBuffer = this.hlBuffer;
@@ -828,7 +836,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
     }
 
     @Override
-    public void transferToDevice(final int mode, Object... objects) {
+    public void transferToDevice(DataTransferMode mode, Object... objects) {
         for (Object functionParameter : objects) {
             if (functionParameter == null) {
                 throw new TornadoRuntimeException("[ERROR] null object passed into streamIn() in schedule " + executionContext.getId());
@@ -851,7 +859,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
             argumentsLookUp.add(functionParameter);
 
             // List of input objects for the dynamic reconfiguration
-            streamingInputObjects.add(new StreamingObject(mode, functionParameter));
+            inputModesObjects.add(new StreamingObject(mode, functionParameter));
 
             if (TornadoOptions.isReusedBuffersEnabled()) {
                 lockObjectsInMemory(functionParameter);
@@ -860,15 +868,24 @@ public class TornadoTaskGraph implements TaskGraphInterface {
     }
 
     @Override
-    public void transferToHost(Object... objects) {
+    public void transferToHost(DataTransferMode mode, Object... objects) {
         for (Object functionParameter : objects) {
             if (functionParameter == null) {
                 Tornado.warn("null object passed into streamIn() in schedule %s", executionContext.getId());
                 continue;
             }
-            streamOutObjects.add(functionParameter);
-            executionContext.getObjectState(functionParameter).setStreamOut(true);
+
+            // If the object mode is set to LAST then we *only* insert it in the lookup
+            // hash-set.
+            if (mode != DataTransferMode.LAST) {
+                streamOutObjects.add(functionParameter);
+                executionContext.getObjectState(functionParameter).setStreamOut(true);
+            }
+
             argumentsLookUp.add(functionParameter);
+
+            // List of output objects for the dynamic reconfiguration
+            outputModeObjects.add(new StreamingObject(mode, functionParameter));
 
             if (TornadoOptions.isReusedBuffersEnabled()) {
                 lockObjectsInMemory(functionParameter);
@@ -1039,7 +1056,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
     }
 
     private void rewriteTaskForReduceSkeleton(MetaReduceCodeAnalysis analysisTaskSchedule) {
-        reduceTaskGraph = new ReduceTaskGraph(this.getId(), taskPackages, streamInObjects, streamingInputObjects, streamOutObjects, graph);
+        reduceTaskGraph = new ReduceTaskGraph(this.getId(), taskPackages, streamInObjects, inputModesObjects, streamOutObjects, outputModeObjects, graph);
         reduceTaskGraph.scheduleWithReduction(analysisTaskSchedule);
         reduceExpressionRewritten = true;
     }
@@ -1344,7 +1361,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
 
                 long start = timer.time();
 
-                for (StreamingObject streamingObject : streamingInputObjects) {
+                for (StreamingObject streamingObject : inputModesObjects) {
                     performStreamInObject(task, streamingObject.object, streamingObject.mode);
                 }
 
@@ -1356,7 +1373,11 @@ public class TornadoTaskGraph implements TaskGraphInterface {
                     }
                     task.addTask(taskPackage);
                 }
-                performStreamOutThreads(task, streamOutObjects);
+
+                for (StreamingObject streamingObject : outputModeObjects) {
+                    performStreamOutThreads(streamingObject.mode, task, streamingObject.object);
+                }
+                // performStreamOutThreads(task, streamOutObjects);
 
                 ImmutableTaskGraph immutableTaskGraph = task.snapshot();
                 TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -1451,7 +1472,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
             TornadoRuntime.setProperty(newTaskScheduleName + "." + taskID + ".device", "0:" + deviceWinnerIndex);
             taskToCompile.addTask(taskPackage);
         }
-        performStreamOutThreads(taskToCompile, streamOutObjects);
+        performStreamOutThreads(DataTransferMode.EVERY_EXECUTION, taskToCompile, streamOutObjects);
         return taskToCompile;
     }
 
@@ -1560,7 +1581,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
             TaskGraph task = new TaskGraph(newTaskScheduleName);
 
             long start = timer.time();
-            for (StreamingObject streamingObject : streamingInputObjects) {
+            for (StreamingObject streamingObject : inputModesObjects) {
                 performStreamInObject(task, streamingObject.object, streamingObject.mode);
             }
 
@@ -1587,7 +1608,10 @@ public class TornadoTaskGraph implements TaskGraphInterface {
             if (ignoreTask) {
                 continue;
             }
-            performStreamOutThreads(task, streamOutObjects);
+            for (StreamingObject modeObject : outputModeObjects) {
+                performStreamOutThreads(modeObject.mode, task, modeObject.object);
+            }
+            // performStreamOutThreads(task, streamOutObjects);
 
             ImmutableTaskGraph immutableTaskGraph = task.snapshot();
             TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

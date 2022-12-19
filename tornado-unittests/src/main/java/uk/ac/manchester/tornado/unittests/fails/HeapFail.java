@@ -70,7 +70,7 @@ public class HeapFail {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
                 .task("s0", HeapFail::validKernel, x, y) //
-                .transferToHost(y); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, y); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

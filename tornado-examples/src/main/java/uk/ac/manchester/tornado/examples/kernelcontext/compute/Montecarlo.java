@@ -26,6 +26,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Montecarlo algorithm to approximate the PI value. This version has been
@@ -102,7 +103,7 @@ public class Montecarlo {
 
         TaskGraph t0 = new TaskGraph("s0") //
                 .task("t0", Montecarlo::computeMontecarlo, context, output, size) //
-                .transferToHost(output);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = t0.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

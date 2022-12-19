@@ -96,7 +96,7 @@ public class MatrixAddition2D {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", MatrixAddition2D::matrixAddition, matrixA, matrixB, matrixC, size) //
-                .transferToHost(matrixC);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -129,7 +129,7 @@ public class MatrixAddition2D {
         TaskGraph taskGraph1 = new TaskGraph("s1") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixAV, matrixBV) //
                 .task("t1", MatrixAddition2D::matrixAddition, matrixAV, matrixBV, matrixCV, (size * 2)) //
-                .transferToHost(matrixCV);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixCV);
 
         ImmutableTaskGraph immutableTaskGraph1 = taskGraph1.snapshot();
         TornadoExecutionPlan executor1 = new TornadoExecutor(immutableTaskGraph1).build();

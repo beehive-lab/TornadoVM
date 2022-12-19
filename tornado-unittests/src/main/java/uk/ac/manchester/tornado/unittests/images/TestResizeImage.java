@@ -81,7 +81,7 @@ public class TestResizeImage extends TornadoTestBase {
         final TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, imageSource) //
                 .task("t0", TestResizeImage::resize, imageDst, imageSource, 2) //
-                .transferToHost(imageDst);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, imageDst);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

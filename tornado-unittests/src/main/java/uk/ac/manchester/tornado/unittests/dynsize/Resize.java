@@ -73,7 +73,7 @@ public class Resize extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize01, a) //
-                .transferToHost(a); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build().execute();
@@ -98,7 +98,7 @@ public class Resize extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize01, a) //
-                .transferToHost(a); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build().execute();
@@ -131,7 +131,7 @@ public class Resize extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize02, a, b) //
-                .transferToHost(b); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b); //
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build().execute();
         // Resize data
@@ -157,7 +157,7 @@ public class Resize extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize02, a, b) //
-                .transferToHost(b); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b); //
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build().execute();
         float[] aux = createArray(256);
@@ -190,7 +190,7 @@ public class Resize extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize02, a, b) //
-                .transferToHost(b); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b); //
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph) //
                 .build() //
@@ -227,7 +227,7 @@ public class Resize extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", Resize::resize02, a, b) //
-                .transferToHost(b); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph) //

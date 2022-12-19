@@ -148,7 +148,7 @@ public class DFTMT {
             long startInit = System.nanoTime();
             graph.transferToDevice(DataTransferMode.FIRST_EXECUTION, inReal, inImag) //
                     .task("t0", DFTMT::computeDFT, inReal, inImag, outReal, outImag, inputSize) //
-                    .transferToHost(outReal, outImag);
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, outReal, outImag);
 
             ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();

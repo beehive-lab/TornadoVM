@@ -159,7 +159,7 @@ public class MatrixMul2DLocalMemory {
         TaskGraph scheduleCUDA = new TaskGraph("cuda_old_api") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", MatrixMul2DLocalMemory::matrixMultiplication, matrixA, matrixB, matrixCCUDA, N) //
-                .transferToHost(matrixCCUDA);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixCCUDA);
 
         ImmutableTaskGraph immutableTaskGraph = scheduleCUDA.snapshot();
         TornadoExecutionPlan executorCUDA = new TornadoExecutor(immutableTaskGraph).build();
@@ -200,7 +200,7 @@ public class MatrixMul2DLocalMemory {
         TaskGraph scheduleOCL = new TaskGraph("ocl_old_api") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", MatrixMul2DLocalMemory::matrixMultiplication, matrixA, matrixB, matrixCOCL, N) //
-                .transferToHost(matrixCOCL);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixCOCL);
 
         ImmutableTaskGraph immutableTaskGraph1 = scheduleOCL.snapshot();
         TornadoExecutionPlan executorOCL = new TornadoExecutor(immutableTaskGraph1).build();
@@ -252,7 +252,7 @@ public class MatrixMul2DLocalMemory {
         TaskGraph oclNewApiTask = new TaskGraph("ocl_advanced_api") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", MatrixMul2DLocalMemory::matrixMultiplicationLocalMemory, context, matrixA, matrixB, matrixCOCLNewApi, N) //
-                .transferToHost(matrixCOCLNewApi); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixCOCLNewApi); //
 
         ImmutableTaskGraph immutableTaskGraph2 = oclNewApiTask.snapshot();
         TornadoExecutionPlan executorOCLNewAPI = new TornadoExecutor(immutableTaskGraph2).build();
@@ -293,7 +293,7 @@ public class MatrixMul2DLocalMemory {
         TaskGraph cudaNewApiTask = new TaskGraph("cuda_advanced_api") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", MatrixMul2DLocalMemory::matrixMultiplicationLocalMemory, contextCUDA, matrixA, matrixB, matrixCCUDANewApi, N) //
-                .transferToHost(matrixCCUDANewApi); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixCCUDANewApi); //
 
         ImmutableTaskGraph immutableTaskGraph3 = cudaNewApiTask.snapshot();
         TornadoExecutionPlan executorCUDANewAPI = new TornadoExecutor(immutableTaskGraph3).build();

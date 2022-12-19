@@ -59,7 +59,7 @@ public class TestLambdas extends TornadoTestBase {
                         x[i] = y[i] * y[i];
                     }
                 }, a, b) //
-                .transferToHost(a);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

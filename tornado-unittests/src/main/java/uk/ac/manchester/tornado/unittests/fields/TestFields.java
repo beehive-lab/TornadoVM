@@ -203,7 +203,7 @@ public class TestFields extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a);
         taskGraph.task("t0", TestFields::setField, a, 77f);
-        taskGraph.transferToHost(a);
+        taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -230,7 +230,7 @@ public class TestFields extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a);
         taskGraph.task("t0", TestFields::setNestedField, a, 77f);
-        taskGraph.transferToHost(a);
+        taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -254,7 +254,7 @@ public class TestFields extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a);
         taskGraph.task("t0", TestFields::setNestedArray, a, indexes);
-        taskGraph.transferToHost(a);
+        taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

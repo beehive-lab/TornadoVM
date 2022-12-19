@@ -62,7 +62,7 @@ public class ArrayMultiplyAdd {
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b, c) //
                 .task("t0", SimpleMath::vectorMultiply, a, b, c) //
                 .task("t1", SimpleMath::vectorAdd, c, b, d) //
-                .transferToHost(d);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, d);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

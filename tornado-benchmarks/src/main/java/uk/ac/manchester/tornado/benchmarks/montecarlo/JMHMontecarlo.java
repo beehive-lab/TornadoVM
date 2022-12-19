@@ -43,6 +43,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 /**
@@ -66,7 +67,7 @@ public class JMHMontecarlo {
             output = new float[size];
             TaskGraph taskGraph = new TaskGraph("benchmark") //
                     .task("montecarlo", ComputeKernels::monteCarlo, output, size) //
-                    .transferToHost(output);
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
             executor.withWarmUp();

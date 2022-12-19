@@ -74,7 +74,7 @@ public class StencilTornado extends BenchmarkDriver {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a0, a1) //
                 .task("stencil", Stencil::stencil3d, n, sz, a0, a1, FAC) //
                 .task("copy", Stencil::copy, sz, a1, a0) //
-                .transferToHost(a0);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a0);
 
         immutableTaskGraph = taskGraph.snapshot();
         executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -119,7 +119,7 @@ public class StencilTornado extends BenchmarkDriver {
 
     @Override
     protected void barrier() {
-        executor.transferToHost();
+        executor.transferToHost(a0);
     }
 
     public void printSummary() {

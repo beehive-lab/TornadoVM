@@ -94,7 +94,8 @@ public class JMHNBody {
 
             TaskGraph taskGraph = new TaskGraph("benchmark") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, velSeq, posSeq) //
-                    .task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
+                    .task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, posSeq, velSeq);
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
             executor.withWarmUp();

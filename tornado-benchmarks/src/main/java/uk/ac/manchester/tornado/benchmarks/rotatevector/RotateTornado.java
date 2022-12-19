@@ -67,7 +67,7 @@ public class RotateTornado extends BenchmarkDriver {
         taskGraph = new TaskGraph("benchmark");
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, input);
         taskGraph.task("rotateVector", GraphicsKernels::rotateVector, output, m, input);
-        taskGraph.transferToHost(output);
+        taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         immutableTaskGraph = taskGraph.snapshot();
         executor = new TornadoExecutor(immutableTaskGraph).build();

@@ -63,7 +63,7 @@ public class MyCompute {
             TaskGraph taskGraph = new TaskGraph("s0") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
                     .task("t0", MyCompute::mxm, a, b, c, N)//
-                    .transferToHost(c);//
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, c);//
 
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();

@@ -185,7 +185,8 @@ public class TestMultipleFunctions extends TornadoTestBase {
             b[i] = r.nextInt();
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b).task("t0", TestMultipleFunctions::vectorAddInteger, a, b, c).transferToHost(c);
+        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b).task("t0", TestMultipleFunctions::vectorAddInteger, a, b, c)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -213,7 +214,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestMultipleFunctions::vectorAddInteger2, a, b, c) //
-                .transferToHost(c);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -241,7 +242,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestMultipleFunctions::vectorAddInteger3, a, b, c) //
-                .transferToHost(c);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -269,7 +270,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestMultipleFunctions::vectorAddInteger4, a, b, c) //
-                .transferToHost(c); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -297,7 +298,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestMultipleFunctions::vectorAddFloats, a, b, c) //
-                .transferToHost(c);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -324,7 +325,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestMultipleFunctions::vectorTypes, a, b, c) //
-                .transferToHost(c);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -398,7 +399,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
                         testArrays.ignoreParam2, //
                         testArrays.callerReadTor, //
                         testArrays.callerWriteTor) //
-                .transferToHost(testArrays.callerReadCalleeWriteTor, testArrays.callerWriteTor);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, testArrays.callerReadCalleeWriteTor, testArrays.callerWriteTor);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -435,7 +436,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
                         testArrays.callerReadTor, //
                         testArrays.callerWriteTor) //
                 .task("t1", testTaskAccesses::caller2, testArrays.callerReadTor, testArrays.calleeReadTor)
-                .transferToHost(testArrays.callerReadCalleeWriteTor, testArrays.callerWriteTor, testArrays.callerReadTor);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, testArrays.callerReadCalleeWriteTor, testArrays.callerWriteTor, testArrays.callerReadTor);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -479,7 +480,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
                         arrays.callee1WriteTor, //
                         arrays.callerReadCalleeWriteTor, //
                         arrays.callee2ReadTor)//
-                .transferToHost(arrays.callerReadCalleeWriteTor, //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, arrays.callerReadCalleeWriteTor, //
                         arrays.callerWriteTor, //
                         arrays.callerReadTor, //
                         arrays.callerReadWriteTor, //
@@ -528,7 +529,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
         int[] arr = new int[] { 0 };
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestMultipleFunctions::functionA, arr)//
-                .transferToHost(arr);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, arr);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

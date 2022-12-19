@@ -80,7 +80,7 @@ public class JMHRenderTrack {
             TaskGraph taskGraph = new TaskGraph("s0")//
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                     .task("t0", ComputeKernels::renderTrack, output, input) //
-                    .transferToHost(output);
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
             executor.withWarmUp();

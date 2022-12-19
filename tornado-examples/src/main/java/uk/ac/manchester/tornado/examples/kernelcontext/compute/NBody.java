@@ -188,7 +188,7 @@ public class NBody {
         final TaskGraph t0 = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, posTornadoVM, velTornadoVM) //
                 .task("t0", NBody::nBody, context, numBodies, posTornadoVM, velTornadoVM) //
-                .transferToHost(posTornadoVM, velTornadoVM);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, posTornadoVM, velTornadoVM);
 
         ImmutableTaskGraph immutableTaskGraph = t0.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

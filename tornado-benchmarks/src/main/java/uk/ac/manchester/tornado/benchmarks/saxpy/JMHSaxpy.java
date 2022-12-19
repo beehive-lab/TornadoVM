@@ -77,7 +77,7 @@ public class JMHSaxpy {
             TaskGraph taskGraph = new TaskGraph("benchmark") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
                     .task("saxpy", LinearAlgebraArrays::saxpy, alpha, x, y) //
-                    .transferToHost(y);
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
 
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();

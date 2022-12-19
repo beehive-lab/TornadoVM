@@ -151,7 +151,8 @@ public class NBody {
 
         final TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, posTornadoVM, velTornadoVM) //
-                .task("t0", NBody::nBody, numBodies, posTornadoVM, velTornadoVM, delT, espSqr);
+                .task("t0", NBody::nBody, numBodies, posTornadoVM, velTornadoVM, delT, espSqr) //
+                .transferToHost(DataTransferMode.LAST, posTornadoVM, velTornadoVM);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build().withWarmUp();
@@ -170,7 +171,9 @@ public class NBody {
         }
         long timeParallel = (end - start);
 
-        System.out.println(resultsIterations.toString());
+        executor.transferToHost(posTornadoVM, velTornadoVM);
+
+        System.out.println(resultsIterations);
 
         if (VALIDATION) {
             boolean isValid = validate(numBodies, posTornadoVM, velTornadoVM, posSeq, velSeq);

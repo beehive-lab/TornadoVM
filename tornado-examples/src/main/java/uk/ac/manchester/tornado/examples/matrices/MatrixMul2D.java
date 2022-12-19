@@ -105,7 +105,7 @@ public class MatrixMul2D {
         TaskGraph cudaTaskGraph = new TaskGraph("cuda_s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", MatrixMul2D::matrixMultiplication, matrixA, matrixB, matrixCCUDA, size) //
-                .transferToHost(matrixCCUDA); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixCCUDA); //
 
         ImmutableTaskGraph immutableTaskGraph = cudaTaskGraph.snapshot();
         TornadoExecutionPlan executorCUDA = new TornadoExecutor(immutableTaskGraph).build();
@@ -133,7 +133,7 @@ public class MatrixMul2D {
         TaskGraph oclTaskGraph = new TaskGraph("ocl_s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", MatrixMul2D::matrixMultiplication, matrixA, matrixB, matrixCOCL, size) //
-                .transferToHost(matrixCOCL); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixCOCL); //
 
         ImmutableTaskGraph immutableTaskGraph1 = oclTaskGraph.snapshot();
         TornadoExecutionPlan executorOCL = new TornadoExecutor(immutableTaskGraph1).build();

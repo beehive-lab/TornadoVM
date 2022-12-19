@@ -83,7 +83,7 @@ public class JMHRotateVector {
             TaskGraph taskGraph = new TaskGraph("benchmark") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                     .task("rotateVector", GraphicsKernels::rotateVector, output, m, input) //
-                    .transferToHost(output);
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
             executor.withWarmUp();

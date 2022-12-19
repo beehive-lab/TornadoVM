@@ -48,6 +48,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
 
@@ -83,9 +84,9 @@ public interface TaskGraphInterface extends ProfileInterface {
 
     void waitOn();
 
-    void transferToDevice(final int mode, Object... objects);
+    void transferToDevice(DataTransferMode mode, Object... objects);
 
-    void transferToHost(Object... objects);
+    void transferToHost(DataTransferMode mode, Object... objects);
 
     void dump();
 

@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * <p>
@@ -150,7 +151,7 @@ public class Mandelbrot {
                 short[] result = new short[SIZE * SIZE];
                 TaskGraph taskGraph = new TaskGraph("s0") //
                         .task("t0", MandelbrotImage::mandelbrotTornado, SIZE, result) //
-                        .transferToHost(result);
+                        .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
                 ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
                 TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

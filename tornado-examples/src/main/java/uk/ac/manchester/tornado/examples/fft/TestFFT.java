@@ -105,7 +105,7 @@ public class TestFFT {
         TaskGraph taskGraph = new TaskGraph("x0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, factors, dimArr) //
                 .task("t0", TestFFT::nesting, input, dim, factors, size, dummyFac, dimArr) //
-                .transferToHost(input);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, input);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();

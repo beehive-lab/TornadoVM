@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.benchmarks.mandelbrot;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -45,7 +46,7 @@ public class MandelbrotTornado extends BenchmarkDriver {
         output = new short[size * size];
         taskGraph = new TaskGraph("benchmark") //
                 .task("t0", ComputeKernels::mandelbrot, size, output) //
-                .transferToHost(output);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
         immutableTaskGraph = taskGraph.snapshot();
         executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withWarmUp();

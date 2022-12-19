@@ -92,7 +92,7 @@ public class BlurFilterTornado extends BenchmarkDriver {
                 .task("blurRed", ComputeKernels::channelConvolution, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
                 .task("blurGreen", ComputeKernels::channelConvolution, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
                 .task("blurBlue", ComputeKernels::channelConvolution, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
-                .transferToHost(redFilter, greenFilter, blueFilter);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, redFilter, greenFilter, blueFilter);
 
         immutableTaskGraph = taskGraph.snapshot();
         executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -155,7 +155,7 @@ public class BlurFilterTornado extends BenchmarkDriver {
                 .task("red", ComputeKernels::channelConvolution, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
                 .task("green", ComputeKernels::channelConvolution, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
                 .task("blue", ComputeKernels::channelConvolution, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
-                .transferToHost(redFilter, greenFilter, blueFilter);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, redFilter, greenFilter, blueFilter);
 
         ImmutableTaskGraph immutableTaskGraph1 = parallelFilter.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph1).build();

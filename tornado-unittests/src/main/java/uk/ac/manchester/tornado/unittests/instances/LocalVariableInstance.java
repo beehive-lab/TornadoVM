@@ -101,7 +101,7 @@ public class LocalVariableInstance {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, in) //
                 .task("t0", msk::map, in, out) //
-                .transferToHost(out);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

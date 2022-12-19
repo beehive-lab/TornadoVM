@@ -86,7 +86,7 @@ public class JMHDotVector {
             TaskGraph taskGraph = new TaskGraph("benchmark")//
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                     .task("dotVector", GraphicsKernels::dotVector, a, b, c) //
-                    .transferToHost(c);
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();

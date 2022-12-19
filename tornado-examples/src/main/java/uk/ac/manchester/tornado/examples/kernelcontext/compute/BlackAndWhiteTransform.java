@@ -152,7 +152,7 @@ public class BlackAndWhiteTransform {
                     TaskGraph taskGraph = new TaskGraph("s0") //
                             .transferToDevice(DataTransferMode.EVERY_EXECUTION, imageRGB) //
                             .task("t0", LoadImage::compute2D, context, imageRGB, w, s) //
-                            .transferToHost(imageRGB);
+                            .transferToHost(DataTransferMode.EVERY_EXECUTION, imageRGB);
 
                     ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
                     executor = new TornadoExecutor(immutableTaskGraph).build();

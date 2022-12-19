@@ -88,7 +88,7 @@ public class ReductionsGlobalMemory {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", ReductionsGlobalMemory::reduction, input, reduce, context) //
-                .task("t1", ReductionsGlobalMemory::rAdd, reduce, size).transferToHost(reduce);
+                .task("t1", ReductionsGlobalMemory::rAdd, reduce, size).transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

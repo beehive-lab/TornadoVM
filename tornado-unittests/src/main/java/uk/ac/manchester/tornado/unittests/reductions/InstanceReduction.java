@@ -75,7 +75,7 @@ public class InstanceReduction extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("ts") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//
                 .task("reduce", rd::reduce, input, result)//
-                .transferToHost(result);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

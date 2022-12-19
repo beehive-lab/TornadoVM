@@ -41,6 +41,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 /**
@@ -64,7 +65,7 @@ public class JMHHilbert {
             hilbertMatrix = new float[size * size];
             TaskGraph taskGraph = new TaskGraph("s0") //
                     .task("t0", ComputeKernels::hilbertComputation, hilbertMatrix, size, size) //
-                    .transferToHost(hilbertMatrix); //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, hilbertMatrix); //
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();
             executor.withWarmUp();

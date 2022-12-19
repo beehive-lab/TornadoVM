@@ -93,7 +93,7 @@ public class JMHStencil {
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, a0, a1) //
                     .task("stencil", Stencil::stencil3d, n, sz, a0, a1, FAC) //
                     .task("copy", Stencil::copy, sz, a1, a0) //
-                    .transferToHost(a0);
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, a0);
 
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();

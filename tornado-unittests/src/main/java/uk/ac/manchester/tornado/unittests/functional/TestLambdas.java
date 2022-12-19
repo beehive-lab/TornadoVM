@@ -63,7 +63,7 @@ public class TestLambdas extends TornadoTestBase {
                         z[i] = x[i] + y[i];
                     }
                 }, a, b, c) //
-                .transferToHost(c);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -96,7 +96,7 @@ public class TestLambdas extends TornadoTestBase {
                         z[i] = x[i] * y[i];
                     }
                 }, a, b, c) //
-                .transferToHost(c);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -129,7 +129,7 @@ public class TestLambdas extends TornadoTestBase {
                         z[i] = x[i] * y[i];
                     }
                 }, a, b, c) //
-                .transferToHost(c);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

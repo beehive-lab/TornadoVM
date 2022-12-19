@@ -72,7 +72,7 @@ public class DotTornado extends BenchmarkDriver {
         taskGraph = new TaskGraph("benchmark");
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b);
         taskGraph.task("dotVector", GraphicsKernels::dotVector, a, b, c);
-        taskGraph.transferToHost(c);
+        taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         immutableTaskGraph = taskGraph.snapshot();
         executor = new TornadoExecutor(immutableTaskGraph).build();

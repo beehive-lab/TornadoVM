@@ -89,7 +89,7 @@ public class PrebuiltTest extends TornadoTestBase {
                         new Access[] { Access.READ, Access.READ, Access.WRITE }, //
                         defaultDevice, //
                         new int[] { numElements })//
-                .transferToHost(c);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -140,7 +140,7 @@ public class PrebuiltTest extends TornadoTestBase {
                         new Access[] { Access.READ, Access.READ, Access.WRITE }, //
                         defaultDevice, //
                         new int[] { numElements })//
-                .transferToHost(c);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -184,7 +184,7 @@ public class PrebuiltTest extends TornadoTestBase {
                         new Access[] { Access.READ, Access.READ, Access.WRITE }, //
                         device, //
                         new int[] { size })//
-                .transferToHost(reduce);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -235,7 +235,7 @@ public class PrebuiltTest extends TornadoTestBase {
                         new Access[] { Access.READ, Access.READ, Access.WRITE }, //
                         device, //
                         new int[] { size })//
-                .transferToHost(reduce);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

@@ -91,7 +91,7 @@ public class JMHAddImage {
             taskGraph = new TaskGraph("benchmark") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                     .task("addImage", GraphicsKernels::addImage, a, b, c) //
-                    .transferToHost(c);
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();

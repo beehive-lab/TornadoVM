@@ -1,10 +1,12 @@
 package uk.ac.manchester.tornado.runtime.tasks;
 
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+
 public class StreamingObject {
-    int mode;
+    DataTransferMode mode;
     Object object;
 
-    public StreamingObject(int mode, Object object) {
+    public StreamingObject(DataTransferMode mode, Object object) {
         this.mode = mode;
         this.object = object;
     }
@@ -13,7 +15,7 @@ public class StreamingObject {
         return object;
     }
 
-    public int getMode() {
+    public DataTransferMode getMode() {
         return mode;
     }
 }

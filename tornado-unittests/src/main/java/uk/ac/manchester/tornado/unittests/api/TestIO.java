@@ -70,7 +70,7 @@ public class TestIO extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA, arrayB) //
                 .task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC) //
-                .transferToHost(arrayC);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, arrayC);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -103,7 +103,7 @@ public class TestIO extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, arrayA, arrayB) //
                 .task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC) //
-                .transferToHost(arrayC);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, arrayC);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -140,7 +140,7 @@ public class TestIO extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, arrayA, arrayB) //
                 .task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC) //
-                .transferToHost(arrayC);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, arrayC);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -191,7 +191,7 @@ public class TestIO extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, arrayA, arrayB) //
                 .task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC)//
-                .transferToHost(arrayC);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, arrayC);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -244,7 +244,7 @@ public class TestIO extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, arrayA, arrayB) //
                 .task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC) //
-                .transferToHost(arrayC);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, arrayC);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

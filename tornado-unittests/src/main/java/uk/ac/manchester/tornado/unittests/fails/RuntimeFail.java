@@ -75,7 +75,7 @@ public class RuntimeFail extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, x, y) //
                 .task("t0", RuntimeFail::vectorAdd, x, y, z) //
                 .task("t0", RuntimeFail::square, z) //
-                .transferToHost(z);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, z);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();

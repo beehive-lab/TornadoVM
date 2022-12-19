@@ -115,7 +115,7 @@ public class GraphicsTests extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, src) //
                 .task("t0", ImagingOps::mm2metersKernel, dest, src, scaleFactor) //
-                .transferToHost(dest);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, dest);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -160,7 +160,7 @@ public class GraphicsTests extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, src, gaussian) //
                 .task("t0", ImagingOps::bilateralFilter, dest, src, gaussian, e_delta, radius) //
-                .transferToHost(dest); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, dest); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -198,7 +198,7 @@ public class GraphicsTests extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, src) //
                 .task("t0", ImagingOps::resizeImage6, dest, src, scaleFactor, e_delta * 3, radius) //
-                .transferToHost(dest);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, dest);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -246,7 +246,7 @@ public class GraphicsTests extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrix4, vector3) //
                 .task("t0", GraphicsTests::testRotate, matrix4, vector3, result) //
-                .transferToHost(result);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -292,7 +292,7 @@ public class GraphicsTests extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrix4, vertext, depth) //
                 .task("t0", GraphicsMath::depth2vertex, vertext, depth, matrix4) //
-                .transferToHost(vertext);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, vertext);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
@@ -328,7 +328,7 @@ public class GraphicsTests extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", GraphicsMath::vertex2normal, pyramidNormals, pyramidVertices) //
-                .transferToHost(pyramidNormals);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, pyramidNormals);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -500,7 +500,7 @@ public class GraphicsTests extends TornadoTestBase {
                         projectReference, //
                         distanceThreshold, //
                         normalThreshold) //
-                .transferToHost(pyramidTrackingResults);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, pyramidTrackingResults);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -551,7 +551,7 @@ public class GraphicsTests extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, depth, matrix4) //
                 .task("t0", GraphicsTests::testPhiNode, vertices, depth, matrix4) //
-                .transferToHost(vertices);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, vertices);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -594,7 +594,7 @@ public class GraphicsTests extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, depth, matrix4) //
                 .task("t0", GraphicsTests::testPhiNode2, vertices, depth, matrix4) //
-                .transferToHost(vertices);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, vertices);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -642,7 +642,7 @@ public class GraphicsTests extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrix4, point) //
                 .task("t0", GraphicsTests::computeRigidTransform, matrix4, point, output)//
-                .transferToHost(output);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -689,7 +689,7 @@ public class GraphicsTests extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
                 .task("t0", GraphicsTests::testNormaliseFunction, input, out) //
-                .transferToHost(out);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
@@ -779,7 +779,7 @@ public class GraphicsTests extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, volume, volumeDims, view) //
                 .task("t0", GraphicsTests::raycast, verticies, normals, volume, volumeDims, view, nearPlane, farPlane, largeStep, smallStep) //
-                .transferToHost(verticies, normals);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, verticies, normals);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -855,7 +855,7 @@ public class GraphicsTests extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, verticies, volume, volumeDims, view) //
                 .task("t0", GraphicsTests::testRayCastPointIsolation, output, verticies, volume, volumeDims, view, nearPlane, farPlane, largeStep, smallStep) //
-                .transferToHost(output);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -987,7 +987,7 @@ public class GraphicsTests extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, filteredDepthImage, invTrack, m2, volumeDims) //
                 .task("t0", GraphicsTests::integrate, filteredDepthImage, invTrack, m2, volumeDims, volume, mu, maxW) //
-                .transferToHost(volume); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, volume); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -1030,7 +1030,7 @@ public class GraphicsTests extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, track) //
                 .task("t0", Renderer::renderTrack, output, track) //
-                .transferToHost(output);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -1082,7 +1082,7 @@ public class GraphicsTests extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, volume, dim, point) //
                 .task("t0", GraphicsTests::volumeOps, output, volume, dim, point) //
-                .transferToHost(output);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -1137,7 +1137,7 @@ public class GraphicsTests extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, f) //
                 .task("t0", GraphicsTests::getCameraMatrix, f, m) //
-                .transferToHost(m);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, m);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
@@ -1198,7 +1198,7 @@ public class GraphicsTests extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, volume, volumeDims, scenePose, light, ambient) //
                 .task("t0", Renderer::renderVolume, output, volume, volumeDims, scenePose, nearPlane, farPlane * 2f, smallStep, largeStep, light, ambient) //
-                .transferToHost(output);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -1332,7 +1332,7 @@ public class GraphicsTests extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, image) //
                 .task("t0", GraphicsTests::mapReduce, output, image) //
-                .transferToHost(output);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -1360,7 +1360,7 @@ public class GraphicsTests extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", GraphicsTests::mapReduce2, output, image) //
-                .transferToHost(output);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -1385,7 +1385,7 @@ public class GraphicsTests extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
                 .task("t0", GraphicsTests::mapReduce3, output, input) //
-                .transferToHost(output);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -1431,7 +1431,7 @@ public class GraphicsTests extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, x, y, z, volume) //
                 .task("t0", GraphicsTests::testVSKernel, x, y, z, volume, output) //
-                .transferToHost(output);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

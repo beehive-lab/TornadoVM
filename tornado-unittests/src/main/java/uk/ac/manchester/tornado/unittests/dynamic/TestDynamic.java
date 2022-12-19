@@ -72,7 +72,7 @@ public class TestDynamic extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestDynamic::compute, a, b) //
-                .transferToHost(b); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -102,7 +102,7 @@ public class TestDynamic extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("ss0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("tt0", TestDynamic::compute, a, b) //
-                .transferToHost(b); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -133,7 +133,7 @@ public class TestDynamic extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestDynamic::saxpy, 2.0f, a, b) //
-                .transferToHost(b); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -161,7 +161,7 @@ public class TestDynamic extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("ts") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("task", TestDynamic::compute2, a, b) //
-                .transferToHost(b);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -196,7 +196,7 @@ public class TestDynamic extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestDynamic::compute, a, b) //
                 .task("t1", TestDynamic::compute2, b, b) //
-                .transferToHost(b);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -226,7 +226,7 @@ public class TestDynamic extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestDynamic::compute, a, b) //
-                .transferToHost(b);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

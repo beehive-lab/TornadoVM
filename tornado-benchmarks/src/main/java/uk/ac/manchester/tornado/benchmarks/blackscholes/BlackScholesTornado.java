@@ -60,7 +60,7 @@ public class BlackScholesTornado extends BenchmarkDriver {
         taskGraph = new TaskGraph("benchmark") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, randArray) //
                 .task("t0", ComputeKernels::blackscholes, randArray, put, call) //
-                .transferToHost(put, call);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, put, call);
 
         immutableTaskGraph = taskGraph.snapshot();
         executor = new TornadoExecutor(immutableTaskGraph).build();

@@ -80,7 +80,7 @@ public class JMHDFT {
             TaskGraph taskGraph = new TaskGraph("benchmark") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, inReal, inImag) //
                     .task("t0", ComputeKernels::computeDFT, inReal, inImag, outReal, outImag) //
-                    .transferToHost(outReal, outImag);
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, outReal, outImag);
 
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
             executor = new TornadoExecutor(immutableTaskGraph).build();

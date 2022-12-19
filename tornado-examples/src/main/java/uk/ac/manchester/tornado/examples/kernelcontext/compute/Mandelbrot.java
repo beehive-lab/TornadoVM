@@ -38,6 +38,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * <p>
@@ -161,7 +162,7 @@ public class Mandelbrot {
 
                 TaskGraph taskGraph = new TaskGraph("s0") //
                         .task("t0", MandelbrotImage::mandelbrotTornado, context, SIZE, result) //
-                        .transferToHost(result);
+                        .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
                 ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
                 TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

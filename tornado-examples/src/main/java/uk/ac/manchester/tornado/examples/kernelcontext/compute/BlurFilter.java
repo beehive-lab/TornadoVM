@@ -170,7 +170,7 @@ public class BlurFilter {
                     .task("red", BlurFilterImage::compute, context, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
                     .task("green", BlurFilterImage::compute, context, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
                     .task("blue", BlurFilterImage::compute, context, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
-                    .transferToHost(redFilter, greenFilter, blueFilter);
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, redFilter, greenFilter, blueFilter);
 
             ImmutableTaskGraph immutableTaskGraph = parallelFilter.snapshot();
             TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

@@ -71,7 +71,7 @@ public class MultipleTasks {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
                 .task("foo", MultipleTasks::foo, x, y) //
                 .task("bar", MultipleTasks::bar, y) //
-                .transferToHost(y);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();

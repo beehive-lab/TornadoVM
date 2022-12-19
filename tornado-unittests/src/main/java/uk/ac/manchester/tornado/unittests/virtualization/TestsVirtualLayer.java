@@ -126,7 +126,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         for (int i = 0; i < numKernels; i++) {
             taskGraph.task("t" + i, TestsVirtualLayer::accumulator, data, 1);
         }
-        taskGraph.transferToHost(data);
+        taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
 
@@ -167,8 +167,8 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, x) //
-                .task("t0", TestsVirtualLayer::saxpy, alpha, x, y).transferToHost(y) //
-                .transferToHost(y);
+                .task("t0", TestsVirtualLayer::saxpy, alpha, x, y).transferToHost(DataTransferMode.EVERY_EXECUTION, y) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -203,7 +203,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestsVirtualLayer::testA, data, 1) //
-                .transferToHost(data);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         // Assign Immutable Task Graph to device 0
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -219,7 +219,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         // because the executor only dispatches immutable task-graphs
         taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t1", TestsVirtualLayer::testA, data, 10) //
-                .transferToHost(data);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         executor.execute();
     }
@@ -253,7 +253,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
         taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t1", TestsVirtualLayer::testA, data, 10) //
-                .transferToHost(data);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         executor.withDevice(driver.getDevice(0)) //
                 .execute();
@@ -283,8 +283,8 @@ public class TestsVirtualLayer extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, dataA, dataB)//
                 .task("t0", TestsVirtualLayer::testA, dataA, 1) //
                 .task("t1", TestsVirtualLayer::testA, dataB, 10) //
-                .transferToHost(dataA) //
-                .transferToHost(dataB);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, dataA) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, dataB);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
@@ -330,7 +330,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
             taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                     .task(taskName, TestsVirtualLayer::testA, data, 1) //
-                    .transferToHost(data);
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
             // Common immutable object for the graph
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -372,7 +372,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, dataA, dataB) //
                 .task("t0", TestsVirtualLayer::testA, dataA, 1) //
-                .transferToHost(dataA);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, dataA);
 
         // Common immutable object for the graph
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -384,7 +384,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         TornadoRuntime.setProperty("s1.t1.device", "0:1");
         TaskGraph taskGraph2 = new TaskGraph("s1") //
                 .task("t1", TestsVirtualLayer::testA, dataB, 1) //
-                .transferToHost(dataB);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, dataB);
 
         ImmutableTaskGraph immutableTaskGraph2 = taskGraph2.snapshot();
 

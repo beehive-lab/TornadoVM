@@ -74,7 +74,8 @@ class ReduceTaskGraph {
     private static final int DEFAULT_DEVICE_INDEX = 0;
     private static AtomicInteger counterName = new AtomicInteger(0);
     private static AtomicInteger counterSeqName = new AtomicInteger(0);
-    private final List<StreamingObject> streamingObjects;
+    private final List<StreamingObject> inputModeObjects;
+    private final List<StreamingObject> outputModeObjects;
 
     private String idTaskGraph;
     private List<TaskPackage> taskPackages;
@@ -94,7 +95,8 @@ class ReduceTaskGraph {
     private boolean hybridInitialized;
     private TornadoExecutionPlan executor;
 
-    ReduceTaskGraph(String taskScheduleID, List<TaskPackage> taskPackages, List<Object> streamInObjects, List<StreamingObject> streamingObjects, List<Object> streamOutObjects, CachedGraph<?> graph) {
+    ReduceTaskGraph(String taskScheduleID, List<TaskPackage> taskPackages, List<Object> streamInObjects, List<StreamingObject> streamingObjects, List<Object> streamOutObjects,
+            List<StreamingObject> outputModeObjects, CachedGraph<?> graph) {
         this.idTaskGraph = taskScheduleID;
         this.sketchGraph = graph;
 
@@ -103,8 +105,9 @@ class ReduceTaskGraph {
         // TornadoVM for performing full parallel reductions from Java sequential code.
         this.taskPackages = new ArrayList<>(taskPackages);
         this.streamInObjects = new ArrayList<>(streamInObjects);
-        this.streamingObjects = new ArrayList<>(streamingObjects);
+        this.inputModeObjects = new ArrayList<>(streamingObjects);
         this.streamOutObjects = new ArrayList<>(streamOutObjects);
+        this.outputModeObjects = new ArrayList<>(outputModeObjects);
     }
 
     /**
@@ -340,7 +343,7 @@ class ReduceTaskGraph {
 
             TornadoTaskGraph.performStreamInObject(rewrittenTaskGraph, streamInObjects, DataTransferMode.EVERY_EXECUTION);
 
-            for (StreamingObject so : streamingObjects) {
+            for (StreamingObject so : inputModeObjects) {
                 if (so.getMode() == DataTransferMode.FIRST_EXECUTION) {
                     TornadoTaskGraph.performStreamInObject(rewrittenTaskGraph, so.getObject(), DataTransferMode.FIRST_EXECUTION);
                 }
@@ -594,7 +597,10 @@ class ReduceTaskGraph {
                 }
             }
         }
-        TornadoTaskGraph.performStreamOutThreads(rewrittenTaskGraph, streamOutObjects);
+
+        // Copy-OUT Re-Writen Rule for Reductions sets the outputs to EVERY_EXECUTION
+        // mode.
+        TornadoTaskGraph.performStreamOutThreads(DataTransferMode.EVERY_EXECUTION, rewrittenTaskGraph, streamOutObjects);
         ImmutableTaskGraph immutableTaskGraph = rewrittenTaskGraph.snapshot();
         this.executor = new TornadoExecutor(immutableTaskGraph).build();
 
