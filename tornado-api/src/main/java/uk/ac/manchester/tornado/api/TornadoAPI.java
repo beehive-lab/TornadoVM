@@ -58,7 +58,6 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
-import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Base interface of the Tornado API. It exposes the set of operations within a
@@ -559,9 +558,9 @@ public interface TornadoAPI {
      */
     TornadoAPI task(SchedulableTask task);
 
-    TornadoAPI transferToDevice(DataTransferMode mode, Object... objects);
+    TornadoAPI transferToDevice(final int mode, Object... objects);
 
-    TornadoAPI transferToHost(DataTransferMode mode, Object... objects);
+    TornadoAPI transferToHost(final int mode, Object... objects);
 
     /**
      * Function that closes a task-graph definition and creates an immutable

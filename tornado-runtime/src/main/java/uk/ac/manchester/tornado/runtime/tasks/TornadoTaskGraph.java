@@ -212,11 +212,11 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         outputModeObjects = new ArrayList<>();
     }
 
-    static void performStreamInObject(TaskGraph task, Object inputObject, DataTransferMode dataTransferMode) {
+    static void performStreamInObject(TaskGraph task, Object inputObject, final int dataTransferMode) {
         task.transferToDevice(dataTransferMode, inputObject);
     }
 
-    static void performStreamInObject(TaskGraph task, List<Object> inputObjects, DataTransferMode dataTransferMode) {
+    static void performStreamInObject(TaskGraph task, List<Object> inputObjects, final int dataTransferMode) {
         int numObjectsCopyIn = inputObjects.size();
         switch (numObjectsCopyIn) {
             case 0:
@@ -282,11 +282,11 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         }
     }
 
-    static void performStreamOutThreads(DataTransferMode mode, TaskGraph task, Object outputObject) {
+    static void performStreamOutThreads(final int mode, TaskGraph task, Object outputObject) {
         task.transferToHost(mode, outputObject);
     }
 
-    static void performStreamOutThreads(DataTransferMode mode, TaskGraph task, List<Object> outputArrays) {
+    static void performStreamOutThreads(final int mode, TaskGraph task, List<Object> outputArrays) {
         int numObjectsCopyOut = outputArrays.size();
         switch (numObjectsCopyOut) {
             case 0:
@@ -836,7 +836,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
     }
 
     @Override
-    public void transferToDevice(DataTransferMode mode, Object... objects) {
+    public void transferToDevice(final int mode, Object... objects) {
         for (Object functionParameter : objects) {
             if (functionParameter == null) {
                 throw new TornadoRuntimeException("[ERROR] null object passed into streamIn() in schedule " + executionContext.getId());
@@ -868,7 +868,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
     }
 
     @Override
-    public void transferToHost(DataTransferMode mode, Object... objects) {
+    public void transferToHost(final int mode, Object... objects) {
         for (Object functionParameter : objects) {
             if (functionParameter == null) {
                 Tornado.warn("null object passed into streamIn() in schedule %s", executionContext.getId());
