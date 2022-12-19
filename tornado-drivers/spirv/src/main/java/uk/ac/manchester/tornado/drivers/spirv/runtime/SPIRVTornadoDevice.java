@@ -334,6 +334,9 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         final ObjectBuffer buffer;
         if (state.hasObjectBuffer() && state.isLockedBuffer()) {
             buffer = state.getObjectBuffer();
+            if (batchSize != 0) {
+                buffer.setSizeSubRegion(batchSize);
+            }
         } else {
             TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
             buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext(), batchSize);

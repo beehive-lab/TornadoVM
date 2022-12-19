@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2020, APT Group, Department of Computer Science,
@@ -72,6 +72,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
     private final OCLDeviceContext deviceContext;
 
     private static final int BYTES_OBJECT_REFERENCE = 8;
+    private long setSubRegionSize;
 
     public OCLObjectWrapper(final OCLDeviceContext device, Object object) {
         this.objectType = object.getClass();
@@ -143,7 +144,6 @@ public class OCLObjectWrapper implements ObjectBuffer {
         this.bufferId = deviceContext.getBufferProvider().getBufferWithSize(size());
         this.bufferOffset = 0;
         setBuffer(new ObjectBufferWrapper(bufferId, bufferOffset));
-
 
         if (DEBUG) {
             debug("object: object=0x%x @ bufferId 0x%x", reference.hashCode(), bufferId);
@@ -418,6 +418,16 @@ public class OCLObjectWrapper implements ObjectBuffer {
             }
         }
         return size;
+    }
+
+    @Override
+    public void setSizeSubRegion(long batchSize) {
+        this.setSubRegionSize = batchSize;
+    }
+
+    @Override
+    public long getSizeSubRegion() {
+        return setSubRegionSize;
     }
 
 }

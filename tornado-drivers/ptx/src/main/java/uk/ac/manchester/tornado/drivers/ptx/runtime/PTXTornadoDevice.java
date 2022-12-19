@@ -285,6 +285,11 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
             buffer = createDeviceBuffer(object.getClass(), object, batchSize);
             state.setObjectBuffer(buffer);
             buffer.allocate(object, batchSize);
+        } else {
+            buffer = state.getObjectBuffer();
+            if (batchSize != 0) {
+                buffer.setSizeSubRegion(batchSize);
+            }
         }
 
         final Class<?> type = object.getClass();

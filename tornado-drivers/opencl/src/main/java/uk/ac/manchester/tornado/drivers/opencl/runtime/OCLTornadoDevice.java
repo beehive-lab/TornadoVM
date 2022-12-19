@@ -93,6 +93,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
+    private static final long OBJECT_HEADER_SIZE = 24;
     private static OCLDriver driver = null;
     private static boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
     private static Pattern namePattern = Pattern.compile("^OpenCL (\\d)\\.(\\d).*");
@@ -540,16 +541,25 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return -1;
     }
 
+    private ObjectBuffer newDeviceBufferAllocation(Object object, long batchSize, TornadoDeviceObjectState state) {
+        final ObjectBuffer buffer;
+        TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
+        buffer = createDeviceBuffer(object.getClass(), object, (OCLDeviceContext) getDeviceContext(), batchSize);
+        state.setObjectBuffer(buffer);
+        buffer.allocate(object, batchSize);
+        return buffer;
+    }
+
     @Override
     public int allocate(Object object, long batchSize, TornadoDeviceObjectState state) {
         final ObjectBuffer buffer;
         if (state.hasObjectBuffer() && state.isLockedBuffer()) {
             buffer = state.getObjectBuffer();
+            if (batchSize != 0) {
+                buffer.setSizeSubRegion(batchSize);
+            }
         } else {
-            TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
-            buffer = createDeviceBuffer(object.getClass(), object, (OCLDeviceContext) getDeviceContext(), batchSize);
-            state.setObjectBuffer(buffer);
-            buffer.allocate(object, batchSize);
+            buffer = newDeviceBufferAllocation(object, batchSize, state);
         }
 
         if (buffer.getClass() == AtomicsBuffer.class) {

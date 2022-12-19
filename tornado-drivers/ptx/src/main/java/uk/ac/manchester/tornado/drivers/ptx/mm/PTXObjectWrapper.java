@@ -64,6 +64,7 @@ public class PTXObjectWrapper implements ObjectBuffer {
     private final PTXDeviceContext deviceContext;
 
     private static final int BYTES_OBJECT_REFERENCE = 8;
+    private long subRegionSize;
 
     public PTXObjectWrapper(final PTXDeviceContext device, Object object) {
         this.type = object.getClass();
@@ -399,6 +400,11 @@ public class PTXObjectWrapper implements ObjectBuffer {
     @Override
     public long size() {
         return getObjectSize();
+    }
+
+    @Override
+    public void setSizeSubRegion(long batchSize) {
+        this.subRegionSize = batchSize;
     }
 
 }

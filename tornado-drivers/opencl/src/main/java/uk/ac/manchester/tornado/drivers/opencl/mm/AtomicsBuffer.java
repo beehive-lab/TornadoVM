@@ -37,8 +37,9 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 public class AtomicsBuffer implements ObjectBuffer {
 
     private int[] atomicsList;
-    private final static int OFFSET = 0;
+    private static final int OFFSET = 0;
     private final OCLDeviceContext deviceContext;
+    private long setSubRegionSize;
 
     public AtomicsBuffer(int[] arr, OCLDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
@@ -103,6 +104,16 @@ public class AtomicsBuffer implements ObjectBuffer {
     @Override
     public long size() {
         return atomicsList.length * 4;
+    }
+
+    @Override
+    public void setSizeSubRegion(long batchSize) {
+        this.setSubRegionSize = batchSize;
+    }
+
+    @Override
+    public long getSizeSubRegion() {
+        return setSubRegionSize;
     }
 
     @Override

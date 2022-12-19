@@ -387,7 +387,6 @@ public class TornadoVM extends TornadoLogger {
         }
 
         final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
-
         int lastEvent = device.streamOutBlocking(object, offset, objectState, waitList);
 
         resetEventIndexes(eventList);

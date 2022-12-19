@@ -118,6 +118,8 @@ public class TestBatches extends TornadoTestBase {
         for (int i = 0; i < arrayB.length; i++) {
             assertEquals(arrayA[i] + 100, arrayB[i], 0.1f);
         }
+
+        executor.freeDeviceMemory();
     }
 
     @Test
@@ -150,6 +152,8 @@ public class TestBatches extends TornadoTestBase {
         for (int i = 0; i < arrayB.length; i++) {
             assertEquals(arrayA[i] + 100, arrayB[i], 1.0f);
         }
+
+        executor.freeDeviceMemory();
     }
 
     @Test
@@ -180,6 +184,8 @@ public class TestBatches extends TornadoTestBase {
         for (int i = 0; i < arrayA.length; i++) {
             assertEquals(i, arrayA[i], 0.1f);
         }
+
+        executor.freeDeviceMemory();
     }
 
     @Test
@@ -215,6 +221,8 @@ public class TestBatches extends TornadoTestBase {
         for (int i = 0; i < arrayA.length; i++) {
             assertEquals(arrayA[i] + arrayB[i], arrayC[i], 0.1f);
         }
+
+        executor.freeDeviceMemory();
     }
 
     @Test
@@ -250,6 +258,7 @@ public class TestBatches extends TornadoTestBase {
         for (int i = 0; i < arrayA.length; i++) {
             assertEquals(arrayA[i] + arrayB[i], arrayC[i]);
         }
+        executor.freeDeviceMemory();
     }
 
     @Test
@@ -286,6 +295,7 @@ public class TestBatches extends TornadoTestBase {
         for (int i = 0; i < arrayA.length; i++) {
             assertEquals(arrayA[i] + arrayB[i], arrayC[i]);
         }
+        executor.freeDeviceMemory();
     }
 
     @Test
@@ -320,6 +330,7 @@ public class TestBatches extends TornadoTestBase {
         for (int i = 0; i < arrayA.length; i++) {
             assertEquals(arrayA[i] + arrayB[i], arrayC[i], 0.01);
         }
+        executor.freeDeviceMemory();
     }
 
     @Test
@@ -355,6 +366,7 @@ public class TestBatches extends TornadoTestBase {
         for (int i = 0; i < arrayA.length; i++) {
             assertEquals(arrayA[i] + arrayB[i], arrayC[i]);
         }
+        executor.freeDeviceMemory();
     }
 
     private long checkMaxHeapAllocation(int size, MemSize memSize) throws UnsupportedConfigurationException {
