@@ -242,7 +242,7 @@ public class TornadoOptions {
      * Option to reuse device buffers every time a task-graph is executed. True by
      * default.
      */
-    public static final boolean REUSE_DEVICE_BUFFER = getBooleanValue("tornado.reuse.device.buffers", TRUE);;
+    public static boolean REUSE_DEVICE_BUFFER = getBooleanValue("tornado.reuse.device.buffers", TRUE);
 
     /**
      * Option to enable profiler. It can be disabled at any point during runtime.
