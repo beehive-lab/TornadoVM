@@ -579,8 +579,6 @@ public interface TornadoAPI {
 
     SchedulableTask getTask(String id);
 
-    TornadoDevice getDevice();
-
     TornadoDevice getDeviceForTask(String id);
 
     TaskGraph replaceParameter(Object oldRef, Object newRef);

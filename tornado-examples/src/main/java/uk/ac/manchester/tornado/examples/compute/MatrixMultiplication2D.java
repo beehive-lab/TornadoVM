@@ -119,7 +119,7 @@ public class MatrixMultiplication2D {
         String formatGPUFGlops = String.format("%.2f", gpuGigaFlops);
         String formatCPUFGlops = String.format("%.2f", cpuGigaFlops);
 
-        TornadoDeviceType deviceType = taskGraph.getDevice().getDeviceType();
+        TornadoDeviceType deviceType = executor.getDevice(0).getDeviceType();
         System.out.println("\tSingle Threaded CPU Execution: " + formatCPUFGlops + " GFlops, Total time = " + (endSequential - startSequential) + " ms");
         System.out.println("\tTornadoVM Execution on " + deviceType + " (Accelerated): " + formatGPUFGlops + " GFlops, Total Time = " + (end - start) + " ms");
         System.out.println("\tSpeedup: " + speedup + "x");

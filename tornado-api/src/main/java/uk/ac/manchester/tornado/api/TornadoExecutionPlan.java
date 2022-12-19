@@ -80,6 +80,10 @@ public class TornadoExecutionPlan implements ProfileInterface {
         return this;
     }
 
+    public TornadoDevice getDevice(int immutableTaskGraphIndex) {
+        return tornadoExecutor.getDevice(immutableTaskGraphIndex);
+    }
+
     public TornadoExecutionPlan freeDeviceMemory() {
         tornadoExecutor.freeDeviceMemory();
         return this;

@@ -217,4 +217,10 @@ public class TornadoExecutor implements ProfileInterface {
         }
     }
 
+    public TornadoDevice getDevice(int immutableTaskGraphIndex) {
+        if (immutableTaskGraphList.size() < immutableTaskGraphIndex) {
+            throw new RuntimeException("TaskGraph index #" + immutableTaskGraphIndex + " does not exist in current executor");
+        }
+        return immutableTaskGraphList.get(immutableTaskGraphIndex).getDevice();
+    }
 }

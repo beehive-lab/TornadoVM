@@ -102,7 +102,7 @@ public class MatrixMultiplication1D {
         matrixMultiplication(matrixA, matrixB, resultSeq, size);
         long endSequential = System.currentTimeMillis();
 
-        // Compute Gigaflops and performance
+        // Compute GigaFLOPS and performance
         long msecGPUElapsedTime = (end - start);
         long msecCPUElaptedTime = (endSequential - startSequential);
         double flops = 2 * Math.pow(size, 3);
@@ -113,7 +113,7 @@ public class MatrixMultiplication1D {
         String formatGPUFGlops = String.format("%.2f", gpuGigaFlops);
         String formatCPUFGlops = String.format("%.2f", cpuGigaFlops);
 
-        TornadoDeviceType deviceType = taskGraph.getDevice().getDeviceType();
+        TornadoDeviceType deviceType = executor.getDevice(0).getDeviceType();
 
         // @formatter:off
         String buffer = "\tSingle Threaded CPU Execution: " + formatCPUFGlops + " GFlops, Total time = " + (endSequential - startSequential) + " ms" +

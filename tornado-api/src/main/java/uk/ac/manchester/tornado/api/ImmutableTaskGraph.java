@@ -188,4 +188,8 @@ public class ImmutableTaskGraph implements ProfileInterface {
     public void withBatch(String batchSize) {
         taskGraph.batch(batchSize);
     }
+
+    public TornadoDevice getDevice() {
+        return taskGraph.getDevice();
+    }
 }
