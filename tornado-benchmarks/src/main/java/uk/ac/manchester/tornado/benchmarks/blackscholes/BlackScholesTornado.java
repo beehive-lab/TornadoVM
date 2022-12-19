@@ -102,7 +102,7 @@ public class BlackScholesTornado extends BenchmarkDriver {
         executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withWarmUp().execute();
 
-        executor.withSyncObjects(putTor, callTor);
+        executor.transferToHost(putTor, callTor);
         executor.clearProfiles();
 
         blackscholes(randArrayTor, putSeq, calSeq);

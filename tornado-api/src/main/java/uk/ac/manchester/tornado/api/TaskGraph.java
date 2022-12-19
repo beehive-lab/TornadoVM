@@ -332,12 +332,8 @@ public class TaskGraph implements TornadoAPI {
         return this;
     }
 
-    void syncField(Object object) {
-        taskScheduleImpl.syncField(object);
-    }
-
-    void syncObjects(Object... objects) {
-        taskScheduleImpl.syncObjects(objects);
+    void syncRuntimeTransferToHost(Object... objects) {
+        taskScheduleImpl.syncRuntimeTransferToHost(objects);
     }
 
     @Override

@@ -99,7 +99,7 @@ public class ConvolveImageTornado extends BenchmarkDriver {
 
         benchmarkMethod(device);
 
-        executor.withSyncField(output) //
+        executor.transferToHost(output) //
                 .clearProfiles();
 
         GraphicsKernels.convolveImage(input, filter, result);

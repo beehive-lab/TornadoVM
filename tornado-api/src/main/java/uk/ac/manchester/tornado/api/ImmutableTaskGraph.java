@@ -92,12 +92,8 @@ public class ImmutableTaskGraph implements ProfileInterface {
         taskGraph.freeDeviceMemory();
     }
 
-    public void syncObject(Object... objects) {
-        taskGraph.syncObjects(objects);
-    }
-
-    public void syncField(Object object) {
-        taskGraph.syncField(object);
+    public void transferToHost(Object... objects) {
+        taskGraph.syncRuntimeTransferToHost(objects);
     }
 
     public void replaceParameter(Object oldParameter, Object newParameter) {

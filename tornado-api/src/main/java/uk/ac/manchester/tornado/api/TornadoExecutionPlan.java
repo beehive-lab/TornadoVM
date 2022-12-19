@@ -85,13 +85,8 @@ public class TornadoExecutionPlan implements ProfileInterface {
         return this;
     }
 
-    public TornadoExecutionPlan withSyncObjects(Object... objects) {
-        tornadoExecutor.syncObjects(objects);
-        return this;
-    }
-
-    public TornadoExecutionPlan withSyncField(Object object) {
-        tornadoExecutor.syncField(object);
+    public TornadoExecutionPlan transferToHost(Object... objects) {
+        tornadoExecutor.transferToHost(objects);
         return this;
     }
 

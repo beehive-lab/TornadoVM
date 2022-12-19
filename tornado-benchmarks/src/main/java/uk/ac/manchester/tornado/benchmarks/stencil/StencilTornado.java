@@ -119,7 +119,7 @@ public class StencilTornado extends BenchmarkDriver {
 
     @Override
     protected void barrier() {
-        executor.withSyncObjects();
+        executor.transferToHost();
     }
 
     public void printSummary() {

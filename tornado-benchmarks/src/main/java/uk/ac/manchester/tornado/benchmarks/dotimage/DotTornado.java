@@ -104,7 +104,7 @@ public class DotTornado extends BenchmarkDriver {
         final ImageFloat result = new ImageFloat(numElementsX, numElementsX);
 
         benchmarkMethod(device);
-        executor.withSyncObjects(c);
+        executor.transferToHost(c);
         executor.clearProfiles();
 
         GraphicsKernels.dotImage(a, b, result);

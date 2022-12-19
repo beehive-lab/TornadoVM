@@ -239,6 +239,12 @@ public class TornadoOptions {
     public static StringBuilder FPGA_BINARIES = System.getProperty("tornado.precompiled.binary", null) != null ? new StringBuilder(System.getProperty("tornado.precompiled.binary", null)) : null;
 
     /**
+     * Option to reuse device buffers every time a task-graph is executed. True by
+     * default.
+     */
+    public static final boolean REUSE_DEVICE_BUFFER = getBooleanValue("tornado.reuse.device.buffers", TRUE);;
+
+    /**
      * Option to enable profiler. It can be disabled at any point during runtime.
      *
      * @return boolean.

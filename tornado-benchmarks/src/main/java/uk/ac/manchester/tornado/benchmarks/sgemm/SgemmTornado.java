@@ -148,7 +148,7 @@ public class SgemmTornado extends BenchmarkDriver {
         boolean val = true;
 
         benchmarkMethod(device);
-        executor.withSyncObjects(c).clearProfiles();
+        executor.transferToHost(c).clearProfiles();
 
         sgemm(m, n, m, a, b, result);
 

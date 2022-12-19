@@ -104,7 +104,7 @@ public class TestFields extends TornadoTestBase {
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
-        executor.withSyncField(foo.output);
+        executor.transferToHost(foo.output);
         executor.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
@@ -126,7 +126,7 @@ public class TestFields extends TornadoTestBase {
         executor.execute() //
                 .freeDeviceMemory();
 
-        executor.withSyncField(foo.output);
+        executor.transferToHost(foo.output);
 
         for (int i = 0; i < N; i++) {
             assertEquals(foo.a[i] + foo.b[i], foo.output[i]);
@@ -145,7 +145,7 @@ public class TestFields extends TornadoTestBase {
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.execute();
 
-        executor.withSyncField(bar.output);
+        executor.transferToHost(bar.output);
 
         executor.freeDeviceMemory();
 

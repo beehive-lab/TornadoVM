@@ -131,7 +131,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
     private static final boolean TIME_IN_NANOSECONDS = Tornado.TIME_IN_NANOSECONDS;
     private static final String TASK_SCHEDULE_PREFIX = "XXX";
     private static final ConcurrentHashMap<Policy, ConcurrentHashMap<String, HistoryTable>> executionHistoryPolicy = new ConcurrentHashMap<>();
-    private static final int HISTORY_POINTS_PREDICTION = 5;
+
     private static final boolean USE_GLOBAL_TASK_CACHE = false;
 
     private static final String RESET = "\u001B[0m";
@@ -853,7 +853,9 @@ public class TornadoTaskGraph implements TaskGraphInterface {
             // List of input objects for the dynamic reconfiguration
             streamingInputObjects.add(new StreamingObject(mode, functionParameter));
 
-            lockObjectsInMemory(functionParameter);
+            if (TornadoOptions.REUSE_DEVICE_BUFFER) {
+                lockObjectsInMemory(functionParameter);
+            }
         }
     }
 
@@ -868,7 +870,9 @@ public class TornadoTaskGraph implements TaskGraphInterface {
             executionContext.getObjectState(functionParameter).setStreamOut(true);
             argumentsLookUp.add(functionParameter);
 
-            lockObjectsInMemory(functionParameter);
+            if (TornadoOptions.REUSE_DEVICE_BUFFER) {
+                lockObjectsInMemory(functionParameter);
+            }
         }
     }
 
@@ -950,17 +954,12 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         }
     }
 
-    @Override
-    public void syncField(Object object) {
-        if (vm == null) {
-            return;
-        }
+    private void syncField(Object object) {
         /*
-         * Clean the profiler -- avoids the possibility of reporting the execute()
+         * Clean the profiler -- avoids the possibility of reporting the `execute`
          * profiling information twice.
          */
         timeProfiler.clean();
-
         executionContext.sync();
         updateProfiler();
     }
@@ -976,53 +975,46 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         return null;
     }
 
-    @Override
-    public void syncObjects() {
-        if (vm == null) {
-            return;
+    private Event syncParameter(Object object) {
+        Event eventParameter = syncObjectInner(object);
+        if (eventParameter != null) {
+            eventParameter.waitOn();
         }
-        /*
-         * Clean the profiler -- avoids the possibility of reporting the execute()
-         * profiling information twice
-         */
-        timeProfiler.clean();
-
-        executionContext.sync();
-        updateProfiler();
+        return eventParameter;
     }
 
     @Override
-    public void syncObjects(Object... objects) {
+    public void syncRuntimeTransferToHost(Object... objects) {
         if (vm == null) {
             return;
         }
 
-        Event[] events = new Event[objects.length];
-        for (int i = 0; i < objects.length; i++) {
-            Object object = objects[i];
-            events[i] = syncObjectInner(object);
-        }
-
-        for (Event e : events) {
-            if (e != null) {
-                e.waitOn();
+        List<Event> events = new ArrayList<>();
+        for (Object object : objects) {
+            // Check if it is an argument captured by the scope (not in the parameter list).
+            if (!argumentsLookUp.contains(object)) {
+                syncField(object);
+            } else {
+                Event eventParameter = syncParameter(object);
+                events.add(eventParameter);
             }
         }
 
         if (TornadoOptions.isProfilerEnabled()) {
+
             /*
-             * Clean the profiler -- avoids the possibility of reporting the execute()
-             * profiling information twice
+             * Clean the profiler. It avoids the possibility of reporting the `execute`
+             * profiling information twice.
              */
             timeProfiler.clean();
-            for (int i = 0; i < events.length; i++) {
-                Event event = events[i];
-                if (event == null) {
+            for (int i = 0; i < events.size(); i++) {
+                Event eventParameter = events.get(i);
+                if (eventParameter == null) {
                     continue;
                 }
                 long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME_SYNC);
-                event.waitForEvents();
-                value += event.getElapsedTime();
+                eventParameter.waitForEvents();
+                value += eventParameter.getElapsedTime();
                 timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME_SYNC, value);
                 LocalObjectState localState = executionContext.getObjectState(objects[i]);
                 DeviceObjectState deviceObjectState = localState.getGlobalState().getDeviceState(meta().getLogicDevice());
@@ -1030,10 +1022,6 @@ public class TornadoTaskGraph implements TaskGraphInterface {
             }
             updateProfiler();
         }
-    }
-
-    public TornadoExecutionContext getExecutionContext() {
-        return this.executionContext;
     }
 
     @Override
@@ -1085,6 +1073,10 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         isFinished = true;
     }
 
+    private boolean isArgumentIgnorable(Object parameter) {
+        return parameter instanceof Number || parameter instanceof KernelContext;
+    }
+
     private boolean checkAllArgumentsPerTask() {
         for (TaskPackage task : taskPackages) {
             Object[] taskParameters = task.getTaskParameters();
@@ -1092,7 +1084,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
             // (computation)
             for (int i = 1; i < (taskParameters.length - 1); i++) {
                 Object parameter = taskParameters[i];
-                if (parameter instanceof Number || parameter instanceof KernelContext) {
+                if (isArgumentIgnorable(parameter)) {
                     continue;
                 }
                 if (!argumentsLookUp.contains(parameter)) {
@@ -1102,6 +1094,23 @@ public class TornadoTaskGraph implements TaskGraphInterface {
             }
         }
         return true;
+    }
+
+    private void lockInPendingFieldsObjects() {
+        // All Fields are set to reuse buffers by default
+        final int taskCount = executionContext.getTaskCount();
+        for (int i = 0; i < taskCount; i++) {
+            SchedulableTask task = executionContext.getTask(i);
+            Object[] arguments = task.getArguments();
+            for (Object arg : arguments) {
+                if (isArgumentIgnorable(arg)) {
+                    continue;
+                }
+                if (!argumentsLookUp.contains(arg)) {
+                    lockObjectsInMemory(arg);
+                }
+            }
+        }
     }
 
     @Override
@@ -1136,6 +1145,8 @@ public class TornadoTaskGraph implements TaskGraphInterface {
                 throw tre;
             }
         }
+
+        lockInPendingFieldsObjects();
 
         analysisTaskSchedule = null;
         scheduleInner();
@@ -1981,10 +1992,10 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         // compute bytes
         switch (Objects.requireNonNull(units)) {
             case "MB":
-                this.batchSizeBytes = value * 1_000_000;
+                this.batchSizeBytes = value * 1000000;
                 break;
             case "GB":
-                this.batchSizeBytes = value * 1_000_000_000;
+                this.batchSizeBytes = value * 1000000000;
                 break;
             default:
                 throw new TornadoRuntimeException("Units not supported: " + units);

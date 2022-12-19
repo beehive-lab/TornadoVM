@@ -81,7 +81,7 @@ public class DFTTornado extends BenchmarkDriver {
                 .withWarmUp() //
                 .execute();
 
-        executor.withSyncObjects(outReal, outImag);
+        executor.transferToHost(outReal, outImag);
 
         ComputeKernels.computeDFT(inReal, inImag, outRealTor, outImagTor);
 

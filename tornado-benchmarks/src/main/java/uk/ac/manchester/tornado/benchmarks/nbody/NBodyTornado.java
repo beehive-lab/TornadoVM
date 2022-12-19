@@ -132,7 +132,7 @@ public class NBodyTornado extends BenchmarkDriver {
         executor.withWarmUp() //
                 .withDevice(device) //
                 .execute() //
-                .withSyncObjects(posSeq, velSeq) //
+                .transferToHost(posSeq, velSeq) //
                 .clearProfiles();
 
         nBody(numBodies, posSeqSeq, velSeqSeq, delT, espSqr);

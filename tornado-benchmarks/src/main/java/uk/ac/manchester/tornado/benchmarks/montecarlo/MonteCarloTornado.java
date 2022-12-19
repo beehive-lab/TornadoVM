@@ -81,7 +81,7 @@ public class MonteCarloTornado extends BenchmarkDriver {
         for (int i = 0; i < 3; i++) {
             executor.execute();
         }
-        executor.withSyncObjects(output) //
+        executor.transferToHost(output) //
                 .clearProfiles();
 
         for (int i = 0; i < size; i++) {

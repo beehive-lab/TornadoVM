@@ -64,7 +64,7 @@ public class MandelbrotTornado extends BenchmarkDriver {
         boolean val = true;
         short[] result = new short[size * size];
 
-        executor.withSyncField(output);
+        executor.transferToHost(output);
         executor.clearProfiles();
 
         ComputeKernels.mandelbrot(size, result);

@@ -101,7 +101,7 @@ public class RotateTornado extends BenchmarkDriver {
         final ImageFloat3 result = new ImageFloat3(numElementsX, numElementsY);
 
         benchmarkMethod(device);
-        executor.withSyncObjects(output).clearProfiles();
+        executor.transferToHost(output).clearProfiles();
 
         rotateImage(result, m, input);
 

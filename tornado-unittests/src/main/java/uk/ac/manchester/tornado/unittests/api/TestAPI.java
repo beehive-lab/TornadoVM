@@ -63,7 +63,7 @@ public class TestAPI extends TornadoTestBase {
         executor.execute();
 
         // Force data transfers from D->H after the execution of a task-graph
-        executor.withSyncObjects(data);
+        executor.transferToHost(data);
 
         // Mark objects associated with the task-graph for reusing memory
         executor.freeDeviceMemory();
@@ -94,7 +94,7 @@ public class TestAPI extends TornadoTestBase {
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build() //
                 .execute();
 
-        executor.withSyncObjects(data).freeDeviceMemory();
+        executor.transferToHost(data).freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data[i]);

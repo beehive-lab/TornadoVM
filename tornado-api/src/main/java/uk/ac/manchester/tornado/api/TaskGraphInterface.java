@@ -93,11 +93,7 @@ public interface TaskGraphInterface extends ProfileInterface {
 
     void freeDeviceMemory();
 
-    void syncField(Object object);
-
-    void syncObjects();
-
-    void syncObjects(Object... objects);
+    void syncRuntimeTransferToHost(Object... objects);
 
     String getId();
 

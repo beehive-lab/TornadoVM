@@ -99,7 +99,7 @@ public class SgemvTornado extends BenchmarkDriver {
         final float[] result = new float[n];
 
         benchmarkMethod(device);
-        executor.withSyncObjects(y).clearProfiles();
+        executor.transferToHost(y).clearProfiles();
 
         sgemv(m, n, a, x, result);
 
