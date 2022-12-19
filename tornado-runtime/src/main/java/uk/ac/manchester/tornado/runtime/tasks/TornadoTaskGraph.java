@@ -853,7 +853,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
             // List of input objects for the dynamic reconfiguration
             streamingInputObjects.add(new StreamingObject(mode, functionParameter));
 
-            if (TornadoOptions.REUSE_DEVICE_BUFFER) {
+            if (TornadoOptions.isReusedBuffersEnabled()) {
                 lockObjectsInMemory(functionParameter);
             }
         }
@@ -870,7 +870,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
             executionContext.getObjectState(functionParameter).setStreamOut(true);
             argumentsLookUp.add(functionParameter);
 
-            if (TornadoOptions.REUSE_DEVICE_BUFFER) {
+            if (TornadoOptions.isReusedBuffersEnabled()) {
                 lockObjectsInMemory(functionParameter);
             }
         }

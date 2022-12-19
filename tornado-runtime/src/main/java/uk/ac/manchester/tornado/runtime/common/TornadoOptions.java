@@ -139,7 +139,7 @@ public class TornadoOptions {
      */
     public static final boolean LOG_IP = getBooleanValue("tornado.enable.ip.logging", FALSE);
     /**
-     * Option to sent the feature extraction and/or profiler logs to a specific
+     * Option to send the feature extractions and/or profiler logs to a specific
      * port.
      */
     public static final String SOCKET_PORT = getProperty("tornado.dump.to.ip", "");
@@ -148,7 +148,7 @@ public class TornadoOptions {
      */
     public static final int TORNADO_SKETCHER_THREADS = Integer.parseInt(getProperty("tornado.sketcher.threads", "4"));
     /**
-     * It enables automatic discovery and parallelisation of loops. Please note that
+     * It enables automatic discovery and parallelization of loops. Please note that
      * this option is experimental and may cause issues if enabled.
      */
     public static final boolean AUTO_PARALLELISATION = getBooleanValue("tornado.parallelise.auto", FALSE);
@@ -242,7 +242,9 @@ public class TornadoOptions {
      * Option to reuse device buffers every time a task-graph is executed. True by
      * default.
      */
-    public static boolean REUSE_DEVICE_BUFFER = getBooleanValue("tornado.reuse.device.buffers", TRUE);
+    public static boolean isReusedBuffersEnabled() {
+        return getBooleanValue("tornado.reuse.device.buffers", TRUE);
+    }
 
     /**
      * Option to enable profiler. It can be disabled at any point during runtime.

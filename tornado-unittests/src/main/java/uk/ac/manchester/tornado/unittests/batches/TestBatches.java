@@ -45,6 +45,12 @@ import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurat
  */
 public class TestBatches extends TornadoTestBase {
 
+    @Override
+    public void before() {
+        super.before();
+        System.setProperty("tornado.reuse.device.buffers", "False");
+    }
+
     public static void compute(float[] array) {
         for (@Parallel int i = 0; i < array.length; i++) {
             // This assignment is on purpose for testing the whole array after merging all
