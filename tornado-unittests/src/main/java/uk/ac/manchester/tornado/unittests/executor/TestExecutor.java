@@ -162,6 +162,56 @@ public class TestExecutor extends TornadoTestBase {
         for (int i = 0; i < c.length; i++) {
             assertEquals(INIT_A + INIT_B, c[i]);
         }
+    }
+
+    /**
+     * Test to show how to program states of ata movement across different
+     * executors. A -> B -> A
+     */
+    @Test
+    public void test04() {
+        int numElements = 16;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+
+        final int INIT_A = 0;
+
+        Arrays.fill(a, INIT_A);
+
+        // 1. Task Graph Definition with A -> B
+        TaskGraph tg = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
+                .task("t0", TestHello::simple, a, b) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
+
+        // 2. Create an immutable task graph
+        ImmutableTaskGraph immutableTaskGraph = tg.snapshot();
+
+        // 3. Create an executor and build an execution plan
+        TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
+
+        // 4. Execute all Immutable Task Graphs associated with an executor
+        executorPlan.execute();
+
+        // 5. Create a second task-graph with B->A
+        TaskGraph tg2 = new TaskGraph("graph2") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, b) //
+                .task("t0", TestHello::simple, b, a) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        ImmutableTaskGraph immutableTaskGraph2 = tg2.snapshot();
+        TornadoExecutionPlan executorPlan2 = new TornadoExecutor(immutableTaskGraph2).build();
+
+        final int ITERATIONS = 10;
+        for (int i = 0; i < ITERATIONS; i++) {
+            executorPlan.execute(); // A -> B
+            executorPlan2.execute(); // B -> A
+        }
+
+        // 8. We check for the result. It should be the same as in step 6.
+        for (int i = 0; i < a.length; i++) {
+            assertEquals(INIT_A + 2 * ITERATIONS, a[i]);
+        }
 
     }
 }

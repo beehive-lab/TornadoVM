@@ -58,6 +58,12 @@ public class TestHello extends TornadoTestBase {
         }
     }
 
+    public static void simple(int[] a, int[] b) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            b[i] = a[i] + 1;
+        }
+    }
+
     public void compute(int[] a, int[] b) {
         for (@Parallel int i = 0; i < a.length; i++) {
             b[i] = a[i] * 2;
