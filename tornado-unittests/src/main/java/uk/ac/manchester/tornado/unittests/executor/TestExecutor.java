@@ -152,7 +152,7 @@ public class TestExecutor extends TornadoTestBase {
         // 6. We try to modify the mutable task-graph before execution
         int[] d = new int[numElements];
         Arrays.fill(d, 10);
-        tg.replaceParameter(a, d);
+        tg.transferToDevice(DataTransferMode.EVERY_EXECUTION, d);
 
         // 7. Run the executor but with the already declared immutable task-graph. It
         // should not be any recompilation.

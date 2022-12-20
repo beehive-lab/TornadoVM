@@ -574,6 +574,4 @@ public interface TornadoAPI {
 
     TornadoDevice getDeviceForTask(String id);
 
-    TaskGraph replaceParameter(Object oldRef, Object newRef);
-
 }

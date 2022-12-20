@@ -80,7 +80,8 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.instances.TestInstances"),  
     TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestAPI"), 
-    TestEntry("uk.ac.manchester.tornado.unittests.api.TestIO"),  ## PENDING (replace parameter)
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestIO"),  
+    TestEntry("uk.ac.manchester.tornado.unittests.executor.TestExecutor"),
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),         
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"), 
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestCombinedTaskGraph"),  
@@ -92,7 +93,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsDoublesKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsLongKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.math.TestMath"),        
-    TestEntry("uk.ac.manchester.tornado.unittests.batches.TestBatches"),  ## PENDING 
+    TestEntry("uk.ac.manchester.tornado.unittests.batches.TestBatches"),  
     TestEntry("uk.ac.manchester.tornado.unittests.lambdas.TestLambdas"), 
     TestEntry("uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap"), 
     TestEntry("uk.ac.manchester.tornado.unittests.logic.TestLogic"),     
@@ -103,7 +104,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.fails.RuntimeFail"),     
     TestEntry("uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection"), 
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestNewArrays"),  
-    TestEntry("uk.ac.manchester.tornado.unittests.dynsize.Resize"),        ## PENDING  (replace parameter)
+    TestEntry("uk.ac.manchester.tornado.unittests.dynsize.Resize"),       
     TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations"),   
     TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion"), 
     TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Types"),    
@@ -190,7 +191,7 @@ __VERBOSE_OPTION__                  = "-Dtornado.unittests.verbose="
 TORNADO_CMD = "tornado "
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "0.15_09122022"
+__VERSION__ = "0.16_20122022"
 
 JDK_8_VERSION = "1.8"
 try:

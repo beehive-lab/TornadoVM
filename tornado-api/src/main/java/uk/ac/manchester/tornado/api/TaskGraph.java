@@ -411,22 +411,7 @@ public class TaskGraph implements TornadoAPI {
         return this;
     }
 
-    /**
-     * Update a data reference from one array to another within TornadoVM.
-     *
-     * Arrays can be of different sizes.
-     *
-     * If a {@link GridScheduler} is not passed in the {@link #execute()} method,
-     * then it will also trigger recompilation. Otherwise, TornadoVM will not
-     * recompile the code, since the first compilation was generic.
-     *
-     *
-     * @param oldParameter
-     * @param newParameter
-     */
-    @Override
-    @Deprecated(forRemoval = true)
-    public TaskGraph replaceParameter(Object oldParameter, Object newParameter) {
+    TaskGraph replaceParameter(Object oldParameter, Object newParameter) {
         taskScheduleImpl.replaceParameter(oldParameter, newParameter);
         return this;
     }

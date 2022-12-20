@@ -96,10 +96,6 @@ public class ImmutableTaskGraph implements ProfileInterface {
         taskGraph.syncRuntimeTransferToHost(objects);
     }
 
-    public void replaceParameter(Object oldParameter, Object newParameter) {
-        taskGraph.replaceParameter(oldParameter, newParameter);
-    }
-
     @Override
     public long getTotalTime() {
         return taskGraph.getTotalTime();

@@ -94,11 +94,6 @@ public class TornadoExecutionPlan implements ProfileInterface {
         return this;
     }
 
-    public TornadoExecutionPlan replaceParameter(Object oldParameter, Object newParameter) {
-        tornadoExecutor.replaceParameter(oldParameter, newParameter);
-        return this;
-    }
-
     public TornadoExecutionPlan withGridScheduler(GridScheduler gridScheduler) {
         this.gridScheduler = gridScheduler;
         return this;

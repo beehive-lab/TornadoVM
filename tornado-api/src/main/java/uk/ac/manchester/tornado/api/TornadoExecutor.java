@@ -115,12 +115,6 @@ public class TornadoExecutor implements ProfileInterface {
         }
     }
 
-    public void replaceParameter(Object oldParameter, Object newParameter) {
-        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
-            immutableTaskGraph.replaceParameter(oldParameter, newParameter);
-        }
-    }
-
     public boolean isFinished() {
         boolean result = true;
         for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
