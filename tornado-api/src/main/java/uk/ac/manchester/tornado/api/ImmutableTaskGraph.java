@@ -122,12 +122,12 @@ public class ImmutableTaskGraph implements ProfileInterface {
     }
 
     @Override
-    public long getWriteTime() {
+    public long getDeviceWriteTime() {
         return taskGraph.getWriteTime();
     }
 
     @Override
-    public long getReadTime() {
+    public long getDeviceReadTime() {
         return taskGraph.getReadTime();
     }
 
@@ -142,18 +142,8 @@ public class ImmutableTaskGraph implements ProfileInterface {
     }
 
     @Override
-    public long getDeviceWriteTime() {
-        return taskGraph.getDeviceWriteTime();
-    }
-
-    @Override
     public long getDeviceKernelTime() {
         return taskGraph.getDeviceKernelTime();
-    }
-
-    @Override
-    public long getDeviceReadTime() {
-        return taskGraph.getDeviceReadTime();
     }
 
     @Override

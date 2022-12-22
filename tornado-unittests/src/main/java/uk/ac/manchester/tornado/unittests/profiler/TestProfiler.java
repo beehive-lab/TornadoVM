@@ -95,18 +95,17 @@ public class TestProfiler extends TornadoTestBase {
         assertTrue(executorPlan.getTornadoCompilerTime() > 0);
         assertTrue(executorPlan.getCompileTime() > 0);
         assertTrue(executorPlan.getDataTransfersTime() >= 0);
-        assertTrue(executorPlan.getReadTime() >= 0);
-        assertTrue(executorPlan.getWriteTime() >= 0);
+        assertTrue(executorPlan.getDeviceReadTime() >= 0);
+        assertTrue(executorPlan.getDeviceWriteTime() >= 0);
         // We do not support dispatch timers for the PTX and SPIRV backends
         if (!isBackendPTXOrSPIRV(driverIndex)) {
             assertTrue(executorPlan.getDataTransferDispatchTime() > 0);
             assertTrue(executorPlan.getKernelDispatchTime() > 0);
         }
-        assertTrue(executorPlan.getDeviceReadTime() >= 0);
         assertTrue(executorPlan.getDeviceWriteTime() >= 0);
-        assertTrue(executorPlan.getDeviceKernelTime() > 0);
+        assertTrue(executorPlan.getDeviceReadTime() > 0);
 
-        assertEquals(executorPlan.getWriteTime() + executorPlan.getReadTime(), executorPlan.getDataTransfersTime());
+        assertEquals(executorPlan.getDeviceWriteTime() + executorPlan.getDeviceReadTime(), executorPlan.getDataTransfersTime());
         assertEquals(executorPlan.getTornadoCompilerTime() + executorPlan.getDriverInstallTime(), executorPlan.getCompileTime());
 
         // Disable profiler
@@ -144,12 +143,10 @@ public class TestProfiler extends TornadoTestBase {
         assertEquals(executor.getTornadoCompilerTime(), 0);
         assertEquals(executor.getCompileTime(), 0);
         assertEquals(executor.getDataTransfersTime(), 0);
-        assertEquals(executor.getReadTime(), 0);
-        assertEquals(executor.getWriteTime(), 0);
-        assertEquals(executor.getDataTransferDispatchTime(), 0);
-        assertEquals(executor.getKernelDispatchTime(), 0);
         assertEquals(executor.getDeviceReadTime(), 0);
         assertEquals(executor.getDeviceWriteTime(), 0);
+        assertEquals(executor.getDataTransferDispatchTime(), 0);
+        assertEquals(executor.getKernelDispatchTime(), 0);
         assertEquals(executor.getDeviceKernelTime(), 0);
         assertEquals(executor.getDeviceKernelTime(), 0);
     }

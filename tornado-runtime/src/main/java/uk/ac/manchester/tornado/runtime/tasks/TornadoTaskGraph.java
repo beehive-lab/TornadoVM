@@ -1133,6 +1133,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
     @Override
     public TaskGraphInterface schedule() {
 
+        isFinished = false;
         if (bailout) {
             if (!TornadoOptions.RECOVER_BAILOUT) {
                 throw new TornadoBailoutRuntimeException("[TornadoVM] Error - Recover option disabled");
@@ -2052,12 +2053,12 @@ public class TornadoTaskGraph implements TaskGraphInterface {
     }
 
     @Override
-    public long getWriteTime() {
+    public long getDeviceWriteTime() {
         return timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
     }
 
     @Override
-    public long getReadTime() {
+    public long getDeviceReadTime() {
         return timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
     }
 
@@ -2072,18 +2073,8 @@ public class TornadoTaskGraph implements TaskGraphInterface {
     }
 
     @Override
-    public long getDeviceWriteTime() {
-        return timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
-    }
-
-    @Override
     public long getDeviceKernelTime() {
         return timeProfiler.getTimer(ProfilerType.TOTAL_KERNEL_TIME);
-    }
-
-    @Override
-    public long getDeviceReadTime() {
-        return timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
     }
 
     @Override

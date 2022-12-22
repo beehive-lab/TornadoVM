@@ -374,11 +374,11 @@ public class TaskGraph implements TornadoAPI {
     }
 
     long getWriteTime() {
-        return taskScheduleImpl.getWriteTime();
+        return taskScheduleImpl.getDeviceWriteTime();
     }
 
     long getReadTime() {
-        return taskScheduleImpl.getReadTime();
+        return taskScheduleImpl.getDeviceReadTime();
     }
 
     long getDataTransferDispatchTime() {
@@ -389,16 +389,8 @@ public class TaskGraph implements TornadoAPI {
         return taskScheduleImpl.getKernelDispatchTime();
     }
 
-    long getDeviceWriteTime() {
-        return taskScheduleImpl.getDeviceWriteTime();
-    }
-
     long getDeviceKernelTime() {
         return taskScheduleImpl.getDeviceKernelTime();
-    }
-
-    long getDeviceReadTime() {
-        return taskScheduleImpl.getDeviceReadTime();
     }
 
     protected String getProfileLog() {
@@ -408,11 +400,6 @@ public class TaskGraph implements TornadoAPI {
 
     TaskGraph useDefaultThreadScheduler(boolean use) {
         taskScheduleImpl.useDefaultThreadScheduler(use);
-        return this;
-    }
-
-    TaskGraph replaceParameter(Object oldParameter, Object newParameter) {
-        taskScheduleImpl.replaceParameter(oldParameter, newParameter);
         return this;
     }
 

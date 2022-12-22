@@ -155,13 +155,13 @@ public class TornadoExecutor implements ProfileInterface {
     }
 
     @Override
-    public long getWriteTime() {
-        return immutableTaskGraphList.stream().map(itg -> itg.getWriteTime()).mapToLong(Long::longValue).sum();
+    public long getDeviceWriteTime() {
+        return immutableTaskGraphList.stream().map(itg -> itg.getDeviceWriteTime()).mapToLong(Long::longValue).sum();
     }
 
     @Override
-    public long getReadTime() {
-        return immutableTaskGraphList.stream().map(itg -> itg.getReadTime()).mapToLong(Long::longValue).sum();
+    public long getDeviceReadTime() {
+        return immutableTaskGraphList.stream().map(itg -> itg.getDeviceReadTime()).mapToLong(Long::longValue).sum();
     }
 
     @Override
@@ -175,18 +175,8 @@ public class TornadoExecutor implements ProfileInterface {
     }
 
     @Override
-    public long getDeviceWriteTime() {
-        return immutableTaskGraphList.stream().map(itg -> itg.getDeviceWriteTime()).mapToLong(Long::longValue).sum();
-    }
-
-    @Override
     public long getDeviceKernelTime() {
         return immutableTaskGraphList.stream().map(itg -> itg.getDeviceKernelTime()).mapToLong(Long::longValue).sum();
-    }
-
-    @Override
-    public long getDeviceReadTime() {
-        return immutableTaskGraphList.stream().map(itg -> itg.getDeviceReadTime()).mapToLong(Long::longValue).sum();
     }
 
     @Override
@@ -216,5 +206,9 @@ public class TornadoExecutor implements ProfileInterface {
             throw new RuntimeException("TaskGraph index #" + immutableTaskGraphIndex + " does not exist in current executor");
         }
         return immutableTaskGraphList.get(immutableTaskGraphIndex).getDevice();
+    }
+
+    public int getNumImmutableTasksGraphs() {
+        return immutableTaskGraphList.size();
     }
 }

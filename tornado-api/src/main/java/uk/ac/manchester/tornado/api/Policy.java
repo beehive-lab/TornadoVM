@@ -43,25 +43,13 @@ package uk.ac.manchester.tornado.api;
 
 /**
  * Enum with the different policies for the dynamic reconfiguration (live task
- * migration). TornadoVM offers two flavours for each policy: one synchronous
- * (sync) and one asynchronous (async).
+ * migration).
  *
- * <p>
- * Synchronous policies will execute dynamic reconfiguration in sequential order
- * one device after another, and then TornadoVM will take the final decision.
- * </p>
- *
- * <p>
- * Asynchronous policies will evaluate all accessible devices in parallel.
- * </p>
  */
 public enum Policy {
     PERFORMANCE("SYNC Performance"), //
-    ASYNC_PERFORMANCE("ASYNC Performance"), //
     END_2_END("SYNC End_2_End"), //
-    ASYNC_END_2_END("ASYNC End_2_End"), //
     LATENCY("SYNC Latency"), //
-    ASYNC_LATENCY("ASYNC Latency"), //
     ENERGY("SYNC Energy");
 
     private final String policyName;

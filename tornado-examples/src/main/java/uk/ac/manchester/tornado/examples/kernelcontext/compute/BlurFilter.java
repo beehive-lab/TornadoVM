@@ -177,7 +177,8 @@ public class BlurFilter {
 
             workerGrid.setGlobalWork(h, w, 1);
             workerGrid.setLocalWorkToNull();
-            executor.withGridScheduler(gridScheduler).execute();
+            executor.withGridScheduler(gridScheduler) //
+                    .execute();
 
             // now recombine into the output image - Alpha is 255 for no
             // transparency
