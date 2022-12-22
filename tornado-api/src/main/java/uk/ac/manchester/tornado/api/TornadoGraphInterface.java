@@ -64,7 +64,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
  * task-schedule
  *
  */
-public interface TornadoAPI {
+public interface TornadoGraphInterface {
 
     /**
      * It adds a task by using a {@link TaskPackage}.
@@ -73,7 +73,7 @@ public interface TornadoAPI {
      *            {@link uk.ac.manchester.tornado.api.common.TaskPackage}
      * @return {@link @TornadoAPI}
      */
-    TornadoAPI addTask(TaskPackage taskPackage);
+    TornadoGraphInterface addTask(TaskPackage taskPackage);
 
     /**
      * Add task with no parameter.
@@ -82,9 +82,9 @@ public interface TornadoAPI {
      *            Task-id
      * @param code
      *            Reference to an existing Java method with one argument
-     * @return {@link TornadoAPI}
+     * @return {@link TornadoGraphInterface}
      */
-    TornadoAPI task(String id, Task code);
+    TornadoGraphInterface task(String id, Task code);
 
     /**
      * Add task with one parameter.
@@ -95,9 +95,9 @@ public interface TornadoAPI {
      *            Reference to an existing Java method with one argument
      * @param arg
      *            Argument to the method
-     * @return {@link TornadoAPI}
+     * @return {@link TornadoGraphInterface}
      */
-    <T1> TornadoAPI task(String id, Task1<T1> code, T1 arg);
+    <T1> TornadoGraphInterface task(String id, Task1<T1> code, T1 arg);
 
     /**
      * Add task with two parameters.
@@ -110,9 +110,9 @@ public interface TornadoAPI {
      *            Argument 1 to the method
      * @param arg2
      *            Argument 2 to the method
-     * @return {@link TornadoAPI}
+     * @return {@link TornadoGraphInterface}
      */
-    <T1, T2> TornadoAPI task(String id, Task2<T1, T2> code, T1 arg1, T2 arg2);
+    <T1, T2> TornadoGraphInterface task(String id, Task2<T1, T2> code, T1 arg1, T2 arg2);
 
     /**
      * Add task with three parameters.
@@ -127,9 +127,9 @@ public interface TornadoAPI {
      *            Argument 2 to the method
      * @param arg3
      *            Argument 3 to the method
-     * @return {@link TornadoAPI}
+     * @return {@link TornadoGraphInterface}
      */
-    <T1, T2, T3> TornadoAPI task(String id, Task3<T1, T2, T3> code, T1 arg1, T2 arg2, T3 arg3);
+    <T1, T2, T3> TornadoGraphInterface task(String id, Task3<T1, T2, T3> code, T1 arg1, T2 arg2, T3 arg3);
 
     /**
      * Add task with four parameters.
@@ -146,9 +146,9 @@ public interface TornadoAPI {
      *            Argument 3 to the method
      * @param arg4
      *            Argument 4 to the method
-     * @return {@link TornadoAPI}
+     * @return {@link TornadoGraphInterface}
      */
-    <T1, T2, T3, T4> TornadoAPI task(String id, Task4<T1, T2, T3, T4> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4);
+    <T1, T2, T3, T4> TornadoGraphInterface task(String id, Task4<T1, T2, T3, T4> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4);
 
     /**
      * Add task with five parameters.
@@ -167,9 +167,9 @@ public interface TornadoAPI {
      *            Argument 4 to the method
      * @param arg5
      *            Argument 5 to the method
-     * @return {@link TornadoAPI}
+     * @return {@link TornadoGraphInterface}
      */
-    <T1, T2, T3, T4, T5> TornadoAPI task(String id, Task5<T1, T2, T3, T4, T5> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5);
+    <T1, T2, T3, T4, T5> TornadoGraphInterface task(String id, Task5<T1, T2, T3, T4, T5> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5);
 
     /**
      * Add task with six parameters.
@@ -190,9 +190,9 @@ public interface TornadoAPI {
      *            Argument 5 to the method
      * @param arg6
      *            Argument 6 to the method
-     * @return {@link TornadoAPI}
+     * @return {@link TornadoGraphInterface}
      */
-    <T1, T2, T3, T4, T5, T6> TornadoAPI task(String id, Task6<T1, T2, T3, T4, T5, T6> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6);
+    <T1, T2, T3, T4, T5, T6> TornadoGraphInterface task(String id, Task6<T1, T2, T3, T4, T5, T6> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6);
 
     /**
      * Add task with seven parameters.
@@ -215,9 +215,9 @@ public interface TornadoAPI {
      *            Argument 6 to the method
      * @param arg7
      *            Argument 7 to the method
-     * @return {@link TornadoAPI}
+     * @return {@link TornadoGraphInterface}
      */
-    <T1, T2, T3, T4, T5, T6, T7> TornadoAPI task(String id, Task7<T1, T2, T3, T4, T5, T6, T7> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7);
+    <T1, T2, T3, T4, T5, T6, T7> TornadoGraphInterface task(String id, Task7<T1, T2, T3, T4, T5, T6, T7> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7);
 
     /**
      * Add task with eight parameters.
@@ -242,9 +242,9 @@ public interface TornadoAPI {
      *            Argument 7 to the method
      * @param arg8
      *            Argument 8 to the method
-     * @return {@link TornadoAPI}
+     * @return {@link TornadoGraphInterface}
      */
-    <T1, T2, T3, T4, T5, T6, T7, T8> TornadoAPI task(String id, Task8<T1, T2, T3, T4, T5, T6, T7, T8> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8);
+    <T1, T2, T3, T4, T5, T6, T7, T8> TornadoGraphInterface task(String id, Task8<T1, T2, T3, T4, T5, T6, T7, T8> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8);
 
     /**
      * Add task with nine parameters.
@@ -271,9 +271,10 @@ public interface TornadoAPI {
      *            Argument 8 to the method
      * @param arg9
      *            Argument 9 to the method
-     * @return {@link TornadoAPI}
+     * @return {@link TornadoGraphInterface}
      */
-    <T1, T2, T3, T4, T5, T6, T7, T8, T9> TornadoAPI task(String id, Task9<T1, T2, T3, T4, T5, T6, T7, T8, T9> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9);
+    <T1, T2, T3, T4, T5, T6, T7, T8, T9> TornadoGraphInterface task(String id, Task9<T1, T2, T3, T4, T5, T6, T7, T8, T9> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8,
+            T9 arg9);
 
     /**
      * Add task with 10 parameters.
@@ -302,10 +303,10 @@ public interface TornadoAPI {
      *            Argument 9 to the method
      * @param arg10
      *            Argument 10 to the method
-     * @return {@link TornadoAPI}
+     * @return {@link TornadoGraphInterface}
      */
-    <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> TornadoAPI task(String id, Task10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8,
-            T9 arg9, T10 arg10);
+    <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> TornadoGraphInterface task(String id, Task10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7,
+            T8 arg8, T9 arg9, T10 arg10);
 
     /**
      * It creates a task with 11 parameters.
@@ -336,10 +337,10 @@ public interface TornadoAPI {
      *            Argument 10 to the method
      * @param arg11
      *            Argument 11 to the method
-     * @return {@link TornadoAPI}
+     * @return {@link TornadoGraphInterface}
      */
-    <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> TornadoAPI task(String id, TornadoFunctions.Task11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5,
-            T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11);
+    <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> TornadoGraphInterface task(String id, TornadoFunctions.Task11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4,
+            T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11);
 
     /**
      * It creates a task with 12 parameters.
@@ -372,10 +373,10 @@ public interface TornadoAPI {
      *            Argument 11 to the method
      * @param arg12
      *            Argument 12 to the method
-     * @return {@link TornadoAPI}
+     * @return {@link TornadoGraphInterface}
      */
-    <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> TornadoAPI task(String id, TornadoFunctions.Task12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4,
-            T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12);
+    <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> TornadoGraphInterface task(String id, TornadoFunctions.Task12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> code, T1 arg1, T2 arg2,
+            T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12);
 
     /**
      * It creates a task with 13 parameters.
@@ -410,10 +411,10 @@ public interface TornadoAPI {
      *            Argument 12 to the method
      * @param arg13
      *            Argument 13 to the method
-     * @return {@link TornadoAPI}
+     * @return {@link TornadoGraphInterface}
      */
-    <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> TornadoAPI task(String id, TornadoFunctions.Task13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> code, T1 arg1, T2 arg2, T3 arg3,
-            T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13);
+    <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> TornadoGraphInterface task(String id, TornadoFunctions.Task13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> code, T1 arg1,
+            T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13);
 
     /**
      * It creates a task with 14 parameters.
@@ -450,10 +451,10 @@ public interface TornadoAPI {
      *            Argument 13 to the method
      * @param arg14
      *            Argument 14 to the method
-     * @return {@link TornadoAPI}
+     * @return {@link TornadoGraphInterface}
      */
-    <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> TornadoAPI task(String id, TornadoFunctions.Task14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> code, T1 arg1,
-            T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14);
+    <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> TornadoGraphInterface task(String id, TornadoFunctions.Task14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> code,
+            T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14);
 
     /**
      * It creates a task with 15 parameters.
@@ -492,10 +493,10 @@ public interface TornadoAPI {
      *            Argument 14 to the method
      * @param arg15
      *            Argument 15 to the method
-     * @return {@link TornadoAPI}
+     * @return {@link TornadoGraphInterface}
      */
-    <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> TornadoAPI task(String id, Task15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> code, T1 arg1, T2 arg2,
-            T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15);
+    <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> TornadoGraphInterface task(String id, Task15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> code, T1 arg1,
+            T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15);
 
     /**
      * Add a pre-built OpenCL task into a task-schedule
@@ -515,9 +516,9 @@ public interface TornadoAPI {
      *            Device to be executed
      * @param dimensions
      *            Select number of dimensions of the kernel (1D, 2D or 3D)
-     * @return {@link TornadoAPI}
+     * @return {@link TornadoGraphInterface}
      */
-    TornadoAPI prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions);
+    TornadoGraphInterface prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions);
 
     /**
      * Add a pre-built OpenCL task into a task-schedule with atomics region
@@ -538,10 +539,10 @@ public interface TornadoAPI {
      *            Select the dimension of the OpenCL kernel (1D, 2D or 3D)
      * @param atomics
      *            Atomics region.
-     * @return {@link TornadoAPI}
+     * @return {@link TornadoGraphInterface}
      *
      */
-    TornadoAPI prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions, int[] atomics);
+    TornadoGraphInterface prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions, int[] atomics);
 
     /**
      * Obtains the task-schedule name that was assigned.
@@ -554,13 +555,13 @@ public interface TornadoAPI {
      *
      * @param task
      *            {@link SchedulableTask}
-     * @return {@link TornadoAPI}
+     * @return {@link TornadoGraphInterface}
      */
-    TornadoAPI task(SchedulableTask task);
+    TornadoGraphInterface task(SchedulableTask task);
 
-    TornadoAPI transferToDevice(final int mode, Object... objects);
+    TornadoGraphInterface transferToDevice(final int mode, Object... objects);
 
-    TornadoAPI transferToHost(final int mode, Object... objects);
+    TornadoGraphInterface transferToHost(final int mode, Object... objects);
 
     /**
      * Function that closes a task-graph definition and creates an immutable

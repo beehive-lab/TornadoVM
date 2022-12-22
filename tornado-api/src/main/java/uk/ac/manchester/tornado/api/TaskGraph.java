@@ -74,7 +74,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
  * PTX or SPIRV compatible device.
  * </p>
  */
-public class TaskGraph implements TornadoAPI {
+public class TaskGraph implements TornadoGraphInterface {
 
     private static final String ERROR_TASK_NAME_DUPLICATION = "[TornadoVM ERROR]. There are more than 1 tasks with the same task-name. Use different a different task name for each task within a TaskGraph.";
 
