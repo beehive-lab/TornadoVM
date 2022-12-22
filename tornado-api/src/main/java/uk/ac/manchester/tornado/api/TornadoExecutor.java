@@ -208,7 +208,4 @@ public class TornadoExecutor implements ProfileInterface {
         return immutableTaskGraphList.get(immutableTaskGraphIndex).getDevice();
     }
 
-    public int getNumImmutableTasksGraphs() {
-        return immutableTaskGraphList.size();
-    }
 }
