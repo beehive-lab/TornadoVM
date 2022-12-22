@@ -42,7 +42,6 @@
 package uk.ac.manchester.tornado.api;
 
 import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions;
@@ -76,7 +75,7 @@ public interface TornadoGraphInterface {
     TornadoGraphInterface addTask(TaskPackage taskPackage);
 
     /**
-     * Add task with no parameter.
+     * Adds task with no parameter.
      *
      * @param id
      *            Task-id
@@ -87,7 +86,7 @@ public interface TornadoGraphInterface {
     TornadoGraphInterface task(String id, Task code);
 
     /**
-     * Add task with one parameter.
+     * Adds task with one parameter.
      *
      * @param id
      *            Task-id
@@ -100,7 +99,7 @@ public interface TornadoGraphInterface {
     <T1> TornadoGraphInterface task(String id, Task1<T1> code, T1 arg);
 
     /**
-     * Add task with two parameters.
+     * Adds task with two parameters.
      *
      * @param id
      *            Task-id
@@ -132,7 +131,7 @@ public interface TornadoGraphInterface {
     <T1, T2, T3> TornadoGraphInterface task(String id, Task3<T1, T2, T3> code, T1 arg1, T2 arg2, T3 arg3);
 
     /**
-     * Add task with four parameters.
+     * Adds task with four parameters.
      *
      * @param id
      *            Task-id
@@ -151,7 +150,7 @@ public interface TornadoGraphInterface {
     <T1, T2, T3, T4> TornadoGraphInterface task(String id, Task4<T1, T2, T3, T4> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4);
 
     /**
-     * Add task with five parameters.
+     * Adds task with five parameters.
      *
      * @param id
      *            Task-id
@@ -172,7 +171,7 @@ public interface TornadoGraphInterface {
     <T1, T2, T3, T4, T5> TornadoGraphInterface task(String id, Task5<T1, T2, T3, T4, T5> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5);
 
     /**
-     * Add task with six parameters.
+     * Adds task with six parameters.
      *
      * @param id
      *            Task-id
@@ -195,7 +194,7 @@ public interface TornadoGraphInterface {
     <T1, T2, T3, T4, T5, T6> TornadoGraphInterface task(String id, Task6<T1, T2, T3, T4, T5, T6> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6);
 
     /**
-     * Add task with seven parameters.
+     * Adds task with seven parameters.
      *
      * @param id
      *            Task-id
@@ -220,7 +219,7 @@ public interface TornadoGraphInterface {
     <T1, T2, T3, T4, T5, T6, T7> TornadoGraphInterface task(String id, Task7<T1, T2, T3, T4, T5, T6, T7> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7);
 
     /**
-     * Add task with eight parameters.
+     * Adds task with eight parameters.
      *
      * @param id
      *            Task-id
@@ -247,7 +246,7 @@ public interface TornadoGraphInterface {
     <T1, T2, T3, T4, T5, T6, T7, T8> TornadoGraphInterface task(String id, Task8<T1, T2, T3, T4, T5, T6, T7, T8> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8);
 
     /**
-     * Add task with nine parameters.
+     * Adds task with nine parameters.
      *
      * @param id
      *            Task-id
@@ -277,7 +276,7 @@ public interface TornadoGraphInterface {
             T9 arg9);
 
     /**
-     * Add task with 10 parameters.
+     * Adds task with 10 parameters.
      *
      * @param id
      *            Task-id
@@ -552,15 +551,53 @@ public interface TornadoGraphInterface {
     String getTaskScheduleName();
 
     /**
+     * Tag a set of objects (Java objects) to be transferred to the device. There
+     * are three modes:
      *
-     * @param task
-     *            {@link SchedulableTask}
+     * <p>
+     * {@link uk.ac.manchester.tornado.api.enums.DataTransferMode#FIRST_EXECUTION}:
+     * it transfers data only the first execution of the task-graph (READ ONLY)
+     * </p>
+     *
+     * </p>
+     * {@link uk.ac.manchester.tornado.api.enums.DataTransferMode#EVERY_EXECUTION}:
+     * it transfers data for every execution of the task-graph (READ/WRITE)
+     * </p>
+     *
+     * @param mode
+     *            A mode from
+     *            {@link uk.ac.manchester.tornado.api.enums.DataTransferMode}
+     * @param objects
+     *            List of Java objects (usually arrays) to be transferred to the
+     *            device.
      * @return {@link TornadoGraphInterface}
      */
-    TornadoGraphInterface task(SchedulableTask task);
-
     TornadoGraphInterface transferToDevice(final int mode, Object... objects);
 
+    /**
+     * Tag a set of objects (Java objects) to be transferred from the device to the
+     * host after the execution completes. There are two modes:
+     *
+     * <p>
+     * {@link uk.ac.manchester.tornado.api.enums.DataTransferMode#EVERY_EXECUTION}:
+     * transfers data for every execution of the task-graph (WRITE only)
+     * </p>
+     *
+     * </p>
+     * {@link uk.ac.manchester.tornado.api.enums.DataTransferMode#LAST}: it
+     * transfers data only under demand. Data are not transferred unless the
+     * execution-plan, an {@link TornadoExecutionPlan} object, invokes the
+     * `transferToHost` function. This is used for optimization of data transfers.
+     * </p>
+     *
+     * @param mode
+     *            A mode from
+     *            {@link uk.ac.manchester.tornado.api.enums.DataTransferMode}
+     * @param objects
+     *            List of Java objects (usually arrays) to be transferred to the
+     *            device.
+     * @return {@link TornadoGraphInterface}
+     */
     TornadoGraphInterface transferToHost(final int mode, Object... objects);
 
     /**
@@ -570,9 +607,5 @@ public interface TornadoGraphInterface {
      * @return {@link ImmutableTaskGraph}
      */
     ImmutableTaskGraph snapshot();
-
-    SchedulableTask getTask(String id);
-
-    TornadoDevice getDeviceForTask(String id);
 
 }
