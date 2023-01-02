@@ -196,9 +196,7 @@ public class TornadoExecutor implements ProfileInterface {
     }
 
     public void useDefaultScheduler(boolean useDefaultScheduler) {
-        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
-            immutableTaskGraph.useDefaultScheduler(useDefaultScheduler);
-        }
+        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.useDefaultScheduler(useDefaultScheduler));
     }
 
     public TornadoDevice getDevice(int immutableTaskGraphIndex) {
@@ -208,4 +206,9 @@ public class TornadoExecutor implements ProfileInterface {
         return immutableTaskGraphList.get(immutableTaskGraphIndex).getDevice();
     }
 
+    List<Object> getOutputs() {
+        List<Object> outputs = new ArrayList<>();
+        immutableTaskGraphList.forEach(immutableTaskGraph -> outputs.addAll(immutableTaskGraph.getOutputs()));
+        return outputs;
+    }
 }

@@ -41,6 +41,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import java.util.Collection;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -126,4 +127,6 @@ public interface TaskGraphInterface extends ProfileInterface {
     Set<Object> getArgumentsLookup();
 
     TaskGraphInterface createImmutableTaskGraph();
+
+    Collection<?> getOutputs();
 }

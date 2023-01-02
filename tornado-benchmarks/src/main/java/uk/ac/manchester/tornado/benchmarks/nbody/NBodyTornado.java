@@ -24,6 +24,7 @@ import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.nBody;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -130,10 +131,11 @@ public class NBodyTornado extends BenchmarkDriver {
         executor = new TornadoExecutor(immutableTaskGraph).build();
         executor.withWarmUp();
 
-        executor.withWarmUp() //
+        TornadoExecutionResult executionResult = executor.withWarmUp() //
                 .withDevice(device) //
-                .execute() //
-                .transferToHost(posSeq, velSeq) //
+                .execute();
+
+        executor.transferToHost(posSeq, velSeq) //
                 .clearProfiles();
 
         nBody(numBodies, posSeqSeq, velSeqSeq, delT, espSqr);

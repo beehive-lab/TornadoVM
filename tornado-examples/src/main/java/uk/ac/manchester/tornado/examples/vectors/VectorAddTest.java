@@ -21,6 +21,7 @@ package uk.ac.manchester.tornado.examples.vectors;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
@@ -67,19 +68,19 @@ public class VectorAddTest {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
-        executorPlan.execute();
+        TornadoExecutionResult executionResult = executorPlan.execute();
 
-        System.out.println("Profiler kernel: " + executorPlan.getDeviceKernelTime());
-        System.out.println("Profiler copyOut: " + executorPlan.getDeviceReadTime());
-        System.out.println("Profiler copyIn: " + executorPlan.getDeviceWriteTime());
+        System.out.println("Profiler kernel: " + executionResult.getTornadoProfilerResult().getDeviceKernelTime());
+        System.out.println("Profiler copyOut: " + executionResult.getTornadoProfilerResult().getDeviceReadTime());
+        System.out.println("Profiler copyIn: " + executionResult.getTornadoProfilerResult().getDeviceWriteTime());
 
         System.out.printf("result: %s\n", results);
 
-        executorPlan.execute();
+        TornadoExecutionResult executionResult1 = executorPlan.execute();
 
-        System.out.println("Profiler kernel: " + executorPlan.getDeviceKernelTime());
-        System.out.println("Profiler copyOut: " + executorPlan.getDeviceReadTime());
-        System.out.println("Profiler copyIn: " + executorPlan.getDeviceWriteTime());
+        System.out.println("Profiler kernel: " + executionResult1.getTornadoProfilerResult().getDeviceKernelTime());
+        System.out.println("Profiler copyOut: " + executionResult1.getTornadoProfilerResult().getDeviceReadTime());
+        System.out.println("Profiler copyIn: " + executionResult1.getTornadoProfilerResult().getDeviceWriteTime());
 
     }
 }

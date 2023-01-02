@@ -26,6 +26,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.TestHello;
@@ -35,7 +36,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * <p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.executor.TestExecutor
+ * tornado-test -V uk.ac.manchester.tornado.unittests.executor.TestExecutor
  * </code>
  * </p>
  */
@@ -69,7 +70,7 @@ public class TestExecutor extends TornadoTestBase {
                 .withDefaultScheduler();
 
         // 5. Execute all Immutable Task Graphs associated with an executor
-        executorPlan.execute();
+        TornadoExecutionResult executionResult = executorPlan.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i]);

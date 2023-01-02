@@ -41,6 +41,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import java.util.Collection;
 import java.util.Objects;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -177,5 +178,9 @@ public class ImmutableTaskGraph implements ProfileInterface {
 
     public TornadoDevice getDevice() {
         return taskGraph.getDevice();
+    }
+
+    Collection<?> getOutputs() {
+        return taskGraph.getOutputs();
     }
 }

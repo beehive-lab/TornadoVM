@@ -27,6 +27,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -89,24 +90,26 @@ public class TestProfiler extends TornadoTestBase {
         TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
 
         // Execute the plan (default TornadoVM optimization choices)
-        executorPlan.execute();
+        TornadoExecutionResult executionResult = executorPlan.execute();
 
-        assertTrue(executorPlan.getTotalTime() > 0);
-        assertTrue(executorPlan.getTornadoCompilerTime() > 0);
-        assertTrue(executorPlan.getCompileTime() > 0);
-        assertTrue(executorPlan.getDataTransfersTime() >= 0);
-        assertTrue(executorPlan.getDeviceReadTime() >= 0);
-        assertTrue(executorPlan.getDeviceWriteTime() >= 0);
+        assertTrue(executionResult.getTornadoProfilerResult().getTotalTime() > 0);
+        assertTrue(executionResult.getTornadoProfilerResult().getTornadoCompilerTime() > 0);
+        assertTrue(executionResult.getTornadoProfilerResult().getCompileTime() > 0);
+        assertTrue(executionResult.getTornadoProfilerResult().getDataTransfersTime() >= 0);
+        assertTrue(executionResult.getTornadoProfilerResult().getDeviceReadTime() >= 0);
+        assertTrue(executionResult.getTornadoProfilerResult().getDeviceWriteTime() >= 0);
         // We do not support dispatch timers for the PTX and SPIRV backends
         if (!isBackendPTXOrSPIRV(driverIndex)) {
-            assertTrue(executorPlan.getDataTransferDispatchTime() > 0);
-            assertTrue(executorPlan.getKernelDispatchTime() > 0);
+            assertTrue(executionResult.getTornadoProfilerResult().getDataTransferDispatchTime() > 0);
+            assertTrue(executionResult.getTornadoProfilerResult().getKernelDispatchTime() > 0);
         }
-        assertTrue(executorPlan.getDeviceWriteTime() >= 0);
-        assertTrue(executorPlan.getDeviceReadTime() > 0);
+        assertTrue(executionResult.getTornadoProfilerResult().getDeviceWriteTime() >= 0);
+        assertTrue(executionResult.getTornadoProfilerResult().getDeviceReadTime() > 0);
 
-        assertEquals(executorPlan.getDeviceWriteTime() + executorPlan.getDeviceReadTime(), executorPlan.getDataTransfersTime());
-        assertEquals(executorPlan.getTornadoCompilerTime() + executorPlan.getDriverInstallTime(), executorPlan.getCompileTime());
+        assertEquals(executionResult.getTornadoProfilerResult().getDeviceWriteTime() + executionResult.getTornadoProfilerResult().getDeviceReadTime(),
+                executionResult.getTornadoProfilerResult().getDataTransfersTime());
+        assertEquals(executionResult.getTornadoProfilerResult().getTornadoCompilerTime() + executionResult.getTornadoProfilerResult().getDriverInstallTime(),
+                executionResult.getTornadoProfilerResult().getCompileTime());
 
         // Disable profiler
         System.setProperty("tornado.profiler", "False");
@@ -137,17 +140,17 @@ public class TestProfiler extends TornadoTestBase {
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
 
         // Execute the plan (default TornadoVM optimization choices)
-        executor.execute();
+        TornadoExecutionResult executionResult = executor.execute();
 
-        assertEquals(executor.getTotalTime(), 0);
-        assertEquals(executor.getTornadoCompilerTime(), 0);
-        assertEquals(executor.getCompileTime(), 0);
-        assertEquals(executor.getDataTransfersTime(), 0);
-        assertEquals(executor.getDeviceReadTime(), 0);
-        assertEquals(executor.getDeviceWriteTime(), 0);
-        assertEquals(executor.getDataTransferDispatchTime(), 0);
-        assertEquals(executor.getKernelDispatchTime(), 0);
-        assertEquals(executor.getDeviceKernelTime(), 0);
-        assertEquals(executor.getDeviceKernelTime(), 0);
+        assertEquals(executionResult.getTornadoProfilerResult().getTotalTime(), 0);
+        assertEquals(executionResult.getTornadoProfilerResult().getTornadoCompilerTime(), 0);
+        assertEquals(executionResult.getTornadoProfilerResult().getCompileTime(), 0);
+        assertEquals(executionResult.getTornadoProfilerResult().getDataTransfersTime(), 0);
+        assertEquals(executionResult.getTornadoProfilerResult().getDeviceReadTime(), 0);
+        assertEquals(executionResult.getTornadoProfilerResult().getDeviceWriteTime(), 0);
+        assertEquals(executionResult.getTornadoProfilerResult().getDataTransferDispatchTime(), 0);
+        assertEquals(executionResult.getTornadoProfilerResult().getKernelDispatchTime(), 0);
+        assertEquals(executionResult.getTornadoProfilerResult().getDeviceKernelTime(), 0);
+        assertEquals(executionResult.getTornadoProfilerResult().getDeviceKernelTime(), 0);
     }
 }

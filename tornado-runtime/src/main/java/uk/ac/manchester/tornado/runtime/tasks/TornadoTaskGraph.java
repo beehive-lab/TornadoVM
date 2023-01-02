@@ -33,6 +33,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -446,6 +447,11 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         tornadoTaskGraph.graph = this.graph;
 
         return tornadoTaskGraph;
+    }
+
+    @Override
+    public Collection<?> getOutputs() {
+        return streamOutObjects;
     }
 
     @Override

@@ -41,6 +41,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -882,5 +883,8 @@ public class TaskGraph implements TornadoGraphInterface {
     protected String getProfileLog() {
         return taskScheduleImpl.getProfileLog();
     }
-    // ************************************************************************
+
+    public Collection<?> getOutputs() {
+        return taskScheduleImpl.getOutputs();
+    }
 }

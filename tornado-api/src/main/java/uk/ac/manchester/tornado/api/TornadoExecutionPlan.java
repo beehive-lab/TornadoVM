@@ -42,7 +42,6 @@
 package uk.ac.manchester.tornado.api;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
 
 /**
  * Object to create and optimize an execution plan for running a set of
@@ -53,7 +52,7 @@ import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
  * @since TornadoVM-0.15
  *
  */
-public class TornadoExecutionPlan implements ProfileInterface {
+public class TornadoExecutionPlan {
 
     private final TornadoExecutor tornadoExecutor;
 
@@ -75,7 +74,7 @@ public class TornadoExecutionPlan implements ProfileInterface {
      *
      * @return {@link TornadoExecutionPlan}
      */
-    public TornadoExecutionPlan execute() {
+    public TornadoExecutionResult execute() {
         if (this.policy != null) {
             tornadoExecutor.executeWithDynamicReconfiguration(this.policy, this.dynamicReconfigurationMode);
         } else if (gridScheduler != null) {
@@ -83,7 +82,7 @@ public class TornadoExecutionPlan implements ProfileInterface {
         } else {
             tornadoExecutor.execute();
         }
-        return this;
+        return new TornadoExecutionResult(tornadoExecutor.getOutputs(), new TornadoProfilerResult(tornadoExecutor));
     }
 
     /**
@@ -122,7 +121,7 @@ public class TornadoExecutionPlan implements ProfileInterface {
     }
 
     /**
-     * Free device memory (device buffers) associated with all immutable tasks
+     * Test Free device memory (device buffers) associated with all immutable tasks
      * graphs.
      *
      * @return {@link TornadoExecutionPlan}
@@ -256,128 +255,6 @@ public class TornadoExecutionPlan implements ProfileInterface {
      */
     public boolean isFinished() {
         return tornadoExecutor.isFinished();
-    }
-
-    /**
-     * Returns the end-to-end time for all immutable task-graph to execute.
-     *
-     * @return long
-     */
-    @Override
-    public long getTotalTime() {
-        return tornadoExecutor.getTotalTime();
-    }
-
-    /**
-     * Returns the JIT Compilation time for all immutable task-graphs associated to
-     * the executor.
-     *
-     * @return long
-     */
-    @Override
-    public long getCompileTime() {
-        return tornadoExecutor.getCompileTime();
-    }
-
-    /**
-     * Returns Tornado JIT Compilation time, in ns, (from Java bc to final step in
-     * Graal LIR) for all immutable task-graphs associated to the executor.
-     *
-     * @return long
-     */
-    @Override
-    public long getTornadoCompilerTime() {
-        return tornadoExecutor.getTornadoCompilerTime();
-    }
-
-    /**
-     * Returns the compilation time (in ns)that took the device driver (e.g., OpenCL
-     * driver) to create the device binary (e.g., from OpenCL C to binary, or from
-     * SPIR-V to binary).
-     *
-     * @return long
-     */
-    @Override
-    public long getDriverInstallTime() {
-        return tornadoExecutor.getDriverInstallTime();
-    }
-
-    /**
-     * Returns the total data transfer time (in ns) for all immutable task-graphs to
-     * perform copies from host to device and device to host.
-     *
-     * @return long
-     */
-    @Override
-    public long getDataTransfersTime() {
-        return tornadoExecutor.getDataTransfersTime();
-    }
-
-    /**
-     * Return the total time for all immutable task-graphs that took to send data to
-     * the device (host -> device).
-     *
-     * @return long
-     */
-    @Override
-    public long getDeviceWriteTime() {
-        return tornadoExecutor.getDeviceWriteTime();
-    }
-
-    /**
-     * Return the total time (in ns) for all immutable task-graphs that took to
-     * receive data to the host (device -> host).
-     *
-     * @return long
-     */
-    @Override
-    public long getDeviceReadTime() {
-        return tornadoExecutor.getDeviceReadTime();
-    }
-
-    /**
-     * Returns the total time (in ns) that took for all immutable task-graphs to
-     * dispatch the command to send and receive data. This depends on the driver
-     * implementation.
-     *
-     * @return long
-     */
-    @Override
-    public long getDataTransferDispatchTime() {
-        return tornadoExecutor.getDataTransferDispatchTime();
-    }
-
-    /**
-     * Returns the total time (in ns) that took all kernels to be dispatched by the
-     * driver. This is mainly used for debugging purposes.
-     *
-     * @return long
-     */
-    @Override
-    public long getKernelDispatchTime() {
-        return tornadoExecutor.getKernelDispatchTime();
-    }
-
-    /**
-     * Returns the total time (in ns) for all immutable task-graphs to run the
-     * kernel. This metric is from the driver.
-     *
-     * @return long
-     */
-    @Override
-    public long getDeviceKernelTime() {
-        return tornadoExecutor.getDeviceKernelTime();
-    }
-
-    /**
-     * Returns the profiler log in a JSON format for all the tasks within the
-     * executor.
-     *
-     * @return String
-     */
-    @Override
-    public String getProfileLog() {
-        return tornadoExecutor.getProfileLog();
     }
 
 }

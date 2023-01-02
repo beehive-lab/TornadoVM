@@ -95,10 +95,11 @@ public class TestAPI extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.LAST, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build() //
-                .execute();
+        TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
 
-        executor.transferToHost(data).freeDeviceMemory();
+        executorPlan.execute();
+
+        executorPlan.transferToHost(data).freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data[i]);

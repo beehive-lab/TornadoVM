@@ -123,8 +123,9 @@ public class TestFields extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.execute() //
-                .freeDeviceMemory();
+        executor.execute();
+
+        executor.freeDeviceMemory();
 
         executor.transferToHost(foo.output);
 
