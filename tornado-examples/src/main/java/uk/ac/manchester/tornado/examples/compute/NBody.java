@@ -25,6 +25,7 @@ import java.util.Arrays;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -159,10 +160,12 @@ public class NBody {
 
         resultsIterations = new StringBuffer();
 
+        TornadoExecutionResult executionResult = null;
+
         for (int i = 0; i < iterations; i++) {
             // System.gc();
             start = System.nanoTime();
-            executor.execute();
+            executionResult = executor.execute();
             end = System.nanoTime();
             enqueueTaskIfEnabled("nbody accelerated", start, end);
             resultsIterations.append("\tTornado execution time of iteration " + i + " is: " + (end - start) + " ns");
@@ -171,7 +174,9 @@ public class NBody {
         }
         long timeParallel = (end - start);
 
-        executor.transferToHost(posTornadoVM, velTornadoVM);
+        if (executionResult != null) {
+            executionResult.transferToHost(posTornadoVM, velTornadoVM);
+        }
 
         System.out.println(resultsIterations);
 

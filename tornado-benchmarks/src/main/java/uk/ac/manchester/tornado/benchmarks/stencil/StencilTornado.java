@@ -92,7 +92,7 @@ public class StencilTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.withDevice(device).execute();
+        executionResult = executor.withDevice(device).execute();
     }
 
     @Override
@@ -119,7 +119,7 @@ public class StencilTornado extends BenchmarkDriver {
 
     @Override
     protected void barrier() {
-        executor.transferToHost(a0);
+        executionResult.transferToHost(a0);
     }
 
     public void printSummary() {

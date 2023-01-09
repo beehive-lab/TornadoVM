@@ -70,17 +70,17 @@ public class VectorAddTest {
         TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
         TornadoExecutionResult executionResult = executorPlan.execute();
 
-        System.out.println("Profiler kernel: " + executionResult.getTornadoProfilerResult().getDeviceKernelTime());
-        System.out.println("Profiler copyOut: " + executionResult.getTornadoProfilerResult().getDeviceReadTime());
-        System.out.println("Profiler copyIn: " + executionResult.getTornadoProfilerResult().getDeviceWriteTime());
+        System.out.println("Profiler kernel: " + executionResult.getProfilerResult().getDeviceKernelTime());
+        System.out.println("Profiler copyOut: " + executionResult.getProfilerResult().getDeviceReadTime());
+        System.out.println("Profiler copyIn: " + executionResult.getProfilerResult().getDeviceWriteTime());
 
         System.out.printf("result: %s\n", results);
 
         TornadoExecutionResult executionResult1 = executorPlan.execute();
 
-        System.out.println("Profiler kernel: " + executionResult1.getTornadoProfilerResult().getDeviceKernelTime());
-        System.out.println("Profiler copyOut: " + executionResult1.getTornadoProfilerResult().getDeviceReadTime());
-        System.out.println("Profiler copyIn: " + executionResult1.getTornadoProfilerResult().getDeviceWriteTime());
+        System.out.println("Profiler kernel: " + executionResult1.getProfilerResult().getDeviceKernelTime());
+        System.out.println("Profiler copyOut: " + executionResult1.getProfilerResult().getDeviceReadTime());
+        System.out.println("Profiler copyIn: " + executionResult1.getProfilerResult().getDeviceWriteTime());
 
     }
 }

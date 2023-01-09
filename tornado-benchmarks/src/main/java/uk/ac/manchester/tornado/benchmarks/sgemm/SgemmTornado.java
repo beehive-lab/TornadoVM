@@ -138,7 +138,7 @@ public class SgemmTornado extends BenchmarkDriver {
         if (grid != null) {
             executor.withGridScheduler(grid);
         }
-        executor.withDevice(device).execute();
+        executionResult = executor.withDevice(device).execute();
     }
 
     @Override
@@ -148,7 +148,9 @@ public class SgemmTornado extends BenchmarkDriver {
         boolean val = true;
 
         benchmarkMethod(device);
-        executor.transferToHost(c).clearProfiles();
+        executionResult.transferToHost(c);
+
+        executor.clearProfiles();
 
         sgemm(m, n, m, a, b, result);
 

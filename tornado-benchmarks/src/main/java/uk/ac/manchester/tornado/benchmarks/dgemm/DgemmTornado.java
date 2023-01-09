@@ -120,7 +120,7 @@ public class DgemmTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.withDevice(device).execute();
+        executionResult = executor.withDevice(device).execute();
     }
 
     @Override

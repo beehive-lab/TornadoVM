@@ -81,7 +81,7 @@ public class DFTTornado extends BenchmarkDriver {
                 .withWarmUp() //
                 .execute();
 
-        executor.transferToHost(outReal, outImag);
+        executionResult.transferToHost(outReal, outImag);
 
         ComputeKernels.computeDFT(inReal, inImag, outRealTor, outImagTor);
 
@@ -112,6 +112,6 @@ public class DFTTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.withDevice(device).execute();
+        executionResult = executor.withDevice(device).execute();
     }
 }

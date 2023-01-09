@@ -31,6 +31,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.TornadoVM_Intrinsics;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -204,9 +205,9 @@ public class TestAtomics extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.execute();
+        TornadoExecutionResult executionResult = executor.execute();
 
-        if (!executor.isFinished()) {
+        if (!executionResult.isFinished()) {
             assertTrue(false);
         }
 
@@ -233,9 +234,9 @@ public class TestAtomics extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.execute();
+        TornadoExecutionResult executionResult = executor.execute();
 
-        if (!executor.isFinished()) {
+        if (!executionResult.isFinished()) {
             assertTrue(false);
         }
 
@@ -307,9 +308,9 @@ public class TestAtomics extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.execute();
+        TornadoExecutionResult executionResult = executor.execute();
 
-        if (!executor.isFinished()) {
+        if (!executionResult.isFinished()) {
             assertTrue(false);
         }
 
@@ -335,9 +336,9 @@ public class TestAtomics extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.execute();
+        TornadoExecutionResult executionResult = executor.execute();
 
-        if (!executor.isFinished()) {
+        if (!executionResult.isFinished()) {
             assertTrue(false);
         }
         boolean repeated = isValueRepeated(a);
@@ -360,9 +361,9 @@ public class TestAtomics extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.execute();
+        TornadoExecutionResult executionResult = executor.execute();
 
-        if (!executor.isFinished()) {
+        if (!executionResult.isFinished()) {
             assertTrue(false);
         }
         boolean repeated = isValueRepeated(a);

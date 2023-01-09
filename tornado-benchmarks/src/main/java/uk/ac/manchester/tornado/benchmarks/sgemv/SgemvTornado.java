@@ -90,7 +90,7 @@ public class SgemvTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.withDevice(device).execute();
+        executionResult = executor.withDevice(device).execute();
     }
 
     @Override
@@ -99,7 +99,8 @@ public class SgemvTornado extends BenchmarkDriver {
         final float[] result = new float[n];
 
         benchmarkMethod(device);
-        executor.transferToHost(y).clearProfiles();
+        executionResult.transferToHost(y);
+        executor.clearProfiles();
 
         sgemv(m, n, a, x, result);
 

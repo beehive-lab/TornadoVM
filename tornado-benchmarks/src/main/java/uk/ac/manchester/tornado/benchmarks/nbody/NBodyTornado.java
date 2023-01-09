@@ -135,8 +135,8 @@ public class NBodyTornado extends BenchmarkDriver {
                 .withDevice(device) //
                 .execute();
 
-        executor.transferToHost(posSeq, velSeq) //
-                .clearProfiles();
+        executionResult.transferToHost(posSeq, velSeq);
+        executor.clearProfiles();
 
         nBody(numBodies, posSeqSeq, velSeqSeq, delT, espSqr);
 
@@ -156,6 +156,6 @@ public class NBodyTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.withDevice(device).execute();
+        executionResult = executor.withDevice(device).execute();
     }
 }

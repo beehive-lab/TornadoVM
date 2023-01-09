@@ -67,7 +67,7 @@ public class MonteCarloTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.withDevice(device).execute();
+        executionResult = executor.withDevice(device).execute();
     }
 
     @Override
@@ -82,8 +82,8 @@ public class MonteCarloTornado extends BenchmarkDriver {
         for (int i = 0; i < 3; i++) {
             executor.execute();
         }
-        executor.transferToHost(output) //
-                .clearProfiles();
+        executionResult.transferToHost(output);
+        executor.clearProfiles();
 
         for (int i = 0; i < size; i++) {
             if (abs(output[i] - result[i]) > 0.01) {

@@ -43,6 +43,17 @@ package uk.ac.manchester.tornado.api;
 
 import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
 
+/**
+ * Object that stores all information related to profiling an executor. To be
+ * able to return all timers, developers must enable the profiler from the
+ * command line using the option:
+ *
+ * <p>
+ * <code>
+ *     --enableProfiler <console|silent>
+ * </code>
+ * </p>
+ */
 public class TornadoProfilerResult implements ProfileInterface {
     private TornadoExecutor executor;
 
@@ -172,4 +183,7 @@ public class TornadoProfilerResult implements ProfileInterface {
         return executor.getProfileLog();
     }
 
+    TornadoExecutor getExecutor() {
+        return executor;
+    }
 }

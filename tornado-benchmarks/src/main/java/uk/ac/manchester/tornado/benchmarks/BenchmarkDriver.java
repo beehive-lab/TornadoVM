@@ -27,6 +27,7 @@ import java.util.List;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
@@ -52,6 +53,8 @@ public abstract class BenchmarkDriver {
     protected TaskGraph taskGraph;
 
     protected TornadoExecutionPlan executor;
+
+    protected TornadoExecutionResult executionResult;
 
     protected ImmutableTaskGraph immutableTaskGraph;
 

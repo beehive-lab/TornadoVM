@@ -92,7 +92,7 @@ public class RotateTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.withDevice(device).execute();
+        executionResult = executor.withDevice(device).execute();
     }
 
     @Override
@@ -101,7 +101,8 @@ public class RotateTornado extends BenchmarkDriver {
         final ImageFloat3 result = new ImageFloat3(numElementsX, numElementsY);
 
         benchmarkMethod(device);
-        executor.transferToHost(output).clearProfiles();
+        executionResult.transferToHost(output);
+        executor.clearProfiles();
 
         rotateImage(result, m, input);
 

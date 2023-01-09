@@ -45,21 +45,42 @@ import java.util.List;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
+/**
+ * Object created when the {@link TornadoExecutionPlan#execute()} is finished.
+ * This objects stores the results of the execution. Additionally, if the
+ * execution plan enabled the profiler information, this object also stores all
+ * profiler information (e.g., read/write time, kernel time, etc.) through the
+ * {@link TornadoProfilerResult} object.
+ */
 public class TornadoExecutionResult {
 
-    List<Object> outputs;
+    private List<Object> outputs;
 
-    TornadoProfilerResult tornadoProfilerResult;
+    private TornadoProfilerResult tornadoProfilerResult;
 
-    public TornadoExecutionResult(List<Object> outputs, TornadoProfilerResult profilerResult) {
+    TornadoExecutionResult(List<Object> outputs, TornadoProfilerResult profilerResult) {
         this.outputs = outputs;
         this.tornadoProfilerResult = profilerResult;
     }
 
+    /**
+     * Method to obtain all object results related to an execution plan. The return
+     * type is a linked list that contains all object results in the same order as
+     * specified in the {@link TaskGraph}.
+     *
+     * @return {@link List<Object>}
+     */
     public List<Object> getOutputs() {
         return this.outputs;
     }
 
+    /**
+     * Method to obtain a specific input from the output result list.
+     *
+     * @param index
+     *            Index of the object within the result list.
+     * @return {@link Object}
+     */
     public Object getOutput(int index) {
         if (outputs.size() >= index) {
             throw new TornadoRuntimeException("Output not found");
@@ -67,8 +88,40 @@ public class TornadoExecutionResult {
         return outputs.get(index);
     }
 
-    public TornadoProfilerResult getTornadoProfilerResult() {
+    /**
+     * Method to obtain the profiler information associated to the latest execution
+     * plan. Note that, all timers associated to the profiler are enabled only if
+     * the execution plan enables the profiler.
+     *
+     * @return {@link TornadoProfilerResult}
+     */
+    public TornadoProfilerResult getProfilerResult() {
         return tornadoProfilerResult;
+    }
+
+    /**
+     * Transfer data from device to host. This is applied for all immutable
+     * task-graphs within an executor. This method is used when a task-graph defines
+     * transferToHost using the
+     * {@link uk.ac.manchester.tornado.api.enums.DataTransferMode#LAST}. This
+     * indicates the runtime to not to copy-out the data en every iteration and
+     * transfer the data under demand.
+     *
+     * @param objects
+     *            Host objects to transfer the data to.
+     */
+    public void transferToHost(Object... objects) {
+        tornadoProfilerResult.getExecutor().transferToHost(objects);
+    }
+
+    /**
+     * It returns true if all task-graphs associated to the executor finished
+     * execution.
+     *
+     * @return boolean
+     */
+    public boolean isFinished() {
+        return tornadoProfilerResult.getExecutor().isFinished();
     }
 
 }

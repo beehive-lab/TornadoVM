@@ -86,7 +86,7 @@ public class RotateTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.withDevice(device).execute();
+        executionResult = executor.withDevice(device).execute();
     }
 
     @Override
@@ -95,7 +95,8 @@ public class RotateTornado extends BenchmarkDriver {
         final VectorFloat3 result = new VectorFloat3(numElements);
 
         benchmarkMethod(device);
-        executor.transferToHost(output).clearProfiles();
+        executionResult.transferToHost(output);
+        executor.clearProfiles();
 
         rotateVector(result, m, input);
 

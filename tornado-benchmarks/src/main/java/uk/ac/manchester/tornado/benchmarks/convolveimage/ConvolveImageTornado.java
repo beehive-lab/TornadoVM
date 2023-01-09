@@ -89,7 +89,7 @@ public class ConvolveImageTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.withDevice(device).execute();
+        executionResult = executor.withDevice(device).execute();
     }
 
     @Override
@@ -99,8 +99,8 @@ public class ConvolveImageTornado extends BenchmarkDriver {
 
         benchmarkMethod(device);
 
-        executor.transferToHost(output) //
-                .clearProfiles();
+        executionResult.transferToHost(output);
+        executor.clearProfiles();
 
         GraphicsKernels.convolveImage(input, filter, result);
 

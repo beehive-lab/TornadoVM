@@ -28,6 +28,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -102,9 +103,10 @@ public class TestFields extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.execute();
+        TornadoExecutionResult executionResult = executor.execute();
 
-        executor.transferToHost(foo.output);
+        executionResult.transferToHost(foo.output);
+
         executor.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
@@ -123,11 +125,11 @@ public class TestFields extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.execute();
+        TornadoExecutionResult executionResult = executor.execute();
 
         executor.freeDeviceMemory();
 
-        executor.transferToHost(foo.output);
+        executionResult.transferToHost(foo.output);
 
         for (int i = 0; i < N; i++) {
             assertEquals(foo.a[i] + foo.b[i], foo.output[i]);
@@ -144,9 +146,9 @@ public class TestFields extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.execute();
+        TornadoExecutionResult executionResult = executor.execute();
 
-        executor.transferToHost(bar.output);
+        executionResult.transferToHost(bar.output);
 
         executor.freeDeviceMemory();
 

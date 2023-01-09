@@ -81,7 +81,7 @@ public class SaxpyTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executor.withDevice(device).execute();
+        executionResult = executor.withDevice(device).execute();
     }
 
     @Override
@@ -90,7 +90,8 @@ public class SaxpyTornado extends BenchmarkDriver {
         final float[] result = new float[numElements];
 
         benchmarkMethod(device);
-        executor.transferToHost(y).clearProfiles();
+        executionResult.transferToHost(y);
+        executor.clearProfiles();
 
         saxpy(alpha, x, result);
 

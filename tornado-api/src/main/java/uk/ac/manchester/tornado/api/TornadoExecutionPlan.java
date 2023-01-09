@@ -58,6 +58,8 @@ public class TornadoExecutionPlan {
 
     private GridScheduler gridScheduler;
 
+    private boolean isProfilerEnabled;
+
     private Policy policy = null;
 
     private boolean useDefaultScheduler;
@@ -132,23 +134,6 @@ public class TornadoExecutionPlan {
     }
 
     /**
-     * Transfer data from device to host. This is applied for all immutable
-     * task-graphs within an executor. This method is used when a task-graph defines
-     * transferToHost using the
-     * {@link uk.ac.manchester.tornado.api.enums.DataTransferMode#LAST}. This
-     * indicates the runtime to not to copy-out the data en every iteration and
-     * transfer the data under demand.
-     *
-     * @param objects
-     *            Host objects to transfer the data to.
-     * @return {@link TornadoExecutionPlan}
-     */
-    public TornadoExecutionPlan transferToHost(Object... objects) {
-        tornadoExecutor.transferToHost(objects);
-        return this;
-    }
-
-    /**
      * Use a {@link GridScheduler} for thread dispatch. The same GridScheduler will
      * be applied to all tasks within the executor. Note that the grid-scheduler API
      * can specify all workers for each task-graph.
@@ -215,6 +200,11 @@ public class TornadoExecutionPlan {
         return this;
     }
 
+    public TornadoExecutionPlan withProfiler(boolean isProfilerEnabled) {
+        this.isProfilerEnabled = isProfilerEnabled;
+        return this;
+    }
+
     /**
      * Dump in STDOUT all metrics associated to an execution. This is for debugging
      * purposes.
@@ -245,16 +235,6 @@ public class TornadoExecutionPlan {
     public TornadoExecutionPlan clearProfiles() {
         tornadoExecutor.clearProfiles();
         return this;
-    }
-
-    /**
-     * It returns true if all task-graphs associated to the executor finished
-     * execution.
-     *
-     * @return boolean
-     */
-    public boolean isFinished() {
-        return tornadoExecutor.isFinished();
     }
 
 }

@@ -28,6 +28,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.arrays.TestArrays;
@@ -63,10 +64,10 @@ public class TestAPI extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.execute();
+        TornadoExecutionResult executionResult = executor.execute();
 
         // Force data transfers from D->H after the execution of a task-graph
-        executor.transferToHost(data);
+        executionResult.transferToHost(data);
 
         // Mark objects associated with the task-graph for reusing memory
         executor.freeDeviceMemory();
@@ -97,9 +98,11 @@ public class TestAPI extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
 
-        executorPlan.execute();
+        TornadoExecutionResult executionResult = executorPlan.execute();
 
-        executorPlan.transferToHost(data).freeDeviceMemory();
+        executionResult.transferToHost(data);
+
+        executorPlan.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data[i]);
