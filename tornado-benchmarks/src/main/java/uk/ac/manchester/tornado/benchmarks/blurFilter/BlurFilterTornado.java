@@ -102,7 +102,7 @@ public class BlurFilterTornado extends BenchmarkDriver {
 
     @Override
     public void tearDown() {
-        executionResult.getProfilerResult().dumpProfiles(executionResult);
+        executionResult.getProfilerResult().dumpProfiles();
         redChannel = null;
         greenChannel = null;
         blueChannel = null;

@@ -87,7 +87,7 @@ public class NBodyTornado extends BenchmarkDriver {
 
     @Override
     public void tearDown() {
-        executionResult.getProfilerResult().dumpProfiles(executionResult);
+        executionResult.getProfilerResult().dumpProfiles();
         posSeq = null;
         velSeq = null;
         executor.resetDevices();

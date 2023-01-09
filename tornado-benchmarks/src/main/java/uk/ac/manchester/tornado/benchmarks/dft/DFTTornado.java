@@ -101,7 +101,7 @@ public class DFTTornado extends BenchmarkDriver {
 
     @Override
     public void tearDown() {
-        executionResult.getProfilerResult().dumpProfiles(executionResult);
+        executionResult.getProfilerResult().dumpProfiles();
 
         outImag = null;
         outReal = null;

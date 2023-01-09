@@ -74,7 +74,7 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
 
     @Override
     public void tearDown() {
-        executionResult.getProfilerResult().dumpProfiles(executionResult);
+        executionResult.getProfilerResult().dumpProfiles();
 
         input = null;
         output = null;

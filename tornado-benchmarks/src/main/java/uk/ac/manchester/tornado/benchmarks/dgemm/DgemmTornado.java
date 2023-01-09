@@ -108,7 +108,7 @@ public class DgemmTornado extends BenchmarkDriver {
 
     @Override
     public void tearDown() {
-        executionResult.getProfilerResult().dumpProfiles(executionResult);
+        executionResult.getProfilerResult().dumpProfiles();
 
         a = null;
         b = null;

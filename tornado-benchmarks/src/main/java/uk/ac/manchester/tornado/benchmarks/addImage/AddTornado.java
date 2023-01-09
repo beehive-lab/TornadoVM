@@ -88,7 +88,7 @@ public class AddTornado extends BenchmarkDriver {
 
     @Override
     public void tearDown() {
-        executionResult.getProfilerResult().dumpProfiles(executionResult);
+        executionResult.getProfilerResult().dumpProfiles();
         a = null;
         b = null;
         c = null;

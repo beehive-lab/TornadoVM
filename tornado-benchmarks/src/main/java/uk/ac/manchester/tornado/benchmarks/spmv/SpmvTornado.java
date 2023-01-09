@@ -66,7 +66,7 @@ public class SpmvTornado extends BenchmarkDriver {
 
     @Override
     public void tearDown() {
-        executionResult.getProfilerResult().dumpProfiles(executionResult);
+        executionResult.getProfilerResult().dumpProfiles();
 
         v = null;
         y = null;

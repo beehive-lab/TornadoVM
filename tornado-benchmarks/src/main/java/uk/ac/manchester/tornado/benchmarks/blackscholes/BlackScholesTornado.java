@@ -69,7 +69,7 @@ public class BlackScholesTornado extends BenchmarkDriver {
 
     @Override
     public void tearDown() {
-        executionResult.getProfilerResult().dumpProfiles(executionResult);
+        executionResult.getProfilerResult().dumpProfiles();
         randArray = null;
         call = null;
         put = null;

@@ -41,6 +41,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
 
 /**
@@ -50,8 +51,13 @@ import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
  *
  * <p>
  * <code>
- *     --enableProfiler <console|silent>
+ * --enableProfiler <console|silent>
  * </code>
+ * </p>
+ *
+ * <p>
+ * Alternatively, the profiler can be enabled using the
+ * {@link TornadoExecutionPlan#withProfiler(ProfilerMode)}.
  * </p>
  */
 public class TornadoProfilerResult implements ProfileInterface {
@@ -190,12 +196,8 @@ public class TornadoProfilerResult implements ProfileInterface {
     /**
      * Dump in STDOUT all metrics associated to an execution. This is for debugging
      * purposes.
-     *
-     * @param tornadoExecutionResult
-     * @return {@link TornadoExecutionResult}
      */
-    public TornadoExecutionResult dumpProfiles(TornadoExecutionResult tornadoExecutionResult) {
+    public void dumpProfiles() {
         getExecutor().dumpProfiles();
-        return tornadoExecutionResult;
     }
 }

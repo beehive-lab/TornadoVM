@@ -54,7 +54,7 @@ public class MandelbrotTornado extends BenchmarkDriver {
 
     @Override
     public void tearDown() {
-        executionResult.getProfilerResult().dumpProfiles(executionResult);
+        executionResult.getProfilerResult().dumpProfiles();
         output = null;
         executor.resetDevices();
         super.tearDown();
