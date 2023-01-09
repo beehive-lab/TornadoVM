@@ -76,7 +76,7 @@ public class RotateTornado extends BenchmarkDriver {
 
     @Override
     public void tearDown() {
-        executor.dumpProfiles();
+        executionResult.getProfilerResult().dumpProfiles(executionResult);
         input = null;
         output = null;
         m = null;

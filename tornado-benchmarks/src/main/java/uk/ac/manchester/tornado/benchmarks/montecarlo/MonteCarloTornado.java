@@ -59,7 +59,7 @@ public class MonteCarloTornado extends BenchmarkDriver {
 
     @Override
     public void tearDown() {
-        executor.dumpProfiles();
+        executionResult.getProfilerResult().dumpProfiles(executionResult);
         output = null;
         executor.resetDevices();
         super.tearDown();

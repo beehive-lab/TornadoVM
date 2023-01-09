@@ -186,4 +186,16 @@ public class TornadoProfilerResult implements ProfileInterface {
     TornadoExecutor getExecutor() {
         return executor;
     }
+
+    /**
+     * Dump in STDOUT all metrics associated to an execution. This is for debugging
+     * purposes.
+     *
+     * @param tornadoExecutionResult
+     * @return {@link TornadoExecutionResult}
+     */
+    public TornadoExecutionResult dumpProfiles(TornadoExecutionResult tornadoExecutionResult) {
+        getExecutor().dumpProfiles();
+        return tornadoExecutionResult;
+    }
 }

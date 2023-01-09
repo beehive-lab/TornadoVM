@@ -109,9 +109,12 @@ public class TornadoExecutionResult {
      *
      * @param objects
      *            Host objects to transfer the data to.
+     *
+     * @return {@link TornadoExecutionResult}
      */
-    public void transferToHost(Object... objects) {
+    public TornadoExecutionResult transferToHost(Object... objects) {
         tornadoProfilerResult.getExecutor().transferToHost(objects);
+        return this;
     }
 
     /**

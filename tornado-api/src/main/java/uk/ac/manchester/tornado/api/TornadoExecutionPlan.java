@@ -42,6 +42,7 @@
 package uk.ac.manchester.tornado.api;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 
 /**
  * Object to create and optimize an execution plan for running a set of
@@ -58,12 +59,12 @@ public class TornadoExecutionPlan {
 
     private GridScheduler gridScheduler;
 
-    private boolean isProfilerEnabled;
-
     private Policy policy = null;
 
     private boolean useDefaultScheduler;
     private DRMode dynamicReconfigurationMode;
+    private ProfilerMode profilerMode;
+    private boolean disableProfiler;
 
     TornadoExecutionPlan(TornadoExecutor tornadoExecutor) {
         this.tornadoExecutor = tornadoExecutor;
@@ -77,6 +78,13 @@ public class TornadoExecutionPlan {
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionResult execute() {
+
+        if (this.profilerMode != null && !this.disableProfiler) {
+            tornadoExecutor.enableProfiler(profilerMode);
+        } else if (this.profilerMode != null && this.disableProfiler) {
+            tornadoExecutor.disableProfiler(profilerMode);
+        }
+
         if (this.policy != null) {
             tornadoExecutor.executeWithDynamicReconfiguration(this.policy, this.dynamicReconfigurationMode);
         } else if (gridScheduler != null) {
@@ -200,19 +208,13 @@ public class TornadoExecutionPlan {
         return this;
     }
 
-    public TornadoExecutionPlan withProfiler(boolean isProfilerEnabled) {
-        this.isProfilerEnabled = isProfilerEnabled;
+    public TornadoExecutionPlan withProfiler(ProfilerMode profilerMode) {
+        this.profilerMode = profilerMode;
         return this;
     }
 
-    /**
-     * Dump in STDOUT all metrics associated to an execution. This is for debugging
-     * purposes.
-     *
-     * @return {@link TornadoExecutionPlan}
-     */
-    public TornadoExecutionPlan dumpProfiles() {
-        tornadoExecutor.dumpProfiles();
+    public TornadoExecutionPlan withoutProfiler() {
+        this.disableProfiler = true;
         return this;
     }
 

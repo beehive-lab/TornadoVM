@@ -83,7 +83,7 @@ public class StencilTornado extends BenchmarkDriver {
 
     @Override
     public void tearDown() {
-        executor.dumpProfiles();
+        executionResult.getProfilerResult().dumpProfiles(executionResult);
         a0 = null;
         a1 = null;
         ainit = null;

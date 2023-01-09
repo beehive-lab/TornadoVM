@@ -49,6 +49,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
 
@@ -129,4 +130,8 @@ public interface TaskGraphInterface extends ProfileInterface {
     TaskGraphInterface createImmutableTaskGraph();
 
     Collection<?> getOutputs();
+
+    void enableProfiler(ProfilerMode profilerMode);
+
+    void disableProfiler(ProfilerMode profilerMode);
 }

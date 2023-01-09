@@ -64,6 +64,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
+import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
 
@@ -886,5 +887,13 @@ public class TaskGraph implements TornadoGraphInterface {
 
     public Collection<?> getOutputs() {
         return taskScheduleImpl.getOutputs();
+    }
+
+    void enableProfiler(ProfilerMode profilerMode) {
+        taskScheduleImpl.enableProfiler(profilerMode);
+    }
+
+    void disableProfiler(ProfilerMode profilerMode) {
+        taskScheduleImpl.disableProfiler(profilerMode);
     }
 }

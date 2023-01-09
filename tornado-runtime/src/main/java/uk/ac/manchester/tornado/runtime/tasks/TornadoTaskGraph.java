@@ -83,6 +83,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
@@ -191,12 +192,6 @@ public class TornadoTaskGraph implements TaskGraphInterface {
      *            Task-Schedule name
      */
     public TornadoTaskGraph(String taskScheduleName) {
-        if (TornadoOptions.isProfilerEnabled()) {
-            this.timeProfiler = new TimeProfiler();
-        } else {
-            this.timeProfiler = new EmptyProfiler();
-        }
-
         executionContext = new TornadoExecutionContext(taskScheduleName, timeProfiler);
         hlBuffer = ByteBuffer.wrap(highLevelCode);
         hlBuffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -454,6 +449,24 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         return streamOutObjects;
     }
 
+    private void setProfiler(ProfilerMode profilerMode, String option) {
+        System.setProperty(TornadoOptions.PROFILER, option);
+        if (profilerMode == ProfilerMode.SILENT) {
+            System.setProperty(TornadoOptions.PROFILER_LOG, option);
+        }
+    }
+
+    @Override
+    public void enableProfiler(ProfilerMode profilerMode) {
+        setProfiler(profilerMode, TornadoOptions.TRUE);
+    }
+
+    @Override
+    public void disableProfiler(ProfilerMode profilerMode) {
+        setProfiler(profilerMode, TornadoOptions.FALSE);
+        this.timeProfiler = null;
+    }
+
     @Override
     public SchedulableTask getTask(String id) {
         return executionContext.getTask(id);
@@ -527,7 +540,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         Providers providers = TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getProviders();
         TornadoSuitesProvider suites = TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getSuitesProvider();
 
-        logTaskMethodHandle(task);
+        // logTaskMethodHandle(task);
 
         executionContext.setTask(index, task);
 
@@ -548,7 +561,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         Providers providers = TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getProviders();
         TornadoSuitesProvider suites = TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getSuitesProvider();
 
-        logTaskMethodHandle(task);
+        // logTaskMethodHandle(task);
 
         int index = executionContext.addTask(task);
 
@@ -738,7 +751,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
             return;
         }
 
-        if (!TornadoOptions.PROFILER_LOGS_ACCUMULATE) {
+        if (!TornadoOptions.PROFILER_LOGS_ACCUMULATE()) {
             timeProfiler.dumpJson(new StringBuffer(), this.getId());
         } else {
             bufferLogProfiler.append(timeProfiler.createJson(new StringBuffer(), this.getId()));
@@ -922,13 +935,14 @@ public class TornadoTaskGraph implements TaskGraphInterface {
 
     @Override
     public void warmup() {
+        setupProfiler();
         getDevice().getDeviceContext().setResetToFalse();
         timeProfiler.clean();
 
         compileToTornadoVMBytecode();
         vm.warmup();
 
-        if (TornadoOptions.isProfilerEnabled() && !TornadoOptions.PROFILER_LOGS_ACCUMULATE) {
+        if (TornadoOptions.isProfilerEnabled() && !TornadoOptions.PROFILER_LOGS_ACCUMULATE()) {
             timeProfiler.dumpJson(new StringBuffer(), this.getId());
         }
     }
@@ -1136,9 +1150,23 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         }
     }
 
+    private void setupProfiler() {
+        if (timeProfiler == null) {
+            if (TornadoOptions.isProfilerEnabled()) {
+                this.timeProfiler = new TimeProfiler();
+            } else {
+                this.timeProfiler = new EmptyProfiler();
+            }
+            for (SchedulableTask task : executionContext.getTasks()) {
+                logTaskMethodHandle(task);
+            }
+        }
+    }
+
     @Override
     public TaskGraphInterface schedule() {
 
+        setupProfiler();
         isFinished = false;
         if (bailout) {
             if (!TornadoOptions.RECOVER_BAILOUT) {

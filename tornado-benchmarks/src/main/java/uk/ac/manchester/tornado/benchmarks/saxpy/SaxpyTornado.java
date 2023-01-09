@@ -70,7 +70,7 @@ public class SaxpyTornado extends BenchmarkDriver {
 
     @Override
     public void tearDown() {
-        executor.dumpProfiles();
+        executionResult.getProfilerResult().dumpProfiles(executionResult);
 
         x = null;
         y = null;

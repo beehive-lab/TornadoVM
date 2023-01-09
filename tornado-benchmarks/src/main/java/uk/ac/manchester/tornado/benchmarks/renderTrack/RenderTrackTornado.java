@@ -73,7 +73,7 @@ public class RenderTrackTornado extends BenchmarkDriver {
 
     @Override
     public void tearDown() {
-        executor.dumpProfiles();
+        executionResult.getProfilerResult().dumpProfiles(executionResult);
         input = null;
         output = null;
         executor.resetDevices();

@@ -46,6 +46,7 @@ import java.util.Collections;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
 
 public class TornadoExecutor implements ProfileInterface {
@@ -210,5 +211,13 @@ public class TornadoExecutor implements ProfileInterface {
         List<Object> outputs = new ArrayList<>();
         immutableTaskGraphList.forEach(immutableTaskGraph -> outputs.addAll(immutableTaskGraph.getOutputs()));
         return outputs;
+    }
+
+    void enableProfiler(ProfilerMode profilerMode) {
+        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.enableProfiler(profilerMode));
+    }
+
+    void disableProfiler(ProfilerMode profilerMode) {
+        immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.disableProfiler(profilerMode));
     }
 }

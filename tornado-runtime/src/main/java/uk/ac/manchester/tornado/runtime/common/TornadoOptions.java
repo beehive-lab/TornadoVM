@@ -30,6 +30,9 @@ public class TornadoOptions {
     public static final String FALSE = "FALSE";
     public static final String TRUE = "TRUE";
 
+    public static String PROFILER_LOG = "tornado.log.profiler";
+    public static String PROFILER = "tornado.profiler";
+
     /**
      * Option to set the device maximum memory usage. It is set to 1GB by default.
      */
@@ -58,18 +61,24 @@ public class TornadoOptions {
      * reductions.
      */
     public static final boolean EXPERIMENTAL_REDUCE = getBooleanValue("tornado.experimental.reduce", TRUE);
+
     /**
      * Temporal option for disabling null checks for Apache-Flink.
      */
     public static final boolean IGNORE_NULL_CHECKS = getBooleanValue("tornado.ignore.nullchecks", FALSE);
+
     /**
      * Option for enabling saving the profiler into a file.
      */
-    public static final boolean PROFILER_LOGS_ACCUMULATE = getBooleanValue("tornado.log.profiler", FALSE);
+    public static boolean PROFILER_LOGS_ACCUMULATE() {
+        return getBooleanValue(PROFILER_LOG, FALSE);
+    }
+
     /**
      * Option to enable profiler-feature extractions.
      */
     public static final boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", FALSE);
+
     /**
      * Enable/Disable FMA Optimizations. True by default.
      */
@@ -252,7 +261,7 @@ public class TornadoOptions {
      * @return boolean.
      */
     public static boolean isProfilerEnabled() {
-        return getBooleanValue("tornado.profiler", FALSE);
+        return getBooleanValue(PROFILER, FALSE);
     }
 
     /**
@@ -266,11 +275,11 @@ public class TornadoOptions {
     }
 
     private static boolean getBooleanValue(String property, String defaultValue) {
-        return Boolean.parseBoolean(Tornado.getProperty(property, defaultValue));
+        return Boolean.parseBoolean(System.getProperty(property, defaultValue));
     }
 
     private static int getIntValue(String property, String defaultValue) {
-        return Integer.parseInt(Tornado.getProperty(property, defaultValue));
+        return Integer.parseInt(System.getProperty(property, defaultValue));
     }
 
 }
