@@ -48,33 +48,35 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
 
+/**
+ * A {@link TaskGraph} is encapsulated in this class and all actions over a task
+ * graph are coded from this class. For instance, execution.
+ *
+ * <p>
+ * This class does not allow a task-graph to mutate (e.g., add/remove tasks or
+ * data from the graph itself). To mutate a graph, we need to create a new
+ * {@link ImmutableTaskGraph} object from a mutated {@TaskGraph}. Note that,
+ * developers can mutate task-graph objects (of type {@TaskGraph}) without
+ * affecting the execution of graphs encapsulated in {@link ImmutableTaskGraph}.
+ * </p>
+ */
 public class ImmutableTaskGraph implements ProfileInterface {
 
-    /**
-     * The idea is a task-graph is encapsulated in this class and all actions over a
-     * task graph are coded from this class. For instance, execution.
-     *
-     * <p>
-     * This class should not allow a task-graph to add/remove tasks or data from the
-     * graph itself. To do so, we should transform a graph from immutable to mutable
-     * state.
-     * </p>
-     */
     private final TaskGraph taskGraph;
 
     ImmutableTaskGraph(TaskGraph taskGraph) {
         this.taskGraph = taskGraph;
     }
 
-    public void execute() {
+    void execute() {
         this.taskGraph.execute();
     }
 
-    public void execute(GridScheduler gridScheduler) {
+    void execute(GridScheduler gridScheduler) {
         taskGraph.execute(gridScheduler);
     }
 
-    public void executeWithDynamicReconfiguration(Policy policy, DRMode mode) {
+    void executeWithDynamicReconfiguration(Policy policy, DRMode mode) {
         if (Objects.requireNonNull(mode) == DRMode.SERIAL) {
             taskGraph.executeWithProfilerSequential(policy);
         } else if (mode == DRMode.PARALLEL) {
@@ -82,19 +84,19 @@ public class ImmutableTaskGraph implements ProfileInterface {
         }
     }
 
-    public void warmup() {
+    void warmup() {
         taskGraph.warmup();
     }
 
-    public void setDevice(TornadoDevice device) {
+    void setDevice(TornadoDevice device) {
         taskGraph.setDevice(device);
     }
 
-    public void freeDeviceMemory() {
+    void freeDeviceMemory() {
         taskGraph.freeDeviceMemory();
     }
 
-    public void transferToHost(Object... objects) {
+    void transferToHost(Object... objects) {
         taskGraph.syncRuntimeTransferToHost(objects);
     }
 
@@ -153,31 +155,31 @@ public class ImmutableTaskGraph implements ProfileInterface {
         return taskGraph.getProfileLog();
     }
 
-    public boolean isFinished() {
+    boolean isFinished() {
         return taskGraph.isFinished();
     }
 
-    public void dumpProfiles() {
+    void dumpProfiles() {
         taskGraph.dumpProfiles();
     }
 
-    public void resetDevices() {
+    void resetDevices() {
         taskGraph.getDevice().reset();
     }
 
-    public void clearProfiles() {
+    void clearProfiles() {
         taskGraph.clearProfiles();
     }
 
-    public void useDefaultScheduler(boolean useDefaultScheduler) {
+    void useDefaultScheduler(boolean useDefaultScheduler) {
         taskGraph.useDefaultThreadScheduler(useDefaultScheduler);
     }
 
-    public void withBatch(String batchSize) {
+    void withBatch(String batchSize) {
         taskGraph.batch(batchSize);
     }
 
-    public TornadoDevice getDevice() {
+    TornadoDevice getDevice() {
         return taskGraph.getDevice();
     }
 
