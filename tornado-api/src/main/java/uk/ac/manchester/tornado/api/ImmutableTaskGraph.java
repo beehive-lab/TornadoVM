@@ -46,7 +46,6 @@ import java.util.Objects;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
-import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
 
 /**
  * A {@link TaskGraph} is encapsulated in this class and all actions over a task
@@ -60,7 +59,7 @@ import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
  * affecting the execution of graphs encapsulated in {@link ImmutableTaskGraph}.
  * </p>
  */
-public class ImmutableTaskGraph implements ProfileInterface {
+public class ImmutableTaskGraph {
 
     private final TaskGraph taskGraph;
 
@@ -100,58 +99,47 @@ public class ImmutableTaskGraph implements ProfileInterface {
         taskGraph.syncRuntimeTransferToHost(objects);
     }
 
-    @Override
-    public long getTotalTime() {
+    long getTotalTime() {
         return taskGraph.getTotalTime();
     }
 
-    @Override
-    public long getCompileTime() {
+    long getCompileTime() {
         return taskGraph.getCompileTime();
     }
 
-    @Override
-    public long getTornadoCompilerTime() {
+    long getTornadoCompilerTime() {
         return taskGraph.getTornadoCompilerTime();
     }
 
-    @Override
-    public long getDriverInstallTime() {
+    long getDriverInstallTime() {
         return taskGraph.getDriverInstallTime();
     }
 
-    @Override
-    public long getDataTransfersTime() {
+    long getDataTransfersTime() {
         return taskGraph.getDataTransfersTime();
     }
 
-    @Override
-    public long getDeviceWriteTime() {
+    long getDeviceWriteTime() {
         return taskGraph.getWriteTime();
     }
 
-    @Override
-    public long getDeviceReadTime() {
+    long getDeviceReadTime() {
         return taskGraph.getReadTime();
     }
 
-    @Override
-    public long getDataTransferDispatchTime() {
+    long getDataTransferDispatchTime() {
         return taskGraph.getDataTransferDispatchTime();
     }
 
-    @Override
-    public long getKernelDispatchTime() {
+    long getKernelDispatchTime() {
         return taskGraph.getKernelDispatchTime();
     }
 
-    @Override
-    public long getDeviceKernelTime() {
+    long getDeviceKernelTime() {
         return taskGraph.getDeviceKernelTime();
     }
 
-    @Override
-    public String getProfileLog() {
+    String getProfileLog() {
         return taskGraph.getProfileLog();
     }
 
