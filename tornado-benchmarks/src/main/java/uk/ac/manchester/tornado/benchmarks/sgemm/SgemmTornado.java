@@ -24,7 +24,7 @@ import java.util.Random;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -90,8 +90,8 @@ public class SgemmTornado extends BenchmarkDriver {
             taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
             immutableTaskGraph = taskGraph.snapshot();
-            executor = new TornadoExecutor(immutableTaskGraph).build();
-            executor.withWarmUp();
+            executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+            executionPlan.withWarmUp();
 
         } else {
             String filePath = "/tmp/mxmFloat.spv";
@@ -116,7 +116,7 @@ public class SgemmTornado extends BenchmarkDriver {
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
             immutableTaskGraph = taskGraph.snapshot();
-            executor = new TornadoExecutor(immutableTaskGraph).build();
+            executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         }
     }
@@ -129,16 +129,16 @@ public class SgemmTornado extends BenchmarkDriver {
         b = null;
         c = null;
 
-        executor.resetDevices();
+        executionPlan.resetDevices();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
         if (grid != null) {
-            executor.withGridScheduler(grid);
+            executionPlan.withGridScheduler(grid);
         }
-        executionResult = executor.withDevice(device).execute();
+        executionResult = executionPlan.withDevice(device).execute();
     }
 
     @Override
@@ -150,7 +150,7 @@ public class SgemmTornado extends BenchmarkDriver {
         benchmarkMethod(device);
         executionResult.transferToHost(c);
 
-        executor.clearProfiles();
+        executionPlan.clearProfiles();
 
         sgemm(m, n, m, a, b, result);
 

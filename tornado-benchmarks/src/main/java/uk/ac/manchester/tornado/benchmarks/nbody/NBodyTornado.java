@@ -24,8 +24,8 @@ import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.nBody;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -81,8 +81,8 @@ public class NBodyTornado extends BenchmarkDriver {
                 .task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
 
         immutableTaskGraph = taskGraph.snapshot();
-        executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.withWarmUp();
+        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp();
     }
 
     @Override
@@ -90,7 +90,7 @@ public class NBodyTornado extends BenchmarkDriver {
         executionResult.getProfilerResult().dumpProfiles();
         posSeq = null;
         velSeq = null;
-        executor.resetDevices();
+        executionPlan.resetDevices();
         super.tearDown();
     }
 
@@ -128,15 +128,15 @@ public class NBodyTornado extends BenchmarkDriver {
         taskGraph.transferToHost(DataTransferMode.USER_DEFINED, posSeq, velSeq);
 
         immutableTaskGraph = taskGraph.snapshot();
-        executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.withWarmUp();
+        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp();
 
-        TornadoExecutionResult executionResult = executor.withWarmUp() //
+        TornadoExecutionResult executionResult = executionPlan.withWarmUp() //
                 .withDevice(device) //
                 .execute();
 
         executionResult.transferToHost(posSeq, velSeq);
-        executor.clearProfiles();
+        executionPlan.clearProfiles();
 
         nBody(numBodies, posSeqSeq, velSeqSeq, delT, espSqr);
 
@@ -156,6 +156,6 @@ public class NBodyTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executionResult = executor.withDevice(device).execute();
+        executionResult = executionPlan.withDevice(device).execute();
     }
 }

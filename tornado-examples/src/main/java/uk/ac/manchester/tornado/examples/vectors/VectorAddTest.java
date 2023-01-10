@@ -22,7 +22,6 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
@@ -67,7 +66,7 @@ public class VectorAddTest {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, results);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executorPlan = new TornadoExecutionPlan(immutableTaskGraph);
         TornadoExecutionResult executionResult = executorPlan.execute();
 
         System.out.println("Profiler kernel: " + executionResult.getProfilerResult().getDeviceKernelTime());

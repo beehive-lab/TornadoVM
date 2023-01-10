@@ -25,7 +25,6 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -170,7 +169,7 @@ public class BlackScholesMT {
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, callPrice, putPrice);
 
             ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
-            executor = new TornadoExecutor(immutableTaskGraph).build();
+            executor = new TornadoExecutionPlan(immutableTaskGraph);
 
             long stopInit = System.nanoTime();
             System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");

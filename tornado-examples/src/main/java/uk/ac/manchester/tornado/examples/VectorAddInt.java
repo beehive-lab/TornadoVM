@@ -23,7 +23,6 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
@@ -57,7 +56,7 @@ public class VectorAddInt {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan tornadoExecutor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan tornadoExecutor = new TornadoExecutionPlan(immutableTaskGraph);
 
         boolean wrongResult;
         String profileLog = null;

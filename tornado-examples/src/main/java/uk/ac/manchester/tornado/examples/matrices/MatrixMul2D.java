@@ -24,7 +24,6 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -108,7 +107,7 @@ public class MatrixMul2D {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixCCUDA); //
 
         ImmutableTaskGraph immutableTaskGraph = cudaTaskGraph.snapshot();
-        TornadoExecutionPlan executorCUDA = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executorCUDA = new TornadoExecutionPlan(immutableTaskGraph);
 
         TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
@@ -136,7 +135,7 @@ public class MatrixMul2D {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixCOCL); //
 
         ImmutableTaskGraph immutableTaskGraph1 = oclTaskGraph.snapshot();
-        TornadoExecutionPlan executorOCL = new TornadoExecutor(immutableTaskGraph1).build();
+        TornadoExecutionPlan executorOCL = new TornadoExecutionPlan(immutableTaskGraph1);
 
         TornadoDriver oclDriver = TornadoRuntime.getTornadoRuntime().getDriver(1);
         TornadoDevice oclDevice = null;

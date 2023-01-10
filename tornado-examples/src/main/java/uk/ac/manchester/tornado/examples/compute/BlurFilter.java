@@ -33,7 +33,6 @@ import javax.swing.JFrame;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
@@ -166,7 +165,7 @@ public class BlurFilter {
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, redFilter, greenFilter, blueFilter);
 
             ImmutableTaskGraph immutableTaskGraph = parallelFilter.snapshot();
-            TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+            TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
             executor.withDefaultScheduler().execute();
 
             // now recombine into the output image - Alpha is 255 for no

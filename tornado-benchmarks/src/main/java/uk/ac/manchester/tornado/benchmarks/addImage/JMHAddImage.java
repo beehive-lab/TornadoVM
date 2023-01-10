@@ -42,7 +42,6 @@ import org.openjdk.jmh.runner.options.TimeValue;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -94,7 +93,7 @@ public class JMHAddImage {
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-            executor = new TornadoExecutor(immutableTaskGraph).build();
+            executor = new TornadoExecutionPlan(immutableTaskGraph);
             executor.withWarmUp();
         }
     }

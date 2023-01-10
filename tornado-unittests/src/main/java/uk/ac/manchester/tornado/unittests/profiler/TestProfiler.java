@@ -28,7 +28,6 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -88,7 +87,7 @@ public class TestProfiler extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Build Executor
-        TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executorPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         // Execute the plan (default TornadoVM optimization choices)
         TornadoExecutionResult executionResult = executorPlan.execute();
@@ -136,7 +135,7 @@ public class TestProfiler extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Build Executor
-        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
 
         // Execute the plan (default TornadoVM optimization choices)
         TornadoExecutionResult executionResult = executor.execute();
@@ -172,7 +171,7 @@ public class TestProfiler extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Build Executor
-        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
 
         executor.withProfiler(ProfilerMode.CONSOLE);
 
@@ -219,9 +218,9 @@ public class TestProfiler extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Build Executor
-        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
 
-        executor.withProfiler(ProfilerMode.CONSOLE);
+        executor.withProfiler(ProfilerMode.SILENT);
 
         // Execute the plan (default TornadoVM optimization choices)
         TornadoExecutionResult executionResult = executor.execute();

@@ -27,7 +27,6 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -72,7 +71,7 @@ public class Resize extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executorPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executorPlan.execute();
 
         // Resize data
@@ -85,7 +84,7 @@ public class Resize extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b); //
 
         ImmutableTaskGraph immutableTaskGraph2 = taskGraph2.snapshot();
-        TornadoExecutionPlan executorPlan2 = new TornadoExecutor(immutableTaskGraph2).build();
+        TornadoExecutionPlan executorPlan2 = new TornadoExecutionPlan(immutableTaskGraph2);
         executorPlan2.execute();
 
         for (float v : b) {
@@ -103,7 +102,7 @@ public class Resize extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executorPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executorPlan.execute();
 
         // Resize data
@@ -116,7 +115,7 @@ public class Resize extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b); //
 
         ImmutableTaskGraph immutableTaskGraph2 = taskGraph2.snapshot();
-        TornadoExecutionPlan executorPlan2 = new TornadoExecutor(immutableTaskGraph2).build();
+        TornadoExecutionPlan executorPlan2 = new TornadoExecutionPlan(immutableTaskGraph2);
         executorPlan2.execute();
 
         // Update old reference for a new reference
@@ -128,7 +127,7 @@ public class Resize extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c); //
 
         ImmutableTaskGraph immutableTaskGraph3 = taskGraph3.snapshot();
-        TornadoExecutionPlan executorPlan3 = new TornadoExecutor(immutableTaskGraph3).build();
+        TornadoExecutionPlan executorPlan3 = new TornadoExecutionPlan(immutableTaskGraph3);
         executorPlan3.execute();
 
         for (float v : c) {

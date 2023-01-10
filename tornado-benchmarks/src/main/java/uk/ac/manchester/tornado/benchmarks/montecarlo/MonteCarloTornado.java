@@ -21,7 +21,7 @@ package uk.ac.manchester.tornado.benchmarks.montecarlo;
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -53,21 +53,21 @@ public class MonteCarloTornado extends BenchmarkDriver {
                 .task("montecarlo", ComputeKernels::monteCarlo, output, size) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
         immutableTaskGraph = taskGraph.snapshot();
-        executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.withWarmUp();
+        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp();
     }
 
     @Override
     public void tearDown() {
         executionResult.getProfilerResult().dumpProfiles();
         output = null;
-        executor.resetDevices();
+        executionPlan.resetDevices();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executionResult = executor.withDevice(device).execute();
+        executionResult = executionPlan.withDevice(device).execute();
     }
 
     @Override
@@ -78,12 +78,12 @@ public class MonteCarloTornado extends BenchmarkDriver {
         result = new float[size];
 
         ComputeKernels.monteCarlo(result, size);
-        executor.withDevice(device).withWarmUp();
+        executionPlan.withDevice(device).withWarmUp();
         for (int i = 0; i < 3; i++) {
-            executor.execute();
+            executionPlan.execute();
         }
         executionResult.transferToHost(output);
-        executor.clearProfiles();
+        executionPlan.clearProfiles();
 
         for (int i = 0; i < size; i++) {
             if (abs(output[i] - result[i]) > 0.01) {

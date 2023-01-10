@@ -33,7 +33,6 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -131,7 +130,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
 
         executor.withDevice(driver.getDevice(0));
         executor.execute();
@@ -171,7 +170,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
         executor.withDevice(driver.getDevice(0)) //
                 .execute(); //
 
@@ -207,7 +206,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
         // Assign Immutable Task Graph to device 0
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
         executor.withDevice(driver.getDevice(0)) //
                 .execute();
 
@@ -244,7 +243,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
         // Assign Immutable Task Graph to device 0
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
         executor.withDevice(driver.getDevice(0)) //
                 .execute();
 
@@ -287,7 +286,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, dataB);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
         executor.execute();
 
         for (int i = 0; i < N; i++) {
@@ -336,7 +335,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
             // Common executor for all permutations of devices
-            TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+            TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
 
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
                 executor.withDevice(driver.getDevice(deviceIndex)) //
@@ -378,7 +377,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Common executor for all permutations of devices
-        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
         executor.execute();
 
         TornadoRuntime.setProperty("s1.t1.device", "0:1");
@@ -389,7 +388,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph2 = taskGraph2.snapshot();
 
         // Common executor for all permutations of devices
-        TornadoExecutionPlan executor2 = new TornadoExecutor(immutableTaskGraph2).build();
+        TornadoExecutionPlan executor2 = new TornadoExecutionPlan(immutableTaskGraph2);
         executor2.execute();
 
         for (int i = 0; i < N; i++) {

@@ -26,7 +26,6 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
@@ -59,7 +58,7 @@ public class Inlining extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
         executor.execute();
 
     }
@@ -128,7 +127,7 @@ public class Inlining extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, greyInts);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
         executor.execute();
 
         rgbToGreyKernel(rgbBytes, seq);
@@ -155,7 +154,7 @@ public class Inlining extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, greyInts);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
         executor.execute();
 
         rgbToGreyKernelInt(rgbBytes, seq);
@@ -183,7 +182,7 @@ public class Inlining extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, greyInts);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
         executor.execute();
 
         rgbToGreyKernelSmall(rgbBytes, seq);
@@ -208,7 +207,7 @@ public class Inlining extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, greyInts);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
         executor.execute();
 
         b2i(rgbBytes, seq);

@@ -45,7 +45,6 @@ import org.openjdk.jmh.runner.options.TimeValue;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
@@ -96,7 +95,7 @@ public class JMHStencil {
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, a0);
 
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-            executor = new TornadoExecutor(immutableTaskGraph).build();
+            executor = new TornadoExecutionPlan(immutableTaskGraph);
             executor.withWarmUp();
         }
     }

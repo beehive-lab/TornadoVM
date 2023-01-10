@@ -25,7 +25,6 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -191,7 +190,7 @@ public class NBody {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, posTornadoVM, velTornadoVM);
 
         ImmutableTaskGraph immutableTaskGraph = t0.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
         executor.withGridScheduler(gridScheduler);
 
         resultsIterations = new StringBuffer();

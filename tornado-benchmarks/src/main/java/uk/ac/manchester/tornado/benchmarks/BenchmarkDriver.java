@@ -52,7 +52,7 @@ public abstract class BenchmarkDriver {
 
     protected TaskGraph taskGraph;
 
-    protected TornadoExecutionPlan executor;
+    protected TornadoExecutionPlan executionPlan;
 
     protected TornadoExecutionResult executionResult;
 

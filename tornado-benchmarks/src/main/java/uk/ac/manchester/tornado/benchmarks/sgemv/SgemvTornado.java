@@ -23,7 +23,7 @@ import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.sgemv;
 import java.util.Random;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -72,8 +72,8 @@ public class SgemvTornado extends BenchmarkDriver {
                 .task("sgemv", LinearAlgebraArrays::sgemv, m, n, a, x, y) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
         immutableTaskGraph = taskGraph.snapshot();
-        executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.withWarmUp();
+        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp();
     }
 
     @Override
@@ -84,13 +84,13 @@ public class SgemvTornado extends BenchmarkDriver {
         x = null;
         y = null;
 
-        executor.resetDevices();
+        executionPlan.resetDevices();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executionResult = executor.withDevice(device).execute();
+        executionResult = executionPlan.withDevice(device).execute();
     }
 
     @Override
@@ -100,7 +100,7 @@ public class SgemvTornado extends BenchmarkDriver {
 
         benchmarkMethod(device);
         executionResult.transferToHost(y);
-        executor.clearProfiles();
+        executionPlan.clearProfiles();
 
         sgemv(m, n, a, x, result);
 

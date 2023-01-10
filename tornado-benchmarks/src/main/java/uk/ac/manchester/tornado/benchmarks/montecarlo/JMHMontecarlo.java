@@ -42,7 +42,6 @@ import org.openjdk.jmh.runner.options.TimeValue;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -60,7 +59,7 @@ public class JMHMontecarlo {
 
         private int size = Integer.parseInt(System.getProperty("x", "8192"));
         private float[] output;
-        private TornadoExecutionPlan executor;
+        private TornadoExecutionPlan executionPlan;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -69,8 +68,8 @@ public class JMHMontecarlo {
                     .task("montecarlo", ComputeKernels::monteCarlo, output, size) //
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-            executor = new TornadoExecutor(immutableTaskGraph).build();
-            executor.withWarmUp();
+            executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+            executionPlan.withWarmUp();
         }
     }
 
@@ -91,7 +90,7 @@ public class JMHMontecarlo {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void montecarloTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TornadoExecutionPlan executor = state.executor;
+        TornadoExecutionPlan executor = state.executionPlan;
         executor.execute();
         blackhole.consume(executor);
     }

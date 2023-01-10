@@ -21,7 +21,7 @@ import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createFilter;
 import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createImage;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -70,8 +70,8 @@ public class ConvolveImageTornado extends BenchmarkDriver {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         immutableTaskGraph = taskGraph.snapshot();
-        executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.withWarmUp();
+        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp();
 
     }
 
@@ -83,13 +83,13 @@ public class ConvolveImageTornado extends BenchmarkDriver {
         output = null;
         filter = null;
 
-        executor.resetDevices();
+        executionPlan.resetDevices();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executionResult = executor.withDevice(device).execute();
+        executionResult = executionPlan.withDevice(device).execute();
     }
 
     @Override
@@ -100,7 +100,7 @@ public class ConvolveImageTornado extends BenchmarkDriver {
         benchmarkMethod(device);
 
         executionResult.transferToHost(output);
-        executor.clearProfiles();
+        executionPlan.clearProfiles();
 
         GraphicsKernels.convolveImage(input, filter, result);
 

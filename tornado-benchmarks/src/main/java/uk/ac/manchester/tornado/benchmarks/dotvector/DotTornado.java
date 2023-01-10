@@ -23,7 +23,7 @@ import java.util.Random;
 import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -75,8 +75,8 @@ public class DotTornado extends BenchmarkDriver {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         immutableTaskGraph = taskGraph.snapshot();
-        executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.withWarmUp();
+        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp();
 
     }
 
@@ -88,13 +88,13 @@ public class DotTornado extends BenchmarkDriver {
         b = null;
         c = null;
 
-        executor.resetDevices();
+        executionPlan.resetDevices();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executionResult = executor.withDevice(device).execute();
+        executionResult = executionPlan.withDevice(device).execute();
     }
 
     @Override
@@ -103,7 +103,7 @@ public class DotTornado extends BenchmarkDriver {
         final float[] result = new float[numElements];
 
         benchmarkMethod(device);
-        executor.clearProfiles();
+        executionPlan.clearProfiles();
 
         GraphicsKernels.dotVector(a, b, result);
 

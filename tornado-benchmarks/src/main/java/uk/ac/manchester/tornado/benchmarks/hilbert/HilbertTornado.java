@@ -20,7 +20,6 @@ package uk.ac.manchester.tornado.benchmarks.hilbert;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -52,15 +51,15 @@ public class HilbertTornado extends BenchmarkDriver {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, hilbertMatrix);
 
         immutableTaskGraph = taskGraph.snapshot();
-        executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.withWarmUp();
+        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp();
     }
 
     @Override
     public void tearDown() {
         executionResult.getProfilerResult().dumpProfiles();
         hilbertMatrix = null;
-        executor.resetDevices();
+        executionPlan.resetDevices();
         super.tearDown();
     }
 
@@ -73,7 +72,7 @@ public class HilbertTornado extends BenchmarkDriver {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, testData); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph1.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
         executor.withDevice(device).execute();
 
         float[] seq = new float[size * size];
@@ -91,6 +90,6 @@ public class HilbertTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executionResult = executor.withDevice(device).execute();
+        executionResult = executionPlan.withDevice(device).execute();
     }
 }

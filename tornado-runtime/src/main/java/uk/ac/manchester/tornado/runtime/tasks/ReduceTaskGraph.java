@@ -45,7 +45,6 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -602,7 +601,7 @@ class ReduceTaskGraph {
         // mode.
         TornadoTaskGraph.performStreamOutThreads(DataTransferMode.EVERY_EXECUTION, rewrittenTaskGraph, streamOutObjects);
         ImmutableTaskGraph immutableTaskGraph = rewrittenTaskGraph.snapshot();
-        this.executor = new TornadoExecutor(immutableTaskGraph).build();
+        this.executor = new TornadoExecutionPlan(immutableTaskGraph);
 
         executeExpression();
         counterName.incrementAndGet();

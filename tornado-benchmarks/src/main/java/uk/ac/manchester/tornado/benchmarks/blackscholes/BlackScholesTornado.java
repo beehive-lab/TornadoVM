@@ -21,7 +21,7 @@ import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.blackscholes;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -63,8 +63,8 @@ public class BlackScholesTornado extends BenchmarkDriver {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, put, call);
 
         immutableTaskGraph = taskGraph.snapshot();
-        executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.withWarmUp();
+        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp();
     }
 
     @Override
@@ -73,7 +73,7 @@ public class BlackScholesTornado extends BenchmarkDriver {
         randArray = null;
         call = null;
         put = null;
-        executor.resetDevices();
+        executionPlan.resetDevices();
         super.tearDown();
     }
 
@@ -99,11 +99,11 @@ public class BlackScholesTornado extends BenchmarkDriver {
         taskGraph.task("t0", ComputeKernels::blackscholes, randArrayTor, putTor, callTor);
 
         immutableTaskGraph = taskGraph.snapshot();
-        executor = new TornadoExecutor(immutableTaskGraph).build();
-        executionResult = executor.withWarmUp().execute();
+        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionResult = executionPlan.withWarmUp().execute();
 
         executionResult.transferToHost(putTor, callTor);
-        executor.clearProfiles();
+        executionPlan.clearProfiles();
 
         blackscholes(randArrayTor, putSeq, calSeq);
 
@@ -123,7 +123,7 @@ public class BlackScholesTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executionResult = executor.withDevice(device) //
+        executionResult = executionPlan.withDevice(device) //
                 .execute();
     }
 }

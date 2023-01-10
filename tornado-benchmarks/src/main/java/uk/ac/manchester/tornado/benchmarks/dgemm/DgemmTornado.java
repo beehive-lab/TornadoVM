@@ -23,7 +23,7 @@ import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.dgemm;
 import java.util.Random;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -78,8 +78,8 @@ public class DgemmTornado extends BenchmarkDriver {
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
             immutableTaskGraph = taskGraph.snapshot();
-            executor = new TornadoExecutor(immutableTaskGraph).build();
-            executor.withWarmUp();
+            executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+            executionPlan.withWarmUp();
 
         } else {
             String filePath = "/tmp/mxmDouble.spv";
@@ -102,7 +102,7 @@ public class DgemmTornado extends BenchmarkDriver {
                             new int[] { n, n })//
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, c);//
             immutableTaskGraph = taskGraph.snapshot();
-            executor = new TornadoExecutor(immutableTaskGraph).build();
+            executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         }
     }
 
@@ -114,13 +114,13 @@ public class DgemmTornado extends BenchmarkDriver {
         b = null;
         c = null;
 
-        executor.resetDevices();
+        executionPlan.resetDevices();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executionResult = executor.withDevice(device).execute();
+        executionResult = executionPlan.withDevice(device).execute();
     }
 
     @Override
@@ -129,7 +129,7 @@ public class DgemmTornado extends BenchmarkDriver {
         final double[] result = new double[m * n];
 
         benchmarkMethod(device);
-        executor.clearProfiles();
+        executionPlan.clearProfiles();
 
         dgemm(m, n, m, a, b, result);
 

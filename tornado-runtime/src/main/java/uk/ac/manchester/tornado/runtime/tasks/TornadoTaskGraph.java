@@ -60,7 +60,6 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraphInterface;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
@@ -1415,7 +1414,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
                 // performStreamOutThreads(task, streamOutObjects);
 
                 ImmutableTaskGraph immutableTaskGraph = task.snapshot();
-                TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+                TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
                 executor.execute();
 
                 if (policy == Policy.PERFORMANCE) {
@@ -1531,7 +1530,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         }
 
         ImmutableTaskGraph immutableTaskGraph = task.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
         executor.execute();
     }
 
@@ -1649,7 +1648,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
             // performStreamOutThreads(task, streamOutObjects);
 
             ImmutableTaskGraph immutableTaskGraph = task.snapshot();
-            TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+            TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
             executor.execute();
 
             if (policy == Policy.PERFORMANCE) {

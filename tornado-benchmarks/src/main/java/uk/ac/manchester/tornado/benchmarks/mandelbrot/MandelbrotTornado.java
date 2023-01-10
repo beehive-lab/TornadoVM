@@ -18,7 +18,7 @@
 package uk.ac.manchester.tornado.benchmarks.mandelbrot;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -48,15 +48,15 @@ public class MandelbrotTornado extends BenchmarkDriver {
                 .task("t0", ComputeKernels::mandelbrot, size, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
         immutableTaskGraph = taskGraph.snapshot();
-        executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.withWarmUp();
+        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp();
     }
 
     @Override
     public void tearDown() {
         executionResult.getProfilerResult().dumpProfiles();
         output = null;
-        executor.resetDevices();
+        executionPlan.resetDevices();
         super.tearDown();
     }
 
@@ -66,7 +66,7 @@ public class MandelbrotTornado extends BenchmarkDriver {
         short[] result = new short[size * size];
 
         executionResult.transferToHost(output);
-        executor.clearProfiles();
+        executionPlan.clearProfiles();
 
         ComputeKernels.mandelbrot(size, result);
 
@@ -84,6 +84,6 @@ public class MandelbrotTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executionResult = executor.withDevice(device).execute();
+        executionResult = executionPlan.withDevice(device).execute();
     }
 }

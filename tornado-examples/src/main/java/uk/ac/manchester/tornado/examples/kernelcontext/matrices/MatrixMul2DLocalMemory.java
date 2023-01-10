@@ -27,7 +27,6 @@ import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -162,7 +161,7 @@ public class MatrixMul2DLocalMemory {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixCCUDA);
 
         ImmutableTaskGraph immutableTaskGraph = scheduleCUDA.snapshot();
-        TornadoExecutionPlan executorCUDA = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executorCUDA = new TornadoExecutionPlan(immutableTaskGraph);
 
         TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
@@ -203,7 +202,7 @@ public class MatrixMul2DLocalMemory {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixCOCL);
 
         ImmutableTaskGraph immutableTaskGraph1 = scheduleOCL.snapshot();
-        TornadoExecutionPlan executorOCL = new TornadoExecutor(immutableTaskGraph1).build();
+        TornadoExecutionPlan executorOCL = new TornadoExecutionPlan(immutableTaskGraph1);
         executorOCL.withGridScheduler(gridSchedulerOpenCLOld);
 
         // Get the same device but running the OCL backend
@@ -255,7 +254,7 @@ public class MatrixMul2DLocalMemory {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixCOCLNewApi); //
 
         ImmutableTaskGraph immutableTaskGraph2 = oclNewApiTask.snapshot();
-        TornadoExecutionPlan executorOCLNewAPI = new TornadoExecutor(immutableTaskGraph2).build();
+        TornadoExecutionPlan executorOCLNewAPI = new TornadoExecutionPlan(immutableTaskGraph2);
 
         // Change the Grid
         workerOpenCLNew.setGlobalWork(N, N, 1); // TS / WPT
@@ -296,7 +295,7 @@ public class MatrixMul2DLocalMemory {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixCCUDANewApi); //
 
         ImmutableTaskGraph immutableTaskGraph3 = cudaNewApiTask.snapshot();
-        TornadoExecutionPlan executorCUDANewAPI = new TornadoExecutor(immutableTaskGraph3).build();
+        TornadoExecutionPlan executorCUDANewAPI = new TornadoExecutionPlan(immutableTaskGraph3);
         executorCUDANewAPI.withGridScheduler(gridSchedulerCudaNew);
 
         // Change the Grid

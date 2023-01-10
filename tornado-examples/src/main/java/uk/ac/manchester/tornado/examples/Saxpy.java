@@ -24,7 +24,6 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.examples.common.Messages;
@@ -66,7 +65,7 @@ public class Saxpy {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
         executor.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL).execute();
 
         numElements = 512 * 2;
@@ -79,7 +78,7 @@ public class Saxpy {
         TaskGraph taskGraph1 = new TaskGraph("s1").task("t0", Saxpy::saxpy, alpha, a, b).transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
         ImmutableTaskGraph immutableTaskGraph1 = taskGraph1.snapshot();
-        TornadoExecutionPlan executor1 = new TornadoExecutor(immutableTaskGraph1).build();
+        TornadoExecutionPlan executor1 = new TornadoExecutionPlan(immutableTaskGraph1);
         executor1.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.PARALLEL).execute();
 
         boolean wrongResult = false;

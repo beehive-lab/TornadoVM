@@ -18,7 +18,7 @@
 package uk.ac.manchester.tornado.benchmarks.juliaset;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -55,8 +55,8 @@ public class JuliaSetTornado extends BenchmarkDriver {
                 .task("juliaSet", GraphicsKernels::juliaSetTornado, size, hue, brightness) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, hue, brightness);
         immutableTaskGraph = taskGraph.snapshot();
-        executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.withWarmUp();
+        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp();
     }
 
     @Override
@@ -64,7 +64,7 @@ public class JuliaSetTornado extends BenchmarkDriver {
         executionResult.getProfilerResult().dumpProfiles();
         hue = null;
         brightness = null;
-        executor.resetDevices();
+        executionPlan.resetDevices();
         super.tearDown();
     }
 
@@ -74,7 +74,7 @@ public class JuliaSetTornado extends BenchmarkDriver {
         final float[] brightnessSeq = new float[size * size];
 
         benchmarkMethod(device);
-        executor.clearProfiles();
+        executionPlan.clearProfiles();
 
         GraphicsKernels.juliaSetTornado(size, hueSeq, brightnessSeq);
 
@@ -100,6 +100,6 @@ public class JuliaSetTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executionResult = executor.withDevice(device).execute();
+        executionResult = executionPlan.withDevice(device).execute();
     }
 }

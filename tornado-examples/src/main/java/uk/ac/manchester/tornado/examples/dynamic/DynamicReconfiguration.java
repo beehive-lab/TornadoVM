@@ -24,7 +24,7 @@ import uk.ac.manchester.tornado.api.DRMode;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
@@ -58,8 +58,7 @@ public class DynamicReconfiguration {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        new TornadoExecutor(immutableTaskGraph) //
-                .build() //
+        new TornadoExecutionPlan(immutableTaskGraph) //
                 .withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.PARALLEL) //
                 .execute();
 

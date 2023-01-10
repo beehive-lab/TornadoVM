@@ -56,23 +56,13 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
  * can be created by calling its constructor and return an optimizing plan
  * through the {@link TornadoExecutor#build()} method.
  */
-public class TornadoExecutor {
+class TornadoExecutor {
 
     private List<ImmutableTaskGraph> immutableTaskGraphList;
 
-    public TornadoExecutor(ImmutableTaskGraph... immutableTaskGraphs) {
+    TornadoExecutor(ImmutableTaskGraph... immutableTaskGraphs) {
         immutableTaskGraphList = new ArrayList<>();
         Collections.addAll(immutableTaskGraphList, immutableTaskGraphs);
-    }
-
-    /**
-     * Build a {@link TornadoExecutionPlan} for all immutable task graphs within the
-     * executor.
-     *
-     * @return {@link TornadoExecutionPlan}
-     */
-    public TornadoExecutionPlan build() {
-        return new TornadoExecutionPlan(this);
     }
 
     void execute() {

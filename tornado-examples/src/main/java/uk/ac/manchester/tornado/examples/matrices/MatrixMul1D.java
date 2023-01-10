@@ -25,7 +25,6 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -83,7 +82,7 @@ public class MatrixMul1D {
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
 
         ImmutableTaskGraph immutableTaskGraph = cudaTaskGraph.snapshot();
-        TornadoExecutionPlan executorCUDA = new TornadoExecutor(immutableTaskGraph).build();
+        TornadoExecutionPlan executorCUDA = new TornadoExecutionPlan(immutableTaskGraph);
         executorCUDA.withDevice(cudaDevice);
 
         // Warm up CUDA
@@ -128,7 +127,7 @@ public class MatrixMul1D {
         }
 
         ImmutableTaskGraph immutableTaskGraph1 = oclTaskGraph.snapshot();
-        TornadoExecutionPlan executorOCL = new TornadoExecutor(immutableTaskGraph1).build();
+        TornadoExecutionPlan executorOCL = new TornadoExecutionPlan(immutableTaskGraph1);
         executorOCL.withDevice(oclDevice);
 
         // Warm up OpenCL

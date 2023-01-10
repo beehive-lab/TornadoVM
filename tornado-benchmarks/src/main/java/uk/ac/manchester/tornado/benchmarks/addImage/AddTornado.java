@@ -21,7 +21,7 @@ import java.util.Random;
 import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
@@ -81,8 +81,8 @@ public class AddTornado extends BenchmarkDriver {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         immutableTaskGraph = taskGraph.snapshot();
-        executor = new TornadoExecutor(immutableTaskGraph).build();
-        executor.withWarmUp();
+        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp();
 
     }
 
@@ -92,13 +92,13 @@ public class AddTornado extends BenchmarkDriver {
         a = null;
         b = null;
         c = null;
-        executor.resetDevices();
+        executionPlan.resetDevices();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        executionResult = executor.withDevice(device) //
+        executionResult = executionPlan.withDevice(device) //
                 .execute();
     }
 
@@ -109,7 +109,7 @@ public class AddTornado extends BenchmarkDriver {
 
         benchmarkMethod(device);
         executionResult.transferToHost(c);
-        executor.clearProfiles();
+        executionPlan.clearProfiles();
 
         GraphicsKernels.addImage(a, b, result);
 

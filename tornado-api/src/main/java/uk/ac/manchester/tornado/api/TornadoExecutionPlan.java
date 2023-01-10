@@ -74,8 +74,8 @@ public class TornadoExecutionPlan {
     private ProfilerMode profilerMode;
     private boolean disableProfiler;
 
-    TornadoExecutionPlan(TornadoExecutor tornadoExecutor) {
-        this.tornadoExecutor = tornadoExecutor;
+    public TornadoExecutionPlan(ImmutableTaskGraph... immutableTaskGraphs) {
+        this.tornadoExecutor = new TornadoExecutor(immutableTaskGraphs);
     }
 
     /**
@@ -87,7 +87,7 @@ public class TornadoExecutionPlan {
      */
     public TornadoExecutionResult execute() {
 
-        enablePendingPipelineOperations();
+        checkProfilerEnabled();
 
         if (this.policy != null) {
             tornadoExecutor.executeWithDynamicReconfiguration(this.policy, this.dynamicReconfigurationMode);
@@ -99,16 +99,13 @@ public class TornadoExecutionPlan {
         return new TornadoExecutionResult(new TornadoProfilerResult(tornadoExecutor));
     }
 
-    private void enablePendingPipelineOperations() {
+    private void checkProfilerEnabled() {
         if (this.profilerMode != null && !this.disableProfiler) {
             tornadoExecutor.enableProfiler(profilerMode);
-        } else if (this.profilerMode != null && this.disableProfiler) {
+        } else if (this.profilerMode != null) {
             tornadoExecutor.disableProfiler(profilerMode);
         }
 
-        if (isWarmUp) {
-            tornadoExecutor.warmup();
-        }
     }
 
     /**
@@ -118,7 +115,8 @@ public class TornadoExecutionPlan {
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withWarmUp() {
-        isWarmUp = true;
+        checkProfilerEnabled();
+        tornadoExecutor.warmup();
         return this;
     }
 
