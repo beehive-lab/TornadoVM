@@ -62,7 +62,6 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 public class TornadoExecutionPlan {
 
     public static TornadoDevice DEFAULT_DEVICE = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
-    private boolean isWarmUp;
 
     public static TornadoDevice getDevice(int driverIndex, int deviceIndex) {
         return TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
@@ -74,7 +73,6 @@ public class TornadoExecutionPlan {
 
     private Policy policy = null;
 
-    private boolean useDefaultScheduler;
     private DRMode dynamicReconfigurationMode;
     private ProfilerMode profilerMode;
     private boolean disableProfiler;
@@ -180,19 +178,7 @@ public class TornadoExecutionPlan {
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withDefaultScheduler() {
-        this.useDefaultScheduler = true;
-        tornadoExecutor.useDefaultScheduler(useDefaultScheduler);
-        return this;
-    }
-
-    /**
-     * Notify the TornadoVM runtime that utilizes the default device for the
-     * execution.
-     *
-     * @return {@link TornadoExecutionPlan}
-     */
-    public TornadoExecutionPlan withDefaultDevice() {
-        // pending implementation
+        tornadoExecutor.useDefaultScheduler(true);
         return this;
     }
 
@@ -227,12 +213,26 @@ public class TornadoExecutionPlan {
         return this;
     }
 
+    /**
+     * Enables the profiler. The profiler includes options to query device kernel
+     * time, data transfers and compilation at different stages (JIT, driver
+     * compilation, Graal, etc).
+     *
+     * @param profilerMode
+     *            {@link ProfilerMode}
+     * @return {@link TornadoExecutionPlan}
+     */
     public TornadoExecutionPlan withProfiler(ProfilerMode profilerMode) {
         this.profilerMode = profilerMode;
         disableProfiler = false;
         return this;
     }
 
+    /**
+     * Disables the profiler if previous execution plan had the profiler enabled.
+     *
+     * @return {@link TornadoExecutionPlan}
+     */
     public TornadoExecutionPlan withoutProfiler() {
         this.disableProfiler = true;
         return this;
