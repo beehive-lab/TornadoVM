@@ -41,10 +41,6 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import java.util.List;
-
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-
 /**
  * Object created when the {@link TornadoExecutionPlan#execute()} is finished.
  * This objects stores the results of the execution. Additionally, if the
@@ -54,38 +50,10 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
  */
 public class TornadoExecutionResult {
 
-    private List<Object> outputs;
-
     private TornadoProfilerResult tornadoProfilerResult;
 
-    TornadoExecutionResult(List<Object> outputs, TornadoProfilerResult profilerResult) {
-        this.outputs = outputs;
+    TornadoExecutionResult(TornadoProfilerResult profilerResult) {
         this.tornadoProfilerResult = profilerResult;
-    }
-
-    /**
-     * Method to obtain all object results related to an execution plan. The return
-     * type is a linked list that contains all object results in the same order as
-     * specified in the {@link TaskGraph}.
-     *
-     * @return {@link List<Object>}
-     */
-    public List<Object> getOutputs() {
-        return this.outputs;
-    }
-
-    /**
-     * Method to obtain a specific input from the output result list.
-     *
-     * @param index
-     *            Index of the object within the result list.
-     * @return {@link Object}
-     */
-    public Object getOutput(int index) {
-        if (outputs.size() >= index) {
-            throw new TornadoRuntimeException("Output not found");
-        }
-        return outputs.get(index);
     }
 
     /**
@@ -103,8 +71,8 @@ public class TornadoExecutionResult {
      * Transfer data from device to host. This is applied for all immutable
      * task-graphs within an executor. This method is used when a task-graph defines
      * transferToHost using the
-     * {@link uk.ac.manchester.tornado.api.enums.DataTransferMode#LAST}. This
-     * indicates the runtime to not to copy-out the data en every iteration and
+     * {@link uk.ac.manchester.tornado.api.enums.DataTransferMode#USER_DEFINED}.
+     * This indicates the runtime to not to copy-out the data en every iteration and
      * transfer the data under demand.
      *
      * @param objects
@@ -123,7 +91,7 @@ public class TornadoExecutionResult {
      *
      * @return boolean
      */
-    public boolean isFinished() {
+    public boolean isReady() {
         return tornadoProfilerResult.getExecutor().isFinished();
     }
 

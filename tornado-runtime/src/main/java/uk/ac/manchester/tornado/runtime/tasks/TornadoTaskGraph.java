@@ -896,7 +896,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
 
             // If the object mode is set to LAST then we *only* insert it in the lookup
             // hash-set.
-            if (mode != DataTransferMode.LAST) {
+            if (mode != DataTransferMode.USER_DEFINED) {
                 streamOutObjects.add(functionParameter);
                 executionContext.getObjectState(functionParameter).setStreamOut(true);
             }

@@ -125,7 +125,7 @@ public class NBodyTornado extends BenchmarkDriver {
         }
         taskGraph = new TaskGraph("benchmark");
         taskGraph.task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
-        taskGraph.transferToHost(DataTransferMode.LAST, posSeq, velSeq);
+        taskGraph.transferToHost(DataTransferMode.USER_DEFINED, posSeq, velSeq);
 
         immutableTaskGraph = taskGraph.snapshot();
         executor = new TornadoExecutor(immutableTaskGraph).build();

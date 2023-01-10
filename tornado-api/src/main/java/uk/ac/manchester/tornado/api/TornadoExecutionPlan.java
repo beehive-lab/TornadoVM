@@ -43,6 +43,7 @@ package uk.ac.manchester.tornado.api;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 /**
  * Object to create and optimize an execution plan for running a set of
@@ -54,6 +55,12 @@ import uk.ac.manchester.tornado.api.enums.ProfilerMode;
  *
  */
 public class TornadoExecutionPlan {
+
+    public static TornadoDevice DEFAULT_DEVICE = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+
+    public static TornadoDevice getDevice(int driverIndex, int deviceIndex) {
+        return TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
+    }
 
     private final TornadoExecutor tornadoExecutor;
 
@@ -92,7 +99,7 @@ public class TornadoExecutionPlan {
         } else {
             tornadoExecutor.execute();
         }
-        return new TornadoExecutionResult(tornadoExecutor.getOutputs(), new TornadoProfilerResult(tornadoExecutor));
+        return new TornadoExecutionResult(new TornadoProfilerResult(tornadoExecutor));
     }
 
     /**
@@ -210,6 +217,7 @@ public class TornadoExecutionPlan {
 
     public TornadoExecutionPlan withProfiler(ProfilerMode profilerMode) {
         this.profilerMode = profilerMode;
+        disableProfiler = false;
         return this;
     }
 

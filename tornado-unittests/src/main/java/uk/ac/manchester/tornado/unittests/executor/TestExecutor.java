@@ -18,6 +18,7 @@
 package uk.ac.manchester.tornado.unittests.executor;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.Arrays;
 
@@ -28,7 +29,10 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.TornadoExecutor;
+import uk.ac.manchester.tornado.api.TornadoProfilerResult;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.unittests.TestHello;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -64,13 +68,21 @@ public class TestExecutor extends TornadoTestBase {
         // 3. Create an executor and build an execution plan
         TornadoExecutionPlan executorPlan = new TornadoExecutor(immutableTaskGraph).build();
 
+        TornadoDevice defaultDevice = TornadoExecutionPlan.DEFAULT_DEVICE;
+
         // 4. Add optimizations to the execution plan
-        executorPlan.withWarmUp() //
-                .withDefaultDevice() //
+        executorPlan.withProfiler(ProfilerMode.CONSOLE) //
+                .withWarmUp() //
+                .withDevice(defaultDevice) //
                 .withDefaultScheduler();
 
         // 5. Execute all Immutable Task Graphs associated with an executor
         TornadoExecutionResult executionResult = executorPlan.execute();
+
+        // 6. Obtain profiler result (only if the execution plan enabled the profiler).
+        TornadoProfilerResult profilerResult = executionResult.getProfilerResult();
+
+        assertNotNull(profilerResult);
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i]);
@@ -166,7 +178,7 @@ public class TestExecutor extends TornadoTestBase {
     }
 
     /**
-     * Test to show how to program states of ata movement across different
+     * Test to show how to program states of data movement across different
      * executors. A -> B -> A
      */
     @Test
