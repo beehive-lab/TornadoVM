@@ -57,6 +57,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 public class TornadoExecutionPlan {
 
     public static TornadoDevice DEFAULT_DEVICE = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+    private boolean isWarmUp;
 
     public static TornadoDevice getDevice(int driverIndex, int deviceIndex) {
         return TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
@@ -86,11 +87,7 @@ public class TornadoExecutionPlan {
      */
     public TornadoExecutionResult execute() {
 
-        if (this.profilerMode != null && !this.disableProfiler) {
-            tornadoExecutor.enableProfiler(profilerMode);
-        } else if (this.profilerMode != null && this.disableProfiler) {
-            tornadoExecutor.disableProfiler(profilerMode);
-        }
+        enablePendingPipelineOperations();
 
         if (this.policy != null) {
             tornadoExecutor.executeWithDynamicReconfiguration(this.policy, this.dynamicReconfigurationMode);
@@ -102,6 +99,18 @@ public class TornadoExecutionPlan {
         return new TornadoExecutionResult(new TornadoProfilerResult(tornadoExecutor));
     }
 
+    private void enablePendingPipelineOperations() {
+        if (this.profilerMode != null && !this.disableProfiler) {
+            tornadoExecutor.enableProfiler(profilerMode);
+        } else if (this.profilerMode != null && this.disableProfiler) {
+            tornadoExecutor.disableProfiler(profilerMode);
+        }
+
+        if (isWarmUp) {
+            tornadoExecutor.warmup();
+        }
+    }
+
     /**
      * It invokes the JIT compiler for all immutable tasks-graphs associated to an
      * executor.
@@ -109,7 +118,7 @@ public class TornadoExecutionPlan {
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withWarmUp() {
-        tornadoExecutor.warmup();
+        isWarmUp = true;
         return this;
     }
 
