@@ -44,6 +44,7 @@ package uk.ac.manchester.tornado.api;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
@@ -269,33 +270,23 @@ public class TornadoExecutionPlan {
         }
 
         void execute() {
-            for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
-                immutableTaskGraph.execute();
-            }
+            immutableTaskGraphList.forEach(ImmutableTaskGraph::execute);
         }
 
         void execute(GridScheduler gridScheduler) {
-            for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
-                immutableTaskGraph.execute(gridScheduler);
-            }
+            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.execute(gridScheduler));
         }
 
         void executeWithDynamicReconfiguration(Policy policy, DRMode mode) {
-            for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
-                immutableTaskGraph.executeWithDynamicReconfiguration(policy, mode);
-            }
+            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.executeWithDynamicReconfiguration(policy, mode));
         }
 
         void warmup() {
-            for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
-                immutableTaskGraph.warmup();
-            }
+            immutableTaskGraphList.forEach(ImmutableTaskGraph::warmup);
         }
 
         void withBatch(String batchSize) {
-            for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
-                immutableTaskGraph.withBatch(batchSize);
-            }
+            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withBatch(batchSize));
         }
 
         /**
@@ -305,21 +296,15 @@ public class TornadoExecutionPlan {
          *            {@link TornadoDevice} object
          */
         void setDevice(TornadoDevice device) {
-            for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
-                immutableTaskGraph.setDevice(device);
-            }
+            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.setDevice(device));
         }
 
         void freeDeviceMemory() {
-            for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
-                immutableTaskGraph.freeDeviceMemory();
-            }
+            immutableTaskGraphList.forEach(ImmutableTaskGraph::freeDeviceMemory);
         }
 
         void transferToHost(Object... objects) {
-            for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
-                immutableTaskGraph.transferToHost(objects);
-            }
+            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.transferToHost(objects));
         }
 
         boolean isFinished() {
@@ -331,64 +316,59 @@ public class TornadoExecutionPlan {
         }
 
         void resetDevices() {
-            for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
-                immutableTaskGraph.resetDevices();
-            }
+            immutableTaskGraphList.forEach(ImmutableTaskGraph::resetDevices);
         }
 
         long getTotalTime() {
-            return immutableTaskGraphList.stream().map(itg -> itg.getTotalTime()).mapToLong(Long::longValue).sum();
+            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getTotalTime).mapToLong(Long::longValue).sum();
         }
 
         long getCompileTime() {
-            return immutableTaskGraphList.stream().map(itg -> itg.getCompileTime()).mapToLong(Long::longValue).sum();
+            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getCompileTime).mapToLong(Long::longValue).sum();
         }
 
         long getTornadoCompilerTime() {
-            return immutableTaskGraphList.stream().map(itg -> itg.getTornadoCompilerTime()).mapToLong(Long::longValue).sum();
+            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getTornadoCompilerTime).mapToLong(Long::longValue).sum();
         }
 
         long getDriverInstallTime() {
-            return immutableTaskGraphList.stream().map(itg -> itg.getDriverInstallTime()).mapToLong(Long::longValue).sum();
+            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getDriverInstallTime).mapToLong(Long::longValue).sum();
         }
 
         long getDataTransfersTime() {
-            return immutableTaskGraphList.stream().map(itg -> itg.getDataTransfersTime()).mapToLong(Long::longValue).sum();
+            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getDataTransfersTime).mapToLong(Long::longValue).sum();
         }
 
         long getDeviceWriteTime() {
-            return immutableTaskGraphList.stream().map(itg -> itg.getDeviceWriteTime()).mapToLong(Long::longValue).sum();
+            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getDeviceWriteTime).mapToLong(Long::longValue).sum();
         }
 
         long getDeviceReadTime() {
-            return immutableTaskGraphList.stream().map(itg -> itg.getDeviceReadTime()).mapToLong(Long::longValue).sum();
+            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getDeviceReadTime).mapToLong(Long::longValue).sum();
         }
 
         long getDataTransferDispatchTime() {
-            return immutableTaskGraphList.stream().map(itg -> itg.getDataTransferDispatchTime()).mapToLong(Long::longValue).sum();
+            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getDataTransferDispatchTime).mapToLong(Long::longValue).sum();
         }
 
         long getKernelDispatchTime() {
-            return immutableTaskGraphList.stream().map(itg -> itg.getKernelDispatchTime()).mapToLong(Long::longValue).sum();
+            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getKernelDispatchTime).mapToLong(Long::longValue).sum();
         }
 
         long getDeviceKernelTime() {
-            return immutableTaskGraphList.stream().map(itg -> itg.getDeviceKernelTime()).mapToLong(Long::longValue).sum();
+            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getDeviceKernelTime).mapToLong(Long::longValue).sum();
         }
 
         String getProfileLog() {
-            return null;
+            return immutableTaskGraphList.stream().map(ImmutableTaskGraph::getProfileLog).collect(Collectors.joining());
         }
 
         void dumpProfiles() {
-            for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList)
-                immutableTaskGraph.dumpProfiles();
+            immutableTaskGraphList.forEach(ImmutableTaskGraph::dumpProfiles);
         }
 
         void clearProfiles() {
-            for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
-                immutableTaskGraph.clearProfiles();
-            }
+            immutableTaskGraphList.forEach(ImmutableTaskGraph::clearProfiles);
         }
 
         void useDefaultScheduler(boolean useDefaultScheduler) {
