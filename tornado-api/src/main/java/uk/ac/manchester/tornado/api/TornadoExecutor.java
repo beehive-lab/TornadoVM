@@ -49,13 +49,6 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
-/**
- * Object that holds a list of {@link ImmutableTaskGraph}. The executor will
- * launch all immutable task graphs on the target device according to an
- * optimizing execution plan. This class follows the builder pattern. Thus, it
- * can be created by calling its constructor and return an optimizing plan
- * through the {@link TornadoExecutor#build()} method.
- */
 class TornadoExecutor {
 
     private List<ImmutableTaskGraph> immutableTaskGraphList;
