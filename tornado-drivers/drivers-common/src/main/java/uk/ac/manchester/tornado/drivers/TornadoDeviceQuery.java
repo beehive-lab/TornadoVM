@@ -82,7 +82,11 @@ public class TornadoDeviceQuery {
             deviceInfoBuffer.append("Driver: " + colour + driver.getName() + ColoursTerminal.RESET + "\n");
             deviceInfoBuffer.append("  Total number of " + driver.getName() + " devices  : " + numDevices + "\n");
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
-                deviceInfoBuffer.append("  Tornado device=" + driverIndex + ":" + deviceIndex + "\n");
+                deviceInfoBuffer.append("  Tornado device=" + driverIndex + ":" + deviceIndex);
+                if (driverIndex == 0 && deviceIndex == 0) {
+                    deviceInfoBuffer.append("  (DEFAULT)");
+                }
+                deviceInfoBuffer.append("\n");
                 deviceInfoBuffer.append("\t" + colour + backendType.toString() + ColoursTerminal.RESET + " -- " + driver.getDevice(deviceIndex)).append("\n");
                 if (verboseFlag.equals("verbose")) {
                     deviceInfoBuffer.append("\t\t" + "Global Memory Size: " + formatSize(driver.getDevice(deviceIndex).getMaxGlobalMemory()) + "\n");
