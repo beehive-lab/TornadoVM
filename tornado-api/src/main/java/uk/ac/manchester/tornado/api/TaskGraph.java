@@ -74,6 +74,8 @@ import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
  * Task-based parallel API to express methods to be accelerated on any OpenCL,
  * PTX or SPIRV compatible device.
  * </p>
+ *
+ * @since TornadoVM-0.15
  */
 public class TaskGraph implements TornadoGraphInterface {
 

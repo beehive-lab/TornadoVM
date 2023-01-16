@@ -58,6 +58,8 @@ import uk.ac.manchester.tornado.api.enums.ProfilerMode;
  * developers can mutate task-graph objects (of type {@TaskGraph}) without
  * affecting the execution of graphs encapsulated in {@link ImmutableTaskGraph}.
  * </p>
+ *
+ * @since TornadoVM-0.15
  */
 public class ImmutableTaskGraph {
 

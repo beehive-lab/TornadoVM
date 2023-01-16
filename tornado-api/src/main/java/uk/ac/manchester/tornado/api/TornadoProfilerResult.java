@@ -60,6 +60,8 @@ import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
  * Alternatively, the profiler can be enabled using the
  * {@link TornadoExecutionPlan#withProfiler(ProfilerMode)}.
  * </p>
+ *
+ * @since TornadoVM-0.15
  */
 public class TornadoProfilerResult implements ProfileInterface {
     private TornadoExecutor executor;

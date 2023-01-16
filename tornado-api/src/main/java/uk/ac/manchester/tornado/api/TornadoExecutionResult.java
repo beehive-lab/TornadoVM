@@ -47,6 +47,8 @@ package uk.ac.manchester.tornado.api;
  * execution plan enabled the profiler information, this object also stores all
  * profiler information (e.g., read/write time, kernel time, etc.) through the
  * {@link TornadoProfilerResult} object.
+ *
+ * @since TornadoVM-0.15
  */
 public class TornadoExecutionResult {
 
