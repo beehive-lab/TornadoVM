@@ -5,7 +5,7 @@
 # This file is part of Tornado: A heterogeneous programming framework:
 # https://github.com/beehive-lab/tornadovm
 #
-# Copyright (c) 2013-2022, APT Group, Department of Computer Science,
+# Copyright (c) 2013-2023, APT Group, Department of Computer Science,
 # The University of Manchester. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -148,16 +148,26 @@ __TEST_THE_WORLD__ = [
                   "-Dtornado.features.dump.dir=" + os.environ["TORNADO_SDK"] + "/virtualFeaturesOut.out"])
 ]
 
-## List of tests that can be ignored. Format: class#testMethod
+## List of tests that can be ignored. The following either fail (we know it is a precision error), or they are not supported
+## for specific backends. Every group of ignored tests have an explanation about the failure and the backends that are affected. 
+#  Format: class#testMethod
 __TORNADO_TESTS_WHITE_LIST__ = [
+
+    ## PTX Backend does not support mathTahn
     "uk.ac.manchester.tornado.unittests.math.TestMath#testMathTanh",
     "uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection#testTornadoMathTanh",
+
+    ## Virtual devices are only available for OpenCL. 
     "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel#testVirtualDeviceKernelGPU",
     "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel#testVirtualDeviceKernelCPU",
     "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction#testVirtualDeviceFeaturesCPU",
     "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction#testVirtualDeviceFeaturesGPU",
+
+    ## Atomics are only available for OpenCL
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic12",
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic15",
+
+    ## Precision errors 
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testNBodyBigNoWorker",
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testEuler",
     "uk.ac.manchester.tornado.unittests.codegen.CodeGen#test02",
@@ -165,7 +175,8 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm2DKernelContext01",
     "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm2DKernelContext02",
 
-    # It might have errors during type casting and type conversion. However the fractals images look correct
+    # It might have errors during type casting and type conversion. However the fractals images look correct. 
+    # This errors might be related to error precision when running many threads in parallel. 
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testMandelbrot",
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testJuliaSets",
 ]

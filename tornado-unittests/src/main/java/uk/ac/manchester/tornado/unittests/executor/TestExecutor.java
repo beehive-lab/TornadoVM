@@ -67,7 +67,14 @@ public class TestExecutor extends TornadoTestBase {
         // 3. Create an executor and build an execution plan
         TornadoExecutionPlan executorPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
+        // Select the default device for the execution plan. This is optional: if no
+        // device is specified, TornadoVM will launch kernels on the default device.
+        // However, developers could print device information from the default devic.
         TornadoDevice defaultDevice = TornadoExecutionPlan.DEFAULT_DEVICE;
+
+        // e.g., Query the device name
+        String deviceName = defaultDevice.getPhysicalDevice().getDeviceName();
+        assertNotNull(deviceName);
 
         // 4. Add optimizations to the execution plan
         executorPlan.withProfiler(ProfilerMode.SILENT) //
