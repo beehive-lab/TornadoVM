@@ -62,8 +62,23 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  */
 public class TornadoExecutionPlan {
 
+    /**
+     * Method to obtain the default device in TornadoVM. The default one corresponds
+     * to the device assigned to the driver (backend) with index 0 and device 0.
+     */
     public static TornadoDevice DEFAULT_DEVICE = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
 
+    /**
+     * Method to obtain a specific device using the driver index (backend index) and
+     * device index.
+     *
+     * @param driverIndex
+     *            Integer value that identifies the backend to be used.
+     * @param deviceIndex
+     *            Integer value that identifies the device within the backend to be
+     *            used.
+     * @return {@link TornadoDevice}
+     */
     public static TornadoDevice getDevice(int driverIndex, int deviceIndex) {
         return TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
     }
