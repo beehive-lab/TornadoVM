@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal;
 
-import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVModule;
 import uk.ac.manchester.tornado.runtime.common.KernelArgs;

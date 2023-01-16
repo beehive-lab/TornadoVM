@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2023, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,10 +39,23 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.mm;
+package uk.ac.manchester.tornado.api.memory;
 
-public interface TornadoMemoryProvider {
+public interface TornadoDeviceObjectState {
 
-    long getHeapSize();
+    void setObjectBuffer(ObjectBuffer value);
 
+    boolean hasObjectBuffer();
+
+    ObjectBuffer getObjectBuffer();
+
+    boolean isAtomicRegionPresent();
+
+    void setAtomicRegion();
+
+    boolean isLockedBuffer();
+
+    boolean hasContents();
+
+    void setContents(boolean value);
 }

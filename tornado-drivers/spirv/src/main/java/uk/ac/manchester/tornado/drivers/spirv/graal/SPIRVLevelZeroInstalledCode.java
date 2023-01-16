@@ -29,7 +29,7 @@ import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPr
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.WorkerGrid;
-import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroCommandQueue;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroModule;

@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -23,16 +23,15 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
-import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
-import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
+import static uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelArgs.RESERVED_SLOTS;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
+
+import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-
-import static uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelArgs.RESERVED_SLOTS;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
 
 public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProvider {
 
@@ -96,8 +95,8 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
 
     void allocateAtomicRegion() {
         if (this.atomicsRegion == -1) {
-            this.atomicsRegion = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR,
-                    INTEGER_BYTES_SIZE * MAX_NUMBER_OF_ATOMICS_PER_KERNEL).getBuffer();
+            this.atomicsRegion = deviceContext.getPlatformContext()
+                    .createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, INTEGER_BYTES_SIZE * MAX_NUMBER_OF_ATOMICS_PER_KERNEL).getBuffer();
         }
     }
 

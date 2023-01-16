@@ -26,7 +26,7 @@ package uk.ac.manchester.tornado.drivers.spirv.mm;
 import static uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVKernelArgs.RESERVED_SLOTS;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
 
-import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 
 // FIXME <REFACTOR> This class can be almost common for all three backends

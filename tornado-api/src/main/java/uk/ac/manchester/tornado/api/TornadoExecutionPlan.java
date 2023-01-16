@@ -93,6 +93,16 @@ public class TornadoExecutionPlan {
     private ProfilerMode profilerMode;
     private boolean disableProfiler;
 
+    /**
+     * Create an Execution Plan: Object to create and optimize an execution plan for
+     * running a set of immutable tasks-graphs. An executor plan contains an
+     * executor object, which in turn, contains a set of immutable task-graphs. All
+     * actions applied to the execution plan affect to all the immutable graphs
+     * associated with it.
+     *
+     * @param immutableTaskGraphs
+     *            {@link ImmutableTaskGraph}
+     */
     public TornadoExecutionPlan(ImmutableTaskGraph... immutableTaskGraphs) {
         this.tornadoExecutor = new TornadoExecutor(immutableTaskGraphs);
     }

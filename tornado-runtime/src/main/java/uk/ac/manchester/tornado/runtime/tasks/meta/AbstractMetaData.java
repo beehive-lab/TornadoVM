@@ -25,26 +25,26 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks.meta;
 
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Integer.parseInt;
+import static uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.resolveDevice;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
-import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
+import uk.ac.manchester.tornado.api.memory.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.DeviceBuffer;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
-
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-
-import static java.lang.Boolean.parseBoolean;
-import static java.lang.Integer.parseInt;
-import static uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.resolveDevice;
 
 public abstract class AbstractMetaData implements TaskMetaDataInterface {
 

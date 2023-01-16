@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2022, 2023, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,23 +39,55 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.mm;
+package uk.ac.manchester.tornado.api.memory;
 
-public interface TornadoDeviceObjectState {
+import java.util.List;
 
-    void setObjectBuffer(ObjectBuffer value);
+import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 
-    boolean hasObjectBuffer();
+public interface ObjectBuffer {
 
-    ObjectBuffer getObjectBuffer();
+    class ObjectBufferWrapper {
+        public final long buffer;
+        public long bufferOffset;
 
-    boolean isAtomicRegionPresent();
+        public ObjectBufferWrapper(long buffer, long bufferOffset) {
+            this.buffer = buffer;
+            this.bufferOffset = bufferOffset;
+        }
+    }
 
-    void setAtomicRegion();
+    long toBuffer();
 
-    boolean isLockedBuffer();
+    void setBuffer(ObjectBufferWrapper bufferWrapper);
 
-    boolean hasContents();
+    long getBufferOffset();
 
-    void setContents(boolean value);
+    void read(Object reference);
+
+    int read(Object reference, long hostOffset, int[] events, boolean useDeps);
+
+    void write(Object reference);
+
+    int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps);
+
+    List<Integer> enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps);
+
+    void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException;
+
+    void deallocate() throws TornadoMemoryException;
+
+    long size();
+
+    void setSizeSubRegion(long batchSize);
+
+    long getSizeSubRegion();
+
+    default int[] getIntBuffer() {
+        return null;
+    }
+
+    default void setIntBuffer(int[] arr) {
+    }
 }

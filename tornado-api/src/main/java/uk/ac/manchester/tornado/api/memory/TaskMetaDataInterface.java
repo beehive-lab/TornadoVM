@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2023, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,55 +39,40 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.mm;
+package uk.ac.manchester.tornado.api.memory;
 
 import java.util.List;
 
-import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.common.TornadoEvents;
 
-public interface ObjectBuffer {
+public interface TaskMetaDataInterface {
 
-    class ObjectBufferWrapper {
-        public final long buffer;
-        public long bufferOffset;
+    List<TornadoEvents> getProfiles();
 
-        public ObjectBufferWrapper(long buffer, long bufferOffset) {
-            this.buffer = buffer;
-            this.bufferOffset = bufferOffset;
-        }
-    }
+    String getCompilerFlags();
 
-    long toBuffer();
+    void setCompilerFlags(String flags);
 
-    void setBuffer(ObjectBufferWrapper bufferWrapper);
+    void setGlobalWork(long[] global);
 
-    long getBufferOffset();
+    void setLocalWork(long[] local);
 
-    void read(Object reference);
+    long[] getGlobalWork();
 
-    int read(Object reference, long hostOffset, int[] events, boolean useDeps);
+    long[] getLocalWork();
 
-    void write(Object reference);
+    void setNumThreads(long threads);
 
-    int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps);
+    long getNumThreads();
 
-    List<Integer> enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps);
+    void setCompiledGraph(Object graph);
 
-    void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException;
+    Object getCompiledResolvedJavaMethod();
 
-    void deallocate() throws TornadoMemoryException;
+    int getDriverIndex();
 
-    long size();
+    int getDeviceIndex();
 
-    void setSizeSubRegion(long batchSize);
-
-    long getSizeSubRegion();
-
-    default int[] getIntBuffer() {
-        return null;
-    }
-
-    default void setIntBuffer(int[] arr) {
-    }
+    void setDevice(TornadoDevice device);
 }

@@ -48,8 +48,8 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
-import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.api.memory.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 
 public interface TornadoDevice {
 
@@ -178,8 +178,6 @@ public interface TornadoDevice {
     void reset();
 
     void dumpEvents();
-
-    // Getters
 
     String getDeviceName();
 

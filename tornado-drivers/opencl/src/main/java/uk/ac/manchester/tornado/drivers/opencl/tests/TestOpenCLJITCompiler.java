@@ -35,7 +35,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.api.memory.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.drivers.common.CompilerUtil;
 import uk.ac.manchester.tornado.drivers.common.MetaCompilation;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;

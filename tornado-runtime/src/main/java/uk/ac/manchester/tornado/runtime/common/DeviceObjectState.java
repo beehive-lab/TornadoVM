@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -27,8 +27,8 @@ package uk.ac.manchester.tornado.runtime.common;
 
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 
-import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
-import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.TornadoDeviceObjectState;
 
 public class DeviceObjectState implements TornadoDeviceObjectState {
 
