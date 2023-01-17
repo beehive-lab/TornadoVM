@@ -57,9 +57,9 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TaskGraphInterface;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoTaskGraphInterface;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
@@ -121,7 +121,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 /**
  * Implementation of the Tornado API for running on heterogeneous devices.
  */
-public class TornadoTaskGraph implements TaskGraphInterface {
+public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     /**
      * Options for Dynamic Reconfiguration
@@ -1080,8 +1080,8 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         reduceExpressionRewritten = true;
     }
 
-    private TaskGraphInterface reduceAnalysis() {
-        TaskGraphInterface abstractTaskGraph = null;
+    private TornadoTaskGraphInterface reduceAnalysis() {
+        TornadoTaskGraphInterface abstractTaskGraph = null;
         if (analysisTaskSchedule == null && !reduceAnalysis) {
             analysisTaskSchedule = ReduceCodeAnalysis.analysisTaskSchedule(taskPackages);
             reduceAnalysis = true;
@@ -1093,8 +1093,8 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         return abstractTaskGraph;
     }
 
-    private TaskGraphInterface analyzeSkeletonAndRun() {
-        TaskGraphInterface abstractTaskGraph;
+    private TornadoTaskGraphInterface analyzeSkeletonAndRun() {
+        TornadoTaskGraphInterface abstractTaskGraph;
         if (!reduceExpressionRewritten) {
             abstractTaskGraph = reduceAnalysis();
         } else {
@@ -1163,7 +1163,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
     }
 
     @Override
-    public TaskGraphInterface schedule() {
+    public TornadoTaskGraphInterface schedule() {
 
         setupProfiler();
         isFinished = false;
@@ -1179,7 +1179,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
         timeProfiler.clean();
         timeProfiler.start(ProfilerType.TOTAL_TASK_SCHEDULE_TIME);
 
-        TaskGraphInterface executionGraph = null;
+        TornadoTaskGraphInterface executionGraph = null;
         if (TornadoOptions.EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_SCHEDULE_PREFIX))) {
             executionGraph = analyzeSkeletonAndRun();
         }
@@ -1206,7 +1206,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
     }
 
     @Override
-    public TaskGraphInterface schedule(GridScheduler gridScheduler) {
+    public TornadoTaskGraphInterface schedule(GridScheduler gridScheduler) {
         this.gridScheduler = gridScheduler;
         return schedule();
     }
@@ -1535,7 +1535,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
     }
 
     @Override
-    public TaskGraphInterface scheduleWithProfile(Policy policy) {
+    public TornadoTaskGraphInterface scheduleWithProfile(Policy policy) {
         if (policyTimeTable.get(policy) == null) {
             runScheduleWithParallelProfiler(policy);
         } else {
@@ -1811,7 +1811,7 @@ public class TornadoTaskGraph implements TaskGraphInterface {
     }
 
     @Override
-    public TaskGraphInterface scheduleWithProfileSequential(Policy policy) {
+    public TornadoTaskGraphInterface scheduleWithProfileSequential(Policy policy) {
         int numDevices = TornadoRuntime.getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX).getDeviceCount();
 
         if (policyTimeTable.get(policy) == null) {
