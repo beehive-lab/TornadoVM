@@ -64,7 +64,7 @@ public class JuliaSetTornado extends BenchmarkDriver {
         executionResult.getProfilerResult().dumpProfiles();
         hue = null;
         brightness = null;
-        executionPlan.resetDevices();
+        executionPlan.resetDevice();
         super.tearDown();
     }
 

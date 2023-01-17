@@ -117,7 +117,7 @@ public interface TornadoTaskGraphInterface extends ProfileInterface {
 
     void addScalaTask(String id, Object function, Object[] args);
 
-    String getTaskScheduleName();
+    String getTaskGraphName();
 
     void replaceParameter(Object oldParameter, Object newParameter);
 

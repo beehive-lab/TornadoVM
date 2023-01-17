@@ -81,13 +81,13 @@ public class TaskGraph implements TaskGraphInterface {
 
     private static final String ERROR_TASK_NAME_DUPLICATION = "[TornadoVM ERROR]. There are more than 1 tasks with the same task-name. Use different a different task name for each task within a TaskGraph.";
 
-    private final String taskScheduleName;
-    protected TornadoTaskGraphInterface taskScheduleImpl;
+    private final String taskGraphName;
+    protected TornadoTaskGraphInterface taskGraphImpl;
     protected HashSet<String> taskNames;
 
     public TaskGraph(String name) {
-        this.taskScheduleName = name;
-        taskScheduleImpl = TornadoAPIProvider.loadScheduleRuntime(name);
+        this.taskGraphName = name;
+        taskGraphImpl = TornadoAPIProvider.loadScheduleRuntime(name);
         taskNames = new HashSet<>();
     }
 
@@ -107,7 +107,7 @@ public class TaskGraph implements TaskGraphInterface {
      */
     @Override
     public TaskGraph addTask(TaskPackage taskPackage) {
-        taskScheduleImpl.addTask(taskPackage);
+        taskGraphImpl.addTask(taskPackage);
         return this;
     }
 
@@ -124,7 +124,7 @@ public class TaskGraph implements TaskGraphInterface {
     public TaskGraph task(String id, Task code) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code);
-        taskScheduleImpl.addTask(taskPackage);
+        taskGraphImpl.addTask(taskPackage);
         return this;
     }
 
@@ -143,7 +143,7 @@ public class TaskGraph implements TaskGraphInterface {
     public <T1> TaskGraph task(String id, Task1<T1> code, T1 arg) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg);
-        taskScheduleImpl.addTask(taskPackage);
+        taskGraphImpl.addTask(taskPackage);
         return this;
     }
 
@@ -164,7 +164,7 @@ public class TaskGraph implements TaskGraphInterface {
     public <T1, T2> TaskGraph task(String id, Task2<T1, T2> code, T1 arg1, T2 arg2) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2);
-        taskScheduleImpl.addTask(taskPackage);
+        taskGraphImpl.addTask(taskPackage);
         return this;
     }
 
@@ -187,7 +187,7 @@ public class TaskGraph implements TaskGraphInterface {
     public <T1, T2, T3> TaskGraph task(String id, Task3<T1, T2, T3> code, T1 arg1, T2 arg2, T3 arg3) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3);
-        taskScheduleImpl.addTask(taskPackage);
+        taskGraphImpl.addTask(taskPackage);
         return this;
     }
 
@@ -212,7 +212,7 @@ public class TaskGraph implements TaskGraphInterface {
     public <T1, T2, T3, T4> TaskGraph task(String id, Task4<T1, T2, T3, T4> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4);
-        taskScheduleImpl.addTask(taskPackage);
+        taskGraphImpl.addTask(taskPackage);
         return this;
     }
 
@@ -239,7 +239,7 @@ public class TaskGraph implements TaskGraphInterface {
     public <T1, T2, T3, T4, T5> TaskGraph task(String id, Task5<T1, T2, T3, T4, T5> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5);
-        taskScheduleImpl.addTask(taskPackage);
+        taskGraphImpl.addTask(taskPackage);
         return this;
     }
 
@@ -268,7 +268,7 @@ public class TaskGraph implements TaskGraphInterface {
     public <T1, T2, T3, T4, T5, T6> TaskGraph task(String id, Task6<T1, T2, T3, T4, T5, T6> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6);
-        taskScheduleImpl.addTask(taskPackage);
+        taskGraphImpl.addTask(taskPackage);
         return this;
     }
 
@@ -299,7 +299,7 @@ public class TaskGraph implements TaskGraphInterface {
     public <T1, T2, T3, T4, T5, T6, T7> TaskGraph task(String id, Task7<T1, T2, T3, T4, T5, T6, T7> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
-        taskScheduleImpl.addTask(taskPackage);
+        taskGraphImpl.addTask(taskPackage);
         return this;
     }
 
@@ -332,7 +332,7 @@ public class TaskGraph implements TaskGraphInterface {
     public <T1, T2, T3, T4, T5, T6, T7, T8> TaskGraph task(String id, Task8<T1, T2, T3, T4, T5, T6, T7, T8> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
-        taskScheduleImpl.addTask(taskPackage);
+        taskGraphImpl.addTask(taskPackage);
         return this;
     }
 
@@ -368,7 +368,7 @@ public class TaskGraph implements TaskGraphInterface {
             T9 arg9) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
-        taskScheduleImpl.addTask(taskPackage);
+        taskGraphImpl.addTask(taskPackage);
         return this;
     }
 
@@ -406,7 +406,7 @@ public class TaskGraph implements TaskGraphInterface {
             T8 arg8, T9 arg9, T10 arg10) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
-        taskScheduleImpl.addTask(taskPackage);
+        taskGraphImpl.addTask(taskPackage);
         return this;
     }
 
@@ -446,7 +446,7 @@ public class TaskGraph implements TaskGraphInterface {
             T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
-        taskScheduleImpl.addTask(taskPackage);
+        taskGraphImpl.addTask(taskPackage);
         return this;
     }
 
@@ -488,7 +488,7 @@ public class TaskGraph implements TaskGraphInterface {
             T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
-        taskScheduleImpl.addTask(taskPackage);
+        taskGraphImpl.addTask(taskPackage);
         return this;
     }
 
@@ -532,7 +532,7 @@ public class TaskGraph implements TaskGraphInterface {
             T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13);
-        taskScheduleImpl.addTask(taskPackage);
+        taskGraphImpl.addTask(taskPackage);
         return this;
     }
 
@@ -578,7 +578,7 @@ public class TaskGraph implements TaskGraphInterface {
             T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14);
-        taskScheduleImpl.addTask(taskPackage);
+        taskGraphImpl.addTask(taskPackage);
         return this;
     }
 
@@ -626,7 +626,7 @@ public class TaskGraph implements TaskGraphInterface {
             T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15);
-        taskScheduleImpl.addTask(taskPackage);
+        taskGraphImpl.addTask(taskPackage);
         return this;
     }
 
@@ -653,7 +653,7 @@ public class TaskGraph implements TaskGraphInterface {
     @Override
     public TaskGraph prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions) {
         checkTaskName(id);
-        taskScheduleImpl.addPrebuiltTask(id, entryPoint, filename, args, accesses, device, dimensions);
+        taskGraphImpl.addPrebuiltTask(id, entryPoint, filename, args, accesses, device, dimensions);
         return this;
     }
 
@@ -682,7 +682,7 @@ public class TaskGraph implements TaskGraphInterface {
     @Override
     public TaskGraph prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions, int[] atomics) {
         checkTaskName(id);
-        taskScheduleImpl.addPrebuiltTask(id, entryPoint, filename, args, accesses, device, dimensions, atomics);
+        taskGraphImpl.addPrebuiltTask(id, entryPoint, filename, args, accesses, device, dimensions, atomics);
         return this;
     }
 
@@ -692,8 +692,8 @@ public class TaskGraph implements TaskGraphInterface {
      * @return {@link String}
      */
     @Override
-    public String getTaskScheduleName() {
-        return taskScheduleName;
+    public String getTaskGraphName() {
+        return taskGraphName;
     }
 
     /**
@@ -720,7 +720,7 @@ public class TaskGraph implements TaskGraphInterface {
      */
     @Override
     public TaskGraph transferToDevice(final int mode, Object... objects) {
-        taskScheduleImpl.transferToDevice(mode, objects);
+        taskGraphImpl.transferToDevice(mode, objects);
         return this;
     }
 
@@ -750,7 +750,7 @@ public class TaskGraph implements TaskGraphInterface {
      */
     @Override
     public TaskGraph transferToHost(final int mode, Object... objects) {
-        taskScheduleImpl.transferToHost(mode, objects);
+        taskGraphImpl.transferToHost(mode, objects);
         return this;
     }
 
@@ -762,140 +762,140 @@ public class TaskGraph implements TaskGraphInterface {
      */
     @Override
     public ImmutableTaskGraph snapshot() {
-        TaskGraph cloneTaskGraph = new TaskGraph(this.getTaskScheduleName());
-        cloneTaskGraph.taskScheduleImpl = this.taskScheduleImpl.createImmutableTaskGraph();
+        TaskGraph cloneTaskGraph = new TaskGraph(this.getTaskGraphName());
+        cloneTaskGraph.taskGraphImpl = this.taskGraphImpl.createImmutableTaskGraph();
         cloneTaskGraph.taskNames = this.taskNames;
         return new ImmutableTaskGraph(cloneTaskGraph);
     }
 
     TaskGraph setDevice(TornadoDevice device) {
-        taskScheduleImpl.setDevice(device);
+        taskGraphImpl.setDevice(device);
         return this;
     }
 
     TaskGraph batch(String batchSize) {
-        taskScheduleImpl.batch(batchSize);
+        taskGraphImpl.batch(batchSize);
         return this;
     }
 
     void execute() {
-        taskScheduleImpl.schedule().waitOn();
+        taskGraphImpl.schedule().waitOn();
     }
 
     void execute(GridScheduler gridScheduler) {
-        taskScheduleImpl.schedule(gridScheduler).waitOn();
+        taskGraphImpl.schedule(gridScheduler).waitOn();
     }
 
     void executeWithProfiler(Policy policy) {
-        taskScheduleImpl.scheduleWithProfile(policy).waitOn();
+        taskGraphImpl.scheduleWithProfile(policy).waitOn();
     }
 
     void executeWithProfilerSequential(Policy policy) {
-        taskScheduleImpl.scheduleWithProfileSequential(policy).waitOn();
+        taskGraphImpl.scheduleWithProfileSequential(policy).waitOn();
     }
 
     void warmup() {
-        taskScheduleImpl.warmup();
+        taskGraphImpl.warmup();
     }
 
     void dumpEvents() {
-        taskScheduleImpl.dumpEvents();
+        taskGraphImpl.dumpEvents();
     }
 
     void dumpTimes() {
-        taskScheduleImpl.dumpTimes();
+        taskGraphImpl.dumpTimes();
     }
 
     void dumpProfiles() {
-        taskScheduleImpl.dumpProfiles();
+        taskGraphImpl.dumpProfiles();
     }
 
     void clearProfiles() {
-        taskScheduleImpl.clearProfiles();
+        taskGraphImpl.clearProfiles();
     }
 
     TaskGraph freeDeviceMemory() {
-        taskScheduleImpl.freeDeviceMemory();
+        taskGraphImpl.freeDeviceMemory();
         return this;
     }
 
     void syncRuntimeTransferToHost(Object... objects) {
-        taskScheduleImpl.syncRuntimeTransferToHost(objects);
+        taskGraphImpl.syncRuntimeTransferToHost(objects);
     }
 
     TornadoDevice getDevice() {
-        return taskScheduleImpl.getDevice();
+        return taskGraphImpl.getDevice();
     }
 
     TaskGraph useDefaultThreadScheduler(boolean use) {
-        taskScheduleImpl.useDefaultThreadScheduler(use);
+        taskGraphImpl.useDefaultThreadScheduler(use);
         return this;
     }
 
     boolean isFinished() {
-        return taskScheduleImpl.isFinished();
+        return taskGraphImpl.isFinished();
     }
 
     public Set<Object> getArgumentsLookup() {
-        return taskScheduleImpl.getArgumentsLookup();
+        return taskGraphImpl.getArgumentsLookup();
     }
 
     // *************************************************
     // Profiler Interface
     // *************************************************
     long getTotalTime() {
-        return taskScheduleImpl.getTotalTime();
+        return taskGraphImpl.getTotalTime();
     }
 
     long getCompileTime() {
-        return taskScheduleImpl.getCompileTime();
+        return taskGraphImpl.getCompileTime();
     }
 
     long getTornadoCompilerTime() {
-        return taskScheduleImpl.getTornadoCompilerTime();
+        return taskGraphImpl.getTornadoCompilerTime();
     }
 
     long getDriverInstallTime() {
-        return taskScheduleImpl.getDriverInstallTime();
+        return taskGraphImpl.getDriverInstallTime();
     }
 
     long getDataTransfersTime() {
-        return taskScheduleImpl.getDataTransfersTime();
+        return taskGraphImpl.getDataTransfersTime();
     }
 
     long getWriteTime() {
-        return taskScheduleImpl.getDeviceWriteTime();
+        return taskGraphImpl.getDeviceWriteTime();
     }
 
     long getReadTime() {
-        return taskScheduleImpl.getDeviceReadTime();
+        return taskGraphImpl.getDeviceReadTime();
     }
 
     long getDataTransferDispatchTime() {
-        return taskScheduleImpl.getDataTransferDispatchTime();
+        return taskGraphImpl.getDataTransferDispatchTime();
     }
 
     long getKernelDispatchTime() {
-        return taskScheduleImpl.getKernelDispatchTime();
+        return taskGraphImpl.getKernelDispatchTime();
     }
 
     long getDeviceKernelTime() {
-        return taskScheduleImpl.getDeviceKernelTime();
+        return taskGraphImpl.getDeviceKernelTime();
     }
 
     protected String getProfileLog() {
-        return taskScheduleImpl.getProfileLog();
+        return taskGraphImpl.getProfileLog();
     }
 
     public Collection<?> getOutputs() {
-        return taskScheduleImpl.getOutputs();
+        return taskGraphImpl.getOutputs();
     }
 
     void enableProfiler(ProfilerMode profilerMode) {
-        taskScheduleImpl.enableProfiler(profilerMode);
+        taskGraphImpl.enableProfiler(profilerMode);
     }
 
     void disableProfiler(ProfilerMode profilerMode) {
-        taskScheduleImpl.disableProfiler(profilerMode);
+        taskGraphImpl.disableProfiler(profilerMode);
     }
 }

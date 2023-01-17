@@ -71,7 +71,7 @@ public class SpmvTornado extends BenchmarkDriver {
         v = null;
         y = null;
 
-        executionPlan.resetDevices();
+        executionPlan.resetDevice();
         super.tearDown();
     }
 

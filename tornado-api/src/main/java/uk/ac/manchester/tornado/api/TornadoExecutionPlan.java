@@ -265,13 +265,12 @@ public class TornadoExecutionPlan {
     }
 
     /**
-     * Invoke the reset device for each device use in previous executions. This
-     * clean-up will reset all device buffers.
+     * Frees all device memory associated to the current execution plan.
      *
      * @return {@link TornadoExecutionPlan}
      */
-    public TornadoExecutionPlan resetDevices() {
-        tornadoExecutor.resetDevices();
+    public TornadoExecutionPlan resetDevice() {
+        tornadoExecutor.resetDevice();
         return this;
     }
 
@@ -340,8 +339,8 @@ public class TornadoExecutionPlan {
             return result;
         }
 
-        void resetDevices() {
-            immutableTaskGraphList.forEach(ImmutableTaskGraph::resetDevices);
+        void resetDevice() {
+            immutableTaskGraphList.forEach(ImmutableTaskGraph::resetDevice);
         }
 
         long getTotalTime() {

@@ -75,7 +75,7 @@ public class RenderTrackTornado extends BenchmarkDriver {
         executionResult.getProfilerResult().dumpProfiles();
         input = null;
         output = null;
-        executionPlan.resetDevices();
+        executionPlan.resetDevice();
         super.tearDown();
     }
 

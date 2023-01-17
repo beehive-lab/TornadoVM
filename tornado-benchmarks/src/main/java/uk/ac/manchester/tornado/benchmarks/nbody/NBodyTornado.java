@@ -90,7 +90,7 @@ public class NBodyTornado extends BenchmarkDriver {
         executionResult.getProfilerResult().dumpProfiles();
         posSeq = null;
         velSeq = null;
-        executionPlan.resetDevices();
+        executionPlan.resetDevice();
         super.tearDown();
     }
 

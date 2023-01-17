@@ -84,7 +84,7 @@ public class SgemvTornado extends BenchmarkDriver {
         x = null;
         y = null;
 
-        executionPlan.resetDevices();
+        executionPlan.resetDevice();
         super.tearDown();
     }
 

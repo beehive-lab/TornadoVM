@@ -153,7 +153,7 @@ public class ImmutableTaskGraph {
         taskGraph.dumpProfiles();
     }
 
-    void resetDevices() {
+    void resetDevice() {
         taskGraph.getDevice().reset();
     }
 

@@ -28,6 +28,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
+import uk.ac.manchester.tornado.api.TornadoProfilerResult;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
@@ -80,6 +81,10 @@ public abstract class BenchmarkDriver {
         return taskGraph;
     }
 
+    public TornadoExecutionResult getExecutionResult() {
+        return executionResult;
+    }
+
     protected void barrier() {
 
     }
@@ -122,18 +127,17 @@ public abstract class BenchmarkDriver {
                 final long end = System.nanoTime();
 
                 if (isProfilerEnabled) {
-
                     // Ensure the execution was correct, so we can count for general stats.
-                    throw new RuntimeException("[UNIMPLEMENT] TIME METRICS FOR BENCHMARKS");
-                    // if (getTaskGraph().getDeviceKernelTime() != 0) {
-                    // deviceKernelTimers.add(getTaskGraph().getDeviceKernelTime());
-                    // }
-                    // if (getTaskGraph().getDeviceWriteTime() != 0) {
-                    // deviceCopyIn.add(getTaskGraph().getDeviceWriteTime());
-                    // }
-                    // if (getTaskGraph().getDeviceReadTime() != 0) {
-                    // deviceCopyOut.add(getTaskGraph().getDeviceReadTime());
-                    // }
+                    TornadoProfilerResult profilerResult = getExecutionResult().getProfilerResult();
+                    if (profilerResult.getDeviceKernelTime() != 0) {
+                        deviceKernelTimers.add(profilerResult.getDeviceKernelTime());
+                    }
+                    if (profilerResult.getDeviceWriteTime() != 0) {
+                        deviceCopyIn.add(profilerResult.getDeviceWriteTime());
+                    }
+                    if (profilerResult.getDeviceReadTime() != 0) {
+                        deviceCopyOut.add(profilerResult.getDeviceReadTime());
+                    }
                 }
 
                 timers[toIntExact(i)] = (end - start);

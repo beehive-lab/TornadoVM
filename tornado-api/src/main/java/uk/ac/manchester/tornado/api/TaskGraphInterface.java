@@ -547,7 +547,7 @@ public interface TaskGraphInterface {
      *
      * @return {@link String}
      */
-    String getTaskScheduleName();
+    String getTaskGraphName();
 
     /**
      * Tag a set of objects (Java objects) to be transferred to the device. There

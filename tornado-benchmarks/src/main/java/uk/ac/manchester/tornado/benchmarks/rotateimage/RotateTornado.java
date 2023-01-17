@@ -86,7 +86,7 @@ public class RotateTornado extends BenchmarkDriver {
         output = null;
         m = null;
 
-        executionPlan.resetDevices();
+        executionPlan.resetDevice();
         super.tearDown();
     }
 

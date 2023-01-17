@@ -92,7 +92,7 @@ public class AddTornado extends BenchmarkDriver {
         a = null;
         b = null;
         c = null;
-        executionPlan.resetDevices();
+        executionPlan.resetDevice();
         super.tearDown();
     }
 

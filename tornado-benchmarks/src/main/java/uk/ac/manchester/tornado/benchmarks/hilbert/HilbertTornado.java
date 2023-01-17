@@ -59,7 +59,7 @@ public class HilbertTornado extends BenchmarkDriver {
     public void tearDown() {
         executionResult.getProfilerResult().dumpProfiles();
         hilbertMatrix = null;
-        executionPlan.resetDevices();
+        executionPlan.resetDevice();
         super.tearDown();
     }
 

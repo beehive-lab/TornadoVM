@@ -337,7 +337,7 @@ public class ReduceCodeAnalysis {
      *
      * @return {@link MetaReduceTasks}
      */
-    public static MetaReduceCodeAnalysis analysisTaskSchedule(List<TaskPackage> taskPackages) {
+    public static MetaReduceCodeAnalysis analysisTaskGraph(List<TaskPackage> taskPackages) {
         int taskIndex = 0;
         int inputSize = 0;
 

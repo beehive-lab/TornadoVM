@@ -106,7 +106,7 @@ public class DFTTornado extends BenchmarkDriver {
         outImag = null;
         outReal = null;
 
-        executionPlan.resetDevices();
+        executionPlan.resetDevice();
         super.tearDown();
     }
 

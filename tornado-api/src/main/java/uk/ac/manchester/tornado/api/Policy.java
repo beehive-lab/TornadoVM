@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2022, APT Group, School of Computer Science,
+ * Copyright (c) 2023, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,15 +42,14 @@
 package uk.ac.manchester.tornado.api;
 
 /**
- * Enum with the different policies for the dynamic reconfiguration (live task
- * migration).
+ * Enumerate with the different policies for the dynamic reconfiguration (live
+ * task migration).
  *
  */
 public enum Policy {
-    PERFORMANCE("SYNC Performance"), //
-    END_2_END("SYNC End_2_End"), //
-    LATENCY("SYNC Latency"), //
-    ENERGY("SYNC Energy");
+    PERFORMANCE("Performance"), //
+    END_2_END("End_2_End"), //
+    LATENCY("Latency");
 
     private final String policyName;
 

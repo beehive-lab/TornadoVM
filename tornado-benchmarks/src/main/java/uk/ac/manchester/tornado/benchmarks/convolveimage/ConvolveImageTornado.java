@@ -83,7 +83,7 @@ public class ConvolveImageTornado extends BenchmarkDriver {
         output = null;
         filter = null;
 
-        executionPlan.resetDevices();
+        executionPlan.resetDevice();
         super.tearDown();
     }
 

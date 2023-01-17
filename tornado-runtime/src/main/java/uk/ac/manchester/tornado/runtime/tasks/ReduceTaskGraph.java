@@ -67,7 +67,7 @@ class ReduceTaskGraph {
     private static final String OPERATION_NOT_SUPPORTED_MESSAGE = "Operation not supported";
     private static final String SEQUENTIAL_TASK_REDUCE_NAME = "reduce_seq";
 
-    private static final String TASK_SCHEDULE_PREFIX = "XXX__GENERATED_REDUCE";
+    private static final String TASK_GRAPH_PREFIX = "XXX__GENERATED_REDUCE";
     private static final int DEFAULT_GPU_WORK_GROUP = 256;
     private static final int DEFAULT_DRIVER_INDEX = 0;
     private static final int DEFAULT_DEVICE_INDEX = 0;
@@ -402,7 +402,7 @@ class ReduceTaskGraph {
 
         Map<Integer, MetaReduceTasks> tableReduce = metaReduceTable.getTable();
 
-        String taskScheduleReduceName = TASK_SCHEDULE_PREFIX + counterName.get();
+        String taskScheduleReduceName = TASK_GRAPH_PREFIX + counterName.get();
         String graphName = idTaskGraph;
 
         HashMap<Integer, List<Object>> streamReduceTable = new HashMap<>();
@@ -564,7 +564,7 @@ class ReduceTaskGraph {
                     int sizeReduceArray = sizesReductionArray.get(i);
                     for (REDUCE_OPERATION operation : operations) {
                         final String newTaskSequentialName = SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName.get();
-                        String fullName = rewrittenTaskGraph.getTaskScheduleName() + "." + newTaskSequentialName;
+                        String fullName = rewrittenTaskGraph.getTaskGraphName() + "." + newTaskSequentialName;
                         TornadoRuntime.setProperty(fullName + ".device", driverToRun + ":" + deviceToRun);
                         inspectBinariesFPGA(taskScheduleReduceName, graphName, taskPackage.getId(), true);
 

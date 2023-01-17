@@ -75,7 +75,7 @@ public class SaxpyTornado extends BenchmarkDriver {
         x = null;
         y = null;
 
-        executionPlan.resetDevices();
+        executionPlan.resetDevice();
         super.tearDown();
     }
 

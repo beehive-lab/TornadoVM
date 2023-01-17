@@ -68,7 +68,7 @@ public class TestGridScheduler {
     }
 
     @Test
-    public void testMultipleTasksWithinTaskSchedule() {
+    public void testMultipleTasksWithinTaskGraph() {
         final int size = 1024;
         float[] a = new float[size];
         float[] b = new float[size];
@@ -102,7 +102,7 @@ public class TestGridScheduler {
     }
 
     @Test
-    public void testMultipleTasksSeparateTaskSchedules() {
+    public void testMultipleTasksSeparateTaskGraphs() {
         final int size = 1024;
         float[] a = new float[size];
         float[] b = new float[size];

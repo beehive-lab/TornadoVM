@@ -49,16 +49,16 @@ public enum DRMode {
     /**
      * A serial mode means that the runtime evaluates all devices in a sequential
      * manner (it compiles all {@link ImmutableTaskGraph} associated with a
-     * {@link TornadoExecutor} one after another) before performing a dynamic device
-     * switch.
+     * {@link TornadoExecutionPlan} one after another) before performing a dynamic
+     * device switch.
      */
     SERIAL, //
 
     /**
      * A parallel mode means that the runtime evaluates all devices in parallel. It
      * compiles all {@link ImmutableTaskGraph} associated with a
-     * {@link TornadoExecutor} and run the expressions on the target devices. Each
-     * physical accelerator handler is mapped to a Java thread.
+     * {@link TornadoExecutionPlan} and run the expressions on the target devices.
+     * Each physical accelerator handler is mapped to a Java thread.
      */
     PARALLEL //
 }

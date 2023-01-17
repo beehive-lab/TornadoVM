@@ -73,7 +73,7 @@ public class BlackScholesTornado extends BenchmarkDriver {
         randArray = null;
         call = null;
         put = null;
-        executionPlan.resetDevices();
+        executionPlan.resetDevice();
         super.tearDown();
     }
 
