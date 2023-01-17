@@ -1,53 +1,47 @@
 Introduction to TornadoVM
-=====
-
-Definition
-
-.. _installation:
-
-Installation
-------------
+=========================
 
 
-Pre-requisites
---------------
+.. image:: images/logo.png
+  :width: 100
+  :alt: Sample Text
+  :align: left
 
-  * Maven Version >= 3.6.3
-  * CMake 3.6 (or newer)
-  * At least one of:
-    * OpenCL: GPUs and CPUs >= 2.1, FPGAs >= 1.0
-    * CUDA 9.0 +
-    * Level Zero >= 1.2
-  * GCC or clang/LLVM (GCC >= 9.0)
-  * Python (>= 3.0)
+TornadoVM is a plug-in to OpenJDK and GraalVM that allows developers to automatically run Java programs on heterogeneous hardware.
+TornadoVM currently targets OpenCL-compatible, PTX-compatible and Level-Zero compatible devices, and it runs on multi-core CPUs,
+dedicated GPUs (Intel, NVIDIA, AMD), integrated GPUs (Intel HD Graphics and ARM Mali), and FPGAs (Intel and Xilinx).
 
-  For Mac OS X users: the OpenCL support for your Apple model can be confirmed [here](https://support.apple.com/en-gb/HT202823).
-
+.. image:: images/tornadovm-01.png
+  :width: 800
+  :alt: Sample Text
 
 
-Supported Platforms
---------------------
+TornadoVM currently has three backends:
+It compiles Java code, at runtime, from Java bytecode to OpenCL C, NVIDIA CUDA PTX, and SPIR-V binary.
+Developers can chose which backends to install and run.
 
-The following table includes the platforms that TornadoVM can be executed.
-
-| OS                         | OpenCL Backend                                             | PTX Backend | SPIR-V Backend            | 
-| -------------------------- | ---------------------------------------------------------- | ----------- | ------------------------- |
-| CentOS >= 7.3              | OpenCL for GPUs and CPUs >= 2.1, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Level-Zero >= 1.1.2       |
-| Fedora >= 21               | OpenCL for GPUs and CPUs >= 2.1, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Level-Zero >= 1.1.2       |
-| Ubuntu >= 16.04            | OpenCL for GPUs and CPUs >= 2.1, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Level-Zero >= 1.1.2       |
-| Mac OS X Mojave 10.14.6    | OpenCL for GPUs and CPUs >= 2.1, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Not supported             |
-| Mac OS X Catalina 10.15.3  | OpenCL for GPUs and CPUs >= 2.1, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Not supported             |
-| Mac OS X Big Sur 11.5.1    | OpenCL for GPUs and CPUs >= 2.1, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Not supported             |
-| Windows 10                 | OpenCL for GPUs and CPUs >= 2.1, OpenCL for FPGAs >= 1.0)  |  CUDA 9.0+  | Not supported/tested      |
+.. image:: images/tornadovm-02.png
+  :width: 800
+  :alt: Sample Text
 
 
-.. code-block:: console
-
-   sample 
-
+TornadoVM does not replace existing VMs, but rather complement them with the capability of offloading Java code to OpenCL, PTX and SPIR-V,
+handling memory management between Java and hardware accelerators, and running/coordinating the compute-kernels.
 
 
-.. _fundamentals:
+Main Features
+--------------------------
 
-Fundamentals
---------------
+TornadoVM includes the following features:
+
+
+-   **Hardware agnostic APIs:** The APIs are hardware agnostic, which means that, from the developers' view, the source code is exactly the same for CPUs, GPUs and FPGAs. It is the TornadoVM runtime and the TornadoVM JIT Compiler that specialises the code per architecture.
+-   **Optimising Just In Time (JIT) compiler per device architecture:** This means that the code is specialised per architecture (e.g., the GPU generated code is specialised differently compared to FPGAs and CPUs).
+-   **Live task migration:** this means that TornadoVM can migrate, at runtime, tasks from one accelerator to another (e.g., from CPU to the GPU).
+-   **Batch processing:** TornadoVM can partition datasets to process in batches on devices that has less physical memory than the main device (CPUs).
+-   **Deployable from edge to cloud:** TornadoVM can be deployed on low-power device (e.g., NVIDIA Jetson Nano), Desktop PCs, servers and data centers.
+-   **Containers:** TornadoVM can be used within Docker containers for running on NVIDIA GPUs, Intel CPUs and Intel GPUs.
+
+
+TornadoVM is a research project developed at APT Group at The University of Manchester.
+TornadoVM is in active development.
