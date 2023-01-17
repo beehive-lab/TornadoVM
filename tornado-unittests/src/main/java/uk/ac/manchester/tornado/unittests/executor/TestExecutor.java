@@ -97,7 +97,7 @@ public class TestExecutor extends TornadoTestBase {
     }
 
     /**
-     * Test to launch multiple times the same executor
+     * Test to launch multiple times the same executor.
      */
     @Test
     public void test02() {
