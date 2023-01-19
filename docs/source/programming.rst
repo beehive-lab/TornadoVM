@@ -34,14 +34,16 @@ The following code snippet shows a full example to accelerate Matrix-Multiplicat
    :code: java 
 
 
+.. _kernel-context-api:
 
 Kernel API
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Another way to express compute-kernels in TornadoVM is via the kernel API. To do so, TornadoVM exposes a ``KernelContext`` with which the application can directly access 
+Another way to express compute-kernels in TornadoVM is via the kernel API. 
+To do so, TornadoVM exposes a ``KernelContext`` with which the application can directly access 
 the thread-id, allocate memory in local memory (shared memory on NVIDIA devices), and insert barriers. 
-This model is similar to programming compute-kernels in OpenCL and CUDA. Therefore, this API is more suitable for GPU/FPGA expert programmers that 
-want more control or want to port existing CUDA/OpenCL compute kernels into TornadoVM.
+This model is similar to programming compute-kernels in OpenCL and CUDA. 
+Therefore, this API is more suitable for GPU/FPGA expert programmers that want more control or want to port existing CUDA/OpenCL compute kernels into TornadoVM.
 
 The following code-snippet shows the Matrix Multiplication example using the kernel-parallel API:
 
@@ -50,32 +52,12 @@ The following code-snippet shows the Matrix Multiplication example using the ker
    :code: java 
 
 
-Additionally, the two modes of expressing parallelism (kernel and loop parallelization) can be combined in the same task graph object.
-
-
-Task-Graphs
-------------------------------------------------
-
-
-Execution Plans 
-------------------------------------------------
-
-
-.. _kernel-context-api:
-
-Kernel Context API 
---------------------------------------------------
-
-Applications for acceleration via TornadoVM can be programmed using both:
-
--  **Loop-parallelism** by annotating loops uging the ``@Parallel`` TornadoVM annotation.
--  **Kernel-parallelism** by using a new object called ``KernelContext`` that is passed as a parameter.
-
-Definition
-~~~~~~~~~~~~~~~~~~~~~~
+Kernel Context
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``KernelContext`` is a Java object exposed by the TornadoVM API to the developers in order to leverage Kernel Parallel Programming using the
-existing ``TaskSchedule`` API. An instance of the ``KernelContext`` object is passed to each task that uses the kernel-parallel API.
+existing ``TaskSchedule`` API. 
+An instance of the ``KernelContext`` object is passed to each task that uses the kernel-parallel API.
 
 Additionally, for all tasks using the ``KernelContext`` object, the user must provide a Grid of execution threads to run on the parallel device.
 This grid of threads is similar to the number of threads to be launched using CUDA or OpenCL (Number of threads per block and number of blocks).
@@ -83,7 +65,7 @@ Examples can be found in the ``Grid``
 `unit-tests <https://github.com/beehive-lab/TornadoVM/tree/master/tornado-unittests/src/main/java/uk/ac/manchester/tornado/unittests/grid>`__.
 
 KernelContext Features
-~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The following table presents the available features that TornadoVM exposes in Java along with the respective OpenCL and CUDA PTX terminology.
 
@@ -132,8 +114,8 @@ The following table presents the available features that TornadoVM exposes in Ja
 | eLocalArray(size) | array[size]    |                                |
 +-------------------+----------------+--------------------------------+
 
-Examples
-~~~~~~~~~~~~~~~~~~~~~~
+Example
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following
 `example <https://github.com/beehive-lab/TornadoVM/tree/master/tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/kernelcontext/compute/MatrixMultiplication2DV2.java>`__
@@ -261,6 +243,16 @@ In this test case, each of the first two tasks uses a separate ``WorkerGrid``.
 The third task does not use a ``WorkerGrid``, and it relies on the TornadoVM Runtime for the scheduling of the threads. 
 
 You can see more examples on `GitHub <https://github.com/beehive-lab/TornadoVM/tree/master/tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/kernelcontext>`_.
+
+
+
+2. Selecting the methods to be accelerated using a Task-Graph API
+------------------------------------------------
+
+
+3. Execution Plans 
+------------------------------------------------
+
 
 
 .. _reductions:
