@@ -20,6 +20,16 @@ Programming in TornadoVM involves the development of three parts:
 1. Expressing Parallelism within Java Methods
 ------------------------------------------------
 
+
+TornadoVM offloads Java methods to heterogeneous hardware such as GPUs and FPGAs for parallel execution. 
+Those Java methods usually represents the sequential (single thread) implementation of the work to perform on the accelerator. 
+However, TornadoVM does not auto-parallelize Java methods.
+
+Thus, TornadoVM needs a hint about how to parallelize the code. 
+TornadoVM has two APIs to achieve this goal: one for loop parallelization using Java annotations; and a second one for low-level programming using a Kernel API. 
+Developers can choose which one to use. The loop API is recommended for non-expert GPU/FPGA programmers. 
+
+
 Loop Parallel API
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

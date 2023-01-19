@@ -20,7 +20,16 @@ public class Compute {
         TaskGraph taskGraph = new TaskGraph("s0")
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B) // Stream data from host to device
                 .task("t0", Compute::mxmKernel, context, A, B, C, size)   // Each task points to an existing Java method
-                .transferToHost(C);                                       // sync arrays with the host side
-        taskGraph.execute(gridScheduler);   // Execute with a GridScheduler
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, C);     // sync arrays with the host side
+
+        // Create an immutable task-graph
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snaphot();
+
+        // Create an execution plan from an immutable task-graph
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        // Execute the execution plan
+        executionPlan.withGridScheduler(gridScheduler)
+                     .execute();
     }
 }
