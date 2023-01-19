@@ -38,10 +38,18 @@ To express parallelism, TornadoVM exposes two annotations that can be used in lo
 a) ``@Parallel`` for annotating parallel loops; and b) ``@Reduce`` for annotating parameters used in reductions.
 
 The following code snippet shows a full example to accelerate Matrix-Multiplication using TornadoVM and the loop-parallel API:
+The two outermost loops can be parallelizable because there are no data dependencies across different iterations.
+Therefore, we can annotate these two loops. 
+Note that, since TornadoVM maps parallel loops to Parllel ND-Range for OpenCL, CUDA and SPIR-V, developers can benefit 
+from 1D (annotating one parallel loop), 2D (annotating two consecutive parallel loops) and 3D (annotating 3 consecutive parallel loops) in their Java methods. 
 
 
 .. include:: codesamples/Compute.java 
    :code: java 
+
+
+The code snipet shows a complete example, using the Loop Parallel annotations, the Task Graphs and the execution plan. 
+This document explains each part. 
 
 
 .. _kernel-context-api:
@@ -541,6 +549,23 @@ Dynamic Reconfiguration
 ------------------------------
 
 
+The dynamic configuration in TornadoVM is the capability to migrate tasks at runtime from one device to another (e.g., from one GPU to another, or from one CPU to GPU, etc).
+The dynamic reconfiguration is not enabled by default, but it can be easily activated through the execition plan as follows:
+
+
+.. code:: java
+
+   executionPlan.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.Parallel)
+                .execute();
+
+
+
+The `withDynamicReconfiguration` call receives two arguments:
+
+1. Policy: dynamically changes devices based on one of the following policies:
+   - `PERFORMANCE`: after a warmup of all devices (JIT compilation is excluded). The TornadoVM runtime evaluates the execution for all devices before making a decision.
+   - `END_2_END`: best performing device including the warm-up phase (JIT compilation and buffer allocations). The TornadoVM runtime evaluates the execution for all devices before making a decision.
+   - `LATENCY`: fastest device to return. The TornadoVM runtime does not evaluate the execution for all devices before making a decision, but rather it switches context with the first device that finishes the execution.
 
 
 
