@@ -7,9 +7,17 @@ TornadoVM exposes to the programmer task-level, data-level and pipeline-level pa
 In addition, TornadoVM uses single-source property, in which the code to be accelerated and the host code live in the same Java program.
 
 
-Compute-kernels in TornadoVM can be programmed using two different approaches (APIs):
+Programming in TornadoVM involves the development of three parts:
 
-Expressing Parallelism within Java Methods
+1. **Expressing parallelism within Java methods:** TornadoVM offers two APIs: one for loop parallelization using Java annotations; and a second one for low-level programming using a Kernel API. 
+   Developers can choose which one to use. The loop API is recommended for non-expert GPU/FPGA programmers. 
+   The kernel API is recommended for experts GPU programmers than want more control (access to GPU's local memory, barriers, etc.).
+2. **Selecting the methods to be accelerated using a Task-Graph API:** once Java methods have been identified for acceleration (either using the loop parallel API or kernel API), Java methods can be grouped together in a graph. 
+   TornadoVM offers an API to define the data as well as the Java methods to be accelerated. 
+3. Building an **Execution Plan**: From the task-graphs, developers can accelerate all methods that are indicate in that graph on an accelerator. Additionally, through an execution plan in TornadoVM, developers can change the way TornadoVM offloads and runs the code (e.g., by selecting a specific GPU, enabling the profiler, etc.).
+
+
+1. Expressing Parallelism within Java Methods
 ------------------------------------------------
 
 Loop Parallel API
