@@ -247,11 +247,158 @@ You can see more examples on `GitHub <https://github.com/beehive-lab/TornadoVM/t
 
 
 2. Selecting the methods to be accelerated using a Task-Graph API
-------------------------------------------------
+-----------------------------------------------------------------
+
+A ``TaskGraph`` is an TornadoVM object that defines and identify which Java methods to be accelerated and the data involved. 
+Task-graph defines data to be copied in, and out of the accelerator as well as all tasks (Java methods) to be accelerated. 
+Note that a ``TaskGraph`` object does not compute/move data, but rather annotates what to do when the computation in launched. 
+As we will see in Step 3, a task-graph is only executed through an execution plan. 
+
+
+The following code snippet shows how to instantiate a ``TaskGraph`` TornadoVM object. 
+
+.. code:: java 
+
+   TaskGraph taskGraph = new TaskGraph(""name");
+
+
+
+A. Defining copies from the host (main CPU) to the device (accelerator).
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 
+
+The Task-Graph API also defines a method, named ``transferToDevice`` to set which arrays need to be copied to the target accelerator. 
+This method receives two types of arguments: 
+
+1. Data Transfer Mode:
+   a. ``EVERY_EXECUTION``: Data is copied from host to device every time a task-graph is executed by an execution plan. 
+   b. ``FIRST_EXECUTION``: Data is only copied the first time a task-graph is executed by an execution plan. 
+2. All input arrays needed to be copied from the host to the device. 
+
+
+The following code snippet sets two arrays (a, b) to be copied from the host to the device every time a task-graph is executed. 
+
+
+.. code:: java
+
+   taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b);
+
+
+Note that this call is only used for the definition of the data flow across multiple tasks in a task-graph, and there are no data copies involved. 
+The TornadoVM runtime stores which data are associated with each data transfer mode and the actual data transfers take place only during the execution by the execution plan. 
+
+
+B. Code definition
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To identify which Java methods, from all existing Java methods in a Java program, to accelerate.
+This is performed using the ``task`` API call as follows:
+
+
+.. code:: java
+
+   taskGraph.task(“sample”, Class::method, param1, param2);
+
+
+- The first paramter sets an ID to the task. This is useful if developers want to change device, or other runtime parameters, from the command line. 
+- The second parameter is a reference (or a Java lambda expression), to an existing Java method.
+- The rest of the parameters correspond to the function call parameters, as if the method were invoked. 
+
+
+Developers can add as many tasks as needed. 
+The maximum number of tasks depends on the amount of code that can be shipped to the accelerator. 
+Usually, FPGAs are more limited than GPUs. 
+
+
+C. Copy out from the device (accelerator) to the host (main CPU). 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Similar to ``transferToDevice``, the ``TaskGraph`` API also offers a call to sync the data back from the device to the host. 
+The API call is ``transferToHost`` with the following parameters:
+
+1. Data Transfer Mode:
+   a. ``EVERY_EXECUTION``: Data is copied from the device to the host every time a task-graph is executed by an execution plan. 
+   b. ``USER_DEFINED:`` Data is only copied by an execution result under demand. This is an optimization if developers plan to execute the task-graph multiple times and do not want to copy the results every time the execution plan is launched.
+2. All output arrays to be copied from the device to the host.
+
+
+Example:
+
+.. code:: java
+
+   taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, output1, output2);
 
 
 3. Execution Plans 
 ------------------------------------------------
+
+
+The last step is the creation of an execution plan. An execution plan receives a list of immutable task graphs ready to be executed, as follows:
+
+
+.. code:: java 
+
+   TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(itg); 
+
+
+What can we do with an execution plan?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+We can execute an execution plan directly, and TornadoVM will apply a list of default optimisations (e.g., it will run on the default device, using the default thread scheduler).
+
+
+.. code:: java 
+
+   executionPlan.execute(); 
+
+
+
+How can we optimize an execution plan?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+The execution plan offers a set of methods that developers can use to optimize different execution plans. 
+Note that the execution plan operates over all immutable task graphs given in the constructor. Therefore, all immutable task graphs will be executed on the same device in order.
+
+Example:
+
+.. code:: java 
+
+   executionPlan.withProfiler(ProfilerMode.SILENT) // Enable Profiling
+       .withWarmUp() //  Perform a warmup (compile and code and install it in a code-cache).
+       .withDevice(device); Select a specific device
+
+
+And then:
+
+.. code:: java 
+
+   executionPlan.execute();
+
+
+
+Step 4. Obtain the result and the profiler
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Every time an execution plan is executed, a new object of type ``TornadoExecutionResult`` is created. 
+
+.. code:: java 
+
+   TornadoExecutionResult executionResult = executionPlan.execute(); 
+
+
+
+From the execution result, developers can obtain the result of the TornadoVM profiler:
+
+
+.. code:: java 
+
+   executionResult.getProfilerResult();  
+
+
+And query the values of the profiling report. 
+Note that the TornadoVM profiler works only if enabled in the execution plan (via the ``withProfiler`` method). 
 
 
 
