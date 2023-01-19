@@ -562,12 +562,14 @@ The dynamic reconfiguration is not enabled by default, but it can be easily acti
 
 The `withDynamicReconfiguration` call receives two arguments:
 
-1. Policy: dynamically changes devices based on one of the following policies:
-   - `PERFORMANCE`: after a warmup of all devices (JIT compilation is excluded). The TornadoVM runtime evaluates the execution for all devices before making a decision.
+1. Policy: dynamically changes devices based on one of the following policies: 
+
+   -  `PERFORMANCE`: after a warmup of all devices (JIT compilation is excluded). The TornadoVM runtime evaluates the execution for all devices before making a decision.
+  
    - `END_2_END`: best performing device including the warm-up phase (JIT compilation and buffer allocations). The TornadoVM runtime evaluates the execution for all devices before making a decision.
+
    - `LATENCY`: fastest device to return. The TornadoVM runtime does not evaluate the execution for all devices before making a decision, but rather it switches context with the first device that finishes the execution.
-
-
+  
 
 .. _batch-processing:
 
