@@ -274,7 +274,7 @@ Selected publications can be found [here](tornado-assembly/src/docs/14_PUBLICATI
 This work is partially funded by [Intel corporation](https://www.intel.com/content/www/us/en/homepage.html).
 In addition, it has been supported by the following EU & UKRI grants (most recent first):
 - EU Horizon Europe & UKRI [ENCRYPT 101070670](https://encrypt-project.eu).
-- EU Horizon Europe & UKRI [TANGO 101070052](https://cordis.europa.eu/project/id/101070052).
+- EU Horizon Europe & UKRI [TANGO 101070052](https://tango-project.eu).
 - EU Horizon 2020 [ELEGANT 957286](https://www.elegant-h2020.eu/).
 - EU Horizon 2020 [E2Data 780245](https://e2data.eu).
 - EU Horizon 2020 [ACTiCLOUD 732366](https://acticloud.eu).
