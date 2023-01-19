@@ -21,6 +21,7 @@ import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createFilter;
 import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createImage;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -66,26 +67,29 @@ public class ConvolveImageTornado extends BenchmarkDriver {
         taskGraph = new TaskGraph("benchmark");
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, input, filter);
         taskGraph.task("convolveImage", GraphicsKernels::convolveImage, input, filter, output);
-        taskGraph.transferToHost(output);
-        taskGraph.warmup();
+        taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        immutableTaskGraph = taskGraph.snapshot();
+        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp();
+
     }
 
     @Override
     public void tearDown() {
-        taskGraph.dumpProfiles();
+        executionResult.getProfilerResult().dumpProfiles();
 
         input = null;
         output = null;
         filter = null;
 
-        taskGraph.getDevice().reset();
+        executionPlan.resetDevice();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.mapAllTo(device);
-        taskGraph.execute();
+        executionResult = executionPlan.withDevice(device).execute();
     }
 
     @Override
@@ -94,8 +98,9 @@ public class ConvolveImageTornado extends BenchmarkDriver {
         final ImageFloat result = new ImageFloat(imageSizeX, imageSizeY);
 
         benchmarkMethod(device);
-        taskGraph.syncObject(output);
-        taskGraph.clearProfiles();
+
+        executionResult.transferToHost(output);
+        executionPlan.clearProfiles();
 
         GraphicsKernels.convolveImage(input, filter, result);
 

@@ -322,10 +322,6 @@ public class TaskUtils {
         final int numArgs;
         final Object[] cvs;
 
-        for (Object arg : args) {
-
-        }
-
         if (extractCVs) {
             cvs = extractCapturedVariables(code);
             numArgs = cvs.length + args.length;

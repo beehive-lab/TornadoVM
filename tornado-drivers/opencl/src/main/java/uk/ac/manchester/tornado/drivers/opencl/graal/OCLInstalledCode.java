@@ -36,7 +36,7 @@ import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
@@ -373,7 +373,6 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         int kernelContextWriteEventId = callWrapper.enqueueWrite();
         updateProfilerKernelContextWrite(kernelContextWriteEventId, meta, callWrapper);
 
-        guarantee(kernel != null, "kernel is null");
         if (meta == null) {
             executeSingleThread();
         } else {

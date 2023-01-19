@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-# set tasbstop=4
+# vim: set tasbstop=4
 
 #
 # This file is part of Tornado: A heterogeneous programming framework:
 # https://github.com/beehive-lab/tornadovm
 #
-# Copyright (c) 2013-2022, APT Group, Department of Computer Science,
+# Copyright (c) 2013-2023, APT Group, Department of Computer Science,
 # The University of Manchester. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -60,60 +60,61 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestDoubles"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestInts"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestVectorAllocation"),
-    TestEntry("uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest"),
-    TestEntry("uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer"),
-    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice"),
-    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice"),
-    TestEntry("uk.ac.manchester.tornado.unittests.temporary.values.TestTemporaryValues"),
-    TestEntry("uk.ac.manchester.tornado.unittests.images.TestImages"),
-    TestEntry("uk.ac.manchester.tornado.unittests.images.TestResizeImage"),
-    TestEntry("uk.ac.manchester.tornado.unittests.branching.TestConditionals"),
-    TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoops"),
-    TestEntry("uk.ac.manchester.tornado.unittests.loops.TestParallelDimensions"),
-    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers"),
-    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats"),
+    TestEntry("uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer"),   
+    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice"),     
+    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.temporary.values.TestTemporaryValues"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.images.TestImages"),  
+    TestEntry("uk.ac.manchester.tornado.unittests.images.TestResizeImage"),  
+    TestEntry("uk.ac.manchester.tornado.unittests.branching.TestConditionals"),  
+    TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoops"),  
+    TestEntry("uk.ac.manchester.tornado.unittests.loops.TestParallelDimensions"),  
+    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers"),  
+    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats"),  
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles"),
-    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsLong"),
+    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsLong"),  
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.InstanceReduction"),
-    TestEntry("uk.ac.manchester.tornado.unittests.instances.TestInstances"),
+    TestEntry("uk.ac.manchester.tornado.unittests.reductions.MultipleReductions"),
+    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsAutomatic"),
+    TestEntry("uk.ac.manchester.tornado.unittests.instances.TestInstances"),  
     TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes"),
-    TestEntry("uk.ac.manchester.tornado.unittests.api.TestAPI"),
-    TestEntry("uk.ac.manchester.tornado.unittests.api.TestIO"),
-    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestCombinedTaskGraph"),
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestAPI"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestIO"),  
+    TestEntry("uk.ac.manchester.tornado.unittests.executor.TestExecutor"),
+    TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),         
+    TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestCombinedTaskGraph"),  
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestVectorAdditionKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.KernelContextWorkGroupTests"),
-    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext"),
-    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsIntegersKernelContext"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsIntegersKernelContext"), 
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsFloatsKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsDoublesKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsLongKernelContext"),
-    TestEntry("uk.ac.manchester.tornado.unittests.math.TestMath"),
-    TestEntry("uk.ac.manchester.tornado.unittests.batches.TestBatches"),
-    TestEntry("uk.ac.manchester.tornado.unittests.lambdas.TestLambdas"),
-    TestEntry("uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap"),
-    TestEntry("uk.ac.manchester.tornado.unittests.logic.TestLogic"),
-    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsAutomatic"),
-    TestEntry("uk.ac.manchester.tornado.unittests.fields.TestFields"),
-    TestEntry("uk.ac.manchester.tornado.unittests.profiler.TestProfiler"),
-    TestEntry("uk.ac.manchester.tornado.unittests.reductions.MultipleReductions"),
-    TestEntry("uk.ac.manchester.tornado.unittests.bitsets.BitSetTests"),
-    TestEntry("uk.ac.manchester.tornado.unittests.fails.TestFails"),
-    TestEntry("uk.ac.manchester.tornado.unittests.fails.RuntimeFail"),
-    TestEntry("uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection"),
-    TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestNewArrays"),
-    TestEntry("uk.ac.manchester.tornado.unittests.dynsize.Resize"),
-    TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations"),
-    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion"),
-    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Types"),
-    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Inlining"),
-    TestEntry("uk.ac.manchester.tornado.unittests.fails.CodeFail"),
-    TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGen"),
-    TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),
-    TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"),
-    TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),
-    TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),
-    TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"),
-    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions"),
+    TestEntry("uk.ac.manchester.tornado.unittests.math.TestMath"),        
+    TestEntry("uk.ac.manchester.tornado.unittests.batches.TestBatches"),  
+    TestEntry("uk.ac.manchester.tornado.unittests.lambdas.TestLambdas"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.logic.TestLogic"),     
+    TestEntry("uk.ac.manchester.tornado.unittests.fields.TestFields"),   
+    TestEntry("uk.ac.manchester.tornado.unittests.profiler.TestProfiler"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.bitsets.BitSetTests"),   
+    TestEntry("uk.ac.manchester.tornado.unittests.fails.TestFails"),       
+    TestEntry("uk.ac.manchester.tornado.unittests.fails.RuntimeFail"),     
+    TestEntry("uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestNewArrays"),  
+    TestEntry("uk.ac.manchester.tornado.unittests.dynsize.Resize"),       
+    TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations"),   
+    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Types"),    
+    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Inlining"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.fails.CodeFail"),        
+    TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGen"),       
+    TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),   
+    TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),  
+    TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions"), 
 
     ## Test for function calls - We force not to inline methods
     TestEntry(testName="uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions",
@@ -147,16 +148,26 @@ __TEST_THE_WORLD__ = [
                   "-Dtornado.features.dump.dir=" + os.environ["TORNADO_SDK"] + "/virtualFeaturesOut.out"])
 ]
 
-## List of tests that can be ignored. Format: class#testMethod
+## List of tests that can be ignored. The following either fail (we know it is a precision error), or they are not supported
+## for specific backends. Every group of ignored tests have an explanation about the failure and the backends that are affected. 
+#  Format: class#testMethod
 __TORNADO_TESTS_WHITE_LIST__ = [
+
+    ## PTX Backend does not support mathTahn
     "uk.ac.manchester.tornado.unittests.math.TestMath#testMathTanh",
     "uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection#testTornadoMathTanh",
+
+    ## Virtual devices are only available for OpenCL. 
     "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel#testVirtualDeviceKernelGPU",
     "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel#testVirtualDeviceKernelCPU",
     "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction#testVirtualDeviceFeaturesCPU",
     "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction#testVirtualDeviceFeaturesGPU",
+
+    ## Atomics are only available for OpenCL
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic12",
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic15",
+
+    ## Precision errors 
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testNBodyBigNoWorker",
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testEuler",
     "uk.ac.manchester.tornado.unittests.codegen.CodeGen#test02",
@@ -164,7 +175,8 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm2DKernelContext01",
     "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm2DKernelContext02",
 
-    # It might have errors during type casting and type conversion. However the fractals images look correct
+    # It might have errors during type casting and type conversion. However the fractals images look correct. 
+    # This errors might be related to error precision when running many threads in parallel. 
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testMandelbrot",
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testJuliaSets",
 ]
@@ -190,7 +202,7 @@ __VERBOSE_OPTION__                  = "-Dtornado.unittests.verbose="
 TORNADO_CMD = "tornado "
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "0.14_14092022"
+__VERSION__ = "0.16_20122022"
 
 JDK_8_VERSION = "1.8"
 try:

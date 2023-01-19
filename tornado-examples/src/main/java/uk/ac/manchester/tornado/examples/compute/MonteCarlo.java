@@ -18,8 +18,11 @@
 
 package uk.ac.manchester.tornado.examples.compute;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Montecarlo algorithm to approximate the PI value. This version has been
@@ -64,10 +67,13 @@ public class MonteCarlo {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("taskGraph", MonteCarlo::computeMontecarlo, output, size) //
-                .transferToHost(output);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
 
         long start = System.nanoTime();
-        taskGraph.execute();
+        executor.execute();
         long end = System.nanoTime();
         long tornadoTime = (end - start);
 

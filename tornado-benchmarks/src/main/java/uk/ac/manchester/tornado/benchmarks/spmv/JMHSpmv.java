@@ -40,7 +40,9 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 import uk.ac.manchester.tornado.matrix.SparseMatrixUtils;
@@ -50,7 +52,7 @@ import uk.ac.manchester.tornado.matrix.SparseMatrixUtils;
  * How to run in isolation?
  * </p>
  * <code>
- *    tornado -jar benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.spmv.JMHSpmv
+ *    tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.spmv.JMHSpmv
  * </code>
  */
 public class JMHSpmv {
@@ -60,7 +62,7 @@ public class JMHSpmv {
         private SparseMatrixUtils.CSRMatrix<float[]> matrix;
         private float[] v;
         private float[] y;
-        private TaskGraph taskGraph;
+        private TornadoExecutionPlan executor;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -69,11 +71,13 @@ public class JMHSpmv {
             v = new float[matrix.size];
             y = new float[matrix.size];
             initData(v);
-            taskGraph = new TaskGraph("benchmark") //
+            TaskGraph taskGraph = new TaskGraph("benchmark") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrix.vals, matrix.cols, matrix.rows, v, y) //
                     .task("spmv", LinearAlgebraArrays::spmv, matrix.vals, matrix.cols, matrix.rows, v, matrix.size, y) //
-                    .transferToHost(y);
-            taskGraph.warmup();
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+            executor = new TornadoExecutionPlan(immutableTaskGraph);
+            executor.withWarmUp();
         }
     }
 
@@ -95,9 +99,9 @@ public class JMHSpmv {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void spmvTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskGraph taskGraph = state.taskGraph;
-        taskGraph.execute();
-        blackhole.consume(taskGraph);
+        TornadoExecutionPlan executor = state.executor;
+        executor.execute();
+        blackhole.consume(executor);
     }
 
     public static void main(String[] args) throws RunnerException {

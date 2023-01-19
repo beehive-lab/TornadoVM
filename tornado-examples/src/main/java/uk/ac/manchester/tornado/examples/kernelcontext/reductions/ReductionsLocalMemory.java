@@ -20,8 +20,10 @@ package uk.ac.manchester.tornado.examples.kernelcontext.reductions;
 import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -85,15 +87,18 @@ public class ReductionsLocalMemory {
         gridScheduler.setWorkerGrid("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        TaskGraph s0 = new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, localSize)//
                 .task("t0", ReductionsLocalMemory::reductionLocal, input, reduce, localSize, context) //
                 .task("t1", ReductionsLocalMemory::rAdd, reduce, (size / localSize)) //
-                .transferToHost(reduce);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
 
         // Change the Grid
         worker.setLocalWork(localSize, 1, 1);
-        s0.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        executor.withGridScheduler(gridScheduler).execute();
 
         // Final SUM
         float finalSum = reduce[0];

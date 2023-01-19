@@ -25,7 +25,9 @@ import java.util.Random;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DDouble;
@@ -333,11 +335,14 @@ public class TestMatrixTypes extends TornadoTestBase {
             }
         }
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA);
-        taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, N);
-        taskGraph.transferToHost(matrixB);
-        taskGraph.execute();
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
+                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, N) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {
@@ -358,11 +363,15 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
         Matrix2DFloat matrixA = new Matrix2DFloat(a);
         Matrix2DFloat matrixB = new Matrix2DFloat(N, N);
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA);
-        taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, N);
-        taskGraph.transferToHost(matrixB);
-        taskGraph.execute();
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
+                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, N) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {
@@ -386,11 +395,14 @@ public class TestMatrixTypes extends TornadoTestBase {
             }
         }
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB);
-        taskGraph.task("t0", TestMatrixTypes::computeMatrixMultiplication, matrixA, matrixB, matrixC);
-        taskGraph.transferToHost(matrixC);
-        taskGraph.execute();
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
+                .task("t0", TestMatrixTypes::computeMatrixMultiplication, matrixA, matrixB, matrixC) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         computeMatrixMultiplication(matrixA, matrixB, sequential);
 
@@ -415,11 +427,14 @@ public class TestMatrixTypes extends TornadoTestBase {
             }
         }
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB);
-        taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, N);
-        taskGraph.transferToHost(matrixB);
-        taskGraph.execute();
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
+                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, N) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {
@@ -444,20 +459,19 @@ public class TestMatrixTypes extends TornadoTestBase {
             }
         }
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA);
-        taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y);
-        taskGraph.transferToHost(matrixB);
-        taskGraph.execute();
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
+                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < X; i++) {
             for (int j = 0; j < Y; j++) {
                 Float4 expected = Float4.add(matrixA.get(i, j), matrixA.get(i, j));
-                if (Float4.isEqual(expected, matrixB.get(i, j))) {
-                    assertTrue(true);
-                } else {
-                    assertTrue(false);
-                }
+                assertTrue(Float4.isEqual(expected, matrixB.get(i, j)));
             }
         }
     }
@@ -502,11 +516,14 @@ public class TestMatrixTypes extends TornadoTestBase {
             }
         }
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA);
-        taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y, Z);
-        taskGraph.transferToHost(matrixB);
-        taskGraph.execute();
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
+                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y, Z) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < X; i++) {
             for (int j = 0; j < Y; j++) {
@@ -566,21 +583,20 @@ public class TestMatrixTypes extends TornadoTestBase {
             }
         }
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA);
-        taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, SMALL_SIZE, SMALL_SIZE, SMALL_SIZE);
-        taskGraph.transferToHost(matrixB);
-        taskGraph.execute();
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
+                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, SMALL_SIZE, SMALL_SIZE, SMALL_SIZE) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < SMALL_SIZE; i++) {
             for (int j = 0; j < SMALL_SIZE; j++) {
                 for (int k = 0; k < SMALL_SIZE; k++) {
                     Float4 expected = Float4.add(matrixA.get(i, j, k), matrixA.get(i, j, k));
-                    if (!Float4.isEqual(expected, matrixB.get(i, j, k))) {
-                        assertTrue(false);
-                    } else {
-                        assertTrue(true);
-                    }
+                    assertTrue(Float4.isEqual(expected, matrixB.get(i, j, k)));
                 }
             }
         }
@@ -603,11 +619,15 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
         Matrix3DFloat matrixA = new Matrix3DFloat(a);
         Matrix3DFloat matrixB = new Matrix3DFloat(X, Y, Z);
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA);
-        taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y, Z);
-        taskGraph.transferToHost(matrixB);
-        taskGraph.execute();
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
+                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y, Z) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < X; i++) {
             for (int j = 0; j < Y; j++) {
@@ -628,11 +648,15 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
         Matrix2DFloat matrixA = new Matrix2DFloat(a);
         Matrix2DFloat matrixB = new Matrix2DFloat(X, Y);
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA);
-        taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y);
-        taskGraph.transferToHost(matrixB);
-        taskGraph.execute();
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
+                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < X; i++) {
             for (int j = 0; j < Y; j++) {
@@ -671,11 +695,15 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
         Matrix2DInt matrixA = new Matrix2DInt(a);
         Matrix2DInt matrixB = new Matrix2DInt(X, Y);
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA);
-        taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y);
-        taskGraph.transferToHost(matrixB);
-        taskGraph.execute();
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
+                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < X; i++) {
             for (int j = 0; j < Y; j++) {
@@ -709,11 +737,15 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
         Matrix2DDouble matrixA = new Matrix2DDouble(a);
         Matrix2DDouble matrixB = new Matrix2DDouble(X, Y);
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA);
-        taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y);
-        taskGraph.transferToHost(matrixB);
-        taskGraph.execute();
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
+                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < X; i++) {
             for (int j = 0; j < Y; j++) {
@@ -751,11 +783,14 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
         Matrix2DFloat matrixA = new Matrix2DFloat(a);
         Matrix2DFloat matrixB = new Matrix2DFloat(X, Y);
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA);
-        taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y);
-        taskGraph.transferToHost(matrixB);
-        taskGraph.execute();
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
+                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < X; i++) {
             for (int j = 0; j < Y; j++) {
@@ -778,11 +813,15 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
         Matrix2DFloat matrixA = new Matrix2DFloat(a);
         Matrix2DFloat matrixB = new Matrix2DFloat(X, Y);
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA);
-        taskGraph.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y);
-        taskGraph.transferToHost(matrixB);
-        taskGraph.execute();
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
+                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < X; i++) {
             for (int j = 0; j < Y; j++) {

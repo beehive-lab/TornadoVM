@@ -19,7 +19,9 @@ package uk.ac.manchester.tornado.examples.compute;
 
 import java.util.Random;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -30,7 +32,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
  * How to run?
  * </p>
  * <code>
- *     $ tornado --threadInfo  -Ds0.t0.device=0:0 -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D
+ *     $ tornado --threadInfo  --jvm="-Ds0.t0.device=0:0" -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D
  * </code>
  */
 public class MatrixMultiplication2D {
@@ -76,19 +78,22 @@ public class MatrixMultiplication2D {
         }
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .lockObjectsInMemory(matrixA, matrixB, matrixC) //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", MatrixMultiplication2D::matrixMultiplication, matrixA, matrixB, matrixC, size) //
-                .transferToHost(matrixC);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        executor.withWarmUp();
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
-            taskGraph.execute();
+            executor.execute();
         }
 
         // 2. Run parallel on the GPU with Tornado
         long start = System.currentTimeMillis();
-        taskGraph.execute();
+        executor.execute();
         long end = System.currentTimeMillis();
 
         // Run sequential
@@ -113,7 +118,7 @@ public class MatrixMultiplication2D {
         String formatGPUFGlops = String.format("%.2f", gpuGigaFlops);
         String formatCPUFGlops = String.format("%.2f", cpuGigaFlops);
 
-        TornadoDeviceType deviceType = taskGraph.getDevice().getDeviceType();
+        TornadoDeviceType deviceType = executor.getDevice(0).getDeviceType();
         System.out.println("\tSingle Threaded CPU Execution: " + formatCPUFGlops + " GFlops, Total time = " + (endSequential - startSequential) + " ms");
         System.out.println("\tTornadoVM Execution on " + deviceType + " (Accelerated): " + formatGPUFGlops + " GFlops, Total Time = " + (end - start) + " ms");
         System.out.println("\tSpeedup: " + speedup + "x");

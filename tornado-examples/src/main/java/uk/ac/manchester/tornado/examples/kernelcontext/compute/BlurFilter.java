@@ -31,8 +31,10 @@ import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -167,12 +169,15 @@ public class BlurFilter {
                     .task("red", BlurFilterImage::compute, context, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
                     .task("green", BlurFilterImage::compute, context, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
                     .task("blue", BlurFilterImage::compute, context, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
-                    .transferToHost(redFilter, greenFilter, blueFilter) //
-                    .useDefaultThreadScheduler(true);
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, redFilter, greenFilter, blueFilter);
+
+            ImmutableTaskGraph immutableTaskGraph = parallelFilter.snapshot();
+            TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
 
             workerGrid.setGlobalWork(h, w, 1);
             workerGrid.setLocalWorkToNull();
-            parallelFilter.execute(gridScheduler);
+            executor.withGridScheduler(gridScheduler) //
+                    .execute();
 
             // now recombine into the output image - Alpha is 255 for no
             // transparency

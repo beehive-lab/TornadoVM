@@ -446,7 +446,7 @@ public class OCLCodeCache {
         return deviceContext.getPlatformContext().getPlatform().getVendor().toLowerCase().startsWith(platformName);
     }
 
-    private String[] splitTaskScheduleAndTaskName(String id) {
+    private String[] splitTaskGraphAndTaskName(String id) {
         if (id.contains(".")) {
             String[] names = id.split("\\.");
             return names;
@@ -484,7 +484,7 @@ public class OCLCodeCache {
         String[] linkCommand = null;
         String[] taskNames;
 
-        taskNames = splitTaskScheduleAndTaskName(id);
+        taskNames = splitTaskGraphAndTaskName(id);
         if (pendingTasks.containsKey(taskNames[0])) {
             pendingTasks.get(taskNames[0]).add(new Pair(taskNames[1], entryPoint));
         } else {
@@ -684,7 +684,7 @@ public class OCLCodeCache {
             debug("\tOpenCL Kernel id = 0x%x", kernel.getOclKernelID());
             cache.put(entryPoint, code);
 
-            String taskScheduleName = splitTaskScheduleAndTaskName(id)[0];
+            String taskScheduleName = splitTaskGraphAndTaskName(id)[0];
             if (pendingTasks.containsKey(taskScheduleName)) {
                 ArrayList<Pair> pendingKernels = pendingTasks.get(taskScheduleName);
                 for (Pair pair : pendingKernels) {

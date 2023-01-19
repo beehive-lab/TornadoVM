@@ -24,7 +24,9 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -191,11 +193,13 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestTornadoMathCollection::testTornadoCos, data) //
-                .transferToHost(data) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoCos(seq);
 
@@ -214,11 +218,13 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestTornadoMathCollection::testTornadoSignum, data) //
-                .transferToHost(data) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoSignum(seq);
 
@@ -240,11 +246,13 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestTornadoMathCollection::testTornadoSignum, data) //
-                .transferToHost(data) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoSignum(seq);
 
@@ -263,11 +271,13 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestTornadoMathCollection::testTornadoSignum, data) //
-                .transferToHost(data) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoSignum(seq);
 
@@ -289,11 +299,13 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestTornadoMathCollection::testTornadoSignum, data) //
-                .transferToHost(data) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoSignum(seq);
 
@@ -312,11 +324,13 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestTornadoMathCollection::testTornadoSin, data) //
-                .transferToHost(data) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoSin(seq);
 
@@ -337,11 +351,13 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestTornadoMathCollection::testTornadoAtan, data) //
-                .transferToHost(data) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoAtan(seq);
 
@@ -360,11 +376,13 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestTornadoMathCollection::testTornadoTan, data) //
-                .transferToHost(data) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoTan(seq);
 
@@ -383,11 +401,13 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestTornadoMathCollection::testTornadoTanh, data) //
-                .transferToHost(data) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoTanh(seq);
 
@@ -406,11 +426,12 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestTornadoMathCollection::testTornadoMin, data) //
-                .transferToHost(data) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoMin(seq);
 
@@ -429,11 +450,12 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestTornadoMathCollection::testTornadoMax, data) //
-                .transferToHost(data) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoMax(seq);
 
@@ -452,11 +474,12 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestTornadoMathCollection::testTornadoSqrt, data) //
-                .transferToHost(data) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoSqrt(seq);
 
@@ -475,11 +498,12 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestTornadoMathCollection::testTornadoExp, data) //
-                .transferToHost(data) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoExp(seq);
 
@@ -498,11 +522,12 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestTornadoMathCollection::testTornadoExp, data) //
-                .transferToHost(data) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoExp(seq);
 
@@ -521,11 +546,13 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestTornadoMathCollection::testTornadoClamp, data) //
-                .transferToHost(data) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoClamp(seq);
 
@@ -544,11 +571,12 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestTornadoMathCollection::testTornadoFract, data) //
-                .transferToHost(data) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoFract(seq);
 
@@ -567,11 +595,13 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestTornadoMathCollection::testTornadoLog2, data) //
-                .transferToHost(data) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoLog2(seq);
 
@@ -590,11 +620,12 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestTornadoMathCollection::testTornadoLog, data) //
-                .transferToHost(data) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoLog(seq);
 
@@ -613,10 +644,12 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestTornadoMathCollection::testTornadoLog, data) //
-                .transferToHost(data).execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoLog(seq);
 
@@ -635,11 +668,13 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestTornadoMathCollection::testTornadoPI, data) //
-                .transferToHost(data) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoPI(seq);
 
@@ -658,11 +693,13 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seq[i] = data[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestTornadoMathCollection::testFloor, data) //
-                .transferToHost(data) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testFloor(seq);
 
@@ -683,11 +720,13 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seq[i] = b[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestTornadoMathCollection::testClamp, a, b) //
-                .transferToHost(b) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testClamp(a, seq);
         assertArrayEquals(b, seq);
@@ -710,11 +749,13 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seqB[i] = b[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, b) //
                 .task("t0", TestTornadoMathCollection::testTornadoAtan2, a, b) //
-                .transferToHost(a) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoAtan2(seqA, seqB);
 
@@ -734,11 +775,12 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seqA[i] = a[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestTornadoMathCollection::testTornadoAcos, a) //
-                .transferToHost(a) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoAcos(seqA);
 
@@ -758,11 +800,12 @@ public class TestTornadoMathCollection extends TornadoTestBase {
             seqA[i] = a[i];
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestTornadoMathCollection::testTornadoAsin, a) //
-                .transferToHost(a) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoAsin(seqA);
 

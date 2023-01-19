@@ -17,7 +17,9 @@
  */
 package uk.ac.manchester.tornado.benchmarks.euler;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -65,7 +67,11 @@ public class EulerTornado extends BenchmarkDriver {
         taskGraph = new TaskGraph("benchmark") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("euler", ComputeKernels::euler, size, input, outputA, outputB, outputC, outputD, outputE) //
-                .transferToHost(outputA, outputB, outputC, outputD, outputE);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outputA, outputB, outputC, outputD, outputE);
+
+        immutableTaskGraph = taskGraph.snapshot();
+        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp();
     }
 
     @Override
@@ -96,9 +102,11 @@ public class EulerTornado extends BenchmarkDriver {
     private void runParallel(int size, long[] input, long[] outputA, long[] outputB, long[] outputC, long[] outputD, long[] outputE, TornadoDevice device) {
         TaskGraph graph = new TaskGraph("s0") //
                 .task("s0", ComputeKernels::euler, size, input, outputA, outputB, outputC, outputD, outputE) //
-                .transferToHost(outputA, outputB, outputC, outputD, outputE);
-        graph.mapAllTo(device);
-        graph.execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outputA, outputB, outputC, outputD, outputE);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withDevice(device).execute();
     }
 
     @Override
@@ -142,7 +150,6 @@ public class EulerTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.mapAllTo(device);
-        taskGraph.execute();
+        executionResult = executionPlan.withDevice(device).execute();
     }
 }

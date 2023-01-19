@@ -24,8 +24,10 @@ import java.util.stream.IntStream;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
@@ -88,11 +90,15 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestReductionsLongKernelContext::longReductionAddGlobalMemory, context, input, reduce) //
-                .transferToHost(reduce);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(gridScheduler) //
+                .execute();
 
         // Final SUM
         long finalSum = 0;
@@ -139,11 +145,15 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestReductionsLongKernelContext::longReductionAddLocalMemory, context, input, reduce) //
-                .transferToHost(reduce);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(gridScheduler) //
+                .execute();
 
         // Final SUM
         long finalSum = 0;
@@ -195,11 +205,15 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestReductionsLongKernelContext::longReductionMaxGlobalMemory, context, input, reduce) //
-                .transferToHost(reduce);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(gridScheduler) //
+                .execute();
 
         // Final SUM
         long finalSum = 0;
@@ -245,11 +259,15 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestReductionsLongKernelContext::longReductionMaxLocalMemory, context, input, reduce) //
-                .transferToHost(reduce);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(gridScheduler) //
+                .execute();
 
         // Final SUM
         long finalSum = 0;
@@ -301,11 +319,15 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestReductionsLongKernelContext::longReductionMinGlobalMemory, context, input, reduce) //
-                .transferToHost(reduce);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(gridScheduler) //
+                .execute();
 
         // Final SUM
         long finalSum = 0;
@@ -351,11 +373,15 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", TestReductionsLongKernelContext::longReductionMinLocalMemory, context, input, reduce) //
-                .transferToHost(reduce);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWork(localSize, 1, 1);
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(gridScheduler) //
+                .execute();
 
         // Final SUM
         long finalSum = 0;

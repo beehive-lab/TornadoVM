@@ -25,7 +25,9 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
@@ -60,13 +62,14 @@ public class TestReductionsLong extends TornadoTestBase {
             input[i] = 2;
         });
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-                .task("t0", TestReductionsLong::reductionAnnotation, input, result)
-                .transferToHost(result)
-                .execute();
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t0", TestReductionsLong::reductionAnnotation, input, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         long[] sequential = new long[1];
         reductionAnnotation(input, sequential);
@@ -92,13 +95,14 @@ public class TestReductionsLong extends TornadoTestBase {
         final int neutral = 1;
         Arrays.fill(result, neutral);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-                .task("t0", TestReductionsLong::multReductionAnnotation, input, result)
-                .transferToHost(result)
-                .execute();
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t0", TestReductionsLong::multReductionAnnotation, input, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         long[] sequential = new long[] { 1 };
         multReductionAnnotation(input, sequential);
@@ -126,13 +130,14 @@ public class TestReductionsLong extends TornadoTestBase {
 
         Arrays.fill(result, Long.MIN_VALUE);
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-                .task("t0", TestReductionsLong::maxReductionAnnotation, input, result)
-                .transferToHost(result)
-                .execute();
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t0", TestReductionsLong::maxReductionAnnotation, input, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         long[] sequential = new long[1];
         maxReductionAnnotation(input, sequential);
@@ -156,11 +161,13 @@ public class TestReductionsLong extends TornadoTestBase {
         long[] result = new long[1];
         Arrays.fill(result, Integer.MAX_VALUE);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
                 .task("t0", TestReductionsLong::minReductionAnnotation, input, result) //
-                .transferToHost(result) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         long[] sequential = new long[] { Long.MAX_VALUE };
         minReductionAnnotation(input, sequential);
@@ -185,13 +192,14 @@ public class TestReductionsLong extends TornadoTestBase {
 
         long neutral = Long.MIN_VALUE;
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-                .task("t0", TestReductionsLong::maxReductionAnnotation2, input, result)
-                .transferToHost(result)
-                .execute();
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t0", TestReductionsLong::maxReductionAnnotation2, input, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         long[] sequential = new long[] { neutral };
         maxReductionAnnotation2(input, sequential);
@@ -213,13 +221,14 @@ public class TestReductionsLong extends TornadoTestBase {
             input[idx] = 100;
         });
 
-        //@formatter:off
-        new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)
-                .task("t0", TestReductionsLong::minReductionAnnotation2, input, result)
-                .transferToHost(result)
-                .execute();
-        //@formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t0", TestReductionsLong::minReductionAnnotation2, input, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         long[] sequential = new long[1];
         minReductionAnnotation2(input, sequential);

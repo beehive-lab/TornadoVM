@@ -22,6 +22,7 @@ import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.spmv;
 import static uk.ac.manchester.tornado.benchmarks.spmv.Benchmark.initData;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -56,25 +57,27 @@ public class SpmvTornado extends BenchmarkDriver {
         taskGraph = new TaskGraph("benchmark") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrix.vals, matrix.cols, matrix.rows, v, y) //
                 .task("spmv", LinearAlgebraArrays::spmv, matrix.vals, matrix.cols, matrix.rows, v, matrix.size, y) //
-                .transferToHost(y);
-        taskGraph.warmup();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
+
+        immutableTaskGraph = taskGraph.snapshot();
+        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp();
     }
 
     @Override
     public void tearDown() {
-        taskGraph.dumpProfiles();
+        executionResult.getProfilerResult().dumpProfiles();
 
         v = null;
         y = null;
 
-        taskGraph.getDevice().reset();
+        executionPlan.resetDevice();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.mapAllTo(device);
-        taskGraph.execute();
+        executionResult = executionPlan.withDevice(device).execute();
     }
 
     @Override
@@ -83,7 +86,7 @@ public class SpmvTornado extends BenchmarkDriver {
         final float[] ref = new float[matrix.size];
 
         benchmarkMethod(device);
-        taskGraph.clearProfiles();
+        executionPlan.clearProfiles();
 
         spmv(matrix.vals, matrix.cols, matrix.rows, v, matrix.size, ref);
 

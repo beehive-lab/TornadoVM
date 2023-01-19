@@ -20,8 +20,10 @@ package uk.ac.manchester.tornado.unittests.fails;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
@@ -71,12 +73,15 @@ public class TestFails extends TornadoTestBase {
 
                     }
                 }, x, y) //
-                .transferToHost(y);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlanPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         // How to provoke the failure
-        taskGraph.warmup();
+        executionPlanPlan.withWarmUp().execute();
         reset();
-        taskGraph.execute();
+        executionPlanPlan.execute();
     }
 
     private static void kernel(float[] a, float[] b) {
@@ -96,10 +101,12 @@ public class TestFails extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
                 .task("s0", TestFails::kernel, x, y) //
-                .transferToHost(y);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
 
         // How to provoke the failure
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlanPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlanPlan.execute();
     }
 
 }

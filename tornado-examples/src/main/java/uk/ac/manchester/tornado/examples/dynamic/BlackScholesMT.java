@@ -20,8 +20,11 @@ package uk.ac.manchester.tornado.examples.dynamic;
 
 import java.util.Random;
 
+import uk.ac.manchester.tornado.api.DRMode;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -158,12 +161,16 @@ public class BlackScholesMT {
         int maxThreadCount = Runtime.getRuntime().availableProcessors();
 
         Thread[] th = new Thread[maxThreadCount];
-
+        TornadoExecutionPlan executor = null;
         if (!executionType.equals("multi") && !executionType.equals("sequential")) {
             long startInit = System.nanoTime();
             graph.transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
                     .task("t0", BlackScholesMT::blackScholesKernel, input, callPrice, putPrice) //
-                    .transferToHost(callPrice, putPrice);
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, callPrice, putPrice);
+
+            ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
+            executor = new TornadoExecutionPlan(immutableTaskGraph);
+
             long stopInit = System.nanoTime();
             System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
         }
@@ -173,12 +180,12 @@ public class BlackScholesMT {
             switch (executionType) {
                 case "performance":
                     start = System.nanoTime();
-                    graph.executeWithProfilerSequential(Policy.PERFORMANCE);
+                    executor.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL).execute();
                     end = System.nanoTime();
                     break;
                 case "end":
                     start = System.nanoTime();
-                    graph.executeWithProfilerSequential(Policy.END_2_END);
+                    executor.withDynamicReconfiguration(Policy.END_2_END, DRMode.SERIAL).execute();
                     end = System.nanoTime();
                     break;
                 case "sequential":
@@ -193,7 +200,7 @@ public class BlackScholesMT {
                     break;
                 default:
                     start = System.nanoTime();
-                    graph.execute();
+                    executor.execute();
                     end = System.nanoTime();
             }
             System.out.println("Total time:  " + (end - start) + " ns");

@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2020, APT Group, Department of Computer Science,
@@ -27,7 +27,25 @@
  */
 package uk.ac.manchester.tornado.runtime.sketcher;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getOptions;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoExecutor;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpScope;
@@ -44,8 +62,10 @@ import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.util.Providers;
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -53,25 +73,6 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getOptions;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoExecutor;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
 public class TornadoSketcher {
 
@@ -106,7 +107,7 @@ public class TornadoSketcher {
 
     private static HashSet<String> openCLTokens = new HashSet<>();
     static {
-        // XXX: To be completed
+        // FIXME: To be completed
         openCLTokens.add("kernel");
         openCLTokens.add("__kernel");
         openCLTokens.add("__global");
@@ -114,6 +115,7 @@ public class TornadoSketcher {
         openCLTokens.add("local");
         openCLTokens.add("__local");
         openCLTokens.add("private");
+        openCLTokens.add("__private");
         openCLTokens.add("half");
         openCLTokens.add("dot");
         openCLTokens.add("uniform");
@@ -197,7 +199,8 @@ public class TornadoSketcher {
         sketches.add(new TornadoSketcherCacheEntry(request.driverIndex, request.deviceIndex, result));
     }
 
-    private static Sketch buildSketch(ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier, int driverIndex, int deviceIndex) {
+    private static Sketch buildSketch(ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier, int driverIndex,
+            int deviceIndex) {
         info("Building sketch of %s", resolvedMethod.getName());
         TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("sketch-" + resolvedMethod.getName(), sketchId.getAndIncrement());
         Builder builder = new Builder(getOptions(), getDebugContext(), AllowAssumptions.YES);
@@ -253,14 +256,16 @@ public class TornadoSketcher {
     }
 
     /**
-     * Merges the {@param calleeAccesses} into the {@param callerAccesses}. For example, given the two {@link Access} arrays below, a merge will look like:
+     * Merges the {@param calleeAccesses} into the {@param callerAccesses}. For
+     * example, given the two {@link Access} arrays below, a merge will look like:
      *
-     * Caller accesses:         NONE, READ,       WRITE, NONE,       READ_WRITE
-     * Callee accesses:         READ, WRITE,      NONE,  READ_WRITE, NONE
+     * Caller accesses: NONE, READ, WRITE, NONE, READ_WRITE Callee accesses: READ,
+     * WRITE, NONE, READ_WRITE, NONE
      *
      * Updated caller accesses: READ, READ_WRITE, WRITE, READ_WRITE, READ_WRITE
      *
-     * This is needed since caller parameters can have different accesses in a callee.
+     * This is needed since caller parameters can have different accesses in a
+     * callee.
      */
     private static void mergeAccesses(Access[] callerAccesses, CallTargetNode callTarget, Access[] calleeAccesses) {
         List<ValueNode> callArgs = callTarget.arguments().snapshot();
@@ -273,7 +278,7 @@ public class TornadoSketcher {
                 continue;
             }
             ParameterNode param = (ParameterNode) callArg;
-            int paramIndex =  param.index();
+            int paramIndex = param.index();
 
             Access calleeAcc = calleeAccesses[index];
             Access callerAcc = callerAccesses[paramIndex];

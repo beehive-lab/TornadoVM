@@ -21,7 +21,9 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -56,8 +58,8 @@ public class MultipleReductions extends TornadoTestBase {
     }
 
     /**
-     * Check if TornadoVM can generate OpenCL code the the input expression. Note
-     * that fusion of multiple reductions is not supported yet.
+     * Check if TornadoVM can generate OpenCL code the input expression. Note that
+     * fusion of multiple reductions is not supported yet.
      */
     @Test
     public void test() {
@@ -73,8 +75,10 @@ public class MultipleReductions extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", MultipleReductions::test, input, result1, result2) //
-                .transferToHost(result1, result2); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result1, result2); //
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
     }
 }

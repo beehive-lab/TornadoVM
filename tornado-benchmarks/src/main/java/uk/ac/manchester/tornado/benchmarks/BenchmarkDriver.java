@@ -24,7 +24,11 @@ import static uk.ac.manchester.tornado.api.utils.TornadoUtilities.humanReadableB
 import java.util.ArrayList;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutionResult;
+import uk.ac.manchester.tornado.api.TornadoProfilerResult;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
@@ -49,7 +53,13 @@ public abstract class BenchmarkDriver {
 
     protected TaskGraph taskGraph;
 
-    public BenchmarkDriver(long iterations) {
+    protected TornadoExecutionPlan executionPlan;
+
+    protected TornadoExecutionResult executionResult;
+
+    protected ImmutableTaskGraph immutableTaskGraph;
+
+    protected BenchmarkDriver(long iterations) {
         this.iterations = iterations;
     }
 
@@ -57,8 +67,6 @@ public abstract class BenchmarkDriver {
 
     public void tearDown() {
         final Runtime runtime = Runtime.getRuntime();
-        // BUG - this potentially triggers a crash
-        // runtime.gc();
         if (PRINT_MEM_USAGE) {
             System.out.printf("memory: free=%s, total=%s, max=%s\n", humanReadableByteCount(runtime.freeMemory(), false), humanReadableByteCount(runtime.totalMemory(), false),
                     humanReadableByteCount(runtime.maxMemory(), false));
@@ -69,8 +77,12 @@ public abstract class BenchmarkDriver {
 
     public abstract void benchmarkMethod(TornadoDevice device);
 
-    public TaskGraph getTaskSchedule() {
+    public TaskGraph getTaskGraph() {
         return taskGraph;
+    }
+
+    public TornadoExecutionResult getExecutionResult() {
+        return executionResult;
     }
 
     protected void barrier() {
@@ -115,16 +127,16 @@ public abstract class BenchmarkDriver {
                 final long end = System.nanoTime();
 
                 if (isProfilerEnabled) {
-
                     // Ensure the execution was correct, so we can count for general stats.
-                    if (getTaskSchedule().getDeviceKernelTime() != 0) {
-                        deviceKernelTimers.add(getTaskSchedule().getDeviceKernelTime());
+                    TornadoProfilerResult profilerResult = getExecutionResult().getProfilerResult();
+                    if (profilerResult.getDeviceKernelTime() != 0) {
+                        deviceKernelTimers.add(profilerResult.getDeviceKernelTime());
                     }
-                    if (getTaskSchedule().getDeviceWriteTime() != 0) {
-                        deviceCopyIn.add(getTaskSchedule().getDeviceWriteTime());
+                    if (profilerResult.getDeviceWriteTime() != 0) {
+                        deviceCopyIn.add(profilerResult.getDeviceWriteTime());
                     }
-                    if (getTaskSchedule().getDeviceReadTime() != 0) {
-                        deviceCopyOut.add(getTaskSchedule().getDeviceReadTime());
+                    if (profilerResult.getDeviceReadTime() != 0) {
+                        deviceCopyOut.add(profilerResult.getDeviceReadTime());
                     }
                 }
 

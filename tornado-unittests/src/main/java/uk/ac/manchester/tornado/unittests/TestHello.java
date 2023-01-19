@@ -26,13 +26,23 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+/**
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.TestHello
+ * </code>
+ */
 public class TestHello extends TornadoTestBase {
 
     private static void printHello(final int n) {
@@ -44,6 +54,12 @@ public class TestHello extends TornadoTestBase {
     public static void add(int[] a, int[] b, int[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
             c[i] = a[i] + b[i];
+        }
+    }
+
+    public static void simple(int[] a, int[] b) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            b[i] = a[i] + 1;
         }
     }
 
@@ -63,11 +79,16 @@ public class TestHello extends TornadoTestBase {
     public void testHello() {
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
-        TaskGraph task = new TaskGraph("s0").task("t0", TestHello::printHello, 8);
-        assertNotNull(task);
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .task("t0", TestHello::printHello, 8);
+        assertNotNull(taskGraph);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         try {
-            task.execute();
+            executionPlan.execute();
             assertTrue("Task was executed.", true);
         } catch (Exception e) {
             assertTrue("Task was not executed.", false);
@@ -84,11 +105,14 @@ public class TestHello extends TornadoTestBase {
         Arrays.fill(a, 1);
         Arrays.fill(b, 2);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestHello::add, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);
@@ -112,11 +136,14 @@ public class TestHello extends TornadoTestBase {
 
         TestHello t = new TestHello();
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", t::compute, a, b) //
-                .transferToHost(b) //
-                .execute(); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < b.length; i++) {
             assertEquals(a[i] * 2, b[i]);
@@ -133,11 +160,14 @@ public class TestHello extends TornadoTestBase {
 
         TestHello t = new TestHello();
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", t::compute, a, b) //
-                .transferToHost(b) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < b.length; i++) {
             assertEquals(a[i] * 2, b[i]);
@@ -151,10 +181,13 @@ public class TestHello extends TornadoTestBase {
 
         Arrays.fill(a, 10);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestHello::compute, a) //
-                .transferToHost(a) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int j : a) {
             assertEquals(20, j);

@@ -20,8 +20,11 @@ package uk.ac.manchester.tornado.examples.dynamic;
 
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.DRMode;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -192,12 +195,16 @@ public class NBodyMT {
         System.out.println("Version running: " + executionType + " ! ");
 
         final TaskGraph graph = new TaskGraph("s0");
+        TornadoExecutionPlan executor = null;
         if (!executionType.equals("multi") && !executionType.equals("sequential")) {
             long startInit = System.nanoTime();
 
             graph.transferToDevice(DataTransferMode.FIRST_EXECUTION, positions, velocity, inputSize) //
                     .task("t0", NBodyMT::nBody, numBodies, positions, velocity, delT, espSqr, inputSize) //
-                    .transferToHost(positions, velocity);
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, positions, velocity);
+
+            ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
+            executor = new TornadoExecutionPlan(immutableTaskGraph);
 
             long stopInit = System.nanoTime();
             System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
@@ -208,12 +215,12 @@ public class NBodyMT {
             switch (executionType) {
                 case "performance":
                     start = System.nanoTime();
-                    graph.executeWithProfilerSequential(Policy.PERFORMANCE);
+                    executor.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL).execute();
                     end = System.nanoTime();
                     break;
                 case "end":
                     start = System.nanoTime();
-                    graph.executeWithProfilerSequential(Policy.END_2_END);
+                    executor.withDynamicReconfiguration(Policy.END_2_END, DRMode.SERIAL).execute();
                     end = System.nanoTime();
                     break;
                 case "sequential":
@@ -229,7 +236,7 @@ public class NBodyMT {
                     break;
                 default:
                     start = System.nanoTime();
-                    graph.execute();
+                    executor.execute();
                     end = System.nanoTime();
             }
             System.out.println("Total time:  " + (end - start) + " ns" + "\n");

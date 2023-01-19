@@ -24,7 +24,9 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -64,9 +66,11 @@ public class TestReductionsAutomatic extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//
                 .task("t0", TestReductionsAutomatic::test, input, result)//
-                .transferToHost(result);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         int[] sequential = new int[1];
         test(input, sequential);
@@ -88,9 +92,11 @@ public class TestReductionsAutomatic extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//
                 .task("t0", TestReductionsAutomatic::testFloat, input, result)//
-                .transferToHost(result);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         float[] sequential = new float[1];
         testFloat(input, sequential);
@@ -136,9 +142,11 @@ public class TestReductionsAutomatic extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//
                 .task("t0", TestReductionsAutomatic::testDouble, input, result)//
-                .transferToHost(result);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         double[] sequential = new double[1];
         testDouble(input, sequential);

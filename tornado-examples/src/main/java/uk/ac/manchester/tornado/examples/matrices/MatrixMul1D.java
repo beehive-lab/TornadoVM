@@ -21,8 +21,10 @@ import java.util.Arrays;
 import java.util.OptionalDouble;
 import java.util.stream.IntStream;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -71,18 +73,21 @@ public class MatrixMul1D {
             matrixB[idx] = 3.5f;
         });
 
-        TaskGraph scheduleCUDA = new TaskGraph("cuda_old_api") //
+        TaskGraph cudaTaskGraph = new TaskGraph("cuda_old_api") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixCCUDA, N) //
-                .transferToHost(matrixCCUDA);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixCCUDA);
 
         TornadoDriver cudaDriver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         TornadoDevice cudaDevice = cudaDriver.getDevice(0);
-        scheduleCUDA.mapAllTo(cudaDevice);
+
+        ImmutableTaskGraph immutableTaskGraph = cudaTaskGraph.snapshot();
+        TornadoExecutionPlan executorCUDA = new TornadoExecutionPlan(immutableTaskGraph);
+        executorCUDA.withDevice(cudaDevice);
 
         // Warm up CUDA
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-            scheduleCUDA.execute();
+            executorCUDA.execute();
         }
 
         // Time CUDA
@@ -90,7 +95,7 @@ public class MatrixMul1D {
         long[] execTimesCUDA = new long[EXECUTE_ITERATIONS];
         for (int i = 0; i < execTimesCUDA.length; i++) {
             start = System.currentTimeMillis();
-            scheduleCUDA.execute();
+            executorCUDA.execute();
             stop = System.currentTimeMillis();
             execTimesCUDA[i] = stop - start;
         }
@@ -102,10 +107,10 @@ public class MatrixMul1D {
         else
             throw new Exception("Could not get average execution time");
 
-        TaskGraph scheduleOCL = new TaskGraph("ocl_old_api") //
+        TaskGraph oclTaskGraph = new TaskGraph("ocl_old_api") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", MatrixMul1D::matrixMultiplication, matrixA, matrixB, matrixCOCL, N) //
-                .transferToHost(matrixCOCL);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixCOCL);
 
         // Get the same device but running the OCL backend
         TornadoDriver oclDriver = TornadoRuntime.getTornadoRuntime().getDriver(1);
@@ -120,18 +125,21 @@ public class MatrixMul1D {
             System.err.println("There is no device with both OpenCL and CUDA-PTX support");
             System.exit(1);
         }
-        scheduleOCL.mapAllTo(oclDevice);
+
+        ImmutableTaskGraph immutableTaskGraph1 = oclTaskGraph.snapshot();
+        TornadoExecutionPlan executorOCL = new TornadoExecutionPlan(immutableTaskGraph1);
+        executorOCL.withDevice(oclDevice);
 
         // Warm up OpenCL
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-            scheduleOCL.execute();
+            executorOCL.execute();
         }
 
         // Time OpenCL
         long[] execTimesOCL = new long[EXECUTE_ITERATIONS];
         for (int i = 0; i < execTimesOCL.length; i++) {
             start = System.currentTimeMillis();
-            scheduleOCL.execute();
+            executorOCL.execute();
             stop = System.currentTimeMillis();
             execTimesOCL[i] = stop - start;
         }

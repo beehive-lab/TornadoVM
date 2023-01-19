@@ -21,6 +21,7 @@ import java.util.Random;
 import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
@@ -43,7 +44,9 @@ public class AddTornado extends BenchmarkDriver {
     private final int numElementsX;
     private final int numElementsY;
 
-    private ImageFloat4 a,b,c;
+    private ImageFloat4 a;
+    private ImageFloat4 b;
+    private ImageFloat4 c;
 
     public AddTornado(int iterations, int numElementsX, int numElementsY) {
         super(iterations);
@@ -75,24 +78,28 @@ public class AddTornado extends BenchmarkDriver {
         taskGraph = new TaskGraph("benchmark") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("addImage", GraphicsKernels::addImage, a, b, c) //
-                .transferToHost(c);
-        taskGraph.warmup();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        immutableTaskGraph = taskGraph.snapshot();
+        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp();
+
     }
 
     @Override
     public void tearDown() {
-        taskGraph.dumpProfiles();
+        executionResult.getProfilerResult().dumpProfiles();
         a = null;
         b = null;
         c = null;
-        taskGraph.getDevice().reset();
+        executionPlan.resetDevice();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.mapAllTo(device);
-        taskGraph.execute();
+        executionResult = executionPlan.withDevice(device) //
+                .execute();
     }
 
     @Override
@@ -101,8 +108,8 @@ public class AddTornado extends BenchmarkDriver {
         final ImageFloat4 result = new ImageFloat4(numElementsX, numElementsY);
 
         benchmarkMethod(device);
-        taskGraph.syncObject(c);
-        taskGraph.clearProfiles();
+        executionResult.transferToHost(c);
+        executionPlan.clearProfiles();
 
         GraphicsKernels.addImage(a, b, result);
 

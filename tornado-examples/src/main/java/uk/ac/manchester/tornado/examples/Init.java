@@ -20,9 +20,12 @@ package uk.ac.manchester.tornado.examples;
 
 import java.math.BigDecimal;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.examples.common.Messages;
 
@@ -62,9 +65,13 @@ public class Init {
         double mb = maxDeviceMemory * 1E-6;
         System.out.println("Maximum alloc device memory: " + mb + " (MB)");
 
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", Init::compute, array).transferToHost((Object) array);
-        taskGraph.execute();
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .task("t0", Init::compute, array) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, array);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        executor.execute();
 
         if (CHECK) {
             boolean check = true;

@@ -24,7 +24,9 @@ import java.util.stream.IntStream;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -84,9 +86,11 @@ public class TestLogic extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestLogic::logic01, data, output) //
-                .transferToHost(output);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         logic01(data, sequential);
 
@@ -108,9 +112,11 @@ public class TestLogic extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestLogic::logic02, data, output) //
-                .transferToHost(output);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         logic02(data, sequential);
 
@@ -131,9 +137,11 @@ public class TestLogic extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestLogic::logic03, data, output) //
-                .transferToHost(output);
-        // @formatter:on
-        taskGraph.execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         logic03(data, sequential);
 
@@ -154,9 +162,11 @@ public class TestLogic extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestLogic::logic04, data, output) //
-                .transferToHost(output);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         logic04(data, sequential);
 

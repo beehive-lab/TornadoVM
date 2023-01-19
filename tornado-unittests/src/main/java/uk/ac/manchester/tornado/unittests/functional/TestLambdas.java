@@ -25,7 +25,9 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -52,7 +54,7 @@ public class TestLambdas extends TornadoTestBase {
             b[i] = Math.random();
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", (x, y, z) -> {
                     // Computation in a lambda expression
@@ -60,8 +62,11 @@ public class TestLambdas extends TornadoTestBase {
                         z[i] = x[i] + y[i];
                     }
                 }, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);
@@ -82,7 +87,7 @@ public class TestLambdas extends TornadoTestBase {
             b[i] = r.nextInt(1000);
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", (x, y, z) -> {
                     // Computation in a lambda expression
@@ -90,8 +95,11 @@ public class TestLambdas extends TornadoTestBase {
                         z[i] = x[i] * y[i];
                     }
                 }, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] * b[i], c[i], 0.001);
@@ -112,7 +120,7 @@ public class TestLambdas extends TornadoTestBase {
             b[i] = r.nextInt(1000);
         });
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", (x, y, z) -> {
                     // Computation in a lambda expression
@@ -120,8 +128,11 @@ public class TestLambdas extends TornadoTestBase {
                         z[i] = x[i] * y[i];
                     }
                 }, a, b, c) //
-                .transferToHost(c) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] * b[i], c[i], 0.001);

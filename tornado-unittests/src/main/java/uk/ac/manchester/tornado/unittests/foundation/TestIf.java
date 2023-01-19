@@ -24,7 +24,10 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -46,10 +49,13 @@ public class TestIf extends TornadoTestBase {
         Arrays.fill(a, 0);
         Arrays.fill(expectedResult, 50);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestKernels::testIfInt, a) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         assertEquals(50, a[0]);
     }
@@ -63,10 +69,13 @@ public class TestIf extends TornadoTestBase {
         Arrays.fill(a, 0);
         Arrays.fill(expectedResult, 50);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestKernels::testIfInt2, a) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         assertArrayEquals(expectedResult, a);
     }
@@ -80,10 +89,13 @@ public class TestIf extends TornadoTestBase {
         Arrays.fill(a, -1);
         Arrays.fill(expectedResult, 100);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestKernels::testIfInt3, a) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         assertArrayEquals(expectedResult, a);
     }
@@ -97,10 +109,13 @@ public class TestIf extends TornadoTestBase {
         Arrays.fill(a, -1);
         Arrays.fill(expectedResult, 100);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestKernels::testIfInt4, a) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         assertArrayEquals(expectedResult, a);
     }
@@ -114,10 +129,13 @@ public class TestIf extends TornadoTestBase {
         Arrays.fill(a, 0);
         Arrays.fill(expectedResult, 50);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestKernels::testIfInt5, a) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         assertArrayEquals(expectedResult, a);
     }
@@ -131,10 +149,13 @@ public class TestIf extends TornadoTestBase {
         Arrays.fill(a, 0);
         Arrays.fill(expectedResult, 100);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestKernels::testIfInt6, a) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         assertArrayEquals(expectedResult, a);
     }

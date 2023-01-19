@@ -19,8 +19,10 @@ package uk.ac.manchester.tornado.examples.matrices;
 
 import java.util.Random;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
@@ -90,20 +92,22 @@ public class MatrixAddition2D {
             }
         }
 
-        TaskGraph tg = new TaskGraph("s0") //
-                .lockObjectsInMemory(matrixA, matrixB, matrixC) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", MatrixAddition2D::matrixAddition, matrixA, matrixB, matrixC, size) //
-                .transferToHost(matrixC);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
-            tg.execute();
+            executor.execute();
         }
 
         // 2. Run parallel on the GPU with Tornado
         long start = System.nanoTime();
-        tg.execute();
+        executor.execute();
         long end = System.nanoTime();
 
         reset();
@@ -121,18 +125,20 @@ public class MatrixAddition2D {
             }
         }
 
-        TaskGraph t1 = new TaskGraph("s1") //
-                .lockObjectsInMemory(matrixAV, matrixBV, matrixCV) //
+        TaskGraph taskGraph1 = new TaskGraph("s1") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixAV, matrixBV) //
                 .task("t1", MatrixAddition2D::matrixAddition, matrixAV, matrixBV, matrixCV, (size * 2)) //
-                .transferToHost(matrixCV);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixCV);
+
+        ImmutableTaskGraph immutableTaskGraph1 = taskGraph1.snapshot();
+        TornadoExecutionPlan executor1 = new TornadoExecutionPlan(immutableTaskGraph1);
 
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
-            t1.execute();
+            executor1.execute();
         }
 
         long startVector = System.nanoTime();
-        t1.execute();
+        executor1.execute();
         long endVector = System.nanoTime();
 
         // Run sequential

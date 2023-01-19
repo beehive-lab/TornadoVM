@@ -21,6 +21,7 @@ package uk.ac.manchester.tornado.unittests.common;
 import org.junit.Before;
 
 import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.TornadoRuntimeInterface;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -148,6 +149,10 @@ public abstract class TornadoTestBase {
         public T1 f1() {
             return t1;
         }
+    }
+
+    public static TornadoRuntimeInterface getTornadoRuntime() {
+        return TornadoRuntime.getTornadoRuntime();
     }
 
 }

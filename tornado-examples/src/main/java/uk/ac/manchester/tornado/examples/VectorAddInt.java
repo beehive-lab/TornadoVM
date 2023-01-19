@@ -19,7 +19,10 @@ package uk.ac.manchester.tornado.examples;
 
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
@@ -47,16 +50,19 @@ public class VectorAddInt {
         Arrays.fill(a, 10);
         Arrays.fill(b, 20);
 
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .lockObjectsInMemory(a, b, c) //
+        TaskGraph taskGraph = new TaskGraph("s0") // T
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", VectorAddInt::vectorAdd, a, b, c) //
-                .transferToHost(c);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan tornadoExecutor = new TornadoExecutionPlan(immutableTaskGraph);
 
         boolean wrongResult;
+        String profileLog = null;
         for (int idx = 0; idx < 10; idx++) {
             // Parallel
-            taskGraph.execute();
+            TornadoExecutionResult executionResult = tornadoExecutor.execute();
             // Sequential
             vectorAdd(a, b, result);
 
@@ -71,10 +77,11 @@ public class VectorAddInt {
             if (wrongResult) {
                 System.out.println("Result is wrong");
             } else {
-                System.out.println("Result is correct. Total time: " + taskGraph.getTotalTime() + " (ns)");
+                System.out.println("Result is correct. Total time: " + executionResult.getProfilerResult().getTotalTime() + " (ns)");
             }
+            profileLog = executionResult.getProfilerResult().getProfileLog();
         }
 
-        System.out.println(taskGraph.getProfileLog());
+        System.out.println(profileLog);
     }
 }

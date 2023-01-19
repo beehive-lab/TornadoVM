@@ -25,26 +25,26 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks.meta;
 
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Integer.parseInt;
+import static uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.resolveDevice;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
-import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
+import uk.ac.manchester.tornado.api.memory.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.DeviceBuffer;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
-
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-
-import static java.lang.Boolean.parseBoolean;
-import static java.lang.Integer.parseInt;
-import static uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.resolveDevice;
 
 public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
@@ -160,7 +160,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     }
 
     public boolean shouldDumpSchedule() {
-        return dumpTaskSchedule;
+        return dumpTaskGraph;
     }
 
     public boolean shouldDebugKernelArgs() {
@@ -292,7 +292,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private final boolean enableVectors;
     private final boolean enableMemChecks;
     private final boolean useThreadCoarsener;
-    private final boolean dumpTaskSchedule;
+    private final boolean dumpTaskGraph;
     private final boolean vmUseDeps;
     private final boolean coarsenWithCpuConfig;
     private final boolean isEnableParallelizationDefined;
@@ -436,7 +436,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         enableMemChecks = parseBoolean(getDefault("memory.check", id, "False"));
         dumpEvents = parseBoolean(getDefault("events.dump", id, "True"));
         dumpProfiles = parseBoolean(getDefault("profiles.print", id, "False"));
-        dumpTaskSchedule = parseBoolean(getDefault("schedule.dump", id, "False"));
+        dumpTaskGraph = parseBoolean(getDefault("schedule.dump", id, "False"));
 
         openclCompilerOptions = (getProperty("tornado.opencl.compiler.options") == null) ? "-w" : getProperty("tornado.opencl.compiler.options");
         isOpenclCompilerFlagsDefined = getProperty("tornado.opencl.compiler.options") != null;

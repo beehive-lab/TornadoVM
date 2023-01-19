@@ -24,13 +24,14 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- * <p>
  * How to run?
  * </p>
  * <code>
@@ -50,15 +51,18 @@ public class TestLambdas extends TornadoTestBase {
 
         IntStream.range(0, a.length).forEach(i -> a[i] = r.nextInt(100));
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, b) //
                 .task("t0", (x, y) -> {
                     for (@Parallel int i = 0; i < x.length; i++) {
                         x[i] = y[i] * y[i];
                     }
                 }, a, b) //
-                .transferToHost(a) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < b.length; i++) {
             assertEquals(b[i] * b[i], a[i]);

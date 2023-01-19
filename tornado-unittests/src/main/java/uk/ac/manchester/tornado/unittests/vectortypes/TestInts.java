@@ -24,7 +24,9 @@ import java.util.Random;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Int2;
 import uk.ac.manchester.tornado.api.collections.types.Int3;
@@ -61,11 +63,14 @@ public class TestInts extends TornadoTestBase {
         Int2 b = new Int2(3, 2);
         VectorInt output = new VectorInt(size);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestInts::addInt2, a, b, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             assertEquals(8, output.get(i));
@@ -85,11 +90,14 @@ public class TestInts extends TornadoTestBase {
         Int3 b = new Int3(3, 2, 1);
         VectorInt output = new VectorInt(size);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestInts::addInt3, a, b, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             assertEquals(12, output.get(i));
@@ -109,11 +117,14 @@ public class TestInts extends TornadoTestBase {
         Int8 b = new Int8(4, 3, 2, 1, 1, 2, 3, 4);
         VectorInt output = new VectorInt(size);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestInts::addInt8, a, b, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             assertEquals(40, output.get(i));
@@ -133,11 +144,14 @@ public class TestInts extends TornadoTestBase {
         Int4 b = new Int4(4, 3, 2, 1);
         VectorInt output = new VectorInt(size);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestInts::addInt4, a, b, output) //
-                .transferToHost(output) //
-                .execute(); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             assertEquals(20, output.get(i));
@@ -164,11 +178,14 @@ public class TestInts extends TornadoTestBase {
             b[i] = i;
         }
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestInts::addIntVectors, a, b, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             assertEquals(i + i, output[i]);
@@ -212,11 +229,15 @@ public class TestInts extends TornadoTestBase {
         dotProductFunctionMap(a, b, seqMap);
         dotProductFunctionReduce(seqMap, seqReduce);
 
-        new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b, outputMap) //
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b, outputMap) //
                 .task("t0-MAP", TestInts::dotProductFunctionMap, a, b, outputMap) //
                 .task("t1-REDUCE", TestInts::dotProductFunctionReduce, outputMap, outputReduce) //
-                .transferToHost(outputReduce) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outputReduce);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         assertEquals(seqReduce[0], outputReduce[0]);
     }
@@ -240,11 +261,14 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int2(size - i, size - i));
         }
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestInts::addVectorInt2, a, b, output) //
-                .transferToHost(output) //
-                .execute(); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             Int2 sequential = new Int2(i + (size - i), i + (size - i));
@@ -272,11 +296,14 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int2(size - i, size - i));
         }
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestInts::subVectorInt2, a, b, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             Int2 sequential = new Int2(i - (size - i), i - (size - i));
@@ -304,11 +331,14 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int2(size - i, size - i));
         }
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestInts::divVectorInt2, a, b, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             Int2 sequential = new Int2(i / (size - i), i / (size - i));
@@ -336,11 +366,14 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int3(size - i, size - i, size - i));
         }
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestInts::addVectorInt3, a, b, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             Int3 sequential = new Int3(i + (size - i), i + (size - i), i + (size - i));
@@ -369,11 +402,14 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int3(size - i, size - i, size - i));
         }
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestInts::subVectorInt3, a, b, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             Int3 sequential = new Int3(i - (size - i), i - (size - i), i - (size - i));
@@ -402,11 +438,14 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int3(size - i, size - i, size - i));
         }
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestInts::divVectorInt3, a, b, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             Int3 sequential = new Int3(i / (size - i), i / (size - i), i / (size - i));
@@ -435,11 +474,14 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int4(size - i, size - i, size - i, size));
         }
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestInts::addVectorInt4, a, b, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             Int4 sequential = new Int4(i + (size - i), i + (size - i), i + (size - i), i + size);
@@ -469,11 +511,14 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int4(size - i, size - i, size - i, size));
         }
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestInts::subVectorInt4, a, b, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             Int4 sequential = new Int4(i - (size - i), i - (size - i), i - (size - i), i - size);
@@ -503,11 +548,14 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int4(size - i, size - i, size - i, size));
         }
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestInts::divVectorInt4, a, b, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             Int4 sequential = new Int4(i / (size - i), i / (size - i), i / (size - i), i / size);
@@ -537,11 +585,14 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int8(size - i, size - i, size - i, size, size - i, size - i, size - i, size));
         }
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestInts::addVectorInt8, a, b, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             Int8 sequential = new Int8(i + (size - i), i + (size - i), i + (size - i), i + size, i + (size - i), i + (size - i), i + (size - i), i + size);
@@ -575,11 +626,14 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int8(size - i, size - i, size - i, size, size - i, size - i, size - i, size));
         }
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestInts::subVectorInt8, a, b, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             Int8 sequential = new Int8(i - (size - i), i - (size - i), i - (size - i), i - size, i - (size - i), i - (size - i), i - (size - i), i - size);
@@ -613,11 +667,14 @@ public class TestInts extends TornadoTestBase {
             b.set(i, new Int8(size - i, size - i, size - i, size, size - i, size - i, size - i, size));
         }
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestInts::divVectorInt8, a, b, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             Int8 sequential = new Int8(i / (size - i), i / (size - i), i / (size - i), i / size, i / (size - i), i / (size - i), i / (size - i), i / size);
@@ -657,8 +714,11 @@ public class TestInts extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.task("t0", TestInts::testPrivateVectorInt2, tornadoOutput);
-        taskGraph.transferToHost(tornadoOutput);
-        taskGraph.execute();
+        taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         testPrivateVectorInt2(sequentialOutput);
 
@@ -693,8 +753,11 @@ public class TestInts extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.task("t0", TestInts::testPrivateVectorInt4, tornadoOutput);
-        taskGraph.transferToHost(tornadoOutput);
-        taskGraph.execute();
+        taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         testPrivateVectorInt4(sequentialOutput);
 
@@ -731,8 +794,11 @@ public class TestInts extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.task("t0", TestInts::testPrivateVectorInt8, tornadoOutput);
-        taskGraph.transferToHost(tornadoOutput);
-        taskGraph.execute();
+        taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         testPrivateVectorInt8(sequentialOutput);
 

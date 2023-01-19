@@ -20,7 +20,9 @@ package uk.ac.manchester.tornado.benchmarks.blurFilter;
 
 import java.util.Random;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -89,13 +91,17 @@ public class BlurFilterTornado extends BenchmarkDriver {
                 .task("blurRed", ComputeKernels::channelConvolution, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
                 .task("blurGreen", ComputeKernels::channelConvolution, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
                 .task("blurBlue", ComputeKernels::channelConvolution, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
-                .transferToHost(redFilter, greenFilter, blueFilter) //
-                .useDefaultThreadScheduler(true);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, redFilter, greenFilter, blueFilter);
+
+        immutableTaskGraph = taskGraph.snapshot();
+        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withDefaultScheduler() //
+                .withWarmUp();
     }
 
     @Override
     public void tearDown() {
-        taskGraph.dumpProfiles();
+        executionResult.getProfilerResult().dumpProfiles();
         redChannel = null;
         greenChannel = null;
         blueChannel = null;
@@ -148,9 +154,11 @@ public class BlurFilterTornado extends BenchmarkDriver {
                 .task("red", ComputeKernels::channelConvolution, redChannel, redFilter, w, h, filter, FILTER_WIDTH) //
                 .task("green", ComputeKernels::channelConvolution, greenChannel, greenFilter, w, h, filter, FILTER_WIDTH) //
                 .task("blue", ComputeKernels::channelConvolution, blueChannel, blueFilter, w, h, filter, FILTER_WIDTH) //
-                .transferToHost(redFilter, greenFilter, blueFilter);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, redFilter, greenFilter, blueFilter);
 
-        parallelFilter.execute();
+        ImmutableTaskGraph immutableTaskGraph1 = parallelFilter.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph1);
+        executor.withDefaultScheduler().execute();
 
         // Sequential
         ComputeKernels.channelConvolution(redChannel, redFilterSeq, size, size, filter, FILTER_WIDTH);
@@ -177,7 +185,6 @@ public class BlurFilterTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.mapAllTo(device);
-        taskGraph.execute();
+        executionResult = executionPlan.withDevice(device).execute();
     }
 }

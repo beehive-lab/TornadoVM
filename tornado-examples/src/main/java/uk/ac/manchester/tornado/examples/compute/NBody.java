@@ -22,7 +22,10 @@ import static uk.ac.manchester.tornado.api.profiler.ChromeEventTracer.enqueueTas
 
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
@@ -148,14 +151,20 @@ public class NBody {
 
         final TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, posTornadoVM, velTornadoVM) //
-                .task("t0", NBody::nBody, numBodies, posTornadoVM, velTornadoVM, delT, espSqr);
+                .task("t0", NBody::nBody, numBodies, posTornadoVM, velTornadoVM, delT, espSqr) //
+                .transferToHost(DataTransferMode.USER_DEFINED, posTornadoVM, velTornadoVM);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph).withWarmUp();
 
         resultsIterations = new StringBuffer();
+
+        TornadoExecutionResult executionResult = null;
 
         for (int i = 0; i < iterations; i++) {
             // System.gc();
             start = System.nanoTime();
-            taskGraph.execute();
+            executionResult = executor.execute();
             end = System.nanoTime();
             enqueueTaskIfEnabled("nbody accelerated", start, end);
             resultsIterations.append("\tTornado execution time of iteration " + i + " is: " + (end - start) + " ns");
@@ -164,7 +173,11 @@ public class NBody {
         }
         long timeParallel = (end - start);
 
-        System.out.println(resultsIterations.toString());
+        if (executionResult != null) {
+            executionResult.transferToHost(posTornadoVM, velTornadoVM);
+        }
+
+        System.out.println(resultsIterations);
 
         if (VALIDATION) {
             boolean isValid = validate(numBodies, posTornadoVM, velTornadoVM, posSeq, velSeq);

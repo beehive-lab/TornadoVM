@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.benchmarks.dft;
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -63,8 +64,11 @@ public class DFTTornado extends BenchmarkDriver {
         taskGraph = new TaskGraph("benchmark") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, inReal, inImag) //
                 .task("t0", ComputeKernels::computeDFT, inReal, inImag, outReal, outImag) //
-                .transferToHost(outReal, outImag);
-        taskGraph.warmup();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outReal, outImag);
+
+        immutableTaskGraph = taskGraph.snapshot();
+        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp();
     }
 
     @Override
@@ -73,10 +77,11 @@ public class DFTTornado extends BenchmarkDriver {
         double[] outRealTor = new double[size];
         double[] outImagTor = new double[size];
 
-        taskGraph.warmup();
-        taskGraph.mapAllTo(device);
-        taskGraph.execute();
-        taskGraph.transferToHost(outReal, outImag);
+        executionPlan.withDevice(device) //
+                .withWarmUp() //
+                .execute();
+
+        executionResult.transferToHost(outReal, outImag);
 
         ComputeKernels.computeDFT(inReal, inImag, outRealTor, outImagTor);
 
@@ -96,19 +101,17 @@ public class DFTTornado extends BenchmarkDriver {
 
     @Override
     public void tearDown() {
-        taskGraph.dumpProfiles();
+        executionResult.getProfilerResult().dumpProfiles();
 
         outImag = null;
         outReal = null;
 
-        taskGraph.getDevice().reset();
+        executionPlan.resetDevice();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.mapAllTo(device);
-        taskGraph.execute();
-
+        executionResult = executionPlan.withDevice(device).execute();
     }
 }

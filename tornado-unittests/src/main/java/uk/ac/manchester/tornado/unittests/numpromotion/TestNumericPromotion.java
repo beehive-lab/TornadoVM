@@ -22,7 +22,9 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -147,11 +149,14 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] result = new byte[4];
         byte[] input = new byte[] { 127, 127, 127, 127, 1, 1, 1, 1 };
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements) //
                 .task("t0", TestNumericPromotion::bitwiseOr, result, input, elements) //
-                .transferToHost(result) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         byte[] sequential = new byte[4];
         bitwiseOr(sequential, input, elements);
@@ -167,11 +172,14 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] result = new byte[4];
         byte[] input = new byte[] { 127, 127, 127, 127, 1, 1, 1, 1 };
 
-        new TaskGraph("s0")//
+        TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
                 .task("t0", TestNumericPromotion::bitwiseAnd, result, input, elements)//
-                .transferToHost(result)//
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         byte[] sequential = new byte[4];
         bitwiseAnd(sequential, input, elements);
@@ -187,11 +195,14 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] result = new byte[4];
         byte[] input = new byte[] { 127, 127, 127, 127, 1, 1, 1, 1 };
 
-        new TaskGraph("s0")//
+        TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
                 .task("t0", TestNumericPromotion::bitwiseXor, result, input, elements)//
-                .transferToHost(result)//
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         byte[] sequential = new byte[4];
         bitwiseXor(sequential, input, elements);
@@ -208,11 +219,14 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] result = new byte[8];
         byte[] input = new byte[] { 0, 0, 127, -127, 1, -1, 1, 1 };
 
-        new TaskGraph("s0")//
+        TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//
                 .task("t0", TestNumericPromotion::bitwiseNot, result, input)//
-                .transferToHost(result)//
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         byte[] sequential = new byte[8];
         bitwiseNot(sequential, input);
@@ -228,11 +242,14 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] result = new byte[4];
         byte[] input = new byte[] { 125, 125, 125, 125, 1, 1, 1, 1 };
 
-        new TaskGraph("s0")//
+        TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
                 .task("t0", TestNumericPromotion::addition, result, input, elements)//
-                .transferToHost(result)//
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         byte[] sequential = new byte[4];
         addition(sequential, input, elements);
@@ -248,11 +265,14 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] result = new byte[4];
         byte[] input = new byte[] { 125, 125, 125, 125, 1, 1, 1, 1 };
 
-        new TaskGraph("s0")//
+        TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
                 .task("t0", TestNumericPromotion::subtraction, result, input, elements)//
-                .transferToHost(result)//
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         byte[] sequential = new byte[4];
         subtraction(sequential, input, elements);
@@ -268,11 +288,14 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] result = new byte[] { 1, 1, 1, 1 };
         byte[] input = new byte[] { 125, 125, 125, 125, 1, 1, 1, 1 };
 
-        new TaskGraph("s0")//
+        TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
                 .task("t0", TestNumericPromotion::multiplication, result, input, elements)//
-                .transferToHost(result)//
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         byte[] sequential = new byte[] { 1, 1, 1, 1 };
         multiplication(sequential, input, elements);
@@ -288,11 +311,14 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] result = new byte[] { 8, 8, 8, 8 };
         byte[] input = new byte[] { 2, 2, 2, 2, 1, 1, 1, 1 };
 
-        new TaskGraph("s0")//
+        TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
                 .task("t0", TestNumericPromotion::division, result, input, elements)//
-                .transferToHost(result)//
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         byte[] sequential = new byte[] { 8, 8, 8, 8 };
         division(sequential, input, elements);
@@ -308,11 +334,14 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] result = new byte[] { 8, 8, 8, 8 };
         byte[] input = new byte[] { 2, 2, 2, 2, 1, 1, 1, 1 };
 
-        new TaskGraph("s0")//
+        TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
                 .task("t0", TestNumericPromotion::signedLeftShift, result, input, elements)//
-                .transferToHost(result)//
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         byte[] sequential = new byte[] { 8, 8, 8, 8 };
         signedLeftShift(sequential, input, elements);
@@ -328,11 +357,14 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] result = new byte[] { 8, 8, 8, 8 };
         byte[] input = new byte[] { 2, 2, 2, 2, 1, 1, 1, 1 };
 
-        new TaskGraph("s0")//
+        TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
                 .task("t0", TestNumericPromotion::signedRightShift, result, input, elements)//
-                .transferToHost(result)//
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         byte[] sequential = new byte[] { 8, 8, 8, 8 };
         signedRightShift(sequential, input, elements);
@@ -348,11 +380,14 @@ public class TestNumericPromotion extends TornadoTestBase {
         byte[] result = new byte[] { 8, 8, 8, 8 };
         byte[] input = new byte[] { 2, 2, 2, 2, 1, 1, 1, 1 };
 
-        new TaskGraph("s0")//
+        TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
                 .task("t0", TestNumericPromotion::unsignedRightShift, result, input, elements)//
-                .transferToHost(result)//
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         byte[] sequential = new byte[] { 8, 8, 8, 8 };
         unsignedRightShift(sequential, input, elements);

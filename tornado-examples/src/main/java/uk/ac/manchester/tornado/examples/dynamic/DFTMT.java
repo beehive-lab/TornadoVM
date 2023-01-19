@@ -18,8 +18,11 @@
 
 package uk.ac.manchester.tornado.examples.dynamic;
 
+import uk.ac.manchester.tornado.api.DRMode;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -28,7 +31,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTMT 
+ *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTMT
  * </code>
  */
 public class DFTMT {
@@ -139,11 +142,15 @@ public class DFTMT {
         }
 
         graph = new TaskGraph("s0");
+        TornadoExecutionPlan executor = null;
         if (!executionType.equals("multi") && !executionType.equals("sequential")) {
             long startInit = System.nanoTime();
             graph.transferToDevice(DataTransferMode.FIRST_EXECUTION, inReal, inImag) //
                     .task("t0", DFTMT::computeDFT, inReal, inImag, outReal, outImag, inputSize) //
-                    .transferToHost(outReal, outImag);
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, outReal, outImag);
+
+            ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
+            executor = new TornadoExecutionPlan(immutableTaskGraph);
             long stopInit = System.nanoTime();
             System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
         }
@@ -157,12 +164,12 @@ public class DFTMT {
             switch (executionType) {
                 case "performance":
                     start = System.nanoTime();
-                    graph.executeWithProfilerSequential(Policy.PERFORMANCE);
+                    executor.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL).execute();
                     end = System.nanoTime();
                     break;
                 case "end":
                     start = System.nanoTime();
-                    graph.executeWithProfilerSequential(Policy.END_2_END);
+                    executor.withDynamicReconfiguration(Policy.END_2_END, DRMode.SERIAL).execute();
                     end = System.nanoTime();
                     break;
                 case "sequential":
@@ -177,7 +184,7 @@ public class DFTMT {
                     break;
                 default:
                     start = System.nanoTime();
-                    graph.execute();
+                    executor.execute();
                     end = System.nanoTime();
             }
             System.out.println("Total time:  " + (end - start) + " ns" + " \n");

@@ -21,8 +21,10 @@ package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -185,14 +187,18 @@ public class NBody {
         final TaskGraph t0 = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, posTornadoVM, velTornadoVM) //
                 .task("t0", NBody::nBody, context, numBodies, posTornadoVM, velTornadoVM) //
-                .transferToHost(posTornadoVM, velTornadoVM);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, posTornadoVM, velTornadoVM);
+
+        ImmutableTaskGraph immutableTaskGraph = t0.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        executor.withGridScheduler(gridScheduler);
 
         resultsIterations = new StringBuffer();
 
         for (int i = 0; i < iterations; i++) {
             System.gc();
             start = System.nanoTime();
-            t0.execute(gridScheduler);
+            executor.execute();
             end = System.nanoTime();
             ChromeEventTracer.enqueueTaskIfEnabled("nbody accelerated", start, end);
             resultsIterations.append("\tTornado execution time of iteration " + i + " is: " + (end - start) + " ns");

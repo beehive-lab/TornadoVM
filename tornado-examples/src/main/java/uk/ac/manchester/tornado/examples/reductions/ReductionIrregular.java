@@ -22,7 +22,9 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -50,10 +52,13 @@ public class ReductionIrregular {
         float[] result = new float[] { 0.0f };
         Random r = new Random(101);
 
-        TaskGraph task = new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//
                 .task("t0", ReductionIrregular::reduceFloats, input, result)//
-                .transferToHost(result);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
 
         ArrayList<Long> timers = new ArrayList<>();
         for (int i = 0; i < ConfigurationReduce.MAX_ITERATIONS; i++) {
@@ -65,7 +70,7 @@ public class ReductionIrregular {
             reduceFloats(input, sequential);
 
             long start = System.nanoTime();
-            task.execute();
+            executor.execute();
             long end = System.nanoTime();
             timers.add((end - start));
 

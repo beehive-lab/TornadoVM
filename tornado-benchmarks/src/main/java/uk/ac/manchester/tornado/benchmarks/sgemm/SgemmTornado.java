@@ -24,6 +24,7 @@ import java.util.Random;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -86,8 +87,12 @@ public class SgemmTornado extends BenchmarkDriver {
         if (!USE_PREBUILT) {
             taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b);
             taskGraph.task("sgemm", LinearAlgebraArrays::sgemm, m, n, n, a, b, c);
-            taskGraph.transferToHost(c);
-            taskGraph.warmup();
+            taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+            immutableTaskGraph = taskGraph.snapshot();
+            executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+            executionPlan.withWarmUp();
+
         } else {
             String filePath = "/tmp/mxmFloat.spv";
 
@@ -108,31 +113,32 @@ public class SgemmTornado extends BenchmarkDriver {
                             new Access[] { Access.READ, Access.READ, Access.READ, Access.READ, Access.READ, Access.WRITE }, //
                             device, //
                             new int[] { n, n })//
-                    .transferToHost(c);
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+            immutableTaskGraph = taskGraph.snapshot();
+            executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         }
     }
 
     @Override
     public void tearDown() {
-        taskGraph.dumpProfiles();
+        executionResult.getProfilerResult().dumpProfiles();
 
         a = null;
         b = null;
         c = null;
 
-        taskGraph.getDevice().reset();
+        executionPlan.resetDevice();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.mapAllTo(device);
-        if (grid == null) {
-            taskGraph.execute();
-        } else {
-            taskGraph.execute(grid);
+        if (grid != null) {
+            executionPlan.withGridScheduler(grid);
         }
+        executionResult = executionPlan.withDevice(device).execute();
     }
 
     @Override
@@ -142,8 +148,9 @@ public class SgemmTornado extends BenchmarkDriver {
         boolean val = true;
 
         benchmarkMethod(device);
-        taskGraph.syncObjects(c);
-        taskGraph.clearProfiles();
+        executionResult.transferToHost(c);
+
+        executionPlan.clearProfiles();
 
         sgemm(m, n, m, a, b, result);
 

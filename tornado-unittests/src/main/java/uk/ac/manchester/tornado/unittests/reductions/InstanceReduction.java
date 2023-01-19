@@ -24,7 +24,9 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -69,11 +71,14 @@ public class InstanceReduction extends TornadoTestBase {
 
         ReduceTest rd = new ReduceTest();
 
-        new TaskGraph("ts") //
+        TaskGraph taskGraph = new TaskGraph("ts") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//
                 .task("reduce", rd::reduce, input, result)//
-                .transferToHost(result)//
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         assertEquals(expected[0], result[0], 0.1f);
     }

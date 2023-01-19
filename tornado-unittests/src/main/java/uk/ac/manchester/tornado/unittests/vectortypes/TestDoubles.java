@@ -24,7 +24,9 @@ import java.util.Random;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Double2;
 import uk.ac.manchester.tornado.api.collections.types.Double3;
@@ -63,11 +65,14 @@ public class TestDoubles extends TornadoTestBase {
         Double2 b = new Double2(3., 2.);
         VectorDouble output = new VectorDouble(size);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestDoubles::addDouble2, a, b, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             assertEquals(8.0, output.get(i), DELTA);
@@ -87,11 +92,14 @@ public class TestDoubles extends TornadoTestBase {
         Double3 b = new Double3(3., 2., 1.);
         VectorDouble output = new VectorDouble(size);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestDoubles::addDouble3, a, b, output) //
-                .transferToHost(output) //
-                .execute(); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             assertEquals(12.0, output.get(i), DELTA);
@@ -111,11 +119,14 @@ public class TestDoubles extends TornadoTestBase {
         Double4 b = new Double4(4., 3., 2., 1.);
         VectorDouble output = new VectorDouble(size);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestDoubles::addDouble4, a, b, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             assertEquals(20.0, output.get(i), DELTA);
@@ -135,11 +146,14 @@ public class TestDoubles extends TornadoTestBase {
         Double8 b = new Double8(8., 7., 6., 5., 4., 3., 2., 1.);
         VectorDouble output = new VectorDouble(size);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestDoubles::addDouble8, a, b, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             assertEquals(72., output.get(i), DELTA);
@@ -165,11 +179,14 @@ public class TestDoubles extends TornadoTestBase {
             b[i] = i;
         }
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestDoubles::addDouble, a, b, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             assertEquals(i + i, output[i], DELTA);
@@ -212,12 +229,15 @@ public class TestDoubles extends TornadoTestBase {
         dotProductFunctionMap(a, b, seqMap);
         dotProductFunctionReduce(seqMap, seqReduce);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b, outputMap) //
                 .task("t0-MAP", TestDoubles::dotProductFunctionMap, a, b, outputMap) //
                 .task("t1-REDUCE", TestDoubles::dotProductFunctionReduce, outputMap, outputReduce) //
-                .transferToHost(outputReduce) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outputReduce);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         assertEquals(seqReduce[0], outputReduce[0], DELTA);
     }
@@ -241,11 +261,14 @@ public class TestDoubles extends TornadoTestBase {
             b.set(i, new Double2(size - i, size - i));
         }
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestDoubles::addVectorDouble2, a, b, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             Double2 sequential = new Double2(i + (size - i), i + (size - i));
@@ -273,11 +296,14 @@ public class TestDoubles extends TornadoTestBase {
             b.set(i, new Double3(size - i, size - i, size - i));
         }
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestDoubles::addVectorDouble3, a, b, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             Double3 sequential = new Double3(i + (size - i), i + (size - i), i + (size - i));
@@ -306,11 +332,14 @@ public class TestDoubles extends TornadoTestBase {
             b.set(i, new Double4(size - i, size - i, size - i, size - i));
         }
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestDoubles::addVectorDouble4, a, b, output) //
-                .transferToHost(output) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             Double4 sequential = new Double4(i + (size - i), i + (size - i), i + (size - i), i + (size - i));
@@ -346,8 +375,11 @@ public class TestDoubles extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.task("t0", TestDoubles::testPrivateVectorDouble2, tornadoOutput);
-        taskGraph.transferToHost(tornadoOutput);
-        taskGraph.execute();
+        taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         testPrivateVectorDouble2(sequentialOutput);
 
@@ -382,8 +414,11 @@ public class TestDoubles extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.task("t0", TestDoubles::testPrivateVectorDouble4, tornadoOutput);
-        taskGraph.transferToHost(tornadoOutput);
-        taskGraph.execute();
+        taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         testPrivateVectorDouble4(sequentialOutput);
 
@@ -420,8 +455,11 @@ public class TestDoubles extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.task("t0", TestDoubles::testPrivateVectorDouble8, tornadoOutput);
-        taskGraph.transferToHost(tornadoOutput);
-        taskGraph.execute();
+        taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         testPrivateVectorDouble8(sequentialOutput);
 

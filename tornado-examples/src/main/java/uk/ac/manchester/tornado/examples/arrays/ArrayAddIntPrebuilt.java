@@ -20,7 +20,9 @@ package uk.ac.manchester.tornado.examples.arrays;
 
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -61,15 +63,18 @@ public class ArrayAddIntPrebuilt {
         String filePath = tornadoSDK + "/examples/generated/";
         filePath += device.getPlatformName().contains("PTX") ? "add.ptx" : "add.cl";
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .prebuiltTask("t0", "add", filePath, //
                         new Object[] { a, b, c }, //
                         new Access[] { Access.READ, Access.READ, Access.WRITE }, //
                         device, //
                         new int[] { numElements }) //
-                .transferToHost(c) //
-                .execute(); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        executor.execute();
 
         System.out.println("a: " + Arrays.toString(a));
         System.out.println("b: " + Arrays.toString(b));

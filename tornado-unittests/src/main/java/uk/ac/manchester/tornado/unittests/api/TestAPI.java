@@ -25,7 +25,10 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.arrays.TestArrays;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -33,14 +36,16 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 /**
  * How to run?
  *
+ * <p>
  * <code>
  *     tornado-test -V uk.ac.manchester.tornado.unittests.api.TestAPI
  * </code>
+ * </p>
  */
 public class TestAPI extends TornadoTestBase {
 
     @Test
-    public void testSyncObject() {
+    public void testLazyCopyOut() {
         final int N = 1024;
         int size = 20;
         int[] data = new int[N];
@@ -52,16 +57,19 @@ public class TestAPI extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0");
         assertNotNull(taskGraph);
 
-        taskGraph.lockObjectInMemory(data) //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestArrays::addAccumulator, data, 1) //
-                .execute(); //
+                .transferToHost(DataTransferMode.USER_DEFINED, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionResult executionResult = executionPlan.execute();
 
         // Force data transfers from D->H after the execution of a task-graph
-        taskGraph.syncObject(data);
+        executionResult.transferToHost(data);
 
-        // Mark objects associated with the task-graph for reusing memory
-        taskGraph.unlockObjectFromMemory(data);
+        // Free all device memory associated to the executionPlan
+        executionPlan.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data[i]);
@@ -69,7 +77,7 @@ public class TestAPI extends TornadoTestBase {
     }
 
     @Test
-    public void testSyncObjects() {
+    public void testLazyCopyOut2() {
         final int N = 128;
         int size = 20;
 
@@ -79,16 +87,21 @@ public class TestAPI extends TornadoTestBase {
             data[idx] = size;
         });
 
-        TaskGraph tg = new TaskGraph("s0");
-        assertNotNull(tg);
+        TaskGraph taskGraph = new TaskGraph("s0");
+        assertNotNull(taskGraph);
 
-        tg.lockObjectInMemory(data);
-        tg.transferToDevice(DataTransferMode.FIRST_EXECUTION, data);
-        tg.task("t0", TestArrays::addAccumulator, data, 1);
-        tg.execute();
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data);
+        taskGraph.task("t0", TestArrays::addAccumulator, data, 1);
+        taskGraph.transferToHost(DataTransferMode.USER_DEFINED, data);
 
-        tg.syncObjects(data);
-        tg.unlockObjectFromMemory(data);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlanPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        TornadoExecutionResult executionResult = executionPlanPlan.execute();
+
+        executionResult.transferToHost(data);
+
+        executionPlanPlan.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data[i]);
@@ -109,16 +122,16 @@ public class TestAPI extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0");
         assertNotNull(taskGraph);
 
-        taskGraph.lockObjectInMemory(data);
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestArrays::addAccumulator, data, 1) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
-        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data);
-        taskGraph.task("t0", TestArrays::addAccumulator, data, 1);
-        taskGraph.transferToHost(data);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp() //
+                .execute();
 
-        taskGraph.warmup();
-
-        taskGraph.execute();
-        taskGraph.unlockObjectFromMemory(data);
+        executionPlan.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data[i]);

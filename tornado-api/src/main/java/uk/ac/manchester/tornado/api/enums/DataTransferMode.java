@@ -59,4 +59,14 @@ public class DataTransferMode {
      * task-graph ({@link uk.ac.manchester.tornado.api.TaskGraph}) is invoked.
      */
     public static final int EVERY_EXECUTION = 1;
+
+    /**
+     * Flag to indicate that copy out of buffers (device -> host) are handled by the
+     * programmer rather than the TornadoVM runtime system. If this flag is used,
+     * developers must manually transfer the data from the device to the host by
+     * invoking
+     * {@link uk.ac.manchester.tornado.api.TornadoExecutionResult#transferToHost(Object...)}
+     * method.
+     */
+    public static final int USER_DEFINED = 2;
 }

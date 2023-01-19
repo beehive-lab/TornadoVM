@@ -42,14 +42,14 @@ import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
-import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
-// FIXME <REFACTOR> This class can be common for the three backends. 
+// FIXME <REFACTOR> This class can be common for the three backends.
 public class SPIRVObjectWrapper implements ObjectBuffer {
 
     private static final int SPIRV_OBJECT_ALIGNMENT = 64;
@@ -69,6 +69,7 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
     private final SPIRVDeviceContext deviceContext;
 
     private static final int BYTES_OBJECT_REFERENCE = 8;
+    private long subRegionSize;
 
     public SPIRVObjectWrapper(final SPIRVDeviceContext deviceContext, Object object) {
         this.objectType = object.getClass();
@@ -140,7 +141,6 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
         this.bufferId = deviceContext.getBufferProvider().getBufferWithSize(size());
         this.bufferOffset = 0;
         setBuffer(new ObjectBufferWrapper(bufferId, bufferOffset));
-
 
         if (DEBUG) {
             debug("object: object=0x%x @ bufferId 0x%x", reference.hashCode(), bufferId);
@@ -414,5 +414,15 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
             }
         }
         return size;
+    }
+
+    @Override
+    public void setSizeSubRegion(long batchSize) {
+        this.subRegionSize = batchSize;
+    }
+
+    @Override
+    public long getSizeSubRegion() {
+        return subRegionSize;
     }
 }

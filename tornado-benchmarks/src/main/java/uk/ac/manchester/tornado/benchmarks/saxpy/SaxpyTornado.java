@@ -21,6 +21,7 @@ import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPD
 import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.saxpy;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -60,25 +61,27 @@ public class SaxpyTornado extends BenchmarkDriver {
         taskGraph = new TaskGraph("benchmark");
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, x);
         taskGraph.task("saxpy", LinearAlgebraArrays::saxpy, alpha, x, y);
-        taskGraph.transferToHost(y);
-        taskGraph.warmup();
+        taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, y);
+
+        immutableTaskGraph = taskGraph.snapshot();
+        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp();
     }
 
     @Override
     public void tearDown() {
-        taskGraph.dumpProfiles();
+        executionResult.getProfilerResult().dumpProfiles();
 
         x = null;
         y = null;
 
-        taskGraph.getDevice().reset();
+        executionPlan.resetDevice();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.mapAllTo(device);
-        taskGraph.execute();
+        executionResult = executionPlan.withDevice(device).execute();
     }
 
     @Override
@@ -87,8 +90,8 @@ public class SaxpyTornado extends BenchmarkDriver {
         final float[] result = new float[numElements];
 
         benchmarkMethod(device);
-        taskGraph.syncObjects(y);
-        taskGraph.clearProfiles();
+        executionResult.transferToHost(y);
+        executionPlan.clearProfiles();
 
         saxpy(alpha, x, result);
 

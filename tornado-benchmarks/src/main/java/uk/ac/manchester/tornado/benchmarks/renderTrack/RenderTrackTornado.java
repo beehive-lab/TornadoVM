@@ -19,7 +19,9 @@ package uk.ac.manchester.tornado.benchmarks.renderTrack;
 
 import java.util.Random;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
@@ -61,16 +63,19 @@ public class RenderTrackTornado extends BenchmarkDriver {
         taskGraph = new TaskGraph("benchmark")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("renderTrack", ComputeKernels::renderTrack, output, input) //
-                .transferToHost(output);
-        taskGraph.warmup();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        immutableTaskGraph = taskGraph.snapshot();
+        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp();
     }
 
     @Override
     public void tearDown() {
-        taskGraph.dumpProfiles();
+        executionResult.getProfilerResult().dumpProfiles();
         input = null;
         output = null;
-        taskGraph.getDevice().reset();
+        executionPlan.resetDevice();
         super.tearDown();
     }
 
@@ -101,16 +106,17 @@ public class RenderTrackTornado extends BenchmarkDriver {
         }
         TaskGraph s0 = new TaskGraph("s0")//
                 .task("t0", ComputeKernels::renderTrack, outputTornado, inputValidation) //
-                .transferToHost(outputTornado);
-        s0.mapAllTo(device);
-        s0.execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outputTornado);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        executor.withDevice(device).execute();
 
         return validate(inputValidation, outputTornado);
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.mapAllTo(device);
-        taskGraph.execute();
+        executionResult = executionPlan.withDevice(device).execute();
     }
 }

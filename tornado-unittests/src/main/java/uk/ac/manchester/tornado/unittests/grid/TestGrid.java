@@ -25,7 +25,9 @@ import java.util.stream.IntStream;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -74,16 +76,20 @@ public class TestGrid extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestArrays::vectorAddFloat, a, b, c) //
-                .transferToHost(c); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c); //
 
         // Set the Grid with 4096 threads
         WorkerGrid1D worker = new WorkerGrid1D(4096);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(gridScheduler) //
+                .execute();
 
         // Change the Grid
         worker.setGlobalWork(512, 1, 1);
-        taskGraph.execute(gridScheduler);
+        executionPlan.execute();
 
         for (int i = 0; i < 512; i++) {
             assertEquals(a[i] + b[i], c[i], 0.01f);
@@ -106,14 +112,17 @@ public class TestGrid extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t1", TestGrid::matrixMultiplication, a, b, c, numElements) //
-                .transferToHost(c); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c); //
 
         WorkerGrid2D worker = new WorkerGrid2D(numElements, numElements);
         GridScheduler gridScheduler = new GridScheduler("s0.t1", worker);
-        taskGraph.execute(gridScheduler);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
 
         worker.setLocalWork(32, 32, 1);
-        taskGraph.execute(gridScheduler);
+        executor.execute();
 
         matrixMultiplication(a, b, seq, numElements);
 
@@ -138,11 +147,15 @@ public class TestGrid extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("foo") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
                 .task("bar", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
-                .transferToHost(matrixB);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
 
         WorkerGrid2D worker = new WorkerGrid2D(X, Y);
         GridScheduler gridScheduler = new GridScheduler("foo.bar", worker);
-        taskGraph.execute(gridScheduler);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
 
         for (int i = 0; i < X; i++) {
             for (int j = 0; j < Y; j++) {
@@ -175,17 +188,20 @@ public class TestGrid extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestArrays::vectorAddFloat, a, b, c) //
                 .task("t1", TestArrays::vectorAddFloat, a, b, c) //
-                .transferToHost(c); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c); //
 
         // Set the Grid with 4096 threads
         WorkerGrid1D worker = new WorkerGrid1D(4096);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         gridScheduler.setWorkerGrid("s0.t1", worker); // share the same worker
-        taskGraph.execute(gridScheduler);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
 
         // Change the Grid
         worker.setGlobalWork(512, 1, 1);
-        taskGraph.execute(gridScheduler);
+        executor.execute();
 
         for (int i = 0; i < 512; i++) {
             assertEquals(a[i] + b[i], c[i], 0.01f);
@@ -208,13 +224,16 @@ public class TestGrid extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("mxm", TestGrid::matrixMultiplication, matrixA, matrixB, matrixC, N) //
-                .transferToHost(matrixC);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
 
         WorkerGrid2D worker = new WorkerGrid2D(N, N);
         GridScheduler gridScheduler = new GridScheduler("s0.mxm", worker);
         worker.setGlobalWork(N, N, 1);
         worker.setLocalWork(256, 256, 1);
 
-        taskGraph.execute(gridScheduler);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
     }
 }

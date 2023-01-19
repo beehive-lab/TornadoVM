@@ -31,8 +31,10 @@ import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -69,7 +71,7 @@ public class BlackAndWhiteTransform {
 
         private static final String IMAGE_FILE = "/tmp/image.jpg";
 
-        private static TaskGraph tornadoTask;
+        private static TornadoExecutionPlan executor;
 
         private static WorkerGrid workerGrid;
         private static GridScheduler gridScheduler;
@@ -141,22 +143,26 @@ public class BlackAndWhiteTransform {
                     }
                 }
 
-                if (tornadoTask == null) {
+                if (executor == null) {
                     workerGrid = new WorkerGrid2D(w, s);
                     gridScheduler = new GridScheduler("s0.t0", workerGrid);
                     KernelContext context = new KernelContext();
 
-                    tornadoTask = new TaskGraph("s0");
-                    tornadoTask.transferToDevice(DataTransferMode.EVERY_EXECUTION, imageRGB) //
+                    TaskGraph taskGraph = new TaskGraph("s0") //
+                            .transferToDevice(DataTransferMode.EVERY_EXECUTION, imageRGB) //
                             .task("t0", LoadImage::compute2D, context, imageRGB, w, s) //
-                            .transferToHost(imageRGB);
+                            .transferToHost(DataTransferMode.EVERY_EXECUTION, imageRGB);
+
+                    ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+                    executor = new TornadoExecutionPlan(immutableTaskGraph);
 
                 }
                 // [Optional] Set the global work group
                 workerGrid.setGlobalWork(w, s, 1);
 
                 taskStart = System.nanoTime();
-                tornadoTask.execute(gridScheduler);
+                executor.withGridScheduler(gridScheduler) //
+                        .execute();
                 taskEnd = System.nanoTime();
 
                 // unmarshall

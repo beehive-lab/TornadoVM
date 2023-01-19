@@ -23,7 +23,9 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -42,10 +44,13 @@ public class TestFloats extends TornadoTestBase {
         final int numElements = 256;
         float[] a = new float[numElements];
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestKernels::testFloatCopy, a) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         assertEquals(a[0], 50.0f, 0.01f);
     }
@@ -65,11 +70,14 @@ public class TestFloats extends TornadoTestBase {
             expected[i] = b[i] + c[i];
         }
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, b, c) //
                 .task("t0", TestKernels::vectorAddFloatCompute, a, b, c) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < numElements; i++) {
             assertEquals(expected[i], a[i], 0.01f);
@@ -91,11 +99,14 @@ public class TestFloats extends TornadoTestBase {
             expected[i] = b[i] - c[i];
         }
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, b, c) //
                 .task("t0", TestKernels::vectorSubFloatCompute, a, b, c) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < numElements; i++) {
             assertEquals(expected[i], a[i], 0.01f);
@@ -119,11 +130,14 @@ public class TestFloats extends TornadoTestBase {
             expected[i] = b[i] * c[i];
         }
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, b, c) //
                 .task("t0", TestKernels::vectorMulFloatCompute, a, b, c) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < numElements; i++) {
             assertEquals(expected[i], a[i], 0.01f);
@@ -146,11 +160,14 @@ public class TestFloats extends TornadoTestBase {
             expected[i] = b[i] / c[i];
         }
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, b, c) //
                 .task("t0", TestKernels::vectorDivFloatCompute, a, b, c) //
-                .transferToHost(a) //
-                .execute(); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < numElements; i++) {
             assertEquals(expected[i], a[i], 0.01f);

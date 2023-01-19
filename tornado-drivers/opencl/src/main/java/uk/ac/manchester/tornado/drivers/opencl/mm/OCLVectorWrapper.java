@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.api.collections.types.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -59,6 +59,7 @@ public class OCLVectorWrapper implements ObjectBuffer {
     private final long batchSize;
 
     private final JavaKind kind;
+    private long setSubRegionSize;
 
     public OCLVectorWrapper(final OCLDeviceContext device, final Object object, long batchSize) {
         TornadoInternalError.guarantee(object instanceof PrimitiveStorage, "Expecting a PrimitiveStorage type");
@@ -94,8 +95,7 @@ public class OCLVectorWrapper implements ObjectBuffer {
         this.bufferId = deviceContext.getBufferProvider().getBufferWithSize(bufferSize);
 
         if (Tornado.FULL_DEBUG) {
-            info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset,
-                    arrayHeaderSize);
+            info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
             info("allocated: %s", toString());
         }
 
@@ -110,8 +110,7 @@ public class OCLVectorWrapper implements ObjectBuffer {
         bufferSize = INIT_VALUE;
 
         if (Tornado.FULL_DEBUG) {
-            info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset,
-                    arrayHeaderSize);
+            info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
             info("deallocated: %s", toString());
         }
     }
@@ -119,6 +118,11 @@ public class OCLVectorWrapper implements ObjectBuffer {
     @Override
     public long size() {
         return bufferSize;
+    }
+
+    @Override
+    public void setSizeSubRegion(long batchSize) {
+        this.setSubRegionSize = batchSize;
     }
 
     @Override
@@ -147,24 +151,24 @@ public class OCLVectorWrapper implements ObjectBuffer {
      *            List of events to wait for.
      * @return Event information
      */
-     private int enqueueReadArrayData(long bufferId, long offset, long bytes, Object value, long hostOffset, int[] waitEvents) {
-         if (kind == JavaKind.Int) {
-             return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, (int[]) value, hostOffset, waitEvents);
-         } else if (kind == JavaKind.Float) {
-             return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, (float[]) value, hostOffset, waitEvents);
-         } else if (kind == JavaKind.Double) {
-             return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, (double[]) value, hostOffset, waitEvents);
-         } else if (kind == JavaKind.Long) {
-             return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, (long[]) value, hostOffset, waitEvents);
-         } else if (kind == JavaKind.Short) {
-             return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, (short[]) value, hostOffset, waitEvents);
-         } else if (kind == JavaKind.Byte) {
-             return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, (byte[]) value, hostOffset, waitEvents);
-         } else {
-             TornadoInternalError.shouldNotReachHere("Expecting an array type");
-         }
-         return -1;
-     }
+    private int enqueueReadArrayData(long bufferId, long offset, long bytes, Object value, long hostOffset, int[] waitEvents) {
+        if (kind == JavaKind.Int) {
+            return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, (int[]) value, hostOffset, waitEvents);
+        } else if (kind == JavaKind.Float) {
+            return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, (float[]) value, hostOffset, waitEvents);
+        } else if (kind == JavaKind.Double) {
+            return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, (double[]) value, hostOffset, waitEvents);
+        } else if (kind == JavaKind.Long) {
+            return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, (long[]) value, hostOffset, waitEvents);
+        } else if (kind == JavaKind.Short) {
+            return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, (short[]) value, hostOffset, waitEvents);
+        } else if (kind == JavaKind.Byte) {
+            return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, (byte[]) value, hostOffset, waitEvents);
+        } else {
+            TornadoInternalError.shouldNotReachHere("Expecting an array type");
+        }
+        return -1;
+    }
 
     @Override
     public List<Integer> enqueueWrite(final Object value, long batchSize, long hostOffset, final int[] events, boolean useDeps) {
@@ -312,5 +316,10 @@ public class OCLVectorWrapper implements ObjectBuffer {
             TornadoInternalError.shouldNotReachHere("The type should be an array");
         }
         return null;
+    }
+
+    @Override
+    public long getSizeSubRegion() {
+        return setSubRegionSize;
     }
 }

@@ -27,7 +27,7 @@ package uk.ac.manchester.tornado.runtime.common;
 
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 
 // FIXME <ADD JAVA DOC>
 public interface TornadoAcceleratorDevice extends TornadoDevice {

@@ -20,15 +20,13 @@ package uk.ac.manchester.tornado.unittests.dynsize;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Arrays;
 import java.util.stream.IntStream;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.WorkerGrid;
-import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -70,16 +68,24 @@ public class Resize extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize01, a) //
-                .transferToHost(a); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a); //
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlanPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlanPlan.execute();
+
         // Resize data
         float[] b = createArray(512);
 
-        // Replace parameter a of the task-graph for b
-        taskGraph.replaceParameter(a, b);
+        // We create a second task-graph with the parameter b instead
+        TaskGraph taskGraph2 = new TaskGraph("graph2") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, b) //
+                .task("t0", Resize::resize01, b) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b); //
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph2 = taskGraph2.snapshot();
+        TornadoExecutionPlan executionPlanPlan2 = new TornadoExecutionPlan(immutableTaskGraph2);
+        executionPlanPlan2.execute();
 
         for (float v : b) {
             assertEquals(1.0f, v, 0.001f);
@@ -93,143 +99,40 @@ public class Resize extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", Resize::resize01, a) //
-                .transferToHost(a); //
-        taskGraph.execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a); //
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlanPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlanPlan.execute();
 
         // Resize data
         float[] b = createArray(512);
 
-        // Update old reference for a new reference
-        taskGraph.replaceParameter(a, b);
+        // We create a second task-graph with the parameter b instead
+        TaskGraph taskGraph2 = new TaskGraph("graph2") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, b) //
+                .task("t0", Resize::resize01, b) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b); //
 
-        taskGraph.execute();
-        taskGraph.execute();
-        taskGraph.execute();
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph2 = taskGraph2.snapshot();
+        TornadoExecutionPlan executionPlanPlan2 = new TornadoExecutionPlan(immutableTaskGraph2);
+        executionPlanPlan2.execute();
 
         // Update old reference for a new reference
         float[] c = createArray(2048);
-        taskGraph.replaceParameter(b, c);
-        taskGraph.execute();
+        // We create a second task-graph with the parameter b instead
+        TaskGraph taskGraph3 = new TaskGraph("graph3") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, c) //
+                .task("t0", Resize::resize01, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c); //
+
+        ImmutableTaskGraph immutableTaskGraph3 = taskGraph3.snapshot();
+        TornadoExecutionPlan executionPlanPlan3 = new TornadoExecutionPlan(immutableTaskGraph3);
+        executionPlanPlan3.execute();
 
         for (float v : c) {
             assertEquals(1.0f, v, 0.001f);
         }
     }
 
-    @Test
-    public void testDynamicSize03() {
-        float[] a = createArray(1024);
-        float[] b = createArray(1024);
-
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
-                .task("t0", Resize::resize02, a, b) //
-                .transferToHost(b); //
-        taskGraph.execute();
-
-        // Resize data
-        float[] c = createArray(512);
-        float[] d = createArray(512);
-
-        // Update multiple references
-        taskGraph.replaceParameter(a, c);
-        taskGraph.replaceParameter(b, d);
-
-        taskGraph.execute();
-
-        for (float v : d) {
-            assertEquals(20.0f, v, 0.001f);
-        }
-    }
-
-    @Test
-    public void testUpdateReferences() {
-        float[] a = createArray(256);
-        float[] b = createArray(256);
-
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
-                .task("t0", Resize::resize02, a, b) //
-                .transferToHost(b); //
-        taskGraph.execute();
-
-        float[] aux = createArray(256);
-
-        // Interchange
-        taskGraph.replaceParameter(b, aux);
-        taskGraph.replaceParameter(a, b);
-        taskGraph.replaceParameter(aux, a);
-        taskGraph.execute();
-
-        // Interchange again
-        taskGraph.replaceParameter(b, aux);
-        taskGraph.replaceParameter(a, b);
-        taskGraph.replaceParameter(aux, a);
-        taskGraph.execute();
-
-        for (float v : b) {
-            assertEquals(40.0f, v, 0.001f);
-        }
-    }
-
-    @Test
-    public void testUpdateReferencesWithGrid() {
-        float[] a = createArray(256);
-        float[] b = createArray(256);
-
-        WorkerGrid workerGrid = new WorkerGrid1D(256);
-        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
-
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
-                .task("t0", Resize::resize02, a, b) //
-                .transferToHost(b); //
-        taskGraph.execute(gridScheduler);
-
-        float[] aux = createArray(256);
-
-        // Interchange
-        taskGraph.replaceParameter(b, aux);
-        taskGraph.replaceParameter(a, b);
-        taskGraph.replaceParameter(aux, a);
-        taskGraph.execute(gridScheduler);
-
-        // Interchange again
-        taskGraph.replaceParameter(b, aux);
-        taskGraph.replaceParameter(a, b);
-        taskGraph.replaceParameter(aux, a);
-        taskGraph.execute(gridScheduler);
-
-        for (float v : b) {
-            assertEquals(40.0f, v, 0.001f);
-        }
-    }
-
-    @Test
-    public void testUpdateReferenceCopyIn() {
-        float[] a = createArray(256);
-        float[] b = createArray(256);
-
-        WorkerGrid workerGrid = new WorkerGrid1D(256);
-        GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
-
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
-                .task("t0", Resize::resize02, a, b) //
-                .transferToHost(b); //
-        taskGraph.execute(gridScheduler);
-
-        float[] aux = createArray(256);
-        Arrays.fill(aux, 15);
-
-        // Update copy in variable 'a'. It should invalidate the buffer state on the
-        // device and copy in the 'aux' array.
-        taskGraph.replaceParameter(a, aux);
-        taskGraph.execute(gridScheduler);
-
-        for (float v : b) {
-            assertEquals(25.0f, v, 0.001f);
-        }
-    }
 }

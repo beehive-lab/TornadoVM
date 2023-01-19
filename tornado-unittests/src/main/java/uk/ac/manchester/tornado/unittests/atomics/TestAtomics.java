@@ -28,7 +28,10 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.TornadoVM_Intrinsics;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -172,11 +175,13 @@ public class TestAtomics extends TornadoTestBase {
         Arrays.fill(a, 1);
         Arrays.fill(b, 1);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestAtomics::atomic03, a) //
-                .transferToHost(a) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         atomic03(b);
         for (int i = 0; i < a.length; i++) {
@@ -195,11 +200,13 @@ public class TestAtomics extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic04, a) //
-                .transferToHost(a); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a); //
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionResult executionResult = executionPlan.execute();
 
-        if (!taskGraph.isFinished()) {
+        if (!executionResult.isReady()) {
             assertTrue(false);
         }
 
@@ -222,11 +229,13 @@ public class TestAtomics extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic04Get, a) //
-                .transferToHost(a); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a); //
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionResult executionResult = executionPlan.execute();
 
-        if (!taskGraph.isFinished()) {
+        if (!executionResult.isReady()) {
             assertTrue(false);
         }
 
@@ -261,20 +270,20 @@ public class TestAtomics extends TornadoTestBase {
         TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(deviceNumber);
         String tornadoSDK = System.getenv("TORNADO_SDK");
 
-        // @formatter:off
-        new TaskGraph("s0")
-                .prebuiltTask("t0",
-                        "add",
-                        tornadoSDK + "/examples/generated/atomics.cl",
-                        new Object[] { a, b },
-                        new Access[] { Access.WRITE, Access.WRITE },
-                        defaultDevice,
-                        new int[] { 32 },
-                        new int[]{155}     // Atomics - Initial Value
-                        )
-                .transferToHost(a)
-                .execute();
-        // @formatter:on
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .prebuiltTask("t0", //
+                        "add", //
+                        tornadoSDK + "/examples/generated/atomics.cl", //
+                        new Object[] { a, b }, //
+                        new Access[] { Access.WRITE, Access.WRITE }, //
+                        defaultDevice, //
+                        new int[] { 32 }, //
+                        new int[] { 155 } // Atomics - Initial Value
+                )//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         boolean repeated = isValueRepeated(a);
         assertTrue(!repeated);
@@ -294,11 +303,13 @@ public class TestAtomics extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestAtomics::atomic06, a, b) //
-                .transferToHost(a, b); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b); //
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionResult executionResult = executionPlan.execute();
 
-        if (!taskGraph.isFinished()) {
+        if (!executionResult.isReady()) {
             assertTrue(false);
         }
 
@@ -320,11 +331,13 @@ public class TestAtomics extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestAtomics::atomic07, a) //
-                .transferToHost(a); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a); //
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionResult executionResult = executionPlan.execute();
 
-        if (!taskGraph.isFinished()) {
+        if (!executionResult.isReady()) {
             assertTrue(false);
         }
         boolean repeated = isValueRepeated(a);
@@ -343,11 +356,13 @@ public class TestAtomics extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestAtomics::atomic08, a) //
-                .transferToHost(a); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a); //
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionResult executionResult = executionPlan.execute();
 
-        if (!taskGraph.isFinished()) {
+        if (!executionResult.isReady()) {
             assertTrue(false);
         }
         boolean repeated = isValueRepeated(a);
@@ -381,11 +396,14 @@ public class TestAtomics extends TornadoTestBase {
 
         AtomicInteger ai = new AtomicInteger(initialValue);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, ai) //
                 .task("t0", TestAtomics::atomic09, a, ai) //
-                .transferToHost(a, ai) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a, ai);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         boolean repeated = isValueRepeated(a);
 
@@ -407,11 +425,14 @@ public class TestAtomics extends TornadoTestBase {
 
         AtomicInteger ai = new AtomicInteger(initialValue);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestAtomics::atomic09, a, ai) //
-                .transferToHost(a, ai) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a, ai);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         boolean repeated = isValueRepeated(a);
 
@@ -433,11 +454,14 @@ public class TestAtomics extends TornadoTestBase {
 
         AtomicInteger ai = new AtomicInteger(initialValue);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestAtomics::atomic09, a, ai) //
-                .transferToHost(ai, a) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, ai, a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         boolean repeated = isValueRepeated(a);
 
@@ -462,11 +486,13 @@ public class TestAtomics extends TornadoTestBase {
         AtomicInteger ai = new AtomicInteger(initialValueA);
         AtomicInteger bi = new AtomicInteger(initialValueB);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestAtomics::atomic10, a, ai, bi) //
-                .transferToHost(ai, a, bi) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, ai, a, bi);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         boolean repeated = isValueRepeated(a);
 
@@ -492,11 +518,13 @@ public class TestAtomics extends TornadoTestBase {
         final int initialValueA = 311;
         AtomicInteger ai = new AtomicInteger(initialValueA);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestAtomics::atomic13, a, ai) //
-                .transferToHost(ai, a) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, ai, a);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         boolean repeated = isValueRepeated(a);
 
@@ -520,11 +548,14 @@ public class TestAtomics extends TornadoTestBase {
         AtomicInteger ai = new AtomicInteger(initialValueA);
         AtomicInteger bi = new AtomicInteger(initialValueB);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestAtomics::atomic14, a, ai, bi) //
-                .transferToHost(ai, a, bi) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, ai, a, bi);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         int lastValue = ai.get();
         assertEquals(initialValueA + size, lastValue);
@@ -546,11 +577,13 @@ public class TestAtomics extends TornadoTestBase {
         final int initialValueA = 311;
         AtomicInteger ai = new AtomicInteger(initialValueA);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
                 .task("t0", TestAtomics::atomic15, a, ai) //
-                .transferToHost(ai, a) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, ai, a);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         int lastValue = ai.get();
         assertEquals(initialValueA + size, lastValue);
@@ -575,11 +608,14 @@ public class TestAtomics extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, ai) //
                 .task("t0", TestAtomics::atomic16, a, ai) //
-                .transferToHost(ai, a);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, ai, a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         final int iterations = 50;
         IntStream.range(0, iterations).forEach(i -> {
-            taskGraph.execute();
+            executionPlan.execute();
         });
 
         int lastValue = ai.get();

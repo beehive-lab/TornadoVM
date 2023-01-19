@@ -19,10 +19,13 @@
 package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Montecarlo algorithm to approximate the PI value. This version has been
@@ -97,10 +100,16 @@ public class Montecarlo {
         // [Optional] Set the local work group to be 1024, 1, 1
         workerGrid.setLocalWork(1024, 1, 1);
 
-        TaskGraph t0 = new TaskGraph("s0").task("t0", Montecarlo::computeMontecarlo, context, output, size).transferToHost(output);
+        TaskGraph t0 = new TaskGraph("s0") //
+                .task("t0", Montecarlo::computeMontecarlo, context, output, size) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = t0.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        executor.withGridScheduler(gridScheduler);
 
         long start = System.nanoTime();
-        t0.execute(gridScheduler);
+        executor.execute();
         long end = System.nanoTime();
         long tornadoTime = (end - start);
 

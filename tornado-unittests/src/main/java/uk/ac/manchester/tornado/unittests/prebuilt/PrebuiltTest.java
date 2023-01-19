@@ -25,8 +25,10 @@ import java.util.stream.IntStream;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -77,7 +79,7 @@ public class PrebuiltTest extends TornadoTestBase {
                 throw new RuntimeException("Backend not supported");
         }
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .prebuiltTask("t0", //
                         "add", //
@@ -86,8 +88,11 @@ public class PrebuiltTest extends TornadoTestBase {
                         new Access[] { Access.READ, Access.READ, Access.WRITE }, //
                         defaultDevice, //
                         new int[] { numElements })//
-                .transferToHost(c)//
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i]);
@@ -125,7 +130,7 @@ public class PrebuiltTest extends TornadoTestBase {
                 throw new RuntimeException("Backend not supported");
         }
 
-        new TaskGraph("s0")//
+        TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .prebuiltTask("t0", //
                         "add", //
@@ -134,8 +139,11 @@ public class PrebuiltTest extends TornadoTestBase {
                         new Access[] { Access.READ, Access.READ, Access.WRITE }, //
                         defaultDevice, //
                         new int[] { numElements })//
-                .transferToHost(c)//
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i]);
@@ -166,7 +174,7 @@ public class PrebuiltTest extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
         KernelContext context = new KernelContext();
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
                 .prebuiltTask("t0", //
                         "floatReductionAddLocalMemory", //
@@ -175,8 +183,13 @@ public class PrebuiltTest extends TornadoTestBase {
                         new Access[] { Access.READ, Access.READ, Access.WRITE }, //
                         device, //
                         new int[] { size })//
-                .transferToHost(reduce)//
-                .execute(gridScheduler);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        executionPlan.withGridScheduler(gridScheduler) //
+                .execute();
 
         // Final SUM
         float finalSum = 0;
@@ -212,7 +225,7 @@ public class PrebuiltTest extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("a.b", worker);
         KernelContext context = new KernelContext();
 
-        new TaskGraph("a") //
+        TaskGraph taskGraph = new TaskGraph("a") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
                 .prebuiltTask("b", //
                         "intReductionAddGlobalMemory", //
@@ -221,8 +234,12 @@ public class PrebuiltTest extends TornadoTestBase {
                         new Access[] { Access.READ, Access.READ, Access.WRITE }, //
                         device, //
                         new int[] { size })//
-                .transferToHost(reduce)//
-                .execute(gridScheduler);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(gridScheduler) //
+                .execute();
 
         // Final SUM
         float finalSum = 0;

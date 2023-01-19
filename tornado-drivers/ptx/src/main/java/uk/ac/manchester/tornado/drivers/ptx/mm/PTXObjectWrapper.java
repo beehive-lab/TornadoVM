@@ -42,7 +42,7 @@ import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
-import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
+import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -64,6 +64,7 @@ public class PTXObjectWrapper implements ObjectBuffer {
     private final PTXDeviceContext deviceContext;
 
     private static final int BYTES_OBJECT_REFERENCE = 8;
+    private long subRegionSize;
 
     public PTXObjectWrapper(final PTXDeviceContext device, Object object) {
         this.type = object.getClass();
@@ -399,6 +400,16 @@ public class PTXObjectWrapper implements ObjectBuffer {
     @Override
     public long size() {
         return getObjectSize();
+    }
+
+    @Override
+    public void setSizeSubRegion(long batchSize) {
+        this.subRegionSize = batchSize;
+    }
+
+    @Override
+    public long getSizeSubRegion() {
+        return this.subRegionSize;
     }
 
 }

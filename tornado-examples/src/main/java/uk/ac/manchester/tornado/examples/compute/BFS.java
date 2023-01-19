@@ -22,7 +22,9 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -173,9 +175,13 @@ public class BFS {
 
         // Step 1: vertices initialisation
         initializeVertices(numNodes, vertices, rootNode);
-        TaskGraph taskGraph = new TaskGraph("s0");
-        taskGraph.task("t0", BFS::initializeVertices, numNodes, vertices, rootNode);
-        taskGraph.transferToHost(vertices).execute();
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .task("t0", BFS::initializeVertices, numNodes, vertices, rootNode) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, vertices);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        executor.execute();
 
         // initialization of Java vertices
         initializeVertices(numNodes, verticesJava, rootNode);
@@ -191,10 +197,12 @@ public class BFS {
         TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
         TaskGraph taskGraph1 = new TaskGraph("s1") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, vertices, adjacencyMatrix, modify, currentDepth) //
-                .mapAllTo(device);
+                .task("t1", BFS::runBFS, vertices, adjacencyMatrix, numNodes, modify, currentDepth) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, vertices, modify);
 
-        taskGraph1.task("t1", BFS::runBFS, vertices, adjacencyMatrix, numNodes, modify, currentDepth);
-        taskGraph1.transferToHost(vertices, modify);
+        ImmutableTaskGraph immutableTaskGraph1 = taskGraph1.snapshot();
+        TornadoExecutionPlan executor1 = new TornadoExecutionPlan(immutableTaskGraph) //
+                .withDevice(device);
 
         boolean done = false;
 
@@ -203,7 +211,7 @@ public class BFS {
             boolean allDone = true;
             System.out.println("Current Depth: " + currentDepth[0]);
             runBFS(verticesJava, adjacencyMatrix, numNodes, modifyJava, currentDepth);
-            taskGraph1.execute();
+            executor1.execute();
             currentDepth[0]++;
 
             if (VALIDATION && !(validModifyResults = checkModify(modify, modifyJava))) {

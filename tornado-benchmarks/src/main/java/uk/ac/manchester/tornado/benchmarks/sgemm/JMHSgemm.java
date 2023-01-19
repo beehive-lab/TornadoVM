@@ -40,7 +40,9 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
@@ -49,7 +51,7 @@ import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
  * How to run in isolation?
  * </p>
  * <code>
- *    tornado -jar benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.sgemm.JMHSgemm
+ *    tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.sgemm.JMHSgemm
  * </code>
  */
 public class JMHSgemm {
@@ -61,7 +63,7 @@ public class JMHSgemm {
         private float[] a;
         private float[] b;
         private float[] c;
-        TaskGraph taskGraph;
+        TornadoExecutionPlan executor;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -80,11 +82,14 @@ public class JMHSgemm {
                 b[i] = random.nextFloat();
             }
 
-            taskGraph = new TaskGraph("benchmark") //
+            TaskGraph taskGraph = new TaskGraph("benchmark") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                     .task("sgemm", LinearAlgebraArrays::sgemm, m, n, n, a, b, c) //
-                    .transferToHost(c);
-            taskGraph.warmup();
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+            executor = new TornadoExecutionPlan(immutableTaskGraph);
+            executor.withWarmUp();
 
         }
     }
@@ -106,9 +111,9 @@ public class JMHSgemm {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void sgemmTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskGraph taskGraph = state.taskGraph;
-        taskGraph.execute();
-        blackhole.consume(taskGraph);
+        TornadoExecutionPlan executor = state.executor;
+        executor.execute();
+        blackhole.consume(executor);
     }
 
     public static void main(String[] args) throws RunnerException {

@@ -20,7 +20,9 @@ package uk.ac.manchester.tornado.examples.arrays;
 
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
@@ -49,14 +51,15 @@ public class ArrayAccInt {
         Arrays.fill(a, 10);
 
         TaskGraph taskGraph = new TaskGraph("s0");
-
-        taskGraph.lockObjectsInMemory(a);
         taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, a);
         for (int i = 0; i < numKernels; i++) {
             taskGraph.task("t" + i, ArrayAccInt::acc, a, 1);
         }
-        taskGraph.transferToHost(a);
-        taskGraph.execute();
+        taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        executor.execute();
 
         // The result must be the initial value for the array plus the number of tasks
         // composed in the task-graph.

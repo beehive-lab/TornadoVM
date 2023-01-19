@@ -30,6 +30,9 @@ public class TornadoOptions {
     public static final String FALSE = "FALSE";
     public static final String TRUE = "TRUE";
 
+    public static String PROFILER_LOG = "tornado.log.profiler";
+    public static String PROFILER = "tornado.profiler";
+
     /**
      * Option to set the device maximum memory usage. It is set to 1GB by default.
      */
@@ -58,18 +61,24 @@ public class TornadoOptions {
      * reductions.
      */
     public static final boolean EXPERIMENTAL_REDUCE = getBooleanValue("tornado.experimental.reduce", TRUE);
+
     /**
      * Temporal option for disabling null checks for Apache-Flink.
      */
     public static final boolean IGNORE_NULL_CHECKS = getBooleanValue("tornado.ignore.nullchecks", FALSE);
+
     /**
      * Option for enabling saving the profiler into a file.
      */
-    public static final boolean PROFILER_LOGS_ACCUMULATE = getBooleanValue("tornado.log.profiler", FALSE);
+    public static boolean PROFILER_LOGS_ACCUMULATE() {
+        return getBooleanValue(PROFILER_LOG, FALSE);
+    }
+
     /**
      * Option to enable profiler-feature extractions.
      */
     public static final boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", FALSE);
+
     /**
      * Enable/Disable FMA Optimizations. True by default.
      */
@@ -139,7 +148,7 @@ public class TornadoOptions {
      */
     public static final boolean LOG_IP = getBooleanValue("tornado.enable.ip.logging", FALSE);
     /**
-     * Option to sent the feature extraction and/or profiler logs to a specific
+     * Option to send the feature extractions and/or profiler logs to a specific
      * port.
      */
     public static final String SOCKET_PORT = getProperty("tornado.dump.to.ip", "");
@@ -148,7 +157,7 @@ public class TornadoOptions {
      */
     public static final int TORNADO_SKETCHER_THREADS = Integer.parseInt(getProperty("tornado.sketcher.threads", "4"));
     /**
-     * It enables automatic discovery and parallelisation of loops. Please note that
+     * It enables automatic discovery and parallelization of loops. Please note that
      * this option is experimental and may cause issues if enabled.
      */
     public static final boolean AUTO_PARALLELISATION = getBooleanValue("tornado.parallelise.auto", FALSE);
@@ -239,12 +248,20 @@ public class TornadoOptions {
     public static StringBuilder FPGA_BINARIES = System.getProperty("tornado.precompiled.binary", null) != null ? new StringBuilder(System.getProperty("tornado.precompiled.binary", null)) : null;
 
     /**
+     * Option to reuse device buffers every time a task-graph is executed. True by
+     * default.
+     */
+    public static boolean isReusedBuffersEnabled() {
+        return getBooleanValue("tornado.reuse.device.buffers", TRUE);
+    }
+
+    /**
      * Option to enable profiler. It can be disabled at any point during runtime.
      *
      * @return boolean.
      */
     public static boolean isProfilerEnabled() {
-        return getBooleanValue("tornado.profiler", FALSE);
+        return getBooleanValue(PROFILER, FALSE);
     }
 
     /**
@@ -258,11 +275,11 @@ public class TornadoOptions {
     }
 
     private static boolean getBooleanValue(String property, String defaultValue) {
-        return Boolean.parseBoolean(Tornado.getProperty(property, defaultValue));
+        return Boolean.parseBoolean(System.getProperty(property, defaultValue));
     }
 
     private static int getIntValue(String property, String defaultValue) {
-        return Integer.parseInt(Tornado.getProperty(property, defaultValue));
+        return Integer.parseInt(System.getProperty(property, defaultValue));
     }
 
 }

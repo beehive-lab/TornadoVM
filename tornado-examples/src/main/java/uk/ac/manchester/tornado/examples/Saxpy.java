@@ -19,8 +19,11 @@ package uk.ac.manchester.tornado.examples;
 
 import java.util.stream.IntStream;
 
+import uk.ac.manchester.tornado.api.DRMode;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.examples.common.Messages;
@@ -56,12 +59,14 @@ public class Saxpy {
 
         IntStream.range(0, numElements).parallel().forEach(i -> x[i] = 450);
 
-        TaskGraph s0 = new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, x) //
                 .task("t0", Saxpy::saxpy, alpha, x, y)//
-                .transferToHost(y);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
 
-        s0.executeWithProfilerSequentialGlobal(Policy.PERFORMANCE);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        executor.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL).execute();
 
         numElements = 512 * 2;
 
@@ -70,11 +75,11 @@ public class Saxpy {
 
         IntStream.range(0, numElements).parallel().forEach(i -> a[i] = 450);
 
-        TaskGraph s1 = new TaskGraph("s1").task("t0", Saxpy::saxpy, alpha, a, b).transferToHost(a);
+        TaskGraph taskGraph1 = new TaskGraph("s1").task("t0", Saxpy::saxpy, alpha, a, b).transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
-        s1.executeWithProfilerSequentialGlobal(Policy.PERFORMANCE);
-
-        s1.executeWithProfilerSequentialGlobal(Policy.PERFORMANCE);
+        ImmutableTaskGraph immutableTaskGraph1 = taskGraph1.snapshot();
+        TornadoExecutionPlan executor1 = new TornadoExecutionPlan(immutableTaskGraph1);
+        executor1.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.PARALLEL).execute();
 
         boolean wrongResult = false;
         for (int i = 0; i < y.length; i++) {

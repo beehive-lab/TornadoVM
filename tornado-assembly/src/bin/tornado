@@ -4,7 +4,7 @@
 # This file is part of Tornado: A heterogeneous programming framework:
 # https://github.com/beehive-lab/tornadovm
 #
-# Copyright (c) 2022, APT Group, Department of Computer Science,
+# Copyright (c) 2022-2023, APT Group, Department of Computer Science,
 # School of Engineering, The University of Manchester. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -45,6 +45,10 @@ __TORNADOVM_DUMP_PROFILER__             = "-Dtornado.profiler=True -Dtornado.log
 __TORNADOVM_ENABLE_PROFILER_SILENT__    = "-Dtornado.profiler=True -Dtornado.log.profiler=True "
 __TORNADOVM_ENABLE_PROFILER_CONSOLE__   = "-Dtornado.profiler=True "
 
+# ########################################################
+# LIST OF TORNADOVM PROVIDERS: Set of Java Classes that 
+# will be loaded at runtime. 
+# ########################################################
 __TORNADOVM_PROVIDERS__ = """\
 -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph \
 -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime \

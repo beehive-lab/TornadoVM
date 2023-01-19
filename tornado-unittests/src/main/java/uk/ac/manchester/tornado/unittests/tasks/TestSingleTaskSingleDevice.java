@@ -24,17 +24,19 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- * Testing Tornado with one task in the same device. The {@link TaskGraph}
- * contains a single task. This task is executed on either on the default device
- * of the one selected.
+ * Testing the TornadoVM API with one task in the same device. The
+ * {@link TaskGraph} contains a single task. This task is executed on either on
+ * the default device of the one selected.
  * <p>
  * How to run?
  * </p>
@@ -63,11 +65,14 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
             b[i] = (float) Math.random();
         });
 
-        new TaskGraph("s0")//
+        TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
                 .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)//
-                .transferToHost(c)//
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);
@@ -86,15 +91,17 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
             b[i] = (float) Math.random();
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
         TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+        final int deviceNumber = 0;
 
-        int deviceNumber = 0;
-        taskGraph.setDevice(driver.getDevice(deviceNumber));
-
-        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
                 .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)//
-                .transferToHost(c)//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withDevice(driver.getDevice(deviceNumber)) //
                 .execute();
 
         for (int i = 0; i < c.length; i++) {
@@ -114,7 +121,6 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
             b[i] = (float) Math.random();
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
         TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
 
         // select device 1 it is available
@@ -123,11 +129,14 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
             deviceNumber = 1;
         }
 
-        taskGraph.setDevice(driver.getDevice(deviceNumber));
-
-        taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
                 .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)//
-                .transferToHost(c)//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withDevice(driver.getDevice(deviceNumber)) //
                 .execute();
 
         for (int i = 0; i < c.length; i++) {

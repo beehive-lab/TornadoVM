@@ -41,17 +41,19 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
+import uk.ac.manchester.tornado.api.enums.ProfilerMode;
+import uk.ac.manchester.tornado.api.memory.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
 
-public interface AbstractTaskGraph extends ProfileInterface {
+public interface TornadoTaskGraphInterface extends ProfileInterface {
 
     SchedulableTask getTask(String taskNameID);
 
@@ -85,39 +87,27 @@ public interface AbstractTaskGraph extends ProfileInterface {
 
     void transferToDevice(final int mode, Object... objects);
 
-    void transferToHost(Object... objects);
+    void transferToHost(final int mode, Object... objects);
 
     void dump();
 
     void warmup();
 
-    void lockObjectInMemory(Object object);
+    void freeDeviceMemory();
 
-    void lockObjectsInMemory(Object[] objects);
-
-    void unlockObjectFromMemory(Object object);
-
-    void unlockObjectsFromMemory(Object[] objects);
-
-    void syncObject(Object object);
-
-    void syncObjects();
-
-    void syncObjects(Object... objects);
+    void syncRuntimeTransferToHost(Object... objects);
 
     String getId();
 
     TaskMetaDataInterface meta();
 
-    AbstractTaskGraph schedule();
+    TornadoTaskGraphInterface schedule();
 
-    AbstractTaskGraph schedule(GridScheduler gridScheduler);
+    TornadoTaskGraphInterface schedule(GridScheduler gridScheduler);
 
-    AbstractTaskGraph scheduleWithProfile(Policy policy);
+    TornadoTaskGraphInterface scheduleWithProfile(Policy policy);
 
-    AbstractTaskGraph scheduleWithProfileSequential(Policy policy);
-
-    AbstractTaskGraph scheduleWithProfileSequentialGlobal(Policy policy);
+    TornadoTaskGraphInterface scheduleWithProfileSequential(Policy policy);
 
     void addTask(TaskPackage taskPackage);
 
@@ -127,7 +117,7 @@ public interface AbstractTaskGraph extends ProfileInterface {
 
     void addScalaTask(String id, Object function, Object[] args);
 
-    String getTaskScheduleName();
+    String getTaskGraphName();
 
     void replaceParameter(Object oldParameter, Object newParameter);
 
@@ -135,5 +125,13 @@ public interface AbstractTaskGraph extends ProfileInterface {
 
     boolean isFinished();
 
-    HashSet<Object> getArgumentsLookup();
+    Set<Object> getArgumentsLookup();
+
+    TornadoTaskGraphInterface createImmutableTaskGraph();
+
+    Collection<?> getOutputs();
+
+    void enableProfiler(ProfilerMode profilerMode);
+
+    void disableProfiler(ProfilerMode profilerMode);
 }

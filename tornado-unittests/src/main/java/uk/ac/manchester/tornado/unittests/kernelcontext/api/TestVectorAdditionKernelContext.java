@@ -24,8 +24,10 @@ import java.util.Arrays;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -82,12 +84,17 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, context, a, b, cTornado) //
-                .transferToHost(cTornado);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, cTornado);
+
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWorkToNull();
 
-        taskGraph.execute(gridScheduler);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        executionPlan.withGridScheduler(gridScheduler) //
+                .execute();
 
         vectorAddJava(a, b, cJava);
 
@@ -115,8 +122,12 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, a, context, b, cTornado) //
-                .transferToHost(cTornado);
-        taskGraph.execute(gridScheduler);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, cTornado);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(gridScheduler) //
+                .execute();
 
         vectorAddJava(a, b, cJava);
 
@@ -144,8 +155,12 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, a, b, context, cTornado) //
-                .transferToHost(cTornado);
-        taskGraph.execute(gridScheduler);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, cTornado);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(gridScheduler) //
+                .execute();
 
         vectorAddJava(a, b, cJava);
 
@@ -173,8 +188,12 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, a, b, cTornado, context) //
-                .transferToHost(cTornado);
-        taskGraph.execute(gridScheduler);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, cTornado);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(gridScheduler) //
+                .execute();
 
         vectorAddJava(a, b, cJava);
 
@@ -201,14 +220,17 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
                 .task("t0", TestVectorAdditionKernelContext::vectorAdd, context, a, b, cTornado) //
-                .transferToHost(cTornado);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, cTornado);
+
         // Change the Grid
         worker.setGlobalWork(size, 1, 1);
         worker.setLocalWorkToNull();
 
-        taskGraph.warmup();
-
-        taskGraph.execute(gridScheduler);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp() //
+                .withGridScheduler(gridScheduler) //
+                .execute();
 
         vectorAddJava(a, b, cJava);
 

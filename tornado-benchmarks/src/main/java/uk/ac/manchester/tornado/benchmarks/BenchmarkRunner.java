@@ -154,9 +154,9 @@ public abstract class BenchmarkRunner {
 
         final String[] devices = selectedDevices.split(",");
         for (String device : devices) {
-            final String[] indicies = device.split(":");
-            final int driverIndex = Integer.parseInt(indicies[0]);
-            final int deviceIndex = Integer.parseInt(indicies[1]);
+            final String[] stringIndex = device.split(":");
+            final int driverIndex = Integer.parseInt(stringIndex[0]);
+            final int deviceIndex = Integer.parseInt(stringIndex[1]);
 
             final BenchmarkDriver deviceTest = getTornadoDriver();
             final TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);

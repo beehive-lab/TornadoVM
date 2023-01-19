@@ -21,6 +21,7 @@ import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.blackscholes;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -59,20 +60,20 @@ public class BlackScholesTornado extends BenchmarkDriver {
         taskGraph = new TaskGraph("benchmark") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, randArray) //
                 .task("t0", ComputeKernels::blackscholes, randArray, put, call) //
-                .transferToHost(put, call);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, put, call);
 
-        taskGraph.warmup();
+        immutableTaskGraph = taskGraph.snapshot();
+        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp();
     }
 
     @Override
     public void tearDown() {
-        taskGraph.dumpProfiles();
-
+        executionResult.getProfilerResult().dumpProfiles();
         randArray = null;
         call = null;
         put = null;
-
-        taskGraph.getDevice().reset();
+        executionPlan.resetDevice();
         super.tearDown();
     }
 
@@ -97,10 +98,12 @@ public class BlackScholesTornado extends BenchmarkDriver {
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, randArrayTor);
         taskGraph.task("t0", ComputeKernels::blackscholes, randArrayTor, putTor, callTor);
 
-        taskGraph.warmup();
-        taskGraph.execute();
-        taskGraph.syncObjects(putTor, callTor);
-        taskGraph.clearProfiles();
+        immutableTaskGraph = taskGraph.snapshot();
+        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionResult = executionPlan.withWarmUp().execute();
+
+        executionResult.transferToHost(putTor, callTor);
+        executionPlan.clearProfiles();
 
         blackscholes(randArrayTor, putSeq, calSeq);
 
@@ -120,7 +123,7 @@ public class BlackScholesTornado extends BenchmarkDriver {
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.mapAllTo(device);
-        taskGraph.execute();
+        executionResult = executionPlan.withDevice(device) //
+                .execute();
     }
 }

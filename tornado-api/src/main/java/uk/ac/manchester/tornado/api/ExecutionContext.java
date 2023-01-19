@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2022-2023, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -52,7 +52,9 @@ public interface ExecutionContext {
      * It adds a barrier for sync all threads within the same work-group to ensure
      * correct order in local memory (OpenCL terminology).
      *
+     * <p>
      * Similar the OpenCL construct:
+     * </p>
      *
      * <code>
      *     barrier(CLK_LOCAL_MEM_FENCE);
@@ -64,7 +66,9 @@ public interface ExecutionContext {
      * It adds a barrier for sync all threads within the same work-group to ensure
      * correct order in global memory (OpenCL terminology).
      *
+     * <p>
      * Similar the OpenCL construct:
+     * </p>
      *
      * <code>
      *     barrier(CLK_GLOBAL_MEM_FENCE);

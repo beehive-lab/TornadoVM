@@ -20,7 +20,9 @@ package uk.ac.manchester.tornado.examples.compute;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
@@ -70,19 +72,22 @@ public class MatrixMultiplication1D {
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .lockObjectsInMemory(matrixA, matrixB, matrixC) //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", MatrixMultiplication1D::matrixMultiplication, matrixA, matrixB, matrixC, size) //
-                .transferToHost(matrixC); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC); //
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        executor.withWarmUp();
 
         // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
-            taskGraph.execute();
+            executor.execute();
         }
 
         // 2. Run parallel on the GPU with Tornado
         long start = System.currentTimeMillis();
-        taskGraph.execute();
+        executor.execute();
         long end = System.currentTimeMillis();
 
         // Run sequential
@@ -96,7 +101,7 @@ public class MatrixMultiplication1D {
         matrixMultiplication(matrixA, matrixB, resultSeq, size);
         long endSequential = System.currentTimeMillis();
 
-        // Compute Gigaflops and performance
+        // Compute GigaFLOPS and performance
         long msecGPUElapsedTime = (end - start);
         long msecCPUElaptedTime = (endSequential - startSequential);
         double flops = 2 * Math.pow(size, 3);
@@ -107,7 +112,7 @@ public class MatrixMultiplication1D {
         String formatGPUFGlops = String.format("%.2f", gpuGigaFlops);
         String formatCPUFGlops = String.format("%.2f", cpuGigaFlops);
 
-        TornadoDeviceType deviceType = taskGraph.getDevice().getDeviceType();
+        TornadoDeviceType deviceType = executor.getDevice(0).getDeviceType();
 
         // @formatter:off
         String buffer = "\tSingle Threaded CPU Execution: " + formatCPUFGlops + " GFlops, Total time = " + (endSequential - startSequential) + " ms" +

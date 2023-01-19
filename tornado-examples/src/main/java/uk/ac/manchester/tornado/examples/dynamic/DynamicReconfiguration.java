@@ -20,8 +20,11 @@ package uk.ac.manchester.tornado.examples.dynamic;
 
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.DRMode;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
@@ -49,11 +52,15 @@ public class DynamicReconfiguration {
         float[] b = new float[numElements];
         Arrays.fill(a, 10);
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", DynamicReconfiguration::saxpy, 2.0f, a, b) //
-                .transferToHost(b) //
-                .executeWithProfiler(Policy.PERFORMANCE);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph) //
+                .withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.PARALLEL) //
+                .execute();
 
     }
 

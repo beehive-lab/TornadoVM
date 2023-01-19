@@ -21,7 +21,9 @@ package uk.ac.manchester.tornado.benchmarks.montecarlo;
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
@@ -49,22 +51,23 @@ public class MonteCarloTornado extends BenchmarkDriver {
         output = new float[size];
         taskGraph = new TaskGraph("benchmark") //
                 .task("montecarlo", ComputeKernels::monteCarlo, output, size) //
-                .transferToHost(output);
-        taskGraph.warmup();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+        immutableTaskGraph = taskGraph.snapshot();
+        executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp();
     }
 
     @Override
     public void tearDown() {
-        taskGraph.dumpProfiles();
+        executionResult.getProfilerResult().dumpProfiles();
         output = null;
-        taskGraph.getDevice().reset();
+        executionPlan.resetDevice();
         super.tearDown();
     }
 
     @Override
     public void benchmarkMethod(TornadoDevice device) {
-        taskGraph.mapAllTo(device);
-        taskGraph.execute();
+        executionResult = executionPlan.withDevice(device).execute();
     }
 
     @Override
@@ -75,13 +78,12 @@ public class MonteCarloTornado extends BenchmarkDriver {
         result = new float[size];
 
         ComputeKernels.monteCarlo(result, size);
-        taskGraph.warmup();
-        taskGraph.mapAllTo(device);
+        executionPlan.withDevice(device).withWarmUp();
         for (int i = 0; i < 3; i++) {
-            taskGraph.execute();
+            executionPlan.execute();
         }
-        taskGraph.syncObjects(output);
-        taskGraph.clearProfiles();
+        executionResult.transferToHost(output);
+        executionPlan.clearProfiles();
 
         for (int i = 0; i < size; i++) {
             if (abs(output[i] - result[i]) > 0.01) {

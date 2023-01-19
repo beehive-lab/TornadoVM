@@ -22,7 +22,9 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
@@ -68,8 +70,10 @@ public class CodeFail extends TornadoTestBase {
 
         taskGraph.task("t0", CodeFail::foo, a) //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
-                .transferToHost(a)//
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
     }
 
     /**
@@ -99,8 +103,10 @@ public class CodeFail extends TornadoTestBase {
 
         taskGraph.task("t0", CodeFail::bar, a) //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
-                .transferToHost(a) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
     }
 
     /**
@@ -128,8 +134,10 @@ public class CodeFail extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                 .task("t0", CodeFail::zoo, input, result1, result2) //
-                .transferToHost(result1, result2); //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result1, result2); //
 
-        taskGraph.execute();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
     }
 }

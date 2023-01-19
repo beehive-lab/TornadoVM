@@ -39,7 +39,9 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
@@ -51,7 +53,7 @@ import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
  * How to run in isolation?
  * </p>
  * <code>
- *    tornado -jar benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.rotatevector.JMHRotateVector
+ *    tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.rotatevector.JMHRotateVector
  * </code>
  */
 public class JMHRotateVector {
@@ -62,7 +64,7 @@ public class JMHRotateVector {
         private VectorFloat3 input;
         private VectorFloat3 output;
         private Matrix4x4Float m;
-        private TaskGraph taskGraph;
+        private TornadoExecutionPlan executor;
 
         @Setup(Level.Trial)
         public void doSetup() {
@@ -77,11 +79,13 @@ public class JMHRotateVector {
                 input.set(i, value);
             }
 
-            taskGraph = new TaskGraph("benchmark") //
+            TaskGraph taskGraph = new TaskGraph("benchmark") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                     .task("rotateVector", GraphicsKernels::rotateVector, output, m, input) //
-                    .transferToHost(output);
-            taskGraph.warmup();
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+            executor = new TornadoExecutionPlan(immutableTaskGraph);
+            executor.withWarmUp();
         }
     }
 
@@ -102,9 +106,9 @@ public class JMHRotateVector {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void rotateVectorTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskGraph taskGraph = state.taskGraph;
-        taskGraph.execute();
-        blackhole.consume(taskGraph);
+        TornadoExecutionPlan executor = state.executor;
+        executor.execute();
+        blackhole.consume(executor);
     }
 
     public static void main(String[] args) throws RunnerException {

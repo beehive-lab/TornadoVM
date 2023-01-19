@@ -23,7 +23,9 @@ import java.util.stream.IntStream;
 import org.junit.Assert;
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
@@ -50,11 +52,15 @@ public class Inlining extends TornadoTestBase {
         byte[] result = new byte[4];
         byte[] input = new byte[] { 127, 127, 127, 127, 1, 1, 1, 1 };
 
-        new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements) //
                 .task("t0", Inlining::bitwiseOr, result, input, elements) //
-                .transferToHost(result) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+
     }
 
     public static int b2i(byte v) {
@@ -118,8 +124,11 @@ public class Inlining extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("foo");
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, rgbBytes) //
                 .task("grey", Inlining::rgbToGreyKernel, rgbBytes, greyInts)//
-                .transferToHost(greyInts) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, greyInts);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         rgbToGreyKernel(rgbBytes, seq);
 
@@ -142,8 +151,11 @@ public class Inlining extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("foo");
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, rgbBytes) //
                 .task("grey", Inlining::rgbToGreyKernelInt, rgbBytes, greyInts)//
-                .transferToHost(greyInts) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, greyInts);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         rgbToGreyKernelInt(rgbBytes, seq);
 
@@ -167,8 +179,11 @@ public class Inlining extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, rgbBytes) //
                 .task("t0", Inlining::rgbToGreyKernelSmall, rgbBytes, greyInts)//
-                .transferToHost(greyInts) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, greyInts);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         rgbToGreyKernelSmall(rgbBytes, seq);
 
@@ -189,8 +204,11 @@ public class Inlining extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, rgbBytes) //
                 .task("t0", Inlining::b2i, rgbBytes, greyInts)//
-                .transferToHost(greyInts) //
-                .execute();
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, greyInts);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         b2i(rgbBytes, seq);
 

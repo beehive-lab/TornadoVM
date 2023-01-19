@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import uk.ac.manchester.tornado.api.common.Event;
@@ -41,8 +42,8 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
-import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -52,27 +53,27 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 public class TornadoExecutionContext {
 
-    private final int MAX_TASKS = 128;
+    private final int MAX_TASKS = 256;
     private final int INITIAL_DEVICE_CAPACITY = 16;
 
     private final String name;
     private final ScheduleMetaData meta;
-    private final List<SchedulableTask> tasks;
-    private final List<Object> constants;
-    private final Map<Integer, Integer> objectMap;
-    private final List<Object> objects;
-    private final List<LocalObjectState> objectState;
-    private final List<TornadoAcceleratorDevice> devices;
+    private List<SchedulableTask> tasks;
+    private List<Object> constants;
+    private Map<Integer, Integer> objectMap;
+    private List<Object> objects;
+    private List<LocalObjectState> objectState;
+    private List<TornadoAcceleratorDevice> devices;
     private final KernelArgs[] callWrappers;
-    private final int[] taskToDevice;
+    private int[] taskToDevice;
     private int nextTask;
 
-    private final HashSet<TornadoAcceleratorDevice> lastDevices;
+    private Set<TornadoAcceleratorDevice> lastDevices;
 
     private boolean redeployOnDevice;
     private boolean defaultScheduler;
 
-    private final TornadoProfiler profiler;
+    private TornadoProfiler profiler;
 
     public TornadoExecutionContext(String id, TornadoProfiler profiler) {
         name = id;
@@ -380,7 +381,7 @@ public class TornadoExecutionContext {
         lastDevices.add(device);
     }
 
-    public HashSet<TornadoAcceleratorDevice> getLastDevices() {
+    public Set<TornadoAcceleratorDevice> getLastDevices() {
         return lastDevices;
     }
 
@@ -398,5 +399,34 @@ public class TornadoExecutionContext {
 
     public boolean useDefaultThreadScheduler() {
         return defaultScheduler;
+    }
+
+    public void createImmutableExecutionContext(TornadoExecutionContext executionContext) {
+
+        List<SchedulableTask> schedulableTasksCopy = new ArrayList<>(tasks);
+        executionContext.tasks = schedulableTasksCopy;
+
+        List<Object> constantCopy = new ArrayList<>(constants);
+        executionContext.constants = constantCopy;
+
+        Map<Integer, Integer> objectsMapCopy = new HashMap<>(objectMap);
+        executionContext.objectMap = objectsMapCopy;
+
+        List<Object> objectsCopy = new ArrayList<>(objects);
+        executionContext.objects = objectsCopy;
+
+        List<LocalObjectState> objectStateCopy = new ArrayList<>(objectState);
+        executionContext.objectState = objectStateCopy;
+
+        List<TornadoAcceleratorDevice> devicesCopy = new ArrayList<>(devices);
+        executionContext.devices = devicesCopy;
+
+        executionContext.taskToDevice = this.taskToDevice.clone();
+
+        Set<TornadoAcceleratorDevice> lastDeviceCopy = new HashSet<>(lastDevices);
+        executionContext.lastDevices = lastDeviceCopy;
+
+        executionContext.profiler = this.profiler;
+        executionContext.nextTask = this.nextTask;
     }
 }

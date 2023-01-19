@@ -18,10 +18,14 @@
 
 package uk.ac.manchester.tornado.examples.dynamic;
 
+import uk.ac.manchester.tornado.api.DRMode;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Montecarlo algorithm to approximate the PI value. This version has been
@@ -110,9 +114,12 @@ public class MontecarloMT {
 
         long startInit = System.nanoTime();
 
-        TaskGraph s0 = new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", MontecarloMT::computeMontecarlo, output)//
-                .transferToHost(output);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
 
         long stopInit = System.nanoTime();
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
@@ -124,12 +131,12 @@ public class MontecarloMT {
             switch (executionType) {
                 case "performance":
                     start = System.nanoTime();
-                    s0.executeWithProfilerSequential(Policy.PERFORMANCE);
+                    executor.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL).execute();
                     end = System.nanoTime();
                     break;
                 case "end":
                     start = System.nanoTime();
-                    s0.executeWithProfilerSequential(Policy.END_2_END);
+                    executor.withDynamicReconfiguration(Policy.END_2_END, DRMode.SERIAL).execute();
                     end = System.nanoTime();
                     break;
                 case "sequential":
@@ -146,7 +153,7 @@ public class MontecarloMT {
                     break;
                 default:
                     start = System.nanoTime();
-                    s0.execute();
+                    executor.execute();
                     end = System.nanoTime();
             }
             System.out.println("Total time:  " + (end - start) + " ns" + "\n");

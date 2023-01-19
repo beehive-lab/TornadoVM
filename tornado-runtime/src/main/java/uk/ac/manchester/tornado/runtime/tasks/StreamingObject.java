@@ -1,10 +1,10 @@
 package uk.ac.manchester.tornado.runtime.tasks;
 
 public class StreamingObject {
-    int mode;
+    final int mode;
     Object object;
 
-    public StreamingObject(int mode, Object object) {
+    public StreamingObject(final int mode, Object object) {
         this.mode = mode;
         this.object = object;
     }

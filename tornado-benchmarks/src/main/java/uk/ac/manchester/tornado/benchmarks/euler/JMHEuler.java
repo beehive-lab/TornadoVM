@@ -37,7 +37,9 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -46,7 +48,7 @@ import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
  * How to run in isolation?
  * </p>
  * <code>
- *    tornado -jar benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.euler.JMHEuler
+ *    tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.euler.JMHEuler
  * </code>
  */
 public class JMHEuler {
@@ -61,7 +63,7 @@ public class JMHEuler {
         long[] outputC;
         long[] outputD;
         long[] outputE;
-        private TaskGraph taskGraph;
+        private TornadoExecutionPlan executor;
 
         private long[] init(int size) {
             long[] input = new long[size];
@@ -79,11 +81,14 @@ public class JMHEuler {
             outputC = new long[size];
             outputD = new long[size];
             outputE = new long[size];
-            taskGraph = new TaskGraph("s0") //
+            TaskGraph taskGraph = new TaskGraph("s0") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
                     .task("s0", ComputeKernels::euler, size, input, outputA, outputB, outputC, outputD, outputE) //
-                    .transferToHost(outputA, outputB, outputC, outputD, outputE);
-            taskGraph.warmup();
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, outputA, outputB, outputC, outputD, outputE);
+
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+            executor = new TornadoExecutionPlan(immutableTaskGraph);
+            executor.withWarmUp();
         }
     }
 
@@ -104,9 +109,9 @@ public class JMHEuler {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void eulerTornado(BenchmarkSetup state, Blackhole blackhole) {
-        TaskGraph taskGraph = state.taskGraph;
-        taskGraph.execute();
-        blackhole.consume(taskGraph);
+        TornadoExecutionPlan executor = state.executor;
+        executor.execute();
+        blackhole.consume(executor);
     }
 
     public static void main(String[] args) throws RunnerException {

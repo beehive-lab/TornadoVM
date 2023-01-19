@@ -34,9 +34,6 @@ $ tornado --enableProfiler console  -m tornado.examples/uk.ac.manchester.tornado
         }
     }
 }
-
-
-
 ```
 
 All timers are printed in nanoseconds.

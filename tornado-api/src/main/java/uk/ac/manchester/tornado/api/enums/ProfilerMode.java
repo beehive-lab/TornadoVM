@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2023, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -10,12 +10,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
- * 
+ *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with GNU Classpath; see the file COPYING.  If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
@@ -25,7 +25,7 @@
  * making a combined work based on this library.  Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
- * 
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent
@@ -39,51 +39,21 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.mm;
+package uk.ac.manchester.tornado.api.enums;
 
-import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 
-import java.util.List;
+public enum ProfilerMode {
 
-public interface ObjectBuffer {
+    /**
+     * Reports profiler via STDOUT once the executor finishes.
+     */
+    CONSOLE, //
 
-    class ObjectBufferWrapper {
-        public final long buffer;
-        public long bufferOffset;
-
-        public ObjectBufferWrapper(long buffer, long bufferOffset) {
-            this.buffer = buffer;
-            this.bufferOffset = bufferOffset;
-        }
-    }
-
-    long toBuffer();
-
-    void setBuffer(ObjectBufferWrapper bufferWrapper);
-
-    long getBufferOffset();
-
-    void read(Object reference);
-
-    int read(Object reference, long hostOffset, int[] events, boolean useDeps);
-
-    void write(Object reference);
-
-    int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps);
-
-    List<Integer> enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps);
-
-    void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException;
-
-    void deallocate() throws TornadoMemoryException;
-
-    long size();
-
-    default int[] getIntBuffer() {
-        return null;
-    }
-
-    default void setIntBuffer(int[] arr) {
-    }
+    /**
+     * Stores all the profiler information in an internal object that can be queried
+     * after the executor finishes the execution using the
+     * {@link TornadoExecutionResult#getProfilerResult()} method.
+     */
+    SILENT;
 }

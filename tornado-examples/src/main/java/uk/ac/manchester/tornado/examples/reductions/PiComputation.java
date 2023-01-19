@@ -22,7 +22,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
@@ -42,7 +44,7 @@ public class PiComputation {
     public static void computePi(float[] input, @Reduce float[] result) {
         result[0] = 0.0f;
         for (@Parallel int i = 1; i < input.length; i++) {
-            float value = input[i] + (float) (TornadoMath.pow(-1, i + 1) / (2 * i - 1));
+            float value = input[i] + (TornadoMath.pow(-1, i + 1) / (2 * i - 1));
             result[0] += value;
         }
     }
@@ -52,10 +54,13 @@ public class PiComputation {
         float[] result = new float[1];
         Arrays.fill(result, 0.0f);
 
-        TaskGraph task = new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//
                 .task("t0", PiComputation::computePi, input, result) //
-                .transferToHost(result);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
 
         ArrayList<Long> timers = new ArrayList<>();
         for (int i = 0; i < ConfigurationReduce.MAX_ITERATIONS; i++) {
@@ -65,7 +70,7 @@ public class PiComputation {
             });
 
             long start = System.nanoTime();
-            task.execute();
+            executor.execute();
             long end = System.nanoTime();
 
             final float piValue = result[0] * 4;
