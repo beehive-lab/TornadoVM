@@ -64,7 +64,7 @@ public class TestExecutor extends TornadoTestBase {
         // 2. Create an immutable task graph
         ImmutableTaskGraph immutableTaskGraph = tg.snapshot();
 
-        // 3. Create an executor and build an execution plan
+        // 3. Create an execution plan
         TornadoExecutionPlan executorPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         // Select the default device for the execution plan. This is optional: if no
@@ -82,7 +82,7 @@ public class TestExecutor extends TornadoTestBase {
                 .withDevice(defaultDevice) //
                 .withDefaultScheduler();
 
-        // 5. Execute all Immutable Task Graphs associated with an executor
+        // 5. Execute all Immutable Task Graphs associated with an executor plan
         TornadoExecutionResult executionResult = executorPlan.execute();
 
         // 6. Obtain profiler result (only if the execution plan enabled the profiler).

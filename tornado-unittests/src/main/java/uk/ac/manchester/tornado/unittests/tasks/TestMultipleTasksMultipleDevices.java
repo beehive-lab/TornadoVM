@@ -76,8 +76,8 @@ public class TestMultipleTasksMultipleDevices {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < a.length; i++) {
             assertEquals(360, a[i]);
@@ -117,8 +117,8 @@ public class TestMultipleTasksMultipleDevices {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b, d); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < a.length; i++) {
             assertEquals(360, a[i]);

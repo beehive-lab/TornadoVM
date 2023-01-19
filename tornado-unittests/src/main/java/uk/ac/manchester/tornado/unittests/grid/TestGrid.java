@@ -83,13 +83,13 @@ public class TestGrid extends TornadoTestBase {
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withGridScheduler(gridScheduler) //
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(gridScheduler) //
                 .execute();
 
         // Change the Grid
         worker.setGlobalWork(512, 1, 1);
-        executor.execute();
+        executionPlan.execute();
 
         for (int i = 0; i < 512; i++) {
             assertEquals(a[i] + b[i], c[i], 0.01f);

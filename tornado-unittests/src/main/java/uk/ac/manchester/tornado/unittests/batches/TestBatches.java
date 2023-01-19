@@ -116,15 +116,15 @@ public class TestBatches extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, arrayB);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withBatch("100MB") // Slots of 100 MB
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withBatch("100MB") // Slots of 100 MB
                 .execute();
 
         for (int i = 0; i < arrayB.length; i++) {
             assertEquals(arrayA[i] + 100, arrayB[i], 0.1f);
         }
 
-        executor.freeDeviceMemory();
+        executionPlan.freeDeviceMemory();
     }
 
     @Test
@@ -150,15 +150,15 @@ public class TestBatches extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, arrayB);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withBatch("300MB") // Slots of 300 MB
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withBatch("300MB") // Slots of 300 MB
                 .execute();
 
         for (int i = 0; i < arrayB.length; i++) {
             assertEquals(arrayA[i] + 100, arrayB[i], 1.0f);
         }
 
-        executor.freeDeviceMemory();
+        executionPlan.freeDeviceMemory();
     }
 
     @Test
@@ -182,15 +182,15 @@ public class TestBatches extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, arrayA);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withBatch("512MB") // Slots of 512 MB
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withBatch("512MB") // Slots of 512 MB
                 .execute();
 
         for (int i = 0; i < arrayA.length; i++) {
             assertEquals(i, arrayA[i], 0.1f);
         }
 
-        executor.freeDeviceMemory();
+        executionPlan.freeDeviceMemory();
     }
 
     @Test
@@ -219,15 +219,15 @@ public class TestBatches extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, arrayC);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withBatch("50MB") // Slots of 50 MB
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withBatch("50MB") // Slots of 50 MB
                 .execute();
 
         for (int i = 0; i < arrayA.length; i++) {
             assertEquals(arrayA[i] + arrayB[i], arrayC[i], 0.1f);
         }
 
-        executor.freeDeviceMemory();
+        executionPlan.freeDeviceMemory();
     }
 
     @Test
@@ -256,14 +256,14 @@ public class TestBatches extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, arrayC);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withBatch("50MB") // Slots of 50 MB
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withBatch("50MB") // Slots of 50 MB
                 .execute();
 
         for (int i = 0; i < arrayA.length; i++) {
             assertEquals(arrayA[i] + arrayB[i], arrayC[i]);
         }
-        executor.freeDeviceMemory();
+        executionPlan.freeDeviceMemory();
     }
 
     @Test
@@ -293,14 +293,14 @@ public class TestBatches extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, arrayC);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withBatch("50MB") // Slots of 50 MB
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withBatch("50MB") // Slots of 50 MB
                 .execute();
 
         for (int i = 0; i < arrayA.length; i++) {
             assertEquals(arrayA[i] + arrayB[i], arrayC[i]);
         }
-        executor.freeDeviceMemory();
+        executionPlan.freeDeviceMemory();
     }
 
     @Test
@@ -328,14 +328,14 @@ public class TestBatches extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, arrayC);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withBatch("50MB") // Slots of 50 MB
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withBatch("50MB") // Slots of 50 MB
                 .execute();
 
         for (int i = 0; i < arrayA.length; i++) {
             assertEquals(arrayA[i] + arrayB[i], arrayC[i], 0.01);
         }
-        executor.freeDeviceMemory();
+        executionPlan.freeDeviceMemory();
     }
 
     @Test
@@ -364,14 +364,14 @@ public class TestBatches extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, arrayC);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withBatch("50MB") // Slots of 50 MB
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withBatch("50MB") // Slots of 50 MB
                 .execute();
 
         for (int i = 0; i < arrayA.length; i++) {
             assertEquals(arrayA[i] + arrayB[i], arrayC[i]);
         }
-        executor.freeDeviceMemory();
+        executionPlan.freeDeviceMemory();
     }
 
     private long checkMaxHeapAllocation(int size, MemSize memSize) throws UnsupportedConfigurationException {

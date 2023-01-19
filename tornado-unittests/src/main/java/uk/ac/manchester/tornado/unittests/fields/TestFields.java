@@ -101,12 +101,12 @@ public class TestFields extends TornadoTestBase {
         taskGraph.task("t0", foo::computeInit);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        TornadoExecutionResult executionResult = executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionResult executionResult = executionPlan.execute();
 
         executionResult.transferToHost(foo.output);
 
-        executor.freeDeviceMemory();
+        executionPlan.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
             assertEquals(100, foo.output[i]);
@@ -123,10 +123,10 @@ public class TestFields extends TornadoTestBase {
         taskGraph.task("t0", foo::computeAdd);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        TornadoExecutionResult executionResult = executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionResult executionResult = executionPlan.execute();
 
-        executor.freeDeviceMemory();
+        executionPlan.freeDeviceMemory();
 
         executionResult.transferToHost(foo.output);
 
@@ -144,12 +144,12 @@ public class TestFields extends TornadoTestBase {
         taskGraph.task("init", bar::computeInit);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        TornadoExecutionResult executionResult = executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionResult executionResult = executionPlan.execute();
 
         executionResult.transferToHost(bar.output);
 
-        executor.freeDeviceMemory();
+        executionPlan.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
             assertEquals(15, bar.output[i]);
@@ -208,8 +208,8 @@ public class TestFields extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         assertEquals(77, a.someOtherField, 0.01f);
         assertEquals(-1, a.b.someField, 0.01f);
@@ -235,8 +235,8 @@ public class TestFields extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         assertEquals(77, a.b.someField, 0.01f);
         assertEquals(-1, a.someOtherField, 0.01f);
@@ -259,8 +259,8 @@ public class TestFields extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < b.someArray.length; i++) {
             assertEquals(6, a.b.someArray[i]);

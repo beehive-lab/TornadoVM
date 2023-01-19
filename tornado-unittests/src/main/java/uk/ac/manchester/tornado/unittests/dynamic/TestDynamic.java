@@ -74,15 +74,15 @@ public class TestDynamic extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         // Run first time to obtain the best performance device
-        executor.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL) //
+        executionPlan.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL) //
                 .execute();
 
         // Run a few iterations to get the device.
         for (int i = 0; i < 10; i++) {
-            executor.execute();
+            executionPlan.execute();
         }
 
         for (int i = 0; i < b.length; i++) {
@@ -104,15 +104,15 @@ public class TestDynamic extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         // Run first time to obtain the best performance device
-        executor.withDynamicReconfiguration(Policy.END_2_END, DRMode.PARALLEL) //
+        executionPlan.withDynamicReconfiguration(Policy.END_2_END, DRMode.PARALLEL) //
                 .execute();
 
         // Run a few iterations to get the device.
         for (int i = 0; i < 10; i++) {
-            executor.execute();
+            executionPlan.execute();
         }
 
         for (int i = 0; i < b.length; i++) {
@@ -135,10 +135,10 @@ public class TestDynamic extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         // Run first time to obtain the best performance device
-        executor.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL) //
+        executionPlan.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL) //
                 .execute();
 
         for (int i = 0; i < b.length; i++) {
@@ -163,15 +163,15 @@ public class TestDynamic extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         // Run first time to obtain the best performance device
-        executor.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL) //
+        executionPlan.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL) //
                 .execute();
 
         // Run a few iterations to get the device.
         for (int i = 0; i < 10; i++) {
-            executor.execute();
+            executionPlan.execute();
         }
 
         for (int i = 0; i < b.length; i++) {
@@ -198,15 +198,15 @@ public class TestDynamic extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         // Run first time to obtain the best performance device
-        executor.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL) //
+        executionPlan.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL) //
                 .execute();
 
         // Run a few iterations to get the device.
         for (int i = 0; i < 10; i++) {
-            executor.execute();
+            executionPlan.execute();
         }
 
         for (int i = 0; i < b.length; i++) {
@@ -228,14 +228,14 @@ public class TestDynamic extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         // Run first time to obtain the best performance device
-        executor.withDynamicReconfiguration(Policy.LATENCY, DRMode.PARALLEL) //
+        executionPlan.withDynamicReconfiguration(Policy.LATENCY, DRMode.PARALLEL) //
                 .execute();
         // Run a few iterations to get the device.
         for (int i = 0; i < 10; i++) {
-            executor.execute();
+            executionPlan.execute();
         }
 
         for (int i = 0; i < b.length; i++) {

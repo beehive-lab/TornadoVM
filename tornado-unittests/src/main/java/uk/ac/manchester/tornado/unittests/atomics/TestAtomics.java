@@ -180,8 +180,8 @@ public class TestAtomics extends TornadoTestBase {
                 .task("t0", TestAtomics::atomic03, a) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         atomic03(b);
         for (int i = 0; i < a.length; i++) {
@@ -203,8 +203,8 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        TornadoExecutionResult executionResult = executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionResult executionResult = executionPlan.execute();
 
         if (!executionResult.isReady()) {
             assertTrue(false);
@@ -232,8 +232,8 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        TornadoExecutionResult executionResult = executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionResult executionResult = executionPlan.execute();
 
         if (!executionResult.isReady()) {
             assertTrue(false);
@@ -282,8 +282,8 @@ public class TestAtomics extends TornadoTestBase {
                 )//
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         boolean repeated = isValueRepeated(a);
         assertTrue(!repeated);
@@ -306,8 +306,8 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        TornadoExecutionResult executionResult = executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionResult executionResult = executionPlan.execute();
 
         if (!executionResult.isReady()) {
             assertTrue(false);
@@ -334,8 +334,8 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        TornadoExecutionResult executionResult = executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionResult executionResult = executionPlan.execute();
 
         if (!executionResult.isReady()) {
             assertTrue(false);
@@ -359,8 +359,8 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        TornadoExecutionResult executionResult = executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionResult executionResult = executionPlan.execute();
 
         if (!executionResult.isReady()) {
             assertTrue(false);
@@ -402,8 +402,8 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a, ai);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         boolean repeated = isValueRepeated(a);
 
@@ -431,8 +431,8 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a, ai);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         boolean repeated = isValueRepeated(a);
 
@@ -460,8 +460,8 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, ai, a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         boolean repeated = isValueRepeated(a);
 
@@ -491,8 +491,8 @@ public class TestAtomics extends TornadoTestBase {
                 .task("t0", TestAtomics::atomic10, a, ai, bi) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, ai, a, bi);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         boolean repeated = isValueRepeated(a);
 
@@ -523,8 +523,8 @@ public class TestAtomics extends TornadoTestBase {
                 .task("t0", TestAtomics::atomic13, a, ai) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, ai, a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         boolean repeated = isValueRepeated(a);
 
@@ -554,8 +554,8 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, ai, a, bi);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         int lastValue = ai.get();
         assertEquals(initialValueA + size, lastValue);
@@ -582,8 +582,8 @@ public class TestAtomics extends TornadoTestBase {
                 .task("t0", TestAtomics::atomic15, a, ai) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, ai, a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         int lastValue = ai.get();
         assertEquals(initialValueA + size, lastValue);
@@ -611,11 +611,11 @@ public class TestAtomics extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, ai, a);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         final int iterations = 50;
         IntStream.range(0, iterations).forEach(i -> {
-            executor.execute();
+            executionPlan.execute();
         });
 
         int lastValue = ai.get();

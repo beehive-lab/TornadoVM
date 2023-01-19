@@ -71,8 +71,8 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);
@@ -100,8 +100,8 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withDevice(driver.getDevice(deviceNumber)) //
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withDevice(driver.getDevice(deviceNumber)) //
                 .execute();
 
         for (int i = 0; i < c.length; i++) {
@@ -135,8 +135,8 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withDevice(driver.getDevice(deviceNumber)) //
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withDevice(driver.getDevice(deviceNumber)) //
                 .execute();
 
         for (int i = 0; i < c.length; i++) {

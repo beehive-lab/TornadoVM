@@ -58,8 +58,8 @@ public class TestInstances extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, array);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (double v : array) {
             assertEquals(2.1, v, 0.001);
@@ -80,8 +80,8 @@ public class TestInstances extends TornadoTestBase {
                 .task("t0", this::compute, array, 2.1) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, array);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (double v : array) {
             assertEquals(2.1, v, 0.001);

@@ -61,8 +61,8 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withGridScheduler(grid) //
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(grid) //
                 .execute();
 
         assertEquals(16, data[0]);
@@ -85,8 +85,8 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withGridScheduler(grid) //
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(grid) //
                 .execute();
 
         assertEquals(8, data[0]);
@@ -108,8 +108,8 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
                 .task("t0", KernelContextWorkGroupTests::apiTestGlobalGroupSizeZ, context, data)//
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withGridScheduler(grid) //
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(grid) //
                 .execute();
         assertEquals(4, data[0]);
     }
@@ -132,8 +132,8 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withGridScheduler(grid) //
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(grid) //
                 .execute();
         assertEquals(worker.getLocalWork()[0], data[0]);
     }
@@ -156,8 +156,8 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withGridScheduler(grid) //
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(grid) //
                 .execute();
         assertEquals(worker.getLocalWork()[1], data[0]);
     }
@@ -180,8 +180,8 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withGridScheduler(grid) //
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(grid) //
                 .execute();
         assertEquals(worker.getLocalWork()[2], data[0]);
     }

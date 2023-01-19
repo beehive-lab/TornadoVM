@@ -85,8 +85,8 @@ public class TestCase extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, cache_dstart);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withWarmUp().execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp().execute();
 
     }
 

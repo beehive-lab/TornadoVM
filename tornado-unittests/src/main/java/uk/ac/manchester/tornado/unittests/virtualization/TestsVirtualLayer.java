@@ -130,10 +130,10 @@ public class TestsVirtualLayer extends TornadoTestBase {
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
-        executor.withDevice(driver.getDevice(0));
-        executor.execute();
+        executionPlan.withDevice(driver.getDevice(0));
+        executionPlan.execute();
 
         for (int i = 0; i < numElements; i++) {
             assertEquals((initValue + numKernels), data[i]);
@@ -141,10 +141,11 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
         initValue += numKernels;
 
-        // Reuse the immutable graph and the executor to change the device for the new
+        // Reuse the immutable graph and the executionPlan to change the device for the
+        // new
         // execution.
-        executor.withDevice(driver.getDevice(1));
-        executor.execute();
+        executionPlan.withDevice(driver.getDevice(1));
+        executionPlan.execute();
 
         for (int i = 0; i < numElements; i++) {
             assertEquals((initValue + numKernels), data[i]);
@@ -170,15 +171,15 @@ public class TestsVirtualLayer extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withDevice(driver.getDevice(0)) //
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withDevice(driver.getDevice(0)) //
                 .execute(); //
 
         for (int i = 0; i < numElements; i++) {
             assertEquals((alpha * 450), y[i], 0.001f);
         }
 
-        executor.withDevice(driver.getDevice(1)) //
+        executionPlan.withDevice(driver.getDevice(1)) //
                 .execute(); //
 
         for (int i = 0; i < numElements; i++) {
@@ -206,21 +207,21 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
         // Assign Immutable Task Graph to device 0
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withDevice(driver.getDevice(0)) //
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withDevice(driver.getDevice(0)) //
                 .execute();
 
-        // Assign executor to device 1
-        executor.withDevice(driver.getDevice(1)) //
+        // Assign executionPlan to device 1
+        executionPlan.withDevice(driver.getDevice(1)) //
                 .execute();
 
-        // The following task-graph mutation won't have any effect on the executor
-        // because the executor only dispatches immutable task-graphs
+        // The following task-graph mutation won't have any effect on the executionPlan
+        // because the executionPlan only dispatches immutable task-graphs
         taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t1", TestsVirtualLayer::testA, data, 10) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
-        executor.execute();
+        executionPlan.execute();
     }
 
     /**
@@ -243,18 +244,18 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
         // Assign Immutable Task Graph to device 0
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withDevice(driver.getDevice(0)) //
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withDevice(driver.getDevice(0)) //
                 .execute();
 
-        executor.withDevice(driver.getDevice(1)) //
+        executionPlan.withDevice(driver.getDevice(1)) //
                 .execute();
 
         taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t1", TestsVirtualLayer::testA, data, 10) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
-        executor.withDevice(driver.getDevice(0)) //
+        executionPlan.withDevice(driver.getDevice(0)) //
                 .execute();
 
         for (int i = 0; i < N; i++) {
@@ -286,8 +287,8 @@ public class TestsVirtualLayer extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, dataB);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < N; i++) {
             assertEquals(101, dataA[i]);
@@ -297,7 +298,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
     /**
      * It creates one task graph with one task. Then, it executes the same task
-     * graph via an executor on different devices.
+     * graph via an executionPlan on different devices.
      *
      * <p>
      * The task is just one instance for all the devices. The loop iterates over the
@@ -334,11 +335,11 @@ public class TestsVirtualLayer extends TornadoTestBase {
             // Common immutable object for the graph
             ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
-            // Common executor for all permutations of devices
-            TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+            // Common executionPlan for all permutations of devices
+            TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
-                executor.withDevice(driver.getDevice(deviceIndex)) //
+                executionPlan.withDevice(driver.getDevice(deviceIndex)) //
                         .execute();
             }
         }
@@ -350,7 +351,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
     /**
      * It creates two task graphs and two tasks and executes them on different
-     * devices using different executors.
+     * devices using different executionPlans.
      */
     @Test
     public void testSchedulerDevices() {
@@ -376,9 +377,9 @@ public class TestsVirtualLayer extends TornadoTestBase {
         // Common immutable object for the graph
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
-        // Common executor for all permutations of devices
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        // Common executionPlan for all permutations of devices
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         TornadoRuntime.setProperty("s1.t1.device", "0:1");
         TaskGraph taskGraph2 = new TaskGraph("s1") //
@@ -387,9 +388,9 @@ public class TestsVirtualLayer extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph2 = taskGraph2.snapshot();
 
-        // Common executor for all permutations of devices
-        TornadoExecutionPlan executor2 = new TornadoExecutionPlan(immutableTaskGraph2);
-        executor2.execute();
+        // Common executionPlan for all permutations of devices
+        TornadoExecutionPlan executionPlan2 = new TornadoExecutionPlan(immutableTaskGraph2);
+        executionPlan2.execute();
 
         for (int i = 0; i < N; i++) {
             assertEquals(dataA[i], dataB[i]);

@@ -111,8 +111,8 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withGridScheduler(gridScheduler) //
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(gridScheduler) //
                 .execute();
 
         // Final Reduction
@@ -190,8 +190,8 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withGridScheduler(gridScheduler) //
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(gridScheduler) //
                 .execute();
 
         // Final SUM
@@ -250,8 +250,8 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withGridScheduler(gridScheduler) //
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(gridScheduler) //
                 .execute();
 
         // Final SUM
@@ -304,8 +304,8 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withGridScheduler(gridScheduler) //
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(gridScheduler) //
                 .execute();
 
         // Final SUM
@@ -364,8 +364,8 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withGridScheduler(gridScheduler) //
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(gridScheduler) //
                 .execute();
 
         // Final SUM
@@ -418,8 +418,8 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         worker.setLocalWork(localSize, 1, 1);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withGridScheduler(gridScheduler) //
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(gridScheduler) //
                 .execute();
 
         // Final SUM

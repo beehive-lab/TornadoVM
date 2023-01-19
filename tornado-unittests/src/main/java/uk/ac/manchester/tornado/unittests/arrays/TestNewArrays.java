@@ -149,8 +149,8 @@ public class TestNewArrays extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         vectorAdd(a, b, sequentialResult);
         for (int i = 0; i < size; i++) {
@@ -176,8 +176,8 @@ public class TestNewArrays extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         vectorAddComplexConditions(a, b, sequentialResult);
         for (int i = 0; i < size; i++) {
@@ -204,8 +204,8 @@ public class TestNewArrays extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         initializeToOne(dataSeq);
 
@@ -233,8 +233,8 @@ public class TestNewArrays extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         initializeToOneParallelScope(dataSeq);
 
@@ -262,8 +262,8 @@ public class TestNewArrays extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         initializeToOneParallelScopeComplex(dataSeq);
 
@@ -291,8 +291,8 @@ public class TestNewArrays extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         initializeToOneParallel(dataSeq);
 
@@ -319,8 +319,8 @@ public class TestNewArrays extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         float[] sequential = new float[1];
         reductionAddFloats(input, sequential);

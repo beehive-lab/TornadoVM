@@ -95,13 +95,13 @@ public class TestAPI extends TornadoTestBase {
         taskGraph.transferToHost(DataTransferMode.USER_DEFINED, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executorPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionPlan executionPlanPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
-        TornadoExecutionResult executionResult = executorPlan.execute();
+        TornadoExecutionResult executionResult = executionPlanPlan.execute();
 
         executionResult.transferToHost(data);
 
-        executorPlan.freeDeviceMemory();
+        executionPlanPlan.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data[i]);
@@ -127,11 +127,11 @@ public class TestAPI extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withWarmUp() //
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withWarmUp() //
                 .execute();
 
-        executor.freeDeviceMemory();
+        executionPlan.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data[i]);

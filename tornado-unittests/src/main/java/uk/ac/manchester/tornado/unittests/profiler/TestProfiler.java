@@ -86,11 +86,11 @@ public class TestProfiler extends TornadoTestBase {
         // Build ImmutableTaskGraph
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
-        // Build Executor
-        TornadoExecutionPlan executorPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        // Build executionPlan
+        TornadoExecutionPlan executionPlanPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         // Execute the plan (default TornadoVM optimization choices)
-        TornadoExecutionResult executionResult = executorPlan.execute();
+        TornadoExecutionResult executionResult = executionPlanPlan.execute();
 
         assertTrue(executionResult.getProfilerResult().getTotalTime() > 0);
         assertTrue(executionResult.getProfilerResult().getTornadoCompilerTime() > 0);
@@ -134,11 +134,11 @@ public class TestProfiler extends TornadoTestBase {
         // Build ImmutableTaskGraph
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
-        // Build Executor
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        // Build executionPlan
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         // Execute the plan (default TornadoVM optimization choices)
-        TornadoExecutionResult executionResult = executor.execute();
+        TornadoExecutionResult executionResult = executionPlan.execute();
 
         assertEquals(executionResult.getProfilerResult().getTotalTime(), 0);
         assertEquals(executionResult.getProfilerResult().getTornadoCompilerTime(), 0);
@@ -153,7 +153,7 @@ public class TestProfiler extends TornadoTestBase {
     }
 
     @Test
-    public void testProfilerFromExecutor() {
+    public void testProfilerFromexecutionPlan() {
         int numElements = 16;
         int[] a = new int[numElements];
         int[] b = new int[numElements];
@@ -170,13 +170,13 @@ public class TestProfiler extends TornadoTestBase {
         // Build ImmutableTaskGraph
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
-        // Build Executor
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        // Build executionPlan
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
-        executor.withProfiler(ProfilerMode.CONSOLE);
+        executionPlan.withProfiler(ProfilerMode.CONSOLE);
 
         // Execute the plan (default TornadoVM optimization choices)
-        TornadoExecutionResult executionResult = executor.execute();
+        TornadoExecutionResult executionResult = executionPlan.execute();
 
         int driverIndex = TornadoRuntime.getTornadoRuntime().getDefaultDevice().getDriverIndex();
 
@@ -217,13 +217,13 @@ public class TestProfiler extends TornadoTestBase {
         // Build ImmutableTaskGraph
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
-        // Build Executor
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        // Build executionPlan
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
-        executor.withProfiler(ProfilerMode.SILENT);
+        executionPlan.withProfiler(ProfilerMode.SILENT);
 
         // Execute the plan (default TornadoVM optimization choices)
-        TornadoExecutionResult executionResult = executor.execute();
+        TornadoExecutionResult executionResult = executionPlan.execute();
 
         int driverIndex = TornadoRuntime.getTornadoRuntime().getDefaultDevice().getDriverIndex();
 
@@ -244,7 +244,7 @@ public class TestProfiler extends TornadoTestBase {
         assertEquals(executionResult.getProfilerResult().getDeviceWriteTime() + executionResult.getProfilerResult().getDeviceReadTime(), executionResult.getProfilerResult().getDataTransfersTime());
         assertEquals(executionResult.getProfilerResult().getTornadoCompilerTime() + executionResult.getProfilerResult().getDriverInstallTime(), executionResult.getProfilerResult().getCompileTime());
 
-        executor.withoutProfiler().execute();
+        executionPlan.withoutProfiler().execute();
 
     }
 }

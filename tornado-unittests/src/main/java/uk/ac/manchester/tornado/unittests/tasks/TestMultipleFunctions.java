@@ -188,8 +188,8 @@ public class TestMultipleFunctions extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals((a[i] + b[i]), c[i]);
@@ -216,8 +216,8 @@ public class TestMultipleFunctions extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals((a[i] + (a[i] + b[i])), c[i]);
@@ -244,8 +244,8 @@ public class TestMultipleFunctions extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals((a[i] + (a[i] + (a[i] + b[i]))), c[i]);
@@ -272,8 +272,8 @@ public class TestMultipleFunctions extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < c.length; i++) {
             assertEquals((a[i] + a[i]) + (b[i] * b[i]), c[i]);
@@ -300,8 +300,8 @@ public class TestMultipleFunctions extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         vectorAddFloats(a, b, checker);
 
@@ -327,8 +327,8 @@ public class TestMultipleFunctions extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         Float4 result = Float4.add(foo(a), bar(b));
 
@@ -401,8 +401,8 @@ public class TestMultipleFunctions extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, testArrays.callerReadCalleeWriteTor, testArrays.callerWriteTor);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         Assert.assertArrayEquals(testArrays.calleeReadSeq, testArrays.calleeReadTor);
         Assert.assertArrayEquals(testArrays.callerReadCalleeWriteSeq, testArrays.callerReadCalleeWriteTor);
@@ -438,8 +438,8 @@ public class TestMultipleFunctions extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, testArrays.callerReadCalleeWriteTor, testArrays.callerWriteTor, testArrays.callerReadTor);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         Assert.assertArrayEquals(testArrays.calleeReadSeq, testArrays.calleeReadTor);
         Assert.assertArrayEquals(testArrays.callerReadCalleeWriteSeq, testArrays.callerReadCalleeWriteTor);
@@ -487,8 +487,8 @@ public class TestMultipleFunctions extends TornadoTestBase {
                         arrays.callerReadCalleeWriteTor);//
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         Assert.assertArrayEquals(arrays.calleeReadSeq, arrays.calleeReadTor);
         Assert.assertArrayEquals(arrays.callerReadCalleeWriteSeq, arrays.callerReadCalleeWriteTor);
@@ -531,8 +531,8 @@ public class TestMultipleFunctions extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, arr);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         Assert.assertEquals(-1, arr[0]);
     }

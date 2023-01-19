@@ -75,8 +75,8 @@ public class TestReductionsFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         float[] sequential = new float[1];
         reductionAddFloats(input, sequential);
@@ -110,8 +110,8 @@ public class TestReductionsFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         float[] sequential = new float[1];
         reductionAddFloatsConstant(input, sequential);
@@ -144,8 +144,8 @@ public class TestReductionsFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         float[] sequential = new float[1];
         reductionAddFloats(input, sequential);
@@ -193,8 +193,8 @@ public class TestReductionsFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         float[] sequential = new float[1];
         reductionAddFloats2(input, sequential);
@@ -221,8 +221,8 @@ public class TestReductionsFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         float[] sequential = new float[1];
         reductionAddFloats4(inputA, inputB, sequential);
@@ -265,8 +265,8 @@ public class TestReductionsFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         float[] sequential = new float[1];
         computeSum(input, sequential);
@@ -296,8 +296,8 @@ public class TestReductionsFloats extends TornadoTestBase {
                 .task("t0", TestReductionsFloats::multiplyFloats, input, result) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         float[] sequential = new float[] { 1.0f };
         multiplyFloats(input, sequential);
@@ -333,8 +333,8 @@ public class TestReductionsFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         float[] sequential = new float[1];
         reductionAddFloatsConditionally(input, sequential);
@@ -368,8 +368,8 @@ public class TestReductionsFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         final float piValue = result[0] * 4;
 
@@ -398,8 +398,8 @@ public class TestReductionsFloats extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         float[] sequential = new float[] { Float.MIN_VALUE };
         maxReductionAnnotation(input, sequential);
@@ -428,8 +428,8 @@ public class TestReductionsFloats extends TornadoTestBase {
                 .task("t0", TestReductionsFloats::maxReductionAnnotation2, input, result) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         float[] sequential = new float[] { Float.MIN_VALUE };
         maxReductionAnnotation2(input, sequential);
@@ -460,8 +460,8 @@ public class TestReductionsFloats extends TornadoTestBase {
                 .task("t0", TestReductionsFloats::minReductionAnnotation, input, result, Float.MAX_VALUE) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         float[] sequential = new float[1];
         minReductionAnnotation(input, sequential, Float.MAX_VALUE);
@@ -492,8 +492,8 @@ public class TestReductionsFloats extends TornadoTestBase {
                 .task("t0", TestReductionsFloats::minReductionAnnotation2, input, result, Float.MAX_VALUE)//
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         float[] sequential = new float[1];
         minReductionAnnotation2(input, sequential, Float.MAX_VALUE);
@@ -533,11 +533,11 @@ public class TestReductionsFloats extends TornadoTestBase {
         });
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         // We run for 10 times
         for (int i = 0; i < 10; i++) {
-            executor.execute();
+            executionPlan.execute();
         }
         integrationTornado(input, resultSeq, a, b);
 

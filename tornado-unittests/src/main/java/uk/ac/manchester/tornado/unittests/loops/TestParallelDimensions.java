@@ -58,8 +58,8 @@ public class TestParallelDimensions extends TornadoTestBase {
                 .task("t0", TestParallelDimensions::forLoopOneD, a) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int j : a) {
             assertEquals(10, j);
@@ -86,8 +86,8 @@ public class TestParallelDimensions extends TornadoTestBase {
                 .task("t0", TestParallelDimensions::forLoop2D, a, size) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
@@ -117,8 +117,8 @@ public class TestParallelDimensions extends TornadoTestBase {
                 .task("t0", TestParallelDimensions::forLoop3D, a, size) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
@@ -155,8 +155,8 @@ public class TestParallelDimensions extends TornadoTestBase {
                 .task("t0", TestParallelDimensions::forLoop3DMap, a, b, size) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {

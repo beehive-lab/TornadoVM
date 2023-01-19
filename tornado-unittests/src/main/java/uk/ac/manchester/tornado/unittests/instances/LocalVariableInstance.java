@@ -103,8 +103,8 @@ public class LocalVariableInstance {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         int[] seq = sequential(in);
 

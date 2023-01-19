@@ -76,8 +76,8 @@ public class TestTemporaryValues extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, aTornado, bTornado, cTornado);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         computeWithTemporaryValues(aJava, bJava, cJava);
 

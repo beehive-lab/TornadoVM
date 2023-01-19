@@ -84,8 +84,8 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         String tornadoSDK = System.getenv("TORNADO_SDK");
         String filePath = tornadoSDK + "/examples/generated/virtualDevice/" + expectedFeaturesFile;

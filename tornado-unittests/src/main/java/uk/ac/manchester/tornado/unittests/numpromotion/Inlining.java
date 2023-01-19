@@ -58,8 +58,8 @@ public class Inlining extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
     }
 
@@ -127,8 +127,8 @@ public class Inlining extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, greyInts);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         rgbToGreyKernel(rgbBytes, seq);
 
@@ -154,8 +154,8 @@ public class Inlining extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, greyInts);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         rgbToGreyKernelInt(rgbBytes, seq);
 
@@ -182,8 +182,8 @@ public class Inlining extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, greyInts);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         rgbToGreyKernelSmall(rgbBytes, seq);
 
@@ -207,8 +207,8 @@ public class Inlining extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, greyInts);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
 
         b2i(rgbBytes, seq);
 

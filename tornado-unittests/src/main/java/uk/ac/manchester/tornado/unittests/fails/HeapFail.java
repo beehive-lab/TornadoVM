@@ -72,7 +72,7 @@ public class HeapFail {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, y); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.execute();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
     }
 }

@@ -72,10 +72,10 @@ public class TestIO extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, arrayC);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         for (int i = 0; i < 4; i++) {
-            executor.execute();
+            executionPlan.execute();
         }
 
         for (int i = 0; i < N; i++) {
@@ -105,10 +105,10 @@ public class TestIO extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, arrayC);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         for (int i = 0; i < 4; i++) {
-            executor.execute();
+            executionPlan.execute();
         }
 
         for (int i = 0; i < N; i++) {
@@ -142,13 +142,13 @@ public class TestIO extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, arrayC);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         for (int i = 0; i < 4; i++) {
-            executor.execute();
+            executionPlan.execute();
         }
 
-        executor.freeDeviceMemory();
+        executionPlan.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
             assertEquals(2 * i, arrayC[i], 0.0f);

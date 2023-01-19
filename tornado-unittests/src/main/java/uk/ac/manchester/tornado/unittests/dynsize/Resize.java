@@ -71,8 +71,8 @@ public class Resize extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executorPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executorPlan.execute();
+        TornadoExecutionPlan executionPlanPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlanPlan.execute();
 
         // Resize data
         float[] b = createArray(512);
@@ -84,8 +84,8 @@ public class Resize extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b); //
 
         ImmutableTaskGraph immutableTaskGraph2 = taskGraph2.snapshot();
-        TornadoExecutionPlan executorPlan2 = new TornadoExecutionPlan(immutableTaskGraph2);
-        executorPlan2.execute();
+        TornadoExecutionPlan executionPlanPlan2 = new TornadoExecutionPlan(immutableTaskGraph2);
+        executionPlanPlan2.execute();
 
         for (float v : b) {
             assertEquals(1.0f, v, 0.001f);
@@ -102,8 +102,8 @@ public class Resize extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executorPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executorPlan.execute();
+        TornadoExecutionPlan executionPlanPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlanPlan.execute();
 
         // Resize data
         float[] b = createArray(512);
@@ -115,8 +115,8 @@ public class Resize extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, b); //
 
         ImmutableTaskGraph immutableTaskGraph2 = taskGraph2.snapshot();
-        TornadoExecutionPlan executorPlan2 = new TornadoExecutionPlan(immutableTaskGraph2);
-        executorPlan2.execute();
+        TornadoExecutionPlan executionPlanPlan2 = new TornadoExecutionPlan(immutableTaskGraph2);
+        executionPlanPlan2.execute();
 
         // Update old reference for a new reference
         float[] c = createArray(2048);
@@ -127,8 +127,8 @@ public class Resize extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c); //
 
         ImmutableTaskGraph immutableTaskGraph3 = taskGraph3.snapshot();
-        TornadoExecutionPlan executorPlan3 = new TornadoExecutionPlan(immutableTaskGraph3);
-        executorPlan3.execute();
+        TornadoExecutionPlan executionPlanPlan3 = new TornadoExecutionPlan(immutableTaskGraph3);
+        executionPlanPlan3.execute();
 
         for (float v : c) {
             assertEquals(1.0f, v, 0.001f);
