@@ -3,6 +3,10 @@
 Running Examples and Benchmarks
 #############################
 
+
+Running TornadoVM Programs
+------------------------------
+
 TornadoVM includes a tool for launching applications from the command-line:
 
 .. code-block:: bash 
@@ -140,7 +144,7 @@ For example running on ``driver:device`` ``1:1`` (Intel HD Graphics in our examp
 The command above will run the MatrixMultiplication1D example on the integrated GPU (Intel HD Graphics).
 
 
-Running Benchmarks
+Benchmarking
 --------------------------------------------
 
 Running all benchmarks with default values
@@ -180,7 +184,7 @@ Running a specific benchmark
   $ tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner --params="sgemm"
 
 
-Running Unittests
+Unittests
 -----------------------------------
 
 To run all unittests in Tornado:
