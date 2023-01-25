@@ -2,7 +2,7 @@ Introduction to TornadoVM
 =========================
 
 
-.. image:: images/logo.png
+.. image:: images/logo.jpg
   :width: 100
   :alt: Sample Text
   :align: left
@@ -44,4 +44,3 @@ TornadoVM includes the following features:
 
 
 TornadoVM is a research project developed at APT Group at The University of Manchester.
-TornadoVM is in active development.

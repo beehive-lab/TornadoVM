@@ -6,7 +6,7 @@ TornadoVM
    This project is under active development.
 
 
-.. image:: images/logo.png
+.. image:: images/logo.jpg
   :width: 100
   :alt: Sample Text
   :align: left
