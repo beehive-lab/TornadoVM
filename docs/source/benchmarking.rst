@@ -6,8 +6,7 @@ Benchmarking TornadoVM
 Benchmarks
 ----------------------
 
-Currently the benchmark runner script extends to the following
-benchmarks:
+Currently the benchmark runner script can execute the following benchmarks:
 
 .. code:: bash
 
@@ -27,8 +26,8 @@ benchmarks:
    *mandelbrot 
    *dft
 
-For each of the benchmarks, a Java version exists in order to obtain timing measurements. 
-All performance and time measurements obtained through a number of iterations (e.g. 130). 
+For each benchmark, a Java version exists in order to obtain timing measurements. 
+All performance and time measurements are obtained through a number of iterations (e.g. 130). 
 Also, each benchmark can be tested for various array sizes ranging from ``256`` to ``16777216``.
 
 How to run

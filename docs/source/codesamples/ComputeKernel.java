@@ -18,10 +18,9 @@ public class Compute {
         workerGrid.setLocalWork(32, 32, 1);                      // Set the local-group size
 
         TaskGraph taskGraph = new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B) // Stream data from host to device
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B) // Transfer data from host to device only during the first execution
                 .task("t0", Compute::mxmKernel, context, A, B, C, size)   // Each task points to an existing Java method
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, C);     // sync arrays with the host side
-
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, C);     // Transfer data from device to host in every execution.
         // Create an immutable task-graph
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snaphot();
 

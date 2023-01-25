@@ -3,8 +3,8 @@
 Cloud Deployments
 ========================
 
-TornadoVM can be executed on cloud. 
-This document explains how to use TornadoVM for running on Amazons AWS instances for GPUs and FPGAs.
+TornadoVM can be executed on the cloud. 
+This document explains how to use TornadoVM for running on Amazons AWS instances that contain GPUs or FPGAs.
 
 1. Running on AWS for CPUs and GPUs
 -------------------------------------
@@ -16,7 +16,7 @@ See the general installation steps here: :ref:`installation`.
 2. Running on AWS EC2 F1 Xilinx FPGAs
 -------------------------------------
 
-The following come with the AWS EC2 F1 instance:
+The following toolkit configuration comes with the AWS EC2 F1 instance:
 
 -  FPGA DEV AMI: 1.10.0
 -  Xilinx Vitis Tool: 2020.2

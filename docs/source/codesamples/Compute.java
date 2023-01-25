@@ -13,9 +13,10 @@ public class Compute {
 
     public void run(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
         TaskGraph taskGraph = new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B) // Stream data from host to device and mark buffers as read-only
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B) // Transfer data from host to device and mark buffers as read-only, 
+                                                                          // since data will be transferred only during the first execution.
                 .task("t0", Compute::mxmLoop, A, B, C, size)              // Each task points to an existing Java method
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, C);     // sync arrays with the host side
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, C);     // Transfer data from device to host in every execution.
         
         // Create an immutable task-graph
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snaphot();

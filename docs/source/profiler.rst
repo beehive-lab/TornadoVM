@@ -3,14 +3,14 @@
 TornadoVM Profiler
 ==================
 
-The TornadoVM profiler can be enabled either from the command line (via a flag from the ``torando`` command), or via an ``ExecutionPlan`` in the source code. 
+The TornadoVM profiler can be enabled either from the command line (via a flag from the ``tornado`` command), or via an ``ExecutionPlan`` in the source code. 
 
 1. Enable the Profiler from the Command Line
 ---------------------------------------------------------
 
 To enable the TornadoVM profiler, developers can  use ``--enableProfiler <silent|console>``.
 
--  ``console``: It prints a JSON entry for each task-schedule executed via STDOUT.
+-  ``console``: It prints a JSON entry for each task-graph executed via STDOUT.
 -  ``silent`` : It enables profiling information in silent mode. Use the profiler API to query the values.
 
 Example:
@@ -26,7 +26,7 @@ Example:
            "TOTAL_DRIVER_COMPILE_TIME": "63298322",
            "TOTAL_DISPATCH_DATA_TRANSFERS_TIME": "0",
            "TOTAL_CODE_GENERATION_TIME": "16564279",
-           "TOTAL_TASK_SCHEDULE_TIME": "285317518",
+           "TOTAL_TASK_GRAPH_TIME": "285317518",
            "TOTAL_GRAAL_COMPILE_TIME": "109520628",
            "TOTAL_KERNEL_TIME": "47974",
            "TOTAL_COPY_OUT_SIZE_BYTES": "400024",
@@ -47,15 +47,15 @@ Example:
 All timers are printed in nanoseconds.
 
 
-2. Enable the Profiler using the TornadoExecutionPlan API 
----------------------------------------------------------
+1. Enabling/Disabling the Profiler using the TornadoExecutionPlan 
+----------------------------------------------------------------------
 
 The profiler can be enable/disable using the `TornadoExecutionPlan` API:
 
 .. code:: bash
 
     // Enable the profiler and print report in STDOUT 
-    executorPlan.withProfiler(ProfilerMode.CONSOLE) //
+    executionPlan.withProfiler(ProfilerMode.CONSOLE) //
         .withDevice(device) //
         .withDefaultScheduler()
         .execute();
@@ -66,7 +66,7 @@ It is also possible to enable the profiler without live reporting in STDOUT and 
 .. code:: bash
 
     // Enable the profiler in silent mode
-    executorPlan.withProfiler(ProfilerMode.SILENT) //
+    executionPlan.withProfiler(ProfilerMode.SILENT) //
         .withDevice(device) //
         .withDefaultScheduler();
 
@@ -85,24 +85,16 @@ Explanation of all values
 -  *COPY_OUT_TIME*: OpenCL timers for copy out (device to host)
 -  *DISPATCH_TIME*: time spent for dispatching a submitted OpenCL
    command
--  *TOTAL_KERNEL_TIME*: It is the sum of all OpenCL kernel timers. For
-   example, if a task-schedule contains 2 tasks, this timer reports the
-   sum of execution of the two kernels.
--  *TOTAL_BYTE_CODE_GENERATION*: time spent in the Tornado bytecode
-   generation
--  *TOTAL_TASK_SCHEDULE_TIME*: Total execution time. It contains all
-   timers
--  *TOTAL_GRAAL_COMPILE_TIME*: Total compilation with Graal (from Java
-   to OpenCL C / PTX)
--  *TOTAL_DRIVER_COMPILE_TIME*: Total compilation with the driver (once
-   the OpenCL C / PTX code is generated, the time that the driver takes
-   to generate the final binary).
+-  *TOTAL_KERNEL_TIME*: It is the sum of all OpenCL kernel timers. For example, if a task-graph contains 2 tasks, this timer reports the sum of execution of the two kernels.
+-  *TOTAL_BYTE_CODE_GENERATION*: time spent in the Tornado bytecode generation.
+-  *TOTAL_TASK_GRAPH_TIME*: Total execution time. It contains all timers.
+-  *TOTAL_GRAAL_COMPILE_TIME*: Total compilation with Graal (from Java. to OpenCL C / PTX)
+-  *TOTAL_DRIVER_COMPILE_TIME*: Total compilation with the driver (once the OpenCL C / PTX code is generated, the time that the driver takes to generate the final binary).
 -  *TOTAL_CODE_GENERATION_TIME*: Total code generation time. This value
    represents the elapsed time from the last Graal compilation phase in
    the LIR to the target backend code (e.g., OpenCL, PTX or SPIR-V).
 
-Then, for each task within a task-schedule, there are usually three
-timers, one device identifier and two data transfer metrics:
+Then, for each task within a task-graph, there are usually three timers, one device identifier and two data transfer metrics:
 
 -  *BACKEND*: TornadoVM backend selected for the method execution on the
    target device. It could be either ``SPIRV``, ``PTX`` or ``OpenCL``.
@@ -124,10 +116,8 @@ timers, one device identifier and two data transfer metrics:
 Note
 ^^^^
 
-When the task-schedule is executed multiple times, timers related to
-compilation will not appear in the Json time-report. This is because the
-generated binary is cached and there is no compilation after the second
-iteration.
+When the task-graph is executed multiple times (through an execution plan), timers related to compilation will not appear in the Json time-report. 
+This is because the generated binary is cached and there is no compilation after the second iteration.
 
 Print timers at the end of the execution
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -145,7 +135,7 @@ Parsing Json files
 ~~~~~~~~~~~~~~~~~~
 
 TornadoVM creates the ``profiler-app.json`` file with multiple entries
-for the application (one per task-schedule invocation).
+for the application (one per task-graph invocation).
 
 TornadoVM’s distribution includes a set of utilities for parsing and
 obtaining statistics:
@@ -161,7 +151,7 @@ obtaining statistics:
    Entry,0
        TOTAL_BYTE_CODE_GENERATION,6783852
        TOTAL_KERNEL_TIME,26560
-       TOTAL_TASK_SCHEDULE_TIME,59962224
+       TOTAL_TASK_GRAPH_TIME,59962224
        COPY_OUT_TIME,32768
        COPY_IN_TIME,81920
        TaskName, s0.t0
@@ -175,7 +165,7 @@ obtaining statistics:
 
    MEDIANS    ### Print median values for each timer
        TOTAL_KERNEL_TIME,25184.0
-       TOTAL_TASK_SCHEDULE_TIME,955967.0
+       TOTAL_TASK_GRAPH_TIME,955967.0
        s0.t0-TASK_KERNEL_TIME,25184.0
        COPY_IN_TIME,74016.0
        COPY_OUT_TIME,32816.0

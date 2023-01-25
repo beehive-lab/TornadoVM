@@ -6,7 +6,7 @@ CUDA Devices
 Prerequisites
 ----------------------------------------------
 
-In order to run the PTX backend of TornadoVM, you will need a CUDA compatible device (NVIDIA GPUs with CUDA support).
+In order to use the PTX backend of TornadoVM, you will need a CUDA compatible device (NVIDIA GPUs with CUDA support).
 
 Driver Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -69,7 +69,7 @@ TornadoVM Installation
 | **Step 3:**
 | Install TornadoVM as described here: :ref:`installation`.
 | Build TornadoVM with the ``PTX`` backend selected and run ``tornado --devices``. 
-The output from a build containing both backends (PTX and OpenCL) should look like this:
+The output of the TornadoVM build containing both backends (PTX and OpenCL) should look like this:
 
 .. code:: bash
 
@@ -152,5 +152,4 @@ We have tested the PTX backend of TornadoVM on the following configurations:
 
 **DISCLAIMER:**
            
-The PTX backend might fail with the ``Quadro GP100``, driver ``384.111``, with segmentation faults for some of the unittest due to driver issues. 
-This backend is under active development.
+The PTX backend might fail with the ``Quadro GP100``, driver ``384.111``, with segmentation faults for some of the unit test due to driver issues. 

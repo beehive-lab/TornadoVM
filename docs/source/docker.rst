@@ -105,8 +105,8 @@ OpenJDK 17.
 
 2) Run an experiment
 
-We provide a runner script that compiles and run your Java programs with
-Tornado. Here's an example:
+We provide a runner script that compiles and run your Java programs with TornadoVM. 
+Here's an example:
 
 .. code:: bash
 
