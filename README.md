@@ -8,7 +8,7 @@ GPUs (Intel, NVIDIA, AMD), integrated GPUs (Intel HD Graphics and ARM Mali), and
 
 
 TornadoVM has three backends that generate OpenCL C, NVIDIA CUDA PTX assembly, and SPIR-V binary.
-Developers can chose which backends to install and run.
+Developers can choose which backends to install and run.
 
 ----------------------
 
