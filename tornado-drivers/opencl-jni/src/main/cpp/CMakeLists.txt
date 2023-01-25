@@ -1,7 +1,6 @@
 cmake_minimum_required (VERSION 3.6)
 project (Tornado)
 
-find_package(OpenCL REQUIRED)
 find_package(JNI REQUIRED)
 
 set(CMAKE_BUILD_TYPE Release)
@@ -28,7 +27,7 @@ add_library(tornado-opencl SHARED
 		source/utils.cpp
 		source/opencl_time_utils.cpp)
 
-target_link_libraries(tornado-opencl ${OpenCL_LIBRARIES} ${JNI_LIB_DIRS})
+target_link_libraries(tornado-opencl -lOpenCL ${OpenCL_LIBRARIES} ${JNI_LIB_DIRS})
 if(CMAKE_HOST_WIN32)
     set_target_properties(tornado-opencl PROPERTIES PREFIX "")
 endif()
