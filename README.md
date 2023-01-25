@@ -3,11 +3,11 @@
 <img align="left" width="250" height="250" src="etc/tornadoVM_Logo.jpg">
 
 TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on heterogeneous hardware. 
-TornadoVM currently targets OpenCL, PTX and SPIR-V compatible devices and it runs on multi-core CPUs, dedicated
+TornadoVM targets OpenCL, PTX and SPIR-V compatible devices which include on multi-core CPUs, dedicated
 GPUs (Intel, NVIDIA, AMD), integrated GPUs (Intel HD Graphics and ARM Mali), and FPGAs (Intel and Xilinx).
 
 
-TornadoVM currently has three backends that generate OpenCL C, NVIDIA CUDA PTX, and SPIR-V binary.
+TornadoVM has three backends that generate OpenCL C, NVIDIA CUDA PTX assembly, and SPIR-V binary.
 Developers can chose which backends to install and run.
 
 ----------------------
@@ -118,10 +118,9 @@ public class Compute {
 
     public void run(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
         TaskGraph taskGraph = new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B) // Stream data from host to device and mark buffers as read-only
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B) // Transfer data from host to device only in the first execution
                 .task("t0", Compute::mxmLoop, A, B, C, size)              // Each task points to an existing Java method
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, C);     // sync arrays with the host side
-        
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, C);     // Transfer data from device to host
         // Create an immutable task-graph
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snaphot();
 
@@ -161,9 +160,9 @@ public class Compute {
         workerGrid.setLocalWork(32, 32, 1);                      // Set the local-group size
 
         TaskGraph taskGraph = new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B) // Stream data from host to device
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B) // Transfer data from host to device only in the first execution
                 .task("t0", Compute::mxmKernel, context, A, B, C, size)   // Each task points to an existing Java method
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, C);     // sync arrays with the host side
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, C);     // Transfer data from device to host
 
         // Create an immutable task-graph
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snaphot();

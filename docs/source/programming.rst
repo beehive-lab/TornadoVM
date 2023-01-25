@@ -74,7 +74,7 @@ Kernel Context
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``KernelContext`` is a Java object exposed by the TornadoVM API to the developers in order to leverage Kernel Parallel Programming using the
-existing ``TaskSchedule`` API. 
+existing ``TaskGraph`` API. 
 An instance of the ``KernelContext`` object is passed to each task that uses the kernel-parallel API.
 
 Additionally, for all tasks using the ``KernelContext`` object, the user must provide a Grid of execution threads to run on the parallel device.
@@ -211,10 +211,10 @@ example also makes use of loop tiling. There are three main steps to leverage th
 
 .. code:: java
 
-   TaskSchedule tg = new TaskSchedule("s0")
-         .transferToDevice(DataTransferMode., matrixA, matrixB)
+   TaskGraph tg = new TaskGraph("s0")
+         .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrixA, matrixB)
          .task("t0",MxM::compute,context, matrixA, matrixB, matrixC, size)
-         .transferToHost(DataTransferMode. matrixC);
+         .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
 
    ImmutableTaskGraph immutableTaskGraph = tg.snapshot();
    TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);

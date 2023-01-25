@@ -55,21 +55,19 @@ Build/Run Configuration
 
 -  **In the Project Tab:**
 
-   -  The Project SDK uses the same java version as the project
-      (e.g. 1.8.0_131).
-   -  The Project language level is using the same java version (e.g. 8
-      - Lambdas, type annotations etc.).
+   -  The Project SDK uses the same java version as the project (e.g. Java 17).
+   -  The Project language level is using the same java version (e.g. Java 17 with Lambdas, type annotations etc.).
 
 -  **In the Modules Tab:**
 
    -  The module SDK of every module uses the same java version
       (e.g. 1.8.0_131).
 
-2. In the right vertical bar in Intellij: **Maven Projects > tornadovm
+1. In the right vertical bar in Intellij: **Maven Projects > tornadovm
    (root) > Lifecycle > package > right click > create tornadovm
    [package]**
 
-3. Then: **Run > Edit Configurations > Maven > tornadovm Package**. You
+2. Then: **Run > Edit Configurations > Maven > tornadovm Package**. You
    need to manually add and check the following information:
 
 -  In the **Parameters** tab :

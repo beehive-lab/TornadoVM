@@ -60,14 +60,14 @@ Some examples:
   $ tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D
 
 
-Use the following command to identify the ids of the Tornado-compatible heterogeneous devices:
+Use the following command to identify the ``ids`` of the devices that are being discovered by TornadoVM:
 
 .. code-block:: bash 
 
   $ tornado --devices
 
 
-Tornado device output corresponds to:
+Every device discovered by TornadoVM is associated with a pair of ``id`` numbers that correspond to the type of driver and the specific device, as follows:
 
 
 .. code-block:: bash 

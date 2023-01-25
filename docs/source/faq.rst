@@ -56,7 +56,7 @@ programming languages supported by GraalVM's polyglot runtime (e.g., Python, R, 
 `Here <https://github.com/beehive-lab/TornadoVM/tree/master/tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/polyglot>`__
 you can find examples of how to use TornadoVM with GraalVM Polyglot.
 
-5. Is TornadoVM a DSL?
+5. Is TornadoVM a Domain Specific Language (DSL)?
 ----------------------
 
 No, TornadoVM is not a DSL. It compiles a subset of Java code to OpenCL C, NVIDIA PTX, and SPIR-V binary.

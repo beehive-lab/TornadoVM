@@ -10,14 +10,11 @@ Videos
 
 - J. Fumero, `Level up Your Java Performance with TornadoVM <https://www.youtube.com/watch?v=Bo0zMdcdCk4>`__, QCon Plus 2021. 
 
--  A. Stratikopoulos, `TornadoVM: A virtual machine for exploiting high performance heterogeneous hardware of Java programs <https://mirrors.dotsrc.org/fosdem/2020/H.1302/tornadovm.mp4>`__,
-   FOSDEM, 01/02/2020.
+- A. Stratikopoulos, `TornadoVM: A virtual machine for exploiting high performance heterogeneous hardware of Java programs <https://mirrors.dotsrc.org/fosdem/2020/H.1302/tornadovm.mp4>`__, FOSDEM, 01/02/2020.
 
--  J. Fumero, `TornadoVM: A virtual machine for exploiting high performance heterogeneous hardware <https://www.youtube.com/watch?v=6oRmxjoe03g>`__, Joker<?>
-   Conference, 26/10/2019.
+- J. Fumero, `TornadoVM: A virtual machine for exploiting high performance heterogeneous hardware <https://www.youtube.com/watch?v=6oRmxjoe03g>`__, Joker<?> Conference, 26/10/2019.
 
--  J. Fumero, `Overview of TornadoVM <https://www.youtube.com/watch?v=nPlacnadR6k>`__, JVMLS,
-   31/07/2019.
+- J. Fumero, `Overview of TornadoVM <https://www.youtube.com/watch?v=nPlacnadR6k>`__, JVMLS, 31/07/2019.
 
 Presentations
 -------------
@@ -52,7 +49,7 @@ Articles
 Demos & Artefacts
 -----------------
 
--  Respository with examples: `link <https://github.com/jjfumero/tornadovm-examples>`__. 
+-  Repository with examples: `link <https://github.com/jjfumero/tornadovm-examples>`__. 
 
 -  Examples used for QConLondon:
    `link <https://github.com/jjfumero/qconlondon2020-tornadovm>`__.
