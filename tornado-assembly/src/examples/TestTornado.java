@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -19,8 +19,6 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- * 
- * Authors: Juan Fumero
  *
  */
 
@@ -29,13 +27,16 @@ package examples;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 public class TestTornado { 
 
   public static void main(String[] args) {
-	testVectorAddition(4096);
+	  testVectorAddition(4096);
   }
 	
 
@@ -58,13 +59,13 @@ public class TestTornado {
         b[i] = r.nextFloat();
     });
 
-    // Tornado Task API 
-    new TaskSchedule("s0")     // new group of Tasks
-        .task("t0", TestTornado::vectorAdd, a, b, c)   // task 0 
-        .streamOut(c)          // copy out from the device to host
-        .execute();            // run the task (Tornado bytecode generation, Tornado tasks graph, 
-                               // OpenCL JIT compilation and execution)
+    TaskGraph taskGraph = new TaskGraph("s0") //
+      .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+      .task("t0", TestTornado::vectorAdd, a, b, c) //
+      .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+    ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+    TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+    executionPlan.execute();
   }
 }
-
-
