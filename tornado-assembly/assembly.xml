@@ -60,6 +60,7 @@
             <outputDirectory>./</outputDirectory>
             <includes>
                 <include>sourceSDK.sh</include>
+                <include>README.md</include>
             </includes>
             <filtered>true</filtered>
             <lineEnding>unix</lineEnding>
