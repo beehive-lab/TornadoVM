@@ -14,15 +14,16 @@ Developers can choose which backends to install and run.
 
 **Website**: [tornadovm.org](https://www.tornadovm.org)
 
-For a quick introduction please read the following [FAQ](https://tornadovm.readthedocs.io/en/feat-documentation/faq.html).
+For a quick introduction please read the following [FAQ](https://tornadovm.readthedocs.io/en/latest/).
 
-**Latest Release:** TornadoVM 0.14.1 - 29/09/2022 : See [CHANGELOG](https://tornadovm.readthedocs.io/en/feat-documentation/CHANGELOG.html).
+**Latest Release:** TornadoVM 0.14.1 - 29/09/2022 : See [CHANGELOG](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html).
 
 ----------------------
 
 ## 1. Installation
 
-In Linux and Mac OSx, TornadoVM can be installed automatically with the [installation script](https://tornadovm.readthedocs.io/en/feat-documentation/installation.html). For example:
+In Linux and Mac OSx, TornadoVM can be installed automatically with the [installation script](https://tornadovm.readthedocs.io/en/latest/installation.html). For example:
+
 ```bash
 $ ./scripts/tornadoVMInstaller.sh 
 TornadoVM installer for Linux and OSx
@@ -64,11 +65,11 @@ $ ./scripts/tornadoVMInstaller.sh --jdk17 --opencl
 $ ./scripts/tornadoVMInstaller.sh --jdk17 --opencl --spirv --ptx
 ```
 
-Alternatively, TornadoVM can be installed either manually [from source](INSTALL.md#b-manual-installation) or by [using Docker](tornado-assembly/src/docs/13_INSTALL_WITH_DOCKER.md).
+Alternatively, TornadoVM can be installed either manually [from source](https://tornadovm.readthedocs.io/en/latest/installation.html#b-manual-installation) or by [using Docker](https://tornadovm.readthedocs.io/en/latest/docker.html).
 
 If you are planning to use Docker with TornadoVM on GPUs, you can also follow [these](https://github.com/beehive-lab/docker-tornado#docker-for-tornadovm) guidelines.
 
-You can also run TornadoVM on Amazon AWS CPUs, GPUs, and FPGAs following the instructions [here](tornado-assembly/src/docs/17_AWS.md).
+You can also run TornadoVM on Amazon AWS CPUs, GPUs, and FPGAs following the instructions [here](https://tornadovm.readthedocs.io/en/latest/cloud.html).
 
 ## 2. Usage Instructions
 
@@ -82,12 +83,12 @@ We also have a set of [examples](https://github.com/beehive-lab/TornadoVM/tree/m
 
 **Additional Information**
 
- - [General Documentation](tornado-assembly/src/docs)
- - [Benchmarks](tornado-assembly/src/docs/4_BENCHMARKS.md)
- - [How TornadoVM executes reductions](tornado-assembly/src/docs/5_REDUCTIONS.md)
- - [Execution Flags](tornado-assembly/src/docs/6_TORNADO_FLAGS.md) 
- - [FPGA execution](tornado-assembly/src/docs/7_FPGA.md)
- - [Profiler Usage](tornado-assembly/src/docs/9_PROFILER.md)
+ - [General Documentation](https://tornadovm.readthedocs.io/en/latest/introduction.html)
+ - [Benchmarks](https://tornadovm.readthedocs.io/en/latest/benchmarking.html)
+ - [How TornadoVM executes reductions](https://tornadovm.readthedocs.io/en/latest/programming.html#parallel-reductions)
+ - [Execution Flags](https://tornadovm.readthedocs.io/en/latest/flags.html) 
+ - [FPGA execution](https://tornadovm.readthedocs.io/en/latest/fpga-programming.html)
+ - [Profiler Usage](https://tornadovm.readthedocs.io/en/latest/profiler.html)
 
 
 ## 3. Programming Model
@@ -135,7 +136,10 @@ public class Compute {
 
 #### b) Kernel API 
 
-Another way to express compute-kernels in TornadoVM is via the **kernel API**. To do so, TornadoVM exposes a `KernelContext` with which the application can directly access the thread-id, allocate memory in local memory (shared memory on NVIDIA devices), and insert barriers. This model is similar to programming compute-kernels in OpenCL and CUDA. Therefore, this API is more suitable for GPU/FPGA expert programmers that want more control or want to port existing CUDA/OpenCL compute kernels into TornadoVM.
+Another way to express compute-kernels in TornadoVM is via the **kernel API**. 
+To do so, TornadoVM exposes a `KernelContext` with which the application can directly access the thread-id, allocate memory in local memory (shared memory on NVIDIA devices), and insert barriers. 
+This model is similar to programming compute-kernels in OpenCL and CUDA. 
+Therefore, this API is more suitable for GPU/FPGA expert programmers that want more control or want to port existing CUDA/OpenCL compute kernels into TornadoVM.
 
 The following code-snippet shows the Matrix Multiplication example using the kernel-parallel API:
 
@@ -192,11 +196,13 @@ efficiently. GPUs are very good at exploiting SIMD applications, and FPGAs are v
 applications. If your applications follow those models, TornadoVM will likely select heterogeneous hardware. Otherwise,
 it will stay on the CPU using the default compilers (C2 or Graal).
 
-To use the dynamic reconfiguration, you can execute using TornadoVM policies. For example:
+To use the dynamic reconfiguration, you can execute using TornadoVM policies. 
+For example:
 
 ```java
 // TornadoVM will execute the code in the best accelerator.
-ts.execute(Policy.PERFORMANCE);
+executionPlan.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.PARALLEL)
+             .execute();
 ```
 
 Further details and instructions on how to enable this feature can be found here.
@@ -238,7 +244,7 @@ To run TornadoVM, you need to either install the TornadoVM extension for GraalVM
 
 ## 6. Additional Resources
 
-[Here](tornado-assembly/src/docs/16_RESOURCES.md) you can find videos, presentations, tech-articles and artefacts describing TornadoVM, and how to use it.
+[Here](https://tornadovm.readthedocs.io/en/latest/resources.html) you can find videos, presentations, tech-articles and artefacts describing TornadoVM, and how to use it.
 
 ## 7. Academic Publications
 
@@ -281,12 +287,14 @@ If you are using **Tornado 0.1** (Initial release), please use the following cit
 
 ```
 
-Selected publications can be found [here](tornado-assembly/src/docs/14_PUBLICATIONS.md).
+Selected publications can be found [here](https://tornadovm.readthedocs.io/en/latest/publications.html).
 
 ## 8. Acknowledgments
 
 This work is partially funded by [Intel corporation](https://www.intel.com/content/www/us/en/homepage.html).
 In addition, it has been supported by the following EU & UKRI grants (most recent first):
+- EU Horizon Europe & UKRI [AERO 101092850](https://cordis.europa.eu/project/id/101092850).
+- EU Horizon Europe & UKRI [INCODE 101093069](https://cordis.europa.eu/project/id/101093069).
 - EU Horizon Europe & UKRI [ENCRYPT 101070670](https://encrypt-project.eu).
 - EU Horizon Europe & UKRI [TANGO 101070052](https://tango-project.eu).
 - EU Horizon 2020 [ELEGANT 957286](https://www.elegant-h2020.eu/).

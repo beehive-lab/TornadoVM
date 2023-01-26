@@ -5,7 +5,7 @@ Please follow the instructions below for your Pull Requests.
 
 ## How to submit your changes
 
-1. **Fork** the repo in Github
+1. **Fork** the repository in GitHub
 2. **Clone** the project
 3. **Create a new branch from the `develop` branch**
 4. **Commit your changes**
@@ -15,23 +15,27 @@ Please follow the instructions below for your Pull Requests.
 Please, ensure that your changes are merged with the latest changes in the `develop` branch, and the code follows the
 code conventions (see below).
 
-Be aware we are a very small team. So, depending on the PR, it might take some time for us to review it since we check
-on many OCL/PTX platforms and different drivers.
+Be aware we are a very small team. 
+Thus, depending on the PR, it might take some time for us to review it since we check on many OCL/SPIR-V/PTX platforms and different drivers.
 
-For the PR process as well as any issues and discussions we follow
-this [CODE_OF_CONDUCT](https://github.com/beehive-lab/TornadoVM/blob/master/CODE_OF_CONDUCT.md).
+For the PR process as well as any issues and discussions we follow this [CODE_OF_CONDUCT](https://github.com/beehive-lab/TornadoVM/blob/master/CODE_OF_CONDUCT.md).
 
-## Coding conventions
+## Coding Conventions
 
-We use the auto-formatter in **Eclipse** and **IntelliJ**. Please, ensure that your code follows the formatter rules
-before the pull request. The auto-formatter is set automatically by running the following script:
+We use the auto-formatter for **Eclipse** and **IntelliJ**. 
+Please, ensure that your code follows the formatter rules before the pull request. 
+The auto-formatter is set automatically by running the following script:
 
+
+#### Using Eclipse:
 ```bash
 ## For Eclipse, use the following script
 $ python3 scripts/eclipseSetup.py
 ``` 
 
-For IntelliJ, import the XML auto-formatter. Steps [here](assembly/src/docs/3_INTELLIJ.md). Additionally, be sure that
+#### Using IntelliJ:
+
+For IntelliJ, import the XML auto-formatter. Steps [here](https://tornadovm.readthedocs.io/en/latest/installation.html#ide-code-formatter). Additionally, be sure that
 IntelliJ uses a single class import:
 
 * Settings -> General -> Code Editing -> Formatting -> Imports optimization
