@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-#  Copyright (c) 2020-2022, APT Group, Department of Computer Science,
+#  Copyright (c) 2020-2023, APT Group, Department of Computer Science,
 #  The University of Manchester.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -80,7 +80,7 @@ function downloadCorretto11() {
     if [[ "$platform" == 'linux' ]]; then
         wget https://corretto.aws/downloads/latest/amazon-corretto-11-x64-linux-jdk.tar.gz
         tar xf amazon-corretto-11-x64-linux-jdk.tar.gz
-        export JAVA_HOME=$PWD/amazon-corretto-11.0.15.9.1-linux-x64
+        export JAVA_HOME=$PWD/amazon-corretto-11.0.18.10.1-linux-x64
     elif [[ "$platform" == 'darwin' ]]; then
 	wget https://corretto.aws/downloads/latest/amazon-corretto-11-x64-macos-jdk.tar.gz
         tar xf amazon-corretto-11-x64-macos-jdk.tar.gz
@@ -93,7 +93,7 @@ function downloadCorretto17() {
     if [[ "$platform" == 'linux' ]]; then
         wget https://corretto.aws/downloads/latest/amazon-corretto-17-x64-linux-jdk.tar.gz
         tar xf amazon-corretto-17-x64-linux-jdk.tar.gz
-        export JAVA_HOME=$PWD/amazon-corretto-17.0.3.6.1-linux-x64
+        export JAVA_HOME=$PWD/amazon-corretto-17.0.6.10.1-linux-x64
     elif [[ "$platform" == 'darwin' ]]; then
         wget https://corretto.aws/downloads/latest/amazon-corretto-17-x64-macos-jdk.tar.gz
         tar xf amazon-corretto-17-x64-macos-jdk.tar.gz
