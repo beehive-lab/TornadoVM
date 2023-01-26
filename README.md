@@ -312,7 +312,7 @@ We welcome collaborations! Please see how to contribute to the project in the [C
 
 ### Write your questions and proposals:
 
-Additionally, you can open new proposals on the GitHub discussions page:[https://github.com/beehive-lab/TornadoVM/discussions](https://github.com/beehive-lab/TornadoVM/discussions)
+Additionally, you can open new proposals on the GitHub discussions page:[https://github.com/beehive-lab/TornadoVM/discussions](https://github.com/beehive-lab/TornadoVM/discussions).
 
 
 Alternatively, you can share a Google document with us. 
