@@ -24,7 +24,8 @@
             <includes>
                 <include>LICENSE_APACHE2</include>
                 <include>LICENSE_GPLv2CE</include>
-                <include>CONTRIBUTORS</include>
+                <include>LICENSE_GPLv2</include>
+                <include>LICENSE_MIT</include>
             </includes>
             <outputDirectory>./</outputDirectory>
             <fileMode>0444</fileMode>
@@ -55,25 +56,21 @@
             <fileMode>0666</fileMode>
         </fileSet>
         <fileSet>
-            <directory>src/docs</directory>
-            <!-- Tornado documentation in docs/ -->
-            <outputDirectory>docs</outputDirectory>
+            <directory>../</directory>
+            <outputDirectory>./</outputDirectory>
             <includes>
-                <include>*.pdf</include>
-                <include>*.md</include>
+                <include>CONTRIBUTING.md</include>
             </includes>
             <fileMode>0444</fileMode>
         </fileSet>
         <fileSet>
-            <directory>src/docs</directory>
-            <outputDirectory>../</outputDirectory>
+            <directory>../docs/source</directory>
+            <outputDirectory>./</outputDirectory>
             <includes>
-                <include>CHANGELOG.md</include>
-                <include>CONTRIBUTIONS.md</include>
+                <include>CHANGELOG.rst</include>
             </includes>
             <fileMode>0444</fileMode>
         </fileSet>
-
         <fileSet>
             <directory>src/examples</directory>
             <!-- Tornado full examples copied into examples directory -->
