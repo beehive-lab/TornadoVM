@@ -55,6 +55,17 @@
             <lineEnding>unix</lineEnding>
             <fileMode>0666</fileMode>
         </fileSet>
+         <fileSet>
+            <directory>src/etc</directory>
+            <outputDirectory>./</outputDirectory>
+            <includes>
+                <include>sourceSDK.sh</include>
+                <include>README.md</include>
+            </includes>
+            <filtered>true</filtered>
+            <lineEnding>unix</lineEnding>
+            <fileMode>0777</fileMode>
+        </fileSet>
         <fileSet>
             <directory>../</directory>
             <outputDirectory>./</outputDirectory>
