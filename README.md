@@ -1,30 +1,28 @@
 # TornadoVM
 
-<img align="right" width="250" height="250" src="etc/tornadoVM_Logo.jpg">
+<img align="left" width="250" height="250" src="etc/tornadoVM_Logo.jpg">
 
-TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on
-heterogeneous hardware. TornadoVM currently targets OpenCL-compatible devices and it runs on multi-core CPUs, dedicated
-GPUs (NVIDIA, AMD), integrated GPUs (Intel HD Graphics and ARM Mali), and FPGAs (Intel and Xilinx).
+TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on heterogeneous hardware. 
+TornadoVM targets OpenCL, PTX and SPIR-V compatible devices which include multi-core CPUs, dedicated
+GPUs (Intel, NVIDIA, AMD), integrated GPUs (Intel HD Graphics and ARM Mali), and FPGAs (Intel and Xilinx).
 
 
-TornadoVM currently has three backends: OpenCL, NVIDIA CUDA PTX and SPIR-V.
-Developers can chose which backends to install and run.
+TornadoVM has three backends that generate OpenCL C, NVIDIA CUDA PTX assembly, and SPIR-V binary.
+Developers can choose which backends to install and run.
 
 ----------------------
 
 **Website**: [tornadovm.org](https://www.tornadovm.org)
 
-For a quick introduction please read the following [FAQ](tornado-assembly/src/docs/15_FAQ.md).
+For a quick introduction please read the following [FAQ](https://tornadovm.readthedocs.io/en/feat-documentation/faq.html).
 
-**Latest Release:** TornadoVM 0.14.1 - 29/09/2022 : See [CHANGELOG](tornado-assembly/src/docs/CHANGELOG.md#tornadovm-0.14.1).
-
-Information about previous releases can be found [here](tornado-assembly/src/docs/Releases.md).
+**Latest Release:** TornadoVM 0.14.1 - 29/09/2022 : See [CHANGELOG](https://tornadovm.readthedocs.io/en/feat-documentation/CHANGELOG.html).
 
 ----------------------
 
 ## 1. Installation
 
-In Linux and Mac OSx, TornadoVM can be installed automatically with the [installation script](INSTALL.md#a-automatic-installation). For example:
+In Linux and Mac OSx, TornadoVM can be installed automatically with the [installation script](https://tornadovm.readthedocs.io/en/feat-documentation/installation.html). For example:
 ```bash
 $ ./scripts/tornadoVMInstaller.sh 
 TornadoVM installer for Linux and OSx
@@ -120,10 +118,17 @@ public class Compute {
 
     public void run(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
         TaskGraph taskGraph = new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B) // Stream data from host to device and mark buffers as read-only
-                .task("t0", Compute::mxmLoop, A, B, C, size)             // Each task points to an existing Java method
-                .transferToHost(C);                                      // sync arrays with the host side
-        taskGraph.execute();   // It will execute the code on the default device (e.g. a GPU)
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B) // Transfer data from host to device only in the first execution
+                .task("t0", Compute::mxmLoop, A, B, C, size)              // Each task points to an existing Java method
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, C);     // Transfer data from device to host
+        // Create an immutable task-graph
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snaphot();
+
+        // Create an execution plan from an immutable task-graph
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        // Execute the execution plan
+        TorandoExecutionResult executionResult = executionPlan.execute();
     }
 }
 ```
@@ -155,10 +160,19 @@ public class Compute {
         workerGrid.setLocalWork(32, 32, 1);                      // Set the local-group size
 
         TaskGraph taskGraph = new TaskGraph("s0")
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B) // Stream data from host to device
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, A, B) // Transfer data from host to device only in the first execution
                 .task("t0", Compute::mxmKernel, context, A, B, C, size)   // Each task points to an existing Java method
-                .transferToHost(C);                                       // sync arrays with the host side
-        taskGraph.execute(gridScheduler);   // Execute with a GridScheduler
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, C);     // Transfer data from device to host
+
+        // Create an immutable task-graph
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snaphot();
+
+        // Create an execution plan from an immutable task-graph
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        // Execute the execution plan
+        executionPlan.withGridScheduler(gridScheduler)
+                     .execute();
     }
 }
 ```
