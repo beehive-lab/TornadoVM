@@ -396,8 +396,8 @@ And then:
 
 
 
-Step 4. Obtain the result and the profiler
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+4. Obtain the result and the profiler
+--------------------------------------------
 
 Every time an execution plan is executed, a new object of type ``TornadoExecutionResult`` is created. 
 
