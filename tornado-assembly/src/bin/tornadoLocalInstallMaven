@@ -4,7 +4,7 @@
 # This file is part of Tornado: A heterogeneous programming framework:
 # https://github.com/beehive-lab/tornadovm
 #
-# Copyright (c) 2013-2020, APT Group, School of Computer Science,
+# Copyright (c) 2013-2023, APT Group, School of Computer Science,
 # The University of Manchester. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -22,14 +22,11 @@
 # 2 along with this work; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Authors: Juan Fumero
-#
-
 
 cd $TORNADO_SDK
 cd share/java/tornado/
 
-TORNADOVM_VERSION="0.14.1"
+TORNADOVM_VERSION="0.15"
 
 read -ra selected_backends < "${TORNADO_SDK}/etc/tornado.backend"
 

@@ -5,6 +5,41 @@ TornadoVM Changelog
 
 This file summarizes the new features and major changes for each *TornadoVM* version.
 
+TornadoVM 0.15
+----------------
+27/01/2023 
+
+Improvements
+~~~~~~~~~~~~~~~~~~
+
+- New TornadoVM API:
+  
+   - API refactoring (``TaskSchedule`` has been renamed to ``TaskGraph``)
+
+   - Introduction of the Immutable ``TaskGraphs``
+
+   - Introduction of the TornadoVM Execution Plans: (``TornadoExecutionPlan``)
+   
+   - The documentation of migration of existing TornadoVM applications to the new API can be found here: https://tornadovm.readthedocs.io/en/latest/programming.html#migration-to-tornadovm-v0-15 
+
+- Launch a new website https://tornadovm.readthedocs.io/en/latest/ for the documentation
+- Improved documentation 
+- Initial support for Intel ARC discrete GPUs. 
+- Improved TornadoVM installer for Linux 
+- ImprovedTornadoVM launch script with optional parameters
+- Support of large buffer allocations with Intel Level Zero. Use: ``tornado.spirv.levelzero.extended.memory=True``
+
+
+Bug fixes:
+~~~~~~~~~~~~~~~~~
+
+- Vector and Matrix types 
+- TornadoVM Floating Replacement compiler phase fixed
+- Fix ``CMAKE`` for Intel ARC GPUs
+- Device query tool fixed for the PTX backend
+- Documentation for Windows 11 fixed
+
+
 TornadoVM 0.14.1
 ----------------
 
