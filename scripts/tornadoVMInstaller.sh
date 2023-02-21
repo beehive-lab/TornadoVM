@@ -271,9 +271,9 @@ function unZipAndSetCmake() {
         export PATH=`pwd`/cmake-3.25.2-linux-aarch64/bin:$PATH
         export CMAKE_ROOT=`pwd`/cmake-3.25.2-linux-aarch64/
     elif [[ "$platform" == 'darwin' ]]; then
-        tar xfz cmake-3.22.1-macos-universal.tar.gz
-        export PATH=`pwd`/cmake-3.22.1-macos-universal/CMake.app/Contents/bin:$PATH
-        export CMAKE_ROOT=`pwd`/cmake-3.22.1-macos-universal/CMake.app/Contents
+        tar xfz cmake-3.25.2-macos-universal.tar.gz
+        export PATH=`pwd`/cmake-3.25.2-macos-universal/CMake.app/Contents/bin:$PATH
+        export CMAKE_ROOT=`pwd`/cmake-3.25.2-macos-universal/CMake.app/Contents
     else
         echo "OS platform not supported"
         exit 0
