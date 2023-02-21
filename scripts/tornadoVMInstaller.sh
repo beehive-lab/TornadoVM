@@ -23,12 +23,22 @@ function getPlatform() {
     echo "$platform"
 }
 
+function getHardwarePlatform() {
+	hwPlatform=$(uname -i)
+	echo $hwPlatform
+}
+
 function downloadOpenJDK11() {
     platform=$(getPlatform)
-    if [[ "$platform" == 'linux' ]]; then
+    hwPlatform=$(getHardwarePlatform)
+    if [[ "$hwPlatform" == 'aarch64' && "$platform" == "linux" ]]; then
+        wget https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.17%2B8/OpenJDK11U-jdk_aarch64_linux_hotspot_11.0.17_8.tar.gz
+        tar -xf OpenJDK11U-jdk_aarch64_linux_hotspot_11.0.17_8.tar.gz 
+        export JAVA_HOME=$PWD/jdk-11.0.17+8
+    elif [[ "$hwPlatform" == 'x86_64' && "$platform" == "linux" ]]; then
         wget https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.13%2B8/OpenJDK11U-jdk_x64_linux_hotspot_11.0.13_8.tar.gz
-        tar -xf OpenJDK11U-jdk_x64_linux_hotspot_11.0.13_8.tar.gz
-        export JAVA_HOME=$PWD/jdk-11.0.13+8
+	tar -xf OpenJDK11U-jdk_x64_linux_hotspot_11.0.13_8.tar.gz
+	export JAVA_HOME=$PWD/jdk-11.0.13+8
     elif [[ "$platform" == 'darwin' ]]; then
         wget https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.13%2B8/OpenJDK11U-jdk_x64_mac_hotspot_11.0.13_8.tar.gz
         tar -xf OpenJDK11U-jdk_x64_mac_hotspot_11.0.13_8.tar.gz
@@ -38,7 +48,12 @@ function downloadOpenJDK11() {
 
 function downloadOpenJDK17() {
     platform=$(getPlatform)
-    if [[ "$platform" == 'linux' ]]; then
+    hwPlatform=$(getHardwarePlatform)
+    if [[ "$hwPlatform" == 'aarch64' && "$platform" == "linux" ]]; then
+	wget https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.6%2B10/OpenJDK17U-jdk_aarch64_linux_hotspot_17.0.6_10.tar.gz
+	tar -xf OpenJDK17U-jdk_aarch64_linux_hotspot_17.0.6_10.tar.gz
+	export JAVA_HOME=$PWD/jdk-17.0.6+10
+    elif [[ "$hwPlatform" == 'x86_64' && "$platform" == "linux" ]]; then
         wget https://download.java.net/java/GA/jdk17.0.1/2a2082e5a09d4267845be086888add4f/12/GPL/openjdk-17.0.1_linux-x64_bin.tar.gz
         tar -xf openjdk-17.0.1_linux-x64_bin.tar.gz
         export JAVA_HOME=$PWD/jdk-17.0.1
@@ -51,7 +66,12 @@ function downloadOpenJDK17() {
 
 function downloadGraalVMJDK11() {
     platform=$(getPlatform)
-    if [[ "$platform" == 'linux' ]]; then
+    hwPlatform=$(getHardwarePlatform)
+    if [[ "$hwPlatform" == 'aarch64' && "$platform" == "linux" ]]; then
+	wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java11-linux-aarch64-22.2.0.tar.gz
+	tar -xf graalvm-ce-java11-linux-aarch64-22.2.0.tar.gz
+	export JAVA_HOME=$PWD/graalvm-ce-java11-22.2.0
+    elif [[ "$hwPlatform" == 'x86_64' && "$platform" == "linux" ]]; then
         wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java11-linux-amd64-22.2.0.tar.gz
 	tar -xf graalvm-ce-java11-linux-amd64-22.2.0.tar.gz
 	export JAVA_HOME=$PWD/graalvm-ce-java11-22.2.0
@@ -64,7 +84,12 @@ function downloadGraalVMJDK11() {
 
 function downloadGraalVMJDK17() {
     platform=$(getPlatform)
-    if [[ "$platform" == 'linux' ]]; then
+    hwPlatform=$(getHardwarePlatform)
+    if [[ "$hwPlatform" == 'aarch64' && "$platform" == "linux" ]]; then
+        wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java17-linux-aarch64-22.2.0.tar.gz
+        tar -xf graalvm-ce-java17-linux-aarch64-22.2.0.tar.gz
+        export JAVA_HOME=$PWD/graalvm-ce-java17-22.2.0
+    elif [[ "$hwPlatform" == 'x86_64' && "$platform" == "linux" ]]; then
         wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java17-linux-amd64-22.2.0.tar.gz
         tar -xf graalvm-ce-java17-linux-amd64-22.2.0.tar.gz
         export JAVA_HOME=$PWD/graalvm-ce-java17-22.2.0
@@ -77,7 +102,12 @@ function downloadGraalVMJDK17() {
 
 function downloadCorretto11() {
     platform=$(getPlatform)
-    if [[ "$platform" == 'linux' ]]; then
+    hwPlatform=$(getHardwarePlatform)
+    if [[ "$hwPlatform" == 'aarch64' && "$platform" == "linux" ]]; then
+        wget https://corretto.aws/downloads/latest/amazon-corretto-11-aarch64-linux-jdk.tar.gz
+        tar xf amazon-corretto-11-aarch64-linux-jdk.tar.gz
+        export JAVA_HOME=$PWD/amazon-corretto-11.0.18.10.1-linux-aarch64/
+    elif [[ "$hwPlatform" == 'x86_64' && "$platform" == "linux" ]]; then
         wget https://corretto.aws/downloads/latest/amazon-corretto-11-x64-linux-jdk.tar.gz
         tar xf amazon-corretto-11-x64-linux-jdk.tar.gz
         export JAVA_HOME=$PWD/amazon-corretto-11.0.18.10.1-linux-x64
@@ -90,7 +120,12 @@ function downloadCorretto11() {
 
 function downloadCorretto17() {
     platform=$(getPlatform)
-    if [[ "$platform" == 'linux' ]]; then
+    hwPlatform=$(getHardwarePlatform)
+    if [[ "$hwPlatform" == 'aarch64' && "$platform" == "linux" ]]; then
+        wget https://corretto.aws/downloads/latest/amazon-corretto-17-aarch64-linux-jdk.tar.gz
+        tar xf amazon-corretto-17-aarch64-linux-jdk.tar.gz
+        export JAVA_HOME=$PWD/amazon-corretto-17.0.6.10.1-linux-aarch64
+    elif [[ "$hwPlatform" == 'x86_64' && "$platform" == "linux" ]]; then
         wget https://corretto.aws/downloads/latest/amazon-corretto-17-x64-linux-jdk.tar.gz
         tar xf amazon-corretto-17-x64-linux-jdk.tar.gz
         export JAVA_HOME=$PWD/amazon-corretto-17.0.6.10.1-linux-x64
@@ -103,7 +138,12 @@ function downloadCorretto17() {
 
 function downloadMandrel11() {
     platform=$(getPlatform)
-    if [[ "$platform" == 'linux' ]]; then
+    hwPlatform=$(getHardwarePlatform)
+    if [[ "$hwPlatform" == 'aarch64' && "$platform" == "linux" ]]; then
+        wget https://github.com/graalvm/mandrel/releases/download/mandrel-22.2.0.0-Final/mandrel-java11-linux-aarch64-22.2.0.0-Final.tar.gz 
+        tar xf mandrel-java11-linux-aarch64-22.2.0.0-Final.tar.gz
+        export JAVA_HOME=$PWD/mandrel-java11-22.2.0.0-Final
+    elif [[ "$hwPlatform" == 'x86_64' && "$platform" == "linux" ]]; then
         wget https://github.com/graalvm/mandrel/releases/download/mandrel-22.2.0.0-Final/mandrel-java11-linux-amd64-22.2.0.0-Final.tar.gz
         tar xf mandrel-java11-linux-amd64-22.2.0.0-Final.tar.gz
         export JAVA_HOME=$PWD/mandrel-java11-22.2.0.0-Final
@@ -116,7 +156,12 @@ function downloadMandrel11() {
 
 function downloadMandrel17() {
     platform=$(getPlatform)
-    if [[ "$platform" == 'linux' ]]; then
+    hwPlatform=$(getHardwarePlatform)
+    if [[ "$hwPlatform" == 'aarch64' && "$platform" == "linux" ]]; then
+        wget https://github.com/graalvm/mandrel/releases/download/mandrel-22.2.0.0-Final/mandrel-java17-linux-aarch64-22.2.0.0-Final.tar.gz
+        tar xf mandrel-java17-linux-aarch64-22.2.0.0-Final.tar.gz
+        export JAVA_HOME=$PWD/mandrel-java17-22.2.0.0-Final
+    elif [[ "$hwPlatform" == 'x86_64' && "$platform" == "linux" ]]; then
         wget https://github.com/graalvm/mandrel/releases/download/mandrel-22.2.0.0-Final/mandrel-java17-linux-amd64-22.2.0.0-Final.tar.gz
         tar xf mandrel-java17-linux-amd64-22.2.0.0-Final.tar.gz
         export JAVA_HOME=$PWD/mandrel-java17-22.2.0.0-Final
@@ -129,10 +174,15 @@ function downloadMandrel17() {
 
 function downloadMicrosoftJDK11() {
     platform=$(getPlatform)
-    if [[ "$platform" == 'linux' ]]; then
-        wget https://aka.ms/download-jdk/microsoft-jdk-11.0.13.8.1-linux-x64.tar.gz
-        tar xf microsoft-jdk-11.0.13.8.1-linux-x64.tar.gz
-        export JAVA_HOME=$PWD/jdk-11.0.13+8
+    hwPlatform=$(getHardwarePlatform)
+    if [[ "$hwPlatform" == 'aarch64' && "$platform" == "linux" ]]; then
+        wget https://aka.ms/download-jdk/microsoft-jdk-11.0.18-linux-aarch64.tar.gz
+        tar xvzf microsoft-jdk-11.0.18-linux-aarch64.tar.gz
+        export JAVA_HOME=$PWD/jdk-11.0.18+10
+    elif [[ "$hwPlatform" == 'x86_64' && "$platform" == "linux" ]]; then
+        wget https://aka.ms/download-jdk/microsoft-jdk-11.0.18-linux-x64.tar.gz
+        tar xf microsoft-jdk-11.0.18-linux-x64.tar.gz
+        export JAVA_HOME=$PWD/jdk-11.0.18+10
     elif [[ "$platform" == 'darwin' ]]; then
         wget https://aka.ms/download-jdk/microsoft-jdk-11.0.13.8.1-macOS-x64.tar.gz
         tar xf microsoft-jdk-11.0.12.7.1-macos-x64.tar.gz
@@ -142,10 +192,15 @@ function downloadMicrosoftJDK11() {
 
 function downloadMicrosoftJDK17() {
     platform=$(getPlatform)
-    if [[ "$platform" == 'linux' ]]; then
-        wget https://aka.ms/download-jdk/microsoft-jdk-17.0.1.12.1-linux-x64.tar.gz
-        tar xf microsoft-jdk-17.0.1.12.1-linux-x64.tar.gz
-        export JAVA_HOME=$PWD/jdk-17.0.1+12
+    hwPlatform=$(getHardwarePlatform)
+    if [[ "$hwPlatform" == 'aarch64' && "$platform" == "linux" ]]; then
+        wget https://aka.ms/download-jdk/microsoft-jdk-17.0.6-linux-aarch64.tar.gz
+        tar xf microsoft-jdk-17.0.6-linux-aarch64.tar.gz
+        export JAVA_HOME=$PWD/jdk-17.0.6+10
+    elif [[ "$hwPlatform" == 'x86_64' && "$platform" == "linux" ]]; then
+        wget https://aka.ms/download-jdk/microsoft-jdk-17.0.6-linux-x64.tar.gz
+        tar xf microsoft-jdk-17.0.6-linux-x64.tar.gz
+        export JAVA_HOME=$PWD/jdk-17.0.6+10
     elif [[ "$platform" == 'darwin' ]]; then
         wget https://aka.ms/download-jdk/microsoft-jdk-17.0.1.12.1-macOS-x64.tar.gz
         tar xf microsoft-jdk-11.0.13.8.1-macOS-x64.tar.gz
@@ -155,7 +210,12 @@ function downloadMicrosoftJDK17() {
 
 function downloadZuluJDK11() {
     platform=$(getPlatform)
-    if [[ "$platform" == 'linux' ]]; then
+    hwPlatform=$(getHardwarePlatform)
+    if [[ "$hwPlatform" == 'aarch64' && "$platform" == "linux" ]]; then
+        wget https://cdn.azul.com/zulu-embedded/bin/zulu11.62.17-ca-jdk11.0.18-linux_aarch64.tar.gz
+        tar xf zulu11.62.17-ca-jdk11.0.18-linux_aarch64.tar.gz
+        export JAVA_HOME=$PWD/zulu11.62.17-ca-jdk11.0.18-linux_aarch64 
+    elif [[ "$hwPlatform" == 'x86_64' && "$platform" == "linux" ]]; then
         wget https://cdn.azul.com/zulu/bin/zulu11.56.19-ca-jdk11.0.15-linux_x64.tar.gz
         tar xf zulu11.56.19-ca-jdk11.0.15-linux_x64.tar.gz
         export JAVA_HOME=$PWD/zulu11.56.19-ca-jdk11.0.15-linux_x64
@@ -168,7 +228,12 @@ function downloadZuluJDK11() {
 
 function downloadZuluJDK17() {
     platform=$(getPlatform)
-    if [[ "$platform" == 'linux' ]]; then
+    hwPlatform=$(getHardwarePlatform)
+    if [[ "$hwPlatform" == 'aarch64' && "$platform" == "linux" ]]; then
+        wget https://cdn.azul.com/zulu/bin/zulu17.40.19-ca-jdk17.0.6-linux_aarch64.tar.gz
+        tar xf zulu17.40.19-ca-jdk17.0.6-linux_aarch64.tar.gz
+        export JAVA_HOME=$PWD/zulu17.40.19-ca-jdk17.0.6-linux_aarch64
+    elif [[ "$hwPlatform" == 'x86_64' && "$platform" == "linux" ]]; then
         wget https://cdn.azul.com/zulu/bin/zulu17.34.19-ca-jdk17.0.3-linux_x64.tar.gz
         tar xf zulu17.34.19-ca-jdk17.0.3-linux_x64.tar.gz
         export JAVA_HOME=$PWD/zulu17.34.19-ca-jdk17.0.3-linux_x64
@@ -181,10 +246,13 @@ function downloadZuluJDK17() {
 
 function downloadCMake01() {
     platform=$1
-    if [[ "$platform" == 'linux' ]]; then
-	    wget https://github.com/Kitware/CMake/releases/download/v3.22.1/cmake-3.22.1-linux-x86_64.tar.gz
+    hwPlatform=$2
+    if [[ "$hwPlatform" == "x86_64" && "$platform" == 'linux' ]]; then
+	    wget https://github.com/Kitware/CMake/releases/download/v3.25.2/cmake-3.25.2-linux-x86_64.tar.gz
+    elif [[ "$hwPlatform" == "aarch64" && "$platform" == 'linux' ]]; then
+    	wget https://github.com/Kitware/CMake/releases/download/v3.25.2/cmake-3.25.2-linux-aarch64.tar.gz
     elif [[ "$platform" == 'darwin' ]]; then
-        wget https://github.com/Kitware/CMake/releases/download/v3.22.1/cmake-3.22.1-macos-universal.tar.gz
+        wget https://github.com/Kitware/CMake/releases/download/v3.25.2/cmake-3.25.2-macos-universal.tar.gz
     else
         echo "OS platform not supported"
         exit 0
@@ -193,10 +261,15 @@ function downloadCMake01() {
 
 function unZipAndSetCmake() {
     platform=$1
-    if [[ "$platform" == 'linux' ]]; then
-        tar xzf cmake-3.22.1-linux-x86_64.tar.gz
-        export PATH=`pwd`/cmake-3.22.1-linux-x86_64/bin:$PATH
-        export CMAKE_ROOT=`pwd`/cmake-3.22.1-linux-x86_64/
+    hwPlatform=$2
+    if [[ "$hwPlatform" == "x86_64" && "$platform" == 'linux' ]]; then
+        tar xzf cmake-3.25.2-linux-x86_64.tar.gz
+        export PATH=`pwd`/cmake-3.25.2-linux-x86_64/bin:$PATH
+        export CMAKE_ROOT=`pwd`/cmake-3.25.2-linux-x86_64/
+    elif [[ "$hwPlatform" == "aarch64" && "$platform" == 'linux' ]]; then
+        tar xzf cmake-3.25.2-linux-aarch64.tar.gz
+        export PATH=`pwd`/cmake-3.25.2-linux-aarch64/bin:$PATH
+        export CMAKE_ROOT=`pwd`/cmake-3.25.2-linux-aarch64/
     elif [[ "$platform" == 'darwin' ]]; then
         tar xfz cmake-3.22.1-macos-universal.tar.gz
         export PATH=`pwd`/cmake-3.22.1-macos-universal/CMake.app/Contents/bin:$PATH
@@ -210,25 +283,23 @@ function unZipAndSetCmake() {
 # Download CMAKE
 function downloadCMake() {
     platform=$(getPlatform)
-    FILE="cmake-3.22.1-linux-x86_64.tar.gz"
+    hwPlatform=$(getHardwarePlatform)
+    FILE="cmake-3.25.2-linux-x86_64.tar.gz"
     if [ ! -f "$FILE" ]; then
-        downloadCMake01 $platform
-        unZipAndSetCmake $platform
+        downloadCMake01 $platform $hwPlatform
+        unZipAndSetCmake $platform $hwPlatform
     else
-        unZipAndSetCmake $platform
+        unZipAndSetCmake $platform $hwPlatform
     fi
 }
 
 function downloadMaven() {
     platform=$(getPlatform)
     if [[ "$platform" == 'linux' ]]; then
-        wget https://dlcdn.apache.org/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz
-        tar xvzf apache-maven-3.8.6-bin.tar.gz 
-        export MAVENPATH=`pwd`/apache-maven-3.8.6/bin 
-        export PATH=`pwd`/apache-maven-3.8.6/bin:$PATH
-    else 
-        echo "OS platform not supported"
-        exit 0
+        wget https://dlcdn.apache.org/maven/maven-3/3.9.0/binaries/apache-maven-3.9.0-bin.tar.gz
+        tar xf apache-maven-3.9.0-bin.tar.gz 
+        export MAVENPATH=`pwd`/apache-maven-3.9.0/bin 
+        export PATH=`pwd`/apache-maven-3.9.0/bin:$PATH
     fi
 }
 
@@ -282,6 +353,7 @@ function setupVariables() {
 	  echo "export TORNADO_SDK=$PWD/bin/sdk" >> source.sh
 	  echo "export CMAKE_ROOT=$CMAKE_ROOT" >> source.sh
 	  echo "export TORNADO_ROOT=$PWD " >> source.sh
+	  echo "export PATH=$MAVENPATH:$PATH" >> source.sh
     echo "........................... [OK]"
 
     echo -e "\nTo run TornadoVM, run \`. source.sh\`"
@@ -293,6 +365,7 @@ function installForOpenJDK11() {
     cd $dirname
     downloadOpenJDK11
     downloadCMake
+    downloadMaven
     cd -
     setupTornadoVM jdk-11-plus
     setupVariables $dirname
@@ -304,6 +377,7 @@ function installForOpenJDK17() {
     cd $dirname
     downloadOpenJDK17
     downloadCMake
+    downloadMaven
     cd -
     setupTornadoVM jdk-11-plus
     setupVariables $dirname
@@ -315,6 +389,7 @@ function installForGraalJDK11() {
     cd $dirname
     downloadGraalVMJDK11
     downloadCMake
+    downloadMaven
     cd -
     setupTornadoVM graal-jdk-11-plus
     setupVariables $dirname
@@ -326,6 +401,7 @@ function installForGraalJDK17() {
     cd $dirname
     downloadGraalVMJDK17
     downloadCMake
+    downloadMaven
     cd -
     setupTornadoVM graal-jdk-11-plus
     setupVariables $dirname
@@ -337,6 +413,7 @@ function installForCorrettoJDK11() {
     cd $dirname
     downloadCorretto11
     downloadCMake
+    downloadMaven
     cd -
     setupTornadoVM jdk-11-plus
     setupVariables $dirname
@@ -348,6 +425,7 @@ function installForCorrettoJDK17() {
     cd $dirname
     downloadCorretto17
     downloadCMake
+    downloadMaven
     cd -
     setupTornadoVM jdk-11-plus
     setupVariables $dirname
@@ -359,6 +437,7 @@ function installForMandrelJDK11() {
     cd $dirname
     downloadMandrel11
     downloadCMake
+    downloadMaven
     cd -
     setupTornadoVM jdk-11-plus
     setupVariables $dirname
@@ -370,6 +449,7 @@ function installForMandrelJDK17() {
     cd $dirname
     downloadMandrel17
     downloadCMake
+    downloadMaven
     cd -
     setupTornadoVM jdk-11-plus
     setupVariables $dirname
@@ -382,6 +462,7 @@ function installForMicrosoftJDK11() {
     cd $dirname
     downloadMicrosoftJDK11
     downloadCMake
+    downloadMaven
     cd -
     setupTornadoVM jdk-11-plus
     setupVariables $dirname
@@ -394,6 +475,7 @@ function installForMicrosoftJDK17() {
     cd $dirname
     downloadMicrosoftJDK17
     downloadCMake
+    downloadMaven
     cd -
     setupTornadoVM jdk-11-plus
     setupVariables $dirname
@@ -406,6 +488,7 @@ function installForZuluJDK11() {
     cd $dirname
     downloadZuluJDK11
     downloadCMake
+    downloadMaven
     cd -
     setupTornadoVM jdk-11-plus
     setupVariables $dirname
@@ -418,6 +501,7 @@ function installForZuluJDK17() {
     cd $dirname
     downloadZuluJDK17
     downloadCMake
+    downloadMaven
     cd -
     setupTornadoVM jdk-11-plus
     setupVariables $dirname
