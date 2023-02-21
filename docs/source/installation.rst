@@ -63,27 +63,28 @@ Additionally, this installation type will automatically trigger all dependencies
 .. code-block:: bash
    
     $ ./scripts/tornadovmInstaller.sh 
-    TornadoVM installer for Linux and OSx 
-    $ ./script/tornadoVMInstaller.sh <JDK> <BACKENDS>
+    TornadoVM installer for Linux and OSx
+    ./scripts/tornadoVMInstaller.sh <JDK> <BACKENDS>
     JDK (select one):
-           --jdk11            : Install TornadoVM with OpenJDK 11
-           --jdk17            : Install TornadoVM with OpenJDK 17
-           --graal-jdk-11     : Install TornadoVM with GraalVM and JDK 11 (GraalVM 22.2.0)
-           --graal-jdk-17     : Install TornadoVM with GraalVM and JDK 17 (GraalVM 22.2.0)
-           --corretto-11      : Install TornadoVM with Corretto JDK 11
-           --corretto-17      : Install TornadoVM with Corretto JDK 17
-           --mandrel-11       : Install TornadoVM with Mandrel 22.2.0 (JDK 11)
-           --mandrel-17       : Install TornadoVM with Mandrel 22.2.0 (JDK 17)
-           --microsoft-jdk-11 : Install TornadoVM with Microsoft JDK 11
-           --microsoft-jdk-17 : Install TornadoVM with Microsoft JDK 17
-           --zulu-jdk-11      : Install TornadoVM with Azul Zulu JDK 11
-           --zulu-jdk-17      : Install TornadoVM with Azul Zulu JDK 17
+       --jdk11            : Install TornadoVM with OpenJDK 11 (Adoptium)
+       --jdk17            : Install TornadoVM with OpenJDK 17 (Oracle OpenJDK)
+       --graal-jdk-11     : Install TornadoVM with GraalVM and JDK 11 (GraalVM 22.2.0)
+       --graal-jdk-17     : Install TornadoVM with GraalVM and JDK 17 (GraalVM 22.2.0)
+       --corretto-11      : Install TornadoVM with Corretto JDK 11
+       --corretto-17      : Install TornadoVM with Corretto JDK 17
+       --mandrel-11       : Install TornadoVM with Mandrel 22.2.0 (JDK 11)
+       --mandrel-17       : Install TornadoVM with Mandrel 22.2.0 (JDK 17)
+       --microsoft-jdk-11 : Install TornadoVM with Microsoft JDK 11
+       --microsoft-jdk-17 : Install TornadoVM with Microsoft JDK 17
+       --zulu-jdk-11      : Install TornadoVM with Azul Zulu JDK 11
+       --zulu-jdk-17      : Install TornadoVM with Azul Zulu JDK 17
     TornadoVM Backends:
-           --opencl           : Install TornadoVM and build the OpenCL backend
-           --ptx              : Install TornadoVM and build the PTX backend
-           --spirv            : Install TornadoVM and build the SPIR-V backend
+       --opencl           : Install TornadoVM and build the OpenCL backend
+       --ptx              : Install TornadoVM and build the PTX backend
+       --spirv            : Install TornadoVM and build the SPIR-V backend
     Help:
-           --help             : Print this help
+       --help             : Print this help
+
 
 
 

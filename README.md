@@ -27,10 +27,10 @@ In Linux and Mac OSx, TornadoVM can be installed automatically with the [install
 ```bash
 $ ./scripts/tornadoVMInstaller.sh 
 TornadoVM installer for Linux and OSx
-$ ./scripts/tornadoVMInstaller.sh <JDK> <BACKENDS>
+./scripts/tornadoVMInstaller.sh <JDK> <BACKENDS>
 JDK (select one):
-       --jdk11            : Install TornadoVM with OpenJDK 11
-       --jdk17            : Install TornadoVM with OpenJDK 17
+       --jdk11            : Install TornadoVM with OpenJDK 11 (Adoptium)
+       --jdk17            : Install TornadoVM with OpenJDK 17 (Oracle OpenJDK)
        --graal-jdk-11     : Install TornadoVM with GraalVM and JDK 11 (GraalVM 22.2.0)
        --graal-jdk-17     : Install TornadoVM with GraalVM and JDK 17 (GraalVM 22.2.0)
        --corretto-11      : Install TornadoVM with Corretto JDK 11
@@ -47,6 +47,7 @@ TornadoVM Backends:
        --spirv            : Install TornadoVM and build the SPIR-V backend
 Help:
        --help             : Print this help
+
 ```
 
 **NOTE** Select the desired backend:

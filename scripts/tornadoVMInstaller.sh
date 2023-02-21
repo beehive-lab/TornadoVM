@@ -50,13 +50,13 @@ function downloadOpenJDK17() {
     platform=$(getPlatform)
     hwPlatform=$(getHardwarePlatform)
     if [[ "$hwPlatform" == 'aarch64' && "$platform" == "linux" ]]; then
-	    wget https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.6%2B10/OpenJDK17U-jdk_aarch64_linux_hotspot_17.0.6_10.tar.gz
-	    tar -xf OpenJDK17U-jdk_aarch64_linux_hotspot_17.0.6_10.tar.gz
-	    export JAVA_HOME=$PWD/jdk-17.0.6+10
+        wget https://download.oracle.com/java/17/latest/jdk-17_linux-aarch64_bin.tar.gz
+	    tar -xf jdk-17_linux-aarch64_bin.tar.gz
+	    export JAVA_HOME=$PWD/jdk-17.0.6
     elif [[ "$hwPlatform" == 'x86_64' && "$platform" == "linux" ]]; then
-        wget https://download.java.net/java/GA/jdk17.0.1/2a2082e5a09d4267845be086888add4f/12/GPL/openjdk-17.0.1_linux-x64_bin.tar.gz
-        tar -xf openjdk-17.0.1_linux-x64_bin.tar.gz
-        export JAVA_HOME=$PWD/jdk-17.0.1
+        wget https://download.oracle.com/java/17/latest/jdk-17_linux-x64_bin.tar.gz
+        tar -xf jdk-17_linux-x64_bin.tar.gz
+        export JAVA_HOME=$PWD/jdk-17.0.6
     elif [[ "$platform" == 'darwin' ]]; then
         wget https://download.java.net/java/GA/jdk17.0.1/2a2082e5a09d4267845be086888add4f/12/GPL/openjdk-17.0.1_macos-x64_bin.tar.gz
         tar -xf openjdk-17.0.1_macos-x64_bin.tar.gz
@@ -511,8 +511,8 @@ function printHelp() {
     echo "TornadoVM installer for Linux and OSx"
     echo "./scripts/tornadoVMInstaller.sh <JDK> <BACKENDS>"
     echo "JDK (select one):"
-    echo "       --jdk11            : Install TornadoVM with OpenJDK 11"
-    echo "       --jdk17            : Install TornadoVM with OpenJDK 17"
+    echo "       --jdk11            : Install TornadoVM with OpenJDK 11 (Adoptium)"
+    echo "       --jdk17            : Install TornadoVM with OpenJDK 17 (Oracle OpenJDK)"
     echo "       --graal-jdk-11     : Install TornadoVM with GraalVM and JDK 11 (GraalVM 22.2.0)"
     echo "       --graal-jdk-17     : Install TornadoVM with GraalVM and JDK 17 (GraalVM 22.2.0)"
     echo "       --corretto-11      : Install TornadoVM with Corretto JDK 11"
