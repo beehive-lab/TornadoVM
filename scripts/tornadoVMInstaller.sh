@@ -37,8 +37,8 @@ function downloadOpenJDK11() {
         export JAVA_HOME=$PWD/jdk-11.0.17+8
     elif [[ "$hwPlatform" == 'x86_64' && "$platform" == "linux" ]]; then
         wget https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.13%2B8/OpenJDK11U-jdk_x64_linux_hotspot_11.0.13_8.tar.gz
-	tar -xf OpenJDK11U-jdk_x64_linux_hotspot_11.0.13_8.tar.gz
-	export JAVA_HOME=$PWD/jdk-11.0.13+8
+	    tar -xf OpenJDK11U-jdk_x64_linux_hotspot_11.0.13_8.tar.gz   
+	    export JAVA_HOME=$PWD/jdk-11.0.13+8
     elif [[ "$platform" == 'darwin' ]]; then
         wget https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.13%2B8/OpenJDK11U-jdk_x64_mac_hotspot_11.0.13_8.tar.gz
         tar -xf OpenJDK11U-jdk_x64_mac_hotspot_11.0.13_8.tar.gz
@@ -50,9 +50,9 @@ function downloadOpenJDK17() {
     platform=$(getPlatform)
     hwPlatform=$(getHardwarePlatform)
     if [[ "$hwPlatform" == 'aarch64' && "$platform" == "linux" ]]; then
-	wget https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.6%2B10/OpenJDK17U-jdk_aarch64_linux_hotspot_17.0.6_10.tar.gz
-	tar -xf OpenJDK17U-jdk_aarch64_linux_hotspot_17.0.6_10.tar.gz
-	export JAVA_HOME=$PWD/jdk-17.0.6+10
+	    wget https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.6%2B10/OpenJDK17U-jdk_aarch64_linux_hotspot_17.0.6_10.tar.gz
+	    tar -xf OpenJDK17U-jdk_aarch64_linux_hotspot_17.0.6_10.tar.gz
+	    export JAVA_HOME=$PWD/jdk-17.0.6+10
     elif [[ "$hwPlatform" == 'x86_64' && "$platform" == "linux" ]]; then
         wget https://download.java.net/java/GA/jdk17.0.1/2a2082e5a09d4267845be086888add4f/12/GPL/openjdk-17.0.1_linux-x64_bin.tar.gz
         tar -xf openjdk-17.0.1_linux-x64_bin.tar.gz
@@ -68,13 +68,13 @@ function downloadGraalVMJDK11() {
     platform=$(getPlatform)
     hwPlatform=$(getHardwarePlatform)
     if [[ "$hwPlatform" == 'aarch64' && "$platform" == "linux" ]]; then
-	wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java11-linux-aarch64-22.2.0.tar.gz
-	tar -xf graalvm-ce-java11-linux-aarch64-22.2.0.tar.gz
-	export JAVA_HOME=$PWD/graalvm-ce-java11-22.2.0
+	    wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java11-linux-aarch64-22.2.0.tar.gz
+	    tar -xf graalvm-ce-java11-linux-aarch64-22.2.0.tar.gz
+	    export JAVA_HOME=$PWD/graalvm-ce-java11-22.2.0
     elif [[ "$hwPlatform" == 'x86_64' && "$platform" == "linux" ]]; then
         wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java11-linux-amd64-22.2.0.tar.gz
-	tar -xf graalvm-ce-java11-linux-amd64-22.2.0.tar.gz
-	export JAVA_HOME=$PWD/graalvm-ce-java11-22.2.0
+	    tar -xf graalvm-ce-java11-linux-amd64-22.2.0.tar.gz
+	    export JAVA_HOME=$PWD/graalvm-ce-java11-22.2.0
     elif [[ "$platform" == 'darwin' ]]; then
         wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java11-darwin-amd64-22.2.0.tar.gz
         tar -xf graalvm-ce-java11-darwin-amd64-22.2.0.tar.gz
