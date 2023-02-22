@@ -22,16 +22,12 @@
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-from subprocess import PIPE
 import os
-import subprocess
-import shlex
 import sys
-import re
 import argparse
 import platform
-import config
 import tarfile
+import config
 
 try:
     import wget
@@ -47,7 +43,7 @@ __SUPPORTED_JDKS__ = ["jdk11", "jdk17", "graalvm-jdk-11",  "graalvm-jdk-17",
                       "mandrel-jdk-11", "mandrel-jdk-17", "windows-jdk-11", 
                       "windows-jdk-17", "corretto-jdk-11", "corretto-jdk-17", 
                       "zulu-jdk-11", "zulu-jdk-17" ]
-                      
+
 __SUPPORTED_BACKENDS__ =  [ "opencl", "spirv", "ptx" ]
 
 __X86_64__ = config.__X86_64__
@@ -91,7 +87,7 @@ class TornadoInstaller():
             url = config.CMAKE[__APPLE__][__ARM__]
         
         fileName = self.processFileName(url)
-        print("FILENAME -> " + fileName)
+        print("Checking dependency: " + fileName)
         fullPath = self.workDirName + "/" + fileName
 
         if not os.path.exists(fullPath):
@@ -123,7 +119,7 @@ class TornadoInstaller():
             url = config.MAVEN[__APPLE__][__ARM__]
         
         fileName = self.processFileName(url)
-        print("FILENAME -> " + fileName)
+        print("Checking dependency: " + fileName)
         fullPath = self.workDirName + "/" + fileName
 
         if not os.path.exists(fullPath):
@@ -153,7 +149,7 @@ class TornadoInstaller():
             url = config.JDK[jdk][__APPLE__][__ARM__]
         
         fileName = self.processFileName(url)
-        print("FILENAME -> " + fileName)
+        print("Checking dependency: " + fileName)
         fullPath = self.workDirName + "/" + fileName
 
         if not os.path.exists(fullPath):
@@ -207,8 +203,13 @@ class TornadoInstaller():
         print(" ------------------------------------------")
         print("Creating source file ......................")
 
+        paths = self.env["PATH"]
+        allPaths = ""
+        for p in paths:
+            allPaths = allPaths + p + ":"
+
         fileContent = "export JAVA_HOME=" + self.env["JAVA_HOME"] + "\n"
-        fileContent = fileContent + "export PATH=" + os.environ["PATH"] + "\n"
+        fileContent = fileContent + "export PATH=" + allPaths + "$PATH" "\n"
         fileContent = fileContent + "export CMAKE_ROOT=" + self.env["CMAKE_ROOT"] + "\n"
         fileContent = fileContent + "export TORNADO_SDK=" + self.env["TORNADO_SDK"] + "\n"
         f = open("source.sh", "w")
