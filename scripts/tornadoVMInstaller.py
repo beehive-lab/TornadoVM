@@ -254,7 +254,12 @@ class TornadoInstaller():
         self.setWorkDir(args.jdk)
         self.downloadCMake()
         self.downloadMaven()
-        self.downloadJDK(args.jdk)
+
+        if (args.javaHome == None):
+            self.downloadJDK(args.jdk)
+        else:
+            self.env["JAVA_HOME"] = args.javaHome 
+
         self.setEnvironmentVariables()
         self.compileTornadoVM(makeJDK, backend)
         self.createSourceFile()
@@ -262,7 +267,7 @@ class TornadoInstaller():
 
 def listSupportedJDKs():
     print("""
-    jdk11            : Install TornadoVM with OpenJDK 11 (Adoptium)"
+    jdk11            : Install TornadoVM with OpenJDK 11 (Oracle OpenJDK)"
     jdk17            : Install TornadoVM with OpenJDK 17 (Oracle OpenJDK)"
     graal-jdk-11     : Install TornadoVM with GraalVM and JDK 11 (GraalVM 22.2.0)"
     graal-jdk-17     : Install TornadoVM with GraalVM and JDK 17 (GraalVM 22.2.0)"
@@ -277,15 +282,19 @@ def listSupportedJDKs():
 
     Usage: 
      $ python scripts/tornadoVMInstaller.py  --jdk <JDK_VERSION> --backend <BACKEND>
+
+    If you want to select another version of OpenJDK, you can use --javaHome="<pathToJavaHome>" and install as follows:
+      $ python scripts/tornadoVMInstaller.py --backend <BACKEND> --javaHome=<pathToJavaHome> 
     """)
 
 def parseArguments():
     """ Parse command line arguments """
     parser = argparse.ArgumentParser(description="""TornadoVM installer tool. It will install all software dependencies except the GPU/FPGA drivers""")
     parser.add_argument('--version', action="store_true", dest="version", default=False, help="Print version of TornadoVM")
-    parser.add_argument('--jdk', action="store", dest="jdk", default=None, help="Select one of the supported JDKs: { jdk11, jdk17, }")
+    parser.add_argument('--jdk', action="store", dest="jdk", default=None, help="Select one of the supported JDKs. Use --listJDKs option to see all supported ones.")
     parser.add_argument('--backend', action="store", dest="backend", default=None, help="Select the backend to install: { opencl, ptx, spirv }")
     parser.add_argument('--listJDKs', action="store_true", dest="listJDKs", default=False, help="List all JDK supported versions")
+    parser.add_argument('--javaHome', action="store", dest="withJavaHome", default=None, help="Use a JDK from a user directory")
     args = parser.parse_args()
 
     if (len(sys.argv) == 1):
