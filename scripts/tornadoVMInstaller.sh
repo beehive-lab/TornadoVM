@@ -321,22 +321,6 @@ function resolveBackends() {
     backend="BACKEND=$b"
 }
 
-# Download and Install TornadoVM
-function setupTornadoVMStandalone() {
-    if [ ! -d TornadoVM ]; then
-        git clone --depth 1 https://github.com/beehive-lab/TornadoVM
-    else
-        cd TornadoVM
-        git pull
-        cd -
-    fi
-    cd TornadoVM
-    export PATH=$PWD/bin/bin:$PATH
-    export TORNADO_SDK=$PWD/bin/sdk
-    resolveBackends
-    make $1 $backend
-}
-
 function setupTornadoVM() {
     export PATH=$PWD/bin/bin:$PATH
     export TORNADO_SDK=$PWD/bin/sdk
@@ -400,7 +384,7 @@ function installForGraalJDK17() {
     mkdir -p $dirname
     cd $dirname
     downloadGraalVMJDK17
-    downloadCMake
+    c
     downloadMaven
     cd -
     setupTornadoVM graal-jdk-11-plus
