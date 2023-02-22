@@ -24,7 +24,7 @@ function getPlatform() {
 }
 
 function getHardwarePlatform() {
-	hwPlatform=$(uname -i)
+	hwPlatform=$(uname -m)
 	echo $hwPlatform
 }
 
