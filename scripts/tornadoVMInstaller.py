@@ -32,7 +32,7 @@ import config
 try:
     import wget
 except:
-    print("Install the wget Python module: pip install wget")
+    print("Install the wget Python module: python -m pip install wget")
     exit()
 
 
