@@ -59,7 +59,7 @@ MAVEN = {
         __ARM__    : "https://dlcdn.apache.org/maven/maven-3/3.9.0/binaries/apache-maven-3.9.0-bin.tar.gz",
     },
     __APPLE__ : {
-        __ARM__    : "NULL",
+        __ARM__    : None,
     }
 }
 

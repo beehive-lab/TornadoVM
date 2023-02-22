@@ -117,7 +117,9 @@ class TornadoInstaller():
             url = config.MAVEN[__LINUX__][__ARM__]
         elif (self.osPlatform == __APPLE__):
             url = config.MAVEN[__APPLE__][__ARM__]
-        
+            if (url == None):
+                return
+            
         fileName = self.processFileName(url)
         print("Checking dependency: " + fileName)
         fullPath = self.workDirName + "/" + fileName
@@ -258,7 +260,7 @@ class TornadoInstaller():
         self.createSourceFile()
 
 
-def showVersions():
+def listSupportedJDKs():
     print("""
     jdk11            : Install TornadoVM with OpenJDK 11 (Adoptium)"
     jdk17            : Install TornadoVM with OpenJDK 17 (Oracle OpenJDK)"
@@ -283,19 +285,24 @@ def parseArguments():
     parser.add_argument('--version', action="store_true", dest="version", default=False, help="Print version of TornadoVM")
     parser.add_argument('--jdk', action="store", dest="jdk", default=None, help="Select one of the supported JDKs: { jdk11, jdk17, }")
     parser.add_argument('--backend', action="store", dest="backend", default=None, help="Select the backend to install: { opencl, ptx, spirv }")
-    parser.add_argument('--showJDKVersions', action="store_true", dest="showVersions", default=False, help="List all JDK supported versions")
+    parser.add_argument('--listJDKs', action="store_true", dest="listJDKs", default=False, help="List all JDK supported versions")
     args = parser.parse_args()
+
+    if (len(sys.argv) == 1):
+        parser.print_help()
+        sys.exit()
+
     return args
 
 if __name__ == "__main__":
-    args = parseArguments() 
+    args = parseArguments()    
 
     if (args.version):
         print(__VERSION__)
         sys.exit(0)
-    if (args.showVersions):
-        showVersions()
+    if (args.listJDKs):
+        listSupportedJDKs()
         sys.exit(0)
-    
+
     installer = TornadoInstaller()
     installer.install(args)
