@@ -294,7 +294,7 @@ def parseArguments():
     parser.add_argument('--jdk', action="store", dest="jdk", default=None, help="Select one of the supported JDKs. Use --listJDKs option to see all supported ones.")
     parser.add_argument('--backend', action="store", dest="backend", default=None, help="Select the backend to install: { opencl, ptx, spirv }")
     parser.add_argument('--listJDKs', action="store_true", dest="listJDKs", default=False, help="List all JDK supported versions")
-    parser.add_argument('--javaHome', action="store", dest="withJavaHome", default=None, help="Use a JDK from a user directory")
+    parser.add_argument('--javaHome', action="store", dest="javaHome", default=None, help="Use a JDK from a user directory")
     args = parser.parse_args()
 
     if (len(sys.argv) == 1):
