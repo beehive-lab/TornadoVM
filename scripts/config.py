@@ -125,7 +125,7 @@ JDK = {
             __ARM__    : "https://github.com/graalvm/mandrel/releases/download/mandrel-22.2.0.0-Final/mandrel-java11-linux-aarch64-22.2.0.0-Final.tar.gz",
         },
         __APPLE__ : {
-            __ARM__    : "NULL",
+            __ARM__    : None,
         }
     },
     __MANDREL17__ : {
@@ -134,7 +134,7 @@ JDK = {
             __ARM__    : "https://github.com/graalvm/mandrel/releases/download/mandrel-22.2.0.0-Final/mandrel-java17-linux-aarch64-22.2.0.0-Final.tar.gz",
         },
         __APPLE__ : {
-            __ARM__    : "NULL",
+            __ARM__    : None,
         }
     },
     __WINDOWS11__ : {
