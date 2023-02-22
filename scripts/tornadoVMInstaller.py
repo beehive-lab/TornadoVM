@@ -56,7 +56,7 @@ class TornadoInstaller():
     def __init__(self):
         self.workDirName = ""
         self.osPlatform = self.getOSPlatform()
-        self.hawdware = self.getMachineArc()
+        self.hardware = self.getMachineArc()
         self.env = {}
         self.env["PATH"] = [self.getCurrentDirectory() + "/bin/bin:"]
         self.env["TORNADO_SDK"] = self.getCurrentDirectory() + "/bin/sdk"
@@ -79,9 +79,9 @@ class TornadoInstaller():
         return os.getcwd()
 
     def downloadCMake(self):
-        if (self.hawdware == __X86_64__ and self.osPlatform == __LINUX__ ):
+        if (self.hardware == __X86_64__ and self.osPlatform == __LINUX__ ):
             url = config.CMAKE[__LINUX__][__X86_64__]
-        elif (self.hawdware == __ARM__ and self.osPlatform == __LINUX__ ):
+        elif (self.hardware == __ARM__ and self.osPlatform == __LINUX__ ):
             url = config.CMAKE[__LINUX__][__ARM__]
         elif (self.osPlatform == __APPLE__):
             url = config.CMAKE[__APPLE__][__ARM__]
@@ -111,9 +111,9 @@ class TornadoInstaller():
 
 
     def downloadMaven(self):
-        if (self.hawdware == __X86_64__ and self.osPlatform == __LINUX__ ):
+        if (self.hardware == __X86_64__ and self.osPlatform == __LINUX__ ):
             url = config.MAVEN[__LINUX__][__X86_64__]
-        elif (self.hawdware == __ARM__ and self.osPlatform == __LINUX__ ):
+        elif (self.hardware == __ARM__ and self.osPlatform == __LINUX__ ):
             url = config.MAVEN[__LINUX__][__ARM__]
         elif (self.osPlatform == __APPLE__):
             url = config.MAVEN[__APPLE__][__ARM__]
@@ -121,7 +121,7 @@ class TornadoInstaller():
                 return
             
         fileName = self.processFileName(url)
-        print("Checking dependency: " + fileName)
+        print("\nChecking dependency: " + fileName)
         fullPath = self.workDirName + "/" + fileName
 
         if not os.path.exists(fullPath):
@@ -143,15 +143,15 @@ class TornadoInstaller():
         self.env["PATH"].append(currentDirectory + "/" + self.workDirName + "/" + extractedDirectory + extraPath + "/bin")
 
     def downloadJDK(self, jdk):
-        if (self.hawdware == __X86_64__ and self.osPlatform == __LINUX__ ):
+        if (self.hardware == __X86_64__ and self.osPlatform == __LINUX__ ):
             url = config.JDK[jdk][__LINUX__][__X86_64__]
-        elif (self.hawdware == __ARM__ and self.osPlatform == __LINUX__ ):
+        elif (self.hardware == __ARM__ and self.osPlatform == __LINUX__ ):
             url = config.JDK[jdk][__LINUX__][__ARM__]
         elif (self.osPlatform == __APPLE__):
             url = config.JDK[jdk][__APPLE__][__ARM__]
         
         fileName = self.processFileName(url)
-        print("Checking dependency: " + fileName)
+        print("\nChecking dependency: " + fileName)
         fullPath = self.workDirName + "/" + fileName
 
         if not os.path.exists(fullPath):
