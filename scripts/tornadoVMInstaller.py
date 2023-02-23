@@ -27,7 +27,7 @@ import sys
 import argparse
 import platform
 import tarfile
-import config
+import installerConfig as config
 
 try:
     import wget
@@ -223,8 +223,7 @@ class TornadoInstaller():
         print(" ")
         print("To run TornadoVM, first run `. source.sh`")
 
-
-    def install(self, args):
+    def checkJDKOption(self, args):
         if (args.jdk == None):
             print("[Error] Define one JDK to install TornadoVM. ")
             sys.exit(0)
@@ -235,26 +234,40 @@ class TornadoInstaller():
                 print("\t" + jdk)
             sys.exit(0)
 
-        if (args.backend == None):
-            print("[Error] Specify at least one backend { opencl,ptx,spirv } ")
-            sys.exit(0)
-        
+    def composeBackendOption(sekf, args):
         backend = args.backend.replace(" ", "").lower()
         for b in backend.split(","):
             if (b not in __SUPPORTED_BACKENDS__):
                 print(b + " is not a supported backend")
                 sys.exit(0)
-
         backend="BACKEND=" + backend
+        return backend
+
+    def install(self, args):
+
+        if (args.javaHome == None):
+            self.checkJDKOption(args)
+
+        if (args.backend == None):
+            print("[Error] Specify at least one backend { opencl,ptx,spirv } ")
+            sys.exit(0)
+        
+        backend = self.composeBackendOption(args)
 
         makeJDK = "jdk-11-plus"
-        if (args.jdk.startswith("graal")):
+        if ((args.javaHome != None and args.javaHome.startswith("graal")) or args.jdk.startswith("graal")):
             makeJDK = "graal-jdk-11-plus"
+        
+        if (args.javaHome != None):
+            directoryPostfix = args.javaHome.split("/")[-1]
+        else:
+            directoryPostfix = args.jdk
 
-        self.setWorkDir(args.jdk)
+        self.setWorkDir(directoryPostfix)
         self.downloadCMake()
         self.downloadMaven()
 
+        ## If JAVA_HOME is provided, there is no need to download a JDK
         if (args.javaHome == None):
             self.downloadJDK(args.jdk)
         else:
