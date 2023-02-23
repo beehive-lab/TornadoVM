@@ -101,11 +101,7 @@ class TornadoInstaller():
         ## Uncompress file
         tar = tarfile.open(fullPath, 'r:gz')
         tar.extractall(self.workDirName)
-        extractedNames = tar.getnames()[0].split("/")
-        if (extractedNames[0] == "."):
-            extractedDirectory = extractedNames[1]
-        else:
-            extractedDirectory = extractedNames[0]
+        extractedDirectory = self.getJDKDirectoryName(tar)
         tar.close()
 
         currentDirectory = self.getCurrentDirectory()
@@ -139,7 +135,7 @@ class TornadoInstaller():
         ## Uncompress file
         tar = tarfile.open(fullPath, 'r:gz')
         tar.extractall(self.workDirName)
-        extractedDirectory = tar.getnames()[0].split("/")[0]
+        extractedDirectory = self.getJDKDirectoryName(tar)
         tar.close()
 
         currentDirectory = self.getCurrentDirectory()
@@ -150,6 +146,14 @@ class TornadoInstaller():
 
         ## Update env-variables
         self.env["PATH"].append(currentDirectory + "/" + self.workDirName + "/" + extractedDirectory + extraPath + "/bin")
+
+    def getJDKDirectoryName(self, tar):
+        extractedNames = tar.getnames()[0].split("/")
+        if (extractedNames[0] == "."):
+            extractedDirectory = extractedNames[1]
+        else:
+            extractedDirectory = extractedNames[0]
+        return extractedDirectory
 
     def downloadJDK(self, jdk):
         if (self.hardware == __X86_64__ and self.osPlatform == __LINUX__ ):
@@ -166,9 +170,8 @@ class TornadoInstaller():
         if not os.path.exists(fullPath):
             wget.download(url, fullPath)
 
-        ## Uncompress file
         tar = tarfile.open(fullPath, 'r:gz')
-        extractedDirectory = tar.getnames()[0].split("/")[0]
+        extractedDirectory = self.getJDKDirectoryName(tar)
         try:
             tar.extractall(self.workDirName, numeric_owner=True)
         except:
