@@ -101,7 +101,11 @@ class TornadoInstaller():
         ## Uncompress file
         tar = tarfile.open(fullPath, 'r:gz')
         tar.extractall(self.workDirName)
-        extractedDirectory = tar.getnames()[0].split("/")[0]
+        extractedNames = tar.getnames()[0].split("/")
+        if (extractedNames[0] == "."):
+            extractedDirectory = extractedNames[1]
+        else:
+            extractedDirectory = extractedNames[0]
         tar.close()
 
         currentDirectory = self.getCurrentDirectory()
