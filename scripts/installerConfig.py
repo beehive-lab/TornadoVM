@@ -22,7 +22,6 @@
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-
 __X86_64__ = "x86_64"
 __ARM__    = "aarch64"
 __LINUX__  = "linux"
@@ -41,7 +40,7 @@ __WINDOWS17__  = "windows-jdk-17"
 __ZULU11__     = "zulu-jdk-11"
 __ZULU17__     = "zulu-jdk-17"
  
-## CMAKE URLS
+## cmake 
 CMAKE = {
     __LINUX__ : {
         __X86_64__ : "https://github.com/Kitware/CMake/releases/download/v3.25.2/cmake-3.25.2-linux-x86_64.tar.gz",
@@ -174,4 +173,3 @@ JDK = {
         }
     },
 }
-
