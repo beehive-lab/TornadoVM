@@ -32,7 +32,12 @@ import installerConfig as config
 try:
     import wget
 except:
-    print("Install the wget Python module: python -m pip install wget")
+    print("""
+    Install the wget Python module using the following command:
+        $ python3 -m pip install wget
+
+    Install the `pip` tool on your system if necessary. 
+    """)
     exit()
 
 
