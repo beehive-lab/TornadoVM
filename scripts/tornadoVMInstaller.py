@@ -44,10 +44,14 @@ except:
 __DIRECTORY_DEPENDENCIES__ = "etc/dependencies"
 __VERSION__ = "v0.15.1"
 
-__SUPPORTED_JDKS__ = ["jdk11", "jdk17", "graalvm-jdk-11",  "graalvm-jdk-17",  
-                      "mandrel-jdk-11", "mandrel-jdk-17", "windows-jdk-11", 
-                      "windows-jdk-17", "corretto-jdk-11", "corretto-jdk-17", 
-                      "zulu-jdk-11", "zulu-jdk-17" ]
+__SUPPORTED_JDKS__ = [ 
+                       config.__JDK11__,      config.__JDK17__,
+                       config.__GRAALVM11__,  config.__GRAALVM17__,
+                       config.__CORRETTO11__, config.__CORRETTO17__,
+                       config.__MANDREL11__,  config.__MANDREL17__,
+                       config.__WINDOWS11__,  config.__WINDOWS17__,
+                       config.__ZULU11__,     config.__ZULU17__
+                     ]
 
 __SUPPORTED_BACKENDS__ =  [ "opencl", "spirv", "ptx" ]
 
@@ -334,6 +338,7 @@ if __name__ == "__main__":
     if (args.version):
         print(__VERSION__)
         sys.exit(0)
+        
     if (args.listJDKs):
         listSupportedJDKs()
         sys.exit(0)
