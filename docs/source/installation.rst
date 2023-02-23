@@ -62,50 +62,39 @@ Additionally, this installation type will automatically trigger all dependencies
 
 .. code-block:: bash
    
-    $ ./scripts/tornadovmInstaller.sh 
-    TornadoVM installer for Linux and OSx 
-    $ ./script/tornadoVMInstaller.sh <JDK> <BACKENDS>
-    JDK (select one):
-           --jdk11            : Install TornadoVM with OpenJDK 11
-           --jdk17            : Install TornadoVM with OpenJDK 17
-           --graal-jdk-11     : Install TornadoVM with GraalVM and JDK 11 (GraalVM 22.2.0)
-           --graal-jdk-17     : Install TornadoVM with GraalVM and JDK 17 (GraalVM 22.2.0)
-           --corretto-11      : Install TornadoVM with Corretto JDK 11
-           --corretto-17      : Install TornadoVM with Corretto JDK 17
-           --mandrel-11       : Install TornadoVM with Mandrel 22.2.0 (JDK 11)
-           --mandrel-17       : Install TornadoVM with Mandrel 22.2.0 (JDK 17)
-           --microsoft-jdk-11 : Install TornadoVM with Microsoft JDK 11
-           --microsoft-jdk-17 : Install TornadoVM with Microsoft JDK 17
-           --zulu-jdk-11      : Install TornadoVM with Azul Zulu JDK 11
-           --zulu-jdk-17      : Install TornadoVM with Azul Zulu JDK 17
-    TornadoVM Backends:
-           --opencl           : Install TornadoVM and build the OpenCL backend
-           --ptx              : Install TornadoVM and build the PTX backend
-           --spirv            : Install TornadoVM and build the SPIR-V backend
-    Help:
-           --help             : Print this help
+    $ ./scripts/tornadovm-installer 
+      usage: tornadovm-installer [-h] [--version] [--jdk JDK] [--backend BACKEND] [--listJDKs] [--javaHome JAVAHOME]
+
+      TornadoVM Installer Tool. It will install all software dependencies except the GPU/FPGA drivers
+
+      optional arguments:
+       -h, --help           show this help message and exit
+       --version            Print version of TornadoVM
+       --jdk JDK            Select one of the supported JDKs. Use --listJDKs option to see all supported ones.
+       --backend BACKEND    Select the backend to install: { opencl, ptx, spirv }
+       --listJDKs           List all JDK supported versions
+       --javaHome JAVAHOME  Use a JDK from a user directory
 
 
+**NOTE** Select the desired backend with the ``--backend`` option:
+  * ``opencl``: Enables the OpenCL backend (it requires OpenCL drivers)
+  * ``ptx``: Enables the PTX backend (it requires NVIDIA CUDA drivers)
+  * ``spirv``: Enables the SPIRV backend (it requires Intel Level Zero drivers)
 
-**NOTE** Select the desired backend:
-  * ``--opencl``: Enables the OpenCL backend (it requires OpenCL drivers)
-  * ``--ptx``: Enables the PTX backend (it requires NVIDIA CUDA drivers)
-  * ``--spirv``: Enables the SPIRV backend (it requires Intel Level Zero drivers)
 
-
-For example, to build TornadoVM with GraalVM and JDK 11:
+For example, to build TornadoVM with GraalVM and JDK 17:
 
 .. code-block:: bash 
 
-  ## Install with Graal JDK 17 using PTX, OpenCL and SPIRV backends
-  ./scripts/tornadovmInstaller.sh --graal-jdk-17 --opencl --ptx --spirv
+  ## Install with Graal for JDK 17 using PTX, OpenCL and SPIRV backends
+  ./scripts/tornadovm-installer --jdk graal-jdk-17  --backend opencl,ptx,spirv
 
 
 To build TornadoVM with Red Hat Mandrel JDK 11 with OpenCL and PTX backends:
 
 .. code-block:: bash 
 
-  ./scripts/tornadovmInstaller.sh --mandrel-11 --opencl --ptx
+  ./scripts/tornadovmInstaller.sh --jdk mandrel-jdk-11 --backend opencl,ptx
 
 
 After the installation, the scripts create a directory with the TornadoVM SDK. The directory also includes a source file with all variables needed to start using TornadoVM. 
