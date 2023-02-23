@@ -42,7 +42,7 @@ except:
 
 
 __DIRECTORY_DEPENDENCIES__ = "etc/dependencies"
-__VERSION__ = "v0.15.1"
+__VERSION__ = "v0.15.1-dev"
 
 __SUPPORTED_JDKS__ = [ 
                        config.__JDK11__,      config.__JDK17__,
@@ -310,15 +310,15 @@ def listSupportedJDKs():
     zulu-jdk-17      : Install TornadoVM with Azul Zulu JDK 17"
 
     Usage: 
-     $ python scripts/tornadoVMInstaller.py  --jdk <JDK_VERSION> --backend <BACKEND>
+     $ ./scripts/tornadovm-installer  --jdk <JDK_VERSION> --backend <BACKEND>
 
     If you want to select another version of OpenJDK, you can use --javaHome="<pathToJavaHome>" and install as follows:
-      $ python scripts/tornadoVMInstaller.py --backend <BACKEND> --javaHome=<pathToJavaHome> 
+      $ ./scripts/tornadovm-installer --backend <BACKEND> --javaHome=<pathToJavaHome> 
     """)
 
 def parseArguments():
     """ Parse command line arguments """
-    parser = argparse.ArgumentParser(description="""TornadoVM installer tool. It will install all software dependencies except the GPU/FPGA drivers""")
+    parser = argparse.ArgumentParser(description="""TornadoVM Installer Tool. It will install all software dependencies except the GPU/FPGA drivers""")
     parser.add_argument('--version', action="store_true", dest="version", default=False, help="Print version of TornadoVM")
     parser.add_argument('--jdk', action="store", dest="jdk", default=None, help="Select one of the supported JDKs. Use --listJDKs option to see all supported ones.")
     parser.add_argument('--backend', action="store", dest="backend", default=None, help="Select the backend to install: { opencl, ptx, spirv }")
@@ -338,7 +338,7 @@ if __name__ == "__main__":
     if (args.version):
         print(__VERSION__)
         sys.exit(0)
-        
+
     if (args.listJDKs):
         listSupportedJDKs()
         sys.exit(0)
