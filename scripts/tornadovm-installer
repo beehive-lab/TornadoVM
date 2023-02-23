@@ -152,7 +152,7 @@ class TornadoInstaller():
         self.env["PATH"].append(currentDirectory + "/" + self.workDirName + "/" + extractedDirectory + extraPath + "/bin")
 
     def getJDKDirectoryName(self, tar):
-        extractedNames = tar.getnames()[0].split("/")
+        extractedNames = tar.getnames()[1].split("/")
         if (extractedNames[0] == "."):
             extractedDirectory = extractedNames[1]
         else:
