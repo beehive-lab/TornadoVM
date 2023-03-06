@@ -74,7 +74,7 @@ public class PTXAssembler extends Assembler {
     private PTXLIRGenerationResult lirGenRes;
 
     public PTXAssembler(TargetDescription target, PTXLIRGenerationResult lirGenRes) {
-        super(target);
+        super(target, null);
         pushToStack = false;
         emitEOL = true;
         convertTabToSpace = false;

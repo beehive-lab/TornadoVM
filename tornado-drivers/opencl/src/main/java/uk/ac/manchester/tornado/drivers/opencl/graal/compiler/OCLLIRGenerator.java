@@ -183,6 +183,11 @@ public class OCLLIRGenerator extends LIRGenerator {
         return null;
     }
 
+    @Override
+    public int getArrayLengthOffset() {
+        return 0;
+    }
+
     public OCLGenTool getOCLGenTool() {
         return oclGenTool;
     }

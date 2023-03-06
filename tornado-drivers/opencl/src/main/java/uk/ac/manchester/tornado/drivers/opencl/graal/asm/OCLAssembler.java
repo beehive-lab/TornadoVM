@@ -63,7 +63,7 @@ public final class OCLAssembler extends Assembler {
     private boolean pushToStack;
 
     public OCLAssembler(TargetDescription target) {
-        super(target);
+        super(target, null);
         indent = 0;
         delimiter = OCLAssemblerConstants.STMT_DELIMITER;
         emitEOL = true;

@@ -29,20 +29,24 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
+import uk.ac.manchester.tornado.drivers.graal.TornadoMemoryOrder;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkVectorStore;
 
 /**
- * The {@code VectorStoreGlobalMemory} represents a vector-write to global memory.
+ * The {@code VectorStoreGlobalMemory} represents a vector-write to global
+ * memory.
  */
 @NodeInfo(nameTemplate = "VectorStoreGlobalMemory")
 public final class VectorStoreGlobalMemory extends FixedWithNextNode implements LIRLowerable, MarkVectorStore {
 
     public static final NodeClass<VectorStoreGlobalMemory> TYPE = NodeClass.create(VectorStoreGlobalMemory.class);
 
-    @Input ValueNode value;
-    @Input ValueNode address;
+    @Input
+    ValueNode value;
+    @Input
+    ValueNode address;
 
     public VectorStoreGlobalMemory(SPIRVKind vectorKind, ValueNode address, ValueNode value) {
         super(TYPE, SPIRVStampFactory.getStampFor(vectorKind));
@@ -53,6 +57,6 @@ public final class VectorStoreGlobalMemory extends FixedWithNextNode implements 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         LIRKind writeKind = gen.getLIRGeneratorTool().getLIRKind(stamp);
-        gen.getLIRGeneratorTool().getArithmetic().emitStore(writeKind, gen.operand(address), gen.operand(value), null);
+        gen.getLIRGeneratorTool().getArithmetic().emitStore(writeKind, gen.operand(address), gen.operand(value), null, TornadoMemoryOrder.GPU_MEMORY_MODE);
     }
 }
