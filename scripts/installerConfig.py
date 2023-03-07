@@ -120,8 +120,8 @@ JDK = {
     },
     __MANDREL11__ : {
         __LINUX__ : {
-            __X86_64__ : "https://github.com/graalvm/mandrel/releases/download/mandrel-22.2.0.0-Final/mandrel-java11-linux-amd64-22.2.0.0-Final.tar.gz",
-            __ARM__    : "https://github.com/graalvm/mandrel/releases/download/mandrel-22.2.0.0-Final/mandrel-java11-linux-aarch64-22.2.0.0-Final.tar.gz",
+            __X86_64__ : None,
+            __ARM__    : None,
         },
         __APPLE__ : {
             __ARM__    : None,
@@ -129,8 +129,8 @@ JDK = {
     },
     __MANDREL17__ : {
         __LINUX__ : {
-            __X86_64__ : "https://github.com/graalvm/mandrel/releases/download/mandrel-22.2.0.0-Final/mandrel-java17-linux-amd64-22.2.0.0-Final.tar.gz",
-            __ARM__    : "https://github.com/graalvm/mandrel/releases/download/mandrel-22.2.0.0-Final/mandrel-java17-linux-aarch64-22.2.0.0-Final.tar.gz",
+            __X86_64__ : "https://github.com/graalvm/mandrel/releases/download/mandrel-22.3.1.0-Final/mandrel-java17-linux-amd64-22.3.1.0-Final.tar.gz",
+            __ARM__    : "https://github.com/graalvm/mandrel/releases/download/mandrel-22.3.1.0-Final/mandrel-java17-linux-aarch64-22.3.1.0-Final.tar.gz",
         },
         __APPLE__ : {
             __ARM__    : None,

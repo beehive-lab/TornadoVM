@@ -305,16 +305,19 @@ JDKs. Below are listed the Java 11+ JDK distributions against which TornadoVM ha
 
 .. code:: bash
 
-   Red Hat Mandrel 11.0.12 (Mandrel 22.3.1 Final)
-   Amazon Corretto >= 11.0.12.7
-   GraalVM 11.0.13+7 (GraalVM CE 22.3.1)
-   GraalVM 17.0.6    (GraalVM CE 22.3.1)
-   OpenJDK 11.0.13+7
-   OpenJDK 17.0.1
-   Microsoft Build of OpenJDK (OpenJDK 11.0.13+8)
-   Microsoft Build of OpenJDK (OpenJDK 17.0.1)
-   Azul Zulu OpenJDK (OpenJDK 11.0.15)
-   Azul Zulu OpenJDK (OpenJDK 17.0.3)
+  ./scripts/tornadovm-installer --listJDKs
+  jdk11            : Install TornadoVM with OpenJDK 11 (Oracle OpenJDK)
+  jdk17            : Install TornadoVM with OpenJDK 17 (Oracle OpenJDK)
+  graalvm-jdk-11   : Install TornadoVM with GraalVM and JDK 11 (GraalVM 22.3.1)
+  graalvm-jdk-17   : Install TornadoVM with GraalVM and JDK 17 (GraalVM 22.3.1)
+  corretto-jdk-11  : Install TornadoVM with Corretto JDK 11
+  corretto-jdk-17  : Install TornadoVM with Corretto JDK 17
+  mandrel-jdk-17   : Install TornadoVM with Mandrel 22.3.1 (JDK 17)
+  microsoft-jdk-11 : Install TornadoVM with Microsoft JDK 11
+  microsoft-jdk-17 : Install TornadoVM with Microsoft JDK 17
+  zulu-jdk-jdk-11  : Install TornadoVM with Azul Zulu JDK 11
+  zulu-jdk-jdk-17  : Install TornadoVM with Azul Zulu JDK 17
+
 
 1. Download a JDK 11+ distribution
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

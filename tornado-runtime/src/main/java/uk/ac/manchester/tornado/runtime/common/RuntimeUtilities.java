@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2020, APT Group, Department of Computer Science,
@@ -82,11 +82,11 @@ public class RuntimeUtilities {
 
     /**
      * Convert byte sizes into human readable format Based on code from
-     * 
+     *
      * @see <a href=http://stackoverflow.com/questions/3758606/how-to-convert
      *      -byte-size-into-human-readable-format-in-java >Reference to
      *      StackOverflow</a>
-     * 
+     *
      *
      * @param bytes
      * @param si
