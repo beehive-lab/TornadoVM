@@ -97,7 +97,7 @@ JDK = {
             __ARM__    : "https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.1/graalvm-ce-java17-linux-aarch64-22.3.1.tar.gz",
         },
         __APPLE__ : {
-            __ARM__    : "https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.1/graalvm-ce-java11-darwin-aarch64-22.3.1.tar.gz",
+            __ARM__    : "https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.1/graalvm-ce-java17-darwin-aarch64-22.3.1.tar.gz",
         }
     },
     __CORRETTO11__ : {
