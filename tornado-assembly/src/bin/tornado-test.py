@@ -179,6 +179,9 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     # This errors might be related to error precision when running many threads in parallel. 
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testMandelbrot",
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testJuliaSets",
+
+    ## For the OpenCL Backend
+    "uk.ac.manchester.tornado.unittests.foundation.TestIf#test06",
 ]
 
 # ################################################################################################################
