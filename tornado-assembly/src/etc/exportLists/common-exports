@@ -83,3 +83,4 @@
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.phases.util=tornado.drivers.common
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.lir.framemap=tornado.runtime
 --add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.common.alloc=tornado.runtime
+--add-exports jdk.internal.vm.compiler/org.graalvm.compiler.core.common.memory=tornado.drivers.common

@@ -149,7 +149,7 @@ public final class SPIRVAssembler extends Assembler {
     private List<SPIRVId> parameterIdList;
 
     public SPIRVAssembler(TargetDescription target) {
-        super(target);
+        super(target, null);
         labelTable = new HashMap<>();
         blockTable = new HashMap<>();
         constants = new HashMap<>();

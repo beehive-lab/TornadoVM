@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerN
 /**
  * This phase scans the IR and checks whether there is a
  * {@link TornadoAtomicIntegerNode} associated for each {@link IncAtomicNode}.
- * 
+ *
  * <p>
  * If it is not the case, this would mean that the atomic is passed as a
  * parameter to the lambda expression. Therefore, this phase introduces the

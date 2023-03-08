@@ -22,7 +22,7 @@
 package uk.ac.manchester.tornado.drivers.ptx.graal.snippets;
 
 import org.graalvm.compiler.api.replacements.Snippet;
-import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -966,7 +966,6 @@ public class PTXGPUReduceSnippets implements Snippets {
 
         public void lower(StoreAtomicIndexedNode storeAtomicIndexed, ValueNode globalId, LoweringTool tool) {
 
-            StructuredGraph graph = storeAtomicIndexed.graph();
             JavaKind elementKind = storeAtomicIndexed.elementKind();
             ValueNode value = storeAtomicIndexed.value();
             ValueNode extra = storeAtomicIndexed.getExtraOperation();
@@ -978,7 +977,7 @@ public class PTXGPUReduceSnippets implements Snippets {
             // This is needed because we have nodes in the snippet which have multiple side
             // effects and this is not allowed (see
             // SnippetFrameStateAssignment.NodeStateAssignment.INVALID)
-            Arguments args = new Arguments(snippet, StructuredGraph.GuardsStage.AFTER_FSA, tool.getLoweringStage());
+            Arguments args = new Arguments(snippet, GraphState.GuardsStage.AFTER_FSA, tool.getLoweringStage());
             args.add("inputData", storeAtomicIndexed.getInputArray());
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("gidx", globalId);

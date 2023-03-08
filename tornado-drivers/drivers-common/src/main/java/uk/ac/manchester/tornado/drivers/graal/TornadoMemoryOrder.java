@@ -1,9 +1,7 @@
 /*
  * Copyright (c) 2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
- * The University of Manchester. All rights reserved.
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009-2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,31 +18,11 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
-package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
+package uk.ac.manchester.tornado.drivers.graal;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 
-import org.graalvm.compiler.code.DataSection.Data;
-import org.graalvm.compiler.lir.asm.DataBuilder;
-
-import jdk.vm.ci.meta.Constant;
-
-public class OCLDataBuilder extends DataBuilder {
-
-    private static final int MAX_DATA_ALIGNMENT = 64;
-
-    @Override
-    public Data createDataItem(Constant constant) {
-        unimplemented("Create Data item in OpenCLDataBuilder not supported yet.");
-        return null;
-    }
-
-    @Override
-    public int getMaxSupportedAlignment() {
-        return MAX_DATA_ALIGNMENT;
-    }
-
+public class TornadoMemoryOrder {
+    public static MemoryOrderMode GPU_MEMORY_MODE = null;
 }

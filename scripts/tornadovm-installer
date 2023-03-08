@@ -298,16 +298,15 @@ def listSupportedJDKs():
     print("""
     jdk11            : Install TornadoVM with OpenJDK 11 (Oracle OpenJDK)"
     jdk17            : Install TornadoVM with OpenJDK 17 (Oracle OpenJDK)"
-    graal-jdk-11     : Install TornadoVM with GraalVM and JDK 11 (GraalVM 22.2.0)"
-    graal-jdk-17     : Install TornadoVM with GraalVM and JDK 17 (GraalVM 22.2.0)"
-    corretto-11      : Install TornadoVM with Corretto JDK 11"
-    corretto-17      : Install TornadoVM with Corretto JDK 17"
-    mandrel-11       : Install TornadoVM with Mandrel 22.2.0 (JDK 11)"
-    mandrel-17       : Install TornadoVM with Mandrel 22.2.0 (JDK 17)"
+    graalvm-jdk-11   : Install TornadoVM with GraalVM and JDK 11 (GraalVM 22.3.1)"
+    graalvm-jdk-17   : Install TornadoVM with GraalVM and JDK 17 (GraalVM 22.3.1)"
+    corretto-jdk-11  : Install TornadoVM with Corretto JDK 11"
+    corretto-jdk-17  : Install TornadoVM with Corretto JDK 17"
+    mandrel-jdk-17   : Install TornadoVM with Mandrel 22.3.1 (JDK 17)"
     microsoft-jdk-11 : Install TornadoVM with Microsoft JDK 11"
     microsoft-jdk-17 : Install TornadoVM with Microsoft JDK 17"
-    zulu-jdk-11      : Install TornadoVM with Azul Zulu JDK 11"
-    zulu-jdk-17      : Install TornadoVM with Azul Zulu JDK 17"
+    zulu-jdk-11  : Install TornadoVM with Azul Zulu JDK 11"
+    zulu-jdk-17  : Install TornadoVM with Azul Zulu JDK 17"
 
     Usage: 
      $ ./scripts/tornadovm-installer  --jdk <JDK_VERSION> --backend <BACKEND>

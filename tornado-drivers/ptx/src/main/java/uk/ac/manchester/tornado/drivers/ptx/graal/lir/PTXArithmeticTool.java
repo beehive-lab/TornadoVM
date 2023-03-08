@@ -29,6 +29,7 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUna
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
+import org.graalvm.compiler.core.common.memory.MemoryExtendKind;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
@@ -283,13 +284,8 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
         return null;
     }
 
-    public void emitVectorLoad(Variable result, PTXUnary.MemoryAccess address) {
-        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitVectorLoad: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
-        getGen().append(new PTXLIRStmt.VectorLoadStmt(result, address));
-    }
-
     @Override
-    public Variable emitLoad(LIRKind kind, Value address, LIRFrameState state) {
+    public Variable emitLoad(LIRKind kind, Value address, LIRFrameState state, MemoryOrderMode memoryOrder, MemoryExtendKind extendKind) {
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitLoad kind=%s address=%s", kind, address);
         guarantee(kind.getPlatformKind() instanceof PTXKind, "invalid LIRKind: %s", kind);
         PTXKind ptxKind = (PTXKind) kind.getPlatformKind();
@@ -305,13 +301,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
-    public Variable emitOrderedLoad(LIRKind kind, Value address, LIRFrameState state, MemoryOrderMode memoryOrder) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
-    public void emitStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state) {
+    public void emitStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state, MemoryOrderMode memoryOrder) {
         assert address instanceof PTXUnary.MemoryAccess;
         assert kind.getPlatformKind() instanceof PTXKind;
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitStore: kind=%s, address=%s, input=%s", kind, address, input);
@@ -325,9 +315,9 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
         }
     }
 
-    @Override
-    public void emitOrderedStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state, MemoryOrderMode memoryOrder) {
-        unimplemented();
+    public void emitVectorLoad(Variable result, PTXUnary.MemoryAccess address) {
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "emitVectorLoad: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
+        getGen().append(new PTXLIRStmt.VectorLoadStmt(result, address));
     }
 
     public Variable emitUnaryAssign(PTXAssembler.PTXUnaryOp op, LIRKind lirKind, Value x) {

@@ -22,16 +22,25 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.compiler;
 
-import jdk.vm.ci.meta.Constant;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+
 import org.graalvm.compiler.code.DataSection;
 import org.graalvm.compiler.lir.asm.DataBuilder;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import jdk.vm.ci.meta.Constant;
 
 public class PTXDataBuilder extends DataBuilder {
+
+    private static final int MAX_DATA_ALIGNMENT = 64;
+
     @Override
     public DataSection.Data createDataItem(Constant c) {
         unimplemented();
         return null;
+    }
+
+    @Override
+    public int getMaxSupportedAlignment() {
+        return MAX_DATA_ALIGNMENT;
     }
 }

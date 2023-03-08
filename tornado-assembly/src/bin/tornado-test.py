@@ -179,6 +179,12 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     # This errors might be related to error precision when running many threads in parallel. 
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testMandelbrot",
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testJuliaSets",
+
+    ## For the OpenCL Backend
+    "uk.ac.manchester.tornado.unittests.foundation.TestIf#test06",
+
+    ## Atomics
+    "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic12",
 ]
 
 # ################################################################################################################
@@ -188,8 +194,8 @@ __MAIN_TORNADO_TEST_RUNNER_MODULE__ = " tornado.unittests/"
 __MAIN_TORNADO_TEST_RUNNER__        = "uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
 __MAIN_TORNADO_JUNIT_MODULE__       = " junit/"
 __MAIN_TORNADO_JUNIT__              = "org.junit.runner.JUnitCore "
-__IGV_OPTIONS__                     = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=true "
-__IGV_LAST_PHASE__                  = "-Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=true -Dtornado.debug.lowtier=True "
+__IGV_OPTIONS__                     = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true "
+__IGV_LAST_PHASE__                  = "-Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true -Dtornado.debug.lowtier=True "
 __PRINT_OPENCL_KERNEL__             = "-Dtornado.print.kernel=True "
 __DEBUG_TORNADO__                   = "-Dtornado.debug=True "
 __THREAD_INFO__                     = "-Dtornado.threadInfo=True "

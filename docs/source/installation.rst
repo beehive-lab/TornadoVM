@@ -5,7 +5,7 @@ Pre-requisites
 ###############
 
 * Maven Version >= 3.6.3
-* CMake >= 3.6 
+* CMake >= 3.6
 * At least one of following drivers:
       * OpenCL drivers: GPUs and CPUs >= 2.1, FPGAs >= 1.0
       * NVIDIA drivers and CUDA SDK 10.0+
@@ -141,15 +141,15 @@ At least one backend must be specified at build time to the ``make`` command:
 
 .. _installation_graalvm:
 
-Installation for GraalVM 22.2.0 on Linux and OSx
+Installation for GraalVM 22.3.1 on Linux and OSx
 -------------------------------------------------------------------
 
-1. Download GraalVM Community Edition 22.2.0
+1. Download GraalVM Community Edition 22.3.1
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-GraalVM 22.2.0 builds are available to download at
+GraalVM 22.3.1 builds are available to download at
 
-`https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.2.0 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.2.0>`_.
+`https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.3.1 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.3.1>`_.
 
 The examples below show how to download and extract GraalVM based on JDK 11 and 17 for Linux.
 
@@ -157,17 +157,17 @@ The examples below show how to download and extract GraalVM based on JDK 11 and 
 
 .. code:: bash
 
-   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java11-linux-amd64-22.2.0.tar.gz
-   $ tar -xf graalvm-ce-java11-linux-amd64-22.2.0.tar.gz
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.1/graalvm-ce-java11-linux-amd64-22.3.1.tar.gz
+   $ tar -xf graalvm-ce-java11-linux-amd64-22.3.1.tar.gz
 
 -  Example for GraalVM based on JDK 17:
 
 .. code:: bash
 
-   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java17-linux-amd64-22.2.0.tar.gz
-   $ tar -xf graalvm-ce-java17-linux-amd64-22.2.0.tar.gz
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.1/graalvm-ce-java17-linux-amd64-22.3.1.tar.gz
+   $ tar -xf graalvm-ce-java17-linux-amd64-22.3.1.tar.gz
 
-The Java binary will be found in the ``graalvm-ce-java{JDK_VERSION}-22.2.0`` directory. This directory is used as the JAVA_HOME (See step 2).
+The Java binary will be found in the ``graalvm-ce-java{JDK_VERSION}-22.3.1`` directory. This directory is used as the JAVA_HOME (See step 2).
 
 For OSX:
 
@@ -175,13 +175,13 @@ For OSX:
 
 .. code:: bash
 
-   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java11-darwin-amd64-22.2.0.tar.gz
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.1/graalvm-ce-java11-darwin-amd64-22.3.1.tar.gz
 
 -  Example for GraalVM based on JDK 17:
 
 .. code:: bash
 
-   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java17-darwin-amd64-22.2.0.tar.gz
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.1/graalvm-ce-java17-darwin-amd64-22.3.1.tar.gz
 
 then ``untar`` it to the OSX standard JDK location
 ``/Library/Java/JavaVirtualMachines/`` or to a folder of your choice.
@@ -208,7 +208,7 @@ ones)**:
 .. code:: bash
 
    #!/bin/bash
-   export JAVA_HOME=<path to GraalVM 22.2.0 jdk> ## This path is produced in Step 1
+   export JAVA_HOME=<path to GraalVM 22.3.1 jdk> ## This path is produced in Step 1
    export PATH=$PWD/bin/bin:$PATH    ## This directory will be automatically generated during Tornado compilation
    export TORNADO_SDK=$PWD/bin/sdk   ## This directory will be automatically generated during Tornado compilation
    export CMAKE_ROOT=/usr            ## or <path/to/cmake/cmake-3.10.2> (see step 4)
@@ -305,15 +305,19 @@ JDKs. Below are listed the Java 11+ JDK distributions against which TornadoVM ha
 
 .. code:: bash
 
-   Red Hat Mandrel 11.0.12 (Mandrel 22.2.0.0 Final)
-   Amazon Corretto >= 11.0.12.7
-   GraalVM LabsJDK 11.0.13+7 (GraalVM 22.2.0)
-   OpenJDK 11.0.13+7
-   OpenJDK 17.0.1
-   Microsoft Build of OpenJDK (OpenJDK 11.0.13+8)
-   Microsoft Build of OpenJDK (OpenJDK 17.0.1)
-   Azul Zulu OpenJDK (OpenJDK 11.0.15)
-   Azul Zulu OpenJDK (OpenJDK 17.0.3)
+  ./scripts/tornadovm-installer --listJDKs
+  jdk11            : Install TornadoVM with OpenJDK 11 (Oracle OpenJDK)
+  jdk17            : Install TornadoVM with OpenJDK 17 (Oracle OpenJDK)
+  graalvm-jdk-11   : Install TornadoVM with GraalVM and JDK 11 (GraalVM 22.3.1)
+  graalvm-jdk-17   : Install TornadoVM with GraalVM and JDK 17 (GraalVM 22.3.1)
+  corretto-jdk-11  : Install TornadoVM with Corretto JDK 11
+  corretto-jdk-17  : Install TornadoVM with Corretto JDK 17
+  mandrel-jdk-17   : Install TornadoVM with Mandrel 22.3.1 (JDK 17)
+  microsoft-jdk-11 : Install TornadoVM with Microsoft JDK 11
+  microsoft-jdk-17 : Install TornadoVM with Microsoft JDK 17
+  zulu-jdk-jdk-11  : Install TornadoVM with Azul Zulu JDK 11
+  zulu-jdk-jdk-17  : Install TornadoVM with Azul Zulu JDK 17
+
 
 1. Download a JDK 11+ distribution
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -580,15 +584,15 @@ Clone the latest TornadoVM source code from the GitHub `repository <https://gith
 We will refer hereafter the directory with TornadoVM sources as
 ``<TornadoVM>``.
 
-3. Download Graal 22.2.0
+3. Download Graal 22.3.1
 ~~~~~~~~~~~~
 
 
-TornadoVM can run with JDK 11 and 17. Visit `GraalVM Community Edition 22.2.0 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.2.0>`__
+TornadoVM can run with JDK 11 and 17. Visit `GraalVM Community Edition 22.3.1 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.3.1>`__
 and download either of the following builds:
 
--  `Download for JDK 11 <https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java11-windows-amd64-22.2.0.zip>`__
--  `Download for JDK 17 <https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java17-windows-amd64-22.2.0.zip>`__
+-  `Download for JDK 11 <https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.1/graalvm-ce-java11-windows-amd64-22.3.1.zip>`__
+-  `Download for JDK 17 <https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.1/graalvm-ce-java17-windows-amd64-22.3.1.zip>`__
 
 Extract the downloaded file to any directory.
 
@@ -636,7 +640,7 @@ the following content:
    #!/bin/bash
 
    # UPDATE PATH TO ACTUAL LOCATION OF THE JDK OR GRAAL (REMEMBER OF UNIX_STYLE SLASHES AND SPACES!!!)
-   export JAVA_HOME="C:/graalvm-ce-java11-22.2.0"
+   export JAVA_HOME="C:/graalvm-ce-java11-22.3.1"
 
    ## NEXT TWO LINES NECESSARY TO BUILD PTX (NVIDIA CUDA) BACKEND
    ## COMMENT THEM OUT OR JUST IGNORE IF YOU ARE NOT INTERESTED IN PTX BUILD

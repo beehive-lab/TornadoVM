@@ -18,7 +18,7 @@
 
     <properties>
         <tornado.version>${project.version}</tornado.version>
-        <graal.version>22.2.0</graal.version>
+        <graal.version>22.3.1</graal.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <classifier>${platform}</classifier>
         <download.cmake>false</download.cmake>
@@ -461,6 +461,10 @@
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.framemap=tornado.runtime</arg>
                                 <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.alloc=tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.core.common.memory=tornado.drivers.common
                                 </arg>
                                 <!-- OpenCL exports-->
                                 <arg>--add-opens</arg>
@@ -1223,6 +1227,10 @@
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.framemap=tornado.runtime</arg>
                                 <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.alloc=tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.core.common.memory=tornado.drivers.common
                                 </arg>
                                 <!-- OpenCL exports-->
                                 <arg>--add-opens</arg>

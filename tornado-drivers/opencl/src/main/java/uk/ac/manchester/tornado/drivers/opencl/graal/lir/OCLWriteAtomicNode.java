@@ -48,6 +48,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.drivers.graal.TornadoMemoryOrder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;
 
 /**
@@ -159,10 +160,10 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
         LIRKind accKind = gen.getLIRGeneratorTool().getLIRKind(accStamp);
 
         // Atomic Store
-        gen.getLIRGeneratorTool().getArithmetic().emitStore(writeKind, gen.operand(address), gen.operand(value()), gen.state(this));
+        gen.getLIRGeneratorTool().getArithmetic().emitStore(writeKind, gen.operand(address), gen.operand(value()), gen.state(this), TornadoMemoryOrder.GPU_MEMORY_MODE);
 
         // Update the accumulator
-        gen.getLIRGeneratorTool().getArithmetic().emitStore(accKind, gen.operand(accumulator), gen.operand(value()), gen.state(this));
+        gen.getLIRGeneratorTool().getArithmetic().emitStore(accKind, gen.operand(accumulator), gen.operand(value()), gen.state(this), TornadoMemoryOrder.GPU_MEMORY_MODE);
     }
 
     @Override

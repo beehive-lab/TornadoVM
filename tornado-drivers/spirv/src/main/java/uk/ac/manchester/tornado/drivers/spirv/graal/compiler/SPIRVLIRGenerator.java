@@ -315,6 +315,11 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    public int getArrayLengthOffset() {
+        return 0;
+    }
+
+    @Override
     public Variable newVariable(ValueKind<?> valueKind) {
         PlatformKind pk = valueKind.getPlatformKind();
         ValueKind<?> actualLIRKind = valueKind;

@@ -25,6 +25,7 @@ import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCA
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
+import org.graalvm.compiler.core.common.memory.MemoryExtendKind;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
@@ -57,6 +58,7 @@ import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.memory.AbstractWriteNode;
+import org.graalvm.compiler.nodes.memory.ExtendableMemoryAccess;
 import org.graalvm.compiler.nodes.memory.OnHeapMemoryAccess;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.WriteNode;
@@ -81,6 +83,7 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import uk.ac.manchester.tornado.drivers.graal.TornadoMemoryOrder;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.CastNode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.FixedArrayNode;
@@ -203,12 +206,21 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
 
     @Override
     public boolean writesStronglyOrdered() {
-        unimplemented();
         return false;
     }
 
     @Override
     public boolean divisionOverflowIsJVMSCompliant() {
+        return false;
+    }
+
+    @Override
+    public boolean narrowsUseCastValue() {
+        return false;
+    }
+
+    @Override
+    public boolean supportsFoldingExtendIntoAccess(ExtendableMemoryAccess access, MemoryExtendKind extendKind) {
         return false;
     }
 
@@ -267,8 +279,6 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
             }
             JavaType[] signature = callTarget.targetMethod().getSignature().toParameterTypes(callTarget.isStatic() ? null : callTarget.targetMethod().getDeclaringClass());
 
-            LoweredCallTargetNode loweredCallTarget = null;
-
             StampPair returnStampPair = callTarget.returnStamp();
             Stamp returnStamp = returnStampPair.getTrustedStamp();
             if (returnStamp instanceof ObjectStamp) {
@@ -280,8 +290,8 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
                 }
             }
 
-            loweredCallTarget = graph.add(new TornadoDirectCallTargetNode(parameters.toArray(new ValueNode[parameters.size()]), returnStampPair, signature, callTarget.targetMethod(),
-                    HotSpotCallingConventionType.JavaCall, callTarget.invokeKind()));
+            LoweredCallTargetNode loweredCallTarget = graph.add(new TornadoDirectCallTargetNode(parameters.toArray(new ValueNode[parameters.size()]), returnStampPair, signature,
+                    callTarget.targetMethod(), HotSpotCallingConventionType.JavaCall, callTarget.invokeKind()));
 
             callTarget.replaceAndDelete(loweredCallTarget);
         }
@@ -409,7 +419,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         ValueNode array = arrayLengthNode.array();
 
         AddressNode address = createOffsetAddress(graph, array, arrayLengthOffset());
-        ReadNode arrayLengthRead = graph.add(new ReadNode(address, ARRAY_LENGTH_LOCATION, StampFactory.positiveInt(), OnHeapMemoryAccess.BarrierType.NONE));
+        ReadNode arrayLengthRead = graph.add(new ReadNode(address, ARRAY_LENGTH_LOCATION, StampFactory.positiveInt(), OnHeapMemoryAccess.BarrierType.NONE, TornadoMemoryOrder.GPU_MEMORY_MODE));
         graph.replaceFixedWithFixed(arrayLengthNode, arrayLengthRead);
     }
 
@@ -424,7 +434,8 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
             loadStamp = loadStamp(loadIndexed.stamp(NodeView.DEFAULT), elementKind, false);
         }
         address = createArrayAccess(graph, loadIndexed, elementKind);
-        ReadNode memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, OnHeapMemoryAccess.BarrierType.NONE));
+        ReadNode memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, OnHeapMemoryAccess.BarrierType.NONE, TornadoMemoryOrder.GPU_MEMORY_MODE));
+
         ValueNode readValue = memoryRead;
         if (!(loadIndexed instanceof LoadIndexedVectorNode)) {
             readValue = implicitLoadConvert(graph, elementKind, memoryRead);
@@ -459,7 +470,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         Stamp loadStamp = loadStamp(loadField.stamp(NodeView.DEFAULT), field.getJavaKind());
         AddressNode address = createFieldAddress(graph, object, field);
         assert address != null : "Field that is loaded must not be eliminated: " + field.getDeclaringClass().toJavaName(true) + "." + field.getName();
-        ReadNode memoryRead = graph.add(new ReadNode(address, fieldLocationIdentity(field), loadStamp, OnHeapMemoryAccess.BarrierType.NONE));
+        ReadNode memoryRead = graph.add(new ReadNode(address, fieldLocationIdentity(field), loadStamp, OnHeapMemoryAccess.BarrierType.NONE, TornadoMemoryOrder.GPU_MEMORY_MODE));
         loadField.replaceAtUsages(memoryRead);
         graph.replaceFixed(loadField, memoryRead);
     }
@@ -471,7 +482,7 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         ValueNode object = storeField.isStatic() ? staticFieldBase(graph, field) : storeField.object();
         AddressNode address = createFieldAddress(graph, object, field);
         assert address != null;
-        WriteNode memoryWrite = graph.add(new WriteNode(address, fieldLocationIdentity(field), storeField.value(), OnHeapMemoryAccess.BarrierType.NONE));
+        WriteNode memoryWrite = graph.add(new WriteNode(address, fieldLocationIdentity(field), storeField.value(), OnHeapMemoryAccess.BarrierType.NONE, TornadoMemoryOrder.GPU_MEMORY_MODE));
         memoryWrite.setStateAfter(storeField.stateAfter());
         graph.replaceFixedWithFixed(storeField, memoryWrite);
     }
@@ -535,7 +546,8 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         if (!(valueStamp instanceof PTXStamp) || !((PTXStamp) valueStamp).getPTXKind().isVector()) {
             storeConvertValue = implicitStoreConvert(graph, elementKind, value);
         }
-        memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), storeConvertValue, OnHeapMemoryAccess.BarrierType.NONE));
+        memoryWrite = graph
+                .add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), storeConvertValue, OnHeapMemoryAccess.BarrierType.NONE, TornadoMemoryOrder.GPU_MEMORY_MODE));
         return memoryWrite;
     }
 }

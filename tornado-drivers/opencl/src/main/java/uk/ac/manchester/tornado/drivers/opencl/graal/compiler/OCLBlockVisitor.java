@@ -93,7 +93,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
     private void updateListEndBracketsForLoopExitNodes(Block block) {
         Block dom = block.getDominator();
         if (dom != null) {
-            if (dom.getPredecessorCount() == 2) { // Dom is merge block on enter
+            if (dom.getPredecessorCount() == 2) { // Dom is a merge block on enter
                 boolean mergeA = false;
                 boolean mergeB = false;
                 Block[] predecessors = dom.getPredecessors();
