@@ -40,7 +40,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerN
 
 /**
  * Compiler phase that relocates the TornadoAtomicIntegerNode(s) from the first
- * basic block (B0) to the basic block that request the atomic (usually within
+ * basic block (B0) to the basic block that requests the atomic (usually within
  * the same basic block that READ/WRITES the atomic value). This phase is needed
  * since the integration with the Graal 22.3.1 JIT compiler.
  *
