@@ -25,18 +25,18 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueInfo.CL_QUEUE_CONTEXT;
-import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueInfo.CL_QUEUE_DEVICE;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.MARKER_USE_BARRIER;
-
-import java.nio.ByteBuffer;
-
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+
+import java.nio.ByteBuffer;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueInfo.CL_QUEUE_CONTEXT;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueInfo.CL_QUEUE_DEVICE;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.MARKER_USE_BARRIER;
 
 public class OCLCommandQueue extends TornadoLogger {
 
@@ -96,6 +96,8 @@ public class OCLCommandQueue extends TornadoLogger {
 
     static native long writeArrayToDevice(long queueId, double[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
 
+    native static long writeArrayToDevice(long queueId, long hostPointer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+
     static native long readArrayFromDevice(long queueId, byte[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
 
     static native long readArrayFromDevice(long queueId, char[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
@@ -110,7 +112,11 @@ public class OCLCommandQueue extends TornadoLogger {
 
     static native long readArrayFromDevice(long queueId, double[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
 
+    native static long readArrayFromDevice(long queueId, long hostPointer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+
     static native void clEnqueueWaitForEvents(long queueId, long[] events) throws OCLException;
+
+    native static long clEnqueueMapBuffer(long queueId, long bufferId, boolean blocking, byte mapFlags, long offset, long bytes, long[] waitEvents) throws OCLException;
 
     /*
      * for OpenCL 1.2 implementations
@@ -269,6 +275,16 @@ public class OCLCommandQueue extends TornadoLogger {
         return -1;
     }
 
+    public long enqueueWrite(long devicePtr, boolean blocking, long offset, long bytes, long hostPointer, long hostOffset, long[] waitEvents) {
+        guarantee(hostPointer != 0, "null segment");
+        try {
+            return writeArrayToDevice(commandQueue, hostPointer, hostOffset, blocking, offset, bytes, devicePtr, waitEvents);
+        } catch (OCLException e) {
+            error(e.getMessage());
+        }
+        return -1;
+    }
+
     public long enqueueRead(long devicePtr, boolean blocking, long offset, long bytes, byte[] array, long hostOffset, long[] waitEvents) {
         guarantee(array != null, "null array");
         try {
@@ -333,6 +349,25 @@ public class OCLCommandQueue extends TornadoLogger {
         guarantee(array != null, "array is null");
         try {
             return readArrayFromDevice(commandQueue, array, hostOffset, blocking, offset, bytes, devicePtr, waitEvents);
+        } catch (OCLException e) {
+            error(e.getMessage());
+        }
+        return -1;
+    }
+
+    public long enqueueRead(long devicePtr, boolean blocking, long offset, long bytes, long hostPointer, long hostOffset, long[] waitEvents) {
+        guarantee(hostPointer != 0, "segment is null");
+        try {
+            return readArrayFromDevice(commandQueue, hostPointer, hostOffset, blocking, offset, bytes, devicePtr, waitEvents);
+        } catch (OCLException e) {
+            error(e.getMessage());
+        }
+        return -1;
+    }
+
+    public long enqueueMapBuffer(long bufferId, boolean blocking, byte mapFlags, long offset, long bytes, long[] waitEvents) {
+        try {
+            return clEnqueueMapBuffer(commandQueue, bufferId, blocking, mapFlags, offset, bytes, waitEvents);
         } catch (OCLException e) {
             error(e.getMessage());
         }

@@ -5,7 +5,7 @@ open module tornado.examples {
     requires transitive lucene.core;
     requires transitive java.desktop;
     requires transitive tornado.api;
-    requires org.graalvm.sdk;
+    requires jdk.incubator.foreign;
 
     exports uk.ac.manchester.tornado.examples;
     exports uk.ac.manchester.tornado.examples.arrays;

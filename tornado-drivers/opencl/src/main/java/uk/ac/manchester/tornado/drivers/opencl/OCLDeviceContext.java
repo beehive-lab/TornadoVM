@@ -25,29 +25,31 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import static uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue.EMPTY_EVENT;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.EVENT_WINDOW;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_SYNC_FLUSH;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
-
-import java.nio.ByteOrder;
-import java.util.Comparator;
-import java.util.List;
-
+import jdk.incubator.foreign.MemorySegment;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
-import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.EventDescriptor;
+import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
+import uk.ac.manchester.tornado.drivers.opencl.mm.OCLBufferInfo;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+
+import java.nio.ByteOrder;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue.EMPTY_EVENT;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.*;
 
 public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextInterface {
 
@@ -66,6 +68,9 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
     private boolean wasReset;
     private boolean printOnce = true;
 
+    private final OCLBufferInfo mainBufferInfo;
+    private final Map<MemorySegment, OCLBufferInfo> segmentToBufferMap;
+
     private final TornadoBufferProvider bufferProvider;
 
     protected OCLDeviceContext(OCLTargetDevice device, OCLCommandQueue queue, OCLContext context) {
@@ -74,6 +79,8 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
         this.context = context;
         this.memoryManager = new OCLMemoryManager(this);
         this.codeCache = new OCLCodeCache(this);
+        this.mainBufferInfo = new OCLBufferInfo();
+        this.segmentToBufferMap = new HashMap<>();
 
         this.oclEventPool = new OCLEventPool(EVENT_WINDOW);
 
@@ -237,6 +244,12 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
                 EventDescriptor.DESC_WRITE_DOUBLE, queue);
     }
 
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, long hostPointer, long hostOffset, int[] waitEvents) {
+        return oclEventPool.registerEvent(
+                queue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, hostPointer, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue) ? oclEventPool.waitEventsBuffer : null),
+                EventDescriptor.DESC_WRITE_SEGMENT, queue);
+    }
+
     /*
      * ASync reads from device
      *
@@ -283,6 +296,12 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
                 EventDescriptor.DESC_READ_SHORT, queue);
     }
 
+    public int enqueueReadBuffer(long bufferId, long offset, long bytes, long hostPointer, long hostOffset, int[] waitEvents) {
+        return oclEventPool.registerEvent(
+                queue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, hostPointer, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue) ? oclEventPool.waitEventsBuffer : null),
+                EventDescriptor.DESC_READ_SEGMENT, queue);
+    }
+
     /*
      * Synchronous writes to device
      */
@@ -326,6 +345,12 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
         oclEventPool.registerEvent(
                 queue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue) ? oclEventPool.waitEventsBuffer : null),
                 EventDescriptor.DESC_WRITE_DOUBLE, queue);
+    }
+
+    public void writeBuffer(long bufferId, long offset, long bytes, long hostPointer, long hostOffset, int[] waitEvents) {
+        oclEventPool.registerEvent(
+                queue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, hostPointer, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue) ? oclEventPool.waitEventsBuffer : null),
+                EventDescriptor.DESC_WRITE_SEGMENT, queue);
     }
 
     /*
@@ -374,6 +399,12 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
                 EventDescriptor.DESC_READ_SHORT, queue);
     }
 
+    public int readBuffer(long bufferId, long offset, long bytes, long hostPointer, long hostOffset, int[] waitEvents) {
+        return oclEventPool.registerEvent(
+                queue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, hostPointer, hostOffset, oclEventPool.serialiseEvents(waitEvents, queue) ? oclEventPool.waitEventsBuffer : null),
+                EventDescriptor.DESC_READ_SEGMENT, queue);
+    }
+
     public int enqueueBarrier(int[] events) {
         long oclEvent = queue.enqueueBarrier(oclEventPool.serialiseEvents(events, queue) ? oclEventPool.waitEventsBuffer : null);
         return queue.getOpenclVersion() < 120 ? -1 : oclEventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_BARRIER, queue);
@@ -384,9 +415,25 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
         return queue.getOpenclVersion() < 120 ? -1 : oclEventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_MARKER, queue);
     }
 
+    @Override
+    public long enqueueMapBuffer(long bufferId, boolean blocking, byte mapFlags, long offset, long byteSize, int[] waitEvents) {
+        return queue.enqueueMapBuffer(bufferId, blocking, mapFlags, offset, byteSize, oclEventPool.serialiseEvents(waitEvents, queue) ? oclEventPool.waitEventsBuffer : null);
+    }
+
     public void reset() {
         oclEventPool.reset();
         codeCache.reset();
+        //TODO
+//        // Release the pinned buffers
+//        for (OCLBufferInfo segmentInfo : segmentToBufferMap.values()) {
+//            try {
+//                OCLContext.clReleaseMemObject(segmentInfo.getBufferId());
+//            } catch (OCLException e) {
+//                Tornado.fatal("Failed to release buffer %ld", segmentInfo.getBufferId());
+//                e.printStackTrace();
+//            }
+//        }
+//        segmentToBufferMap.clear();
         wasReset = true;
     }
 
@@ -512,5 +559,18 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
 
     public OCLCodeCache getCodeCache() {
         return this.codeCache;
+    }
+
+    @Override
+    public void registerPinnedBuffer(MemorySegment segment, OCLBufferInfo bufferInfo) {
+        segmentToBufferMap.put(segment, bufferInfo);
+    }
+
+    public Map<MemorySegment, OCLBufferInfo> getSegmentToBufferMap() {
+        return segmentToBufferMap;
+    }
+
+    public OCLBufferInfo getMainBufferInfo() {
+        return mainBufferInfo;
     }
 }

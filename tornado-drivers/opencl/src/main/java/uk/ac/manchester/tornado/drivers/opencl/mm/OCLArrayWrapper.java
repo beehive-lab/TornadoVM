@@ -25,17 +25,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.VALIDATE_ARRAY_HEADERS;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
-
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.List;
-
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
@@ -43,6 +32,15 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.*;
 
 public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
@@ -231,7 +229,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     abstract protected int enqueueWriteArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
     private OCLByteBuffer getArrayHeader() {
-        final OCLByteBuffer header = new OCLByteBuffer(deviceContext, bufferId, bufferOffset, arrayHeaderSize);
+        final OCLByteBuffer header = new OCLByteBuffer(deviceContext.getMainBufferInfo(), deviceContext, bufferId, bufferOffset, arrayHeaderSize);
         header.buffer.clear();
         return header;
     }

@@ -23,15 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitive;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
-
-import java.nio.ByteBuffer;
-
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -40,12 +31,7 @@ import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.drivers.opencl.OCLGPUScheduler;
-import uk.ac.manchester.tornado.drivers.opencl.OCLKernel;
-import uk.ac.manchester.tornado.drivers.opencl.OCLKernelScheduler;
-import uk.ac.manchester.tornado.drivers.opencl.OCLProgram;
-import uk.ac.manchester.tornado.drivers.opencl.OCLScheduler;
+import uk.ac.manchester.tornado.drivers.opencl.*;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelArgs;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
@@ -54,6 +40,13 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+
+import java.nio.ByteBuffer;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitive;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.*;
 
 public class OCLInstalledCode extends InstalledCode implements TornadoInstalledCode {
 
@@ -148,7 +141,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
      * @param meta
      *            task metadata {@link TaskMetaData}
      */
-    private void setKernelArgs(final OCLKernelArgs kernelArgs, final ObjectBuffer atomicSpace, TaskMetaData meta) {
+    private void setKernelArgs(final OCLKernelArgs kernelArgs, TaskMetaData meta) {
         int index = 0;
 
         if (deviceContext.needsBump()) {
@@ -241,7 +234,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
          * Only set the kernel arguments if they are either: - not set or - have changed
          */
         final int[] waitEvents;
-        setKernelArgs(kernelArgs, atomicSpace, meta);
+        setKernelArgs(kernelArgs, meta);
         internalEvents[0] = kernelArgs.enqueueWrite(events);
         waitEvents = internalEvents;
         updateProfilerKernelContextWrite(internalEvents[0], meta, kernelArgs);
@@ -369,7 +362,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
         }
 
-        setKernelArgs(callWrapper, atomicSpace, meta);
+        setKernelArgs(callWrapper, meta);
         int kernelContextWriteEventId = callWrapper.enqueueWrite();
         updateProfilerKernelContextWrite(kernelContextWriteEventId, meta, callWrapper);
 

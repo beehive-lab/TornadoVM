@@ -5,6 +5,7 @@ open module tornado.runtime {
     requires transitive jdk.internal.vm.ci;
     requires transitive jdk.internal.vm.compiler;
     requires transitive tornado.api;
+    requires jdk.incubator.foreign;
 
     exports uk.ac.manchester.tornado.runtime;
     exports uk.ac.manchester.tornado.runtime.analyzer;

@@ -4,6 +4,8 @@ module tornado.drivers.opencl {
     requires transitive tornado.api;
     requires transitive tornado.runtime;
     requires tornado.drivers.common;
+    requires jdk.incubator.foreign;
+    requires org.graalvm.sdk;
 
     exports uk.ac.manchester.tornado.drivers.opencl;
     exports uk.ac.manchester.tornado.drivers.opencl.builtins;

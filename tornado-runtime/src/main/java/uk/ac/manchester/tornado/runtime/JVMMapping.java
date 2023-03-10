@@ -25,9 +25,7 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-
+import jdk.incubator.foreign.MemorySegment;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -38,11 +36,10 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.api.memory.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.KernelArgs;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
-import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
-import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
+import uk.ac.manchester.tornado.runtime.common.*;
+
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class JVMMapping implements TornadoAcceleratorDevice {
 
@@ -245,6 +242,16 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     @Override
     public void setAtomicRegion(ObjectBuffer bufferAtomics) {
 
+    }
+
+    @Override
+    public MemorySegment allocateNonPinnedBuffer(long hostBufferSize, long deviceBufferSize) {
+        return null;
+    }
+
+    @Override
+    public MemorySegment allocateNonPinnedBuffer(long byteSize) {
+        return null;
     }
 
     @Override

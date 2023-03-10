@@ -22,15 +22,15 @@
  */
 package uk.ac.manchester.tornado.drivers.common;
 
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
-
-import java.util.ArrayList;
-
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+
+import java.util.ArrayList;
+
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
 
 /**
  * This class implements a cache of allocated buffers on the device and also
@@ -70,6 +70,8 @@ public abstract class TornadoBufferProvider {
     protected final TornadoDeviceContext deviceContext;
     protected final ArrayList<BufferInfo> freeBuffers;
     protected final ArrayList<BufferInfo> usedBuffers;
+
+   // public HashMap<MemorySegment, BufferInfo> segmentToBuffer = new HashMap();
     protected long currentMemoryAvailable;
 
     protected TornadoBufferProvider(TornadoDeviceContext deviceContext) {
@@ -81,6 +83,8 @@ public abstract class TornadoBufferProvider {
         // Instead, use a flag similar to -Xmx.
         currentMemoryAvailable = TornadoOptions.DEVICE_AVAILABLE_MEMORY;
     }
+
+
 
     protected abstract long allocateBuffer(long size);
 
@@ -182,6 +186,20 @@ public abstract class TornadoBufferProvider {
         }
     }
 
+//    public long getBufferWithSizeMapSegment(long sizeInBytes, MemorySegment segmentToMap) {
+//        long buf = getBufferWithSize(sizeInBytes);
+//        int foundIndex = -1;
+//        for (int i = 0; i < usedBuffers.size(); i++) {
+//            if (usedBuffers.get(i).buffer == buf) {
+//                foundIndex = i;
+//                break;
+//            }
+//        }
+//        TornadoInternalError.guarantee(foundIndex != -1, "Expected the buffer to be allocated and used at this point.");
+//        segmentToBuffer.put(segmentToMap, usedBuffers.get(foundIndex));
+//        return buf;
+//    }
+
     /**
      * Removes the buffer from the {@link #usedBuffers} list and add it to
      * the @{@link #freeBuffers} list.
@@ -195,6 +213,15 @@ public abstract class TornadoBufferProvider {
             }
         }
         TornadoInternalError.guarantee(foundIndex != -1, "Expected the buffer to be allocated and used at this point.");
+
+//        if (segmentToBuffer.containsValue(usedBuffers.get(foundIndex))) {
+//            for (MemorySegment seg : segmentToBuffer.keySet()) {
+//                if (segmentToBuffer.get(seg).buffer == usedBuffers.get(foundIndex).buffer) {
+//                    segmentToBuffer.remove(seg);
+//                    break;
+//                }
+//            }
+//        }
         BufferInfo removedBuffer = usedBuffers.remove(foundIndex);
         freeBuffers.add(removedBuffer);
     }

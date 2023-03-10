@@ -41,8 +41,11 @@
  */
 package uk.ac.manchester.tornado.api.memory;
 
+import jdk.incubator.foreign.MemorySegment;
+
 public interface TornadoMemoryProvider {
 
     long getHeapSize();
-
+    long allocatePinnedBuffer(long byteSize);
+    void registerPinnedBuffer(MemorySegment segment, long bufferId, long hostBufferPointer, long deviceBufferAddress);
 }

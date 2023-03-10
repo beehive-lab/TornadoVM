@@ -25,18 +25,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.runtime;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import jdk.incubator.foreign.MemorySegment;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -54,42 +43,35 @@ import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
-import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
-import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
+import uk.ac.manchester.tornado.drivers.opencl.*;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
-import uk.ac.manchester.tornado.drivers.opencl.mm.AtomicsBuffer;
-import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteArrayWrapper;
-import uk.ac.manchester.tornado.drivers.opencl.mm.OCLCharArrayWrapper;
-import uk.ac.manchester.tornado.drivers.opencl.mm.OCLDoubleArrayWrapper;
-import uk.ac.manchester.tornado.drivers.opencl.mm.OCLFloatArrayWrapper;
-import uk.ac.manchester.tornado.drivers.opencl.mm.OCLIntArrayWrapper;
-import uk.ac.manchester.tornado.drivers.opencl.mm.OCLLongArrayWrapper;
-import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMultiDimArrayWrapper;
-import uk.ac.manchester.tornado.drivers.opencl.mm.OCLObjectWrapper;
-import uk.ac.manchester.tornado.drivers.opencl.mm.OCLShortArrayWrapper;
-import uk.ac.manchester.tornado.drivers.opencl.mm.OCLVectorWrapper;
+import uk.ac.manchester.tornado.drivers.opencl.mm.*;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.KernelArgs;
-import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
-import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
-import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
+import uk.ac.manchester.tornado.runtime.common.*;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
@@ -514,6 +496,9 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
                 result = new AtomicsBuffer(new int[] {}, deviceContext);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 result = new OCLVectorWrapper(deviceContext, object, batchSize);
+            }  else if (object instanceof MemorySegment) {
+                MemorySegment segment = (MemorySegment) object;
+                result = new OCLMemorySegmentWrapper(segment, deviceContext);
             } else {
                 result = new OCLObjectWrapper(deviceContext, object);
             }
@@ -793,5 +778,38 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public MemorySegment allocateNonPinnedBuffer(long hostBufferSize, long deviceBufferSize) {
+        OCLBufferInfo bufferInfo = new OCLBufferInfo();
+
+        // Allocate the device buffer.
+        long bufferId = ((OCLMemoryManager) getMemoryProvider()).allocateRegion(OCLMemFlags.CL_MEM_READ_WRITE, deviceBufferSize, false);
+        bufferInfo.setBufferId(bufferId);
+        bufferInfo.setBufferSize(deviceBufferSize);
+
+//        // Make sure the lookup buffer kernel is compiled and obtain the required meta data.
+//        TaskMetaData meta = getBackend().compileLookupBufferKernel();
+//
+//        // Run the lookup buffer kernel and obtain the device address of the buffer.
+//        long deviceBufferAddress = getBackend().readMemorySegmentBaseAddress(bufferInfo, meta);
+//        bufferInfo.setDevicePointer(deviceBufferAddress);
+
+        // Allocate the memory segment on the host.
+        MemorySegment segment = MemorySegment.allocateNative(hostBufferSize, 8).share();
+        long hostBufferAddress = segment.address().toRawLongValue();
+        bufferInfo.setHostBufferPointer(hostBufferAddress);
+        bufferInfo.setBufferSize(hostBufferSize);
+
+        // Register the buffer, to be able to release it on device.reset().
+        getDeviceContext().registerPinnedBuffer(segment, bufferInfo);
+
+        return segment;
+    }
+
+    @Override
+    public MemorySegment allocateNonPinnedBuffer(long byteSize) {
+        return null;
     }
 }

@@ -23,12 +23,12 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
-import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 
 public class OCLKernelArgs extends OCLByteBuffer implements KernelArgs {
 
@@ -38,7 +38,7 @@ public class OCLKernelArgs extends OCLByteBuffer implements KernelArgs {
     private final ArrayList<CallArgument> callArguments;
 
     OCLKernelArgs(long bufferId, int numArgs, OCLDeviceContext device) {
-        super(device, bufferId, 0, RESERVED_SLOTS << 3);
+        super(device.getMainBufferInfo(), device, bufferId, 0, RESERVED_SLOTS << 3);
         this.callArguments = new ArrayList<>(numArgs);
 
         buffer.clear();

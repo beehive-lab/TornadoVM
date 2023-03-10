@@ -25,12 +25,9 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal;
 
-import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-
-import java.util.Iterator;
-
+import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
+import jdk.vm.ci.meta.*;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.core.common.spi.MetaAccessExtensionProvider;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
@@ -39,30 +36,12 @@ import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeInputList;
-import org.graalvm.compiler.nodes.AbstractDeoptimizeNode;
-import org.graalvm.compiler.nodes.CompressionNode;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.Invoke;
-import org.graalvm.compiler.nodes.InvokeNode;
-import org.graalvm.compiler.nodes.LoweredCallTargetNode;
-import org.graalvm.compiler.nodes.NamedLocationIdentity;
-import org.graalvm.compiler.nodes.NodeView;
-import org.graalvm.compiler.nodes.PhiNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.UnwindNode;
-import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.*;
 import org.graalvm.compiler.nodes.calc.FloatConvertNode;
 import org.graalvm.compiler.nodes.calc.IntegerDivRemNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.nodes.calc.RemNode;
-import org.graalvm.compiler.nodes.java.ArrayLengthNode;
-import org.graalvm.compiler.nodes.java.InstanceOfNode;
-import org.graalvm.compiler.nodes.java.LoadFieldNode;
-import org.graalvm.compiler.nodes.java.LoadIndexedNode;
-import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
-import org.graalvm.compiler.nodes.java.StoreFieldNode;
-import org.graalvm.compiler.nodes.java.StoreIndexedNode;
+import org.graalvm.compiler.nodes.java.*;
 import org.graalvm.compiler.nodes.memory.AbstractWriteNode;
 import org.graalvm.compiler.nodes.memory.OnHeapMemoryAccess;
 import org.graalvm.compiler.nodes.memory.ReadNode;
@@ -77,47 +56,24 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.replacements.DefaultJavaLoweringProvider;
 import org.graalvm.compiler.replacements.SnippetCounter;
-
-import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
-import jdk.vm.ci.meta.ConstantReflectionProvider;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.PrimitiveConstant;
-import jdk.vm.ci.meta.ResolvedJavaField;
-import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode.ATOMIC_OPERATION;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.CastNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GroupIdNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIdNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadSizeNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.*;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceCPUSnippets;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
-import uk.ac.manchester.tornado.runtime.graal.nodes.GetGroupIdFixedWithNextNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.GlobalGroupSizeFixedWithNextNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.LocalGroupSizeFixedWithNextNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.NewArrayNonVirtualizableNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdFixedWithNextNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadLocalIdFixedWithNextNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceMulNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceSubNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.*;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
+
+import java.util.Iterator;
+
+import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 /**
  * Lower IR from one representation to another (e.g., from TornadoVM High-IR to
@@ -197,6 +153,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             lowerLocalThreadIdNode((ThreadLocalIdFixedWithNextNode) node);
         } else if (node instanceof GetGroupIdFixedWithNextNode) {
             lowerGetGroupIdNode((GetGroupIdFixedWithNextNode) node);
+        } else if (node instanceof MemorySegmentArrayNode) {
+            lowerMemorySegmentArrayNode((MemorySegmentArrayNode) node);
         } else if (node instanceof GlobalGroupSizeFixedWithNextNode) {
             lowerGlobalGroupSizeNode((GlobalGroupSizeFixedWithNextNode) node);
         } else if (node instanceof LocalGroupSizeFixedWithNextNode) {
@@ -204,6 +162,12 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         } else {
             super.lower(node, tool);
         }
+    }
+
+    private void lowerMemorySegmentArrayNode(MemorySegmentArrayNode memorySegmentArrayNode) {
+        StructuredGraph graph = memorySegmentArrayNode.graph();
+        OCLMemorySegmentArray memorySegmentArray = graph.add(new OCLMemorySegmentArray(memorySegmentArrayNode.getSegmentParameter()));
+        graph.replaceFixedWithFixed(memorySegmentArrayNode, memorySegmentArray);
     }
 
     @Override

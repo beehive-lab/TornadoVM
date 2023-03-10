@@ -41,6 +41,9 @@ public class OCLMemFlags {
     public static final long CL_MEM_ALLOC_HOST_PTR  = (1 << 4);
     public static final long CL_MEM_COPY_HOST_PTR   = (1 << 5);
 
+    public static final long CL_MAP_READ            = (1 << 0);
+    public static final long CL_MAP_WRITE           = (1 << 1);
+
     // reserved (1 << 6)
     public static final long CL_MEM_HOST_WRITE_ONLY = (1 << 7);
     public static final long CL_MEM_HOST_READ_ONLY  = (1 << 8);

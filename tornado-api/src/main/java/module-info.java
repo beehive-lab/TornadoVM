@@ -40,6 +40,7 @@
  *
  */
 module tornado.api {
+    requires jdk.incubator.foreign;
     exports uk.ac.manchester.tornado.api;
     exports uk.ac.manchester.tornado.api.annotations;
     exports uk.ac.manchester.tornado.api.collections.graphics;

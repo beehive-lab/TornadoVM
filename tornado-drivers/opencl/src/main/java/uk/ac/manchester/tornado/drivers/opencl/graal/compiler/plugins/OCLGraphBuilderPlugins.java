@@ -25,31 +25,20 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins;
 
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.ATAN2;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMAX;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMIN;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.POW;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.ACOS;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.ASIN;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.ATAN;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.COS;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.EXP;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.FABS;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.LOG;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.SIN;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.TAN;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.TANH;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MAX;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MIN;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode.Operation.POPCOUNT;
-
+import jdk.incubator.foreign.MemorySegment;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.nodes.extended.BoxNode;
+import org.graalvm.compiler.nodes.extended.JavaReadNode;
+import org.graalvm.compiler.nodes.extended.JavaWriteNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
@@ -59,31 +48,25 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registratio
 import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
+import org.graalvm.compiler.nodes.memory.OnHeapMemoryAccess;
+import org.graalvm.compiler.nodes.memory.address.AddressNode;
+import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
-
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import org.graalvm.word.LocationIdentity;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TornadoVM_Intrinsics;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNodeTemplate;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DecAtomicNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GetAtomicNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PrintfNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TPrintfNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.*;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.*;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.*;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MAX;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MIN;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode.Operation.POPCOUNT;
 
 public class OCLGraphBuilderPlugins {
 
@@ -99,6 +82,8 @@ public class OCLGraphBuilderPlugins {
         registerTornadoVMAtomicsPlugins(plugins);
         // Register KernelContext Plugins
         registerKernelContextPlugins(plugins);
+
+        registerMemoryAccessPlugins(plugins);
 
         OCLMathPlugins.registerTornadoMathPlugins(plugins);
         VectorPlugins.registerPlugins(ps, plugins);
@@ -361,6 +346,57 @@ public class OCLGraphBuilderPlugins {
         newArrayNode.safeDelete();
 
         return true;
+    }
+
+    private static void registerMemoryAccessPlugins(InvocationPlugins plugins) {
+        Registration r = new Registration(plugins, jdk.incubator.foreign.MemoryAccess.class);
+
+        for (JavaKind kind : JavaKind.values()) {
+            if (kind == JavaKind.Object || kind == JavaKind.Void || kind == JavaKind.Illegal) {
+                continue;
+            }
+            r.register(new InvocationPlugin("get" + kind.name() + "AtIndex", MemorySegment.class, long.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index) {
+                    MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
+                    AddressNode addressNode = b.append(new OffsetAddressNode(segment, mulNode));
+                    JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), OnHeapMemoryAccess.BarrierType.NONE, false);
+                    b.addPush(kind, readNode);
+                    return true;
+                }
+            });
+
+            r.register(new InvocationPlugin("set" + kind.name() + "AtIndex", MemorySegment.class, long.class, kind.toJavaClass()) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode value) {
+                    MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
+                    AddressNode addressNode = b.append(new OffsetAddressNode(segment, mulNode));
+                    JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, OnHeapMemoryAccess.BarrierType.NONE, false);
+                    b.add(writeNode);
+                    return true;
+                }
+            });
+
+            r.register(new InvocationPlugin("get" + kind.name() + "AtOffset", MemorySegment.class, long.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode offset) {
+                    AddressNode addressNode = b.append(new OffsetAddressNode(segment, offset));
+                    JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), OnHeapMemoryAccess.BarrierType.NONE, false);
+                    b.addPush(kind, readNode);
+                    return true;
+                }
+            });
+
+            r.register(new InvocationPlugin("set" + kind.name() + "AtOffset", MemorySegment.class, long.class, kind.toJavaClass()) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode offset, ValueNode value) {
+                    AddressNode addressNode = b.append(new OffsetAddressNode(segment, offset));
+                    JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, OnHeapMemoryAccess.BarrierType.NONE, false);
+                    b.add(writeNode);
+                    return true;
+                }
+            });
+        }
     }
 
     private static void registerTornadoVMIntrinsicsPlugins(InvocationPlugins plugins) {

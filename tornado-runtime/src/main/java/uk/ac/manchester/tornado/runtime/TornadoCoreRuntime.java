@@ -25,9 +25,32 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
-import static org.graalvm.compiler.debug.GraalError.guarantee;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.SHOULD_LOAD_RMI;
+import jdk.incubator.foreign.MemorySegment;
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.runtime.JVMCI;
+import jdk.vm.ci.runtime.JVMCIBackend;
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.compiler.core.common.GraalOptions;
+import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.hotspot.HotSpotGraalOptionValues;
+import org.graalvm.compiler.lir.constopt.ConstantLoadOptimization;
+import org.graalvm.compiler.lir.phases.PostAllocationOptimizationStage;
+import org.graalvm.compiler.options.OptionKey;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
+import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.TornadoRuntimeInterface;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.enums.TornadoDrivers;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
+import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -40,31 +63,9 @@ import java.util.concurrent.ThreadFactory;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import org.graalvm.collections.EconomicMap;
-import org.graalvm.compiler.core.common.GraalOptions;
-import org.graalvm.compiler.debug.DebugContext;
-import org.graalvm.compiler.hotspot.HotSpotGraalOptionValues;
-import org.graalvm.compiler.lir.constopt.ConstantLoadOptimization;
-import org.graalvm.compiler.lir.phases.PostAllocationOptimizationStage;
-import org.graalvm.compiler.options.OptionKey;
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
-
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.runtime.JVMCI;
-import jdk.vm.ci.runtime.JVMCIBackend;
-import uk.ac.manchester.tornado.api.TornadoDriver;
-import uk.ac.manchester.tornado.api.TornadoRuntimeInterface;
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.common.enums.TornadoDrivers;
-import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
-import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
+import static org.graalvm.compiler.debug.GraalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.SHOULD_LOAD_RMI;
 
 public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeInterface {
 
@@ -248,6 +249,12 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeI
     @Override
     public TornadoAcceleratorDevice getDefaultDevice() {
         return (tornadoVMDrivers == null || tornadoVMDrivers[DEFAULT_DRIVER] == null) ? JVM : (TornadoAcceleratorDevice) tornadoVMDrivers[DEFAULT_DRIVER].getDefaultDevice();
+    }
+
+    @Override
+    public MemorySegment getPinnedBuffer(TornadoDevice device, int byteSize) {
+        MemorySegment segment = device.allocateNonPinnedBuffer(byteSize);
+        return segment;
     }
 
 }

@@ -41,15 +41,16 @@
  */
 package uk.ac.manchester.tornado.api.common;
 
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-
+import jdk.incubator.foreign.MemorySegment;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.memory.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
+
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 public interface TornadoDevice {
 
@@ -223,4 +224,6 @@ public interface TornadoDevice {
     TornadoVMBackendType getTornadoVMBackend();
 
     boolean isSPIRVSupported();
+
+   MemorySegment allocateNonPinnedBuffer(long byteSize);
 }

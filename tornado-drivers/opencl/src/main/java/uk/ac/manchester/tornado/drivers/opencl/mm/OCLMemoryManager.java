@@ -23,15 +23,16 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
-import static uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelArgs.RESERVED_SLOTS;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
-
+import jdk.incubator.foreign.MemorySegment;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+
+import static uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelArgs.RESERVED_SLOTS;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
 
 public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProvider {
 
@@ -106,4 +107,28 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
             this.atomicsRegion = -1;
         }
     }
+
+//    @Override
+//    public long allocatePinnedBuffer(long byteSize) {
+//        return allocateRegion(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, byteSize, false);
+//    }
+
+    @Override
+    public long allocatePinnedBuffer(long byteSize) {
+        this.constantPointer = createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, 4).getBuffer();
+        return this.constantPointer;
+    }
+
+    @Override
+    public void registerPinnedBuffer(MemorySegment segment, long bufferId, long hostBufferPointer, long deviceBufferAddress) {
+
+    }
+
+    public long allocateRegion(long memFlags, long numBytes, boolean retainBuffer) {
+        return deviceContext.getPlatformContext().createBuffer(memFlags, numBytes).getBuffer();
+    }
+
+//    public Map<MemorySegment, MemorySegmentInfo> getSegmentToBufferMap() {
+//        return segmentToBufferMap;
+//    }
 }

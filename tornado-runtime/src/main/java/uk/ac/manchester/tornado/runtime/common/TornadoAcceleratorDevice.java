@@ -25,6 +25,7 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
+import jdk.incubator.foreign.MemorySegment;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
@@ -62,4 +63,8 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
     void enableThreadSharing();
 
     void setAtomicRegion(ObjectBuffer bufferAtomics);
+
+    MemorySegment allocateNonPinnedBuffer(long hostBufferSize, long deviceBufferSize);
+
+    MemorySegment allocateNonPinnedBuffer(long byteSize);
 }
