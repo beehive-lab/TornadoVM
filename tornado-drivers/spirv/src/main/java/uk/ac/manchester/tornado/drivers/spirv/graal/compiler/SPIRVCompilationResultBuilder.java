@@ -67,10 +67,9 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
     private final Set<ResolvedJavaMethod> nonInlinedMethods;
     HashSet<Block> rescheduledBasicBlocks;
     private boolean isKernel;
-    private int loops = 0;
+
     private boolean isParallel;
     private SPIRVDeviceContext deviceContext;
-    private TaskMetaData meta;
 
     public SPIRVCompilationResultBuilder(CodeGenProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
             CompilationResult compilationResult) {
