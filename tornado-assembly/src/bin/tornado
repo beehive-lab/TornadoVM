@@ -24,6 +24,7 @@
 #
 
 from subprocess import PIPE
+from pathlib import Path
 import os
 import subprocess
 import shlex
@@ -44,16 +45,16 @@ __TORNADOVM_PRINT_BC__                  = "-Dtornado.print.bytecodes=True"
 __TORNADOVM_DUMP_PROFILER__             = "-Dtornado.profiler=True -Dtornado.log.profiler=True -Dtornado.profiler.dump.dir="
 __TORNADOVM_ENABLE_PROFILER_SILENT__    = "-Dtornado.profiler=True -Dtornado.log.profiler=True "
 __TORNADOVM_ENABLE_PROFILER_CONSOLE__   = "-Dtornado.profiler=True "
-##### Truffle Python TornadoVM Flags
-__TORNADOVM_DEBUG_TRUFFLE_PYTHON__                     = "--vm.Dtornado.debug=True "
-__TORNADOVM_THREAD_INFO_TRUFFLE_PYTHON__               = "--vm.Dtornado.threadInfo=True "
-__TORNADOVM_IGV_TRUFFLE_PYTHON__                       = "--vm.Dgraal.Dump=*:5 --vm.Dgraal.PrintGraph=Network --vm.Dgraal.PrintBackendCFG=true"
-__TORNADOVM__IGV_LOW_TIER_TRUFFLE_PYTHON               = "--vm.Dgraal.Dump=*:1 --vm.Dgraal.PrintGraph=Network --vm.Dgraal.PrintBackendCFG=true --vm.Dtornado.debug.lowtier=True "
-__TORNADOVM_PRINT_KERNEL_TRUFFLE_PYTHON__              = "--vm.Dtornado.print.kernel=True "
-__TORNADOVM_PRINT_BC_TRUFFLE_PYTHON__                  = "--vm.Dtornado.print.bytecodes=True"
-__TORNADOVM_DUMP_PROFILER_TRUFFLE_PYTHON__             = "--vm.Dtornado.profiler=True --vm.Dtornado.log.profiler=True --vm.Dtornado.profiler.dump.dir="
-__TORNADOVM_ENABLE_PROFILER_SILENT_TRUFFLE_PYTHON__    = "--vm.Dtornado.profiler=True --vm.Dtornado.log.profiler=True "
-__TORNADOVM_ENABLE_PROFILER_CONSOLE_TRUFFLE_PYTHON__   = "--vm.Dtornado.profiler=True "
+##### Truffle TornadoVM Flags
+__TORNADOVM_DEBUG_TRUFFLE__                     = "--vm.Dtornado.debug=True "
+__TORNADOVM_THREAD_INFO_TRUFFLE__               = "--vm.Dtornado.threadInfo=True "
+__TORNADOVM_IGV_TRUFFLE__                       = "--vm.Dgraal.Dump=*:5 --vm.Dgraal.PrintGraph=Network --vm.Dgraal.PrintBackendCFG=true"
+__TORNADOVM__IGV_LOW_TIER_TRUFFLE__             = "--vm.Dgraal.Dump=*:1 --vm.Dgraal.PrintGraph=Network --vm.Dgraal.PrintBackendCFG=true --vm.Dtornado.debug.lowtier=True "
+__TORNADOVM_PRINT_KERNEL_TRUFFLE__              = "--vm.Dtornado.print.kernel=True "
+__TORNADOVM_PRINT_BC_TRUFFLE__                  = "--vm.Dtornado.print.bytecodes=True"
+__TORNADOVM_DUMP_PROFILER_TRUFFLE__             = "--vm.Dtornado.profiler=True --vm.Dtornado.log.profiler=True --vm.Dtornado.profiler.dump.dir="
+__TORNADOVM_ENABLE_PROFILER_SILENT_TRUFFLE__    = "--vm.Dtornado.profiler=True --vm.Dtornado.log.profiler=True "
+__TORNADOVM_ENABLE_PROFILER_CONSOLE_TRUFFLE__   = "--vm.Dtornado.profiler=True "
 
 # ########################################################
 # LIST OF TORNADOVM PROVIDERS: Set of Java Classes that 
@@ -69,7 +70,7 @@ __TORNADOVM_PROVIDERS__ = """\
 -Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor \
 -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel """
 
-__TORNADOVM_PROVIDERS_TRUFFLE_PYTHON__ = """\
+__TORNADOVM_PROVIDERS_TRUFFLE__ = """\
 --vm.Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph \
 --vm.Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime \
 --vm.Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado \
@@ -89,18 +90,8 @@ __SPIRV_EXPORTS__  = "/etc/exportLists/spirv-exports"
 __TORNADOVM_ADD_MODULES__ = "--add-modules ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common"
 __PTX_MODULE__     = "tornado.drivers.ptx"
 __OPENCL_MODULE__  = "tornado.drivers.opencl"
-##### Truffle Python export files and modules
-#__COMMON_EXPORTS_TRUFFLE_PYTHON__ = "/etc/exportLists/common-exports-python"
-#__OPENCL_EXPORTS_TRUFFLE_PYTHON__ = "/etc/exportLists/opencl-exports-python"
-__TORNADOVM_ADD_MODULES_TRUFFLE_PYTHON__ = "--vm.-add-modules=ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common,tornado.examples"
 
-COMMON_EXPORTS_TRUFFLE_PYTHON = " --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.cfg=tornado.runtime --vm.-add-exports=jdk.internal.vm.ci/jdk.vm.ci.common=jdk.internal.vm.compiler --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.hotspot.meta=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.util=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir=tornado.runtime,tornado.drivers.common --vm.-add-exports=jdk.internal.vm.ci/jdk.vm.ci.meta=tornado.runtime,tornado.annotation,tornado.drivers.common,jdk.internal.vm.compiler --vm.-add-exports=jdk.internal.vm.ci/jdk.vm.ci.code=tornado.runtime,tornado.drivers.common,jdk.internal.vm.compiler --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.graph=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.graph.spi=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir.gen=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodeinfo=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes=tornado.runtime,tornado.drivers.common --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.calc=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.spi=tornado.runtime,tornado.drivers.common --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.api.runtime=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.code=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common=tornado.runtime,tornado.drivers.common --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.target=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.debug=tornado.runtime,tornado.drivers.common --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.hotspot=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.java=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir.asm=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir.phases=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.graphbuilderconf=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.options=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases=tornado.runtime,tornado.drivers.common --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.tiers=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.util=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.printer=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.runtime=tornado.runtime --vm.-add-exports=jdk.internal.vm.ci/jdk.vm.ci.runtime=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.graph.iterators=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.java=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.bytecode=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.common=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.spi=tornado.runtime,tornado.drivers.common --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.api.replacements=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.replacements=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.phases=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.type=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.extended=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.loop=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining.info=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining.policy=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining.walker=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.loop.phases=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.debug=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.util=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.virtual=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir.constopt=tornado.runtime --vm.-add-opens=jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.runtime --vm.-add-exports=jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.gc=tornado.runtime,tornado.drivers.common --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory.address=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.replacements.nodes=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.word=tornado.drivers.common --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.util=tornado.drivers.common --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir.framemap=tornado.runtime --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.alloc=tornado.runtime "
- 
-OPENCL_EXPORTS_TRUFFLE_PYTHON = " --vm.-add-opens=java.base/java.lang=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.ci/jdk.vm.ci.common=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.ci/jdk.vm.ci.amd64=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.hotspot.meta=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.replacements.classfile=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.alloc=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.util=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.cfg=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir.framemap=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.ci/jdk.vm.ci.meta=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.ci/jdk.vm.ci.code=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.graph=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.graph.spi=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir.gen=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodeinfo=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.calc=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.spi=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.code=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.debug=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.hotspot=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.java=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir.asm=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir.phases=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.graphbuilderconf=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.options=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.tiers=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.util=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.printer=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.ci/jdk.vm.ci.runtime=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.graph.iterators=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.java=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.bytecode=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.common=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.spi=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.api.replacements=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.replacements=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.phases=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.type=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.extended=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.loop=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.loop.phases=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.debug=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.util=tornado.drivers.opencl --vm.-add-opens=jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.asm=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.cfg=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.schedule=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.virtual.phases.ea=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir.ssa=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.calc=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.gen=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.match=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory.address=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.type=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.graph=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.util=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.util=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.graph=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.word=tornado.drivers.opencl --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.memory=tornado.drivers.opencl "
-
-PTX_EXPORTS_TRUFFLE_PYTHON = " --vm.-add-opens=java.base/java.lang=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.ci/jdk.vm.ci.common=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.ci/jdk.vm.ci.amd64=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.hotspot.meta=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.replacements.classfile=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.alloc=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.util=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.cfg=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir.framemap=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.ci/jdk.vm.ci.meta=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.ci/jdk.vm.ci.code=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.graph=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.graph.spi=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir.gen=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodeinfo=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.calc=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.spi=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.code=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.debug=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.hotspot=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.java=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir.asm=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir.phases=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.graphbuilderconf=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.options=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.tiers=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.util=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.printer=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.ci/jdk.vm.ci.runtime=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.graph.iterators=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.java=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.bytecode=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.common=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.spi=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.api.replacements=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.replacements=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.phases=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.type=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.extended=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.loop=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.loop.phases=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.debug=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.util=tornado.drivers.ptx --vm.-add-opens=jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.asm=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.cfg=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.schedule=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.virtual.phases.ea=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir.ssa=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.calc=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.gen=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.match=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory.address=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.type=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.graph=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.util=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.util=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.graph=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.word=tornado.drivers.ptx --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.memory=tornado.drivers.ptx "
-
-SPIRV_EXPORTS_TRUFFLE_PYTHON = " --vm.-add-opens=java.base/java.lang=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.ci/jdk.vm.ci.common=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.ci/jdk.vm.ci.amd64=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.hotspot.meta=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.replacements.classfile=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.alloc=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.util=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.cfg=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir.framemap=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.ci/jdk.vm.ci.meta=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.ci/jdk.vm.ci.code=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.graph=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.graph.spi=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir.gen=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodeinfo=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.calc=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.spi=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.code=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.debug=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.hotspot=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.java=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir.asm=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir.phases=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.graphbuilderconf=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.options=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.tiers=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.util=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.printer=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.ci/jdk.vm.ci.runtime=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.graph.iterators=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.java=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.bytecode=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.common=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.spi=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.api.replacements=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.replacements=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.phases=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.type=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.extended=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.loop=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.loop.phases=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.debug=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.util=tornado.drivers.spirv --vm.-add-opens=jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.asm=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.cfg=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.schedule=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.virtual.phases.ea=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.lir.ssa=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.calc=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.gen=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.match=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory.address=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.nodes.type=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.graph=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.util=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.util=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.phases.graph=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.word=tornado.drivers.spirv --vm.-add-exports=jdk.internal.vm.compiler/org.graalvm.compiler.core.common.memory=tornado.drivers.spirv " 
+__TORNADOVM_ADD_MODULES_TRUFFLE__ = "--vm.-add-modules=ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common,tornado.examples"
 
 # ########################################################
 # JAVA FLAGS
@@ -108,9 +99,9 @@ SPIRV_EXPORTS_TRUFFLE_PYTHON = " --vm.-add-opens=java.base/java.lang=tornado.dri
 __JAVA_GC_JDK11__     = "-XX:+UseParallelOldGC -XX:-UseBiasedLocking "
 __JAVA_GC_JDK16__     = "-XX:+UseParallelGC "
 __JAVA_BASE_OPTIONS__ = "-server -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI "
-__JAVA_GC_JDK11_TRUFFLE_PYTHON__     = "--vm.XX:+UseParallelOldGC --vm.XX:-UseBiasedLocking "
-__JAVA_GC_JDK16_TRUFFLE_PYTHON__     = "--vm.XX:+UseParallelGC "
-__JAVA_BASE_OPTIONS_TRUFFLE_PYTHON__ = "--jvm --polyglot --vm.XX:-UseCompressedOops --vm.XX:+UnlockExperimentalVMOptions --vm.XX:+EnableJVMCI "
+__JAVA_GC_JDK11_TRUFFLE__     = "--vm.XX:+UseParallelOldGC --vm.XX:-UseBiasedLocking "
+__JAVA_GC_JDK16_TRUFFLE__     = "--vm.XX:+UseParallelGC "
+__JAVA_BASE_OPTIONS_TRUFFLE__ = "--jvm --polyglot --vm.XX:-UseCompressedOops --vm.XX:+UnlockExperimentalVMOptions --vm.XX:+EnableJVMCI "
 
 # We do not satisfy the Graal compiler assertions because we only support a subset of the Java specification.
 # This allows us to have the GraalIR in states which normally would be illegal.
@@ -138,6 +129,7 @@ class TornadoVMRunnerTool():
 
         self.java_command = self.java_home + "/bin/java"
         self.graalpy_command = self.java_home + "/bin/graalpy"
+        self.graaljs_command = self.java_home + "/bin/node"
         self.java_version, self.isGraalVM = self.getJavaVersion()
         self.checkCompatibilityWithTornadoVM()
         self.platform = sys.platform
@@ -241,37 +233,37 @@ class TornadoVMRunnerTool():
         return tornadoFlags
         
     
-    def buildTornadoVMOptionsTrufflePython(self, args):
+    def buildTornadoVMOptionsTruffle(self, args):
         tornadoFlags = ""
         if (args.debug):
-            tornadoFlags = tornadoFlags + __TORNADOVM_DEBUG_TRUFFLE_PYTHON__ 
+            tornadoFlags = tornadoFlags + __TORNADOVM_DEBUG_TRUFFLE__ 
 
         if (args.threadInfo):
-            tornadoFlags = tornadoFlags + __TORNADOVM_THREAD_INFO_TRUFFLE_PYTHON__
+            tornadoFlags = tornadoFlags + __TORNADOVM_THREAD_INFO_TRUFFLE__
 
         if (args.printKernel):
-            tornadoFlags = tornadoFlags + __TORNADOVM_PRINT_KERNEL_TRUFFLE_PYTHON__  
+            tornadoFlags = tornadoFlags + __TORNADOVM_PRINT_KERNEL_TRUFFLE__  
 
         if (args.igv):
-            tornadoFlags = tornadoFlags + __TORNADOVM_IGV_TRUFFLE_PYTHON__
+            tornadoFlags = tornadoFlags + __TORNADOVM_IGV_TRUFFLE__
 
         if (args.igvLowTier):
-            tornadoFlags = tornadoFlags + __TORNADOVM__IGV_LOW_TIER_TRUFFLE_PYTHON
+            tornadoFlags = tornadoFlags + __TORNADOVM__IGV_LOW_TIER_TRUFFLE__
 
         if (args.printBytecodes):
-            tornadoFlags = tornadoFlags + __TORNADOVM_PRINT_BC_TRUFFLE_PYTHON__
+            tornadoFlags = tornadoFlags + __TORNADOVM_PRINT_BC_TRUFFLE__
 
         if (args.enable_profiler != None):
             if (args.enable_profiler == "silent"):
-                tornadoFlags = tornadoFlags + __TORNADOVM_ENABLE_PROFILER_SILENT_TRUFFLE_PYTHON__
+                tornadoFlags = tornadoFlags + __TORNADOVM_ENABLE_PROFILER_SILENT_TRUFFLE__
             elif (args.enable_profiler == "console"):
-                tornadoFlags = tornadoFlags + __TORNADOVM_ENABLE_PROFILER_CONSOLE_TRUFFLE_PYTHON__
+                tornadoFlags = tornadoFlags + __TORNADOVM_ENABLE_PROFILER_CONSOLE_TRUFFLE__
             else:
                 print("[ERROR] Please select --vm.-enableProfiler <silent|console>")
                 sys.exit(0)
 
         if (args.dump_profiler != None):
-            tornadoFlags = tornadoFlags + __TORNADOVM_DUMP_PROFILER_TRUFFLE_PYTHON__ + " " + args.dump_profiler + " "
+            tornadoFlags = tornadoFlags + __TORNADOVM_DUMP_PROFILER_TRUFFLE__ + " " + args.dump_profiler + " "
             
         tornadoFlags = tornadoFlags + "--vm.Djava.library.path=" + self.sdk + "/lib "
         if (self.java_version == 8):
@@ -373,29 +365,43 @@ class TornadoVMRunnerTool():
             javaFlags = javaFlags + " -cp " + args.classPath + " "
 
         return self.java_command + javaFlags
+        
+    def truffleCompatibleExports(self, exportFile):
+        data = Path(exportFile).read_text()
+        # ignore the header of the file
+        data = re.sub(r'(?m)^\#.*\n?', "", data)
+        # make exports compatible with truffle
+        data = data.replace('--add', '--vm.-add').replace(' ', '=').replace('\n', ' ')
+        return data
 
-    def buildTrufflePythonCommand(self, args):
-        tornadoFlags = self.buildTornadoVMOptionsTrufflePython(args)
-        tornadoAddModules = __TORNADOVM_ADD_MODULES_TRUFFLE_PYTHON__
+    def buildTruffleCommand(self, args):
+        tornadoFlags = self.buildTornadoVMOptionsTruffle(args)
+        tornadoAddModules = __TORNADOVM_ADD_MODULES_TRUFFLE__
         jvmFlags = ""
         
-        jvmFlags = jvmFlags + " " + __JAVA_BASE_OPTIONS_TRUFFLE_PYTHON__ + tornadoFlags + __TORNADOVM_PROVIDERS_TRUFFLE_PYTHON__ + " "
+        jvmFlags = jvmFlags + " " + __JAVA_BASE_OPTIONS_TRUFFLE__ + tornadoFlags + __TORNADOVM_PROVIDERS_TRUFFLE__ + " "
         if (self.java_version == 8):
             jvmFlags = javaFlags + " --vm.XX:-UseJVMCIClassLoader "
         else:
-            common = COMMON_EXPORTS_TRUFFLE_PYTHON
-            opencl = OPENCL_EXPORTS_TRUFFLE_PYTHON
-            ptx = PTX_EXPORTS_TRUFFLE_PYTHON
-            spirv = SPIRV_EXPORTS_TRUFFLE_PYTHON
+            common_path = self.sdk + __COMMON_EXPORTS__
+            opencl_path = self.sdk + __OPENCL_EXPORTS__
+            ptx_path = self.sdk + __PTX_EXPORTS__
+            spirv_path = self.sdk + __SPIRV_EXPORTS__
+            
+            common = self.truffleCompatibleExports(common_path)
+            opencl = self.truffleCompatibleExports(opencl_path)
+            ptx = self.truffleCompatibleExports(ptx_path)
+            spirv = self.truffleCompatibleExports(spirv_path)
+            
             upgradeModulePath = " --vm.-upgrade-module-path " + self.sdk + "/share/java/graalJars "
 
             if (self.isGraalVM == False):
                 print("GraalVM is required to run Truffle languages!")
                 jvmFlags = jvmFlags + upgradeModulePath 
             if (self.java_version >= 16):
-                jvmFlags = jvmFlags + __JAVA_GC_JDK16_TRUFFLE_PYTHON__ 
+                jvmFlags = jvmFlags + __JAVA_GC_JDK16_TRUFFLE__ 
             else:
-                jvmFlags = jvmFlags + __JAVA_GC_JDK11_TRUFFLE_PYTHON__ 
+                jvmFlags = jvmFlags + __JAVA_GC_JDK11_TRUFFLE__ 
 
             jvmFlags = jvmFlags + " " + common + " "
 
@@ -416,17 +422,22 @@ class TornadoVMRunnerTool():
 
         #if (args.classPath != None):
         #    jvmFlags = javaFlags + " -cp " + args.classPath + " "
+        if (args.truffle_language == "python"):
+            executeCommand = self.graalpy_command
+        elif (args.truffle_language == "js"):
+            executeCommand = self.graaljs_command
+        else:
+            executeCommand = ""
 
-        return self.graalpy_command + jvmFlags
-    
+        return executeCommand + jvmFlags
     
     def executeCommand(self, args):
         javaFlags = self.buildJavaCommand(args)
         
-        if (args.truffle_language != None and args.truffle_language == "python"):
-            trufflePythonFlags = self.buildTrufflePythonCommand(args)
+        if (args.truffle_language != None and (args.truffle_language == "python" or args.truffle_language == "js")):
+            truffleFlags = self.buildTruffleCommand(args)
         else:
-            trufflePythonFlags = None
+            truffleFlags = None
 
         if (args.versionJVM):
             command = javaFlags + " -version"
@@ -451,8 +462,8 @@ class TornadoVMRunnerTool():
                 params = args.application + " " + params    
         
         if (args.truffle_language != None):
-            if (args.truffle_language == "python"):
-                command = trufflePythonFlags + str(args.application) + " " + params
+            if (args.truffle_language == "python" or args.truffle_language == "js"):
+                command = truffleFlags + str(args.application) + " " + params
             else:
                 print("Support for " + args.truffle_language + " not provided yet.")
         else:
@@ -464,7 +475,7 @@ class TornadoVMRunnerTool():
                 command = javaFlags + " -jar " + str(args.jar_file) + " " + params
             else:
                 if (args.truffle_language != None and args.truffle_language == "python"):
-                    command = trufflePythonFlags + " " + str(args.application) + " " + params
+                    command = truffleFlags + " " + str(args.application) + " " + params
                 else:       
                     command = javaFlags + " " + str(args.application) + " " + params
                     
