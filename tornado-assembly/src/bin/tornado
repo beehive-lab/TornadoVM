@@ -130,6 +130,7 @@ class TornadoVMRunnerTool():
         self.java_command = self.java_home + "/bin/java"
         self.graalpy_command = self.java_home + "/bin/graalpy"
         self.graaljs_command = self.java_home + "/bin/node"
+        self.graalr_command = self.java_home + "/bin/Rscript"
         self.java_version, self.isGraalVM = self.getJavaVersion()
         self.checkCompatibilityWithTornadoVM()
         self.platform = sys.platform
@@ -426,6 +427,8 @@ class TornadoVMRunnerTool():
             executeCommand = self.graalpy_command
         elif (args.truffle_language == "js"):
             executeCommand = self.graaljs_command
+        elif (args.truffle_language == "r"):
+            executeCommand = self.graalr_command
         else:
             executeCommand = ""
 
@@ -434,7 +437,7 @@ class TornadoVMRunnerTool():
     def executeCommand(self, args):
         javaFlags = self.buildJavaCommand(args)
         
-        if (args.truffle_language != None and (args.truffle_language == "python" or args.truffle_language == "js")):
+        if (args.truffle_language != None and (args.truffle_language == "python" or args.truffle_language == "js" or args.truffle_language == "r")):
             truffleFlags = self.buildTruffleCommand(args)
         else:
             truffleFlags = None
@@ -462,7 +465,7 @@ class TornadoVMRunnerTool():
                 params = args.application + " " + params    
         
         if (args.truffle_language != None):
-            if (args.truffle_language == "python" or args.truffle_language == "js"):
+            if (args.truffle_language == "python" or args.truffle_language == "js" or args.truffle_language == "r"):
                 command = truffleFlags + str(args.application) + " " + params
             else:
                 print("Support for " + args.truffle_language + " not provided yet.")
@@ -474,11 +477,10 @@ class TornadoVMRunnerTool():
                     params = args.application + " " + params
                 command = javaFlags + " -jar " + str(args.jar_file) + " " + params
             else:
-                if (args.truffle_language != None and args.truffle_language == "python"):
+                if (args.truffle_language != None and (args.truffle_language == "python" or args.truffle_language == "js" or args.truffle_language == "r")):
                     command = truffleFlags + " " + str(args.application) + " " + params
                 else:       
-                    command = javaFlags + " " + str(args.application) + " " + params
-                    
+                    command = javaFlags + " " + str(args.application) + " " + params	   
         ## Execute the command
         os.system(command)
        
