@@ -129,7 +129,7 @@ class TornadoVMRunnerTool():
 
         self.java_command = self.java_home + "/bin/java"
         self.graalpy_command = self.java_home + "/bin/graalpy"
-        self.graaljs_command = self.java_home + "/bin/node"
+        self.graaljs_command = self.java_home + "/bin/js"
         self.graalr_command = self.java_home + "/bin/Rscript"
         self.java_version, self.isGraalVM = self.getJavaVersion()
         self.checkCompatibilityWithTornadoVM()
@@ -507,7 +507,7 @@ def parseArguments():
     parser.add_argument('-jar', action="store", dest="jar_file", default=None, help="Main Java application in a JAR File")
     parser.add_argument('--params', action="store", dest="application_parameters", default=None, help="Command-line parameters for the host-application. Example: --params=\"param1 param2...\"")
     parser.add_argument("application", nargs="?")
-    parser.add_argument("--truffle", action="store", dest="truffle_language", default=None, help="Enable Truffle languages through TornadoVM. Example: --truffle python|r|ruby|llvm|js")
+    parser.add_argument("--truffle", action="store", dest="truffle_language", default=None, help="Enable Truffle languages through TornadoVM. Example: --truffle python|r|js")
     parser.add_argument("param1", nargs="?")
     parser.add_argument("param2", nargs="?")
     parser.add_argument("param3", nargs="?")
