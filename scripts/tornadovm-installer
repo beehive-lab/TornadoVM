@@ -49,7 +49,7 @@ __SUPPORTED_JDKS__ = [
                        config.__GRAALVM11__,  config.__GRAALVM17__,
                        config.__CORRETTO11__, config.__CORRETTO17__,
                        config.__MANDREL11__,  config.__MANDREL17__,
-                       config.__WINDOWS11__,  config.__WINDOWS17__,
+                       config.__MICROSOFT11__,  config.__MICROSOFT17__,
                        config.__ZULU11__,     config.__ZULU17__
                      ]
 
