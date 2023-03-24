@@ -35,8 +35,8 @@ __MANDREL11__  = "mandrel-jdk-11"
 __MANDREL17__  = "mandrel-jdk-17"
 __CORRETTO11__ = "corretto-jdk-11"
 __CORRETTO17__ = "corretto-jdk-17"
-__WINDOWS11__  = "windows-jdk-11"
-__WINDOWS17__  = "windows-jdk-17"
+__MICROSOFT11__  = "microsoft-jdk-11"
+__MICROSOFT17__  = "microsoft-jdk-17"
 __ZULU11__     = "zulu-jdk-11"
 __ZULU17__     = "zulu-jdk-17"
  
@@ -145,7 +145,7 @@ JDK = {
             __ARM__    : None,
         }
     },
-    __WINDOWS11__ : {
+    __MICROSOFT11__ : {
         __LINUX__ : {
             __X86_64__ : "https://aka.ms/download-jdk/microsoft-jdk-11.0.18-linux-x64.tar.gz",
             __ARM__    : "https://aka.ms/download-jdk/microsoft-jdk-11.0.18-linux-aarch64.tar.gz",
@@ -155,7 +155,7 @@ JDK = {
             __ARM__    : "https://aka.ms/download-jdk/microsoft-jdk-11.0.18-macOS-aarch64.tar.gz",
         }
     },
-    __WINDOWS17__ : {
+    __MICROSOFT17__ : {
         __LINUX__ : {
             __X86_64__ : "https://aka.ms/download-jdk/microsoft-jdk-17.0.6-linux-x64.tar.gz",
             __ARM__    : "https://aka.ms/download-jdk/microsoft-jdk-17.0.6-linux-aarch64.tar.gz",
