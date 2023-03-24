@@ -20,7 +20,7 @@ pipeline {
         TORNADO_ROOT="/var/lib/jenkins/workspace/Tornado-pipeline"
         PATH="/var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor/bin:/var/lib/jenkins/workspace/Tornado-pipeline/bin/bin:$PATH"    
         TORNADO_SDK="/var/lib/jenkins/workspace/Tornado-pipeline/bin/sdk" 
-        CMAKE_ROOT="/opt/jenkins/cmake-3.10.2-Linux-x86_64"
+        CMAKE_ROOT="/opt/jenkins/cmake-3.25.2-linux-x86_64"
         KFUSION_ROOT="/var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor"
         TORNADO_RAY_TRACER_ROOT="/var/lib/jenkins/workspace/TornadoVM-Ray-Tracer"
         JAVAFX_SDK="/var/lib/jenkins/workspace/TornadoVM-Ray-Tracer/javafx-sdk-18.0.1/"
