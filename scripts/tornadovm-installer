@@ -185,7 +185,7 @@ class TornadoInstaller():
         currentDirectory = self.getCurrentDirectory()
         
         extraPath = ""
-        if (self.osPlatform == __APPLE__):
+        if (self.osPlatform == __APPLE__ and "zulu" not in jdk):
             extraPath = "/Contents/Home"
 
         ## Update env-variables
