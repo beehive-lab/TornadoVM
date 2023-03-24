@@ -45,16 +45,6 @@ __TORNADOVM_PRINT_BC__                  = "-Dtornado.print.bytecodes=True"
 __TORNADOVM_DUMP_PROFILER__             = "-Dtornado.profiler=True -Dtornado.log.profiler=True -Dtornado.profiler.dump.dir="
 __TORNADOVM_ENABLE_PROFILER_SILENT__    = "-Dtornado.profiler=True -Dtornado.log.profiler=True "
 __TORNADOVM_ENABLE_PROFILER_CONSOLE__   = "-Dtornado.profiler=True "
-##### Truffle TornadoVM Flags
-__TORNADOVM_DEBUG_TRUFFLE__                     = "--vm.Dtornado.debug=True "
-__TORNADOVM_THREAD_INFO_TRUFFLE__               = "--vm.Dtornado.threadInfo=True "
-__TORNADOVM_IGV_TRUFFLE__                       = "--vm.Dgraal.Dump=*:5 --vm.Dgraal.PrintGraph=Network --vm.Dgraal.PrintBackendCFG=true"
-__TORNADOVM__IGV_LOW_TIER_TRUFFLE__             = "--vm.Dgraal.Dump=*:1 --vm.Dgraal.PrintGraph=Network --vm.Dgraal.PrintBackendCFG=true --vm.Dtornado.debug.lowtier=True "
-__TORNADOVM_PRINT_KERNEL_TRUFFLE__              = "--vm.Dtornado.print.kernel=True "
-__TORNADOVM_PRINT_BC_TRUFFLE__                  = "--vm.Dtornado.print.bytecodes=True"
-__TORNADOVM_DUMP_PROFILER_TRUFFLE__             = "--vm.Dtornado.profiler=True --vm.Dtornado.log.profiler=True --vm.Dtornado.profiler.dump.dir="
-__TORNADOVM_ENABLE_PROFILER_SILENT_TRUFFLE__    = "--vm.Dtornado.profiler=True --vm.Dtornado.log.profiler=True "
-__TORNADOVM_ENABLE_PROFILER_CONSOLE_TRUFFLE__   = "--vm.Dtornado.profiler=True "
 
 # ########################################################
 # LIST OF TORNADOVM PROVIDERS: Set of Java Classes that 
@@ -70,16 +60,6 @@ __TORNADOVM_PROVIDERS__ = """\
 -Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor \
 -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel """
 
-__TORNADOVM_PROVIDERS_TRUFFLE__ = """\
---vm.Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph \
---vm.Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime \
---vm.Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado \
---vm.Dtornado.load.device.implementation.opencl=uk.ac.manchester.tornado.drivers.opencl.runtime.OCLDeviceFactory \
---vm.Dtornado.load.device.implementation.ptx=uk.ac.manchester.tornado.drivers.ptx.runtime.PTXDeviceFactory \
---vm.Dtornado.load.device.implementation.spirv=uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVDeviceFactory \
---vm.Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor \
---vm.Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel """
-
 # ########################################################
 # BACKEND FILES AND MODULES
 # ########################################################
@@ -91,17 +71,13 @@ __TORNADOVM_ADD_MODULES__ = "--add-modules ALL-SYSTEM,tornado.runtime,tornado.an
 __PTX_MODULE__     = "tornado.drivers.ptx"
 __OPENCL_MODULE__  = "tornado.drivers.opencl"
 
-__TORNADOVM_ADD_MODULES_TRUFFLE__ = "--vm.-add-modules=ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common,tornado.examples"
-
 # ########################################################
 # JAVA FLAGS
 # ########################################################
 __JAVA_GC_JDK11__     = "-XX:+UseParallelOldGC -XX:-UseBiasedLocking "
 __JAVA_GC_JDK16__     = "-XX:+UseParallelGC "
 __JAVA_BASE_OPTIONS__ = "-server -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI "
-__JAVA_GC_JDK11_TRUFFLE__     = "--vm.XX:+UseParallelOldGC --vm.XX:-UseBiasedLocking "
-__JAVA_GC_JDK16_TRUFFLE__     = "--vm.XX:+UseParallelGC "
-__JAVA_BASE_OPTIONS_TRUFFLE__ = "--jvm --polyglot --vm.XX:-UseCompressedOops --vm.XX:+UnlockExperimentalVMOptions --vm.XX:+EnableJVMCI "
+__TRUFFLE_BASE_OPTIONS__ = "--jvm --polyglot --vm.XX:-UseCompressedOops --vm.XX:+UnlockExperimentalVMOptions --vm.XX:+EnableJVMCI "
 
 # We do not satisfy the Graal compiler assertions because we only support a subset of the Java specification.
 # This allows us to have the GraalIR in states which normally would be illegal.
@@ -127,17 +103,26 @@ class TornadoVMRunnerTool():
             print("Please ensure the JAVA_HOME environment variable is set correctly")
             sys.exit(0)
 
-        self.java_command = self.java_home + "/bin/java"
-        self.graalpy_command = self.java_home + "/bin/graalpy"
-        self.graaljs_command = self.java_home + "/bin/js"
-        self.graalr_command = self.java_home + "/bin/Rscript"
+        self.commands = {"java": self.java_home + "/bin/java", "python": self.java_home + "/bin/graalpy ", "r": self.java_home + "/bin/Rscript ", "js": self.java_home + "/bin/js "}
+        
+        self.isTruffleCommand = args.truffle_language != None
+        
+        if (self.isTruffleCommand):
+            if (args.truffle_language in self.commands):
+                self.cmd = self.commands[args.truffle_language]
+            else:
+                print("Support for " + args.truffle_language + " not provided yet. Please run --truffle with one of the following options: python|r|js")
+                sys.exit(0)         
+        else:
+            self.cmd = self.commands["java"]
+
         self.java_version, self.isGraalVM = self.getJavaVersion()
         self.checkCompatibilityWithTornadoVM()
         self.platform = sys.platform
         self.listOfBackends = self.getInstalledBackends(False)
 
     def getJavaVersion(self):
-        versionCommand = subprocess.Popen(shlex.split(self.java_command + " -version"), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        versionCommand = subprocess.Popen(shlex.split(self.commands["java"] + " -version"), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = versionCommand.communicate()
         matchJVMVersion = re.search(r"version \"\d+", str(stderr))
         matchGraal = re.search(r"GraalVM", str(stderr))
@@ -230,52 +215,20 @@ class TornadoVMRunnerTool():
             tornadoFlags = tornadoFlags + ":" + args.module_path + " "
         else:
             tornadoFlags = tornadoFlags + " "
-
-        return tornadoFlags
         
-    
-    def buildTornadoVMOptionsTruffle(self, args):
-        tornadoFlags = ""
-        if (args.debug):
-            tornadoFlags = tornadoFlags + __TORNADOVM_DEBUG_TRUFFLE__ 
-
-        if (args.threadInfo):
-            tornadoFlags = tornadoFlags + __TORNADOVM_THREAD_INFO_TRUFFLE__
-
-        if (args.printKernel):
-            tornadoFlags = tornadoFlags + __TORNADOVM_PRINT_KERNEL_TRUFFLE__  
-
-        if (args.igv):
-            tornadoFlags = tornadoFlags + __TORNADOVM_IGV_TRUFFLE__
-
-        if (args.igvLowTier):
-            tornadoFlags = tornadoFlags + __TORNADOVM__IGV_LOW_TIER_TRUFFLE__
-
-        if (args.printBytecodes):
-            tornadoFlags = tornadoFlags + __TORNADOVM_PRINT_BC_TRUFFLE__
-
-        if (args.enable_profiler != None):
-            if (args.enable_profiler == "silent"):
-                tornadoFlags = tornadoFlags + __TORNADOVM_ENABLE_PROFILER_SILENT_TRUFFLE__
-            elif (args.enable_profiler == "console"):
-                tornadoFlags = tornadoFlags + __TORNADOVM_ENABLE_PROFILER_CONSOLE_TRUFFLE__
-            else:
-                print("[ERROR] Please select --vm.-enableProfiler <silent|console>")
-                sys.exit(0)
-
-        if (args.dump_profiler != None):
-            tornadoFlags = tornadoFlags + __TORNADOVM_DUMP_PROFILER_TRUFFLE__ + " " + args.dump_profiler + " "
-            
-        tornadoFlags = tornadoFlags + "--vm.Djava.library.path=" + self.sdk + "/lib "
-        if (self.java_version == 8):
-            tornadoFlags = tornadoFlags + " --vm.Djava.ext.dirs=" + self.sdk + "/share/java/tornado "
-        else:
-            tornadoFlags = tornadoFlags + " --vm.-module-path=.:"+ self.sdk + "/share/java/tornado"
-
-        if (args.module_path != None):
-            tornadoFlags = tornadoFlags + ":" + args.module_path + " "
-        else:
-            tornadoFlags = tornadoFlags + " "
+        # If the execution will take place through truffle, adapt the flags
+        if (self.isTruffleCommand):
+            flags = tornadoFlags.split()
+            truffleFlags = ""
+            for flag in flags:
+               if (flag.startswith("-D")):
+                   truffleFlags = truffleFlags + flag.replace("-D", "--vm.D") + " "     
+               elif (flag.startswith("--module")):
+                   truffleFlags = truffleFlags + "--vm.-module-path="
+               else:
+                   truffleFlags = truffleFlags + flag + " "
+ 
+            tornadoFlags = truffleFlags
 
         return tornadoFlags
 
@@ -320,21 +273,25 @@ class TornadoVMRunnerTool():
 
     def buildJavaCommand(self, args):
         tornadoFlags = self.buildTornadoVMOptions(args)
-        tornadoAddModules = __TORNADOVM_ADD_MODULES__
+        if (self.isTruffleCommand):
+            tornadoAddModules = __TORNADOVM_ADD_MODULES__.replace("--", "--vm.-").replace(" ", "=") + ",tornado.examples"
+        else:
+            tornadoAddModules = __TORNADOVM_ADD_MODULES__
 
         javaFlags = ""
         if (args.enableAssertions):
             javaFlags = javaFlags + __GRAAL_ENABLE_ASSERTIONS__
-
-        javaFlags = javaFlags + " " + __JAVA_BASE_OPTIONS__ + tornadoFlags + __TORNADOVM_PROVIDERS__ + " "
+            
+        if(self.isTruffleCommand):
+            javaFlags = javaFlags + " " + __TRUFFLE_BASE_OPTIONS__
+        else:
+            javaFlags = javaFlags + " " + __JAVA_BASE_OPTIONS__
+            
+        javaFlags = javaFlags + tornadoFlags + __TORNADOVM_PROVIDERS__ + " "
 
         if (self.java_version == 8):
             javaFlags = javaFlags + " -XX:-UseJVMCIClassLoader "
         else:
-            common = self.sdk + __COMMON_EXPORTS__
-            opencl = self.sdk + __OPENCL_EXPORTS__
-            ptx = self.sdk + __PTX_EXPORTS__
-            spirv = self.sdk + __SPIRV_EXPORTS__
             upgradeModulePath = "--upgrade-module-path " + self.sdk + "/share/java/graalJars "
 
             if (self.isGraalVM == False):
@@ -345,8 +302,23 @@ class TornadoVMRunnerTool():
             else:
                 javaFlags = javaFlags + __JAVA_GC_JDK11__ 
 
+            if (self.isTruffleCommand):
+                common_path = self.sdk + __COMMON_EXPORTS__
+                opencl_path = self.sdk + __OPENCL_EXPORTS__
+                ptx_path = self.sdk + __PTX_EXPORTS__
+                spirv_path = self.sdk + __SPIRV_EXPORTS__
+            
+                common = self.truffleCompatibleExports(common_path)
+                opencl = self.truffleCompatibleExports(opencl_path)
+                ptx = self.truffleCompatibleExports(ptx_path)
+                spirv = self.truffleCompatibleExports(spirv_path)
+            else:
+                common = self.sdk + __COMMON_EXPORTS__
+                opencl = self.sdk + __OPENCL_EXPORTS__
+                ptx = self.sdk + __PTX_EXPORTS__
+                spirv = self.sdk + __SPIRV_EXPORTS__
+                
             javaFlags = javaFlags + " @" + common + " "
-
             if ("opencl-backend" in self.listOfBackends):
                 javaFlags = javaFlags + "@" + opencl + " "
                 tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
@@ -364,8 +336,26 @@ class TornadoVMRunnerTool():
 
         if (args.classPath != None):
             javaFlags = javaFlags + " -cp " + args.classPath + " "
-
-        return self.java_command + javaFlags
+        
+        if (self.isTruffleCommand):
+            flags = javaFlags.split()
+            truffleFlags = ""
+            for flag in flags:
+                if (flag.startswith("--vm") or flag == "--jvm" or flag == "--polyglot"):
+                    truffleFlags = truffleFlags + flag + " "
+                elif (flag.startswith("-D")):
+                    truffleFlags = truffleFlags + flag.replace("-D", "--vm.D") + " "
+                elif (flag.startswith("--")):
+                    truffleFlags = truffleFlags + flag.replace("--", "--vm.-") + " "
+                elif (flag.startswith("-")):
+                    truffleFlags = truffleFlags + flag.replace("-", "--vm.") + " "               
+                elif(flag != "@"):
+                    truffleFlags = truffleFlags + flag + " "        
+            executionFlags = truffleFlags
+        else:
+            executionFlags = javaFlags
+            
+        return self.cmd + executionFlags
         
     def truffleCompatibleExports(self, exportFile):
         data = Path(exportFile).read_text()
@@ -374,73 +364,9 @@ class TornadoVMRunnerTool():
         # make exports compatible with truffle
         data = data.replace('--add', '--vm.-add').replace(' ', '=').replace('\n', ' ')
         return data
-
-    def buildTruffleCommand(self, args):
-        tornadoFlags = self.buildTornadoVMOptionsTruffle(args)
-        tornadoAddModules = __TORNADOVM_ADD_MODULES_TRUFFLE__
-        jvmFlags = ""
-        
-        jvmFlags = jvmFlags + " " + __JAVA_BASE_OPTIONS_TRUFFLE__ + tornadoFlags + __TORNADOVM_PROVIDERS_TRUFFLE__ + " "
-        if (self.java_version == 8):
-            jvmFlags = javaFlags + " --vm.XX:-UseJVMCIClassLoader "
-        else:
-            common_path = self.sdk + __COMMON_EXPORTS__
-            opencl_path = self.sdk + __OPENCL_EXPORTS__
-            ptx_path = self.sdk + __PTX_EXPORTS__
-            spirv_path = self.sdk + __SPIRV_EXPORTS__
-            
-            common = self.truffleCompatibleExports(common_path)
-            opencl = self.truffleCompatibleExports(opencl_path)
-            ptx = self.truffleCompatibleExports(ptx_path)
-            spirv = self.truffleCompatibleExports(spirv_path)
-            
-            upgradeModulePath = " --vm.-upgrade-module-path " + self.sdk + "/share/java/graalJars "
-
-            if (self.isGraalVM == False):
-                print("GraalVM is required to run Truffle languages!")
-                jvmFlags = jvmFlags + upgradeModulePath 
-            if (self.java_version >= 16):
-                jvmFlags = jvmFlags + __JAVA_GC_JDK16_TRUFFLE__ 
-            else:
-                jvmFlags = jvmFlags + __JAVA_GC_JDK11_TRUFFLE__ 
-
-            jvmFlags = jvmFlags + " " + common + " "
-
-            if ("opencl-backend" in self.listOfBackends):
-                jvmFlags = jvmFlags + " " + opencl + " "
-                tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-            if ("spirv-backend" in self.listOfBackends):
-                jvmFlags = jvmFlags + " " + opencl + " " + spirv + " "
-                tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
-            if ("ptx-backend" in self.listOfBackends):
-                jvmFlags = jvmFlags + " " + ptx + " "
-                tornadoAddModules = tornadoAddModules + "," + __PTX_MODULE__
-
-            jvmFlags = jvmFlags + tornadoAddModules + " "
-            
-        if (args.jvm_options != None):
-            jvmFlags = jvmFlags + args.jvm_options + " "
-
-        #if (args.classPath != None):
-        #    jvmFlags = javaFlags + " -cp " + args.classPath + " "
-        if (args.truffle_language == "python"):
-            executeCommand = self.graalpy_command
-        elif (args.truffle_language == "js"):
-            executeCommand = self.graaljs_command
-        elif (args.truffle_language == "r"):
-            executeCommand = self.graalr_command
-        else:
-            executeCommand = ""
-
-        return executeCommand + jvmFlags
     
     def executeCommand(self, args):
         javaFlags = self.buildJavaCommand(args)
-        
-        if (args.truffle_language != None and (args.truffle_language == "python" or args.truffle_language == "js" or args.truffle_language == "r")):
-            truffleFlags = self.buildTruffleCommand(args)
-        else:
-            truffleFlags = None
 
         if (args.versionJVM):
             command = javaFlags + " -version"
@@ -463,24 +389,15 @@ class TornadoVMRunnerTool():
             params = self.buildOptionalParameters(args)
             if (args.module_application and args.application != None):
                 params = args.application + " " + params    
-        
-        if (args.truffle_language != None):
-            if (args.truffle_language == "python" or args.truffle_language == "js" or args.truffle_language == "r"):
-                command = truffleFlags + str(args.application) + " " + params
-            else:
-                print("Support for " + args.truffle_language + " not provided yet.")
+
+        if (args.module_application != None):
+            command = javaFlags + " -m " + str(args.module_application) + " " + params
+        elif (args.jar_file != None):
+            if (args.application != None):
+                params = args.application + " " + params
+            command = javaFlags + " -jar " + str(args.jar_file) + " " + params
         else:
-            if (args.module_application != None):
-                command = javaFlags + " -m " + str(args.module_application) + " " + params
-            elif (args.jar_file != None):
-                if (args.application != None):
-                    params = args.application + " " + params
-                command = javaFlags + " -jar " + str(args.jar_file) + " " + params
-            else:
-                if (args.truffle_language != None and (args.truffle_language == "python" or args.truffle_language == "js" or args.truffle_language == "r")):
-                    command = truffleFlags + " " + str(args.application) + " " + params
-                else:       
-                    command = javaFlags + " " + str(args.application) + " " + params	   
+            command = javaFlags + " " + str(args.application) + " " + params	   
         ## Execute the command
         os.system(command)
        
