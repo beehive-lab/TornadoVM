@@ -17,7 +17,7 @@
  */
 
 // Line to modify depending on the launch directory
-Java.addToClasspath("bin/sdk/examples/polyglotTruffle/mxmWithTornadoVM.js")
+Java.addToClasspath("$TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.js")
 
 console.log("Hello TornadoVM from JavaScript!")
 
