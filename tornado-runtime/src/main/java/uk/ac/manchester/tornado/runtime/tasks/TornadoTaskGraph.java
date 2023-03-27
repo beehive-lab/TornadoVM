@@ -973,7 +973,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             return;
         }
         inputModesObjects.stream().forEach(streamingObject -> freeDeviceMemoryObject(streamingObject.getObject()));
-        streamOutObjects.stream().forEach(object -> freeDeviceMemoryObject(object));
+        outputModeObjects.stream().forEach(streamingObject -> freeDeviceMemoryObject(streamingObject.getObject()));
     }
 
     private void freeDeviceMemoryObject(Object object) {
