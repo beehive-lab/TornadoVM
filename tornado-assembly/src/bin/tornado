@@ -172,6 +172,7 @@ class TornadoVMRunnerTool():
     def printVersion(self):
         self.printRelease()
         self.getInstalledBackends(True)
+        
     
     def buildTornadoVMOptions(self, args):
         tornadoFlags = ""
@@ -218,17 +219,7 @@ class TornadoVMRunnerTool():
         
         # If the execution will take place through truffle, adapt the flags
         if (self.isTruffleCommand):
-            flags = tornadoFlags.split()
-            truffleFlags = ""
-            for flag in flags:
-               if (flag.startswith("-D")):
-                   truffleFlags = truffleFlags + flag.replace("-D", "--vm.D") + " "     
-               elif (flag.startswith("--module")):
-                   truffleFlags = truffleFlags + "--vm.-module-path="
-               else:
-                   truffleFlags = truffleFlags + flag + " "
- 
-            tornadoFlags = truffleFlags
+            tornadoFlags = self.truffleCompatibleFlags(tornadoFlags)
 
         return tornadoFlags
 
@@ -302,21 +293,16 @@ class TornadoVMRunnerTool():
             else:
                 javaFlags = javaFlags + __JAVA_GC_JDK11__ 
 
-            if (self.isTruffleCommand):
-                common_path = self.sdk + __COMMON_EXPORTS__
-                opencl_path = self.sdk + __OPENCL_EXPORTS__
-                ptx_path = self.sdk + __PTX_EXPORTS__
-                spirv_path = self.sdk + __SPIRV_EXPORTS__
+            common = self.sdk + __COMMON_EXPORTS__
+            opencl = self.sdk + __OPENCL_EXPORTS__
+            ptx = self.sdk + __PTX_EXPORTS__
+            spirv = self.sdk + __SPIRV_EXPORTS__
             
-                common = self.truffleCompatibleExports(common_path)
-                opencl = self.truffleCompatibleExports(opencl_path)
-                ptx = self.truffleCompatibleExports(ptx_path)
-                spirv = self.truffleCompatibleExports(spirv_path)
-            else:
-                common = self.sdk + __COMMON_EXPORTS__
-                opencl = self.sdk + __OPENCL_EXPORTS__
-                ptx = self.sdk + __PTX_EXPORTS__
-                spirv = self.sdk + __SPIRV_EXPORTS__
+            if (self.isTruffleCommand):
+                common = self.truffleCompatibleExports(common)
+                opencl = self.truffleCompatibleExports(opencl)
+                ptx = self.truffleCompatibleExports(ptx)
+                spirv = self.truffleCompatibleExports(spirv)
                 
             javaFlags = javaFlags + " @" + common + " "
             if ("opencl-backend" in self.listOfBackends):
@@ -338,20 +324,7 @@ class TornadoVMRunnerTool():
             javaFlags = javaFlags + " -cp " + args.classPath + " "
         
         if (self.isTruffleCommand):
-            flags = javaFlags.split()
-            truffleFlags = ""
-            for flag in flags:
-                if (flag.startswith("--vm") or flag == "--jvm" or flag == "--polyglot"):
-                    truffleFlags = truffleFlags + flag + " "
-                elif (flag.startswith("-D")):
-                    truffleFlags = truffleFlags + flag.replace("-D", "--vm.D") + " "
-                elif (flag.startswith("--")):
-                    truffleFlags = truffleFlags + flag.replace("--", "--vm.-") + " "
-                elif (flag.startswith("-")):
-                    truffleFlags = truffleFlags + flag.replace("-", "--vm.") + " "               
-                elif(flag != "@"):
-                    truffleFlags = truffleFlags + flag + " "        
-            executionFlags = truffleFlags
+            executionFlags = self.truffleCompatibleFlags(javaFlags)
         else:
             executionFlags = javaFlags
             
@@ -364,6 +337,24 @@ class TornadoVMRunnerTool():
         # make exports compatible with truffle
         data = data.replace('--add', '--vm.-add').replace(' ', '=').replace('\n', ' ')
         return data
+        
+    def truffleCompatibleFlags(self, javaFlags):
+        flags = javaFlags.split()
+        truffleFlags = ""
+        for flag in flags:
+            if (flag.startswith("--vm") or flag == "--jvm" or flag == "--polyglot"):
+                truffleFlags = truffleFlags + flag + " "
+            elif (flag.startswith("-D")):
+                truffleFlags = truffleFlags + flag.replace("-D", "--vm.D") + " "
+            elif (flag.startswith("--module")):
+                   truffleFlags = truffleFlags + "--vm.-module-path="
+            elif (flag.startswith("--")):
+                truffleFlags = truffleFlags + flag.replace("--", "--vm.-") + " "
+            elif (flag.startswith("-")):
+                truffleFlags = truffleFlags + flag.replace("-", "--vm.") + " "               
+            elif(flag != "@"):
+                truffleFlags = truffleFlags + flag + " "
+        return truffleFlags
     
     def executeCommand(self, args):
         javaFlags = self.buildJavaCommand(args)
