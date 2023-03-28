@@ -240,6 +240,25 @@
             </properties>
         </profile>
         <profile>
+            <id>mac-aarch64-release</id>
+            <activation>
+                <property>
+                    <name>osDetection</name>
+                    <value>!false</value>
+                </property>
+                <os>
+                    <family>mac</family>
+                    <arch>aarch64</arch>
+                </os>
+            </activation>
+            <properties>
+                <platform>mac-aarch64</platform>
+                <build.type>release</build.type>
+                <cmake.classifier>mac-arm</cmake.classifier>
+                <cmake.generator>Unix Makefiles</cmake.generator>
+            </properties>
+        </profile>
+        <profile>
             <id>portable</id>
             <!--
                   Sonatype requires a main jar, even for platform-specific artifacts, so we supply it with an
