@@ -176,9 +176,13 @@ public class TornadoExecutionPlan {
     /**
      * Mark all device buffers that correspond to the current execution plan as free
      * in order for the TornadoVM runtime system to reuse those buffers and avoid
-     * continuous memory deallocation and allocation. In this context, "free" means
-     * for the TornadoVM runtime system, which handles data management The marking
-     * affects to all buffers associated to the current task-graph.
+     * continuous device memory deallocation and allocation.
+     *
+     * <p>
+     * Note that, in this context, "free device memory" means the TornadoVM runtime
+     * system marks device buffers to be reusable, thus, for the runtime system,
+     * device buffers are no longer linked to the current execution plan.
+     * </p>
      *
      * @return {@link TornadoExecutionPlan}
      */
@@ -269,7 +273,7 @@ public class TornadoExecutionPlan {
 
     /**
      * Reset the execution context for the current execution plan. The TornadoVM
-     * runtime system will clean the code cache and all events associated to the
+     * runtime system will clean the code cache and all events associated with the
      * current execution. It resets the internal GPU/FPGA/CPU execution context to
      * its default values.
      *
