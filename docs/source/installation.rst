@@ -87,7 +87,7 @@ For example, to build TornadoVM with GraalVM and JDK 17:
 .. code-block:: bash 
 
   ## Install with Graal for JDK 17 using PTX, OpenCL and SPIRV backends
-  ./scripts/tornadovm-installer --jdk graal-jdk-17  --backend opencl,ptx,spirv
+  ./scripts/tornadovm-installer --jdk graalvm-jdk-17  --backend opencl,ptx,spirv
 
 
 To build TornadoVM with Red Hat Mandrel JDK 11 with OpenCL and PTX backends:
@@ -286,7 +286,7 @@ To build with GraalVM and JDK 11 and JDK 17:
 
 .. code:: bash
 
-   $ make graal-jdk-11-plus BACKEND={ptx,opencl}
+   $ make graalvm-jdk-11-plus BACKEND={ptx,opencl}
 
 and done!!
 
