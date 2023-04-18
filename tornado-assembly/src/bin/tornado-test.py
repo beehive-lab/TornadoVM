@@ -490,7 +490,7 @@ def parseArguments():
     parser.add_argument('--igvLowTier', action="store_true", dest="dumpIGVLastTier", default=False,
                         help="Dump OpenCL Low-TIER GraalIR into IGV")
     parser.add_argument('--debug', "-d", action="store_true", dest="debugTornado", default=False, help="Enable the Debug mode in Tornado")
-    parser.add_argument('--fullDebug', action="store_true", dest="fullDebug", default=False, help="Enable the Full Debug mode. This is mode is more verbose compared to --debug only")
+    parser.add_argument('--fullDebug', action="store_true", dest="fullDebug", default=False, help="Enable the Full Debug mode. This mode is more verbose compared to --debug only")
     parser.add_argument('--fast', "-f", action="store_true", dest="fast", default=False, help="Visualize Fast")
     parser.add_argument('--device', dest="device", default=None, help="Set an specific device. E.g `s0.t0.device=0:1`")
     parser.add_argument('--printExec', dest="printExecution", action="store_true", default=False,

@@ -403,7 +403,7 @@ def parseArguments():
     parser.add_argument('--version', action="store_true", dest="version", default=False, help="Print version of TornadoVM")
     parser.add_argument('-version', action="store_true", dest="versionJVM", default=False, help="Print JVM Version")
     parser.add_argument('--debug', action="store_true", dest="debug", default=False, help="Enable debug mode")
-    parser.add_argument('--fullDebug', action="store_true", dest="fullDebug", default=False, help="Enable the Full Debug mode. This is mode is more verbose compared to --debug only")
+    parser.add_argument('--fullDebug', action="store_true", dest="fullDebug", default=False, help="Enable the Full Debug mode. This mode is more verbose compared to --debug only")
     parser.add_argument('--threadInfo', action="store_true", dest="threadInfo", default=False, help="Print thread deploy information per task on the accelerator")
     parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Debug Compilation Graphs using Ideal Graph Visualizer (IGV)")
     parser.add_argument('--igvLowTier', action="store_true", dest="igvLowTier", default=False, help="Debug Low Tier Compilation Graphs using Ideal Graph Visualizer (IGV)")
