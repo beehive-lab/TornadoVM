@@ -885,12 +885,24 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
+    private boolean isANumber(Object parameter) {
+        return parameter instanceof Number;
+    }
+
+    private boolean isAtomic(Object parameter) {
+        return parameter instanceof AtomicInteger;
+    }
+
     @Override
     public void transferToHost(final int mode, Object... objects) {
         for (Object functionParameter : objects) {
             if (functionParameter == null) {
                 Tornado.warn("null object passed into streamIn() in schedule %s", executionContext.getId());
                 continue;
+            }
+
+            if (isANumber(functionParameter) && !isAtomic(functionParameter)) {
+                throw new TornadoRuntimeException("[ERROR] Scalar value used as output. Use an array or a vector-type instead");
             }
 
             // If the object mode is set to LAST then we *only* insert it in the lookup
