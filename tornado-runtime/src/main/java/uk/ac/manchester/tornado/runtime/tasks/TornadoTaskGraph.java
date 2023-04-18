@@ -129,7 +129,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private static final boolean EXPERIMENTAL_MULTI_HOST_HEAP = false;
     private static final int DEFAULT_DRIVER_INDEX = 0;
     private static final int PERFORMANCE_WARMUP = 3;
-    private static final boolean TIME_IN_NANOSECONDS = Tornado.TIME_IN_NANOSECONDS;
+    private static final boolean TIME_IN_NANOSECONDS = TornadoOptions.TIME_IN_NANOSECONDS;
     private static final String TASK_GRAPH_PREFIX = "XXX";
     private static final ConcurrentHashMap<Policy, ConcurrentHashMap<String, HistoryTable>> executionHistoryPolicy = new ConcurrentHashMap<>();
 
@@ -728,7 +728,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
      */
     private void preCompilationForFPGA() {
         boolean compile = false;
-        if (Tornado.FPGA_EMULATION) {
+        if (TornadoOptions.FPGA_EMULATION) {
             compile = true;
         } else if (executionContext.getDeviceFirstTask() instanceof TornadoAcceleratorDevice) {
             TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) executionContext.getDeviceFirstTask();
