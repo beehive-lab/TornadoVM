@@ -238,6 +238,7 @@ public class TestLoops extends TornadoTestBase {
         Arrays.fill(a, 75);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestLoops::steppedLoop, a, size) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
