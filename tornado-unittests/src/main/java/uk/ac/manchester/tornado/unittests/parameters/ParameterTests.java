@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2022 APT Group, Department of Computer Science,
+ * Copyright (c) 2023 APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -48,18 +48,45 @@ public class ParameterTests extends TornadoTestBase {
     }
 
     /**
+     * This method is only for testing the Task-Graph and ExecutionPlan logic when
+     * having scalar values as parameters. Note that this method does not return any
+     * value is stored in a local variable. Thus, it does not scale the method
+     * scope.
+     */
+    private static void testWithOnlyScalarValues2(int z) {
+        z = 0;
+    }
+
+    /**
      * This test throws a {@link TornadoRuntimeException} because scalar values are
      * used as output parameters. This type of code is not legal in TornadoVM.
      */
     @Test(expected = TornadoRuntimeException.class)
-    public void testScalarParameters() {
+    public void testScalarParameters01() {
         int x = 10;
         int y = 20;
-        int z = 20;
+        int z = 0;
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, x, y) //
                 .task("t0", ParameterTests::testWithOnlyScalarValues, x, y, z) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, z);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+    }
+
+    /**
+     * This test throws a {@link TornadoRuntimeException} because scalar values are
+     * used as output parameters. This type of code is not legal in TornadoVM.
+     */
+    @Test(expected = TornadoRuntimeException.class)
+    public void testScalarParameters02() {
+        int z = 0;
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .task("t0", ParameterTests::testWithOnlyScalarValues2, z) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, z);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
