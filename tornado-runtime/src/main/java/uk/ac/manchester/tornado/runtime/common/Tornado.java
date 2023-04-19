@@ -36,27 +36,8 @@ import uk.ac.manchester.tornado.api.TornadoCI;
 
 public final class Tornado implements TornadoCI {
 
-    public static final boolean TIME_IN_NANOSECONDS = Boolean.parseBoolean(System.getProperty("tornado.ns.time", "true"));
-    public static final boolean FPGA_EMULATION = isFPGAEmulation();
-    public static final TornadoLogger log = new TornadoLogger(Tornado.class);
+    public static final TornadoLogger log = new TornadoLogger(TornadoLogger.class);
     private static final Properties settings = System.getProperties();
-    public static final int DEFAULT_DRIVER_INDEX = Integer.parseInt(Tornado.getProperty("tornado.driver", "0"));
-    public static final int DEFAULT_DEVICE_INDEX = Integer.parseInt(Tornado.getProperty("tornado.device", "0"));
-    /**
-     * Priority of the PTX Backend. The higher the number, the more priority over
-     * the rest of the backends.
-     */
-    public static final int PTX_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.ptx.priority", "0"));
-    /**
-     * Priority of the OpenCL Backend. The higher the number, the more priority over
-     * the rest of the backends.
-     */
-    public static final int OPENCL_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.opencl.priority", "10"));
-    /**
-     * Priority of the SPIRV Backend. The higher the number, the more priority over
-     * the rest of the backends.
-     */
-    public static final int SPIRV_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.spirv.priority", "11"));
     public static final boolean VALIDATE_ARRAY_HEADERS = Boolean.parseBoolean(settings.getProperty("tornado.opencl.array.validate", "False"));
     public static final boolean TORNADO_LOOPS_REVERSE = Boolean.parseBoolean(settings.getProperty("tornado.loops.reverse", "True"));
     public static final boolean MARKER_USE_BARRIER = Boolean.parseBoolean(settings.getProperty("tornado.opencl.marker.asbarrier", "False"));
@@ -76,6 +57,7 @@ public final class Tornado implements TornadoCI {
     public static final boolean TORNADO_ENABLE_BIFS = Boolean.parseBoolean(settings.getProperty("tornado.bifs.enable", "False"));
     public static final boolean DEBUG = Boolean.parseBoolean(settings.getProperty("tornado.debug", "False"));
     public static final boolean FPGA_DUMP_LOG = Boolean.parseBoolean(settings.getProperty("tornado.fpgaDumpLog", "False"));
+
     public static final boolean FULL_DEBUG = Boolean.parseBoolean(settings.getProperty("tornado.fullDebug", "False"));
     public static final boolean SHOULD_LOAD_RMI = Boolean.parseBoolean(settings.getProperty("tornado.rmi.enable", "false"));
     private static final String TORNADO_SDK_VARIABLE = "TORNADO_SDK";
@@ -95,12 +77,6 @@ public final class Tornado implements TornadoCI {
 
     public static String getProperty(String key, String defaultValue) {
         return settings.getProperty(key, defaultValue);
-    }
-
-    private static boolean isFPGAEmulation() {
-        String contextEmulatorIntelFPGA = System.getenv("CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA");
-        String contextEmulatorXilinxFPGA = System.getenv("XCL_EMULATION_MODE");
-        return (contextEmulatorIntelFPGA != null && (contextEmulatorIntelFPGA.equals("1"))) || (contextEmulatorXilinxFPGA != null && (contextEmulatorXilinxFPGA.equals("sw_emu")));
     }
 
     public static void debug(final String msg) {
