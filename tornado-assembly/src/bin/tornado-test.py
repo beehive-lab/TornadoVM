@@ -205,6 +205,7 @@ __PRINT_EXECUTION_TIMER__           = "-Dtornado.debug.executionTime=True "
 __GC__                              = "-Xmx6g "
 __BASE_OPTIONS__                    = "-Dtornado.recover.bailout=False "
 __VERBOSE_OPTION__                  = "-Dtornado.unittests.verbose="
+__TORNADOVM_PRINT_BC__              = "-Dtornado.print.bytecodes=True "
 # ################################################################################################################
 
 TORNADO_CMD = "tornado "
@@ -265,6 +266,9 @@ def composeAllOptions(args):
 
     if (args.printExecution):
         options = options + __PRINT_EXECUTION_TIMER__
+
+    if (args.printBytecodes):
+        options = options + __TORNADOVM_PRINT_BC__
 
     if (args.jvmFlags != None):
         options = options + args.jvmFlags
@@ -490,6 +494,7 @@ def parseArguments():
     parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Dump GraalIR into IGV")
     parser.add_argument('--igvLowTier', action="store_true", dest="dumpIGVLastTier", default=False,
                         help="Dump OpenCL Low-TIER GraalIR into IGV")
+    parser.add_argument('--printBytecodes', "-pbc", action="store_true", dest="printBytecodes", default=False, help="Print TornadoVM internal bytecodes")
     parser.add_argument('--debug', "-d", action="store_true", dest="debugTornado", default=False, help="Enable the Debug mode in Tornado")
     parser.add_argument('--fullDebug', action="store_true", dest="fullDebug", default=False, help="Enable the Full Debug mode. This mode is more verbose compared to --debug only")
     parser.add_argument('--fast', "-f", action="store_true", dest="fast", default=False, help="Visualize Fast")
