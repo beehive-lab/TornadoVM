@@ -251,10 +251,4 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeI
         return (tornadoVMDrivers == null || tornadoVMDrivers[DEFAULT_DRIVER] == null) ? JVM : (TornadoAcceleratorDevice) tornadoVMDrivers[DEFAULT_DRIVER].getDefaultDevice();
     }
 
-    @Override
-    public MemorySegment getPinnedBuffer(TornadoDevice device, int byteSize) {
-        MemorySegment segment = device.allocateNonPinnedBuffer(byteSize);
-        return segment;
-    }
-
 }
