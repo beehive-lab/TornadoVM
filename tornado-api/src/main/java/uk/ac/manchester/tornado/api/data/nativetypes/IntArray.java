@@ -1,106 +1,89 @@
+/*
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2023, APT Group, Department of Computer Science,
+ * The University of Manchester. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * GNU Classpath is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2, or (at your option)
+ * any later version.
+ *
+ * GNU Classpath is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301 USA.
+ *
+ * Linking this library statically or dynamically with other modules is
+ * making a combined work based on this library.  Thus, the terms and
+ * conditions of the GNU General Public License cover the whole
+ * combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent
+ * modules, and to copy and distribute the resulting executable under
+ * terms of your choice, provided that you also meet, for each linked
+ * independent module, the terms and conditions of the license of that
+ * module.  An independent module is a module which is not derived from
+ * or based on this library.  If you modify this library, you may extend
+ * this exception to your version of the library, but you are not
+ * obligated to do so.  If you do not wish to do so, delete this
+ * exception statement from your version.
+ *
+ */
 package uk.ac.manchester.tornado.api.data.nativetypes;
 
 import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemorySegment;
 
-public class TornadoVMNativeType {
-
-
-    private int type_code;
-
+public class IntArray {
     private MemorySegment segment;
+    private final int INT_BYTES = 4;
+    private int numberOfElements;
 
-    public TornadoVMNativeType(int numberOfElements, String type) {
-        // number of elements * number of bytes
-        int byteSize = 0;
-        if (type.equals("int")) {
-            byteSize = 4;
-            type_code = 0;
-        } else if (type.equals("float")) {
-           byteSize = 4;
-           type_code  = 1;
-        } else if (type.equals("double")) {
-            byteSize = 8;
-            type_code = 2;
-        } else if (type.equals("long")) {
-            byteSize = 8;
-            type_code = 3;
-        } else {
-            //error
-        }
-        segment = MemorySegment.allocateNative(numberOfElements * byteSize);
+    public IntArray(int numberOfElements) {
+        this.numberOfElements = numberOfElements;
+        segment = MemorySegment.allocateNative(numberOfElements * INT_BYTES);
     }
 
 
     public void set(int index, int value) {
-        if (type_code == 0) {
-            MemoryAccess.setIntAtIndex(segment, index, value);
-        } else if (type_code == 1) {
-            MemoryAccess.setFloatAtIndex(segment, index, value);
-        } else if (type_code == 2) {
-            MemoryAccess.setDoubleAtIndex(segment, index, value);
-        } else if (type_code == 3) {
-            MemoryAccess.setLongAtIndex(segment, index, value);
-        } else {
-            // error
-        }
-    }
-
-    public void setInt(int index, int value) {
         MemoryAccess.setIntAtIndex(segment, index, value);
     }
 
-    public void setFloat(int index, float value) {
-        MemoryAccess.setFloatAtIndex(segment, index, value);
-    }
-
-    public void setDouble(int index, double value) {
-        MemoryAccess.setDoubleAtIndex(segment, index, value);
-    }
-
-    public void setLong(int index, long value) {
-        MemoryAccess.setLongAtIndex(segment, index, value);
-    }
-
-    public int getInt(int index) {
+    public int get(int index) {
         return MemoryAccess.getIntAtIndex(segment, index);
     }
 
-    public float getFloat(int index) {
-        return MemoryAccess.getFloatAtIndex(segment, index);
-    }
-
-    public double getDouble(int index) {
-        return MemoryAccess.getDoubleAtIndex(segment, index);
-    }
-
-    public long getLong(int index) {
-        return MemoryAccess.getLongAtIndex(segment, index);
-    }
 
     public void init(int value) {
-        if (type_code == 0) {
-            for (int i = 0; i < segment.byteSize() / 4; i++) {
-                MemoryAccess.setIntAtIndex(segment, i, value);
-            }
-        } else if (type_code == 1) {
-            for (int i = 0; i < segment.byteSize() / 4; i++) {
-                MemoryAccess.setFloatAtIndex(segment, i, value);
-            }
-        } else if (type_code == 2) {
-            for (int i = 0; i < segment.byteSize() / 8; i++) {
-                MemoryAccess.setDoubleAtIndex(segment, i, value);
-            }
-        } else if (type_code == 3) {
-            for (int i = 0; i < segment.byteSize() / 8; i++) {
-                MemoryAccess.setLongAtIndex(segment, i, value);
-            }
-        } else {
-            // error
+        for (int i = 0; i < segment.byteSize() / INT_BYTES; i++) {
+            MemoryAccess.setIntAtIndex(segment, i, value);
         }
+    }
+
+    public int getSize() {
+        return numberOfElements;
     }
 
     public MemorySegment getSegment() {
         return segment;
+    }
+
+    @Override
+    public String toString() {
+        String arrayContents = String.valueOf(this.get(0));
+        for (int i = 1; i < numberOfElements; i++) {
+            arrayContents += ", " + this.get(i);
+        }
+        return arrayContents;
     }
 }
