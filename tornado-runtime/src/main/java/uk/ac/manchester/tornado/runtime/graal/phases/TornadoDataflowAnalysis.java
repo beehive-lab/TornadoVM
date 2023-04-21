@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -20,27 +20,29 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
 import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 
 import java.util.ArrayDeque;
+import java.util.HashSet;
 import java.util.Queue;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.BeginNode;
 import org.graalvm.compiler.nodes.BinaryOpLogicNode;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
+import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StartNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
@@ -52,6 +54,7 @@ import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelStrideNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 
 public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext> {
@@ -185,19 +188,21 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
         boolean isReadField = false;
         boolean isWrittenField = false;
 
-        Queue<Node> nf = new ArrayDeque<>();
-        parameter.usages().forEach(nf::add);
+        Queue<Node> nodesToProcess = new ArrayDeque<>();
+        parameter.usages().forEach(nodesToProcess::add);
 
         boolean isWrittenTrueCondition = false;
         boolean isWrittenFalseCondition = false;
         IfNode fatherNodeStore = null;
 
-        while (!nf.isEmpty()) {
-            Node currentNode = nf.remove();
+        boolean isWritingAllPositions = false;
+
+        while (!nodesToProcess.isEmpty()) {
+            Node currentNode = nodesToProcess.remove();
             if (currentNode instanceof LoadIndexedNode) {
                 isRead = true;
                 if (((ValueNode) currentNode).stamp(NodeView.DEFAULT).javaType(metaAccess).isArray()) {
-                    nf.addAll(currentNode.usages().snapshot());
+                    nodesToProcess.addAll(currentNode.usages().snapshot());
                 }
             } else if (currentNode instanceof StoreIndexedNode || currentNode instanceof StoreAtomicIndexedNode) {
                 MetaControlFlow meta = analyseControlFlowForWriting(currentNode, fatherNodeStore, isWrittenTrueCondition, isWrittenFalseCondition);
@@ -205,10 +210,13 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 isWrittenTrueCondition = meta.isWrittenTrueCondition();
                 isWrittenFalseCondition = meta.isWrittenFalseCondition();
                 isWritten = true;
+                if (currentNode instanceof StoreIndexedNode) {
+                    isWritingAllPositions = analyseWritingPositions((StoreIndexedNode) currentNode);
+                }
             } else if (currentNode instanceof LoadFieldNode) {
                 LoadFieldNode loadField = (LoadFieldNode) currentNode;
                 if (loadField.stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
-                    loadField.usages().forEach(nf::add);
+                    loadField.usages().forEach(nodesToProcess::add);
                 }
                 isReadField = true;
             } else if (currentNode instanceof StoreFieldNode) {
@@ -221,15 +229,15 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
             } else if (currentNode instanceof MarkVectorStore) {
                 isWritten = true;
             } else if (isNodeFromKnownObject(currentNode)) {
-                // All objects are passed by reference -> R/W
+                // All known objects are passed by reference -> R/W (e.g., Atomics)
                 isRead = true;
                 isWritten = true;
             } else if (currentNode instanceof PiNode || currentNode instanceof AddressNode) {
-                currentNode.usages().forEach(nf::add);
+                currentNode.usages().forEach(nodesToProcess::add);
             }
         }
 
-        if (isWrittenTrueCondition ^ isWrittenFalseCondition) {
+        if ((isWrittenTrueCondition ^ isWrittenFalseCondition) && !isWritingAllPositions) {
             isRead = true;
         }
 
@@ -237,19 +245,84 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
         if (isRead && isWritten) {
             result = Access.READ_WRITE;
         } else if (isRead) {
-            result = Access.READ;
+            result = Access.READ_ONLY;
         } else if (isWritten) {
-            result = Access.WRITE;
+            result = Access.WRITE_ONLY;
         }
 
         if (isReadField && isWrittenField) {
             result = Access.asArray()[result.position | Access.READ_WRITE.position];
         } else if (isReadField) {
-            result = Access.asArray()[result.position | Access.READ.position];
+            result = Access.asArray()[result.position | Access.READ_ONLY.position];
         } else if (isWrittenField) {
-            result = Access.asArray()[result.position | Access.WRITE.position];
+            result = Access.asArray()[result.position | Access.WRITE_ONLY.position];
         }
 
         return result;
     }
+
+    /**
+     * Quick check to obtain if the store index of the store operation covers all
+     * iterations or a subset. This check is useful to determine READ-ONLY or
+     * WRITE-ONLY Accesses over an array.
+     *
+     * @param storeIndexedNode
+     *            store indexed (array) value
+     * @return It returns true if the store covers all iterations.
+     */
+    private boolean analyseWritingPositions(StoreIndexedNode storeIndexedNode) {
+
+        // Part I
+        // Check first that we are not in an if-condition. This will mean that the
+        // write-node is only for some iterations of the loop. Thus, even though the
+        // induction variable is incremented by 1, the write is only affected by some of
+        // the iterations of the loop.
+        Node pre = storeIndexedNode.predecessor();
+        while ((pre != null) && !(pre instanceof IfNode)) {
+            pre = pre.predecessor();
+        }
+
+        if (pre != null) {
+            if (pre.predecessor() instanceof BeginNode) {
+                return false;
+            }
+        }
+
+        // Part II
+        // If the check was not false, then we can continue with the analysis
+        ArrayDeque<Node> nodesToProcess = new ArrayDeque<>();
+        HashSet<Node> visited = new HashSet<>();
+        nodesToProcess.add(storeIndexedNode.index());
+        while (!nodesToProcess.isEmpty()) {
+            Node node = nodesToProcess.remove();
+            visited.add(node);
+            if (node instanceof ParallelStrideNode) {
+                ParallelStrideNode parallelStrideNode = (ParallelStrideNode) node;
+                Node valueNode = parallelStrideNode.value();
+                if (valueNode instanceof ConstantNode) {
+                    ConstantNode constantNode = (ConstantNode) valueNode;
+                    ConstantNode constantNode1 = ConstantNode.forInt(1);
+                    return constantNode.getValue().equals(constantNode1.getValue());
+                }
+            } else if (node instanceof BinaryArithmeticNode) {
+                Node a = ((BinaryArithmeticNode<?>) node).getX();
+                Node b = ((BinaryArithmeticNode<?>) node).getY();
+                if (!visited.contains(a)) {
+                    nodesToProcess.add(a);
+                }
+                if (!visited.contains(b)) {
+                    nodesToProcess.add(b);
+                }
+            } else if (node instanceof PhiNode) {
+                PhiNode phiNode = (PhiNode) node;
+                for (ValueNode valuePhiNode : phiNode.values()) {
+                    if (!visited.contains(valuePhiNode)) {
+                        nodesToProcess.add(valuePhiNode);
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
 }

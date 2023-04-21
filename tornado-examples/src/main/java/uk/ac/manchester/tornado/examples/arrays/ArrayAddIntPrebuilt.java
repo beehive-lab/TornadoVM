@@ -67,7 +67,7 @@ public class ArrayAddIntPrebuilt {
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .prebuiltTask("t0", "add", filePath, //
                         new Object[] { a, b, c }, //
-                        new Access[] { Access.READ, Access.READ, Access.WRITE }, //
+                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
                         device, //
                         new int[] { numElements }) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);

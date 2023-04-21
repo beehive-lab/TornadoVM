@@ -98,11 +98,11 @@ public class PTX {
 
             switch (access) {
                 case READ_WRITE:
-                case READ:
+                case READ_ONLY:
                     tornadoDevice.allocate(object, 0, deviceState);
                     tornadoDevice.ensurePresent(object, deviceState, null, 0, 0);
                     break;
-                case WRITE:
+                case WRITE_ONLY:
                     tornadoDevice.allocate(object, 0, deviceState);
                     break;
                 default:
@@ -132,7 +132,7 @@ public class PTX {
             Access access = accesses[i];
             switch (access) {
                 case READ_WRITE:
-                case WRITE:
+                case WRITE_ONLY:
                     Object object = parameters[i];
                     DeviceObjectState deviceState = states.get(i);
                     tornadoDevice.streamOutBlocking(object, 0, deviceState, null);
