@@ -30,6 +30,11 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
@@ -498,6 +503,21 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
                 result = new OCLVectorWrapper(deviceContext, object, batchSize);
             }  else if (object instanceof MemorySegment) {
                 MemorySegment segment = (MemorySegment) object;
+                result = new OCLMemorySegmentWrapper(segment, deviceContext);
+            } else if (object instanceof IntArray) {
+                MemorySegment segment = ((IntArray) object).getSegment();
+                result = new OCLMemorySegmentWrapper(segment, deviceContext);
+            } else if (object instanceof FloatArray) {
+                MemorySegment segment = ((FloatArray) object).getSegment();
+                result = new OCLMemorySegmentWrapper(segment, deviceContext);
+            } else if (object instanceof DoubleArray) {
+                MemorySegment segment = ((DoubleArray) object).getSegment();
+                result = new OCLMemorySegmentWrapper(segment, deviceContext);
+            } else if (object instanceof LongArray) {
+                MemorySegment segment = ((LongArray) object).getSegment();
+                result = new OCLMemorySegmentWrapper(segment, deviceContext);
+            } else if (object instanceof ShortArray) {
+                MemorySegment segment = ((ShortArray) object).getSegment();
                 result = new OCLMemorySegmentWrapper(segment, deviceContext);
             } else {
                 result = new OCLObjectWrapper(deviceContext, object);

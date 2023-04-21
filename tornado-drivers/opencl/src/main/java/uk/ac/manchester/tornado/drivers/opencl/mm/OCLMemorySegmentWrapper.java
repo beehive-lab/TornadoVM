@@ -1,6 +1,7 @@
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
 import jdk.incubator.foreign.MemorySegment;
+import uk.ac.manchester.tornado.api.data.nativetypes.*;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
@@ -65,8 +66,20 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
 
     @Override
     public int read(Object reference, long hostOffset, int[] events, boolean useDeps) {
-        MemorySegment segment = (MemorySegment) reference;
-        //OCLBufferInfo bufferInfo = deviceContext.getSegmentToBufferMap().get(segment);
+        MemorySegment segment;
+        if (reference instanceof IntArray) {
+            segment = ((IntArray) reference).getSegment();
+        } else if(reference instanceof FloatArray) {
+            segment = ((FloatArray) reference).getSegment();
+        } else if(reference instanceof DoubleArray) {
+            segment = ((DoubleArray) reference).getSegment();
+        } else if(reference instanceof LongArray) {
+            segment = ((LongArray) reference).getSegment();
+        } else if (reference instanceof ShortArray) {
+            segment = ((ShortArray) reference).getSegment();
+        } else {
+            segment = (MemorySegment) reference;
+        }
 
         final int returnEvent;
         returnEvent = deviceContext.readBuffer(toBuffer(), 0, segment.byteSize(),
@@ -95,7 +108,21 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
     @Override
     public List<Integer> enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         List<Integer> returnEvents = new ArrayList<>();
-        MemorySegment seg = (MemorySegment) reference;
+        MemorySegment seg;
+        if (reference instanceof IntArray) {
+            seg = ((IntArray) reference).getSegment();
+        } else if(reference instanceof FloatArray) {
+            seg = ((FloatArray) reference).getSegment();
+        } else if(reference instanceof DoubleArray) {
+            seg = ((DoubleArray) reference).getSegment();
+        } else if(reference instanceof LongArray) {
+            seg = ((LongArray) reference).getSegment();
+        } else if (reference instanceof ShortArray) {
+            seg = ((ShortArray) reference).getSegment();
+        } else {
+            seg = (MemorySegment) reference;
+        }
+
         int internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), 0,
                 seg.byteSize(), seg.address().toRawLongValue(), hostOffset, (useDeps) ? events : null);
         returnEvents.add(internalEvent);
@@ -106,8 +133,20 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
 
     @Override
     public void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
-
-        MemorySegment memref = (MemorySegment) reference;
+        MemorySegment memref;
+        if (reference instanceof IntArray) {
+            memref = ((IntArray) reference).getSegment();
+        } else if(reference instanceof FloatArray) {
+            memref = ((FloatArray) reference).getSegment();
+        } else if(reference instanceof DoubleArray) {
+            memref = ((DoubleArray) reference).getSegment();
+        } else if(reference instanceof LongArray) {
+            memref = ((LongArray) reference).getSegment();
+        } else if (reference instanceof ShortArray) {
+            memref = ((ShortArray) reference).getSegment();
+        } else {
+            memref = (MemorySegment) reference;
+        }
         long bufferSize = memref.byteSize();
 
         if (bufferSize <= 0) {
