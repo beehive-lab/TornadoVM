@@ -25,6 +25,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
@@ -40,8 +41,8 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  */
 public class MontecarloMT {
 
-    public static void computeMontecarlo(float[] output) {
-        for (@Parallel int j = 0; j < output.length; j++) {
+    public static void computeMontecarlo(FloatArray output) {
+        for (@Parallel int j = 0; j < output.getSize(); j++) {
             long seed = j;
             // generate a pseudo random number (you do need it twice)
             seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
@@ -57,21 +58,21 @@ public class MontecarloMT {
 
             float dist = TornadoMath.sqrt(x * x + y * y);
             if (dist <= 1.0f) {
-                output[j] = 1.0f;
+                output.set(j, 1.0f);
             } else {
-                output[j] = 0.0f;
+                output.set(j, 0.0f);
             }
         }
     }
 
-    public static void computeMontecarloThreads(float[] output, int threads, Thread[] th) throws InterruptedException {
-        int balk = output.length / threads;
+    public static void computeMontecarloThreads(FloatArray output, int threads, Thread[] th) throws InterruptedException {
+        int balk = output.getSize() / threads;
         for (int i = 0; i < threads; i++) {
             final int current = i;
             int lowBound = current * balk;
             int upperBound = (current + 1) * balk;
             if (current == threads - 1) {
-                upperBound = output.length;
+                upperBound = output.getSize();
             }
             int finalUpperBound = upperBound;
             th[i] = new Thread(() -> {
@@ -91,9 +92,9 @@ public class MontecarloMT {
 
                     float dist = TornadoMath.sqrt(x * x + y * y);
                     if (dist <= 1.0f) {
-                        output[k] = 1.0f;
+                        output.set(k, 1.0f);
                     } else {
-                        output[k] = 0.0f;
+                        output.set(k, 0.0f);
                     }
                 }
             });
@@ -108,8 +109,8 @@ public class MontecarloMT {
 
     public static void montecarlo(final int size, final String executionType, final int iterations) throws InterruptedException {
 
-        float[] output = new float[size];
-        float[] seq = new float[size];
+        FloatArray output = new FloatArray(size);
+        FloatArray seq = new FloatArray(size);
         long start,end;
 
         long startInit = System.nanoTime();
@@ -161,7 +162,7 @@ public class MontecarloMT {
 
         float sum = 0;
         for (int j = 0; j < size; j++) {
-            sum += output[j];
+            sum += output.get(j);
         }
         sum *= 4;
         System.out.println("Pi value (TornadoVM) : " + (sum / size));
@@ -170,7 +171,7 @@ public class MontecarloMT {
 
         sum = 0;
         for (int j = 0; j < size; j++) {
-            sum += seq[j];
+            sum += seq.get(j);
         }
         sum *= 4;
 

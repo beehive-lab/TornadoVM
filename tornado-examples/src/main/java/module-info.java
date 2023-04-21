@@ -6,6 +6,7 @@ open module tornado.examples {
     requires transitive java.desktop;
     requires transitive tornado.api;
     requires jdk.incubator.foreign;
+    requires org.graalvm.sdk;
 
     exports uk.ac.manchester.tornado.examples;
     exports uk.ac.manchester.tornado.examples.arrays;

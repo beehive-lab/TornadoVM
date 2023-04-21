@@ -18,12 +18,11 @@
 
 package uk.ac.manchester.tornado.examples.arrays;
 
-import java.util.Arrays;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
@@ -36,9 +35,10 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  */
 public class ArrayAccInt {
 
-    public static void acc(int[] a, int value) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] += value;
+    public static void acc(IntArray a, int value) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            a.set(i, a.get(i) + value);
+           // a[i] += value;
         }
     }
 
@@ -46,9 +46,9 @@ public class ArrayAccInt {
 
         final int numElements = 8;
         final int numKernels = 8;
-        int[] a = new int[numElements];
+        IntArray a = new IntArray(numElements);
 
-        Arrays.fill(a, 10);
+        a.init(10);
 
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, a);
@@ -63,6 +63,6 @@ public class ArrayAccInt {
 
         // The result must be the initial value for the array plus the number of tasks
         // composed in the task-graph.
-        System.out.println("a: " + Arrays.toString(a));
+        System.out.println("a: " + a);
     }
 }

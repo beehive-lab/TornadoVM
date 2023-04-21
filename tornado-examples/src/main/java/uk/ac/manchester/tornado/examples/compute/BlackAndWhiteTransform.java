@@ -18,23 +18,21 @@
 
 package uk.ac.manchester.tornado.examples.compute;
 
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.Graphics;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-
-import javax.imageio.ImageIO;
-import javax.swing.JFrame;
-
-import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
-import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * Program taken from the Marawacc parallel programming framework with the
@@ -75,10 +73,10 @@ public class BlackAndWhiteTransform {
             }
         }
 
-        private static void compute(int[] image, final int w, final int s) {
+        private static void compute(IntArray image, final int w, final int s) {
             for (@Parallel int i = 0; i < w; i++) {
                 for (@Parallel int j = 0; j < s; j++) {
-                    int rgb = image[i * s + j];
+                    int rgb = image.get(i * s + j);
                     int alpha = (rgb >> 24) & 0xff;
                     int red = (rgb >> 16) & 0xFF;
                     int green = (rgb >> 8) & 0xFF;
@@ -87,7 +85,7 @@ public class BlackAndWhiteTransform {
                     int grayLevel = (red + green + blue) / 3;
                     int gray = (alpha << 24) | (grayLevel << 16) | (grayLevel << 8) | grayLevel;
 
-                    image[i * s + j] = gray;
+                    image.set(i * s + j, gray);
                 }
             }
         }
@@ -104,7 +102,7 @@ public class BlackAndWhiteTransform {
             int w = image.getWidth();
             int s = image.getHeight();
 
-            int[] imageRGB = new int[w * s];
+            IntArray imageRGB = new IntArray(w * s);
 
             long start = 0,end = 0;
             long taskStart = 0,taskEnd = 0;
@@ -113,7 +111,7 @@ public class BlackAndWhiteTransform {
                 for (int i = 0; i < w; i++) {
                     for (int j = 0; j < s; j++) {
                         int rgb = image.getRGB(i, j);
-                        imageRGB[i * s + j] = rgb;
+                        imageRGB.set(i * s + j, rgb);
                     }
                 }
 
@@ -136,7 +134,7 @@ public class BlackAndWhiteTransform {
                 // unmarshall
                 for (int i = 0; i < w; i++) {
                     for (int j = 0; j < s; j++) {
-                        image.setRGB(i, j, imageRGB[i * s + j]);
+                        image.setRGB(i, j, imageRGB.get(i * s + j));
                     }
                 }
 

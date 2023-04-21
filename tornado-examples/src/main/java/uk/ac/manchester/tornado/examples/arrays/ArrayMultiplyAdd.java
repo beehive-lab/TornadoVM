@@ -18,12 +18,11 @@
 
 package uk.ac.manchester.tornado.examples.arrays;
 
-import java.util.Arrays;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.collections.math.SimpleMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
@@ -41,18 +40,18 @@ public class ArrayMultiplyAdd {
 
         final int numElements = (args.length == 1) ? Integer.parseInt(args[0]) : 1024;
 
-        final float[] a = new float[numElements];
-        final float[] b = new float[numElements];
-        final float[] c = new float[numElements];
-        final float[] d = new float[numElements];
+        final FloatArray a = new FloatArray(numElements);
+        final FloatArray b = new FloatArray(numElements);
+        final FloatArray c = new FloatArray(numElements);
+        final FloatArray d = new FloatArray(numElements);
 
         /*
          * Data Initialization
          */
-        Arrays.fill(a, 3);
-        Arrays.fill(b, 2);
-        Arrays.fill(c, 0);
-        Arrays.fill(d, 0);
+        a.init(3);
+        b.init(2);
+        c.init(0);
+        d.init(0);
 
         /*
          * build an execution graph
@@ -70,7 +69,8 @@ public class ArrayMultiplyAdd {
         /*
          * Check to make sure result is correct
          */
-        for (final float value : d) {
+        for (int i = 0; i < numElements; i++) {
+            float value = d.get(i);
             if (value != 8) {
                 System.out.println("Invalid result: " + value);
                 break;
