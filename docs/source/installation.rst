@@ -619,9 +619,9 @@ NVIDIA CUDA Toolkit.
 -  Complete CUDA Toolkit from `CUDA Toolkit
    Downloads <https://developer.nvidia.com/cuda-downloads?target_os=Windows&target_arch=x86_64>`__.
 
-Note that this toolkit includes GPU drivers as well, so you may avoid downloading drivers separately. 
+It is important to make sure that the GPU drivers are included with the CUDA Toolkit, so you may avoid downloading drivers separately. 
 The only thing to note is that GPU driver you are currently using should be of the same or higher version than the one shipped with CUDA Toolkit. 
-Thus, if you have existing driver make sure that it's version is same or higher, otherwise update GPU driver during toolkit installation. 
+Thus, if you have the driver already installed, make sure that the version required by the CUDA SDK is same or higher, otherwise update GPU driver during toolkit installation. 
 Note, that NSight, BLAST libs and Visual Studio integration are irrelevant for TornadoVM builds, you need just SDK - so you may skip installing them.
 
 5. Configure the TornadoVM build: setting ENV variables
