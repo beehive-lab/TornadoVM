@@ -24,7 +24,10 @@ List of TornadoVM Flags:
    | Print the information about the number of parallel threads used.
 
 -  | ``--debug``:
-   | Print minor debug info.
+   | Print minor debug information such as compilation status, generated code and device information. 
+
+-  | ``--fullDebug``:
+   | In addition to the information dumped by the basic debug, the full debug mode also dumps information about the TornadoVM bytecode, and internal runtime status. This option is mainly used for development of TornadoVM. 
 
 -  | ``--devices``:
    | Output a list of all available devices on the current system.

@@ -110,6 +110,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Types"),    
     TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Inlining"), 
     TestEntry("uk.ac.manchester.tornado.unittests.fails.CodeFail"),        
+    TestEntry("uk.ac.manchester.tornado.unittests.parameters.ParameterTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGen"),       
     TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),   
     TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),  
@@ -198,6 +199,7 @@ __IGV_OPTIONS__                     = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph
 __IGV_LAST_PHASE__                  = "-Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true -Dtornado.debug.lowtier=True "
 __PRINT_OPENCL_KERNEL__             = "-Dtornado.print.kernel=True "
 __DEBUG_TORNADO__                   = "-Dtornado.debug=True "
+__TORNADOVM_FULLDEBUG__             = __DEBUG_TORNADO__ + "-Dtornado.fullDebug=True "
 __THREAD_INFO__                     = "-Dtornado.threadInfo=True "
 __PRINT_EXECUTION_TIMER__           = "-Dtornado.debug.executionTime=True "
 __GC__                              = "-Xmx6g "
@@ -248,6 +250,9 @@ def composeAllOptions(args):
 
     if (args.debugTornado):
         options = options + __DEBUG_TORNADO__
+
+    if (args.fullDebug):
+        options = options + __TORNADOVM_FULLDEBUG__
 
     if (args.threadInfo):
         options = options + __THREAD_INFO__
@@ -485,7 +490,8 @@ def parseArguments():
     parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Dump GraalIR into IGV")
     parser.add_argument('--igvLowTier', action="store_true", dest="dumpIGVLastTier", default=False,
                         help="Dump OpenCL Low-TIER GraalIR into IGV")
-    parser.add_argument('--debug', "-d", action="store_true", dest="debugTornado", default=False, help="Debug Tornado")
+    parser.add_argument('--debug', "-d", action="store_true", dest="debugTornado", default=False, help="Enable the Debug mode in Tornado")
+    parser.add_argument('--fullDebug', action="store_true", dest="fullDebug", default=False, help="Enable the Full Debug mode. This mode is more verbose compared to --debug only")
     parser.add_argument('--fast', "-f", action="store_true", dest="fast", default=False, help="Visualize Fast")
     parser.add_argument('--device', dest="device", default=None, help="Set an specific device. E.g `s0.t0.device=0:1`")
     parser.add_argument('--printExec', dest="printExecution", action="store_true", default=False,

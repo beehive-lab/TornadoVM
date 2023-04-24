@@ -36,15 +36,16 @@ import platform
 # ########################################################
 # FLAGS FOR TORNADOVM
 # ########################################################
-__TORNADOVM_DEBUG__                     = "-Dtornado.debug=True "
-__TORNADOVM_THREAD_INFO__               = "-Dtornado.threadInfo=True "
-__TORNADOVM_IGV__                       = "-Dgraal.Dump=*:5 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true"
-__TORNADOVM__IGV_LOW_TIER               = "-Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true -Dtornado.debug.lowtier=True "
-__TORNADOVM_PRINT_KERNEL__              = "-Dtornado.print.kernel=True "
-__TORNADOVM_PRINT_BC__                  = "-Dtornado.print.bytecodes=True"
-__TORNADOVM_DUMP_PROFILER__             = "-Dtornado.profiler=True -Dtornado.log.profiler=True -Dtornado.profiler.dump.dir="
-__TORNADOVM_ENABLE_PROFILER_SILENT__    = "-Dtornado.profiler=True -Dtornado.log.profiler=True "
-__TORNADOVM_ENABLE_PROFILER_CONSOLE__   = "-Dtornado.profiler=True "
+__TORNADOVM_DEBUG__                     = " -Dtornado.debug=True "
+__TORNADOVM_FULLDEBUG__                 = __TORNADOVM_DEBUG__ + "-Dtornado.fullDebug=True "
+__TORNADOVM_THREAD_INFO__               = " -Dtornado.threadInfo=True "
+__TORNADOVM_IGV__                       = " -Dgraal.Dump=*:5 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true"
+__TORNADOVM__IGV_LOW_TIER               = " -Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true -Dtornado.debug.lowtier=True "
+__TORNADOVM_PRINT_KERNEL__              = " -Dtornado.print.kernel=True "
+__TORNADOVM_PRINT_BC__                  = " -Dtornado.print.bytecodes=True "
+__TORNADOVM_DUMP_PROFILER__             = " -Dtornado.profiler=True -Dtornado.log.profiler=True -Dtornado.profiler.dump.dir="
+__TORNADOVM_ENABLE_PROFILER_SILENT__    = " -Dtornado.profiler=True -Dtornado.log.profiler=True "
+__TORNADOVM_ENABLE_PROFILER_CONSOLE__   = " -Dtornado.profiler=True "
 
 # ########################################################
 # LIST OF TORNADOVM PROVIDERS: Set of Java Classes that 
@@ -177,7 +178,11 @@ class TornadoVMRunnerTool():
     def buildTornadoVMOptions(self, args):
         tornadoFlags = ""
         if (args.debug):
-            tornadoFlags = tornadoFlags + __TORNADOVM_DEBUG__ 
+            tornadoFlags = tornadoFlags + __TORNADOVM_DEBUG__
+
+        if (args.fullDebug):
+            # Full debug also enables the light debugging option
+            tornadoFlags = tornadoFlags + __TORNADOVM_FULLDEBUG__
 
         if (args.threadInfo):
             tornadoFlags = tornadoFlags + __TORNADOVM_THREAD_INFO__
@@ -398,11 +403,12 @@ def parseArguments():
     parser.add_argument('--version', action="store_true", dest="version", default=False, help="Print version of TornadoVM")
     parser.add_argument('-version', action="store_true", dest="versionJVM", default=False, help="Print JVM Version")
     parser.add_argument('--debug', action="store_true", dest="debug", default=False, help="Enable debug mode")
+    parser.add_argument('--fullDebug', action="store_true", dest="fullDebug", default=False, help="Enable the Full Debug mode. This mode is more verbose compared to --debug only")
     parser.add_argument('--threadInfo', action="store_true", dest="threadInfo", default=False, help="Print thread deploy information per task on the accelerator")
     parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Debug Compilation Graphs using Ideal Graph Visualizer (IGV)")
     parser.add_argument('--igvLowTier', action="store_true", dest="igvLowTier", default=False, help="Debug Low Tier Compilation Graphs using Ideal Graph Visualizer (IGV)")
     parser.add_argument('--printKernel', '-pk', action="store_true", dest="printKernel", default=False, help="Print generated kernel (OpenCL, PTX or SPIR-V)")
-    parser.add_argument('--printBytecodes', '-pc', action="store_true", dest="printBytecodes", default=False, help="Print the generated TornadoVM bytecodes")
+    parser.add_argument('--printBytecodes', '-pbc', action="store_true", dest="printBytecodes", default=False, help="Print the generated TornadoVM bytecodes from the Task-Graphs")
     parser.add_argument('--enableProfiler', action="store", dest="enable_profiler", default=None, help="Enable the profiler {silent|console}")
     parser.add_argument('--dumpProfiler', action="store", dest="dump_profiler", default=None, help="Dump the profiler to a file")
     parser.add_argument('--printJavaFlags', action="store_true", dest="printFlags", default=False, help="Print all the Java flags to enable the execution with TornadoVM")

@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2023 APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -19,8 +19,6 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: Juan Fumero
  *
  */
 package uk.ac.manchester.tornado.runtime.tasks;
@@ -129,7 +127,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private static final boolean EXPERIMENTAL_MULTI_HOST_HEAP = false;
     private static final int DEFAULT_DRIVER_INDEX = 0;
     private static final int PERFORMANCE_WARMUP = 3;
-    private static final boolean TIME_IN_NANOSECONDS = Tornado.TIME_IN_NANOSECONDS;
+    private static final boolean TIME_IN_NANOSECONDS = TornadoOptions.TIME_IN_NANOSECONDS;
     private static final String TASK_GRAPH_PREFIX = "XXX";
     private static final ConcurrentHashMap<Policy, ConcurrentHashMap<String, HistoryTable>> executionHistoryPolicy = new ConcurrentHashMap<>();
 
@@ -728,7 +726,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
      */
     private void preCompilationForFPGA() {
         boolean compile = false;
-        if (Tornado.FPGA_EMULATION) {
+        if (TornadoOptions.FPGA_EMULATION) {
             compile = true;
         } else if (executionContext.getDeviceFirstTask() instanceof TornadoAcceleratorDevice) {
             TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) executionContext.getDeviceFirstTask();
@@ -885,12 +883,24 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
+    private boolean isANumber(Object parameter) {
+        return parameter instanceof Number;
+    }
+
+    private boolean isAtomic(Object parameter) {
+        return parameter instanceof AtomicInteger;
+    }
+
     @Override
     public void transferToHost(final int mode, Object... objects) {
         for (Object functionParameter : objects) {
             if (functionParameter == null) {
                 Tornado.warn("null object passed into streamIn() in schedule %s", executionContext.getId());
                 continue;
+            }
+
+            if (isANumber(functionParameter) && !isAtomic(functionParameter)) {
+                throw new TornadoRuntimeException("[ERROR] Scalar value used as output. Use an array or a vector-type instead");
             }
 
             // If the object mode is set to LAST then we *only* insert it in the lookup

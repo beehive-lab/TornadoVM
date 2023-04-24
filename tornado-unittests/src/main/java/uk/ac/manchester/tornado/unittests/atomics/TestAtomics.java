@@ -275,7 +275,7 @@ public class TestAtomics extends TornadoTestBase {
                         "add", //
                         tornadoSDK + "/examples/generated/atomics.cl", //
                         new Object[] { a, b }, //
-                        new Access[] { Access.WRITE, Access.WRITE }, //
+                        new Access[] { Access.WRITE_ONLY, Access.WRITE_ONLY }, //
                         defaultDevice, //
                         new int[] { 32 }, //
                         new int[] { 155 } // Atomics - Initial Value

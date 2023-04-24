@@ -128,7 +128,7 @@ public class TornadoGraphBuilder {
 
                 final AbstractNode arg = objectNodes[variableIndex];
                 if (!(arg instanceof ContextOpNode)) {
-                    if (Objects.requireNonNull(accesses)[argIndex] == Access.WRITE) {
+                    if (Objects.requireNonNull(accesses)[argIndex] == Access.WRITE_ONLY) {
                         createAllocateNode(context, graph, arg, args, argIndex, persist);
                     } else {
                         final ObjectNode objectNode = (ObjectNode) arg;
@@ -147,7 +147,7 @@ public class TornadoGraphBuilder {
                 }
 
                 final AbstractNode nextAccessNode;
-                if (accesses[argIndex] == Access.WRITE || accesses[argIndex] == Access.READ_WRITE) {
+                if (accesses[argIndex] == Access.WRITE_ONLY || accesses[argIndex] == Access.READ_WRITE) {
                     final DependentReadNode depRead = new DependentReadNode(context);
                     final ObjectNode value;
                     if (objectNodes[variableIndex] instanceof ObjectNode) {

@@ -368,7 +368,7 @@ public class OCLCodeCache {
         if (compilationFlags != null) {
             bufferCommand.add(compilationFlags);
         }
-        bufferCommand.add(Tornado.FPGA_EMULATION ? ("-march=emulator") : ("-board=" + fpgaName));
+        bufferCommand.add(TornadoOptions.FPGA_EMULATION ? ("-march=emulator") : ("-board=" + fpgaName));
         bufferCommand.add("-o " + outputFile);
         return bufferCommand.toString().split(" ");
     }
@@ -389,7 +389,7 @@ public class OCLCodeCache {
 
         bufferCommand.add(fpgaCompiler);
 
-        bufferCommand.add(Tornado.FPGA_EMULATION ? ("-t " + "sw_emu") : ("-t " + "hw"));
+        bufferCommand.add(TornadoOptions.FPGA_EMULATION ? ("-t " + "sw_emu") : ("-t " + "hw"));
         bufferCommand.add("--platform " + fpgaName + " -c " + "-k " + kernelName);
         bufferCommand.add("-g " + "-I" + directoryBitstream);
         bufferCommand.add("--xp " + "misc:solution_name=" + kernelName);
@@ -410,7 +410,7 @@ public class OCLCodeCache {
         StringJoiner bufferCommand = new StringJoiner(" ");
 
         bufferCommand.add(fpgaCompiler);
-        bufferCommand.add(Tornado.FPGA_EMULATION ? ("-t " + "sw_emu") : ("-t " + "hw"));
+        bufferCommand.add(TornadoOptions.FPGA_EMULATION ? ("-t " + "sw_emu") : ("-t " + "hw"));
         bufferCommand.add("--platform " + fpgaName + " -l " + "-g");
         bufferCommand.add("--xp " + "misc:solution_name=link");
         bufferCommand.add("--report_dir " + directoryBitstream + "reports");
@@ -649,17 +649,17 @@ public class OCLCodeCache {
         if (shouldReuseProgramObject(entryPoint) && cache.containsKey(entryPoint)) {
             program = cache.get(entryPoint).getProgram();
         } else {
-            long beforeLoad = (Tornado.TIME_IN_NANOSECONDS) ? System.nanoTime() : System.currentTimeMillis();
+            long beforeLoad = (TornadoOptions.TIME_IN_NANOSECONDS) ? System.nanoTime() : System.currentTimeMillis();
             isSPIRVBinary = isInputSourceSPIRVBinary(binary);
             if (isSPIRVBinary) {
                 program = deviceContext.createProgramWithIL(binary, new long[] { binary.length });
             } else {
                 program = deviceContext.createProgramWithBinary(binary, new long[] { binary.length });
             }
-            long afterLoad = (Tornado.TIME_IN_NANOSECONDS) ? System.nanoTime() : System.currentTimeMillis();
+            long afterLoad = (TornadoOptions.TIME_IN_NANOSECONDS) ? System.nanoTime() : System.currentTimeMillis();
 
             if (PRINT_LOAD_TIME) {
-                System.out.println("Binary load time: " + (afterLoad - beforeLoad) + (Tornado.TIME_IN_NANOSECONDS ? " ns" : " ms") + " \n");
+                System.out.println("Binary load time: " + (afterLoad - beforeLoad) + (TornadoOptions.TIME_IN_NANOSECONDS ? " ns" : " ms") + " \n");
             }
 
             if (program == null) {

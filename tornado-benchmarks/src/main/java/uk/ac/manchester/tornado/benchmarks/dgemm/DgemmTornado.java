@@ -97,7 +97,7 @@ public class DgemmTornado extends BenchmarkDriver {
                             "dgemm", //
                             filePath, //
                             new Object[] { m, n, n, a, b, c }, //
-                            new Access[] { Access.READ, Access.READ, Access.READ, Access.READ, Access.READ, Access.WRITE }, //
+                            new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
                             device, //
                             new int[] { n, n })//
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, c);//
