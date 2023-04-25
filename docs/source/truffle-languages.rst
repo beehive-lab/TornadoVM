@@ -1,13 +1,16 @@
 Polyglot Programming
 =============================
-TornadoVM is a plug-in to GraalVM, therefore, it inherits its support of `polyglot programming <https://www.graalvm.org/22.0/reference-manual/polyglot-programming/>`_. This guide will describe how to invoke TornadoVM programs through code written in Python, JavaScript, and R. 
+TornadoVM can be used with the GraalVM Truffle Polyglot API to invoke Task-Graphs from guest programming languages such as Python, R, etc.. This guide will describe how to execute TornadoVM programs through code written in Python, JavaScript, and R. 
 
-Prerequisites
+1. Prerequisites
 ----------------------------------------------
+
+A) Configuration of the JAVA_HOME Variable
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 To enable polyglot support, the ``JAVA_HOME`` variable must be set to the GraalVM path. 
 Instructions on how to install TornadoVM with GraalVM can be found here: :ref:`installation_graalvm`. 
 
-GraalVM Polyglot Dependencies
+B) GraalVM Polyglot Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 As detailed in the `GraalVM Reference Manuals <https://www.graalvm.org/latest/reference-manual/>`_, the following dependencies must be downloaded for each of the programming languages supported:
 
@@ -29,12 +32,12 @@ As detailed in the `GraalVM Reference Manuals <https://www.graalvm.org/latest/re
 
   $JAVA_HOME/bin/gu install r
 
-Executing a TornadoVM program through Graal's Polyglot API
+2. Executing a TornadoVM program through Graal's Polyglot API
 ---------------
-To invoke a TornadoVM Task Graph (written in Java) through Python, R or JavaScript code, the following steps must be followed. 
+In the following example, we will iterate over the necessary steps to invoke a TornadoVM computation from Python, JavaScript and R programs, using the ``MyCompute`` class from the TornadoVM examples module. However, users can create their own Java classes with the code to be accelerated following the TornadoVM API guidelines :ref:`programming`. 
 
 * Step 1: 
-    Create a variable that is of your Java class type. 
+    Create a variable that is of the Java class type. 
 
     **Python**
 
@@ -56,7 +59,7 @@ To invoke a TornadoVM Task Graph (written in Java) through Python, R or JavaScri
         myclass <- java.type('uk.ac.manchester.tornado.examples.polyglot.MyCompute')
 
 * Step 2: 
-    Use this variable to invoke the Java function that contains the Task Graph. In this example, the function is named ``compute()``. 
+    Use this variable to invoke the Java function that contains the Task-Graph. In this example, the function is named ``compute()``. 
     
 
     **Python**
@@ -91,7 +94,7 @@ To invoke a TornadoVM Task Graph (written in Java) through Python, R or JavaScri
 
 All of the existing TornadoVM options (e.g., ``--printKernel``, etc.) can be used as always.  
 
-Testing
+3. Testing
 ---------------
 
 The ``tornado-assembly/scr/example/polyglotTruffle`` directory contains three examples, one for each of the supported languages.  
