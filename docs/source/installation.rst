@@ -29,6 +29,8 @@ The following table includes the platforms that TornadoVM can be executed.
 +---------------------------+-----------------------------------------------------------+-----------------+----------------------+
 | Ubuntu >= 16.04           | OpenCL for GPUs and CPUs >= 2.1, OpenCL for FPGAs >= 1.0  | CUDA 10.0+      | Level-Zero >= 1.2    |
 +---------------------------+-----------------------------------------------------------+-----------------+----------------------+
+| Pop!_OS >= 22.04          | OpenCL for GPUs and CPUs >= 2.1, OpenCL for FPGAs >= 1.0  | CUDA 10.0+      | Level-Zero >= 1.2    |
++---------------------------+-----------------------------------------------------------+-----------------+----------------------+
 | OpenSuse Leap 15.4        | OpenCL for GPUs and CPUs >= 2.1, OpenCL for FPGAs >= 1.0  | CUDA 10.0+      | Level-Zero >= 1.2    |
 +---------------------------+-----------------------------------------------------------+-----------------+----------------------+
 | Mac OS X Mojave 10.14.6   | OpenCL for GPUs and CPUs >= 1.2                           | Not supported   | Not supported        |
