@@ -75,9 +75,9 @@ __OPENCL_MODULE__  = "tornado.drivers.opencl"
 # ########################################################
 # JAVA FLAGS
 # ########################################################
-__JAVA_GC_JDK11__     = "-XX:+UseParallelOldGC -XX:-UseBiasedLocking "
-__JAVA_GC_JDK16__     = "-XX:+UseParallelGC "
-__JAVA_BASE_OPTIONS__ = "-server -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI "
+__JAVA_GC_JDK11__        = "-XX:+UseParallelOldGC -XX:-UseBiasedLocking "
+__JAVA_GC_JDK16__        = "-XX:+UseParallelGC "
+__JAVA_BASE_OPTIONS__    = "-server -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI "
 __TRUFFLE_BASE_OPTIONS__ = "--jvm --polyglot --vm.XX:-UseCompressedOops --vm.XX:+UnlockExperimentalVMOptions --vm.XX:+EnableJVMCI "
 
 # We do not satisfy the Graal compiler assertions because we only support a subset of the Java specification.
@@ -326,7 +326,13 @@ class TornadoVMRunnerTool():
             javaFlags = javaFlags + args.jvm_options + " "
 
         if (args.classPath != None):
-            javaFlags = javaFlags + " -cp " + args.classPath + " "
+            javaFlags = javaFlags + " -cp " + args.classPath 
+            try:
+                ## Obtain existing CLASSPATH
+                systemClassPath = os.environ["CLASSPATH"]
+                javaFlags = javaFlags + ":" + systemClassPath + " "
+            except:
+                javaFlags =  javaFlags + " "
         
         if (self.isTruffleCommand):
             executionFlags = self.truffleCompatibleFlags(javaFlags)
