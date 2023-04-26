@@ -774,7 +774,7 @@ public class TornadoVM extends TornadoLogger {
                 }
                 lastEvent = executeBarrier(tornadoVMBytecodeList, eventList, waitList);
             } else if (op == TornadoVMBytecode.END.value()) {
-                if (TornadoOptions.PRINT_BYTECODES) {
+                if (!isWarmup && TornadoOptions.PRINT_BYTECODES) {
                     tornadoVMBytecodeList.append("bc: " + debugHighLightBC("END\n") + "\n");
                 }
                 break;
