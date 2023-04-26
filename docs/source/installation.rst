@@ -474,7 +474,7 @@ To run individual tests:
 TornadoVM for Windows 10/11 using GraalVM 
 ---------------------------------------------------------------
 
-**[DISCLAIMER] Please, notice that, although TornadoVM can run on Windows10, it is still experimental.**
+**[DISCLAIMER] Please, notice that, although TornadoVM can run on Windows10 via MSys2, it is still experimental.**
 
 1. Install prerequisites
 ~~~~~~~~~~~~
@@ -483,8 +483,8 @@ TornadoVM for Windows 10/11 using GraalVM
 Maven
 '''''
 
-Download Apache Maven from the `official site <https://maven.apache.org/download.cgi>`__ and extract it to any
-location on your computer. Below it's assumed that Maven's home is ``C:/Maven``.
+Download Apache Maven (at least 3.9.0) from the `official site <https://maven.apache.org/download.cgi>`__, and extract it to any
+location on your computer. Below it's assumed that Maven's home is ``C:/bin/``, but you can use any other directory. 
 
 MSys2
 '''''
@@ -567,7 +567,7 @@ Example:
 .. code:: bash
 
    #!/usr/bin/env bash
-   C:/bin/apache-maven-3.8.4-bin/apache-maven-3.8.4/bin/mvn.cmd --settings ${HOME}/.m2/settings.xml "$@"
+   C:/bin/apache-maven-3.9.1-bin/apache-maven-3.9.1/bin/mvn.cmd --settings ${HOME}/.m2/settings.xml "$@"
 
 You only need to change the path to your maven installation in Windows.
 
@@ -621,16 +621,12 @@ NVIDIA CUDA Toolkit.
 -  Complete CUDA Toolkit from `CUDA Toolkit
    Downloads <https://developer.nvidia.com/cuda-downloads?target_os=Windows&target_arch=x86_64>`__.
 
-Note that this toolkit includes GPU drivers as well, so you may avoid
-downloading drivers separately. The only thing to note is that GPU
-driver you are currently using should be of the same or higher version
-than the one shipped with CUDA Toolkit. Thus, if you have existing
-driver make sure that it’s version is same or higher, otherwise update
-GPU driver during toolkit installation. Note, that NSight, BLAST libs
-and Visual Studio integration are irrelevant for TornadoVM builds, you
-need just SDK - so you may skip installing them.
+It is important to make sure that the GPU drivers are included with the CUDA Toolkit, so you may avoid downloading drivers separately. 
+The only thing to note is that the GPU driver you are currently using should be of the same or higher version than the one shipped with CUDA Toolkit. 
+Thus, if you have the driver already installed, make sure that the version required by the CUDA SDK is same or higher, otherwise update the GPU driver during toolkit installation. 
+Note, that NSight, BLAST libs and Visual Studio integration are irrelevant for TornadoVM builds, you just need the CUDA SDK - so you may skip installing them.
 
-5. Configure the build
+5. Configure the TornadoVM build: setting ENV variables
 ~~~~~~~~~~~~
 
 
@@ -641,8 +637,9 @@ the following content:
 
    #!/bin/bash
 
-   # UPDATE PATH TO ACTUAL LOCATION OF THE JDK OR GRAAL (REMEMBER OF UNIX_STYLE SLASHES AND SPACES!!!)
-   export JAVA_HOME="C:/graalvm-ce-java11-22.3.1"
+   # UPDATE PATH TO ACTUAL LOCATION OF THE JDK OR GRAAL 
+   export JAVA_HOME="C:\Users\jjfum\bin\jvms\graalvm-ce-java17-windows-amd64-22.3.1\graalvm-ce-java17-22.3.1"
+
 
    ## NEXT TWO LINES NECESSARY TO BUILD PTX (NVIDIA CUDA) BACKEND
    ## COMMENT THEM OUT OR JUST IGNORE IF YOU ARE NOT INTERESTED IN PTX BUILD
@@ -675,8 +672,7 @@ directory, and build TornadoVM as follows:
    source etc/sources.env
    make graal-jdk-11-plus BACKEND=ptx,opencl
 
-The ``BACKEND`` parameter has to be a comma-separated list of ``ptx``
-and ``opencl`` options. You may build ``ptx`` only when NVIDIA GPU
+The ``BACKEND`` parameter has to be a comma-separated list of ``ptx`` and ``opencl`` options. You may build ``ptx`` only when NVIDIA GPU
 Computing Toolkit (CUDA) is installed.
 
 7. Check the installation
