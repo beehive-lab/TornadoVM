@@ -51,7 +51,7 @@ which means that TornadoVM must insert extra control-flow to guarantee those exc
 Currently, since TornadoVM compiles at runtime, many of those checks can be assured at runtime. 
 However, we plan to integrate exception support for TornadoVM in the future.
 
-6. No Support for static TaskGraphs and Tasks
+5. No Support for static TaskGraphs and Tasks
 ''''''''''''''''''''''''''''''''''''''''''''
 
 TornadoVM currently does not support static ``TaskGraph`` and Tasks. For
