@@ -143,15 +143,15 @@ At least one backend must be specified at build time to the ``make`` command:
 
 .. _installation_graalvm:
 
-Installation for GraalVM 22.3.1 on Linux and OSx
+Installation for GraalVM 22.3.2 on Linux and OSx
 -------------------------------------------------------------------
 
-1. Download GraalVM Community Edition 22.3.1
+1. Download GraalVM Community Edition 22.3.2
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-GraalVM 22.3.1 builds are available to download at
+GraalVM 22.3.2 builds are available to download at
 
-`https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.3.1 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.3.1>`_.
+`https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.3.2 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.3.2>`_.
 
 The examples below show how to download and extract GraalVM based on JDK 11 and 17 for Linux.
 
@@ -159,17 +159,17 @@ The examples below show how to download and extract GraalVM based on JDK 11 and 
 
 .. code:: bash
 
-   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.1/graalvm-ce-java11-linux-amd64-22.3.1.tar.gz
-   $ tar -xf graalvm-ce-java11-linux-amd64-22.3.1.tar.gz
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java11-linux-amd64-22.3.2.tar.gz
+   $ tar -xf graalvm-ce-java11-linux-amd64-22.3.2.tar.gz
 
 -  Example for GraalVM based on JDK 17:
 
 .. code:: bash
 
-   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.1/graalvm-ce-java17-linux-amd64-22.3.1.tar.gz
-   $ tar -xf graalvm-ce-java17-linux-amd64-22.3.1.tar.gz
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java17-linux-amd64-22.3.2.tar.gz
+   $ tar -xf graalvm-ce-java17-linux-amd64-22.3.2.tar.gz
 
-The Java binary will be found in the ``graalvm-ce-java{JDK_VERSION}-22.3.1`` directory. This directory is used as the JAVA_HOME (See step 2).
+The Java binary will be found in the ``graalvm-ce-java{JDK_VERSION}-22.3.2`` directory. This directory is used as the JAVA_HOME (See step 2).
 
 For OSX:
 
@@ -177,13 +177,13 @@ For OSX:
 
 .. code:: bash
 
-   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.1/graalvm-ce-java11-darwin-amd64-22.3.1.tar.gz
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java11-darwin-amd64-22.3.2.tar.gz
 
 -  Example for GraalVM based on JDK 17:
 
 .. code:: bash
 
-   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.1/graalvm-ce-java17-darwin-amd64-22.3.1.tar.gz
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java17-darwin-amd64-22.3.2.tar.gz
 
 then ``untar`` it to the OSX standard JDK location
 ``/Library/Java/JavaVirtualMachines/`` or to a folder of your choice.
@@ -210,7 +210,7 @@ ones)**:
 .. code:: bash
 
    #!/bin/bash
-   export JAVA_HOME=<path to GraalVM 22.3.1 jdk> ## This path is produced in Step 1
+   export JAVA_HOME=<path to GraalVM 22.3.2 jdk> ## This path is produced in Step 1
    export PATH=$PWD/bin/bin:$PATH    ## This directory will be automatically generated during Tornado compilation
    export TORNADO_SDK=$PWD/bin/sdk   ## This directory will be automatically generated during Tornado compilation
    export CMAKE_ROOT=/usr            ## or <path/to/cmake/cmake-3.10.2> (see step 4)
@@ -310,11 +310,11 @@ JDKs. Below are listed the Java 11+ JDK distributions against which TornadoVM ha
   ./scripts/tornadovm-installer --listJDKs
   jdk11            : Install TornadoVM with OpenJDK 11 (Oracle OpenJDK)
   jdk17            : Install TornadoVM with OpenJDK 17 (Oracle OpenJDK)
-  graalvm-jdk-11   : Install TornadoVM with GraalVM and JDK 11 (GraalVM 22.3.1)
-  graalvm-jdk-17   : Install TornadoVM with GraalVM and JDK 17 (GraalVM 22.3.1)
+  graalvm-jdk-11   : Install TornadoVM with GraalVM and JDK 11 (GraalVM 22.3.2)
+  graalvm-jdk-17   : Install TornadoVM with GraalVM and JDK 17 (GraalVM 22.3.2)
   corretto-jdk-11  : Install TornadoVM with Corretto JDK 11
   corretto-jdk-17  : Install TornadoVM with Corretto JDK 17
-  mandrel-jdk-17   : Install TornadoVM with Mandrel 22.3.1 (JDK 17)
+  mandrel-jdk-17   : Install TornadoVM with Mandrel 22.3.2 (JDK 17)
   microsoft-jdk-11 : Install TornadoVM with Microsoft JDK 11
   microsoft-jdk-17 : Install TornadoVM with Microsoft JDK 17
   zulu-jdk-jdk-11  : Install TornadoVM with Azul Zulu JDK 11
@@ -586,15 +586,15 @@ Clone the latest TornadoVM source code from the GitHub `repository <https://gith
 We will refer hereafter the directory with TornadoVM sources as
 ``<TornadoVM>``.
 
-3. Download Graal 22.3.1
+3. Download Graal 22.3.2
 ~~~~~~~~~~~~
 
 
-TornadoVM can run with JDK 11 and 17. Visit `GraalVM Community Edition 22.3.1 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.3.1>`__
+TornadoVM can run with JDK 11 and 17. Visit `GraalVM Community Edition 22.3.2 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.3.2>`__
 and download either of the following builds:
 
--  `Download for JDK 11 <https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.1/graalvm-ce-java11-windows-amd64-22.3.1.zip>`__
--  `Download for JDK 17 <https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.1/graalvm-ce-java17-windows-amd64-22.3.1.zip>`__
+-  `Download for JDK 11 <https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java11-windows-amd64-22.3.2.zip>`__
+-  `Download for JDK 17 <https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java17-windows-amd64-22.3.2.zip>`__
 
 Extract the downloaded file to any directory.
 
@@ -638,7 +638,7 @@ the following content:
    #!/bin/bash
 
    # UPDATE PATH TO ACTUAL LOCATION OF THE JDK OR GRAAL 
-   export JAVA_HOME="C:\Users\jjfum\bin\jvms\graalvm-ce-java17-windows-amd64-22.3.1\graalvm-ce-java17-22.3.1"
+   export JAVA_HOME="C:\Users\jjfum\bin\jvms\graalvm-ce-java17-windows-amd64-22.3.2\graalvm-ce-java17-22.3.2"
 
 
    ## NEXT TWO LINES NECESSARY TO BUILD PTX (NVIDIA CUDA) BACKEND
