@@ -18,7 +18,7 @@
 
     <properties>
         <tornado.version>${project.version}</tornado.version>
-        <graal.version>22.3.1</graal.version>
+        <graal.version>22.3.2</graal.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <classifier>${platform}</classifier>
         <download.cmake>false</download.cmake>

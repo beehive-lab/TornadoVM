@@ -11,12 +11,12 @@ pipeline {
     }
 
     environment {
-        ZULU_11_JAVA_HOME="/opt/jenkins/jdks/graal-22.3.1/zulu11.56.19-ca-jdk11.0.15-linux_x64"
-        ZULU_17_JAVA_HOME="/opt/jenkins/jdks/graal-22.3.1/zulu17.34.19-ca-jdk17.0.3-linux_x64"
-        CORRETTO_11_JAVA_HOME="/opt/jenkins/jdks/graal-22.3.1/amazon-corretto-11.0.15.9.1-linux-x64"
-        JDK_17_JAVA_HOME="/opt/jenkins/jdks/graal-22.3.1/jdk-17.0.1"
-        GRAALVM_11_JAVA_HOME="/opt/jenkins/jdks/graal-22.3.1/graalvm-ce-java11-22.3.1"
-        GRAALVM_17_JAVA_HOME="/opt/jenkins/jdks/graal-22.3.1/graalvm-ce-java17-22.3.1"
+        ZULU_11_JAVA_HOME="/opt/jenkins/jdks/graal-22.3.2/zulu11.56.19-ca-jdk11.0.15-linux_x64"
+        ZULU_17_JAVA_HOME="/opt/jenkins/jdks/graal-22.3.2/zulu17.34.19-ca-jdk17.0.3-linux_x64"
+        CORRETTO_11_JAVA_HOME="/opt/jenkins/jdks/graal-22.3.2/amazon-corretto-11.0.15.9.1-linux-x64"
+        JDK_17_JAVA_HOME="/opt/jenkins/jdks/graal-22.3.2/jdk-17.0.1"
+        GRAALVM_11_JAVA_HOME="/opt/jenkins/jdks/graal-22.3.2/graalvm-ce-java11-22.3.2"
+        GRAALVM_17_JAVA_HOME="/opt/jenkins/jdks/graal-22.3.2/graalvm-ce-java17-22.3.2"
         TORNADO_ROOT="/var/lib/jenkins/workspace/Tornado-pipeline"
         PATH="/var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor/bin:/var/lib/jenkins/workspace/Tornado-pipeline/bin/bin:$PATH"    
         TORNADO_SDK="/var/lib/jenkins/workspace/Tornado-pipeline/bin/sdk" 
