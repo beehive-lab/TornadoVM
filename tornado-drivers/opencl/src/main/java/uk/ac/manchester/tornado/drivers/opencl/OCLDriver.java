@@ -50,7 +50,6 @@ import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public final class OCLDriver extends TornadoLogger implements TornadoAcceleratorDriver {
     public static final List<OCLDeviceType> DEVICE_TYPE_LIST = Arrays.asList(OCLDeviceType.CL_DEVICE_TYPE_GPU, OCLDeviceType.CL_DEVICE_TYPE_CPU, OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR,
@@ -71,7 +70,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         contexts = new ArrayList<>();
         discoverDevices(options, vmRuntime, vmConfig);
         flatBackends = flattenBackends(backends);
-        flatBackends = orderFlattenBackends(getDeviceTypeListFromOrdering(DEVICE_TYPE_LIST));
+        flatBackends = orderFlattenBackends(DEVICE_TYPE_LIST);
     }
 
     private OCLBackend[] flattenBackends(OCLBackend[][] backends) {
@@ -87,27 +86,6 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
 
     private static String getString(String property) {
         return System.getProperty(property) == null ? null : System.getProperty(property);
-    }
-
-    public static List<OCLDeviceType> getDeviceTypeListFromOrdering(List<OCLDeviceType> deviceTypeList) {
-        List<OCLDeviceType> orderedDeviceTypes = new ArrayList<>();
-        List<String> orderingList = Arrays.asList(TornadoOptions.DEVICE_TYPE_ORDERING.split(","));
-
-        if (orderingList.size() != deviceTypeList.size()) {
-            throw new TornadoRuntimeException(
-                    "The number of device types in the device type ordering does not match the number of device types available. Example usage is: -Dtornado.deviceTypeOrdering=GPU,CPU,ACCELERATOR,CUSTOM");
-        }
-
-        for (String deviceType : orderingList) {
-            for (OCLDeviceType type : deviceTypeList) {
-                if (type.toString().equals("CL_DEVICE_TYPE_" + deviceType.trim().toUpperCase())) {
-                    orderedDeviceTypes.add(type);
-                    break;
-                }
-            }
-        }
-
-        return orderedDeviceTypes;
     }
 
     /**
