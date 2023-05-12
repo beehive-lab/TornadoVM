@@ -93,7 +93,7 @@ JDK = {
         },
         __APPLE__: {
             __X86_64__ : "https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java11-darwin-amd64-22.3.2.tar.gz",
-            __ARM__    : "https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java11-darwin-aarch64-22.3.2.tar.gz",
+            __ARM__    : "https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java11-darwin-amd64-22.3.2.tar.gz",
         }
     },
     __GRAALVM17__ : {
@@ -103,7 +103,7 @@ JDK = {
         },
         __APPLE__: {
             __X86_64__ : "https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java17-darwin-amd64-22.3.2.tar.gz",
-            __ARM__    : "https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java17-darwin-aarch64-22.3.2.tar.gz",
+            __ARM__    : "https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java17-darwin-amd64-22.3.2.tar.gz",
         }
     },
     __CORRETTO11__ : {
