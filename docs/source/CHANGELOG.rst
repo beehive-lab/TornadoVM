@@ -32,7 +32,6 @@ Bug fixes:
 ~~~~~~~~~~~~~~~~~
 
 - Documentation that resets the device's memory: https://github.com/beehive-lab/TornadoVM/blob/master/tornado-api/src/main/java/uk/ac/manchester/tornado/api/TornadoExecutionPlan.java#L282 
-- Fix for the installation for ARM-based systems. 
 - Append the Java ``CLASSPATH`` to the ``cp`` option from the ``tornado`` script. 
 - Dependency fixed for the ``cmake-maven`` plugin fixed for ARM-64 arch.
 - Fixed the automatic installation for Apple M1/M2 and ARM-64 and NVIDIA Jetson nano computing systems. 
