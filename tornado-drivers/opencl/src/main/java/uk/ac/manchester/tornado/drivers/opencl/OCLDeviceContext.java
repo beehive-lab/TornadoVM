@@ -441,6 +441,11 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
     }
 
     @Override
+    public boolean isFP64Supported() {
+        return device.isDeviceDoubleFPSupported();
+    }
+
+    @Override
     public int getDeviceIndex() {
         return device.getIndex();
     }
