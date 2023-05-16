@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2023, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -44,6 +44,7 @@ import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
@@ -286,7 +287,11 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             System.out.println(e.getMessage());
             driver.fatal("unable to compile %s for device %s\n", task.getId(), getDeviceName());
             driver.fatal("exception occurred when compiling %s\n", ((CompilableTask) task).getMethod().getName());
-            throw new TornadoBailoutRuntimeException("[Error During the Task Compilation] ");
+            if (e instanceof TornadoDeviceFP64NotSupported) {
+                throw e;
+            } else {
+                throw new TornadoBailoutRuntimeException("[Error During the Task Compilation] ");
+            }
         }
     }
 
