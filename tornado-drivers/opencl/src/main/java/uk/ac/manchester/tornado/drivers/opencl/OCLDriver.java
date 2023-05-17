@@ -57,7 +57,6 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
     private OCLBackend[] flatBackends;
     private final OCLBackend[][] backends;
     private final List<OCLExecutionEnvironment> contexts;
-    private final HashMap<OCLDeviceType, OCLBackend> deviceTypeMap = new HashMap<>();
 
     public OCLDriver(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
         final int numPlatforms = OpenCL.getNumPlatforms();

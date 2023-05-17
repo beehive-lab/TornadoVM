@@ -39,7 +39,7 @@ import platform
 __TORNADOVM_DEBUG__                     = " -Dtornado.debug=True "
 __TORNADOVM_FULLDEBUG__                 = __TORNADOVM_DEBUG__ + "-Dtornado.fullDebug=True "
 __TORNADOVM_THREAD_INFO__               = " -Dtornado.threadInfo=True "
-__TORNADOVM_IGV__                       = " -Dgraal.Dump=*:5 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true"
+__TORNADOVM_IGV__                       = " -Dgraal.Dump=*:5 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true "
 __TORNADOVM__IGV_LOW_TIER               = " -Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true -Dtornado.debug.lowtier=True "
 __TORNADOVM_PRINT_KERNEL__              = " -Dtornado.print.kernel=True "
 __TORNADOVM_PRINT_BC__                  = " -Dtornado.print.bytecodes=True "

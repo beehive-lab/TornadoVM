@@ -5,6 +5,40 @@ TornadoVM Changelog
 
 This file summarizes the new features and major changes for each *TornadoVM* version.
 
+TornadoVM 0.15.1
+----------------
+15/05/2023 
+
+Improvements
+~~~~~~~~~~~~~~~~~~
+
+- Introduction of a device selection heuristic based on the computing capabilities of devices. TornadoVM selects, as the default device, the fastest device based on its computing capability. 
+- Optimisation of removing redundant data copies for Read-Only and Write-Only buffers from between the host (CPU) and the device (GPU) based on the Tornado Data Flow Graph. 
+- New installation script for TornadoVM.
+- Option to dump the TornadoVM bytecodes for the unit tests. 
+- Full debug option improved. Use ``--fullDebug``.
+
+
+Compatibility/Integration
+~~~~~~~~~~~~~~~~~~~~~
+
+- Integration and compatibility with the Graal 22.3.2 JIT Compiler.
+- Improved compatibility with Apple M1 and Apple M2 through the OpenCL Backend. 
+- GraalVM/Truffle programs integration improved. Use ``--truffle`` in the ``tornado`` script to run guest programs with Truffle. 
+  Example: ``tornado --truffle python myProgram.py`` 
+  Full documentation: https://tornadovm.readthedocs.io/en/latest/truffle-languages.html 
+
+Bug fixes:
+~~~~~~~~~~~~~~~~~
+
+- Documentation that resets the device's memory: https://github.com/beehive-lab/TornadoVM/blob/master/tornado-api/src/main/java/uk/ac/manchester/tornado/api/TornadoExecutionPlan.java#L282 
+- Append the Java ``CLASSPATH`` to the ``cp`` option from the ``tornado`` script. 
+- Dependency fixed for the ``cmake-maven`` plugin fixed for ARM-64 arch.
+- Fixed the automatic installation for Apple M1/M2 and ARM-64 and NVIDIA Jetson nano computing systems. 
+- Integration with IGV fixed. Use the  ``--igv`` option for the ``tornado`` and ``tornado-test`` scripts. 
+
+
+
 TornadoVM 0.15
 ----------------
 27/01/2023 
