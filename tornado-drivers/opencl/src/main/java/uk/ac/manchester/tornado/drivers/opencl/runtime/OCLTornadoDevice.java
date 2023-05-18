@@ -85,6 +85,7 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
@@ -284,13 +285,12 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
             return installedCode;
         } catch (Exception e) {
-            System.out.println(e.getMessage());
             driver.fatal("unable to compile %s for device %s\n", task.getId(), getDeviceName());
             driver.fatal("exception occurred when compiling %s\n", ((CompilableTask) task).getMethod().getName());
-            if (e instanceof TornadoDeviceFP64NotSupported) {
-                throw e;
+            if (TornadoOptions.RECOVER_BAILOUT) {
+                throw new TornadoBailoutRuntimeException("[Error during the Task Compilation]: " + e.getMessage());
             } else {
-                throw new TornadoBailoutRuntimeException("[Error During the Task Compilation] ");
+                throw e;
             }
         }
     }
