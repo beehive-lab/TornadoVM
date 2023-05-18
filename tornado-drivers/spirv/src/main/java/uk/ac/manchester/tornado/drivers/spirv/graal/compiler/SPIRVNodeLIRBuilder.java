@@ -96,7 +96,7 @@ import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVId;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVId;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
