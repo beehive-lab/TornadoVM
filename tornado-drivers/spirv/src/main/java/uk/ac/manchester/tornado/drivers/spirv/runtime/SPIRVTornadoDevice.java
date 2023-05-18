@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022, 2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -190,8 +190,8 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
             return installedCode;
         } catch (Exception e) {
-            System.err.printf("Unable to compile %s for device %s\n", task.getId(), getDeviceName());
-            System.err.printf("Exception occurred when compiling %s\n", task.getMethod().getName());
+            driver.fatal("Unable to compile %s for device %s\n", task.getId(), getDeviceName());
+            driver.fatal("Exception occurred when compiling %s\n", task.getMethod().getName());
             if (TornadoOptions.RECOVER_BAILOUT) {
                 throw new TornadoBailoutRuntimeException("[Error During the Task Compilation]: " + e.getMessage());
             } else {
