@@ -39,8 +39,11 @@ then
     git clone https://github.com/beehive-lab/spirv-beehive-toolkit
   fi
   cd $spirvToolkit
-  git pull origin master 
-  mvn clean install
+  #git pull origin master 
+  git checkout name-update
+  git pull origin name-update
+  mvn clean package
+  mvn install
   cd $current
 
 	levelZeroLib="level-zero"
