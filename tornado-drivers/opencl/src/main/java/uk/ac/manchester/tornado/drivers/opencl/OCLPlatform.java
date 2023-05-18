@@ -52,14 +52,15 @@ public class OCLPlatform extends TornadoLogger implements TornadoPlatform {
         this.contexts = new HashSet<>();
 
         final int deviceCount;
-        if (this.getVendor().equals("Xilinx")) {
+
+        if (isVendor("Xilinx") || isVendor("Codeplay")) {
             deviceCount = clGetDeviceCount(id, OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR.getValue());
         } else {
             deviceCount = clGetDeviceCount(id, OCLDeviceType.CL_DEVICE_TYPE_ALL.getValue());
         }
 
         final long[] ids = new long[deviceCount];
-        if (this.getVendor().equals("Xilinx")) {
+        if (isVendor("Xilinx") || isVendor("Codeplay")) {
             clGetDeviceIDs(id, OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR.getValue(), ids);
         } else {
             clGetDeviceIDs(id, OCLDeviceType.CL_DEVICE_TYPE_ALL.getValue(), ids);
@@ -70,13 +71,17 @@ public class OCLPlatform extends TornadoLogger implements TornadoPlatform {
 
     }
 
-    native static String clGetPlatformInfo(long id, int info);
+    private boolean isVendor(String vendorName) {
+        return this.getVendor().toLowerCase().startsWith(vendorName.toLowerCase());
+    }
 
-    native static int clGetDeviceCount(long id, long type);
+    static native String clGetPlatformInfo(long id, int info);
 
-    native static int clGetDeviceIDs(long id, long type, long[] devices);
+    static native int clGetDeviceCount(long id, long type);
 
-    native static long clCreateContext(long platform, long[] devices) throws OCLException;
+    static native int clGetDeviceIDs(long id, long type, long[] devices);
+
+    static native long clCreateContext(long platform, long[] devices) throws OCLException;
 
     public List<OCLTargetDevice> getDevices() {
         return devices;
@@ -131,12 +136,8 @@ public class OCLPlatform extends TornadoLogger implements TornadoPlatform {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append(String.format("name=%s, num. devices=%d, ", getName(), devices.size()));
-        sb.append(String.format("version=%s", getVersion()));
-
-        return sb.toString().trim();
+        String sb = String.format("name=%s, num. devices=%d, ", getName(), devices.size()) + String.format("version=%s", getVersion());
+        return sb.trim();
     }
 
     public int getIndex() {
