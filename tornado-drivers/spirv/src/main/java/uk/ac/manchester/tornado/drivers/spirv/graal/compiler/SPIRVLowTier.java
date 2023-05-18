@@ -44,6 +44,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAPragmaPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.OCLFPGAThreadScheduler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.InverseSquareRootPhase;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.SPIRVFMAPhase;
+import uk.ac.manchester.tornado.drivers.spirv.graal.phases.SPIRVFP64SupportPhase;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFeatureExtraction;
@@ -57,6 +58,8 @@ public class SPIRVLowTier extends TornadoLowTier {
 
     public SPIRVLowTier(OptionValues options, TornadoDeviceContext deviceContext, AddressLoweringPhase.AddressLowering addressLowering) {
         CanonicalizerPhase canonicalizer = getCannonicalizer(options);
+
+        appendPhase(new SPIRVFP64SupportPhase(deviceContext));
 
         appendPhase(new LowTierLoweringPhase(canonicalizer));
 
