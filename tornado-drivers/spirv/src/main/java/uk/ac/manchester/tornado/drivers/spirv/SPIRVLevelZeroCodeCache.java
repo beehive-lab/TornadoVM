@@ -32,10 +32,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVTool;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.disassembler.Disassembler;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.disassembler.SPIRVDisassemblerOptions;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.disassembler.SPVFileReader;
+import uk.ac.manchester.beehivespirvtoolkit.lib.SPIRVTool;
+import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.Disassembler;
+import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.SPIRVDisassemblerOptions;
+import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.SPVFileReader;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
