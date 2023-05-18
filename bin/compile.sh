@@ -33,10 +33,10 @@ done
 if [[ $selected_backends == *spirv* ]]
 then
 	current=$PWD
-	spirvToolkit="spirv-beehive-toolkit"
-  if [[ ! -d spirv-beehive-toolkit ]]
+	spirvToolkit="beehive-spirv-toolkit"
+  if [[ ! -d beehive-spirv-toolkit ]]
   then
-    git clone https://github.com/beehive-lab/spirv-beehive-toolkit
+    git clone https://github.com/beehive-lab/beehive-spirv-toolkit.git
   fi
   cd $spirvToolkit
   #git pull origin master 
