@@ -30,9 +30,9 @@ import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.nodes.DirectCallTargetNode;
 
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpFunctionCall;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVId;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMultipleOperands;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpFunctionCall;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVId;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVUtils;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
