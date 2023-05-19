@@ -495,11 +495,12 @@ public class TornadoVM extends TornadoLogger {
                 profilerUpdateForPreCompiledTask(task);
                 doUpdate = false;
             } catch (TornadoBailoutRuntimeException e) {
-                throw new TornadoBailoutRuntimeException("Unable to compile task " + task.getFullName() + "\n" + Arrays.toString(e.getStackTrace()), e);
+                throw new TornadoBailoutRuntimeException(
+                        "Unable to compile " + task.getFullName() + "\n" + "The internal error is: " + e.getMessage() + "\n" + "Stacktrace: " + Arrays.toString(e.getStackTrace()), e);
             } catch (TornadoDeviceFP64NotSupported e) {
                 throw e;
             } catch (InternalError e) {
-                throw new TornadoBailoutRuntimeException("[Internal Error] Unable to compile task " + task.getFullName() + "\n" + Arrays.toString(e.getStackTrace()));
+                throw new TornadoBailoutRuntimeException("[Internal Error] Unable to compile " + task.getFullName() + "\n" + Arrays.toString(e.getStackTrace()));
             }
         }
         return new ExecutionInfo(callWrapper, waitList);
