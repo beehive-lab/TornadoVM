@@ -109,7 +109,7 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
 
     @Override
     public boolean isFP64Supported() {
-        return false;
+        return true;
     }
 
     public PTXTornadoDevice asMapping() {
