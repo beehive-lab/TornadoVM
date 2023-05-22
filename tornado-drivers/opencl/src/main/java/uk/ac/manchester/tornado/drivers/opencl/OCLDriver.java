@@ -27,22 +27,22 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import java.util.stream.IntStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
-import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLHotSpotBackendFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLSuitesProvider;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
@@ -52,7 +52,10 @@ import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public final class OCLDriver extends TornadoLogger implements TornadoAcceleratorDriver {
-    public static final List<OCLDeviceType> DEVICE_TYPE_LIST = Arrays.asList(OCLDeviceType.CL_DEVICE_TYPE_GPU, OCLDeviceType.CL_DEVICE_TYPE_CPU, OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR,
+    public static final List<OCLDeviceType> DEVICE_TYPE_LIST = Arrays.asList( //
+            OCLDeviceType.CL_DEVICE_TYPE_GPU, //
+            OCLDeviceType.CL_DEVICE_TYPE_CPU, //
+            OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR, //
             OCLDeviceType.CL_DEVICE_TYPE_CUSTOM);
     private OCLBackend[] flatBackends;
     private final OCLBackend[][] backends;
