@@ -63,7 +63,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
-import uk.ac.manchester.tornado.runtime.graph.TornadoGraphAssembler.TornadoVMBytecode;
+import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecode;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
@@ -287,7 +287,7 @@ public class TornadoVM extends TornadoLogger {
     }
 
     private int transferHostToDeviceOnce(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch,
-            final int[] waitList) {
+                                         final int[] waitList) {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
         Object object = objects.get(objectIndex);
 
@@ -333,7 +333,7 @@ public class TornadoVM extends TornadoLogger {
     }
 
     private int transferHostToDeviceAlways(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch,
-            final int[] waitList) {
+                                           final int[] waitList) {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
         Object object = objects.get(objectIndex);
 
@@ -371,7 +371,7 @@ public class TornadoVM extends TornadoLogger {
     }
 
     private int transferDeviceToHost(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch,
-            final int[] waitList) {
+                                     final int[] waitList) {
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
         Object object = objects.get(objectIndex);
 
@@ -407,7 +407,7 @@ public class TornadoVM extends TornadoLogger {
     }
 
     private void transferDeviceToHostBlocking(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch,
-            final int[] waitList) {
+                                              final int[] waitList) {
 
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);
         Object object = objects.get(objectIndex);
@@ -514,7 +514,7 @@ public class TornadoVM extends TornadoLogger {
     }
 
     private int executeLaunch(StringBuilder tornadoVMBytecodeList, final int contextIndex, final int numArgs, final int eventList, final int taskIndex, final long batchThreads, final long offset,
-            ExecutionInfo info) {
+                              ExecutionInfo info) {
 
         final SchedulableTask task = tasks.get(taskIndex);
         final TornadoAcceleratorDevice device = contexts.get(contextIndex);

@@ -44,7 +44,6 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
-import uk.ac.manchester.tornado.runtime.graph.TornadoGraphAssembler.TornadoVMBytecode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextOpNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.DependentReadNode;
@@ -66,15 +65,12 @@ public class TornadoVMGraphCompiler {
     /**
      * Generate TornadoVM byte-code from a Tornado Task Graph.
      *
-     * @param graph
-     *            TornadoVM execution Graph.
-     * @param context
-     *            TornadoVM execution context.
-     * @param batchSize
-     *            Batch size
-     * @return {@link TornadoVMGraphCompilationResult}
+     * @param graph     TornadoVM execution Graph.
+     * @param context   TornadoVM execution context.
+     * @param batchSize Batch size
+     * @return {@link TornadoVMBytecodeBuilder}
      */
-    public static TornadoVMGraphCompilationResult compile(TornadoGraph graph, TornadoExecutionContext context, long batchSize) {
+    public static TornadoVMBytecodeBuilder compile(TornadoGraph graph, TornadoExecutionContext context, long batchSize) {
         return compileContext(graph, context, batchSize);
     }
 
@@ -145,8 +141,8 @@ public class TornadoVMGraphCompiler {
         return new BatchSizeMetaData(totalChunks, remainingChunkSize, typeSize);
     }
 
-    private static TornadoVMGraphCompilationResult compileContext(TornadoGraph graph, TornadoExecutionContext context, long batchSize) {
-        final TornadoVMGraphCompilationResult result = new TornadoVMGraphCompilationResult();
+    private static TornadoVMBytecodeBuilder compileContext(TornadoGraph graph, TornadoExecutionContext context, long batchSize) {
+        final TornadoVMBytecodeBuilder result = new TornadoVMBytecodeBuilder();
 
         final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
 
@@ -210,7 +206,7 @@ public class TornadoVMGraphCompiler {
         return result;
     }
 
-    private static void synchronizeOperationLastByteCode(TornadoVMGraphCompilationResult result, int numDepLists) {
+    private static void synchronizeOperationLastByteCode(TornadoVMBytecodeBuilder result, int numDepLists) {
         final byte[] code = result.getCode();
         final int codeSize = result.getCodeSize();
         if (code[codeSize - 13] == TornadoVMBytecode.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()) {
@@ -242,11 +238,11 @@ public class TornadoVMGraphCompiler {
         }
     }
 
-    private static void scheduleAndEmitTornadoVMBytecodes(TornadoVMGraphCompilationResult result, TornadoGraph graph, int[] nodeIds, BitSet[] deps) {
+    private static void scheduleAndEmitTornadoVMBytecodes(TornadoVMBytecodeBuilder result, TornadoGraph graph, int[] nodeIds, BitSet[] deps) {
         scheduleAndEmitTornadoVMBytecodes(result, graph, nodeIds, deps, 0, 0, 0);
     }
 
-    private static void scheduleAndEmitTornadoVMBytecodes(TornadoVMGraphCompilationResult result, TornadoGraph graph, int[] nodeIds, BitSet[] deps, long offset, long bufferBatchSize, long nThreads) {
+    private static void scheduleAndEmitTornadoVMBytecodes(TornadoVMBytecodeBuilder result, TornadoGraph graph, int[] nodeIds, BitSet[] deps, long offset, long bufferBatchSize, long nThreads) {
         final BitSet scheduled = new BitSet(deps.length);
         scheduled.clear();
         final BitSet nodes = new BitSet(graph.getValid().length());
@@ -278,7 +274,7 @@ public class TornadoVMGraphCompiler {
                             result.emitAsyncNode(asyncNode, asyncNode.getContext().getDeviceIndex(), (deps[i].isEmpty()) ? -1 : depLists[i], offset, bufferBatchSize, nThreads);
                         } catch (BufferOverflowException e) {
                             throw new TornadoRuntimeException("[ERROR] Buffer Overflow exception. Use -Dtornado.tvm.maxbytecodesize=<value> with value > "
-                                    + TornadoVMGraphCompilationResult.MAX_TORNADO_VM_BYTECODE_SIZE + " to increase the buffer code size");
+                                    + TornadoVMBytecodeBuilder.MAX_TORNADO_VM_BYTECODE_SIZE + " to increase the buffer code size");
                         }
 
                         for (int j = 0; j < deps.length; j++) {
@@ -286,7 +282,7 @@ public class TornadoVMGraphCompiler {
                                 continue;
                             }
                             if (deps[j].get(nodeIds[i]) && depLists[j] != -1) {
-                                result.emitAddDep(depLists[j]);
+                                result.emitAddDependency(depLists[j]);
                             }
                         }
                         scheduled.set(i);

@@ -25,6 +25,7 @@ package uk.ac.manchester.tornado.runtime.graph;
 
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateMultipleBuffersNode;
@@ -38,17 +39,21 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.ObjectNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.StreamInNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
 
-public class TornadoVMGraphCompilationResult {
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.List;
+
+public class TornadoVMBytecodeBuilder {
 
     public static final int MAX_TORNADO_VM_BYTECODE_SIZE = Integer.parseInt(getProperty("tornado.tvm.maxbytecodesize", "4096"));
 
     private final byte[] code;
-    private final TornadoGraphAssembler bitcodeASM;
+    private final TornadoVMBytecodeAssembler bitcodeASM;
     private int globalTaskID;
 
-    public TornadoVMGraphCompilationResult() {
+    public TornadoVMBytecodeBuilder() {
         code = new byte[MAX_TORNADO_VM_BYTECODE_SIZE];
-        bitcodeASM = new TornadoGraphAssembler(code);
+        bitcodeASM = new TornadoVMBytecodeAssembler(code);
         globalTaskID = 0;
     }
 
@@ -116,7 +121,7 @@ public class TornadoVMGraphCompilationResult {
         }
     }
 
-    public void emitAddDep(int dep) {
+    public void emitAddDependency(int dep) {
         bitcodeASM.addDependency(dep);
     }
 
@@ -132,4 +137,136 @@ public class TornadoVMGraphCompilationResult {
         return bitcodeASM.position();
     }
 
+    public class TornadoVMBytecodeAssembler {
+        private final ByteBuffer buffer;
+
+        /**
+         * Constructs a new {@code TornadoVMBytecodeAssembler} instance.
+         *
+         * @param code The byte array to hold the assembled bytecode.
+         */
+        TornadoVMBytecodeAssembler(byte[] code) {
+            buffer = ByteBuffer.wrap(code);
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+        }
+
+
+        public int position() {
+            return buffer.position();
+        }
+
+        void begin() {
+            buffer.put(TornadoVMBytecode.BEGIN.value);
+        }
+
+        public void end() {
+            buffer.put(TornadoVMBytecode.END.value);
+        }
+
+        void setup(int numContexts, int numStacks, int numDeps) {
+            buffer.put(TornadoVMBytecode.INIT.value);
+            buffer.putInt(numContexts);
+            buffer.putInt(numStacks);
+            buffer.putInt(numDeps);
+        }
+
+        void addDependency(int index) {
+            buffer.put(TornadoVMBytecode.ADD_DEPENDENCY.value);
+            buffer.putInt(index);
+        }
+
+        public void context(int index) {
+            buffer.put(TornadoVMBytecode.CONTEXT.value);
+            buffer.putInt(index);
+        }
+
+        public void allocate(List<AbstractNode> values, int ctx, long batchSize) {
+            buffer.put(TornadoVMBytecode.ALLOC.value);
+            buffer.putInt(ctx);
+            buffer.putLong(batchSize);
+            buffer.putInt(values.size());
+            for (AbstractNode node : values) {
+                buffer.putInt(node.getIndex());
+            }
+        }
+
+        public void deallocate(int object, int ctx) {
+            buffer.put(TornadoVMBytecode.DEALLOC.value);
+            buffer.putInt(object);
+            buffer.putInt(ctx);
+        }
+
+        void transferToDeviceOnce(int obj, int ctx, int dep, long offset, long size) {
+            buffer.put(TornadoVMBytecode.TRANSFER_HOST_TO_DEVICE_ONCE.value);
+            buffer.putInt(obj);
+            buffer.putInt(ctx);
+            buffer.putInt(dep);
+            buffer.putLong(offset);
+            buffer.putLong(size);
+        }
+
+        void transferToDeviceAlways(int obj, int ctx, int dep, long offset, long size) {
+            buffer.put(TornadoVMBytecode.TRANSFER_HOST_TO_DEVICE_ALWAYS.value);
+            buffer.putInt(obj);
+            buffer.putInt(ctx);
+            buffer.putInt(dep);
+            buffer.putLong(offset);
+            buffer.putLong(size);
+        }
+
+        void transferToHost(int obj, int ctx, int dep, long offset, long size) {
+            buffer.put(TornadoVMBytecode.TRANSFER_DEVICE_TO_HOST_ALWAYS.value);
+            buffer.putInt(obj);
+            buffer.putInt(ctx);
+            buffer.putInt(dep);
+            buffer.putLong(offset);
+            buffer.putLong(size);
+        }
+
+        void launch(int gtid, int ctx, int task, int numParameters, int dep, long offset, long size) {
+            buffer.put(TornadoVMBytecode.LAUNCH.value);
+            buffer.putInt(gtid);
+            buffer.putInt(ctx);
+            buffer.putInt(task);
+            buffer.putInt(numParameters);
+            buffer.putInt(dep);
+            buffer.putLong(offset);
+            buffer.putLong(size);
+        }
+
+        public void barrier(int dep) {
+            buffer.put(TornadoVMBytecode.BARRIER.value);
+            buffer.putInt(dep);
+        }
+
+        void constantArg(int index) {
+            buffer.put(TornadoVMBytecode.PUSH_CONSTANT_ARGUMENT.value);
+            buffer.putInt(index);
+        }
+
+        void referenceArg(int index) {
+            buffer.put(TornadoVMBytecode.PUSH_REFERENCE_ARGUMENT.value);
+            buffer.putInt(index);
+        }
+
+        public void dump() {
+            final int width = 16;
+            System.out.printf("code  : capacity = %s, in use = %s   \n", RuntimeUtilities.humanReadableByteCount(buffer.capacity(), true),
+                    RuntimeUtilities.humanReadableByteCount(buffer.position(), true));
+            for (int i = 0; i < buffer.position(); i += width) {
+                System.out.printf("[0x%04x]: ", i);
+                for (int j = 0; j < Math.min(buffer.capacity() - i, width); j++) {
+                    if (j % 2 == 0) {
+                        System.out.printf(" ");
+                    }
+                    if (j < buffer.position() - i) {
+                        System.out.printf("%02x", buffer.get(i + j));
+                    } else {
+                        System.out.printf("..");
+                    }
+                }
+                System.out.println();
+            }
+        }
+    }
 }

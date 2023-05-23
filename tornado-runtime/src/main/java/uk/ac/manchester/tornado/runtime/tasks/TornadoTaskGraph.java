@@ -105,7 +105,7 @@ import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraph;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphBuilder;
-import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompilationResult;
+import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodeBuilder;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompiler;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
@@ -148,7 +148,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private TornadoExecutionContext executionContext;
     private byte[] highLevelCode = new byte[2048];
     private ByteBuffer hlBuffer;
-    private TornadoVMGraphCompilationResult result;
+    private TornadoVMBytecodeBuilder result;
     private long batchSizeBytes = -1;
     private boolean bailout = false;
     // One TornadoVM instance per TaskSchedule
@@ -185,8 +185,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     /**
      * Task Schedule implementation that uses GPU/FPGA and multi-core backends.
      *
-     * @param taskScheduleName
-     *            Task-Schedule name
+     * @param taskScheduleName Task-Schedule name
      */
     public TornadoTaskGraph(String taskScheduleName) {
         executionContext = new TornadoExecutionContext(taskScheduleName, timeProfiler);
@@ -615,8 +614,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     /**
      * Compile a task-schedule into TornadoVM byte-code
      *
-     * @param setNewDevice:
-     *            boolean that specifies if set a new device or not.
+     * @param setNewDevice: boolean that specifies if set a new device or not.
      */
     private TornadoVM compile(boolean setNewDevice) {
         final ByteBuffer buffer = ByteBuffer.wrap(highLevelCode);
@@ -1779,10 +1777,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
      * Experimental method to sync all objects when making a clone copy for all
      * output objects per device.
      *
-     * @param policy
-     *            input policy
-     * @param numDevices
-     *            number of devices
+     * @param policy     input policy
+     * @param numDevices number of devices
      */
     private void restoreVarsIntoJavaHeap(Policy policy, int numDevices) {
         if (policyTimeTable.get(policy) < numDevices) {
@@ -1910,7 +1906,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private void addInner(int type, Method method, ScheduleMetaData meta, String id, Object[] parameters) {
         switch (type) {
             case 0:
