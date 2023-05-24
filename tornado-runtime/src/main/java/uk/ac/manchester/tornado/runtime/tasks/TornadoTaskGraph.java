@@ -23,70 +23,16 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks;
 
-import java.io.IOException;
-import java.lang.reflect.Array;
-import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.graph.CachedGraph;
 import org.graalvm.compiler.phases.util.Providers;
-
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.api.GridScheduler;
-import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
-import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.Policy;
-import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TornadoDriver;
-import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.TornadoTaskGraphInterface;
-import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.api.common.Event;
-import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.api.common.TaskPackage;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task1;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task10;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task11;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task12;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task13;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task14;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task15;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task2;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task3;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task4;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task5;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
-import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
+import uk.ac.manchester.tornado.api.*;
+import uk.ac.manchester.tornado.api.common.*;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.*;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
-import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
-import uk.ac.manchester.tornado.api.exceptions.TornadoDynamicReconfigurationException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.*;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -95,18 +41,12 @@ import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
-import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.common.TornadoVMClient;
+import uk.ac.manchester.tornado.runtime.common.*;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraph;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphBuilder;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodeBuilder;
-import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompiler;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
@@ -115,6 +55,18 @@ import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+
+import java.io.IOException;
+import java.lang.reflect.Array;
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Implementation of the Tornado API for running on heterogeneous devices.
@@ -374,7 +326,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         // 4. Update the global states array in the vm.
         if (vm != null) {
-            vm.fetchGlobalStates();
+//            vm.fetchGlobalStates();
         }
 
         // 5. Set the update data flag to true in order to create a new call wrapper
@@ -521,8 +473,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         // 2. Clear the code cache of the TornadoVM instance
         if (vm != null) {
-            vm.clearInstalledCode();
-            vm.setCompileUpdate();
+//            vm.clearInstalledCode();
+//            vm.setCompileUpdate();
         }
     }
 
@@ -627,14 +579,13 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
 
         // TornadoVM byte-code generation
-        result = TornadoVMGraphCompiler.compile(tornadoGraph, executionContext, batchSizeBytes);
 
-        TornadoVM tornadoVM = new TornadoVM(executionContext, result.getCode(), result.getCodeSize(), timeProfiler);
+        TornadoVM tornadoVM = new TornadoVM(executionContext, tornadoGraph, timeProfiler, batchSizeBytes);
 
         if (meta().shouldDumpSchedule()) {
             executionContext.print();
             tornadoGraph.print();
-            result.dump();
+//            result.dump();
         }
 
         return tornadoVM;
@@ -705,7 +656,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
          * TornadoTaskSchedule::compile method is not called in different runs of the
          * same TaskSchedule.
          */
-        vm.setGridScheduler(gridScheduler);
+//        vm.setGridScheduler(gridScheduler);
 
         if (updateData) {
             executionContext.newCallWrapper(true);
@@ -716,7 +667,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private void compileTaskToOpenCL() {
-        vm.compile();
+//        vm.compile();
     }
 
     /**
@@ -822,22 +773,22 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void dumpTimes() {
-        vm.printTimes();
+//        vm.printTimes();
     }
 
     @Override
     public void dumpProfiles() {
-        vm.dumpProfiles();
+//        vm.dumpProfiles();
     }
 
     @Override
     public void dumpEvents() {
-        vm.dumpEvents();
+//        vm.dumpEvents();
     }
 
     @Override
     public void clearProfiles() {
-        vm.clearProfiles();
+//        vm.clearProfiles();
     }
 
     @Override
@@ -947,7 +898,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         timeProfiler.clean();
 
         compileToTornadoVMBytecode();
-        vm.warmup();
+//        vm.warmup();
 
         if (TornadoOptions.isProfilerEnabled() && !TornadoOptions.PROFILER_LOGS_ACCUMULATE()) {
             timeProfiler.dumpJson(new StringBuffer(), this.getId());

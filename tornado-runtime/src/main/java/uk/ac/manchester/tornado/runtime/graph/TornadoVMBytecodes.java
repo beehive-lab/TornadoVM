@@ -26,7 +26,7 @@ package uk.ac.manchester.tornado.runtime.graph;
 /**
  * Enum representing TornadoVM bytecodes.
  */
-public enum TornadoVMBytecode {
+public enum TornadoVMBytecodes {
 
     /**
      * Native buffer allocation. If there is not enough space on the target device,
@@ -195,7 +195,7 @@ public enum TornadoVMBytecode {
 
     final byte value;
 
-    TornadoVMBytecode(byte value) {
+    TornadoVMBytecodes(byte value) {
         this.value = value;
     }
 

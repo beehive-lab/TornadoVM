@@ -23,25 +23,15 @@
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
-
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
-import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateMultipleBuffersNode;
-import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateNode;
-import uk.ac.manchester.tornado.runtime.graph.nodes.ConstantNode;
-import uk.ac.manchester.tornado.runtime.graph.nodes.CopyInNode;
-import uk.ac.manchester.tornado.runtime.graph.nodes.CopyOutNode;
-import uk.ac.manchester.tornado.runtime.graph.nodes.DeallocateNode;
-import uk.ac.manchester.tornado.runtime.graph.nodes.DependentReadNode;
-import uk.ac.manchester.tornado.runtime.graph.nodes.ObjectNode;
-import uk.ac.manchester.tornado.runtime.graph.nodes.StreamInNode;
-import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.*;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.List;
+
+import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 public class TornadoVMBytecodeBuilder {
 
@@ -156,32 +146,32 @@ public class TornadoVMBytecodeBuilder {
         }
 
         void begin() {
-            buffer.put(TornadoVMBytecode.BEGIN.value);
+            buffer.put(TornadoVMBytecodes.BEGIN.value);
         }
 
         public void end() {
-            buffer.put(TornadoVMBytecode.END.value);
+            buffer.put(TornadoVMBytecodes.END.value);
         }
 
         void setup(int numContexts, int numStacks, int numDeps) {
-            buffer.put(TornadoVMBytecode.INIT.value);
+            buffer.put(TornadoVMBytecodes.INIT.value);
             buffer.putInt(numContexts);
             buffer.putInt(numStacks);
             buffer.putInt(numDeps);
         }
 
         void addDependency(int index) {
-            buffer.put(TornadoVMBytecode.ADD_DEPENDENCY.value);
+            buffer.put(TornadoVMBytecodes.ADD_DEPENDENCY.value);
             buffer.putInt(index);
         }
 
         public void context(int index) {
-            buffer.put(TornadoVMBytecode.CONTEXT.value);
+            buffer.put(TornadoVMBytecodes.CONTEXT.value);
             buffer.putInt(index);
         }
 
         public void allocate(List<AbstractNode> values, int ctx, long batchSize) {
-            buffer.put(TornadoVMBytecode.ALLOC.value);
+            buffer.put(TornadoVMBytecodes.ALLOC.value);
             buffer.putInt(ctx);
             buffer.putLong(batchSize);
             buffer.putInt(values.size());
@@ -191,13 +181,13 @@ public class TornadoVMBytecodeBuilder {
         }
 
         public void deallocate(int object, int ctx) {
-            buffer.put(TornadoVMBytecode.DEALLOC.value);
+            buffer.put(TornadoVMBytecodes.DEALLOC.value);
             buffer.putInt(object);
             buffer.putInt(ctx);
         }
 
         void transferToDeviceOnce(int obj, int ctx, int dep, long offset, long size) {
-            buffer.put(TornadoVMBytecode.TRANSFER_HOST_TO_DEVICE_ONCE.value);
+            buffer.put(TornadoVMBytecodes.TRANSFER_HOST_TO_DEVICE_ONCE.value);
             buffer.putInt(obj);
             buffer.putInt(ctx);
             buffer.putInt(dep);
@@ -206,7 +196,7 @@ public class TornadoVMBytecodeBuilder {
         }
 
         void transferToDeviceAlways(int obj, int ctx, int dep, long offset, long size) {
-            buffer.put(TornadoVMBytecode.TRANSFER_HOST_TO_DEVICE_ALWAYS.value);
+            buffer.put(TornadoVMBytecodes.TRANSFER_HOST_TO_DEVICE_ALWAYS.value);
             buffer.putInt(obj);
             buffer.putInt(ctx);
             buffer.putInt(dep);
@@ -215,7 +205,7 @@ public class TornadoVMBytecodeBuilder {
         }
 
         void transferToHost(int obj, int ctx, int dep, long offset, long size) {
-            buffer.put(TornadoVMBytecode.TRANSFER_DEVICE_TO_HOST_ALWAYS.value);
+            buffer.put(TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS.value);
             buffer.putInt(obj);
             buffer.putInt(ctx);
             buffer.putInt(dep);
@@ -224,7 +214,7 @@ public class TornadoVMBytecodeBuilder {
         }
 
         void launch(int gtid, int ctx, int task, int numParameters, int dep, long offset, long size) {
-            buffer.put(TornadoVMBytecode.LAUNCH.value);
+            buffer.put(TornadoVMBytecodes.LAUNCH.value);
             buffer.putInt(gtid);
             buffer.putInt(ctx);
             buffer.putInt(task);
@@ -235,17 +225,17 @@ public class TornadoVMBytecodeBuilder {
         }
 
         public void barrier(int dep) {
-            buffer.put(TornadoVMBytecode.BARRIER.value);
+            buffer.put(TornadoVMBytecodes.BARRIER.value);
             buffer.putInt(dep);
         }
 
         void constantArg(int index) {
-            buffer.put(TornadoVMBytecode.PUSH_CONSTANT_ARGUMENT.value);
+            buffer.put(TornadoVMBytecodes.PUSH_CONSTANT_ARGUMENT.value);
             buffer.putInt(index);
         }
 
         void referenceArg(int index) {
-            buffer.put(TornadoVMBytecode.PUSH_REFERENCE_ARGUMENT.value);
+            buffer.put(TornadoVMBytecodes.PUSH_REFERENCE_ARGUMENT.value);
             buffer.putInt(index);
         }
 

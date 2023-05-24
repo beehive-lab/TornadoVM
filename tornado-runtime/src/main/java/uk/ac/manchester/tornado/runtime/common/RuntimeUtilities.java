@@ -27,19 +27,19 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURCE;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURCE_DIRECTORY;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.Signature;
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.loop.BasicInductionVariable;
+import org.graalvm.compiler.nodes.loop.LoopEx;
+import org.graalvm.compiler.nodes.loop.LoopsData;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -47,11 +47,12 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.List;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.Signature;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURCE;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURCE_DIRECTORY;
 
 public class RuntimeUtilities {
 
@@ -83,15 +84,12 @@ public class RuntimeUtilities {
     /**
      * Convert byte sizes into human readable format Based on code from
      *
-     * @see <a href=http://stackoverflow.com/questions/3758606/how-to-convert
-     *      -byte-size-into-human-readable-format-in-java >Reference to
-     *      StackOverflow</a>
-     *
-     *
      * @param bytes
      * @param si
-     *
      * @return humanReadableByteCount
+     * @see <a href=http://stackoverflow.com/questions/3758606/how-to-convert
+     * -byte-size-into-human-readable-format-in-java >Reference to
+     * StackOverflow</a>
      */
     public static String humanReadableByteCount(long bytes, boolean si) {
         final int unit = si ? 1000 : 1024;
@@ -147,7 +145,6 @@ public class RuntimeUtilities {
      * Returns true if object is a boxed type
      *
      * @param obj
-     *
      * @return
      */
     public static boolean isBoxedPrimitive(final Object obj) {
@@ -177,9 +174,7 @@ public class RuntimeUtilities {
     /**
      * Returns true if object is a boxed type
      *
-     * @param klass
-     *            Class to check is boxed type.
-     *
+     * @param klass Class to check is boxed type.
      * @return boolean
      */
     public static boolean isBoxedPrimitiveClass(final Class<?> klass) {
@@ -210,7 +205,6 @@ public class RuntimeUtilities {
      * Returns true if object is a boxed type
      *
      * @param clazz
-     *
      * @return
      */
     public static Class<?> toUnboxedPrimitiveClass(final Class<?> clazz) {
@@ -240,9 +234,7 @@ public class RuntimeUtilities {
     /**
      * determines whether a given array is composed of primitives or objects
      *
-     * @param type
-     *            type to check
-     *
+     * @param type type to check
      * @return true if the array is composed of a primitive type
      */
     public static boolean isPrimitiveArray(final Class<?> type) {
@@ -351,6 +343,32 @@ public class RuntimeUtilities {
         }
         sb.append(")");
         return sb.toString();
+    }
+
+    /**
+     * Prints the induction variables for counted loops in the given StructuredGraph.
+     * This helper can be used for post-processing paralled induction variables
+     *
+     * @param graph The StructuredGraph to analyze and print induction variables for.
+     */
+    private static void printInductionVariables(StructuredGraph graph) {
+        final LoopsData data = new TornadoLoopsData(graph);
+        data.detectCountedLoops();
+
+        final List<LoopEx> loops = data.outerFirst();
+
+        List<ParallelRangeNode> parRanges = graph.getNodes().filter(ParallelRangeNode.class).snapshot();
+        for (LoopEx loop : loops) {
+            for (ParallelRangeNode parRange : parRanges) {
+                for (Node n : parRange.offset().usages()) {
+                    if (loop.getInductionVariables().containsKey(n)) {
+                        BasicInductionVariable iv = (BasicInductionVariable) loop.getInductionVariables().get(n);
+                        System.out.printf("[%d] parallel loop: %s -> init=%s, cond=%s, stride=%s, op=%s\n", parRange.index(), loop.loopBegin(), parRange.offset().value(), parRange.value(),
+                                parRange.stride(), iv.getOp());
+                    }
+                }
+            }
+        }
     }
 
     public static boolean ifFileExists(File fileName) {

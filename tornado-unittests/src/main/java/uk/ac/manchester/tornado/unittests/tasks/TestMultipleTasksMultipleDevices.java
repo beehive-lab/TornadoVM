@@ -39,16 +39,50 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  * The user needs to specify the target device for each task as follows:
  * </p>
  * <code>
- *  -Ds0.t0.device=0:0 -Ds0.t0.device=0:1
- *</code>
+ * -Ds0.t0.device=0:0 -Ds0.t0.device=0:1
+ * </code>
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices
+ * tornado-test -V uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices
  * </code>
  **/
 public class TestMultipleTasksMultipleDevices {
+    @Test
+    public void test() {
+        final int numElements = 8192;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+        int devices = TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
+
+        IntStream.range(0, numElements).forEach(i -> {
+            a[i] = 30;
+            b[i] = 10;
+        });
+
+//        if (devices == 1) {
+//            assertTrue("This test needs at least 2 OpenCL-compatible devices.", devices == 1);
+//        } else {
+//            System.setProperty("tornado.debug", "true");
+////            System.setProperty("s0.t0.device", "0:1");
+//            System.setProperty("s0.t1.device", "0:0");
+//        }
+
+        TaskGraph taskGraph = new TaskGraph("s0")//
+                .task("t0", TestMultipleTasksSingleDevice::task0Initialization, b) //
+//                .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b); //
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+
+        for (int i = 0; i < a.length; i++) {
+            assertEquals(10, b[i]);
+//            assertEquals(10, b[i]);
+        }
+    }
 
     @Test
     public void testTwoTasksTwoDevices() {
