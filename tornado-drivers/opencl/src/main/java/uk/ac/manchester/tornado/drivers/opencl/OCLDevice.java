@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl;
@@ -465,9 +463,7 @@ public class OCLDevice implements OCLTargetDevice {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format("id=0x%x, deviceName=%s, type=%s, available=%s", id, getDeviceName(), getDeviceType().toString(), isDeviceAvailable()));
-        return sb.toString();
+        return String.format("id=0x%x, deviceName=%s, type=%s, available=%s", id, getDeviceName(), getDeviceType().toString(), isDeviceAvailable());
     }
 
     @Override
