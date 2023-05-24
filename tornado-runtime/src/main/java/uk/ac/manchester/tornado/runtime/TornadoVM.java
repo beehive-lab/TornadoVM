@@ -84,10 +84,18 @@ public class TornadoVM extends TornadoLogger {
             index++;
         }
     }
-    
+
+
+    public TornadoVMBytecodeBuilder[] getTornadoVMBytecodes() {
+        return tornadoVMBytecodes;
+    }
 
     public Event execute() {
+//        for (TornadoVMInterpreter tornadoVMInterpreter : tornadoVMInterpreters) {
+//            tornadoVMInterpreter.execute(false);
+//        }
         return tornadoVMInterpreters[0].execute(false);
+
     }
 
     private void scheduleInterpreters() {

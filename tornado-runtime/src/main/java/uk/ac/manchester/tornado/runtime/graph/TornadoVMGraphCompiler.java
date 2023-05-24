@@ -70,10 +70,10 @@ public class TornadoVMGraphCompiler {
 
         bytecodes[0] = new TornadoVMBytecodeBuilder();
 
+        System.out.println("------------ XXX");
         final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
 
         final IntermediateTornadoGraph intermediateTornadoGraph = new IntermediateTornadoGraph(asyncNodes, graph);
-        intermediateTornadoGraph.traverseIntermediateGraph();
 
 
         // Generate Context + BEGIN bytecode
@@ -119,7 +119,44 @@ public class TornadoVMGraphCompiler {
     }
 
     private static TornadoVMBytecodeBuilder[] compileMultiContextTornadoGraphToTornadoBytecodes(TornadoGraph graph, TornadoExecutionContext context) {
-        TornadoVMBytecodeBuilder[] bytecodes = new TornadoVMBytecodeBuilder[1];
+        TornadoVMBytecodeBuilder[] bytecodes = new TornadoVMBytecodeBuilder[context.getDevices().size()];
+
+        Arrays.fill(bytecodes, new TornadoVMBytecodeBuilder());
+
+        final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
+
+        final IntermediateTornadoGraph intermediateTornadoGraph = new IntermediateTornadoGraph(asyncNodes, graph);
+
+        System.out.println("Async nodes " + asyncNodes.cardinality() + " COntext size : " + bytecodes.length);
+
+        int contextIndex = 0;
+        for (TornadoVMBytecodeBuilder bc : bytecodes) {
+            // Generate Context + BEGIN bytecode
+            bc.begin(contextIndex, intermediateTornadoGraph.getTasks().cardinality(), intermediateTornadoGraph.getNumberOfDependecies() + 1);
+
+
+            // Generate bytecodes with no batches
+            scheduleAndEmitTornadoVMBytecodes(bc, graph, intermediateTornadoGraph.getNodeIds(), intermediateTornadoGraph.getDependencies());
+
+//            System.exit(0);
+            // Last operation -> perform synchronisation
+            if (TornadoOptions.ENABLE_STREAM_OUT_BLOCKING) {
+                synchronizeOperationLastByteCode(bc, intermediateTornadoGraph.getNumberOfDependecies());
+            } else {
+                bc.barrier(intermediateTornadoGraph.getNumberOfDependecies());
+            }
+
+            // Generate END bytecode
+            bc.end();
+        }
+
+        for (TornadoVMBytecodeBuilder bcs : bytecodes) {
+            System.out.println("-----start-------");
+//            System.out.println(bcs.dump());
+            bcs.dump();
+            System.out.println("-----end-------");
+        }
+//        System.exit(0);
 
         return bytecodes;
     }
@@ -218,6 +255,7 @@ public class TornadoVMGraphCompiler {
             this.nodeIds = new int[asyncNodes.cardinality()];
             this.index = 0;
             this.numberOfDependecies = 0;
+            traverseIntermediateGraph();
         }
 
         public BitSet[] getDependencies() {

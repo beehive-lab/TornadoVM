@@ -579,13 +579,13 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
 
         // TornadoVM byte-code generation
-
         TornadoVM tornadoVM = new TornadoVM(executionContext, tornadoGraph, timeProfiler, batchSizeBytes);
 
         if (meta().shouldDumpSchedule()) {
             executionContext.print();
             tornadoGraph.print();
-//            result.dump();
+            Arrays.stream(tornadoVM.getTornadoVMBytecodes())
+                    .forEach(TornadoVMBytecodeBuilder::dump);
         }
 
         return tornadoVM;

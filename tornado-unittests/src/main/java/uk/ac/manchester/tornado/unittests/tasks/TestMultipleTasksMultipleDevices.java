@@ -18,18 +18,17 @@
 
 package uk.ac.manchester.tornado.unittests.tasks;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.util.stream.IntStream;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Testing TornadoVM with multiple independent tasks on different devices. The
@@ -61,18 +60,18 @@ public class TestMultipleTasksMultipleDevices {
             b[i] = 10;
         });
 
-//        if (devices == 1) {
-//            assertTrue("This test needs at least 2 OpenCL-compatible devices.", devices == 1);
-//        } else {
-//            System.setProperty("tornado.debug", "true");
-////            System.setProperty("s0.t0.device", "0:1");
-//            System.setProperty("s0.t1.device", "0:0");
-//        }
+        if (devices == 1) {
+            assertTrue("This test needs at least 2 OpenCL-compatible devices.", devices == 1);
+        } else {
+            System.setProperty("tornado.debug", "true");
+            System.setProperty("s0.t0.device", "0:1");
+            System.setProperty("s0.t1.device", "0:0");
+        }
 
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .task("t0", TestMultipleTasksSingleDevice::task0Initialization, b) //
-//                .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, b); //
+                .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b, a); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
@@ -80,7 +79,7 @@ public class TestMultipleTasksMultipleDevices {
 
         for (int i = 0; i < a.length; i++) {
             assertEquals(10, b[i]);
-//            assertEquals(10, b[i]);
+            assertEquals(360, a[i]);
         }
     }
 
