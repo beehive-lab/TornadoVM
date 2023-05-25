@@ -27,7 +27,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 
 import java.lang.reflect.Array;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
@@ -36,16 +36,30 @@ import java.util.List;
  * This class provides methods to compute chunk sizes based on the batch size and input objects.
  */
 public class BatchConfiguration {
-    private static HashMap<Class<?>, Byte> dataTypesSize = new HashMap<>();
+    private enum DataTypeSize {
+        BYTE(byte.class, (byte) 1),
+        CHAR(char.class, (byte) 2),
+        SHORT(short.class, (byte) 2),
+        INT(int.class, (byte) 4),
+        FLOAT(float.class, (byte) 4),
+        LONG(long.class, (byte) 8),
+        DOUBLE(double.class, (byte) 8);
 
-    static {
-        dataTypesSize.put(byte.class, (byte) 1);
-        dataTypesSize.put(char.class, (byte) 2);
-        dataTypesSize.put(short.class, (byte) 2);
-        dataTypesSize.put(int.class, (byte) 4);
-        dataTypesSize.put(float.class, (byte) 4);
-        dataTypesSize.put(long.class, (byte) 8);
-        dataTypesSize.put(double.class, (byte) 8);
+        private final Class<?> dataType;
+        private final byte size;
+
+        DataTypeSize(Class<?> dataType, byte size) {
+            this.dataType = dataType;
+            this.size = size;
+        }
+
+        public Class<?> getDataType() {
+            return dataType;
+        }
+
+        public byte getSize() {
+            return size;
+        }
     }
 
     private final int totalChunks;
@@ -77,12 +91,11 @@ public class BatchConfiguration {
         return numBytesType;
     }
 
-
     public static BatchConfiguration computeChunkSizes(TornadoExecutionContext context, long batchSize) {
         // Get the size of the batch
         List<Object> inputObjects = context.getObjects();
         long totalSize = 0;
-        byte typeSize = 1;
+        DataTypeSize dataTypeSize = null;
 
         HashSet<Class<?>> classObjects = new HashSet<>();
         HashSet<Long> inputSizes = new HashSet<>();
@@ -91,12 +104,12 @@ public class BatchConfiguration {
         for (Object o : inputObjects) {
             if (o.getClass().isArray()) {
                 Class<?> componentType = o.getClass().getComponentType();
-                if (dataTypesSize.get(componentType) == null) {
+                dataTypeSize = findDataTypeSize(componentType);
+                if (dataTypeSize == null) {
                     throw new TornadoRuntimeException("[UNSUPPORTED] Data type not supported for processing in batches");
                 }
                 long size = Array.getLength(o);
-                typeSize = dataTypesSize.get(componentType);
-                totalSize = size * typeSize;
+                totalSize = size * dataTypeSize.getSize();
 
                 classObjects.add(componentType);
                 inputSizes.add(totalSize);
@@ -117,6 +130,13 @@ public class BatchConfiguration {
             System.out.println("Total chunks: " + totalChunks);
             System.out.println("remainingChunkSize: " + remainingChunkSize);
         }
-        return new BatchConfiguration(totalChunks, remainingChunkSize, typeSize);
+        return new BatchConfiguration(totalChunks, remainingChunkSize, dataTypeSize.getSize());
+    }
+
+    private static DataTypeSize findDataTypeSize(Class<?> dataType) {
+        return Arrays.stream(DataTypeSize.values())
+                .filter(size -> size.getDataType().equals(dataType))
+                .findFirst()
+                .orElse(null);
     }
 }
