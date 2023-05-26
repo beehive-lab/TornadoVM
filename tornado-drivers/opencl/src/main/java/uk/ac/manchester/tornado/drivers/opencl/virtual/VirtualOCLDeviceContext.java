@@ -198,6 +198,11 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements OCLDeviceC
     }
 
     @Override
+    public boolean isFP64Supported() {
+        return device.isDeviceDoubleFPSupported();
+    }
+
+    @Override
     public int getDeviceIndex() {
         return device.getIndex();
     }

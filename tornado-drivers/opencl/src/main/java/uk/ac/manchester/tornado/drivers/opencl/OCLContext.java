@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -161,7 +162,7 @@ public class OCLContext implements OCLExecutionEnvironment {
         try {
             long programID = clCreateProgramWithIL(contextID, spirvBinary, lengths);
             if (programID == -1) {
-                throw new TornadoRuntimeException("OpenCL version <= 2.1. clCreateProgramWithIL is not supported");
+                throw new TornadoNoOpenCLPlatformException("OpenCL version <= 2.1. clCreateProgramWithIL is not supported");
             }
             program = new OCLProgram(programID, deviceContext);
             programs.add(program);

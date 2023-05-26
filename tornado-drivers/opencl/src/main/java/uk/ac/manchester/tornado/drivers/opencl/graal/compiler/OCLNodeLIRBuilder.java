@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -93,6 +93,7 @@ import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
@@ -236,9 +237,11 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                                 doRoot(valueNode);
                                 platformPatch(isKernel);
                             } catch (final Throwable e) {
-                                System.out.println("e: " + e.toString());
-                                e.printStackTrace();
-                                throw new TornadoInternalError(e).addContext(valueNode.toString());
+                                if (e instanceof TornadoDeviceFP64NotSupported) {
+                                    throw e;
+                                } else {
+                                    throw new TornadoInternalError(e).addContext(valueNode.toString());
+                                }
                             }
                         }
                     } else {
