@@ -28,12 +28,12 @@ package uk.ac.manchester.tornado.runtime.graph;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 import uk.ac.manchester.tornado.api.common.Event;
@@ -65,7 +65,9 @@ public class TornadoExecutionContext {
     private List<LocalObjectState> objectState;
     private List<TornadoAcceleratorDevice> devices;
     private final KernelArgs[] callWrappers;
-    private int[] taskToDevice;
+//    private int[] taskToDevice;
+
+    private ConcurrentHashMap<Integer, TornadoAcceleratorDevice> taskToDeviceMap;
     private int nextTask;
 
     private Set<TornadoAcceleratorDevice> lastDevices;
@@ -85,8 +87,7 @@ public class TornadoExecutionContext {
         objectState = new ArrayList<>();
         devices = new ArrayList<>(INITIAL_DEVICE_CAPACITY);
         callWrappers = new KernelArgs[MAX_TASKS];
-        taskToDevice = new int[MAX_TASKS];
-        Arrays.fill(taskToDevice, -1);
+        taskToDeviceMap = new ConcurrentHashMap<>();
         nextTask = 0;
         lastDevices = new HashSet<>();
         this.profiler = profiler;
@@ -177,11 +178,11 @@ public class TornadoExecutionContext {
     }
 
     public int getDeviceIndexForTask(int index) {
-        return taskToDevice[index];
+        return taskToDeviceMap.get(index).getDriverIndex();
     }
 
     public TornadoAcceleratorDevice getDeviceForTask(int index) {
-        return getDevice(taskToDevice[index]);
+        return taskToDeviceMap.get(index);
     }
 
     public TornadoAcceleratorDevice getDevice(int index) {
@@ -203,7 +204,9 @@ public class TornadoExecutionContext {
             devices.clear();
             devices.add(0, (TornadoAcceleratorDevice) mapping);
             apply(task -> task.mapTo(mapping));
-            Arrays.fill(taskToDevice, 0);
+            for(int i = 0; i < nextTask; i++) {
+                taskToDeviceMap.put(i, (TornadoAcceleratorDevice) mapping);
+            }
         } else {
             throw new RuntimeException("Device " + mapping.getClass() + " not supported yet");
         }
@@ -242,10 +245,11 @@ public class TornadoExecutionContext {
             setDevice(deviceIndex, accelerator);
         }
 
-        taskToDevice[index] = deviceIndex;
+        taskToDeviceMap.put(index, accelerator);
     }
 
     public void assignToDevices() {
+        taskToDeviceMap.clear();
         for (int i = 0; i < tasks.size(); i++) {
             assignTask(i, tasks.get(i));
         }
@@ -421,7 +425,8 @@ public class TornadoExecutionContext {
         List<TornadoAcceleratorDevice> devicesCopy = new ArrayList<>(devices);
         executionContext.devices = devicesCopy;
 
-        executionContext.taskToDevice = this.taskToDevice.clone();
+        ConcurrentHashMap<Integer, TornadoAcceleratorDevice> taskToDeviceMapCopy = new ConcurrentHashMap<>(taskToDeviceMap);
+        executionContext.taskToDeviceMap = taskToDeviceMapCopy;
 
         Set<TornadoAcceleratorDevice> lastDeviceCopy = new HashSet<>(lastDevices);
         executionContext.lastDevices = lastDeviceCopy;
