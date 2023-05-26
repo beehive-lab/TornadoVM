@@ -190,8 +190,8 @@ public class OCLBuiltinTool {
         return new OCLUnary.Intrinsic(LOG, LIRKind.value(input.getPlatformKind()), input);
     }
 
-    public Value genFloatRadian(Value input) {
-        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genFloatRadian: radians(%s)", input);
+    public Value genFloatRadians(Value input) {
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genFloatRadians: radians(%s)", input);
         return new OCLUnary.Intrinsic(RADIANS, LIRKind.value(input.getPlatformKind()), input);
     }
 
