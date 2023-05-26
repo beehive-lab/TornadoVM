@@ -169,37 +169,37 @@ public class TornadoExecutionContext {
         tasks.set(index, task);
     }
 
-    public List<Object> getConstants() {
+    public synchronized List<Object> getConstants() {
         return constants;
     }
 
-    public List<Object> getObjects() {
+    public synchronized List<Object> getObjects() {
         return objects;
     }
 
-    public int getDeviceIndexForTask(int index) {
+    public synchronized int getDeviceIndexForTask(int index) {
         return taskToDeviceMap.get(index).getDriverIndex();
     }
 
-    public TornadoAcceleratorDevice getDeviceForTask(int index) {
+    public synchronized TornadoAcceleratorDevice getDeviceForTask(int index) {
         return taskToDeviceMap.get(index);
     }
 
-    public TornadoAcceleratorDevice getDevice(int index) {
+    public synchronized TornadoAcceleratorDevice getDevice(int index) {
         return devices.get(index);
     }
 
-    public SchedulableTask getTask(int index) {
+    public synchronized SchedulableTask getTask(int index) {
         return tasks.get(index);
     }
 
-    public void apply(Consumer<SchedulableTask> consumer) {
+    public synchronized void apply(Consumer<SchedulableTask> consumer) {
         for (SchedulableTask task : tasks) {
             consumer.accept(task);
         }
     }
 
-    public void mapAllTo(TornadoDevice mapping) {
+    public synchronized void mapAllTo(TornadoDevice mapping) {
         if (mapping instanceof TornadoAcceleratorDevice) {
             devices.clear();
             devices.add(0, (TornadoAcceleratorDevice) mapping);
@@ -212,7 +212,7 @@ public class TornadoExecutionContext {
         }
     }
 
-    private void checkDeviceListSize(int deviceIndex) {
+    private synchronized void checkDeviceListSize(int deviceIndex) {
         if (deviceIndex >= devices.size()) {
             for (int i = devices.size(); i <= deviceIndex; i++) {
                 devices.add(null);
@@ -220,12 +220,12 @@ public class TornadoExecutionContext {
         }
     }
 
-    public void setDevice(int index, TornadoAcceleratorDevice device) {
+    public synchronized void setDevice(int index, TornadoAcceleratorDevice device) {
         checkDeviceListSize(index);
         devices.set(index, device);
     }
 
-    private void assignTask(int index, SchedulableTask task) {
+    private synchronized void assignTask(int index, SchedulableTask task) {
 
         String id = task.getId();
         TornadoDevice target = task.getDevice();
@@ -248,22 +248,22 @@ public class TornadoExecutionContext {
         taskToDeviceMap.put(index, accelerator);
     }
 
-    public void assignToDevices() {
+    public synchronized void assignToDevices() {
         taskToDeviceMap.clear();
         for (int i = 0; i < tasks.size(); i++) {
             assignTask(i, tasks.get(i));
         }
     }
 
-    public TornadoDevice getDeviceFirstTask() {
+    public synchronized TornadoDevice getDeviceFirstTask() {
         return tasks.get(0).getDevice();
     }
 
-    public LocalObjectState getObjectState(Object object) {
+    public synchronized LocalObjectState getObjectState(Object object) {
         return objectState.get(insertVariable(object));
     }
 
-    public LocalObjectState replaceObjectState(Object oldObj, Object newObj) {
+    public synchronized LocalObjectState replaceObjectState(Object oldObj, Object newObj) {
         return objectState.get(replaceVariable(oldObj, newObj));
     }
 
@@ -291,15 +291,15 @@ public class TornadoExecutionContext {
         }
     }
 
-    public List<LocalObjectState> getObjectStates() {
+    public synchronized List<LocalObjectState> getObjectStates() {
         return objectState;
     }
 
-    public List<SchedulableTask> getTasks() {
+    public synchronized List<SchedulableTask> getTasks() {
         return tasks;
     }
 
-    public List<TornadoAcceleratorDevice> getDevices() {
+    public synchronized List<TornadoAcceleratorDevice> getDevices() {
         return devices;
     }
 
@@ -310,7 +310,7 @@ public class TornadoExecutionContext {
      * @return {@link TornadoAcceleratorDevice}
      */
     @Deprecated
-    public TornadoAcceleratorDevice getDefaultDevice() {
+    public synchronized TornadoAcceleratorDevice getDefaultDevice() {
         return meta.getLogicDevice();
     }
 
@@ -344,7 +344,7 @@ public class TornadoExecutionContext {
         return null;
     }
 
-    public TornadoAcceleratorDevice getDeviceForTask(String id) {
+    public synchronized TornadoAcceleratorDevice getDeviceForTask(String id) {
         TornadoDevice device = getTask(id).getDevice();
         TornadoAcceleratorDevice tornadoDevice = null;
         if (device instanceof TornadoAcceleratorDevice) {
@@ -355,15 +355,15 @@ public class TornadoExecutionContext {
         return getTask(id) == null ? null : tornadoDevice;
     }
 
-    public String getId() {
+    public synchronized String getId() {
         return name;
     }
 
-    public ScheduleMetaData meta() {
+    public synchronized ScheduleMetaData meta() {
         return meta;
     }
 
-    public void sync() {
+    public  synchronized void sync() {
         for (int i = 0; i < objects.size(); i++) {
             Object object = objects.get(i);
             if (object != null) {
@@ -381,23 +381,23 @@ public class TornadoExecutionContext {
         }
     }
 
-    public void addLastDevice(TornadoAcceleratorDevice device) {
+    public synchronized void addLastDevice(TornadoAcceleratorDevice device) {
         lastDevices.add(device);
     }
 
-    public Set<TornadoAcceleratorDevice> getLastDevices() {
+    public synchronized Set<TornadoAcceleratorDevice> getLastDevices() {
         return lastDevices;
     }
 
-    public void newCallWrapper(boolean newCallWrapper) {
+    public synchronized void newCallWrapper(boolean newCallWrapper) {
         this.redeployOnDevice = newCallWrapper;
     }
 
-    public boolean redeployOnDevice() {
+    public synchronized boolean redeployOnDevice() {
         return this.redeployOnDevice;
     }
 
-    public void setDefaultThreadScheduler(boolean use) {
+    public synchronized void setDefaultThreadScheduler(boolean use) {
         defaultScheduler = use;
     }
 
