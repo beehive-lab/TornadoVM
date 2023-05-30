@@ -182,6 +182,12 @@ public class TestTornadoMathCollection extends TornadoTestBase {
         }
     }
 
+    public static void testTornadoRadians(float[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = TornadoMath.toRadians(a[i]);
+        }
+    }
+
     @Test
     public void testTornadoMathCos() {
         final int size = 128;
@@ -730,6 +736,31 @@ public class TestTornadoMathCollection extends TornadoTestBase {
 
         testClamp(a, seq);
         assertArrayEquals(b, seq);
+    }
+
+    @Test
+    public void testTornadoMathRadians() {
+        final int size = 128;
+        float[] data = new float[size];
+        float[] seq = new float[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            data[i] = (float) Math.random();
+            seq[i] = data[i];
+        });
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestTornadoMathCollection::testTornadoRadians, data) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
+
+        testTornadoRadians(seq);
+
+        assertArrayEquals(data, seq, 0.01f);
+
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2022-2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -104,6 +104,7 @@ public class OCLFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
         LOG1P, 
         LOGB,
         NAN,
+        RADIANS,
         REMQUO, 
         RINT,
         ROUND, 
@@ -197,6 +198,9 @@ public class OCLFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
                 break;
             case LOG:
                 result = gen.genFloatLog(input);
+                break;
+            case RADIANS:
+                result = gen.genFloatRadians(input);
                 break;
             default:
                 throw shouldNotReachHere();
