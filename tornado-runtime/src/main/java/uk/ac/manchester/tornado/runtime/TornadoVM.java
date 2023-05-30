@@ -34,6 +34,12 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompiler;
 import uk.ac.manchester.tornado.runtime.interpreter.TornadoVMInterpreter;
 import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 
 /**
@@ -99,17 +105,45 @@ public class TornadoVM extends TornadoLogger {
 
     }
 
-    private void scheduleInterpreters() {
-        if (true) {
-            for (TornadoVMInterpreter interpreter : tornadoVMInterpreters) {
-                interpreter.execute(false);
+    public Event execute(int par) {
+        // Create a thread pool with a fixed number of threads
+        int numThreads = graphContext.getDevices().size();
+        ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+
+        // Create a list to hold the futures of each execution
+        List<Future<?>> futures = new ArrayList<>();
+
+        // Submit each task to the thread pool
+        for (TornadoVMInterpreter tornadoVMInterpreter : tornadoVMInterpreters) {
+            Future<?> future = executor.submit(() -> tornadoVMInterpreter.execute(false));
+            futures.add(future);
+        }
+        // Wait for all tasks to complete
+        for (Future<?> future : futures) {
+            try {
+                future.get(); // Blocking call to wait for the task to complete
+            } catch (Exception e) {
+                // Handle any exceptions that occurred during execution
+                e.printStackTrace();
             }
         }
-    }
 
-    private void instantiateInterpreter() {
-
+// Shutdown the executor after all tasks have completed
+        executor.shutdown();
+        return new EmptyEvent();
     }
+//
+//    private void scheduleInterpreters() {
+//        if (true) {
+//            for (TornadoVMInterpreter interpreter : tornadoVMInterpreters) {
+//                interpreter.execute(false);
+//            }
+//        }
+//    }
+//
+//    private void instantiateInterpreter() {
+//
+//    }
     //InterpreterManager->
 
 //    private static class InterpreterManager {

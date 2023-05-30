@@ -270,7 +270,6 @@ public class TornadoExecutionContext {
         final String ANSI_PURPLE = "\u001B[35m";
         final String ANSI_GREEN = "\u001B[32m";
         System.out.println("-----------------------------------");
-
         System.out.println(ANSI_CYAN + "Device Table:" + ANSI_RESET);
         for (int i = 0; i < devices.size(); i++) {
             System.out.printf("[%d]: %s\n", i, devices.get(i));
@@ -292,6 +291,7 @@ public class TornadoExecutionContext {
             final SchedulableTask task = tasks.get(i);
             System.out.printf("[%d]: %s\n", i, task.getFullName());
         }
+        System.out.println("-----------------------------------");
     }
 
 

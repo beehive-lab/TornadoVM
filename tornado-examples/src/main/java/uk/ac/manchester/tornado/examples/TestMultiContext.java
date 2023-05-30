@@ -56,9 +56,9 @@ public class TestMultiContext {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < a.length; i++) {
-//            assert(10, b[i]);
-//            assertEquals(360, a[i]);
-        }
+//        for (int i = 0; i < a.length; i++) {
+//            .assassert(10, b[i]);
+////            assertEquals(360, a[i]);
+//        }
     }
 }
