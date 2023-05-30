@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2022-2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -236,6 +236,11 @@ public class SPIRVBuiltinTool {
     public Value genFloatTanh(Value input) {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "gen: tanh(%s)", input);
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.TANH, LIRKind.value(input.getPlatformKind()), input);
+    }
+
+    public Value genFloatRadians(Value input) {
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "genFloatRadians: radians(%s)", input);
+        return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.RADIANS, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatTanpi(Value input) {
