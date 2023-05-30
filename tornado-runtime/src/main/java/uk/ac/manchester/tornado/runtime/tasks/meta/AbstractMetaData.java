@@ -25,14 +25,6 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks.meta;
 
-import static java.lang.Boolean.parseBoolean;
-import static java.lang.Integer.parseInt;
-import static uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.resolveDevice;
-
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.WorkerGrid;
@@ -47,9 +39,17 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Integer.parseInt;
+import static uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.resolveDevice;
+
 public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
-    private static final long[] SEQUENTIAL_GLOBAL_WORK_GROUP = { 1, 1, 1 };
+    private static final long[] SEQUENTIAL_GLOBAL_WORK_GROUP = {1, 1, 1};
     private String id;
     private TornadoAcceleratorDevice device;
     private boolean shouldRecompile;
@@ -100,8 +100,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     /**
      * Set a device in the default driver in Tornado.
      *
-     * @param device
-     *            {@link TornadoDevice}
+     * @param device {@link TornadoDevice}
      */
     public void setDevice(TornadoDevice device) {
         this.driverIndex = device.getDriverIndex();
@@ -115,10 +114,8 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     /**
      * Set a device from a specific Tornado driver.
      *
-     * @param driverIndex
-     *            Driver Index
-     * @param device
-     *            {@link TornadoAcceleratorDevice}
+     * @param driverIndex Driver Index
+     * @param device      {@link TornadoAcceleratorDevice}
      */
     public void setDriverDevice(int driverIndex, TornadoAcceleratorDevice device) {
         this.driverIndex = driverIndex;
@@ -437,7 +434,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         enableMemChecks = parseBoolean(getDefault("memory.check", id, "False"));
         dumpEvents = parseBoolean(getDefault("events.dump", id, "True"));
         dumpProfiles = parseBoolean(getDefault("profiles.print", id, "False"));
-        dumpTaskGraph = parseBoolean(getDefault("schedule.dump", id, "False"));
+        dumpTaskGraph = parseBoolean(getDefault("schedule.dump", "s0", "True"));
 
         openclCompilerOptions = (getProperty("tornado.opencl.compiler.options") == null) ? "-w" : getProperty("tornado.opencl.compiler.options");
         isOpenclCompilerFlagsDefined = getProperty("tornado.opencl.compiler.options") != null;

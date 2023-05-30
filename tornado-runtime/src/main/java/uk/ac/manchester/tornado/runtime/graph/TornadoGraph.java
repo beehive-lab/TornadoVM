@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -25,12 +25,12 @@
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
+
 import java.util.BitSet;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 
 public class TornadoGraph {
 
@@ -111,9 +111,13 @@ public class TornadoGraph {
         pApply(valid, consumer);
     }
 
-    public void print() {
-        System.out.println("graph:");
+    public void dumpTornadoGraph() {
+        final String ANSI_CYAN = "\u001B[36m";
+        final String ANSI_RESET = "\u001B[0m";
+
+        System.out.println(ANSI_CYAN + "TaskGraph:" + ANSI_RESET);
         apply(System.out::println);
+        System.out.println("-----------------------------------");
     }
 
     public BitSet getValid() {

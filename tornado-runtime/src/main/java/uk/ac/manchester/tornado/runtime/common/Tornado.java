@@ -25,14 +25,14 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
+import uk.ac.manchester.tornado.api.TornadoCI;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
-
-import uk.ac.manchester.tornado.api.TornadoCI;
 
 public final class Tornado implements TornadoCI {
 

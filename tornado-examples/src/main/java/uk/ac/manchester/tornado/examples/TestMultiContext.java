@@ -10,7 +10,6 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import java.util.stream.IntStream;
 
 
-
 public class TestMultiContext {
 
     public static void task0Initialization(int[] a) {
@@ -44,14 +43,16 @@ public class TestMultiContext {
             System.setProperty("s0.t0.device", "0:0");
             System.setProperty("s0.t1.device", "0:1");
         }
-
+        System.setProperty("s0.t0.device", "0:0");
+        System.setProperty("s0.t1.device", "0:1");
         TaskGraph taskGraph = new TaskGraph("s0")//
-                .task("t0", TestMultiContext::task0Initialization, b) //
-//                .task("t1", TestMultiContext::task1Multiplication, a, 12) //
+                .task("t0", TestMultiContext::task0Initialization, b) //z
+                .task("t1", TestMultiContext::task1Multiplication, a, 12) //
 //                .transferToHost(DataTransferMode.EVERY_EXECUTION, b, a); //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, b); //
-
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b); //
+//        taskGraph.s
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 

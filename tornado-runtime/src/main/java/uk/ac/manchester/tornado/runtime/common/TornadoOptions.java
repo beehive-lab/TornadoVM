@@ -71,7 +71,7 @@ public class TornadoOptions {
     /**
      * Option to print TornadoVM Internal Bytecodes.
      */
-    public static final boolean PRINT_BYTECODES = getBooleanValue("tornado.print.bytecodes", FALSE);
+    public static final boolean PRINT_BYTECODES = getBooleanValue("tornado.print.bytecodes", TRUE);
 
     /**
      * Option to debug dynamic reconfiguration policies.
@@ -261,7 +261,7 @@ public class TornadoOptions {
     /**
      * If enabled, the TornadoVM will substitute the last READ (data transfer from
      * the Device -> Host) using a blocking call for STREAM OUT.
-     *
+     * <p>
      * This is FALSE by default.
      */
     public static final boolean ENABLE_STREAM_OUT_BLOCKING = getBooleanValue("tornado.enable.streamOut.blocking", FALSE);

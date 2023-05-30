@@ -574,16 +574,16 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         buffer.limit(hlBuffer.position());
 
         final TornadoGraph tornadoGraph = TornadoGraphBuilder.buildGraph(executionContext, buffer);
-        if (setNewDevice) {
-            updateDeviceContext(tornadoGraph);
-        }
+//        if (setNewDevice) {
+//            updateDeviceContext(tornadoGraph);
+//        }
 
         // TornadoVM byte-code generation
         TornadoVM tornadoVM = new TornadoVM(executionContext, tornadoGraph, timeProfiler, batchSizeBytes);
 
         if (meta().shouldDumpSchedule()) {
-            executionContext.print();
-            tornadoGraph.print();
+            executionContext.dumpExecutionContextMeta();
+            tornadoGraph.dumpTornadoGraph();
             Arrays.stream(tornadoVM.getTornadoVMBytecodes())
                     .forEach(TornadoVMBytecodeBuilder::dump);
         }

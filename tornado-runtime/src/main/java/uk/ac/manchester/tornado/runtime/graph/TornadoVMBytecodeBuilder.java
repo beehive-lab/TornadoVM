@@ -84,7 +84,17 @@ public class TornadoVMBytecodeBuilder {
         } else if (node instanceof DeallocateNode) {
             bitcodeASM.deallocate(((DeallocateNode) node).getValue().getIndex(), contextID);
         } else if (node instanceof TaskNode) {
+            System.out.println("task node " + node.toString());
             final TaskNode taskNode = (TaskNode) node;
+            System.out.println("Start of Arguments");
+            System.out.println("globalTaskID: " + globalTaskID);
+            System.out.println("Device Index: " + taskNode.getContext().getDeviceIndex());
+            System.out.println("Task Index: " + taskNode.getTaskIndex());
+            System.out.println("Num Args: " + taskNode.getNumArgs());
+            System.out.println("Dependency BC: " + dependencyBC);
+            System.out.println("Offset: " + offset);
+            System.out.println("Number of Threads: " + nThreads);
+            System.out.println("End of Arguments");
             bitcodeASM.launch(globalTaskID, taskNode.getContext().getDeviceIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), dependencyBC, offset, nThreads);
             emitArgList(taskNode);
             incTaskID();

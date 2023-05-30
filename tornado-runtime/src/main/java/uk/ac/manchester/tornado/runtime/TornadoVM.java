@@ -80,9 +80,10 @@ public class TornadoVM extends TornadoLogger {
     private void bindBytecodesToInterpreters() {
         int index = 0;
         for (TornadoAcceleratorDevice distinctContext : graphContext.getDevices()) {
-            tornadoVMInterpreters[index] = new TornadoVMInterpreter(graphContext, tornadoVMBytecodes[index], timeProfiler, distinctContext);
+            tornadoVMInterpreters[index] = new TornadoVMInterpreter(graphContext, tornadoVMBytecodes[index], timeProfiler, distinctContext, index);
             index++;
         }
+//        tornadoVMInterpreters[index] = new TornadoVMInterpreter(graphContext, tornadoVMBytecodes[index], timeProfiler, distinctContext, index);
     }
 
 
@@ -91,10 +92,10 @@ public class TornadoVM extends TornadoLogger {
     }
 
     public Event execute() {
-//        for (TornadoVMInterpreter tornadoVMInterpreter : tornadoVMInterpreters) {
-//            tornadoVMInterpreter.execute(false);
-//        }
-        return tornadoVMInterpreters[0].execute(false);
+        for (TornadoVMInterpreter tornadoVMInterpreter : tornadoVMInterpreters) {
+            tornadoVMInterpreter.execute(false);
+        }
+        return new EmptyEvent();
 
     }
 

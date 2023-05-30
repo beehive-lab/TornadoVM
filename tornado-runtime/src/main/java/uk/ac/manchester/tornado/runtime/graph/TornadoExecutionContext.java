@@ -25,17 +25,6 @@
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
-
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -51,6 +40,17 @@ import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.LocalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Consumer;
+
+import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
+
 public class TornadoExecutionContext {
 
     private final int MAX_TASKS = 256;
@@ -65,9 +65,7 @@ public class TornadoExecutionContext {
     private List<LocalObjectState> objectState;
     private List<TornadoAcceleratorDevice> devices;
     private final KernelArgs[] callWrappers;
-//    private int[] taskToDevice;
-
-    private ConcurrentHashMap<Integer, TornadoAcceleratorDevice> taskToDeviceMap;
+    private int[] taskToDevice;
     private int nextTask;
 
     private Set<TornadoAcceleratorDevice> lastDevices;
@@ -87,7 +85,8 @@ public class TornadoExecutionContext {
         objectState = new ArrayList<>();
         devices = new ArrayList<>(INITIAL_DEVICE_CAPACITY);
         callWrappers = new KernelArgs[MAX_TASKS];
-        taskToDeviceMap = new ConcurrentHashMap<>();
+        taskToDevice = new int[MAX_TASKS];
+        Arrays.fill(taskToDevice, -1);
         nextTask = 0;
         lastDevices = new HashSet<>();
         this.profiler = profiler;
@@ -169,50 +168,48 @@ public class TornadoExecutionContext {
         tasks.set(index, task);
     }
 
-    public synchronized List<Object> getConstants() {
+    public List<Object> getConstants() {
         return constants;
     }
 
-    public synchronized List<Object> getObjects() {
+    public List<Object> getObjects() {
         return objects;
     }
 
-    public synchronized int getDeviceIndexForTask(int index) {
-        return taskToDeviceMap.get(index).getDriverIndex();
+    public int getDeviceIndexForTask(int index) {
+        return taskToDevice[index];
     }
 
-    public synchronized TornadoAcceleratorDevice getDeviceForTask(int index) {
-        return taskToDeviceMap.get(index);
+    public TornadoAcceleratorDevice getDeviceForTask(int index) {
+        return getDevice(taskToDevice[index]);
     }
 
-    public synchronized TornadoAcceleratorDevice getDevice(int index) {
+    public TornadoAcceleratorDevice getDevice(int index) {
         return devices.get(index);
     }
 
-    public synchronized SchedulableTask getTask(int index) {
+    public SchedulableTask getTask(int index) {
         return tasks.get(index);
     }
 
-    public synchronized void apply(Consumer<SchedulableTask> consumer) {
+    public void apply(Consumer<SchedulableTask> consumer) {
         for (SchedulableTask task : tasks) {
             consumer.accept(task);
         }
     }
 
-    public synchronized void mapAllTo(TornadoDevice mapping) {
+    public void mapAllTo(TornadoDevice mapping) {
         if (mapping instanceof TornadoAcceleratorDevice) {
             devices.clear();
             devices.add(0, (TornadoAcceleratorDevice) mapping);
             apply(task -> task.mapTo(mapping));
-            for(int i = 0; i < nextTask; i++) {
-                taskToDeviceMap.put(i, (TornadoAcceleratorDevice) mapping);
-            }
+            Arrays.fill(taskToDevice, 0);
         } else {
             throw new RuntimeException("Device " + mapping.getClass() + " not supported yet");
         }
     }
 
-    private synchronized void checkDeviceListSize(int deviceIndex) {
+    private void checkDeviceListSize(int deviceIndex) {
         if (deviceIndex >= devices.size()) {
             for (int i = devices.size(); i <= deviceIndex; i++) {
                 devices.add(null);
@@ -220,12 +217,12 @@ public class TornadoExecutionContext {
         }
     }
 
-    public synchronized void setDevice(int index, TornadoAcceleratorDevice device) {
+    public void setDevice(int index, TornadoAcceleratorDevice device) {
         checkDeviceListSize(index);
         devices.set(index, device);
     }
 
-    private synchronized void assignTask(int index, SchedulableTask task) {
+    private void assignTask(int index, SchedulableTask task) {
 
         String id = task.getId();
         TornadoDevice target = task.getDevice();
@@ -245,61 +242,68 @@ public class TornadoExecutionContext {
             setDevice(deviceIndex, accelerator);
         }
 
-        taskToDeviceMap.put(index, accelerator);
+        taskToDevice[index] = deviceIndex;
     }
 
-    public synchronized void assignToDevices() {
-        taskToDeviceMap.clear();
+    public void assignToDevices() {
         for (int i = 0; i < tasks.size(); i++) {
             assignTask(i, tasks.get(i));
         }
     }
 
-    public synchronized TornadoDevice getDeviceFirstTask() {
+    public TornadoDevice getDeviceFirstTask() {
         return tasks.get(0).getDevice();
     }
 
-    public synchronized LocalObjectState getObjectState(Object object) {
+    public LocalObjectState getObjectState(Object object) {
         return objectState.get(insertVariable(object));
     }
 
-    public synchronized LocalObjectState replaceObjectState(Object oldObj, Object newObj) {
+    public LocalObjectState replaceObjectState(Object oldObj, Object newObj) {
         return objectState.get(replaceVariable(oldObj, newObj));
     }
 
-    public void print() {
-        System.out.println("device table:");
+    public void dumpExecutionContextMeta() {
+        final String ANSI_RESET = "\u001B[0m";
+        final String ANSI_CYAN = "\u001B[36m";
+        final String ANSI_YELLOW = "\u001B[33m";
+        final String ANSI_PURPLE = "\u001B[35m";
+        final String ANSI_GREEN = "\u001B[32m";
+        System.out.println("-----------------------------------");
+
+        System.out.println(ANSI_CYAN + "Device Table:" + ANSI_RESET);
         for (int i = 0; i < devices.size(); i++) {
             System.out.printf("[%d]: %s\n", i, devices.get(i));
         }
 
-        System.out.println("constant table:");
+        System.out.println(ANSI_YELLOW + "Constant Table:" + ANSI_RESET);
         for (int i = 0; i < constants.size(); i++) {
             System.out.printf("[%d]: %s\n", i, constants.get(i));
         }
 
-        System.out.println("object table:");
+        System.out.println(ANSI_PURPLE + "Object Table:" + ANSI_RESET);
         for (int i = 0; i < objects.size(); i++) {
             final Object obj = objects.get(i);
             System.out.printf("[%d]: 0x%x %s\n", i, obj.hashCode(), obj.toString());
         }
 
-        System.out.println("task table:");
+        System.out.println(ANSI_GREEN + "Task Table:" + ANSI_RESET);
         for (int i = 0; i < tasks.size(); i++) {
             final SchedulableTask task = tasks.get(i);
             System.out.printf("[%d]: %s\n", i, task.getFullName());
         }
     }
 
-    public synchronized List<LocalObjectState> getObjectStates() {
+
+    public List<LocalObjectState> getObjectStates() {
         return objectState;
     }
 
-    public synchronized List<SchedulableTask> getTasks() {
+    public List<SchedulableTask> getTasks() {
         return tasks;
     }
 
-    public synchronized List<TornadoAcceleratorDevice> getDevices() {
+    public List<TornadoAcceleratorDevice> getDevices() {
         return devices;
     }
 
@@ -310,7 +314,7 @@ public class TornadoExecutionContext {
      * @return {@link TornadoAcceleratorDevice}
      */
     @Deprecated
-    public synchronized TornadoAcceleratorDevice getDefaultDevice() {
+    public TornadoAcceleratorDevice getDefaultDevice() {
         return meta.getLogicDevice();
     }
 
@@ -344,7 +348,7 @@ public class TornadoExecutionContext {
         return null;
     }
 
-    public synchronized TornadoAcceleratorDevice getDeviceForTask(String id) {
+    public TornadoAcceleratorDevice getDeviceForTask(String id) {
         TornadoDevice device = getTask(id).getDevice();
         TornadoAcceleratorDevice tornadoDevice = null;
         if (device instanceof TornadoAcceleratorDevice) {
@@ -355,15 +359,15 @@ public class TornadoExecutionContext {
         return getTask(id) == null ? null : tornadoDevice;
     }
 
-    public synchronized String getId() {
+    public String getId() {
         return name;
     }
 
-    public synchronized ScheduleMetaData meta() {
+    public ScheduleMetaData meta() {
         return meta;
     }
 
-    public  synchronized void sync() {
+    public void sync() {
         for (int i = 0; i < objects.size(); i++) {
             Object object = objects.get(i);
             if (object != null) {
@@ -381,23 +385,23 @@ public class TornadoExecutionContext {
         }
     }
 
-    public synchronized void addLastDevice(TornadoAcceleratorDevice device) {
+    public void addLastDevice(TornadoAcceleratorDevice device) {
         lastDevices.add(device);
     }
 
-    public synchronized Set<TornadoAcceleratorDevice> getLastDevices() {
+    public Set<TornadoAcceleratorDevice> getLastDevices() {
         return lastDevices;
     }
 
-    public synchronized void newCallWrapper(boolean newCallWrapper) {
+    public void newCallWrapper(boolean newCallWrapper) {
         this.redeployOnDevice = newCallWrapper;
     }
 
-    public synchronized boolean redeployOnDevice() {
+    public boolean redeployOnDevice() {
         return this.redeployOnDevice;
     }
 
-    public synchronized void setDefaultThreadScheduler(boolean use) {
+    public void setDefaultThreadScheduler(boolean use) {
         defaultScheduler = use;
     }
 
@@ -425,8 +429,7 @@ public class TornadoExecutionContext {
         List<TornadoAcceleratorDevice> devicesCopy = new ArrayList<>(devices);
         executionContext.devices = devicesCopy;
 
-        ConcurrentHashMap<Integer, TornadoAcceleratorDevice> taskToDeviceMapCopy = new ConcurrentHashMap<>(taskToDeviceMap);
-        executionContext.taskToDeviceMap = taskToDeviceMapCopy;
+        executionContext.taskToDevice = this.taskToDevice.clone();
 
         Set<TornadoAcceleratorDevice> lastDeviceCopy = new HashSet<>(lastDevices);
         executionContext.lastDevices = lastDeviceCopy;
