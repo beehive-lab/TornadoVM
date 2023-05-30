@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -175,6 +175,14 @@ public class SPIRVMathPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SPIRVUnaryOperation.TANH, kind)));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("toRadians", type) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SPIRVUnaryOperation.RADIANS, kind)));
                 return true;
             }
         });

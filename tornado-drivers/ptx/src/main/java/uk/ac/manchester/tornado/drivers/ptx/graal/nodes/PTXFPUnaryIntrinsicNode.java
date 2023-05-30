@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2022-2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -48,6 +48,7 @@ import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
+import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerator;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXArithmeticTool;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXBinary;
@@ -84,6 +85,7 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
         FABS,
         FLOOR,
         LOG,
+        RADIANS,
         SIGN,
         SIN,
         SQRT,
@@ -179,6 +181,10 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
             case LOG:
                 generateLog(builder, lirGenPTX, gen, initialInput);
                 return;
+            case RADIANS:
+                Value constantForRadians = getConstantValueForRadians(initialInput);
+                result = gen.genFloatRadians(constantForRadians, auxValue);
+                break;
             default:
                 throw shouldNotReachHere();
         }
@@ -324,6 +330,25 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
     private boolean shouldConvertInput(Value input) {
         return (operation() == Operation.TAN || operation() == Operation.TANH || operation() == Operation.COS || operation() == Operation.SIN || operation() == Operation.EXP
                 || operation() == Operation.LOG) && !((PTXKind) input.getPlatformKind()).isF32();
+    }
+
+    /**
+     * Returns a {@link ConstantValue} that corresponds to the (pi/180) value which
+     * is represented by
+     * {@value uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants#DEGREES_TO_RADIANS}.
+     * This value is used as the first parameter for the multiplication (mul.rn.f32)
+     * with a float value in order to convert an angle measured in degrees to an
+     * approximately equivalent angle measured in radians.
+     */
+    public Value getConstantValueForRadians(Value x) {
+        ConstantValue constantValue = null;
+        if (((PTXKind) x.getPlatformKind()).isF32()) {
+            constantValue = new ConstantValue(LIRKind.value(PTXKind.F32), JavaConstant.forFloat(PTXAssemblerConstants.DEGREES_TO_RADIANS));
+        } else {
+            shouldNotReachHere("The kind of the input parameter in the radian method is not float.");
+        }
+
+        return constantValue;
     }
 
     private static double doCompute(double value, Operation op) {

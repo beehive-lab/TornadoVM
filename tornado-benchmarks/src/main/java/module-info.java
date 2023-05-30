@@ -1,11 +1,8 @@
 module tornado.benchmarks {
     requires org.apache.commons.lang3;
     requires java.logging;
-    requires org.apache.logging.log4j;
     requires jmh.core;
 
-    requires transitive junit;
-    requires transitive lucene.core;
     requires transitive tornado.api;
     requires transitive tornado.matrices;
 
