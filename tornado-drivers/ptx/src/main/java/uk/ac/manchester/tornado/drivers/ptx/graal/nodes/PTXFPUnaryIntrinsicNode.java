@@ -333,17 +333,17 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
     }
 
     /**
-     * Returns a {@link ConstantValue} which is used as the first parameter for the
-     * multiplication (mul.rn.f32) with a float value in order to convert an angle
-     * measured in degrees to an approximately equivalent angle measured in radians.
-     *
-     * The value of the first parameter is 0xF3C8EFA35.
+     * Returns a {@link ConstantValue} that corresponds to the (pi/180) value which
+     * is represented by
+     * {@value uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants#DEGREES_TO_RADIANS}.
+     * This value is used as the first parameter for the multiplication (mul.rn.f32)
+     * with a float value in order to convert an angle measured in degrees to an
+     * approximately equivalent angle measured in radians.
      */
     public Value getConstantValueForRadians(Value x) {
         ConstantValue constantValue = null;
         if (((PTXKind) x.getPlatformKind()).isF32()) {
-            Long longValue = Long.parseLong(PTXAssemblerConstants.CONSTANT_FOR_RADIAN, 16);
-            constantValue = new ConstantValue(LIRKind.value(PTXKind.F32), JavaConstant.forFloat(Float.intBitsToFloat(longValue.intValue())));
+            constantValue = new ConstantValue(LIRKind.value(PTXKind.F32), JavaConstant.forFloat(PTXAssemblerConstants.DEGREES_TO_RADIANS));
         } else {
             shouldNotReachHere("The kind of the input parameter in the radian method is not float.");
         }

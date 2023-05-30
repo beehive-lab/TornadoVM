@@ -91,5 +91,9 @@ public class PTXAssemblerConstants {
 
     public static final String CALL = "call";
 
-    public static final String CONSTANT_FOR_RADIAN = "F3C8EFA35";
+    /**
+     * This constant number corresponds to the calculation of the (pi/180) number,
+     * which is used to convert degrees to radians.
+     */
+    public static final float DEGREES_TO_RADIANS = 0.0174533f;
 }

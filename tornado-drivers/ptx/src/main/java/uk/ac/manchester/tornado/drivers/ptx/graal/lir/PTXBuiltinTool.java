@@ -137,17 +137,19 @@ public class PTXBuiltinTool {
     }
 
     /**
-     * The radians operation is implemented in PTX with a multiplication between a
-     * floating constant value x (0xF3C8EFA35) and the value of y.
+     * The radians operation is implemented as: (pi / 180) * degrees. In PTX, the
+     * first argument of the multiplication is a constant value x
+     * {@value uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants#DEGREES_TO_RADIANS}
+     * while the second argument that corresponds to the degrees is value y.
      *
      * @param x
-     *            the constant value of 0xF3C8EFA35
+     *            the constant value of (pi/180)
      * @param y
      *            the angle value measured in degrees
      * @return Value: the approximately equivalent angle measured in radians
      */
     public Value genFloatRadians(Value x, Value y) {
-        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genFloatRadians: radians corresponds to PTX instruction mul.rn.f32(%s, %s)", x, y);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "genFloatRadians: radians corresponds to PTX instruction mul.rn.f32(%s, %s)", x, y);
         return new PTXBinary.Intrinsic(RADIANS, LIRKind.combine(x, y), x, y);
     }
 
