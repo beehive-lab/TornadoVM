@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 /**
@@ -133,15 +134,34 @@ public class TornadoVM extends TornadoLogger {
         return Tornado.PARALLEL_INTERPRETERS && (graphContext.getDevices().size() > 1);
     }
 
-    public void clearInstalledCode() {
+    public void executeActionOnInterpreters(Consumer<TornadoVMInterpreter> action) {
         for (TornadoVMInterpreter tornadoVMInterpreter : tornadoVMInterpreters) {
-            tornadoVMInterpreter.clearInstalledCode();
+            action.accept(tornadoVMInterpreter);
         }
     }
 
-    public void setCompileUpdate() {
-        for (TornadoVMInterpreter tornadoVMInterpreter : tornadoVMInterpreters) {
-            tornadoVMInterpreter.setCompileUpdate();
-        }
+    public void clearInstalledCode() {
+        executeActionOnInterpreters(TornadoVMInterpreter::clearInstalledCode);
     }
+
+    public void setCompileUpdate() {
+        executeActionOnInterpreters(TornadoVMInterpreter::setCompileUpdate);
+    }
+
+    public void dumpProfiles() {
+        executeActionOnInterpreters(TornadoVMInterpreter::dumpProfiles);
+    }
+
+    public void dumpEvents() {
+        executeActionOnInterpreters(TornadoVMInterpreter::dumpEvents);
+    }
+
+    public void clearProfiles() {
+        executeActionOnInterpreters(TornadoVMInterpreter::clearProfiles);
+    }
+
+    public void printTimes() {
+        executeActionOnInterpreters(TornadoVMInterpreter::printTimes);
+    }
+    
 }

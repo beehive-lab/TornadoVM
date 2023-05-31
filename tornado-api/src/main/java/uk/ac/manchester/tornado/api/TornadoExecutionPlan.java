@@ -41,15 +41,15 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Object to create and optimize an execution plan for running a set of
@@ -58,7 +58,6 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  * execution plan affect to all the immutable graphs associated with it.
  *
  * @since TornadoVM-0.15
- *
  */
 public class TornadoExecutionPlan {
 
@@ -72,11 +71,9 @@ public class TornadoExecutionPlan {
      * Method to obtain a specific device using the driver index (backend index) and
      * device index.
      *
-     * @param driverIndex
-     *            Integer value that identifies the backend to be used.
-     * @param deviceIndex
-     *            Integer value that identifies the device within the backend to be
-     *            used.
+     * @param driverIndex Integer value that identifies the backend to be used.
+     * @param deviceIndex Integer value that identifies the device within the backend to be
+     *                    used.
      * @return {@link TornadoDevice}
      */
     public static TornadoDevice getDevice(int driverIndex, int deviceIndex) {
@@ -100,8 +97,7 @@ public class TornadoExecutionPlan {
      * actions applied to the execution plan affect to all the immutable graphs
      * associated with it.
      *
-     * @param immutableTaskGraphs
-     *            {@link ImmutableTaskGraph}
+     * @param immutableTaskGraphs {@link ImmutableTaskGraph}
      */
     public TornadoExecutionPlan(ImmutableTaskGraph... immutableTaskGraphs) {
         this.tornadoExecutor = new TornadoExecutor(immutableTaskGraphs);
@@ -165,8 +161,7 @@ public class TornadoExecutionPlan {
      * ideally, different task immutable task-graph could be executed on different
      * devices.
      *
-     * @param immutableTaskGraphIndex
-     *            Index of a specific immutable task-graph
+     * @param immutableTaskGraphIndex Index of a specific immutable task-graph
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoDevice getDevice(int immutableTaskGraphIndex) {
@@ -196,8 +191,7 @@ public class TornadoExecutionPlan {
      * be applied to all tasks within the executor. Note that the grid-scheduler API
      * can specify all workers for each task-graph.
      *
-     * @param gridScheduler
-     *            {@link GridScheduler}
+     * @param gridScheduler {@link GridScheduler}
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withGridScheduler(GridScheduler gridScheduler) {
@@ -219,10 +213,8 @@ public class TornadoExecutionPlan {
      * Use the TornadoVM dynamic reconfiguration (akka live task migration) across
      * visible devices.
      *
-     * @param policy
-     *            {@link Policy}
-     * @param mode
-     *            {@link DRMode}
+     * @param policy {@link Policy}
+     * @param mode   {@link DRMode}
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withDynamicReconfiguration(Policy policy, DRMode mode) {
@@ -237,8 +229,7 @@ public class TornadoExecutionPlan {
      * users want to execute big data applications that do not fit on the device's
      * global memory.
      *
-     * @param batchSize
-     *            String in the format a number + "MB" Example "512MB".
+     * @param batchSize String in the format a number + "MB" Example "512MB".
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withBatch(String batchSize) {
@@ -251,8 +242,7 @@ public class TornadoExecutionPlan {
      * time, data transfers and compilation at different stages (JIT, driver
      * compilation, Graal, etc).
      *
-     * @param profilerMode
-     *            {@link ProfilerMode}
+     * @param profilerMode {@link ProfilerMode}
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withProfiler(ProfilerMode profilerMode) {
@@ -294,6 +284,7 @@ public class TornadoExecutionPlan {
         return this;
     }
 
+
     static class TornadoExecutor {
 
         private List<ImmutableTaskGraph> immutableTaskGraphList;
@@ -326,8 +317,7 @@ public class TornadoExecutionPlan {
         /**
          * For all task-graphs contained in an Executor, update the device
          *
-         * @param device
-         *            {@link TornadoDevice} object
+         * @param device {@link TornadoDevice} object
          */
         void setDevice(TornadoDevice device) {
             immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.setDevice(device));
