@@ -129,7 +129,6 @@ public class TornadoGraphBuilder {
                 final int size = buffer.getInt();
                 args = new AbstractNode[size];
                 argIndex = 0;
-                System.out.println("Task " + taskIndex + " context " + context.getIndex());
                 taskNode = new TaskNode(context, taskIndex, args);
             } else if (op == TornadoGraphBitcodes.LOAD_REF.index()) {
                 final int variableIndex = buffer.getInt();
@@ -198,7 +197,6 @@ public class TornadoGraphBuilder {
                 task = graphContext.getTask(taskIndex);
 
                 context = graph.addUnique(new ContextNode(graphContext.getDeviceIndexForTask(globalTaskId)));
-                System.out.println("get dev index for task " + graphContext.getDeviceIndexForTask(globalTaskId) + " : " + globalTaskId);
 
                 persist = graph.addUnique(new AllocateMultipleBuffersNode(context));
                 context.addUse(persist);
@@ -207,7 +205,6 @@ public class TornadoGraphBuilder {
                     final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(((CompilableTask) task).getMethod());
                     Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
                     accesses = sketch.getArgumentsAccess();
-                    System.out.println("RESOLVED l: " + task.meta().getDeviceIndex());
                 } else {
                     accesses = task.getArgumentsAccess();
                 }

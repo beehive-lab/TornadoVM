@@ -109,7 +109,6 @@ public class TornadoVMInterpreter extends TornadoLogger {
         this.timeProfiler = timeProfiler;
 
         this.deviceForInterpreter = graphContext.getDeviceForTask(idx);
-        System.out.println("Get dev for task " + idx + "  : " + deviceForContext.toString());
         useDependencies = graphContext.meta().enableOooExecution() || VM_USE_DEPS;
         totalTime = 0;
         invocations = 0;
@@ -125,7 +124,6 @@ public class TornadoVMInterpreter extends TornadoLogger {
         callWrappers = graphContext.getCallWrappers().clone();
         events = new int[buffer.getInt()][MAX_EVENTS];
         eventsIndexes = new int[events.length];
-        System.out.println("tASK COUNT " + taskCount);
         installedCodes = new TornadoInstalledCode[taskCount];
 
         for (int i = 0; i < events.length; i++) {
@@ -133,7 +131,6 @@ public class TornadoVMInterpreter extends TornadoLogger {
             eventsIndexes[i] = 0;
         }
 
-//        debug("found %d contexts", contexts.size());
         debug("created %d callWrappers", callWrappers.length);
         debug("created %d event lists", events.length);
 
@@ -540,7 +537,6 @@ public class TornadoVMInterpreter extends TornadoLogger {
 
         // Check if a different batch size was used for the same kernel. If true, then
         // the kernel needs to be recompiled.
-        System.out.println("+++ Task index " + taskIndex);
 
         if (!shouldCompile(installedCodes[0]) && task.getBatchThreads() != 0 && task.getBatchThreads() != batchThreads) {
             installedCodes[0].invalidate();

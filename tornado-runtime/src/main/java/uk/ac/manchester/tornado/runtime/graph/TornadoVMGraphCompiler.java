@@ -26,6 +26,7 @@
 package uk.ac.manchester.tornado.runtime.graph;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.runtime.common.BatchConfiguration;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextOpNode;
@@ -66,54 +67,52 @@ public class TornadoVMGraphCompiler {
 
     private static TornadoVMBytecodeBuilder[] compileSingleContextTornadoGraphToTornadoBytecodes(TornadoGraph graph, TornadoExecutionContext context, long batchSize) {
         TornadoVMBytecodeBuilder[] bytecodes = new TornadoVMBytecodeBuilder[1];
-//
-//        bytecodes[0] = new TornadoVMBytecodeBuilder();
-//
-//        System.out.println("------------ XXX");
-//        final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
-//
-//        final IntermediateTornadoGraph intermediateTornadoGraph = new IntermediateTornadoGraph(asyncNodes, graph);
-//
-//
-//        // Generate Context + BEGIN bytecode
-//        bytecodes[0].begin(1, intermediateTornadoGraph.getTasks().cardinality(), intermediateTornadoGraph.getNumberOfDependecies() + 1);
-//
-//        BatchConfiguration sizeBatch = null;
-//        if (batchSize != -1) {
-//            sizeBatch = sizeBatch.computeChunkSizes(context, batchSize);
-//        }
-//
-//        if (batchSize != -1) {
-//            // compute in batches
-//            long offset = 0;
-//            long nthreads = batchSize / sizeBatch.getNumBytesType();
-//            for (int i = 0; i < sizeBatch.getTotalChunks(); i++) {
-//                offset = (batchSize * i);
-//                scheduleAndEmitTornadoVMBytecodes(bytecodes[0], graph, intermediateTornadoGraph.getNodeIds(), intermediateTornadoGraph.getDependencies(), offset, batchSize, nthreads);
-//            }
-//            // Last chunk
-//            if (sizeBatch.getRemainingChunkSize() != 0) {
-//                offset += (batchSize);
-//                nthreads = sizeBatch.getRemainingChunkSize() / sizeBatch.getNumBytesType();
-//                long realBatchSize = sizeBatch.getTotalChunks() == 0 ? 0 : sizeBatch.getRemainingChunkSize();
-//                long realOffsetSize = sizeBatch.getTotalChunks() == 0 ? 0 : offset;
-//                scheduleAndEmitTornadoVMBytecodes(bytecodes[0], graph, intermediateTornadoGraph.getNodeIds(), intermediateTornadoGraph.getDependencies(), realOffsetSize, realBatchSize, nthreads);
-//            }
-//
-//        } else {
-//            // Generate bytecodes with no batches
-//            scheduleAndEmitTornadoVMBytecodes(bytecodes[0], graph, intermediateTornadoGraph.getNodeIds(), intermediateTornadoGraph.getDependencies());
-//        }
 
-//        // Last operation -> perform synchronisation
-//        if (TornadoOptions.ENABLE_STREAM_OUT_BLOCKING) {
-//            synchronizeOperationLastByteCode(bytecodes[0], intermediateTornadoGraph.getNumberOfDependecies());
-//        } else {
-//            bytecodes[0].barrier(intermediateTornadoGraph.getNumberOfDependecies());
-//        }
-//
-//        // Generate END bytecode
-//        bytecodes[0].end();
+        bytecodes[0] = new TornadoVMBytecodeBuilder();
+
+        final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
+
+        final IntermediateTornadoGraph intermediateTornadoGraph = new IntermediateTornadoGraph(asyncNodes, graph, context);
+
+
+        // Generate Context + BEGIN bytecode
+        bytecodes[0].begin(1, intermediateTornadoGraph.getTasks().cardinality(), intermediateTornadoGraph.getNumberOfDependencies() + 1);
+
+        BatchConfiguration sizeBatch = null;
+        if (batchSize != -1) {
+            sizeBatch = sizeBatch.computeChunkSizes(context, batchSize);
+        }
+
+        if (batchSize != -1) {
+            // compute in batches
+            long offset = 0;
+            long nthreads = batchSize / sizeBatch.getNumBytesType();
+            for (int i = 0; i < sizeBatch.getTotalChunks(); i++) {
+                offset = (batchSize * i);
+                scheduleAndEmitTornadoVMBytecodes(bytecodes[0], graph, intermediateTornadoGraph.getNodeIds(), intermediateTornadoGraph.getDependencies(), offset, batchSize, nthreads, 1);
+            }
+            // Last chunk
+            if (sizeBatch.getRemainingChunkSize() != 0) {
+                offset += (batchSize);
+                nthreads = sizeBatch.getRemainingChunkSize() / sizeBatch.getNumBytesType();
+                long realBatchSize = sizeBatch.getTotalChunks() == 0 ? 0 : sizeBatch.getRemainingChunkSize();
+                long realOffsetSize = sizeBatch.getTotalChunks() == 0 ? 0 : offset;
+                scheduleAndEmitTornadoVMBytecodes(bytecodes[0], graph, intermediateTornadoGraph.getNodeIds(), intermediateTornadoGraph.getDependencies(), realOffsetSize, realBatchSize, nthreads, 1);
+            }
+
+        } else {
+            // Generate bytecodes with no batches
+            scheduleAndEmitTornadoVMBytecodes(bytecodes[0], graph, intermediateTornadoGraph.getNodeIds(), intermediateTornadoGraph.getDependencies(), 1);
+        }
+
+        // Last operation -> perform synchronisation
+        if (TornadoOptions.ENABLE_STREAM_OUT_BLOCKING) {
+            synchronizeOperationLastByteCode(bytecodes[0], intermediateTornadoGraph.getNumberOfDependencies());
+        } else {
+            bytecodes[0].barrier(intermediateTornadoGraph.getNumberOfDependencies());
+        }
+        // Generate END bytecode
+        bytecodes[0].end();
         return bytecodes;
     }
 
@@ -124,40 +123,28 @@ public class TornadoVMGraphCompiler {
 
         final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
 
-        final IntermediateTornadoGraph intermediateTornadoGraph = new IntermediateTornadoGraph(asyncNodes, graph);
+        final IntermediateTornadoGraph intermediateTornadoGraph = new IntermediateTornadoGraph(asyncNodes, graph, context);
 
-        System.out.println("Async nodes " + asyncNodes.cardinality() + " COntext size : " + bytecodes.length);
-//        System.out.println("Context " + context.get);
         for (int i = 0; i < bytecodes.length; i++) {
 
             TornadoVMBytecodeBuilder bytecodeForTasks = new TornadoVMBytecodeBuilder();
-//            int tasksToAlloc = context.get
             // Generate Context + BEGIN bytecode
-            bytecodeForTasks.begin(1, 1, intermediateTornadoGraph.getNumberOfDependecies() + 1);
-
+            bytecodeForTasks.begin(1, 1, intermediateTornadoGraph.getNumberOfDependencies() + 1);
 
             // Generate bytecodes with no batches
             scheduleAndEmitTornadoVMBytecodes(bytecodeForTasks, graph, intermediateTornadoGraph.getNodeIds(), intermediateTornadoGraph.getDependencies(), i);
 
             // Last operation -> perform synchronisation
             if (TornadoOptions.ENABLE_STREAM_OUT_BLOCKING) {
-                synchronizeOperationLastByteCode(bytecodeForTasks, intermediateTornadoGraph.getNumberOfDependecies());
+                synchronizeOperationLastByteCode(bytecodeForTasks, intermediateTornadoGraph.getNumberOfDependencies());
             } else {
-                bytecodeForTasks.barrier(intermediateTornadoGraph.getNumberOfDependecies());
+                bytecodeForTasks.barrier(intermediateTornadoGraph.getNumberOfDependencies());
             }
 
             // Generate END bytecode
             bytecodeForTasks.end();
+
             bytecodes[i] = bytecodeForTasks;
-            System.out.println("-----start-------");
-
-            bytecodeForTasks.dump();
-
-            System.out.println("-----end-------");
-        }
-
-
-        for (TornadoVMBytecodeBuilder bcs : bytecodes) {
         }
 
         return bytecodes;
@@ -207,11 +194,8 @@ public class TornadoVMGraphCompiler {
                     if (outstandingDeps.isEmpty()) {
                         final ContextOpNode asyncNode = (ContextOpNode) graph.getNode(nodeIds[i]);
 
-                        System.out.println("Context + id " + asyncNode.getContext().getIndex() + "   : " + id);
-                        System.out.println("Context  " + asyncNode.getContext() + "   : " + id);
                         if (asyncNode.getContext().getDeviceIndex() == id) {
                             try {
-                                System.out.println("Emit node for " + asyncNode.getContext().getIndex());
                                 bytecodes.emitAsyncNode(asyncNode, asyncNode.getContext().getDeviceIndex(), (deps[i].isEmpty()) ? -1 : depLists[i], offset, bufferBatchSize, nThreads);
                             } catch (BufferOverflowException e) {
                                 throw new TornadoRuntimeException("[ERROR] Buffer Overflow exception. Use -Dtornado.tvm.maxbytecodesize=<value> with value > "
@@ -242,26 +226,28 @@ public class TornadoVMGraphCompiler {
      */
     private static class IntermediateTornadoGraph {
         private final TornadoGraph graph;
+        private final TornadoExecutionContext context;
         private final BitSet asyncNodes;
         private final BitSet[] dependencies;
         private final BitSet tasks;
         private final int[] nodeIds;
         private int index;
-        private int numberOfDependecies;
+        private int numberOfDependencies;
 
         /**
          * Constructs an IntermediateTornadoGraph with the specified asyncNodes BitSet.
          *
          * @param asyncNodes The BitSet representing the asynchronous nodes in the graph.
          */
-        public IntermediateTornadoGraph(BitSet asyncNodes, TornadoGraph graph) {
+        public IntermediateTornadoGraph(BitSet asyncNodes, TornadoGraph graph, TornadoExecutionContext context) {
             this.graph = graph;
             this.asyncNodes = asyncNodes;
             this.dependencies = new BitSet[asyncNodes.cardinality()];
             this.tasks = new BitSet(asyncNodes.cardinality());
             this.nodeIds = new int[asyncNodes.cardinality()];
             this.index = 0;
-            this.numberOfDependecies = 0;
+            this.numberOfDependencies = 0;
+            this.context = context;
             traverseIntermediateGraph();
         }
 
@@ -277,8 +263,8 @@ public class TornadoVMGraphCompiler {
             return nodeIds;
         }
 
-        public int getNumberOfDependecies() {
-            return numberOfDependecies;
+        public int getNumberOfDependencies() {
+            return numberOfDependencies;
         }
 
         private void traverseIntermediateGraph() {
@@ -289,9 +275,13 @@ public class TornadoVMGraphCompiler {
                     tasks.set(index);
                 }
                 if (!dependencies[index].isEmpty()) {
-                    numberOfDependecies++;
+                    numberOfDependencies++;
                 }
                 index++;
+            }
+
+            if (context.meta().shouldDumpSchedule()) {
+                printDependencyMatrix(nodeIds, dependencies, tasks);
             }
         }
 
@@ -310,12 +300,31 @@ public class TornadoVMGraphCompiler {
             return deps;
         }
 
-        private static void printDepedencyMatrix(int[] nodeIds, BitSet[] deps, BitSet tasks) {
-            System.out.println("TornadoGraph dependency matrix...");
+        private static void printDependencyMatrix(int[] nodeIds, BitSet[] deps, BitSet tasks) {
+            StringBuffer output = new StringBuffer();
+            output.append("TornadoGraph dependency matrix...\n");
+
+            int maxNodeId = Arrays.stream(nodeIds).max().getAsInt();
+            int maxLabelLength = Integer.toString(maxNodeId).length();
+
+            output.append("+" + "-".repeat(maxLabelLength + 2) + "+");
+            output.append("-".repeat(15) + "+");
+            output.append("\n");
+
             for (int i = 0; i < nodeIds.length; i++) {
                 final int nodeId = nodeIds[i];
-                System.out.printf("%d [%s]| %s\n", nodeId, (tasks.get(i)) ? "task" : "data", toString(deps[i]));
+                final String label = String.format("%" + maxLabelLength + "d", nodeId);
+                final String type = (tasks.get(i)) ? "task" : "data";
+
+                output.append("| ").append(String.format("%-" + maxLabelLength + "s", label));
+                output.append(" [").append(type).append("]| ").append(toString(deps[i])).append("\n");
+
+                output.append("|").append("-".repeat(maxLabelLength + 2)).append("+");
+                output.append("-".repeat(15)).append("+");
+                output.append("\n");
             }
+
+            System.out.println(output.toString());
         }
 
         private static String toString(BitSet set) {

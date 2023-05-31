@@ -434,7 +434,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         enableMemChecks = parseBoolean(getDefault("memory.check", id, "False"));
         dumpEvents = parseBoolean(getDefault("events.dump", id, "True"));
         dumpProfiles = parseBoolean(getDefault("profiles.print", id, "False"));
-        dumpTaskGraph = parseBoolean(getDefault("schedule.dump", "s0", "True"));
+        dumpTaskGraph = parseBoolean(getDefault("schedule.dump", id, "False"));
 
         openclCompilerOptions = (getProperty("tornado.opencl.compiler.options") == null) ? "-w" : getProperty("tornado.opencl.compiler.options");
         isOpenclCompilerFlagsDefined = getProperty("tornado.opencl.compiler.options") != null;

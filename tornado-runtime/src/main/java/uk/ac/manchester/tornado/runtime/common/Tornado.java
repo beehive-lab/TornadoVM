@@ -54,7 +54,7 @@ public final class Tornado implements TornadoCI {
     public static final boolean VM_USE_DEPS = Boolean.parseBoolean(Tornado.getProperty("tornado.vm.deps", "False"));
     public static final int UNROLL_FACTOR = Integer.parseInt(getProperty("tornado.unroll.factor", "2"));
 
-    public static final boolean PARALLEL_INTERPRETERS = Boolean.parseBoolean(settings.getProperty("tornado.parallel.interpreters", "False"));
+    public static final boolean PARALLEL_INTERPRETERS = Boolean.parseBoolean(settings.getProperty("tornado.parallel.interpreters", "True"));
     public static final boolean ENABLE_VECTORS = Boolean.parseBoolean(settings.getProperty("tornado.vectors.enable", "True"));
     public static final boolean TORNADO_ENABLE_BIFS = Boolean.parseBoolean(settings.getProperty("tornado.bifs.enable", "False"));
     public static final boolean DEBUG = Boolean.parseBoolean(settings.getProperty("tornado.debug", "False"));

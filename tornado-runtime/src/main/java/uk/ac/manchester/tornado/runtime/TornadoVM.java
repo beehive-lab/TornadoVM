@@ -90,18 +90,18 @@ public class TornadoVM extends TornadoLogger {
     }
 
     public Event execute() {
-        return runInParallel() ? executeParallelInterpreters() : executeSingleThreadedInterpreters();
+        return runInParallel() ? executeInterpretersMultithreaded() : executeInterpretersSingleThreaded();
     }
 
 
-    private Event executeSingleThreadedInterpreters() {
+    private Event executeInterpretersSingleThreaded() {
         for (TornadoVMInterpreter tornadoVMInterpreter : tornadoVMInterpreters) {
             tornadoVMInterpreter.execute(false);
         }
         return new EmptyEvent();
     }
 
-    private Event executeParallelInterpreters() {
+    private Event executeInterpretersMultithreaded() {
         // Create a thread pool with a fixed number of threads
         int numThreads = graphContext.getDevices().size();
         ExecutorService executor = Executors.newFixedThreadPool(numThreads);
@@ -131,5 +131,17 @@ public class TornadoVM extends TornadoLogger {
 
     private boolean runInParallel() {
         return Tornado.PARALLEL_INTERPRETERS && (graphContext.getDevices().size() > 1);
+    }
+
+    public void clearInstalledCode() {
+        for (TornadoVMInterpreter tornadoVMInterpreter : tornadoVMInterpreters) {
+            tornadoVMInterpreter.clearInstalledCode();
+        }
+    }
+
+    public void setCompileUpdate() {
+        for (TornadoVMInterpreter tornadoVMInterpreter : tornadoVMInterpreters) {
+            tornadoVMInterpreter.setCompileUpdate();
+        }
     }
 }

@@ -517,10 +517,10 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             i++;
         }
 
-        // 2. Clear the code cache of the TornadoVM instance
+        // 2. Clear the code caches in the TornadoVMInterpreter instance of the TorandoVM
         if (vm != null) {
-//            vm.clearInstalledCode();
-//            vm.setCompileUpdate();
+            vm.clearInstalledCode();
+            vm.setCompileUpdate();
         }
     }
 

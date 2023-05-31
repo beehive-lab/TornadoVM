@@ -32,6 +32,10 @@ import java.util.BitSet;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+/**
+ * The TornadoGraph class represents a graph data structure that stores nodes based on Taskgraphs relationsips.
+ * It provides methods to add, retrieve, delete, and filter nodes based on various criteria.
+ */
 public class TornadoGraph {
 
     private final static int INITIAL_SIZE = 256;
@@ -114,7 +118,7 @@ public class TornadoGraph {
     public void dumpTornadoGraph() {
         final String ANSI_CYAN = "\u001B[36m";
         final String ANSI_RESET = "\u001B[0m";
-
+        System.out.println("-----------------------------------");
         System.out.println(ANSI_CYAN + "TaskGraph:" + ANSI_RESET);
         apply(System.out::println);
         System.out.println("-----------------------------------");
