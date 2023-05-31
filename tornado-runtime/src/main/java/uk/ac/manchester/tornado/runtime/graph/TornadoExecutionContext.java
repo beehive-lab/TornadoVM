@@ -25,6 +25,7 @@
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -73,6 +74,8 @@ public class TornadoExecutionContext {
     private boolean redeployOnDevice;
     private boolean defaultScheduler;
 
+    private boolean independentTasks;
+
     private TornadoProfiler profiler;
 
     public TornadoExecutionContext(String id, TornadoProfiler profiler) {
@@ -90,6 +93,7 @@ public class TornadoExecutionContext {
         nextTask = 0;
         lastDevices = new HashSet<>();
         this.profiler = profiler;
+        this.independentTasks = areTasksIndependent();
     }
 
     public KernelArgs[] getCallWrappers() {
@@ -246,8 +250,12 @@ public class TornadoExecutionContext {
     }
 
     public void assignToDevices() {
-        for (int i = 0; i < tasks.size(); i++) {
-            assignTask(i, tasks.get(i));
+        if (independentTasks) {
+            for (int i = 0; i < tasks.size(); i++) {
+                assignTask(i, tasks.get(i));
+            }
+        } else {
+            mapAllTo(getDeviceFirstTask());
         }
     }
 
@@ -263,35 +271,47 @@ public class TornadoExecutionContext {
         return objectState.get(replaceVariable(oldObj, newObj));
     }
 
-    public void dumpExecutionContextMeta() {
-        final String ANSI_RESET = "\u001B[0m";
-        final String ANSI_CYAN = "\u001B[36m";
-        final String ANSI_YELLOW = "\u001B[33m";
-        final String ANSI_PURPLE = "\u001B[35m";
-        final String ANSI_GREEN = "\u001B[32m";
-        System.out.println("-----------------------------------");
-        System.out.println(ANSI_CYAN + "Device Table:" + ANSI_RESET);
-        for (int i = 0; i < devices.size(); i++) {
-            System.out.printf("[%d]: %s\n", i, devices.get(i));
-        }
-
-        System.out.println(ANSI_YELLOW + "Constant Table:" + ANSI_RESET);
-        for (int i = 0; i < constants.size(); i++) {
-            System.out.printf("[%d]: %s\n", i, constants.get(i));
-        }
-
-        System.out.println(ANSI_PURPLE + "Object Table:" + ANSI_RESET);
-        for (int i = 0; i < objects.size(); i++) {
-            final Object obj = objects.get(i);
-            System.out.printf("[%d]: 0x%x %s\n", i, obj.hashCode(), obj.toString());
-        }
-
-        System.out.println(ANSI_GREEN + "Task Table:" + ANSI_RESET);
+    private boolean areTasksIndependent() {
         for (int i = 0; i < tasks.size(); i++) {
-            final SchedulableTask task = tasks.get(i);
-            System.out.printf("[%d]: %s\n", i, task.getFullName());
+            SchedulableTask task = tasks.get(i);
+            for (int j = i + 1; j < tasks.size(); j++) {
+                SchedulableTask otherTask = tasks.get(j);
+
+                if (!isSameTask(task, otherTask) && haveCommonArguments(task, otherTask)) {
+                    if (hasWriteAccess(task, otherTask)) {
+                        return false;
+                    }
+                }
+            }
         }
-        System.out.println("-----------------------------------");
+        return true;
+    }
+
+    private boolean isSameTask(SchedulableTask task1, SchedulableTask task2) {
+        return task1.getTaskName().equals(task2.getTaskName()) && task1.getId().equals(task2.getId());
+    }
+
+    private boolean haveCommonArguments(SchedulableTask task1, SchedulableTask task2) {
+        for (Object arg1 : task1.getArguments()) {
+            for (Object arg2 : task2.getArguments()) {
+                if (arg1.equals(arg2)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean hasWriteAccess(SchedulableTask task, SchedulableTask otherTask) {
+        for (int i = 0; i < task.getArguments().length; i++) {
+            if (task.getArguments()[i].equals(otherTask.getArguments()[i])) {
+                Access access = task.getArgumentsAccess()[i];
+                if (access == Access.WRITE_ONLY || access == Access.READ_WRITE) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
 
@@ -436,5 +456,36 @@ public class TornadoExecutionContext {
 
         executionContext.profiler = this.profiler;
         executionContext.nextTask = this.nextTask;
+    }
+
+    public void dumpExecutionContextMeta() {
+        final String ANSI_RESET = "\u001B[0m";
+        final String ANSI_CYAN = "\u001B[36m";
+        final String ANSI_YELLOW = "\u001B[33m";
+        final String ANSI_PURPLE = "\u001B[35m";
+        final String ANSI_GREEN = "\u001B[32m";
+        System.out.println("-----------------------------------");
+        System.out.println(ANSI_CYAN + "Device Table:" + ANSI_RESET);
+        for (int i = 0; i < devices.size(); i++) {
+            System.out.printf("[%d]: %s\n", i, devices.get(i));
+        }
+
+        System.out.println(ANSI_YELLOW + "Constant Table:" + ANSI_RESET);
+        for (int i = 0; i < constants.size(); i++) {
+            System.out.printf("[%d]: %s\n", i, constants.get(i));
+        }
+
+        System.out.println(ANSI_PURPLE + "Object Table:" + ANSI_RESET);
+        for (int i = 0; i < objects.size(); i++) {
+            final Object obj = objects.get(i);
+            System.out.printf("[%d]: 0x%x %s\n", i, obj.hashCode(), obj.toString());
+        }
+
+        System.out.println(ANSI_GREEN + "Task Table:" + ANSI_RESET);
+        for (int i = 0; i < tasks.size(); i++) {
+            final SchedulableTask task = tasks.get(i);
+            System.out.printf("[%d]: %s\n", i, task.getFullName());
+        }
+        System.out.println("-----------------------------------");
     }
 }
