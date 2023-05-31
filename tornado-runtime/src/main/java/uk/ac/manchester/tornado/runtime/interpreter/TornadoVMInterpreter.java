@@ -29,16 +29,26 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
-import uk.ac.manchester.tornado.api.exceptions.*;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
+import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.*;
+import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.KernelArgs;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
-import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodeBuilder;
+import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
@@ -46,15 +56,25 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.*;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.*;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_VM_FLUSH;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 
 /**
- *
+ * TornadoVMInterpreter: it is a bytecode interpreter (Tornado bytecodes), a memory
+ * manager for all devices (FPGAs, GPUs and multicore that follows the OpenCL
+ * programming model), and a JIT compiler from Java bytecode to OpenCL.
+ * <p>
+ * The JIT compiler extends the Graal JIT Compiler for OpenCL compilation.
+ * <p>
  */
 public class TornadoVMInterpreter extends TornadoLogger {
     private static final Event EMPTY_EVENT = new EmptyEvent();
@@ -62,14 +82,12 @@ public class TornadoVMInterpreter extends TornadoLogger {
     private static final int MAX_EVENTS = 32;
     private final boolean useDependencies;
 
-    //    private final TornadoExecutionContext graphContext;
     private final List<Object> objects;
 
     private final GlobalObjectState[] globalStates;
     private final KernelArgs[] callWrappers;
     private final int[][] events;
     private final int[] eventsIndexes;
-    //    private final List<TornadoAcceleratorDevice> contexts;
     private final TornadoAcceleratorDevice deviceForInterpreter;
     private final TornadoInstalledCode[] installedCodes;
 
@@ -138,7 +156,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
         constants = graphContext.getConstants();
         tasks = graphContext.getTasks();
 
-        debug("%s - vm ready to go", graphContext.getId());
+        debug("%s - interperter ready to go", graphContext.getId());
         buffer.mark();
 
     }
@@ -152,7 +170,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
 
     public Event execute(boolean isWarmup) {
         isWarmup = isWarmup || VIRTUAL_DEVICE_ENABLED;
-//        deviceForContext.enableThreadSharing();
+        deviceForInterpreter.enableThreadSharing();
         final long t0 = System.nanoTime();
         int lastEvent = -1;
         initWaitEventList();
@@ -287,9 +305,9 @@ public class TornadoVMInterpreter extends TornadoLogger {
             invocations++;
         }
 
-//        if (graphContext.meta().isDebug()) {
-//            debug("bc: complete elapsed=%.9f s (%d iterations, %.9f s mean)", elapsed, invocations, (totalTime / invocations));
-//        }
+        if (graphContext.meta().isDebug()) {
+            debug("bc: complete elapsed=%.9f s (%d iterations, %.9f s mean)", elapsed, invocations, (totalTime / invocations));
+        }
 
         buffer.reset();
 
@@ -711,8 +729,6 @@ public class TornadoVMInterpreter extends TornadoLogger {
             tornadoVMBytecodeList.append(String.format("bc: " + InterpreterUtilities.debugHighLightBC("BARRIER") + " event-list %d%n", eventList));
         }
 
-//        int id = contexts.size() - 1;
-//        final TornadoAcceleratorDevice device = contexts.get(id);
         int lastEvent = deviceForInterpreter.enqueueMarker(waitList);
 
         resetEventIndexes(eventList);
@@ -720,9 +736,9 @@ public class TornadoVMInterpreter extends TornadoLogger {
     }
 
     private void throwError(byte op) {
-//        if (graphContext.meta().isDebug()) {
-//            debug("bc: invalid op 0x%x(%d)", op, op);
-//        }
+        if (graphContext.meta().isDebug()) {
+            debug("bc: invalid op 0x%x(%d)", op, op);
+        }
         throw new TornadoRuntimeException("[ERROR] TornadoVM Bytecode not recognized");
     }
 
@@ -755,10 +771,10 @@ public class TornadoVMInterpreter extends TornadoLogger {
     }
 
     public void dumpEvents() {
-//        if (!ENABLE_PROFILING || !graphContext.meta().shouldDumpEvents()) {
-//            info("profiling and/or event dumping is not enabled");
-//            return;
-//        }
+        if (!ENABLE_PROFILING || !graphContext.meta().shouldDumpEvents()) {
+            info("profiling and/or event dumping is not enabled");
+            return;
+        }
 
         deviceForInterpreter.dumpEvents();
     }
@@ -772,9 +788,9 @@ public class TornadoVMInterpreter extends TornadoLogger {
     }
 
     private KernelArgs resolveCallWrapper(int index, int numArgs, KernelArgs[] callWrappers, TornadoAcceleratorDevice device, boolean setNewDevice) {
-//        if (graphContext.meta().isDebug() && setNewDevice) {
-//            debug("Recompiling task on device " + device);
-//        }
+        if (graphContext.meta().isDebug() && setNewDevice) {
+            debug("Recompiling task on device " + device);
+        }
         if (callWrappers[index] == null || setNewDevice) {
             callWrappers[index] = device.createCallWrapper(numArgs);
         }
@@ -783,10 +799,10 @@ public class TornadoVMInterpreter extends TornadoLogger {
 
 
     public void dumpProfiles() {
-//        if (!graphContext.meta().shouldDumpProfiles()) {
-//            info("profiling is not enabled");
-//            return;
-//        }
+        if (!graphContext.meta().shouldDumpProfiles()) {
+            info("profiling is not enabled");
+            return;
+        }
 
         for (final SchedulableTask task : tasks) {
             final TaskMetaData meta = (TaskMetaData) task.meta();

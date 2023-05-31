@@ -25,7 +25,7 @@ package uk.ac.manchester.tornado.runtime;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraph;
@@ -39,26 +39,14 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
-import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
+import java.util.stream.IntStream;
 
 /**
- * TornadoVM: it includes a bytecode interpreter (Tornado bytecodes), a memory
- * manager for all devices (FPGAs, GPUs and multicore that follows the OpenCL
- * programming model), and a JIT compiler from Java bytecode to OpenCL.
- * <p>
- * The JIT compiler extends the Graal JIT Compiler for OpenCL compilation.
- * <p>
- * There is an instance of the {@link TornadoVM} per {@link TornadoTaskGraph}.
- * Each TornadoVM contains the logic to orchestrate the execution on the
- * parallel device (e.g., a GPU).
+ * * There is an instance of the {@link TornadoVM} per {@link TornadoTaskGraph}.
+ * * Each TornadoVM contains the logic to orchestrate the execution on the
+ * * parallel device (e.g., a GPU).
  */
-
-
 public class TornadoVM extends TornadoLogger {
-    private final boolean Parallel_Ints = false;
-    private final boolean useDependencies;
-
     private final TornadoExecutionContext graphContext;
 
 
@@ -70,26 +58,30 @@ public class TornadoVM extends TornadoLogger {
     private final TornadoVMBytecodeBuilder[] tornadoVMBytecodes;
 
     private final TornadoVMInterpreter[] tornadoVMInterpreters;
-//    private final InterpreterManager interpreterManager;
 
+    /**
+     * Constructs a new TornadoVM instance.
+     *
+     * @param graphContext the TornadoExecutionContext for managing the execution context
+     * @param tornadoGraph the TornadoGraph representing the TaskGraph
+     * @param timeProfiler the TornadoProfiler for profiling execution time
+     * @param batchSize    the batch size when running in bartch mode
+     */
     public TornadoVM(TornadoExecutionContext graphContext, TornadoGraph tornadoGraph, TornadoProfiler timeProfiler, long batchSize) {
         tornadoVMBytecodes = TornadoVMGraphCompiler.compile(tornadoGraph, graphContext, batchSize);
-        tornadoVMInterpreters = new TornadoVMInterpreter[graphContext.getDevices().size()]; // context per device == size means total interpretes
+        tornadoVMInterpreters = new TornadoVMInterpreter[graphContext.getDevices().size()];
         this.graphContext = graphContext;
         this.timeProfiler = timeProfiler;
-        useDependencies = graphContext.meta().enableOooExecution() || VM_USE_DEPS;
         totalTime = 0;
         invocations = 0;
         bindBytecodesToInterpreters();
     }
 
     private void bindBytecodesToInterpreters() {
-        int index = 0;
-        for (TornadoAcceleratorDevice distinctContext : graphContext.getDevices()) {
-            tornadoVMInterpreters[index] = new TornadoVMInterpreter(graphContext, tornadoVMBytecodes[index], timeProfiler, distinctContext, index);
-            index++;
-        }
-//        tornadoVMInterpreters[index] = new TornadoVMInterpreter(graphContext, tornadoVMBytecodes[index], timeProfiler, distinctContext, index);
+        IntStream.range(0, graphContext.getDevices().size())
+                .forEach(index -> tornadoVMInterpreters[index] =
+                        new TornadoVMInterpreter(graphContext, tornadoVMBytecodes[index],
+                                timeProfiler, graphContext.getDevices().get(index), index));
     }
 
 
@@ -98,14 +90,18 @@ public class TornadoVM extends TornadoLogger {
     }
 
     public Event execute() {
+        return runInParallel() ? executeParallelInterpreters() : executeSingleThreadedInterpreters();
+    }
+
+
+    private Event executeSingleThreadedInterpreters() {
         for (TornadoVMInterpreter tornadoVMInterpreter : tornadoVMInterpreters) {
             tornadoVMInterpreter.execute(false);
         }
         return new EmptyEvent();
-
     }
 
-    public Event execute(int par) {
+    private Event executeParallelInterpreters() {
         // Create a thread pool with a fixed number of threads
         int numThreads = graphContext.getDevices().size();
         ExecutorService executor = Executors.newFixedThreadPool(numThreads);
@@ -127,39 +123,13 @@ public class TornadoVM extends TornadoLogger {
                 e.printStackTrace();
             }
         }
+        // Shutdown the executor after all tasks have completed
 
-// Shutdown the executor after all tasks have completed
         executor.shutdown();
         return new EmptyEvent();
     }
-//
-//    private void scheduleInterpreters() {
-//        if (true) {
-//            for (TornadoVMInterpreter interpreter : tornadoVMInterpreters) {
-//                interpreter.execute(false);
-//            }
-//        }
-//    }
-//
-//    private void instantiateInterpreter() {
-//
-//    }
-    //InterpreterManager->
 
-//    private static class InterpreterManager {
-//        int totalInterpreters;
-//        TornadoVMInterpreter[] tornadoVMInterpreters;
-//        TornadoVMBytecodeBuilder tornadoVMBytecode;
-//        boolean isParallel;
-//
-//        public int getTotalInterpreters() {
-//            return totalInterpreters;
-//        }
-//
-//        public InterpreterManager(TornadoVMInterpreter[] tornadoVMInterpreters, TornadoVMBytecodeBuilder tornadoVMBytecode) {
-//            this.tornadoVMInterpreters = tornadoVMInterpreters;
-//            this.tornadoVMBytecode = tornadoVMBytecode;
-//        }
-//
-//    }
+    private boolean runInParallel() {
+        return Tornado.PARALLEL_INTERPRETERS && (graphContext.getDevices().size() > 1);
+    }
 }
