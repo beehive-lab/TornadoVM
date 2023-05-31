@@ -142,9 +142,9 @@ public class TornadoVMInterpreter extends TornadoLogger {
         while (op != TornadoVMBytecodes.BEGIN.value()) {
             TornadoInternalError.guarantee(op == TornadoVMBytecodes.CONTEXT.value(), "invalid code: 0x%x", op);
             final int deviceIndex = buffer.getInt();
-            debug("loading context %s", deviceForContext.toString());
+            debug("loading context %s", deviceForInterpreter.toString());
             final long t0 = System.nanoTime();
-            deviceForContext.ensureLoaded();
+            deviceForInterpreter.ensureLoaded();
             final long t1 = System.nanoTime();
             debug("loaded in %.9f s", (t1 - t0) * 1e-9);
             op = buffer.get();

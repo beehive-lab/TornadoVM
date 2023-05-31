@@ -67,9 +67,10 @@ public class TornadoVMGraphCompiler {
 
     private static TornadoVMBytecodeBuilder[] compileSingleContextTornadoGraphToTornadoBytecodes(TornadoGraph graph, TornadoExecutionContext context, long batchSize) {
         TornadoVMBytecodeBuilder[] bytecodes = new TornadoVMBytecodeBuilder[1];
-
+        final boolean isSingleContext = true;
         bytecodes[0] = new TornadoVMBytecodeBuilder();
 
+        System.out.println("SIngle context compilation");
         final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
 
         final IntermediateTornadoGraph intermediateTornadoGraph = new IntermediateTornadoGraph(asyncNodes, graph);
@@ -89,7 +90,7 @@ public class TornadoVMGraphCompiler {
             long nthreads = batchSize / sizeBatch.getNumBytesType();
             for (int i = 0; i < sizeBatch.getTotalChunks(); i++) {
                 offset = (batchSize * i);
-                scheduleAndEmitTornadoVMBytecodes(bytecodes[0], graph, intermediateTornadoGraph.getNodeIds(), intermediateTornadoGraph.getDependencies(), offset, batchSize, nthreads, 1);
+                scheduleAndEmitTornadoVMBytecodes(bytecodes[0], graph, intermediateTornadoGraph.getNodeIds(), intermediateTornadoGraph.getDependencies(), offset, batchSize, nthreads, 1, isSingleContext);
             }
             // Last chunk
             if (sizeBatch.getRemainingChunkSize() != 0) {
@@ -97,12 +98,12 @@ public class TornadoVMGraphCompiler {
                 nthreads = sizeBatch.getRemainingChunkSize() / sizeBatch.getNumBytesType();
                 long realBatchSize = sizeBatch.getTotalChunks() == 0 ? 0 : sizeBatch.getRemainingChunkSize();
                 long realOffsetSize = sizeBatch.getTotalChunks() == 0 ? 0 : offset;
-                scheduleAndEmitTornadoVMBytecodes(bytecodes[0], graph, intermediateTornadoGraph.getNodeIds(), intermediateTornadoGraph.getDependencies(), realOffsetSize, realBatchSize, nthreads, 1);
+                scheduleAndEmitTornadoVMBytecodes(bytecodes[0], graph, intermediateTornadoGraph.getNodeIds(), intermediateTornadoGraph.getDependencies(), realOffsetSize, realBatchSize, nthreads, 1, isSingleContext);
             }
 
         } else {
             // Generate bytecodes with no batches
-            scheduleAndEmitTornadoVMBytecodes(bytecodes[0], graph, intermediateTornadoGraph.getNodeIds(), intermediateTornadoGraph.getDependencies(), 1);
+            scheduleAndEmitTornadoVMBytecodes(bytecodes[0], graph, intermediateTornadoGraph.getNodeIds(), intermediateTornadoGraph.getDependencies(), 1, isSingleContext);
         }
 
         // Last operation -> perform synchronisation
@@ -137,7 +138,7 @@ public class TornadoVMGraphCompiler {
             bytecodeForTasks.begin(1, 1, intermediateTornadoGraph.getNumberOfDependencies() + 1);
 
             // Generate bytecodes with no batches
-            scheduleAndEmitTornadoVMBytecodes(bytecodeForTasks, graph, intermediateTornadoGraph.getNodeIds(), intermediateTornadoGraph.getDependencies(), i);
+            scheduleAndEmitTornadoVMBytecodes(bytecodeForTasks, graph, intermediateTornadoGraph.getNodeIds(), intermediateTornadoGraph.getDependencies(), i, context.getDevices().size() == 1);
 
             // Last operation -> perform synchronisation
             if (TornadoOptions.ENABLE_STREAM_OUT_BLOCKING) {
@@ -171,11 +172,11 @@ public class TornadoVMGraphCompiler {
         }
     }
 
-    private static void scheduleAndEmitTornadoVMBytecodes(TornadoVMBytecodeBuilder result, TornadoGraph graph, int[] nodeIds, BitSet[] deps, int id) {
-        scheduleAndEmitTornadoVMBytecodes(result, graph, nodeIds, deps, 0, 0, 0, id);
+    private static void scheduleAndEmitTornadoVMBytecodes(TornadoVMBytecodeBuilder result, TornadoGraph graph, int[] nodeIds, BitSet[] deps, int id, boolean singleContext) {
+        scheduleAndEmitTornadoVMBytecodes(result, graph, nodeIds, deps, 0, 0, 0, id, singleContext);
     }
 
-    private static void scheduleAndEmitTornadoVMBytecodes(TornadoVMBytecodeBuilder bytecodes, TornadoGraph graph, int[] nodeIds, BitSet[] deps, long offset, long bufferBatchSize, long nThreads, int id) {
+    private static void scheduleAndEmitTornadoVMBytecodes(TornadoVMBytecodeBuilder bytecodes, TornadoGraph graph, int[] nodeIds, BitSet[] deps, long offset, long bufferBatchSize, long nThreads, int id, boolean singleContext) {
         final BitSet scheduled = new BitSet(deps.length);
         scheduled.clear();
         final BitSet nodes = new BitSet(graph.getValid().length());
@@ -203,7 +204,7 @@ public class TornadoVMGraphCompiler {
                     if (outstandingDeps.isEmpty()) {
                         final ContextOpNode asyncNode = (ContextOpNode) graph.getNode(nodeIds[i]);
 
-                        if (asyncNode.getContext().getDeviceIndex() == id) {
+                        if (asyncNode.getContext().getDeviceIndex() == id || singleContext) {
                             try {
                                 bytecodes.emitAsyncNode(asyncNode, asyncNode.getContext().getDeviceIndex(), (deps[i].isEmpty()) ? -1 : depLists[i], offset, bufferBatchSize, nThreads);
                             } catch (BufferOverflowException e) {
