@@ -72,7 +72,7 @@ public class TornadoVMGraphCompiler {
 
         final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
 
-        final IntermediateTornadoGraph intermediateTornadoGraph = new IntermediateTornadoGraph(asyncNodes, graph, context);
+        final IntermediateTornadoGraph intermediateTornadoGraph = new IntermediateTornadoGraph(asyncNodes, graph);
 
 
         // Generate Context + BEGIN bytecode
@@ -113,6 +113,11 @@ public class TornadoVMGraphCompiler {
         }
         // Generate END bytecode
         bytecodes[0].end();
+
+        if (context.meta().shouldDumpSchedule()) {
+            intermediateTornadoGraph.printDependencyMatrix();
+        }
+
         return bytecodes;
     }
 
@@ -123,7 +128,7 @@ public class TornadoVMGraphCompiler {
 
         final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
 
-        final IntermediateTornadoGraph intermediateTornadoGraph = new IntermediateTornadoGraph(asyncNodes, graph, context);
+        final IntermediateTornadoGraph intermediateTornadoGraph = new IntermediateTornadoGraph(asyncNodes, graph);
 
         for (int i = 0; i < bytecodes.length; i++) {
 
@@ -145,6 +150,10 @@ public class TornadoVMGraphCompiler {
             bytecodeForTasks.end();
 
             bytecodes[i] = bytecodeForTasks;
+        }
+
+        if (context.meta().shouldDumpSchedule()) {
+            intermediateTornadoGraph.printDependencyMatrix();
         }
 
         return bytecodes;
@@ -226,11 +235,10 @@ public class TornadoVMGraphCompiler {
      */
     private static class IntermediateTornadoGraph {
         private final TornadoGraph graph;
-        private final TornadoExecutionContext context;
         private final BitSet asyncNodes;
-        private final BitSet[] dependencies;
-        private final BitSet tasks;
-        private final int[] nodeIds;
+        private static BitSet[] dependencies = new BitSet[0];
+        private static BitSet tasks = null;
+        private static int[] nodeIds = new int[0];
         private int index;
         private int numberOfDependencies;
 
@@ -239,7 +247,7 @@ public class TornadoVMGraphCompiler {
          *
          * @param asyncNodes The BitSet representing the asynchronous nodes in the graph.
          */
-        public IntermediateTornadoGraph(BitSet asyncNodes, TornadoGraph graph, TornadoExecutionContext context) {
+        public IntermediateTornadoGraph(BitSet asyncNodes, TornadoGraph graph) {
             this.graph = graph;
             this.asyncNodes = asyncNodes;
             this.dependencies = new BitSet[asyncNodes.cardinality()];
@@ -247,7 +255,6 @@ public class TornadoVMGraphCompiler {
             this.nodeIds = new int[asyncNodes.cardinality()];
             this.index = 0;
             this.numberOfDependencies = 0;
-            this.context = context;
             traverseIntermediateGraph();
         }
 
@@ -279,10 +286,6 @@ public class TornadoVMGraphCompiler {
                 }
                 index++;
             }
-
-            if (context.meta().shouldDumpSchedule()) {
-                printDependencyMatrix(nodeIds, dependencies, tasks);
-            }
         }
 
         private static BitSet calculateDependencies(TornadoGraph graph, int i) {
@@ -300,7 +303,7 @@ public class TornadoVMGraphCompiler {
             return deps;
         }
 
-        private static void printDependencyMatrix(int[] nodeIds, BitSet[] deps, BitSet tasks) {
+        public void printDependencyMatrix() {
             StringBuffer output = new StringBuffer();
             output.append("TornadoGraph dependency matrix...\n");
 
@@ -317,7 +320,7 @@ public class TornadoVMGraphCompiler {
                 final String type = (tasks.get(i)) ? "task" : "data";
 
                 output.append("| ").append(String.format("%-" + maxLabelLength + "s", label));
-                output.append(" [").append(type).append("]| ").append(toString(deps[i])).append("\n");
+                output.append(" [").append(type).append("]| ").append(toString(dependencies[i])).append("\n");
 
                 output.append("|").append("-".repeat(maxLabelLength + 2)).append("+");
                 output.append("-".repeat(15)).append("+");

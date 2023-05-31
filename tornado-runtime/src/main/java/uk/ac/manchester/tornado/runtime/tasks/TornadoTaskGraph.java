@@ -619,7 +619,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.limit(hlBuffer.position());
 
-        final TornadoGraph tornadoGraph = TornadoGraphBuilder.buildGraph(executionContext, buffer);
+        final TornadoGraph tornadoGraph = TornadoGraphBuilder.buildGraph(executionContext, buffer); // pro
         if (setNewDevice) {
             updateDeviceContext(tornadoGraph);
         }
@@ -630,8 +630,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         if (meta().shouldDumpSchedule()) {
             executionContext.dumpExecutionContextMeta();
             tornadoGraph.dumpTornadoGraph();
-            Arrays.stream(tornadoVM.getTornadoVMBytecodes())
-                    .forEach(TornadoVMBytecodeBuilder::dump);
+
+//            Arrays.stream(tornadoVM.getTornadoVMBytecodes())
+//                    .forEach(TornadoVMBytecodeBuilder::dump);
         }
 
         return tornadoVM;
@@ -819,22 +820,22 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void dumpTimes() {
-//        vm.printTimes();
+        vm.printTimes();
     }
 
     @Override
     public void dumpProfiles() {
-//        vm.dumpProfiles();
+        vm.dumpProfiles();
     }
 
     @Override
     public void dumpEvents() {
-//        vm.dumpEvents();
+        vm.dumpEvents();
     }
 
     @Override
     public void clearProfiles() {
-//        vm.clearProfiles();
+        vm.clearProfiles();
     }
 
     @Override
