@@ -279,7 +279,7 @@ class TornadoInstaller():
         backend = self.composeBackendOption(args)
 
         makeJDK = "jdk-11-plus"
-        if ((args.javaHome != None and args.javaHome.startswith("graal")) or args.jdk.startswith("graal")):
+        if ((args.javaHome != None and "graal" in args.javaHome) or ("graal" in args.jdk)):
             makeJDK = "graal-jdk-11-plus"
         
         if (args.javaHome != None):
