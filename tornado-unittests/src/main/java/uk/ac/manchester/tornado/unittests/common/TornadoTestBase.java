@@ -105,7 +105,7 @@ public abstract class TornadoTestBase {
         }
     }
 
-    protected TornadoDevice checkSPIRVSupport() {
+    protected TornadoDevice getSPIRVSupportedDevice() {
         TornadoDevice device = null;
         TornadoTestBase.Tuple2<Integer, Integer> driverAndDeviceIndex = getDriverAndDeviceIndex();
         if (driverAndDeviceIndex.f0() != 0) {

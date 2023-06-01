@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -49,6 +50,7 @@ import java.util.stream.IntStream;
  */
 public class TornadoVM extends TornadoLogger {
     private final TornadoExecutionContext graphContext;
+    private final boolean setNewDevice;
 
 
     private double totalTime;
@@ -68,21 +70,31 @@ public class TornadoVM extends TornadoLogger {
      * @param timeProfiler the TornadoProfiler for profiling execution time
      * @param batchSize    the batch size when running in bartch mode
      */
-    public TornadoVM(TornadoExecutionContext graphContext, TornadoGraph tornadoGraph, TornadoProfiler timeProfiler, long batchSize) {
+    public TornadoVM(TornadoExecutionContext graphContext, TornadoGraph tornadoGraph, TornadoProfiler timeProfiler, long batchSize, boolean setNewDevice) {
         tornadoVMBytecodes = TornadoVMGraphCompiler.compile(tornadoGraph, graphContext, batchSize);
         tornadoVMInterpreters = new TornadoVMInterpreter[graphContext.getDevices().size()];
         this.graphContext = graphContext;
         this.timeProfiler = timeProfiler;
+        this.setNewDevice = setNewDevice;
         totalTime = 0;
         invocations = 0;
         bindBytecodesToInterpreters();
     }
 
     private void bindBytecodesToInterpreters() {
+        System.out.println("TornadoBytecodeBuilder size " + tornadoVMBytecodes.length);
+        System.out.println("GraphCoctext size device : " + graphContext.getDevices().size());
+        System.out.println("Graph context : " + graphContext.meta().shouldDumpSchedule());
+
         IntStream.range(0, graphContext.getDevices().size())
                 .forEach(index -> tornadoVMInterpreters[index] =
                         new TornadoVMInterpreter(graphContext, tornadoVMBytecodes[index],
                                 timeProfiler, graphContext.getDevices().get(index), index));
+
+
+//        tornadoVMInterpreters[0] = new TornadoVMInterpreter(graphContext, tornadoVMBytecodes[0],
+//                timeProfiler, graphContext.getDevices().get(0), 0);
+
     }
 
 
@@ -96,8 +108,17 @@ public class TornadoVM extends TornadoLogger {
 
 
     private Event executeInterpretersSingleThreaded() {
-        for (TornadoVMInterpreter tornadoVMInterpreter : tornadoVMInterpreters) {
-            tornadoVMInterpreter.execute(false);
+        System.out.println("iNVALITED " + graphContext.invalidatedContxtId());
+        if (graphContext.invalidatedContxtId() == -1) {
+            for (TornadoVMInterpreter tornadoVMInterpreter : tornadoVMInterpreters) {
+                tornadoVMInterpreter.execute(false);
+            }
+        } else {
+            for (int i = 0; i < graphContext.getDevices().size(); i++) {
+                if (i != graphContext.invalidatedContxtId()) {
+                    tornadoVMInterpreters[i].execute(false);
+                }
+            }
         }
         return new EmptyEvent();
     }
@@ -163,5 +184,15 @@ public class TornadoVM extends TornadoLogger {
     public void printTimes() {
         executeActionOnInterpreters(TornadoVMInterpreter::printTimes);
     }
-    
+
+    public void warmup() {
+        executeActionOnInterpreters(TornadoVMInterpreter::warmup);
+    }
+
+    public void setGridScheduler(GridScheduler gridScheduler) {
+        for (TornadoVMInterpreter interpreter : tornadoVMInterpreters) {
+            interpreter.setGridScheduler(gridScheduler);
+        }
+    }
+
 }

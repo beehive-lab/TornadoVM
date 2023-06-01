@@ -486,6 +486,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         meta().setDevice(device);
 
+        System.out.println("old device :  " + oldDevice.getDescription() + " \n new device :  " + device.getDescription());
         // Make sure that a sketch is available for the device.
         for (int i = 0; i < executionContext.getTaskCount(); i++) {
             SchedulableTask task = executionContext.getTask(i);
@@ -493,10 +494,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             if (task instanceof CompilableTask) {
                 ResolvedJavaMethod method = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(((CompilableTask) task).getMethod());
                 if (!meta().getLogicDevice().getDeviceContext().isCached(method.getName(), task)) {
+                    System.out.println("Update inner for task");
                     updateInner(i, executionContext.getTask(i));
                 }
             }
         }
+        System.out.println("old device :  " + oldDevice.getDeviceContext().getDeviceIndex() + " \n new device :  " + device.getDeviceContext().getDeviceIndex());
 
         // Release locked buffers from the old device and lock them on the new one.
         for (LocalObjectState localState : executionContext.getObjectStates()) {
@@ -621,13 +624,15 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         final TornadoGraph tornadoGraph = TornadoGraphBuilder.buildGraph(executionContext, buffer); // pro
         if (setNewDevice) {
+            System.out.println("UPDATES DEVICE");
             updateDeviceContext(tornadoGraph);
+//            executionContext.setInvalidContext(0);
         }
 
         // TornadoVM byte-code generation
-        TornadoVM tornadoVM = new TornadoVM(executionContext, tornadoGraph, timeProfiler, batchSizeBytes);
+        TornadoVM tornadoVM = new TornadoVM(executionContext, tornadoGraph, timeProfiler, batchSizeBytes, setNewDevice);
 
-        if (meta().shouldDumpSchedule()) {
+        if (true) {
             executionContext.dumpExecutionContextMeta();
             tornadoGraph.dumpTornadoGraph();
 
@@ -659,11 +664,17 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
      */
     private CompileInfo extractCompileInfo() {
         if (result == null && isLastDeviceListEmpty()) {
+            System.out.println("Com1");
+//            executionContext.setInvalidContext(0);
             return COMPILE_ONLY;
         } else if (result != null && !isLastDeviceListEmpty() && !(compareDevices(executionContext.getLastDevices(), meta().getLogicDevice()))) {
+            System.out.println("Com2");
+
             return COMPILE_AND_UPDATE;
         } else if (updateData) {
+            System.out.println("Com3");
             if (gridScheduler == null) {
+
                 return COMPILE_ONLY;
             }
             /*
@@ -679,6 +690,10 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                     return COMPILE_ONLY;
                 }
             }
+        }
+        System.out.println("Com99");
+        if (!compareDevices(executionContext.getLastDevices(), meta().getLogicDevice())) {
+            return COMPILE_AND_UPDATE;
         }
         return NOT_COMPILE_UPDATE;
     }
@@ -703,7 +718,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
          * TornadoTaskSchedule::compile method is not called in different runs of the
          * same TaskSchedule.
          */
-//        vm.setGridScheduler(gridScheduler);
+        vm.setGridScheduler(gridScheduler);
 
         if (updateData) {
             executionContext.newCallWrapper(true);
@@ -790,6 +805,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             preCompilationForFPGA();
         }
 
+        System.out.println("In schedule inner " + deviceForTask.getPlatformName());
         try {
             event = vm.execute();
             timeProfiler.stop(ProfilerType.TOTAL_TASK_GRAPH_TIME);
@@ -945,7 +961,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         timeProfiler.clean();
 
         compileToTornadoVMBytecode();
-//        vm.warmup();
+        vm.warmup();
 
         if (TornadoOptions.isProfilerEnabled() && !TornadoOptions.PROFILER_LOGS_ACCUMULATE()) {
             timeProfiler.dumpJson(new StringBuffer(), this.getId());
