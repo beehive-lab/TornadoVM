@@ -17,13 +17,7 @@
  */
 package uk.ac.manchester.tornado.unittests.prebuilt;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.Arrays;
-import java.util.stream.IntStream;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -38,12 +32,17 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+import java.util.Arrays;
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
+
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest
+ * tornado-test -V uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest
  * </code>
  */
 public class PrebuiltTest extends TornadoTestBase {
@@ -84,10 +83,10 @@ public class PrebuiltTest extends TornadoTestBase {
                 .prebuiltTask("t0", //
                         "add", //
                         filePath, //
-                        new Object[] { a, b, c }, //
-                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
+                        new Object[]{a, b, c}, //
+                        new Access[]{Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY}, //
                         defaultDevice, //
-                        new int[] { numElements })//
+                        new int[]{numElements})//
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -135,10 +134,10 @@ public class PrebuiltTest extends TornadoTestBase {
                 .prebuiltTask("t0", //
                         "add", //
                         filePath, //
-                        new Object[] { a, b, c }, //
-                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
+                        new Object[]{a, b, c}, //
+                        new Access[]{Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY}, //
                         defaultDevice, //
-                        new int[] { numElements })//
+                        new int[]{numElements})//
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -151,12 +150,12 @@ public class PrebuiltTest extends TornadoTestBase {
     }
 
     @Test
-    public void testPrebuilt03() {
+    public void testPrebuilt03SPIRV() {
         assertNotBackend(TornadoVMBackendType.PTX);
 
         TornadoDevice device = checkSPIRVSupport();
 
-        if (device == null) {
+        if (device != null) {
             assertNotBackend(TornadoVMBackendType.OPENCL);
         }
 
@@ -179,10 +178,10 @@ public class PrebuiltTest extends TornadoTestBase {
                 .prebuiltTask("t0", //
                         "floatReductionAddLocalMemory", //
                         filePath, //
-                        new Object[] { context, input, reduce }, //
-                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
+                        new Object[]{context, input, reduce}, //
+                        new Access[]{Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY}, //
                         device, //
-                        new int[] { size })//
+                        new int[]{size})//
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -202,12 +201,12 @@ public class PrebuiltTest extends TornadoTestBase {
     }
 
     @Test
-    public void testPrebuilt04() {
+    public void testPrebuilt04SPIRV() {
         assertNotBackend(TornadoVMBackendType.PTX);
 
         TornadoDevice device = checkSPIRVSupport();
 
-        if (device == null) {
+        if (device != null) {
             assertNotBackend(TornadoVMBackendType.OPENCL);
         }
 
@@ -230,10 +229,10 @@ public class PrebuiltTest extends TornadoTestBase {
                 .prebuiltTask("b", //
                         "intReductionAddGlobalMemory", //
                         filePath, //
-                        new Object[] { context, input, reduce }, //
-                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
+                        new Object[]{context, input, reduce}, //
+                        new Access[]{Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY}, //
                         device, //
-                        new int[] { size })//
+                        new int[]{size})//
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
