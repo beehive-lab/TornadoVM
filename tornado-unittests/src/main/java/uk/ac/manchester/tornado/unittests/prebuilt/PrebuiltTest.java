@@ -153,7 +153,7 @@ public class PrebuiltTest extends TornadoTestBase {
     public void testPrebuilt03SPIRV() {
         assertNotBackend(TornadoVMBackendType.PTX);
 
-        TornadoDevice device = checkSPIRVSupport();
+        TornadoDevice device = getSPIRVSupportedDevice();
 
         if (device != null) {
             assertNotBackend(TornadoVMBackendType.OPENCL);
@@ -204,7 +204,7 @@ public class PrebuiltTest extends TornadoTestBase {
     public void testPrebuilt04SPIRV() {
         assertNotBackend(TornadoVMBackendType.PTX);
 
-        TornadoDevice device = checkSPIRVSupport();
+        TornadoDevice device = getSPIRVSupportedDevice();
 
         if (device != null) {
             assertNotBackend(TornadoVMBackendType.OPENCL);
