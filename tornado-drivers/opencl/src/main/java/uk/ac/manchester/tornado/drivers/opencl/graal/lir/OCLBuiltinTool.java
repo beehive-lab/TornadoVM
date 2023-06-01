@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -50,6 +50,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCL
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.NATIVE_SQRT;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.NATIVE_TAN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.POPCOUNT;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.RADIANS;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.SIGN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.SIN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.SQRT;
@@ -187,6 +188,11 @@ public class OCLBuiltinTool {
     public Value genFloatLog(Value input) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genLog: log(%s)", input);
         return new OCLUnary.Intrinsic(LOG, LIRKind.value(input.getPlatformKind()), input);
+    }
+
+    public Value genFloatRadians(Value input) {
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "genFloatRadians: radians(%s)", input);
+        return new OCLUnary.Intrinsic(RADIANS, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatLog2(Value input) {

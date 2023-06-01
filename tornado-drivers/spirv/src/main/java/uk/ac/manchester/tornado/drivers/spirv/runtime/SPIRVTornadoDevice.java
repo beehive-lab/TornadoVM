@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022, 2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,7 +36,6 @@ import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
@@ -71,6 +70,7 @@ import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
@@ -189,13 +189,14 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
             profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
             return installedCode;
-        } catch (TornadoBailoutRuntimeException e) {
-            System.err.printf("Unable to compile %s for device %s\n", task.getId(), getDeviceName());
-            System.err.printf("Exception occurred when compiling %s\n", task.getMethod().getName());
-            e.printStackTrace();
-            throw new TornadoBailoutRuntimeException("[Error During the Task Compilation] ", e);
-        } catch (TornadoDeviceFP64NotSupported e) {
-            throw new TornadoDeviceFP64NotSupported(e);
+        } catch (Exception e) {
+            driver.fatal("Unable to compile %s for device %s\n", task.getId(), getDeviceName());
+            driver.fatal("Exception occurred when compiling %s\n", task.getMethod().getName());
+            if (TornadoOptions.RECOVER_BAILOUT) {
+                throw new TornadoBailoutRuntimeException("[Error During the Task Compilation]: " + e.getMessage());
+            } else {
+                throw e;
+            }
         }
     }
 

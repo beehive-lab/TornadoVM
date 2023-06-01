@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2022-2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -37,6 +37,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntr
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.FABS;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.FLOOR;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.LOG;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.RADIANS;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.SIN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.SQRT;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.TAN;
@@ -195,6 +196,14 @@ public class OCLMathPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, TANH, kind)));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("toRadians", type) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, RADIANS, kind)));
                 return true;
             }
         });
