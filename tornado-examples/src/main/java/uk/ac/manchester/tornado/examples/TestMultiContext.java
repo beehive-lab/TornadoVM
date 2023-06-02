@@ -33,14 +33,14 @@ public class TestMultiContext {
 
         IntStream.range(0, numElements).forEach(i -> {
             a[i] = 30;
-            b[i] = 10;
+            b[i] = 35;
         });
 
         if (devices == 1) {
 //            assertTrue("This test needs at least 2 OpenCL-compatible devices.", devices == 1);
         } else {
             System.setProperty("tornado.debug", "true");
-            System.setProperty("s0.t0.device", "0:0");
+            System.setProperty("s0.t0.device", "1:0");
             System.setProperty("s0.t1.device", "0:1");
         }
         System.setProperty("s0.t0.device", "0:0");
@@ -54,11 +54,13 @@ public class TestMultiContext {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+
         executionPlan.execute();
 
-//        for (int i = 0; i < a.length; i++) {
-//            .assassert(10, b[i]);
-////            assertEquals(360, a[i]);
-//        }
+        for (int i = 0; i < b.length; i++) {
+//            System.out.println(b[i]);
+//            assertEquals(360, a[i]);
+        }
     }
 }

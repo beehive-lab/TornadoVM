@@ -56,7 +56,7 @@ public class TornadoExecutionContext {
 
     private final int MAX_TASKS = 256;
     private final int INITIAL_DEVICE_CAPACITY = 16;
-
+    private int invalidatedCoxtext;
     private final String name;
     private final ScheduleMetaData meta;
     private List<SchedulableTask> tasks;
@@ -79,6 +79,7 @@ public class TornadoExecutionContext {
     private TornadoProfiler profiler;
 
     public TornadoExecutionContext(String id, TornadoProfiler profiler) {
+        this.invalidatedCoxtext = -1;
         name = id;
         meta = new ScheduleMetaData(name);
         tasks = new ArrayList<>();
@@ -169,6 +170,7 @@ public class TornadoExecutionContext {
     }
 
     public void setTask(int index, SchedulableTask task) {
+        System.out.println("SET TASK " + task.getId());
         tasks.set(index, task);
     }
 
@@ -223,11 +225,12 @@ public class TornadoExecutionContext {
 
     public void setDevice(int index, TornadoAcceleratorDevice device) {
         checkDeviceListSize(index);
+        System.out.println("SET DEVICE EXE");
         devices.set(index, device);
     }
 
     private void assignTask(int index, SchedulableTask task) {
-
+        System.out.println("ASSS DDDD ");
         String id = task.getId();
         TornadoDevice target = task.getDevice();
         TornadoAcceleratorDevice accelerator;
@@ -250,6 +253,7 @@ public class TornadoExecutionContext {
     }
 
     public void assignToDevices() {
+        System.out.println("Assing to devices");
         if (independentTasks) {
             for (int i = 0; i < tasks.size(); i++) {
                 assignTask(i, tasks.get(i));
@@ -427,6 +431,14 @@ public class TornadoExecutionContext {
 
     public boolean useDefaultThreadScheduler() {
         return defaultScheduler;
+    }
+
+    public int invalidatedContxtId() {
+        return invalidatedCoxtext;
+    }
+
+    public void setInvalidContext(int idx) {
+        invalidatedCoxtext = idx;
     }
 
     public void createImmutableExecutionContext(TornadoExecutionContext executionContext) {

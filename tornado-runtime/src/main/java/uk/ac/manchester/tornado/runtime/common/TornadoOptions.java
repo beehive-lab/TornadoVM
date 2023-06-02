@@ -71,7 +71,7 @@ public class TornadoOptions {
     /**
      * Option to print TornadoVM Internal Bytecodes.
      */
-    public static final boolean PRINT_BYTECODES = getBooleanValue("tornado.print.bytecodes", FALSE);
+    public static final boolean PRINT_BYTECODES = getBooleanValue("tornado.print.bytecodes", TRUE);
 
     /**
      * Option to debug dynamic reconfiguration policies.

@@ -108,7 +108,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
         this.graphContext = graphContext;
         this.timeProfiler = timeProfiler;
 
-        this.deviceForInterpreter = graphContext.getDeviceForTask(idx);
+        this.deviceForInterpreter = graphContext.invalidatedContxtId() == -1 ? graphContext.getDeviceForTask(idx) : graphContext.getDeviceForTask(0);
         useDependencies = graphContext.meta().enableOooExecution() || VM_USE_DEPS;
         totalTime = 0;
         invocations = 0;
@@ -546,6 +546,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
 //        task.enableDefaultThreadScheduler(graphContext.useDefaultThreadScheduler());
 
         if (gridScheduler != null && gridScheduler.get(task.getId()) != null) {
+            System.out.println("+++Grid on ");
             task.setUseGridScheduler(true);
             task.setGridScheduler(gridScheduler);
         }

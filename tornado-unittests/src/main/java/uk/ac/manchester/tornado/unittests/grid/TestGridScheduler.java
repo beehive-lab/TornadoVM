@@ -17,12 +17,7 @@
  */
 package uk.ac.manchester.tornado.unittests.grid;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.stream.IntStream;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -32,14 +27,17 @@ import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
+
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- *      tornado-test.py -V --debug uk.ac.manchester.tornado.unittests.grid.TestGridScheduler
+ * tornado-test.py -V --debug uk.ac.manchester.tornado.unittests.grid.TestGridScheduler
  * </code>
- *
  */
 public class TestGridScheduler {
 
@@ -102,7 +100,8 @@ public class TestGridScheduler {
     }
 
     @Test
-    public void testMultipleTasksSeparateTaskGraphs() {
+    public void
+    testMultipleTasksSeparateTaskGraphs() {
         final int size = 1024;
         float[] a = new float[size];
         float[] b = new float[size];

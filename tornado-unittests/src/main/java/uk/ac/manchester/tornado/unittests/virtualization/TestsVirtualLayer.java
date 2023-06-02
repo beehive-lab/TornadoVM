@@ -18,17 +18,9 @@
 
 package uk.ac.manchester.tornado.unittests.virtualization;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-
-import java.util.Arrays;
-import java.util.stream.IntStream;
-
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
@@ -39,12 +31,19 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
 
+import java.util.Arrays;
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer
+ * tornado-test -V uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer
  * </code>
  */
 public class TestsVirtualLayer extends TornadoTestBase {
@@ -145,6 +144,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         // new
         // execution.
         executionPlan.withDevice(driver.getDevice(1));
+        System.out.println("Device sss" + driver.getDevice(1).getDeviceName());
         executionPlan.execute();
 
         for (int i = 0; i < numElements; i++) {
@@ -267,7 +267,6 @@ public class TestsVirtualLayer extends TornadoTestBase {
      * Tasks within the same task schedules are always executed on the same device.
      * Currently, it is not possible to change device for a single tasks in a group
      * of tasks.
-     *
      */
     @Test
     public void testVirtualLayer03() {

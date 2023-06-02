@@ -17,8 +17,6 @@
  */
 package uk.ac.manchester.tornado.examples.kernelcontext.reductions;
 
-import java.util.stream.IntStream;
-
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -28,12 +26,14 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
+import java.util.stream.IntStream;
+
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- *      $ tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.reductions.ReductionsGlobalMemory
+ * $ tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.reductions.ReductionsGlobalMemory
  * </code>
  */
 public class ReductionsGlobalMemory {
