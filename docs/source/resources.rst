@@ -6,7 +6,7 @@ Resources
 Videos
 ------
 
-- A. Stratikopoulos, `https://fosdem.org/2023/schedule/event/hardware/`__, FOSDEM 2023 
+- A. Stratikopoulos, `Write Once, Run Anywhere... Well, What About Heterogeneous Hardware? <https://fosdem.org/2023/schedule/event/hardware/>`__, FOSDEM 2023 
 
 - J. Fumero, `TornadoVM: Transparent Hardware Acceleration for Java and Beyond! <https://www.youtube.com/watch?v=HxhO4hMKi5M>`__, Devoxx Ukraine 2021. 
 
@@ -31,9 +31,9 @@ Presentations
 Podcast 
 -------------
 
-- Foojay Podcast #17: Execute Java Code with TornadoVM on CPUs, GPUs, and FPGAs (March 2023): `https://medium.com/javarevisited/foojay-podcast-17-execute-java-code-with-tornadovm-on-cpus-gpus-and-fpgas-d924cc2e34d2`__  
+-  `Foojay Podcast #17: Execute Java Code with TornadoVM on CPUs, GPUs, and FPGAs (March 2023): <https://medium.com/javarevisited/foojay-podcast-17-execute-java-code-with-tornadovm-on-cpus-gpus-and-fpgas-d924cc2e34d2>`__  
 
-- TornadoVM at Software Engineering Daily (2019): `https://softwareengineeringdaily.com/2020/09/21/tornadovm-accelerating-java-with-gpus-with-juan-fumero/`__ 
+-  `TornadoVM at Software Engineering Daily (2019): <https://softwareengineeringdaily.com/2020/09/21/tornadovm-accelerating-java-with-gpus-with-juan-fumero/>`__ 
 
 
 Articles
