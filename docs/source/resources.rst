@@ -68,7 +68,7 @@ Demos & Artefacts
    `link <https://github.com/jjfumero/jjfumero.github.io/blob/master/files/videos/KFUSION-TORNADOVM-0.3.webm>`__.
 
 -  TornadoVM Ray-Tracer:
-    `link https://github.com/beehive-lab/TornadoVM`__.
+    `link <https://github.com/beehive-lab/TornadoVM>`__.
 
 -  TornadoVM running with Docker images on NVIDIA GPUs:
    `link <https://github.com/jjfumero/jjfumero.github.io/blob/master/files/videos/TornadoDockerGPU.webm>`__.
