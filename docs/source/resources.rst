@@ -31,9 +31,9 @@ Presentations
 Podcast 
 -------------
 
--  `Foojay Podcast #17: Execute Java Code with TornadoVM on CPUs, GPUs, and FPGAs (March 2023): <https://medium.com/javarevisited/foojay-podcast-17-execute-java-code-with-tornadovm-on-cpus-gpus-and-fpgas-d924cc2e34d2>`__  
+-  Foojay Podcast #17: Execute Java Code with TornadoVM on CPUs, GPUs, and FPGAs (March 2023): `link <https://medium.com/javarevisited/foojay-podcast-17-execute-java-code-with-tornadovm-on-cpus-gpus-and-fpgas-d924cc2e34d2>`__  
 
--  `TornadoVM at Software Engineering Daily (2019): <https://softwareengineeringdaily.com/2020/09/21/tornadovm-accelerating-java-with-gpus-with-juan-fumero/>`__ 
+-  TornadoVM at Software Engineering Daily (2019): `link <https://softwareengineeringdaily.com/2020/09/21/tornadovm-accelerating-java-with-gpus-with-juan-fumero/>`__ 
 
 
 Articles
