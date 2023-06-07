@@ -59,16 +59,15 @@ Articles
 Demos & Artefacts
 -----------------
 
--  Repository with examples: `link <https://github.com/jjfumero/tornadovm-examples>`__. 
+-  TornadoVM Examples: `link <https://github.com/jjfumero/tornadovm-examples>`__. 
 
 -  Examples used for QConLondon:
    `link <https://github.com/jjfumero/qconlondon2020-tornadovm>`__.
 
--  TornadoVM running with KFusion Microsoft Kinet:
+-  TornadoVM running with KFusion Microsoft Kinect:
    `link <https://github.com/jjfumero/jjfumero.github.io/blob/master/files/videos/KFUSION-TORNADOVM-0.3.webm>`__.
 
--  TornadoVM Ray-Tracer:
-    `link <https://github.com/beehive-lab/TornadoVM>`__.
+-  TornadoVM Ray-Tracer: `link <https://github.com/beehive-lab/TornadoVM>`__.
 
 -  TornadoVM running with Docker images on NVIDIA GPUs:
    `link <https://github.com/jjfumero/jjfumero.github.io/blob/master/files/videos/TornadoDockerGPU.webm>`__.
