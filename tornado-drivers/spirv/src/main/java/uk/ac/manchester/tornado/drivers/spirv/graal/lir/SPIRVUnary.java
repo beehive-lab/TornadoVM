@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021-2022 APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1017,6 +1017,7 @@ public class SPIRVUnary {
             NATIVE_SQRT("native_sqrt", 93),  // Optimization
             NATIVE_TAN("native_tan", 94),  // Optimization
             FCLAMP("flamp", 95),
+            RADIANS("radians", 100),
             SIGN("sign", 103),
             SABS("s_abs", 141),
             SCLAMP("s_clamp", 149),

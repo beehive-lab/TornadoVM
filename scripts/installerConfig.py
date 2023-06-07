@@ -22,8 +22,12 @@
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
+import platform
 __X86_64__ = "x86_64"
-__ARM__    = "aarch64"
+if (platform.system().lower().startswith("darwin")):
+  __ARM__  = "arm64"
+else:
+  __ARM__  = "aarch64"
 __LINUX__  = "linux"
 __APPLE__  = "darwin"
 
