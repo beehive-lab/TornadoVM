@@ -23,17 +23,17 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
-import java.lang.annotation.Annotation;
-
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.FixedNode;
+import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PhiNode;
+import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StartNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -43,11 +43,14 @@ import org.graalvm.compiler.nodes.calc.BinaryNode;
 import org.graalvm.compiler.nodes.calc.CompareNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.nodes.calc.SubNode;
+import org.graalvm.compiler.nodes.extended.JavaReadNode;
+import org.graalvm.compiler.nodes.extended.JavaWriteNode;
+import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
+import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.phases.BasePhase;
-
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
@@ -55,6 +58,10 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNodeExtens
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceMulNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceSubNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNodeExtension;
+
+import java.lang.annotation.Annotation;
 
 public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext> {
 
@@ -98,6 +105,18 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             if (loadNode.array() == arrayToStore && loadNode.index() == indexToStore) {
                 isReduction = true;
             }
+        } else if (currentNode instanceof JavaReadNode) {
+            JavaReadNode readNode = (JavaReadNode) currentNode;
+            //((OffsetAddressNode)readNode.getAddress()).getOffset();
+            if (readNode.getAddress() instanceof OffsetAddressNode) {
+                OffsetAddressNode readAddress = (OffsetAddressNode)readNode.getAddress();
+                if (indexToStore instanceof OffsetAddressNode) {
+                    OffsetAddressNode writeAddress =  (OffsetAddressNode) indexToStore;
+                    isReduction = writeAddress.valueEquals(readAddress);
+                }
+            }
+
+           // isReduction = ((OffsetAddressNode) indexToStore).getOffset().valueEquals(((OffsetAddressNode)readNode.getAddress()).getOffset());
         }
         return isReduction;
     }
@@ -109,7 +128,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         return recursiveCheck(arrayToStore, indexToStore, valueToStore);
     }
 
-    private boolean checkIfVarIsInLoop(StoreIndexedNode store) {
+    private boolean checkIfVarIsInLoop(Node store) {
         Node node = store.predecessor();
         boolean hasPred = true;
         while (hasPred) {
@@ -166,30 +185,51 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             if (loadNode.array() != outputArray) {
                 array = loadNode.array();
             }
+        } else if (currentNode instanceof JavaReadNode) {
+            return obtainInputArray(((JavaReadNode) currentNode).getAddress(), outputArray);
+        } else if (currentNode instanceof OffsetAddressNode) {
+            return obtainInputArray(((OffsetAddressNode) currentNode).getBase(), outputArray);
+        } else if (currentNode instanceof LoadFieldNode) {
+            LoadFieldNode ldf = (LoadFieldNode) currentNode;
+            if ( ldf.getValue() instanceof PiNode) {
+                PiNode pi = (PiNode) ldf.getValue();
+                ParameterNode par = pi.inputs().filter(ParameterNode.class).first();
+                if (par != outputArray) {
+                    array = par;
+                }
+            }
         }
         return array;
     }
 
-    private ReductionMetadataNode createReductionNode(StructuredGraph graph, StoreIndexedNode store, ValueNode inputArray, ValueNode startNode) throws RuntimeException {
+    private ReductionMetadataNode createReductionNode(StructuredGraph graph, Node store, ValueNode inputArray, ValueNode startNode) throws RuntimeException {
         ValueNode value;
         ValueNode accumulator;
+        ValueNode storeValue = null;
 
-        ValueNode storeValue = store.value();
+        if (store instanceof StoreIndexedNode) {
+            storeValue = ((StoreIndexedNode) store).value();
+        } else if (store instanceof JavaWriteNode) {
+            storeValue = ((JavaWriteNode) store).value();
+        }
+        if (storeValue == null) {
+            throw new TornadoRuntimeException("\n\n[NODE REDUCTION NOT SUPPORTED] Node : " + store + " not supported yet.");
+        }
 
         if (storeValue instanceof AddNode) {
-            AddNode addNode = (AddNode) store.value();
+            AddNode addNode = (AddNode) storeValue;
             final TornadoReduceAddNode atomicAdd = graph.addOrUnique(new TornadoReduceAddNode(addNode.getX(), addNode.getY()));
             accumulator = addNode.getY();
             value = atomicAdd;
             addNode.safeDelete();
         } else if (storeValue instanceof MulNode) {
-            MulNode mulNode = (MulNode) store.value();
+            MulNode mulNode = (MulNode) storeValue;
             final TornadoReduceMulNode atomicMultiplication = graph.addOrUnique(new TornadoReduceMulNode(mulNode.getX(), mulNode.getY()));
             accumulator = mulNode.getX();
             value = atomicMultiplication;
             mulNode.safeDelete();
         } else if (storeValue instanceof SubNode) {
-            SubNode subNode = (SubNode) store.value();
+            SubNode subNode = (SubNode) storeValue;
             final TornadoReduceSubNode atomicSub = graph.addOrUnique(new TornadoReduceSubNode(subNode.getX(), subNode.getY()));
             accumulator = subNode.getX();
             value = atomicSub;
@@ -208,7 +248,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             }
             value = storeValue;
         } else {
-            throw new TornadoRuntimeException("\n\n[NODE REDUCTION NOT SUPPORTED] Node : " + store.value() + " not supported yet.");
+            throw new TornadoRuntimeException("\n\n[NODE REDUCTION NOT SUPPORTED] Node : " + storeValue + " not supported yet.");
         }
 
         return new ReductionMetadataNode(value, accumulator, inputArray, startNode);
@@ -217,19 +257,25 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
     /**
      * Final Node Replacement
      */
-    private void performNodeReplacement(StructuredGraph graph, StoreIndexedNode store, Node predecessor, ReductionMetadataNode reductionNode) {
+    private void performNodeReplacement(StructuredGraph graph, FixedWithNextNode node, Node predecessor, ReductionMetadataNode reductionNode, ValueNode outArray) {
 
         ValueNode value = reductionNode.value;
         ValueNode accumulator = reductionNode.accumulator;
         ValueNode inputArray = reductionNode.inputArray;
         ValueNode startNode = reductionNode.startNode;
-
-        StoreAtomicIndexedNodeExtension storeAtomicIndexedNodeExtension = new StoreAtomicIndexedNodeExtension(startNode);
-        graph.addOrUnique(storeAtomicIndexedNodeExtension);
-
-        StoreAtomicIndexedNode atomicStoreNode = graph //
-                .addOrUnique(new StoreAtomicIndexedNode(store.array(), store.index(), store.elementKind(), //
-                        store.getBoundsCheck(), value, accumulator, inputArray, storeAtomicIndexedNodeExtension));
+        FixedWithNextNode st = null;
+        if (node instanceof StoreIndexedNode) {
+            StoreAtomicIndexedNodeExtension storeAtomicIndexedNodeExtension = new StoreAtomicIndexedNodeExtension(startNode);
+            graph.addOrUnique(storeAtomicIndexedNodeExtension);
+            StoreIndexedNode store = (StoreIndexedNode) node;
+            st = graph.addOrUnique(new StoreAtomicIndexedNode(store.array(), store.index(), store.elementKind(), //
+                    store.getBoundsCheck(), value, accumulator, inputArray, storeAtomicIndexedNodeExtension));
+        } else if (node instanceof JavaWriteNode) {
+            WriteAtomicNodeExtension writeAtomicNodeExtension = new WriteAtomicNodeExtension(startNode);
+            graph.addOrUnique(writeAtomicNodeExtension);
+            JavaWriteNode jwrite = (JavaWriteNode) node;
+            st = graph.addOrUnique(new WriteAtomicNode(jwrite.getWriteKind(), jwrite.getAddress(), value, accumulator, inputArray, outArray, writeAtomicNodeExtension));
+        }
 
         ValueNode arithmeticNode = null;
         if (value instanceof TornadoReduceAddNode) {
@@ -249,14 +295,17 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             arithmeticNode = accumulator;
         }
 
-        atomicStoreNode.setOptionalOperation(arithmeticNode);
+        if (st instanceof StoreAtomicIndexedNode) {
+            ((StoreAtomicIndexedNode) st).setOptionalOperation(arithmeticNode);
+        } else if (st instanceof WriteAtomicNode) {
+            ((WriteAtomicNode) st).setOptionalOperation(arithmeticNode);
+        }
 
-        FixedNode next = store.next();
+        FixedNode next = node.next();
 
-        predecessor.replaceFirstSuccessor(store, atomicStoreNode);
-        store.replaceAndDelete(atomicStoreNode);
-        atomicStoreNode.setNext(next);
-
+        predecessor.replaceFirstSuccessor(node, st);
+        node.replaceAndDelete(st);
+        st.setNext(next);
     }
 
     private boolean shouldSkip(int index, StructuredGraph graph) {
@@ -292,15 +341,53 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
 
                 ReductionMetadataNode reductionNode = createReductionNode(graph, store, inputArray, startNode);
                 Node predecessor = node.predecessor();
-                performNodeReplacement(graph, store, predecessor, reductionNode);
+                performNodeReplacement(graph, store, predecessor, reductionNode, store.array());
 
             } else if (node instanceof StoreFieldNode) {
                 throw new TornadoRuntimeException("\n[NOT SUPPORTED] Node StoreFieldNode is not supported yet.");
+            } else if (node instanceof PiNode) {
+                // for memory segments
+                for (Node piUsage : node.usages()) {
+                    if (piUsage instanceof LoadFieldNode) {
+                        LoadFieldNode lf = (LoadFieldNode) piUsage;
+                        if (lf.uncheckedStamp().toString().contains("jdk.internal.foreign.NativeMemorySegmentImpl")) {
+                        // We have the loading of the segment field
+                            if (lf.usages().filter(OffsetAddressNode.class).isNotEmpty()) {
+                                OffsetAddressNode offset = lf.usages().filter(OffsetAddressNode.class).first();
+                                if (offset.usages().filter(JavaWriteNode.class).isNotEmpty()) {
+                                    JavaWriteNode jwrite = offset.usages().filter(JavaWriteNode.class).first();
+                                    // follow these steps but adapted to jwrite
+                                    ParameterNode par = node.inputs().filter(ParameterNode.class).first();
+                                    boolean isReductionValue = recursiveCheck(par, offset, jwrite.value());
+                                    if (!isReductionValue) {
+                                        continue;
+                                    }
+
+                                   boolean isInALoop = checkIfVarIsInLoop(jwrite);
+                                    if (!isInALoop) {
+                                        continue;
+                                    }
+
+                                    ValueNode inputArray = obtainInputArray(jwrite.value(), par);
+                                    ValueNode startNode = obtainStartLoopNode(jwrite);
+//
+                                    ReductionMetadataNode reductionNode = createReductionNode(graph, jwrite, inputArray, startNode);
+                                    Node predecessor = jwrite.predecessor();
+                                    performNodeReplacement(graph, jwrite, predecessor, reductionNode, par);
+                                }
+                            }
+                        }
+
+                    }
+                }
+
             }
         }
     }
 
-    private ValueNode obtainStartLoopNode(StoreIndexedNode store) {
+
+
+    private ValueNode obtainStartLoopNode(Node store) {
         boolean startFound = false;
         ValueNode startNode = null;
         IfNode ifNode;

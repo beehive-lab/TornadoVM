@@ -126,6 +126,8 @@ public class OCLHighTier extends TornadoHighTier {
 
         appendPhase(new TornadoOpenCLIntrinsicsReplacements(metaAccessProvider));
 
+        appendPhase(new TornadoLocalArrayHeaderEliminator());
+
         appendPhase(new TornadoLocalMemoryAllocation());
 
         appendPhase(new ExceptionSuppression());

@@ -51,7 +51,7 @@ public class LongArray {
 
     public LongArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segment = MemorySegment.allocateNative(numberOfElements * LONG_BYTES);
+        segment = MemorySegment.allocateNative(numberOfElements * LONG_BYTES).share();
     }
 
 

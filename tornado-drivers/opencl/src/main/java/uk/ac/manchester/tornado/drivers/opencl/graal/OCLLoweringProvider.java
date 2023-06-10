@@ -137,6 +137,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             lowerStoreIndexedNode((StoreIndexedNode) node, tool);
         } else if (node instanceof StoreAtomicIndexedNode) {
             lowerStoreAtomicsReduction(node, tool);
+        } else if (node instanceof WriteAtomicNode) {
+            lowerWriteAtomicsReduction((WriteAtomicNode)node, tool);
         } else if (node instanceof LoadFieldNode) {
             lowerLoadFieldNode((LoadFieldNode) node, tool);
         } else if (node instanceof StoreFieldNode) {
@@ -196,9 +198,17 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         return false;
     }
 
-    private void lowerReduceSnippets(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
-        StructuredGraph graph = storeIndexed.graph();
-        ValueNode startIndexNode = storeIndexed.getStartNode();
+    private void lowerReduceSnippets(Node node, LoweringTool tool) {
+
+        StructuredGraph graph = null;
+        ValueNode startIndexNode = null;
+        if (node instanceof StoreAtomicIndexedNode) {
+            graph = ((StoreAtomicIndexedNode) node).graph();
+            startIndexNode = ((StoreAtomicIndexedNode) node).getStartNode();
+        } else if (node instanceof WriteAtomicNode) {
+           graph = ((WriteAtomicNode) node).graph();
+           startIndexNode = ((WriteAtomicNode) node).getStartNode();
+        }
 
         // Find Get Global ID node and Global Size;
         GlobalThreadIdNode oclIdNode = graph.getNodes().filter(GlobalThreadIdNode.class).first();
@@ -232,9 +242,9 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         }
         // Depending on the Scheduler, call the proper snippet factory
         if (cpuScheduler) {
-            cpuReduceSnippets.lower(storeIndexed, threadID, oclIdNode, startIndexNode, tool);
+            cpuReduceSnippets.lower(node, threadID, oclIdNode, startIndexNode, tool);
         } else {
-            gpuReduceSnippets.lower(storeIndexed, threadID, oclGlobalSize, tool);
+            gpuReduceSnippets.lower(node, threadID, oclGlobalSize, tool);
         }
     }
 
@@ -244,6 +254,38 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             lowerAtomicStoreIndexedNode(storeAtomicNode);
         } else {
             lowerReduceSnippets(storeAtomicNode, tool);
+        }
+    }
+
+    private void lowerAtomicWriteNode(WriteAtomicNode writeAtomicNode) {
+        StructuredGraph graph = writeAtomicNode.graph();
+        JavaKind elementKind = writeAtomicNode.getElementKind();
+
+        ValueNode value = writeAtomicNode.value();
+        ValueNode array = writeAtomicNode.getInputArray();
+        ValueNode accumulator = writeAtomicNode.getAccumulator();
+
+        ATOMIC_OPERATION operation = ATOMIC_OPERATION.CUSTOM;
+        if (value instanceof TornadoReduceAddNode) {
+            operation = ATOMIC_OPERATION.ADD;
+        } else if (value instanceof TornadoReduceSubNode) {
+            operation = ATOMIC_OPERATION.SUB;
+        } else if (value instanceof TornadoReduceMulNode) {
+            operation = ATOMIC_OPERATION.MUL;
+        }
+
+        AddressNode address = createArrayAddress(graph, array, elementKind, writeAtomicNode.getIndex());
+        OCLWriteAtomicNode memoryWrite = graph.add(new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, OnHeapMemoryAccess.BarrierType.NONE, accumulator,
+                accumulator.stamp(NodeView.DEFAULT), writeAtomicNode.getElementKind(), operation));
+        graph.replaceFixedWithFixed(writeAtomicNode, memoryWrite);
+    }
+
+    protected void lowerWriteAtomicsReduction(WriteAtomicNode jwrite, LoweringTool tool) {
+        if (USE_ATOMICS) {
+            //TODO: Fix this
+            lowerAtomicWriteNode(jwrite);
+        } else {
+            lowerReduceSnippets(jwrite, tool);
         }
     }
 

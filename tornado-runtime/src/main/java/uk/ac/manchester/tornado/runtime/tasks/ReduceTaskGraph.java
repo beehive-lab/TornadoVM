@@ -47,6 +47,10 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -225,6 +229,14 @@ class ReduceTaskGraph {
             Arrays.fill((double[]) reduceArray, (double) neutral);
         } else if (reduceArray instanceof long[]) {
             Arrays.fill((long[]) reduceArray, (long) neutral);
+        } else if (reduceArray instanceof IntArray) {
+            ((IntArray) reduceArray).init((int) neutral);
+        } else if (reduceArray instanceof FloatArray) {
+            ((FloatArray) reduceArray).init((float) neutral);
+        } else if (reduceArray instanceof DoubleArray) {
+            ((DoubleArray) reduceArray).init((double) neutral);
+        } else if (reduceArray instanceof LongArray) {
+            ((LongArray) reduceArray).init((long) neutral);
         } else {
             throw new TornadoRuntimeException(EXCEPTION_MESSAGE_ERROR + reduceArray.getClass());
         }
@@ -242,6 +254,14 @@ class ReduceTaskGraph {
             return new double[size];
         } else if (reduceVariable instanceof long[]) {
             return new long[size];
+        } else if (reduceVariable instanceof IntArray) {
+            return new IntArray(size);
+        } else if (reduceVariable instanceof FloatArray) {
+            return new FloatArray(size);
+        } else if (reduceVariable instanceof DoubleArray) {
+            return new DoubleArray(size);
+        } else if (reduceVariable instanceof LongArray) {
+            return new LongArray(size);
         } else {
             throw new TornadoRuntimeException(EXCEPTION_MESSAGE_ERROR + reduceVariable.getClass());
         }
@@ -256,6 +276,14 @@ class ReduceTaskGraph {
             return new double[1];
         } else if (reduceVariable instanceof long[]) {
             return new long[1];
+        } else if (reduceVariable instanceof IntArray) {
+            return new IntArray(1);
+        } else if (reduceVariable instanceof FloatArray) {
+            return new FloatArray(1);
+        } else if (reduceVariable instanceof DoubleArray) {
+            return new DoubleArray(1);
+        } else if (reduceVariable instanceof LongArray) {
+            return new LongArray(1);
         } else {
             throw new TornadoRuntimeException(EXCEPTION_MESSAGE_ERROR + reduceVariable.getClass());
         }
@@ -270,6 +298,14 @@ class ReduceTaskGraph {
             return ((double[]) originalArray)[0];
         } else if (originalArray instanceof long[]) {
             return ((long[]) originalArray)[0];
+        } else if (originalArray instanceof IntArray) {
+            return ((IntArray) originalArray).get(0);
+        } else if (originalArray instanceof FloatArray) {
+            return ((FloatArray) originalArray).get(0);
+        } else if (originalArray instanceof DoubleArray) {
+            return ((DoubleArray) originalArray).get(0);
+        } else if (originalArray instanceof LongArray) {
+            return ((LongArray) originalArray).get(0);
         } else {
             throw new TornadoRuntimeException(EXCEPTION_MESSAGE_ERROR + originalArray.getClass());
         }
@@ -744,6 +780,18 @@ class ReduceTaskGraph {
             case "long[]":
                 ((long[]) originalReduceVariable)[0] = ((long[]) newArray)[0];
                 break;
+            case "uk.ac.manchester.tornado.api.data.nativetypes.IntArray":
+                ((IntArray) originalReduceVariable).set(0, ((IntArray) newArray).get(0));
+                break;
+            case "uk.ac.manchester.tornado.api.data.nativetypes.FloatArray":
+                ((FloatArray) originalReduceVariable).set(0, ((FloatArray) newArray).get(0));
+                break;
+            case "uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray":
+                ((DoubleArray) originalReduceVariable).set(0, ((DoubleArray) newArray).get(0));
+                break;
+            case "uk.ac.manchester.tornado.api.data.nativetypes.LongArray":
+                ((LongArray) originalReduceVariable).set(0, ((LongArray) newArray).get(0));
+                break;
             default:
                 throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
         }
@@ -770,6 +818,26 @@ class ReduceTaskGraph {
                 long al = ((long[]) hostHybridVariables.get(newArray))[0];
                 long bl = ((long[]) newArray)[0];
                 ((long[]) originalReduceVariable)[0] = operateFinalReduction(al, bl, hybridMergeTable.get(newArray));
+                break;
+            case "uk.ac.manchester.tornado.api.data.nativetypes.IntArray":
+                int ani = ((IntArray) hostHybridVariables.get(newArray)).get(0);
+                int bni = ((IntArray) newArray).get(0);
+                ((IntArray) originalReduceVariable).set(0, operateFinalReduction(ani, bni, hybridMergeTable.get(newArray)));
+                break;
+            case "uk.ac.manchester.tornado.api.data.nativetypes.FloatArray":
+                float anf = ((FloatArray) hostHybridVariables.get(newArray)).get(0);
+                float bnf = ((FloatArray) newArray).get(0);
+                ((FloatArray) originalReduceVariable).set(0, operateFinalReduction(anf, bnf, hybridMergeTable.get(newArray)));
+                break;
+            case "uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray":
+                double and = ((DoubleArray) hostHybridVariables.get(newArray)).get(0);
+                double bnd = ((DoubleArray) newArray).get(0);
+                ((DoubleArray) originalReduceVariable).set(0, operateFinalReduction(and, bnd, hybridMergeTable.get(newArray)));
+                break;
+            case "uk.ac.manchester.tornado.api.data.nativetypes.LongArray":
+                long anl = ((LongArray) hostHybridVariables.get(newArray)).get(0);
+                long bnl = ((LongArray) newArray).get(0);
+                ((LongArray) originalReduceVariable).set(0, operateFinalReduction(anl, bnl, hybridMergeTable.get(newArray)));
                 break;
             default:
                 throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());

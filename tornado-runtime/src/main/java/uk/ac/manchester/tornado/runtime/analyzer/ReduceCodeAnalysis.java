@@ -25,13 +25,6 @@
  */
 package uk.ac.manchester.tornado.runtime.analyzer;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
-
 import org.graalvm.compiler.graph.CachedGraph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
@@ -54,15 +47,26 @@ import org.graalvm.compiler.nodes.calc.BinaryNode;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.nodes.java.ArrayLengthNode;
+import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
-
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkFloatingPointIntrinsicsNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkIntIntrinsicNode;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * Code analysis class for reductions in TornadoVM.
@@ -76,7 +80,7 @@ public class ReduceCodeAnalysis {
         MAX //
     }
 
-    private static boolean checkIfVarIsInLoop(StoreIndexedNode store) {
+    private static boolean checkIfVarIsInLoop(Node store) {
         Node node = store.predecessor();
         boolean hasPred = true;
         while (hasPred) {
@@ -175,6 +179,13 @@ public class ReduceCodeAnalysis {
                         if (invoke.callTarget().targetName().startsWith("Math")) {
                             reduceOperation.add(invoke);
                         }
+                    }
+                } else if (node instanceof MethodCallTargetNode) {
+                    MethodCallTargetNode method = (MethodCallTargetNode) node;
+
+                    if (method.inputs().filter(BinaryNode.class).isNotEmpty()) {
+                        ValueNode value = method.inputs().filter(BinaryNode.class).first();
+                        reduceOperation.add(value);
                     }
                 }
             }
@@ -365,21 +376,34 @@ public class ReduceCodeAnalysis {
                 continue;
             }
 
-            // Perform PE to obtain the value of the upper-bound loop
-            ArrayList<ValueNode> loopBound = findLoopUpperBoundNode(graph, reduceIndices);
-            for (int i = 0; i < graph.method().getParameters().length; i++) {
-                for (ValueNode valueNode : loopBound) {
-                    int position = !graph.method().isStatic() ? i + 1 : i;
-                    if (valueNode.equals(graph.getParameter(position))) {
-                        Object object = taskPackages.get(taskIndex).getTaskParameters()[i + 1];
-                        inputSize = Array.getLength(object);
-                    } else if (valueNode instanceof ConstantNode) {
-                        ConstantNode constant = (ConstantNode) valueNode;
-                        inputSize = Integer.parseInt(constant.getValue().toValueString());
+            if (taskPackages.get(taskIndex).getTaskParameters()[1] instanceof FloatArray) {
+                FloatArray object = (FloatArray) taskPackages.get(taskIndex).getTaskParameters()[1];
+                inputSize = object.getSize();
+            } else if (taskPackages.get(taskIndex).getTaskParameters()[1] instanceof IntArray) {
+                IntArray object = (IntArray) taskPackages.get(taskIndex).getTaskParameters()[1];
+                inputSize = object.getSize();
+            } else if (taskPackages.get(taskIndex).getTaskParameters()[1] instanceof DoubleArray) {
+                DoubleArray object = (DoubleArray) taskPackages.get(taskIndex).getTaskParameters()[1];
+                inputSize = object.getSize();
+            } else if (taskPackages.get(taskIndex).getTaskParameters()[1] instanceof LongArray) {
+                LongArray object = (LongArray) taskPackages.get(taskIndex).getTaskParameters()[1];
+                inputSize = object.getSize();
+            } else {
+                // Perform PE to obtain the value of the upper-bound loop
+                ArrayList<ValueNode> loopBound = findLoopUpperBoundNode(graph, reduceIndices);
+                for (int i = 0; i < graph.method().getParameters().length; i++) {
+                    for (ValueNode valueNode : loopBound) {
+                        int position = !graph.method().isStatic() ? i + 1 : i;
+                        if (valueNode.equals(graph.getParameter(position))) {
+                            Object object = taskPackages.get(taskIndex).getTaskParameters()[i + 1];
+                            inputSize = Array.getLength(object);
+                        } else if (valueNode instanceof ConstantNode) {
+                            ConstantNode constant = (ConstantNode) valueNode;
+                            inputSize = Integer.parseInt(constant.getValue().toValueString());
+                        }
                     }
                 }
             }
-
             MetaReduceTasks reduceTasks = new MetaReduceTasks(taskIndex, graph, reduceIndices, inputSize);
             tableMetaDataReduce.put(taskIndex, reduceTasks);
             taskIndex++;

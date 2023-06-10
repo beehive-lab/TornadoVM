@@ -18,16 +18,17 @@
 
 package uk.ac.manchester.tornado.examples.reductions;
 
-import java.util.ArrayList;
-import java.util.Random;
-import java.util.stream.IntStream;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+
+import java.util.ArrayList;
+import java.util.Random;
+import java.util.stream.IntStream;
 
 /**
  * <p>
@@ -40,20 +41,23 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  */
 public class ReductionAddFloats {
 
-    public static void reductionAddFloats(float[] input, @Reduce float[] result) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] += input[i];
+    public static void reductionAddFloats(FloatArray input, @Reduce FloatArray result) {
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            result.set(0, result.get(0) + input.get(i));
+           // result[0] += input[i];
         }
     }
 
     public void run(int size) {
 
-        float[] input = new float[size];
-        float[] result = new float[1];
+//        float[] input = new float[size];
+//        float[] result = new float[1];
+        FloatArray input = new FloatArray(size);
+        FloatArray result = new FloatArray(1);
 
         Random r = new Random();
         IntStream.range(0, size).sequential().forEach(i -> {
-            input[i] = r.nextFloat();
+            input.set(i, r.nextFloat());
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //

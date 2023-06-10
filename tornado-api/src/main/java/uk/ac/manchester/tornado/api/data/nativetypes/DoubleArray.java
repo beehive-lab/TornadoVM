@@ -52,7 +52,7 @@ public class DoubleArray {
 
     public DoubleArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segment = MemorySegment.allocateNative(numberOfElements * DOUBLE_BYTES);
+        segment = MemorySegment.allocateNative(numberOfElements * DOUBLE_BYTES).share();
     }
 
 

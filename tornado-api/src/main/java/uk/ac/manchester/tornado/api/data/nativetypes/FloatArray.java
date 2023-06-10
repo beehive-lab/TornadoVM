@@ -52,7 +52,7 @@ public class FloatArray {
 
     public FloatArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segment = MemorySegment.allocateNative(numberOfElements * FLOAT_BYTES);
+        segment = MemorySegment.allocateNative(numberOfElements * FLOAT_BYTES).share();
     }
 
 

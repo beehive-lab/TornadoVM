@@ -16,6 +16,16 @@
             <artifactId>tornado-api</artifactId>
         	<version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.graalvm.sdk</groupId>
+            <artifactId>graal-sdk</artifactId>
+            <version>21.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.compiler</groupId>
+            <artifactId>compiler</artifactId>
+            <version>21.2.0</version>
+        </dependency>
     </dependencies>
 
     <profiles>

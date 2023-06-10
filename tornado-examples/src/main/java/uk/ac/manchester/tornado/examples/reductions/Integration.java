@@ -19,17 +19,17 @@
  */
 package uk.ac.manchester.tornado.examples.reductions;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.stream.IntStream;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+
+import java.util.ArrayList;
+import java.util.stream.IntStream;
 
 /**
  * <p>
@@ -78,11 +78,11 @@ public class Integration {
         return finalValue;
     }
 
-    public static void integrationTornado(float[] input, @Reduce float[] sum, final float a, final float b) {
-        final int size = input.length;
-        for (@Parallel int i = 0; i < input.length; i++) {
+    public static void integrationTornado(FloatArray input, @Reduce FloatArray sum, final float a, final float b) {
+        final int size = input.getSize();
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
             float value = f(a + (((i + 1) - (1 / 2)) * ((b - a) / size)));
-            sum[0] += input[i] + value;
+            sum.set(0, sum.get(0) + input.get(i) + value);
         }
     }
 
@@ -90,9 +90,9 @@ public class Integration {
 
         System.out.println("\nRunning Tornado version");
 
-        float[] input = new float[size];
-        float[] result = new float[1];
-        Arrays.fill(result, 0.0f);
+        FloatArray input = new FloatArray(size);
+        FloatArray result = new FloatArray(1);
+        result.init(0.0f);
 
         final float a = LOWER;
         final float b = UPPER;
@@ -111,14 +111,14 @@ public class Integration {
         for (int i = 0; i < ConfigurationReduce.MAX_ITERATIONS; i++) {
 
             IntStream.range(0, size).sequential().forEach(idx -> {
-                input[idx] = 0;
+                input.set(idx, 0);
             });
 
             long start = System.nanoTime();
             executor.execute();
             long end = System.nanoTime();
 
-            finalValue = ((b - a) / size) * result[0];
+            finalValue = ((b - a) / size) * result.get(0);
             // System.out.println("IntegrationValue: " + finalValue);
             timers.add((end - start));
         }
@@ -140,7 +140,7 @@ public class Integration {
         }
 
         // Run Sequential
-        // new Integration().runIntegrationSequential(size);
+       // new Integration().runIntegrationSequential(size);
 
         // Run with Tornado
         new Integration().runTornado(size);

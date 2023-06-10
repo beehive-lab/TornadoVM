@@ -51,7 +51,7 @@ public class IntArray {
 
     public IntArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segment = MemorySegment.allocateNative(numberOfElements * INT_BYTES);
+        segment = MemorySegment.allocateNative(numberOfElements * INT_BYTES).share();
     }
 
 
