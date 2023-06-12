@@ -17,20 +17,20 @@
  */
 package uk.ac.manchester.tornado.unittests.reductions;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.Random;
-import java.util.stream.IntStream;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+
+import java.util.Random;
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * <p>
@@ -45,10 +45,10 @@ public class InstanceReduction extends TornadoTestBase {
     public static final int N = 1024;
 
     public class ReduceTest {
-        public void reduce(float[] input, @Reduce float[] result) {
-            result[0] = 0.0f;
-            for (@Parallel int i = 0; i < input.length; i++) {
-                result[0] += input[i];
+        public void reduce(FloatArray input, @Reduce FloatArray result) {
+            result.set(0, 0.0f);
+            for (@Parallel int i = 0; i < input.getSize(); i++) {
+                result.set(0, result.get(0) + input.get(i));
             }
         }
     }
@@ -56,17 +56,21 @@ public class InstanceReduction extends TornadoTestBase {
     @Test
     public void testReductionInstanceClass() {
 
-        float[] input = new float[N];
-        float[] result = new float[1];
-        float[] expected = new float[1];
+        FloatArray input = new FloatArray(N);
+        FloatArray result = new FloatArray(1);
+        FloatArray expected = new FloatArray(1);
 
         Random rand = new Random();
         IntStream.range(0, N).forEach(i -> {
-            input[i] = rand.nextFloat();
+            input.set(i, rand.nextFloat());
         });
 
-        for (float v : input) {
-            expected[0] += v;
+//        for (float v : input) {
+//            expected[0] += v;
+//        }
+
+        for (int i = 0; i < N; i++) {
+            expected.set(0, expected.get(0) + input.get(i));
         }
 
         ReduceTest rd = new ReduceTest();
@@ -80,6 +84,6 @@ public class InstanceReduction extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        assertEquals(expected[0], result[0], 0.1f);
+        assertEquals(expected.get(0), result.get(0), 0.1f);
     }
 }

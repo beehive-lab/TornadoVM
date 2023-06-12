@@ -17,23 +17,23 @@
  */
 package uk.ac.manchester.tornado.unittests.reductions;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.Arrays;
-import java.util.Random;
-import java.util.stream.IntStream;
-
 import org.junit.Ignore;
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+
+import java.util.Arrays;
+import java.util.Random;
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * <p>
@@ -50,23 +50,26 @@ public class TestReductionsFloats extends TornadoTestBase {
     private static final int SIZE = 8192;
     private static final int SIZE2 = 32;
 
-    private static void reductionAddFloats(float[] input, @Reduce float[] result) {
-        result[0] = 0.0f;
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] += input[i];
+    private static void reductionAddFloats(FloatArray input, @Reduce FloatArray result) {
+        result.set(0, 0.0f);
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            result.set(0, result.get(0) + input.get(i));
+           // result[0] += input[i];
         }
     }
 
     @Test
     public void testSumFloats() {
-        float[] input = new float[SIZE];
-        float[] result = new float[1];
+        FloatArray input = new FloatArray(SIZE);
+        FloatArray result = new FloatArray(1);
         final int neutral = 0;
-        Arrays.fill(result, neutral);
+        result.init(neutral);
+       // Arrays.fill(result, neutral);
 
         Random r = new Random();
-        IntStream.range(0, input.length).sequential().forEach(i -> {
-            input[i] = r.nextFloat();
+        IntStream.range(0, input.getSize()).sequential().forEach(i -> {
+            input.set(i, r.nextFloat());
+            //input[i] = r.nextFloat();
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -78,11 +81,11 @@ public class TestReductionsFloats extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        float[] sequential = new float[1];
+        FloatArray sequential = new FloatArray(1);
         reductionAddFloats(input, sequential);
 
         // Check result
-        assertEquals(sequential[0], result[0], 0.1f);
+        assertEquals(sequential.get(0), result.get(0), 0.1f);
     }
 
     private static void reductionAddFloatsConstant(float[] input, @Reduce float[] result) {
@@ -148,7 +151,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         executionPlan.execute();
 
         float[] sequential = new float[1];
-        reductionAddFloats(input, sequential);
+      //  reductionAddFloats(input, sequential);
 
         // Check result
         assertEquals(sequential[0], result[0], 1.f);

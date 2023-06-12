@@ -17,20 +17,22 @@
  */
 package uk.ac.manchester.tornado.unittests.reductions;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.Random;
-import java.util.stream.IntStream;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+
+import java.util.Random;
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * <p>
@@ -42,15 +44,15 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 public class TestReductionsAutomatic extends TornadoTestBase {
 
-    public static void test(int[] input, @Reduce int[] output) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            output[0] += input[i];
+    public static void test(IntArray input, @Reduce IntArray output) {
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            output.set(0, output.get(0) + input.get(i));
         }
     }
 
-    private static void testFloat(float[] input, @Reduce float[] output) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            output[0] += input[i];
+    private static void testFloat(FloatArray input, @Reduce FloatArray output) {
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            output.set(0, output.get(0) + input.get(i));
         }
     }
 
@@ -58,10 +60,11 @@ public class TestReductionsAutomatic extends TornadoTestBase {
     public void testIrregularSize01() {
 
         final int size = 33554432 + 15;
-        int[] input = new int[size];
-        int[] result = new int[] { 0 };
+        IntArray input = new IntArray(size);
+        IntArray result = new IntArray(1);
+        result.init(0);
 
-        IntStream.range(0, size).parallel().forEach(i -> input[i] = i);
+        IntStream.range(0, size).parallel().forEach(i -> input.set(i, i));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//
@@ -72,21 +75,23 @@ public class TestReductionsAutomatic extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        int[] sequential = new int[1];
+        IntArray sequential = new IntArray(1);
+        sequential.init(0);
         test(input, sequential);
 
         // Check result
-        assertEquals(sequential[0], result[0]);
+        assertEquals(sequential.get(0), result.get(0));
     }
 
     private void testIrregular(final int inputSize) {
 
-        float[] input = new float[inputSize];
-        float[] result = new float[] { 0.0f };
+        FloatArray input = new FloatArray(inputSize);
+        FloatArray result = new FloatArray(1);
+        result.init(0.0f);
 
         Random r = new Random();
         IntStream.range(0, inputSize).parallel().forEach(i -> {
-            input[i] = r.nextFloat();
+            input.set(i, r.nextFloat());
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -98,11 +103,11 @@ public class TestReductionsAutomatic extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        float[] sequential = new float[1];
+        FloatArray sequential = new FloatArray(1);
         testFloat(input, sequential);
 
         // Check result
-        assertEquals(sequential[0], result[0], 0.1f);
+        assertEquals(sequential.get(0), result.get(0), 0.1f);
     }
 
     @Test
@@ -123,20 +128,21 @@ public class TestReductionsAutomatic extends TornadoTestBase {
         }
     }
 
-    private static void testDouble(double[] input, @Reduce double[] output) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            output[0] += input[i];
+    private static void testDouble(DoubleArray input, @Reduce DoubleArray output) {
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            output.set(0, output.get(0) + input.get(i));
         }
     }
 
     @Test
     public void testIrregularSize04() {
         final int size = 17;
-        double[] input = new double[size];
-        double[] result = new double[] { 0 };
+        DoubleArray input = new DoubleArray(size);
+        DoubleArray result = new DoubleArray(1);
+        result.init(0);
 
         IntStream.range(0, size).parallel().forEach(i -> {
-            input[i] = i;
+            input.set(i, i);
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -148,10 +154,10 @@ public class TestReductionsAutomatic extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        double[] sequential = new double[1];
+        DoubleArray sequential = new DoubleArray(1);
         testDouble(input, sequential);
 
         // Check result
-        assertEquals(sequential[0], result[0], 0.01);
+        assertEquals(sequential.get(0), result.get(0), 0.01);
     }
 }

@@ -18,16 +18,16 @@
 
 package uk.ac.manchester.tornado.examples.reductions;
 
-import java.util.ArrayList;
-import java.util.Random;
-import java.util.stream.IntStream;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+
+import java.util.ArrayList;
+import java.util.Random;
+import java.util.stream.IntStream;
 
 /**
  * <p>
@@ -61,7 +61,7 @@ public class ReductionIrregular {
         TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
 
         ArrayList<Long> timers = new ArrayList<>();
-        for (int i = 0; i < ConfigurationReduce.MAX_ITERATIONS; i++) {
+        for (int i = 0; i < 1; i++) {
 
             IntStream.range(0, inputSize).parallel().forEach(idx -> {
                 input[idx] = r.nextFloat();
@@ -81,7 +81,7 @@ public class ReductionIrregular {
             }
         }
 
-        System.out.println("Median TotalTime: " + Stats.computeMedian(timers));
+       // System.out.println("Median TotalTime: " + Stats.computeMedian(timers));
 
     }
 
