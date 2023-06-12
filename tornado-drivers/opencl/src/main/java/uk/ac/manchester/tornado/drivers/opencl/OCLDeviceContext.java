@@ -68,7 +68,6 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
     private boolean wasReset;
     private boolean printOnce = true;
 
-    private final OCLBufferInfo mainBufferInfo;
     private final Map<MemorySegment, OCLBufferInfo> segmentToBufferMap;
 
     private final TornadoBufferProvider bufferProvider;
@@ -79,7 +78,6 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
         this.context = context;
         this.memoryManager = new OCLMemoryManager(this);
         this.codeCache = new OCLCodeCache(this);
-        this.mainBufferInfo = new OCLBufferInfo();
         this.segmentToBufferMap = new HashMap<>();
 
         this.oclEventPool = new OCLEventPool(EVENT_WINDOW);
@@ -415,11 +413,6 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
         return queue.getOpenclVersion() < 120 ? -1 : oclEventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_MARKER, queue);
     }
 
-    @Override
-    public long enqueueMapBuffer(long bufferId, boolean blocking, byte mapFlags, long offset, long byteSize, int[] waitEvents) {
-        return queue.enqueueMapBuffer(bufferId, blocking, mapFlags, offset, byteSize, oclEventPool.serialiseEvents(waitEvents, queue) ? oclEventPool.waitEventsBuffer : null);
-    }
-
     public void reset() {
         oclEventPool.reset();
         codeCache.reset();
@@ -561,16 +554,8 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
         return this.codeCache;
     }
 
-    @Override
-    public void registerPinnedBuffer(MemorySegment segment, OCLBufferInfo bufferInfo) {
-        segmentToBufferMap.put(segment, bufferInfo);
-    }
-
     public Map<MemorySegment, OCLBufferInfo> getSegmentToBufferMap() {
         return segmentToBufferMap;
     }
 
-    public OCLBufferInfo getMainBufferInfo() {
-        return mainBufferInfo;
-    }
 }

@@ -432,11 +432,6 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public MemorySegment allocateNonPinnedBuffer(long hostBufferSize, long deviceBufferSize) {
-        return null;
-    }
-
-    @Override
     public int getAvailableProcessors() {
         return ((VirtualOCLDevice) device).getAvailableProcessors();
     }
@@ -459,11 +454,6 @@ public class VirtualOCLTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public boolean isSPIRVSupported() {
         return false;
-    }
-
-    @Override
-    public MemorySegment allocateNonPinnedBuffer(long byteSize) {
-        return null;
     }
 
 }

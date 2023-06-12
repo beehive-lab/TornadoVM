@@ -38,7 +38,7 @@ public class OCLKernelArgs extends OCLByteBuffer implements KernelArgs {
     private final ArrayList<CallArgument> callArguments;
 
     OCLKernelArgs(long bufferId, int numArgs, OCLDeviceContext device) {
-        super(device.getMainBufferInfo(), device, bufferId, 0, RESERVED_SLOTS << 3);
+        super(device, bufferId, 0, RESERVED_SLOTS << 3);
         this.callArguments = new ArrayList<>(numArgs);
 
         buffer.clear();

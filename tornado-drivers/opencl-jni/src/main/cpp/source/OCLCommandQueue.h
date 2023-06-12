@@ -75,10 +75,18 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
  * Method:    clEnqueueMapBuffer
- * Signature: (JJZBJJ[J)J
+ * Signature: (JJJZIJJ[J)J
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clEnqueueMapBuffer
-        (JNIEnv *, jclass, jlong, jlong, jboolean, jbyte, jlong, jlong, jlongArray);
+        (JNIEnv *, jclass, jlong, jlong, jlong, jboolean, jint, jlong, jlong, jlongArray);
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
+ * Method:    clEnqueueMapBuffer2
+ * Signature: (JJZIJJ[J)Luk/ac/manchester/tornado/drivers/opencl/OCLCommandQueue/OCLMapResult;
+*/
+JNIEXPORT jobject JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clEnqueueMapBuffer2
+        (JNIEnv *, jclass, jlong, jlong, jboolean, jint, jlong, jlong, jlongArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue

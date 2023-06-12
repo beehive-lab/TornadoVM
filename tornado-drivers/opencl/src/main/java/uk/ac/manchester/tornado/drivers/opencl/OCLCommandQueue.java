@@ -116,8 +116,6 @@ public class OCLCommandQueue extends TornadoLogger {
 
     static native void clEnqueueWaitForEvents(long queueId, long[] events) throws OCLException;
 
-    native static long clEnqueueMapBuffer(long queueId, long bufferId, boolean blocking, byte mapFlags, long offset, long bytes, long[] waitEvents) throws OCLException;
-
     /*
      * for OpenCL 1.2 implementations
      */
@@ -359,15 +357,6 @@ public class OCLCommandQueue extends TornadoLogger {
         guarantee(hostPointer != 0, "segment is null");
         try {
             return readArrayFromDevice(commandQueue, hostPointer, hostOffset, blocking, offset, bytes, devicePtr, waitEvents);
-        } catch (OCLException e) {
-            error(e.getMessage());
-        }
-        return -1;
-    }
-
-    public long enqueueMapBuffer(long bufferId, boolean blocking, byte mapFlags, long offset, long bytes, long[] waitEvents) {
-        try {
-            return clEnqueueMapBuffer(commandQueue, bufferId, blocking, mapFlags, offset, bytes, waitEvents);
         } catch (OCLException e) {
             error(e.getMessage());
         }

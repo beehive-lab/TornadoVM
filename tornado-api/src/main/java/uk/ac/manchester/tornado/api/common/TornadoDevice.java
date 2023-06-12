@@ -41,7 +41,6 @@
  */
 package uk.ac.manchester.tornado.api.common;
 
-import jdk.incubator.foreign.MemorySegment;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
@@ -225,5 +224,4 @@ public interface TornadoDevice {
 
     boolean isSPIRVSupported();
 
-   MemorySegment allocateNonPinnedBuffer(long byteSize);
 }

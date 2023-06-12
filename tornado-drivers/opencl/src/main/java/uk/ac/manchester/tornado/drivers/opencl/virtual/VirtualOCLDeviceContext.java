@@ -23,17 +23,18 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.virtual;
 
-import jdk.incubator.foreign.MemorySegment;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
-import uk.ac.manchester.tornado.drivers.opencl.*;
+import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
+import uk.ac.manchester.tornado.drivers.opencl.OCLProgram;
+import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
-import uk.ac.manchester.tornado.drivers.opencl.mm.OCLBufferInfo;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -239,12 +240,4 @@ public class VirtualOCLDeviceContext extends TornadoLogger implements OCLDeviceC
         return false;
     }
 
-    @Override
-    public long enqueueMapBuffer(long bufferId, boolean blocking, byte mapFlags, long offset, long byteSize, int[] waitEvents) {
-        TornadoInternalError.unimplemented("Not implemented for virtual devices");
-        return 0;
-    }
-
-    @Override
-    public void registerPinnedBuffer(MemorySegment segment, OCLBufferInfo bufferInfo) {}
 }

@@ -487,29 +487,3 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
      return (jlong) readEvent;
 }
 
-/*
- * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
- * Method:    clEnqueueMapBuffer
- * Signature: (JJZBJJ[J)J
- */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clEnqueueMapBuffer
-        (JNIEnv *env, jclass clazz, jlong queue_id, jlong bufferId, jboolean blocking, jbyte mapFlags, jlong offset, jlong bytes, jlongArray waitEvents) {
-
-    cl_bool blocking_write = blocking ? CL_TRUE : CL_FALSE;
-    jlong *arrayEvents = static_cast<jlong *>((waitEvents != NULL) ? env->GetPrimitiveArrayCritical(waitEvents, NULL) : NULL);
-    jlong *events = (waitEvents != NULL) ? &arrayEvents[1] : NULL;
-    jsize numberOfEvents = (waitEvents != NULL) ? arrayEvents[0] : 0;
-
-    cl_event event;
-    cl_int status;
-    void* hostBufferPointer = clEnqueueMapBuffer((cl_command_queue) queue_id, (cl_mem) bufferId, blocking_write,
-                                                (cl_map_flags) mapFlags, (size_t) offset, (size_t) bytes,
-                                                numberOfEvents, (cl_event *) events, &event, &status);
-
-    LOG_OCL_AND_VALIDATE("clEnqueueMapBuffer", status);
-
-    if (waitEvents != NULL) {
-        env->ReleasePrimitiveArrayCritical(waitEvents, arrayEvents, JNI_ABORT);
-    }
-    return (jlong) event;
-}

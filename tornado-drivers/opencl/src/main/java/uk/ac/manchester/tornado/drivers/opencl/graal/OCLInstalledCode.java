@@ -23,6 +23,13 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal;
 
+import java.nio.ByteBuffer;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitive;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.*;
+
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -40,13 +47,6 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
-import java.nio.ByteBuffer;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitive;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.*;
 
 public class OCLInstalledCode extends InstalledCode implements TornadoInstalledCode {
 
@@ -141,7 +141,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
      * @param meta
      *            task metadata {@link TaskMetaData}
      */
-    private void setKernelArgs(final OCLKernelArgs kernelArgs, TaskMetaData meta) {
+    private void setKernelArgs(final OCLKernelArgs kernelArgs, final ObjectBuffer atomicSpace, TaskMetaData meta) {
         int index = 0;
 
         if (deviceContext.needsBump()) {
@@ -234,7 +234,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
          * Only set the kernel arguments if they are either: - not set or - have changed
          */
         final int[] waitEvents;
-        setKernelArgs(kernelArgs, meta);
+        setKernelArgs(kernelArgs,atomicSpace, meta);
         internalEvents[0] = kernelArgs.enqueueWrite(events);
         waitEvents = internalEvents;
         updateProfilerKernelContextWrite(internalEvents[0], meta, kernelArgs);
@@ -362,7 +362,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
         }
 
-        setKernelArgs(callWrapper, meta);
+        setKernelArgs(callWrapper, atomicSpace, meta);
         int kernelContextWriteEventId = callWrapper.enqueueWrite();
         updateProfilerKernelContextWrite(kernelContextWriteEventId, meta, callWrapper);
 

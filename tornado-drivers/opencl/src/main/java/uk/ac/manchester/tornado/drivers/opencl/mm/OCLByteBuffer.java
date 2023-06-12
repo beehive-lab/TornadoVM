@@ -46,7 +46,7 @@ public class OCLByteBuffer {
     protected final OCLDeviceContext deviceContext;
     private OCLBufferInfo bufferInfo;
 
-    public OCLByteBuffer(final OCLBufferInfo bufferInfo, final OCLDeviceContext deviceContext, final long oclBufferId, final long offset, final long numBytes) {
+    public OCLByteBuffer(OCLDeviceContext deviceContext, final long oclBufferId, final long offset, final long numBytes) {
         this.deviceContext = deviceContext;
         this.oclBufferId = oclBufferId;
         this.bytes = numBytes;

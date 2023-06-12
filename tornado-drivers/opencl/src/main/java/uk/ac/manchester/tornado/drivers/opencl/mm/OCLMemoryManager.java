@@ -23,7 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
-import jdk.incubator.foreign.MemorySegment;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
@@ -108,27 +107,8 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         }
     }
 
-//    @Override
-//    public long allocatePinnedBuffer(long byteSize) {
-//        return allocateRegion(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, byteSize, false);
-//    }
-
-    @Override
-    public long allocatePinnedBuffer(long byteSize) {
-        this.constantPointer = createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, 4).getBuffer();
-        return this.constantPointer;
-    }
-
-    @Override
-    public void registerPinnedBuffer(MemorySegment segment, long bufferId, long hostBufferPointer, long deviceBufferAddress) {
-
-    }
 
     public long allocateRegion(long memFlags, long numBytes, boolean retainBuffer) {
         return deviceContext.getPlatformContext().createBuffer(memFlags, numBytes).getBuffer();
     }
-
-//    public Map<MemorySegment, MemorySegmentInfo> getSegmentToBufferMap() {
-//        return segmentToBufferMap;
-//    }
 }

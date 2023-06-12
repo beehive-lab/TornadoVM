@@ -23,13 +23,11 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import jdk.incubator.foreign.MemorySegment;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
-import uk.ac.manchester.tornado.drivers.opencl.mm.OCLBufferInfo;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
@@ -88,7 +86,4 @@ public interface OCLDeviceContextInterface extends TornadoDeviceContext {
 
     OCLProgram createProgramWithIL(byte[] binary, long[] lengths);
 
-    long enqueueMapBuffer(long bufferId, boolean blocking, byte mapFlags, long offset, long byteSize, int[] waitEvents);
-
-    void registerPinnedBuffer(MemorySegment segment, OCLBufferInfo bufferInfo);
 }

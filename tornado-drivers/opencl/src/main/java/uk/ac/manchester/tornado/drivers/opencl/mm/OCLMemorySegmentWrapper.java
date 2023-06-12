@@ -52,18 +52,6 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
 
     }
 
-//    @Override
-//    public long toAbsoluteAddress() {
-//        guarantee(deviceContext.getSegmentToBufferMap().containsKey(segment), "Should contain the segment by this point");
-//        return deviceContext.getSegmentToBufferMap().get(segment).getDevicePointer();
-//    }
-
-//    @Override
-//    public long toRelativeAddress() {
-//        // Will always be 0 since there is no parent buffer.
-//        return 0;
-//    }
-
     @Override
     public int read(Object reference, long hostOffset, int[] events, boolean useDeps) {
         MemorySegment segment;
@@ -176,26 +164,6 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
             info("deallocated: %s", toString());
         }
     }
-
-//    @Override
-//    public int getAlignment() {
-//        return 0;
-//    }
-
-//    @Override
-//    public boolean isValid() {
-//        return onDevice;
-//    }
-
-//    @Override
-//    public void invalidate() {
-//        onDevice = false;
-//    }
-
-//    @Override
-//    public void printHeapTrace() {
-//        System.out.printf("0x%x\ttype=%s\n", toAbsoluteAddress(), MemorySegment.class.getName());
-//    }
 
     @Override
     public long size() {

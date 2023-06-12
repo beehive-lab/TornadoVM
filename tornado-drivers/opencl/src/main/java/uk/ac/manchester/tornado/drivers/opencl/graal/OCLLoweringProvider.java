@@ -155,8 +155,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             lowerLocalThreadIdNode((ThreadLocalIdFixedWithNextNode) node);
         } else if (node instanceof GetGroupIdFixedWithNextNode) {
             lowerGetGroupIdNode((GetGroupIdFixedWithNextNode) node);
-        } else if (node instanceof MemorySegmentArrayNode) {
-            lowerMemorySegmentArrayNode((MemorySegmentArrayNode) node);
         } else if (node instanceof GlobalGroupSizeFixedWithNextNode) {
             lowerGlobalGroupSizeNode((GlobalGroupSizeFixedWithNextNode) node);
         } else if (node instanceof LocalGroupSizeFixedWithNextNode) {
@@ -164,12 +162,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         } else {
             super.lower(node, tool);
         }
-    }
-
-    private void lowerMemorySegmentArrayNode(MemorySegmentArrayNode memorySegmentArrayNode) {
-        StructuredGraph graph = memorySegmentArrayNode.graph();
-        OCLMemorySegmentArray memorySegmentArray = graph.add(new OCLMemorySegmentArray(memorySegmentArrayNode.getSegmentParameter()));
-        graph.replaceFixedWithFixed(memorySegmentArrayNode, memorySegmentArray);
     }
 
     @Override

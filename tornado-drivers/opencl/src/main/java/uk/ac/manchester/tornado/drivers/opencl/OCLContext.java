@@ -263,7 +263,7 @@ public class OCLContext implements OCLExecutionEnvironment {
         return createBuffer(flags, bytes, 0L);
     }
 
-    public OCLBufferResult createBuffer(long flags, long bytes, long hostPointer) {
+    private OCLBufferResult createBuffer(long flags, long bytes, long hostPointer) {
         try {
             final OCLBufferResult result = createBuffer(contextID, flags, bytes, hostPointer);
             TornadoLogger.info("buffer allocated %s @ 0x%x", RuntimeUtilities.humanReadableByteCount(bytes, false), result.getBuffer());
