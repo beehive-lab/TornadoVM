@@ -538,8 +538,8 @@ public class TornadoVMInterpreter extends TornadoLogger {
         // Check if a different batch size was used for the same kernel. If true, then
         // the kernel needs to be recompiled.
 
-        if (!shouldCompile(installedCodes[0]) && task.getBatchThreads() != 0 && task.getBatchThreads() != batchThreads) {
-            installedCodes[0].invalidate();
+        if (!shouldCompile(installedCodes[taskIndex]) && task.getBatchThreads() != 0 && task.getBatchThreads() != batchThreads) {
+            installedCodes[taskIndex].invalidate();
         }
         // Set the batch size in the task information
         task.setBatchThreads(batchThreads);
@@ -551,7 +551,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
             task.setGridScheduler(gridScheduler);
         }
 
-        if (shouldCompile(installedCodes[0])) {
+        if (shouldCompile(installedCodes[taskIndex])) {
             task.mapTo(deviceForInterpreter);
             try {
                 task.attachProfiler(timeProfiler);
@@ -564,7 +564,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
                 if (doUpdate) {
                     task.forceCompilation();
                 }
-                installedCodes[0] = deviceForInterpreter.installCode(task);
+                installedCodes[taskIndex] = deviceForInterpreter.installCode(task);
                 profilerUpdateForPreCompiledTask(task);
                 doUpdate = false;
             } catch (TornadoBailoutRuntimeException e) {
@@ -593,13 +593,13 @@ public class TornadoVMInterpreter extends TornadoLogger {
         KernelArgs callWrapper = info.callWrapper;
         int[] waitList = info.waitList;
 
-        if (installedCodes[0] == null) {
+        if (installedCodes[taskIndex] == null) {
             // After warming-up, it is possible to get a null pointer in the task-cache due
             // to lazy compilation for FPGAs. In tha case, we check again the code cache.
-            installedCodes[0] = deviceForInterpreter.getCodeFromCache(task);
+            installedCodes[taskIndex] = deviceForInterpreter.getCodeFromCache(task);
         }
 
-        final TornadoInstalledCode installedCode = installedCodes[0];
+        final TornadoInstalledCode installedCode = installedCodes[taskIndex];
         if (installedCode == null) {
             // There was an error during compilation -> bailout
             throw new TornadoBailoutRuntimeException("Code generator Failed");
