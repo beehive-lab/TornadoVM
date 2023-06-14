@@ -6,7 +6,9 @@ Resources
 Videos
 ------
 
-- J. Fumero, `TornadoVM: Transparent Hardware Acceleration for Java…and Beyond! <https://www.youtube.com/watch?v=HxhO4hMKi5M>`__, Devoxx Ukraine 2021. 
+- A. Stratikopoulos, `Write Once, Run Anywhere... Well, What About Heterogeneous Hardware? <https://fosdem.org/2023/schedule/event/hardware/>`__, FOSDEM 2023 
+
+- J. Fumero, `TornadoVM: Transparent Hardware Acceleration for Java and Beyond! <https://www.youtube.com/watch?v=HxhO4hMKi5M>`__, Devoxx Ukraine 2021. 
 
 - J. Fumero, `Level up Your Java Performance with TornadoVM <https://www.youtube.com/watch?v=Bo0zMdcdCk4>`__, QCon Plus 2021. 
 
@@ -25,6 +27,14 @@ Presentations
    `link <https://github.com/jjfumero/jjfumero.github.io/blob/master/files/JVMLS2019-TornadoVM.pdf>`__
 -  TornadoVM Slides @ JVMLS 2019:
    `link <https://github.com/jjfumero/jjfumero.github.io/blob/master/files/JVMLS2019-TornadoVM.pdf>`__
+
+Podcast 
+-------------
+
+-  Foojay Podcast #17: Execute Java Code with TornadoVM on CPUs, GPUs, and FPGAs (March 2023): `link <https://medium.com/javarevisited/foojay-podcast-17-execute-java-code-with-tornadovm-on-cpus-gpus-and-fpgas-d924cc2e34d2>`__  
+
+-  TornadoVM at Software Engineering Daily (2019): `link <https://softwareengineeringdaily.com/2020/09/21/tornadovm-accelerating-java-with-gpus-with-juan-fumero/>`__ 
+
 
 Articles
 --------
@@ -49,13 +59,15 @@ Articles
 Demos & Artefacts
 -----------------
 
--  Repository with examples: `link <https://github.com/jjfumero/tornadovm-examples>`__. 
+-  TornadoVM Examples: `link <https://github.com/jjfumero/tornadovm-examples>`__. 
 
 -  Examples used for QConLondon:
    `link <https://github.com/jjfumero/qconlondon2020-tornadovm>`__.
 
--  TornadoVM running with KFusion Microsoft Kinet:
+-  TornadoVM running with KFusion Microsoft Kinect:
    `link <https://github.com/jjfumero/jjfumero.github.io/blob/master/files/videos/KFUSION-TORNADOVM-0.3.webm>`__.
+
+-  TornadoVM Ray-Tracer: `link <https://github.com/beehive-lab/TornadoVM>`__.
 
 -  TornadoVM running with Docker images on NVIDIA GPUs:
    `link <https://github.com/jjfumero/jjfumero.github.io/blob/master/files/videos/TornadoDockerGPU.webm>`__.
