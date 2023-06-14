@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020-2022 APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -105,6 +105,11 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
     @Override
     public boolean isPlatformXilinxFPGA() {
         return false;
+    }
+
+    @Override
+    public boolean isFP64Supported() {
+        return true;
     }
 
     public PTXTornadoDevice asMapping() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2022-2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -615,6 +615,8 @@ public class PTXAssembler extends Assembler {
         public static final PTXBinaryIntrinsic FLOAT_MAX = new PTXBinaryIntrinsic("max", false);
 
         public static final PTXBinaryIntrinsic COPY_SIGN = new PTXBinaryIntrinsic("copysign", false);
+
+        public static final PTXBinaryIntrinsic RADIANS = new PTXBinaryIntrinsic("mul", true);
         // @formatter:on
 
         protected PTXBinaryIntrinsic(String opcode) {

@@ -92,7 +92,9 @@ class TornadoInstaller():
             url = config.CMAKE[__LINUX__][__X86_64__]
         elif (self.hardware == __ARM__ and self.osPlatform == __LINUX__ ):
             url = config.CMAKE[__LINUX__][__ARM__]
-        elif (self.osPlatform == __APPLE__):
+        elif (self.hardware == __X86_64__ and self.osPlatform == __APPLE__):
+            url = config.CMAKE[__APPLE__][__X86_64__]
+        elif (self.hardware == __ARM__ and self.osPlatform == __APPLE__):
             url = config.CMAKE[__APPLE__][__ARM__]
         
         fileName = self.processFileName(url)
@@ -124,11 +126,15 @@ class TornadoInstaller():
             url = config.MAVEN[__LINUX__][__X86_64__]
         elif (self.hardware == __ARM__ and self.osPlatform == __LINUX__ ):
             url = config.MAVEN[__LINUX__][__ARM__]
-        elif (self.osPlatform == __APPLE__):
+        elif (self.hardware == __ARM__ and self.osPlatform == __APPLE__):
             url = config.MAVEN[__APPLE__][__ARM__]
             if (url == None):
                 return
-            
+        elif (self.hardware == __X86_64__ and self.osPlatform == __APPLE__):
+            url = config.MAVEN[__APPLE__][__X86_64__]
+            if (url == None):
+                return
+
         fileName = self.processFileName(url)
         print("\nChecking dependency: " + fileName)
         fullPath = self.workDirName + "/" + fileName
@@ -164,9 +170,11 @@ class TornadoInstaller():
             url = config.JDK[jdk][__LINUX__][__X86_64__]
         elif (self.hardware == __ARM__ and self.osPlatform == __LINUX__ ):
             url = config.JDK[jdk][__LINUX__][__ARM__]
-        elif (self.osPlatform == __APPLE__):
+        elif (self.hardware == __ARM__ and self.osPlatform == __APPLE__):
             url = config.JDK[jdk][__APPLE__][__ARM__]
-        
+        elif (self.hardware == __X86_64__ and self.osPlatform == __APPLE__):
+                   url = config.JDK[jdk][__APPLE__][__X86_64__]
+
         fileName = self.processFileName(url)
         print("\nChecking dependency: " + fileName)
         fullPath = self.workDirName + "/" + fileName
@@ -271,7 +279,7 @@ class TornadoInstaller():
         backend = self.composeBackendOption(args)
 
         makeJDK = "jdk-11-plus"
-        if ((args.javaHome != None and args.javaHome.startswith("graal")) or args.jdk.startswith("graal")):
+        if ((args.javaHome != None and "graal" in args.javaHome) or ("graal" in args.jdk)):
             makeJDK = "graal-jdk-11-plus"
         
         if (args.javaHome != None):

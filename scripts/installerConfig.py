@@ -22,8 +22,12 @@
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
+import platform
 __X86_64__ = "x86_64"
-__ARM__    = "aarch64"
+if (platform.system().lower().startswith("darwin")):
+  __ARM__  = "arm64"
+else:
+  __ARM__  = "aarch64"
 __LINUX__  = "linux"
 __APPLE__  = "darwin"
 
@@ -55,8 +59,8 @@ CMAKE = {
 ## Maven 
 MAVEN = {
     __LINUX__ : {
-        __X86_64__ : "https://dlcdn.apache.org/maven/maven-3/3.9.1/binaries/apache-maven-3.9.1-bin.tar.gz",
-        __ARM__    : "https://dlcdn.apache.org/maven/maven-3/3.9.1/binaries/apache-maven-3.9.1-bin.tar.gz",
+        __X86_64__ : "https://dlcdn.apache.org/maven/maven-3/3.9.2/binaries/apache-maven-3.9.2-bin.tar.gz",
+        __ARM__    : "https://dlcdn.apache.org/maven/maven-3/3.9.2/binaries/apache-maven-3.9.2-bin.tar.gz",
     },
     __APPLE__ : {
         __X86_64__ : None,   

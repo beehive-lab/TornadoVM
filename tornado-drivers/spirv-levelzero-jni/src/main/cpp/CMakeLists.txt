@@ -13,7 +13,7 @@ find_package(JNI REQUIRED)
 
 # set the C++14 standard
 set(CMAKE_CXX_STANDARD 14)
-set(GCC_INTEL_LEVEL0 "-std=c++14 -O3 -fpermissive -rdynamic -fPIC -lstdc++")
+set(GCC_INTEL_LEVEL0 "-std=c++14 -O2 -fpermissive -rdynamic -fPIC -lstdc++")
 
 # This should point to: "PATH-TO/level-zero/build/lib/libze_loader.so"
 set(ZE_LOADER $ENV{ZE_SHARED_LOADER})

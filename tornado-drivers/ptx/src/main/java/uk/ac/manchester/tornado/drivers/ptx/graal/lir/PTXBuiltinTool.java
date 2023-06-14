@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2022-2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +26,7 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBin
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryIntrinsic.FLOAT_MIN;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryIntrinsic.INT_MAX;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryIntrinsic.INT_MIN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXBinaryIntrinsic.RADIANS;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUnaryIntrinsic.ABS;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUnaryIntrinsic.COS;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUnaryIntrinsic.EXP2;
@@ -133,6 +134,23 @@ public class PTXBuiltinTool {
     public Value genFloatFloor(Value input) {
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "genFloatFloor: floor(%s)", input);
         return new PTXUnary.Intrinsic(FLOAT_FLOOR, LIRKind.value(input.getPlatformKind()), input);
+    }
+
+    /**
+     * The radians operation is implemented as: (pi / 180) * degrees. In PTX, the
+     * first argument of the multiplication is a constant value x
+     * {@value uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants#DEGREES_TO_RADIANS}
+     * while the second argument that corresponds to the degrees is value y.
+     *
+     * @param x
+     *            the constant value of (pi/180)
+     * @param y
+     *            the angle value measured in degrees
+     * @return Value: the approximately equivalent angle measured in radians
+     */
+    public Value genFloatRadians(Value x, Value y) {
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "genFloatRadians: radians corresponds to PTX instruction mul.rn.f32(%s, %s)", x, y);
+        return new PTXBinary.Intrinsic(RADIANS, LIRKind.combine(x, y), x, y);
     }
 
     public Value genFloatILogb(Value input) {
