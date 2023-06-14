@@ -41,7 +41,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
-import java.util.stream.IntStream;
 
 /**
  * * There is an instance of the {@link TornadoVM} per {@link TornadoTaskGraph}. * Each TornadoVM contains the logic to orchestrate the execution on the * parallel device (e.g., a GPU).
@@ -71,23 +70,34 @@ public class TornadoVM extends TornadoLogger {
      *         the batch size when running in batch mode
      */
     public TornadoVM(TornadoExecutionContext graphContext, TornadoGraph tornadoGraph, TornadoProfiler timeProfiler, long batchSize, boolean setNewDevice) {
-        tornadoVMBytecodes = TornadoVMGraphCompiler.compile(tornadoGraph, graphContext, batchSize);
-        tornadoVMInterpreters = new TornadoVMInterpreter[graphContext.getDevices().size()];
         this.graphContext = graphContext;
         this.timeProfiler = timeProfiler;
         this.setNewDevice = setNewDevice;
         totalTime = 0;
         invocations = 0;
+        tornadoVMBytecodes = TornadoVMGraphCompiler.compile(tornadoGraph, graphContext, batchSize);
+        tornadoVMInterpreters = new TornadoVMInterpreter[validContextsSize(graphContext)];
         bindBytecodesToInterpreters();
+    }
+
+    private int validContextsSize(TornadoExecutionContext graphContext) {
+        int nullDevicesEntries = (int) graphContext.getDevices().stream().filter(device -> device == null).count();
+        return graphContext.getDevices().size() - nullDevicesEntries;
     }
 
     private void bindBytecodesToInterpreters() {
         System.out.println("TornadoBytecodeBuilder size " + tornadoVMBytecodes.length);
         System.out.println("GraphCoctext size device : " + graphContext.getDevices().size());
         System.out.println("Graph context : " + graphContext.meta().shouldDumpSchedule());
+        int bciD;
+        for (int i = 0; i < validContextsSize(graphContext); i++) {
+            bciD = validContextsSize(graphContext) < graphContext.getDevices().size() ? i + 1 : i;
+            tornadoVMInterpreters[i] = new TornadoVMInterpreter(graphContext, tornadoVMBytecodes[bciD], timeProfiler, graphContext.getDevices().get(i), i);
 
-        IntStream.range(0, graphContext.getDevices().size())
-                .forEach(index -> tornadoVMInterpreters[index] = new TornadoVMInterpreter(graphContext, tornadoVMBytecodes[index], timeProfiler, graphContext.getDevices().get(index), index));
+        }
+
+        //        IntStream.range(0, validContextsSize(graphContext))
+        //                .forEach(index -> tornadoVMInterpreters[index] = new TornadoVMInterpreter(graphContext, tornadoVMBytecodes[index + 1], timeProfiler, graphContext.getDevices().get(index), index));
 
     }
 

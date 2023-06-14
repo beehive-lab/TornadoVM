@@ -100,8 +100,7 @@ public class TestGridScheduler {
     }
 
     @Test
-    public void
-    testMultipleTasksSeparateTaskGraphs() {
+    public void testMultipleTasksSeparateTaskGraphs() {
         final int size = 1024;
         float[] a = new float[size];
         float[] b = new float[size];
