@@ -1,14 +1,12 @@
 Simple example of GraalVM with Node.js invoking Java code expressed in TornadoVM.
 
-Note: `$JAVA_HOME` must point to GraalVM jdk8 or jdk11
+Note: `$JAVA_HOME` must point to GraalVM jdk11 and jdk17
 
 ## 1) Setup:
 
 ```bash 
-cd $TORNADO_ROOT && make
+cd $TORNADO_ROOT && maken graalvm-jdk-11-plus
 cd $TORNADO_ROOT/tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/polyglot/node
-export CLASSPATH="$TORNADO_ROOT/bin/sdk/share/java/tornado/tornado-api-0.15.2-dev.jar" 
-javac.py Mandelbrot.java
 ```
 
 Install the following modules: 
@@ -27,7 +25,8 @@ $ $JAVA_HOME/bin/npm install fs
 
 ```bash 
 tornado --truffle node server.js
-wget -q -O - http://localhost:3000/
+wget -q -O - http://localhost:3000/   
 ```
 
-Or access `http://localhost:3000/` 
+Or access `http://localhost:3000/` for the accelerated version with TornadoVM and `http://localhost:3000/java` for running without TornadoVM. 
+
