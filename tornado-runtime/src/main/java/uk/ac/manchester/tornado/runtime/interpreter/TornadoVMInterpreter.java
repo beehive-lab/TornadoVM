@@ -69,9 +69,8 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 
 /**
- * TornadoVMInterpreter: it is a bytecode interpreter (Tornado bytecodes), a memory
- * manager for all devices (FPGAs, GPUs and multicore that follows the OpenCL
- * programming model), and a JIT compiler from Java bytecode to OpenCL.
+ * TornadoVMInterpreter: it is a bytecode interpreter (Tornado bytecodes), a memory manager for all devices (FPGAs, GPUs and multicore that follows the OpenCL programming model), and a JIT compiler
+ * from Java bytecode to OpenCL.
  * <p>
  * The JIT compiler extends the Graal JIT Compiler for OpenCL compilation.
  * <p>
@@ -101,7 +100,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
     private final TornadoProfiler timeProfiler;
     private boolean finishedWarmup;
     private boolean doUpdate;
-    private TornadoExecutionContext graphContext;
+    private final TornadoExecutionContext graphContext;
     private GridScheduler gridScheduler;
 
     public TornadoVMInterpreter(TornadoExecutionContext graphContext, TornadoVMBytecodeBuilder bytecode, TornadoProfiler timeProfiler, TornadoAcceleratorDevice deviceForContext, int idx) {
@@ -153,16 +152,13 @@ public class TornadoVMInterpreter extends TornadoLogger {
         constants = graphContext.getConstants();
         tasks = graphContext.getTasks();
 
-        debug("%s - interperter ready to go", graphContext.getId());
+        debug("%s - interpreter ready to go", graphContext.getId());
         buffer.mark();
 
     }
 
     private ByteBuffer setupBytecodeBuffer(TornadoVMBytecodeBuilder bytecode) {
-        ByteBuffer interpreterBuffer = ByteBuffer.wrap(bytecode.getCode())
-                .order(ByteOrder.LITTLE_ENDIAN)
-                .limit(bytecode.getCodeSize());
-        return interpreterBuffer;
+        return ByteBuffer.wrap(bytecode.getCode()).order(ByteOrder.LITTLE_ENDIAN).limit(bytecode.getCodeSize());
     }
 
     public Event execute(boolean isWarmup) {
@@ -175,7 +171,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
         StringBuilder tornadoVMBytecodeList = null;
         if (TornadoOptions.PRINT_BYTECODES) {
             tornadoVMBytecodeList = new StringBuilder();
-            tornadoVMBytecodeList.append("Bytecodes for : " + deviceForInterpreter.toString() + " Running in thread : " + Thread.currentThread().getId() + "\n");
+            tornadoVMBytecodeList.append("Bytecodes for : ").append(deviceForInterpreter).append(" Running in thread : ").append(Thread.currentThread().getId()).append("\n");
         }
 
         while (buffer.hasRemaining()) {
@@ -273,7 +269,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
                 lastEvent = executeBarrier(tornadoVMBytecodeList, eventList, waitList);
             } else if (op == TornadoVMBytecodes.END.value()) {
                 if (!isWarmup && TornadoOptions.PRINT_BYTECODES) {
-                    tornadoVMBytecodeList.append("bc: " + InterpreterUtilities.debugHighLightBC("END\n") + "\n");
+                    tornadoVMBytecodeList.append("bc: ").append(InterpreterUtilities.debugHighLightBC("END\n")).append("\n");
                 }
                 break;
             } else {
@@ -324,7 +320,8 @@ public class TornadoVMInterpreter extends TornadoLogger {
             objectStates[i] = resolveObjectState(args[i], contextIndex);
 
             if (TornadoOptions.PRINT_BYTECODES) {
-                String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("ALLOC") + "%s on %s, size=%d", objects[i], InterpreterUtilities.debugDeviceBC(deviceForInterpreter), sizeBatch);
+                String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("ALLOC") + "%s on %s, size=%d", objects[i], InterpreterUtilities.debugDeviceBC(deviceForInterpreter),
+                        sizeBatch);
                 tornadoVMBytecodeList.append(verbose).append("\n");
 
             }
@@ -340,8 +337,9 @@ public class TornadoVMInterpreter extends TornadoLogger {
             return 0;
         }
 
-        if (TornadoOptions.PRINT_BYTECODES && !isObjectAtomic(object)) {
-            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("DEALLOC") + "[0x%x] %s on %s", object.hashCode(), object, InterpreterUtilities.debugDeviceBC(deviceForInterpreter));
+        if (TornadoOptions.PRINT_BYTECODES && isObjectAtomic(object)) {
+            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("DEALLOC") + "[0x%x] %s on %s", object.hashCode(), object,
+                    InterpreterUtilities.debugDeviceBC(deviceForInterpreter));
             tornadoVMBytecodeList.append(verbose).append("\n");
 
         }
@@ -351,7 +349,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
     }
 
     private boolean isObjectAtomic(Object object) {
-        return object instanceof AtomicInteger;
+        return !(object instanceof AtomicInteger);
     }
 
     private boolean isObjectKernelContext(Object object) {
@@ -359,7 +357,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
     }
 
     private int transferHostToDeviceOnce(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch,
-                                         final int[] waitList) {
+            final int[] waitList) {
         Object object = objects.get(objectIndex);
 
         if (isObjectKernelContext(object)) {
@@ -368,9 +366,9 @@ public class TornadoVMInterpreter extends TornadoLogger {
 
         final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
 
-        if (TornadoOptions.PRINT_BYTECODES & !isObjectAtomic(object)) {
-            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ONCE") + " [Object Hash Code=0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(),
-                    object, InterpreterUtilities.debugDeviceBC(deviceForInterpreter), sizeBatch, offset, eventList);
+        if (TornadoOptions.PRINT_BYTECODES & isObjectAtomic(object)) {
+            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ONCE") + " [Object Hash Code=0x%x] %s on %s, size=%d, offset=%d [event list=%d]",
+                    object.hashCode(), object, InterpreterUtilities.debugDeviceBC(deviceForInterpreter), sizeBatch, offset, eventList);
             tornadoVMBytecodeList.append(verbose).append("\n");
 
         }
@@ -405,16 +403,16 @@ public class TornadoVMInterpreter extends TornadoLogger {
     }
 
     private int transferHostToDeviceAlways(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch,
-                                           final int[] waitList) {
+            final int[] waitList) {
         Object object = objects.get(objectIndex);
 
         if (isObjectKernelContext(object)) {
             return 0;
         }
 
-        if (TornadoOptions.PRINT_BYTECODES && !isObjectAtomic(object)) {
-            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ALWAYS") + " [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object,
-                    InterpreterUtilities.debugDeviceBC(deviceForInterpreter), sizeBatch, offset, eventList);
+        if (TornadoOptions.PRINT_BYTECODES && isObjectAtomic(object)) {
+            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ALWAYS") + " [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(),
+                    object, InterpreterUtilities.debugDeviceBC(deviceForInterpreter), sizeBatch, offset, eventList);
             tornadoVMBytecodeList.append(verbose).append("\n");
 
         }
@@ -443,7 +441,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
     }
 
     private int transferDeviceToHost(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch,
-                                     final int[] waitList) {
+            final int[] waitList) {
         Object object = objects.get(objectIndex);
 
         if (isObjectKernelContext(object)) {
@@ -451,8 +449,8 @@ public class TornadoVMInterpreter extends TornadoLogger {
         }
 
         if (TornadoOptions.PRINT_BYTECODES) {
-            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("TRANSFER_DEVICE_TO_HOST_ALWAYS") + "[0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object,
-                    InterpreterUtilities.debugDeviceBC(deviceForInterpreter), sizeBatch, offset, eventList);
+            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("TRANSFER_DEVICE_TO_HOST_ALWAYS") + "[0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(),
+                    object, InterpreterUtilities.debugDeviceBC(deviceForInterpreter), sizeBatch, offset, eventList);
             tornadoVMBytecodeList.append(verbose).append("\n");
 
         }
@@ -479,7 +477,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
     }
 
     private void transferDeviceToHostBlocking(StringBuilder tornadoVMBytecodeList, final int objectIndex, final int contextIndex, final long offset, final int eventList, final long sizeBatch,
-                                              final int[] waitList) {
+            final int[] waitList) {
 
         Object object = objects.get(objectIndex);
 
@@ -488,8 +486,8 @@ public class TornadoVMInterpreter extends TornadoLogger {
         }
 
         if (TornadoOptions.PRINT_BYTECODES) {
-            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("STREAM_OUT_BLOCKING") + " [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, InterpreterUtilities.debugDeviceBC(deviceForInterpreter),
-                    sizeBatch, offset, eventList);
+            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("STREAM_OUT_BLOCKING") + " [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object,
+                    InterpreterUtilities.debugDeviceBC(deviceForInterpreter), sizeBatch, offset, eventList);
             tornadoVMBytecodeList.append(verbose).append("\n");
 
         }
@@ -543,7 +541,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
         }
         // Set the batch size in the task information
         task.setBatchThreads(batchThreads);
-//        task.enableDefaultThreadScheduler(graphContext.useDefaultThreadScheduler());
+        //        task.enableDefaultThreadScheduler(graphContext.useDefaultThreadScheduler());
 
         if (gridScheduler != null && gridScheduler.get(task.getId()) != null) {
             System.out.println("+++Grid on ");
@@ -586,8 +584,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
         return objectState.isAtomicRegionPresent() && device.checkAtomicsParametersForTask(task);
     }
 
-    private int executeLaunch(StringBuilder tornadoVMBytecodeList, final int numArgs, final int eventList, final int taskIndex, final long batchThreads, final long offset,
-                              ExecutionInfo info) {
+    private int executeLaunch(StringBuilder tornadoVMBytecodeList, final int numArgs, final int eventList, final int taskIndex, final long batchThreads, final long offset, ExecutionInfo info) {
 
         final SchedulableTask task = tasks.get(taskIndex);
         KernelArgs callWrapper = info.callWrapper;
@@ -664,16 +661,16 @@ public class TornadoVMInterpreter extends TornadoLogger {
                 }
             }
             if (TornadoOptions.PRINT_BYTECODES) {
-                String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("STREAM_IN") + "  ATOMIC [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", bufferAtomics.hashCode(), bufferAtomics, deviceForInterpreter,
-                        0, 0, eventList);
+                String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("STREAM_IN") + "  ATOMIC [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", bufferAtomics.hashCode(),
+                        bufferAtomics, deviceForInterpreter, 0, 0, eventList);
                 tornadoVMBytecodeList.append(verbose).append("\n");
 
             }
         }
 
         if (TornadoOptions.PRINT_BYTECODES) {
-            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("LAUNCH") + " %s on %s, size=%d, offset=%d [event list=%d]", task.getFullName(), deviceForInterpreter, batchThreads, offset,
-                    eventList);
+            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("LAUNCH") + " %s on %s, size=%d, offset=%d [event list=%d]", task.getFullName(), deviceForInterpreter,
+                    batchThreads, offset, eventList);
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
 
@@ -739,7 +736,6 @@ public class TornadoVMInterpreter extends TornadoLogger {
         throw new TornadoRuntimeException("[ERROR] TornadoVM Bytecode not recognized");
     }
 
-
     private void resetEventIndexes(int eventList) {
         if (eventList != -1) {
             eventsIndexes[eventList] = 0;
@@ -794,7 +790,6 @@ public class TornadoVMInterpreter extends TornadoLogger {
         return callWrappers[index];
     }
 
-
     public void dumpProfiles() {
         if (!graphContext.meta().shouldDumpProfiles()) {
             info("profiling is not enabled");
@@ -836,7 +831,6 @@ public class TornadoVMInterpreter extends TornadoLogger {
         }
     }
 
-
     public void warmup() {
         execute(true);
         finishedWarmup = true;
@@ -859,7 +853,6 @@ public class TornadoVMInterpreter extends TornadoLogger {
     public void clearInstalledCode() {
         Arrays.fill(installedCodes, null);
     }
-
 
     private static class ExecutionInfo {
         KernelArgs callWrapper;

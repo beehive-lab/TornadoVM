@@ -318,7 +318,6 @@ public class TornadoExecutionContext {
         return false;
     }
 
-
     public List<LocalObjectState> getObjectStates() {
         return objectState;
     }
@@ -332,8 +331,7 @@ public class TornadoExecutionContext {
     }
 
     /**
-     * Default device inspects the driver 0 and device 0 of the internal OpenCL
-     * list.
+     * Default device inspects the driver 0 and device 0 of the internal OpenCL list.
      *
      * @return {@link TornadoAcceleratorDevice}
      */
@@ -343,30 +341,15 @@ public class TornadoExecutionContext {
     }
 
     public SchedulableTask getTask(String id) {
-        for (int i = 0; i < tasks.size(); i++) {
+        for (SchedulableTask task : tasks) {
             final String canonicalisedId;
             if (id.startsWith(getId())) {
                 canonicalisedId = id;
             } else {
                 canonicalisedId = getId() + "." + id;
             }
-            if (tasks.get(i).getId().equalsIgnoreCase(canonicalisedId)) {
-                return tasks.get(i);
-            }
-        }
-        return null;
-    }
-
-    public KernelArgs getFrame(String id) {
-        for (int i = 0; i < tasks.size(); i++) {
-            final String canonicalisedId;
-            if (id.startsWith(getId())) {
-                canonicalisedId = id;
-            } else {
-                canonicalisedId = getId() + "." + id;
-            }
-            if (tasks.get(i).getId().equalsIgnoreCase(canonicalisedId)) {
-                return callWrappers[i];
+            if (task.getId().equalsIgnoreCase(canonicalisedId)) {
+                return task;
             }
         }
         return null;
@@ -490,7 +473,7 @@ public class TornadoExecutionContext {
         System.out.println(ANSI_PURPLE + "Object Table:" + ANSI_RESET);
         for (int i = 0; i < objects.size(); i++) {
             final Object obj = objects.get(i);
-            System.out.printf("[%d]: 0x%x %s\n", i, obj.hashCode(), obj.toString());
+            System.out.printf("[%d]: 0x%x %s\n", i, obj.hashCode(), obj);
         }
 
         System.out.println(ANSI_GREEN + "Task Table:" + ANSI_RESET);

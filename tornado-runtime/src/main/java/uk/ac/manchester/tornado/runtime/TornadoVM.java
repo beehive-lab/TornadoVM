@@ -44,19 +44,15 @@ import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 /**
- * * There is an instance of the {@link TornadoVM} per {@link TornadoTaskGraph}.
- * * Each TornadoVM contains the logic to orchestrate the execution on the
- * * parallel device (e.g., a GPU).
+ * * There is an instance of the {@link TornadoVM} per {@link TornadoTaskGraph}. * Each TornadoVM contains the logic to orchestrate the execution on the * parallel device (e.g., a GPU).
  */
 public class TornadoVM extends TornadoLogger {
     private final TornadoExecutionContext graphContext;
     private final boolean setNewDevice;
 
-
     private double totalTime;
     private long invocations;
     private final TornadoProfiler timeProfiler;
-
 
     private final TornadoVMBytecodeBuilder[] tornadoVMBytecodes;
 
@@ -65,10 +61,14 @@ public class TornadoVM extends TornadoLogger {
     /**
      * Constructs a new TornadoVM instance.
      *
-     * @param graphContext the TornadoExecutionContext for managing the execution context
-     * @param tornadoGraph the TornadoGraph representing the TaskGraph
-     * @param timeProfiler the TornadoProfiler for profiling execution time
-     * @param batchSize    the batch size when running in bartch mode
+     * @param graphContext
+     *         the TornadoExecutionContext for managing the execution context
+     * @param tornadoGraph
+     *         the TornadoGraph representing the TaskGraph
+     * @param timeProfiler
+     *         the TornadoProfiler for profiling execution time
+     * @param batchSize
+     *         the batch size when running in batch mode
      */
     public TornadoVM(TornadoExecutionContext graphContext, TornadoGraph tornadoGraph, TornadoProfiler timeProfiler, long batchSize, boolean setNewDevice) {
         tornadoVMBytecodes = TornadoVMGraphCompiler.compile(tornadoGraph, graphContext, batchSize);
@@ -87,16 +87,9 @@ public class TornadoVM extends TornadoLogger {
         System.out.println("Graph context : " + graphContext.meta().shouldDumpSchedule());
 
         IntStream.range(0, graphContext.getDevices().size())
-                .forEach(index -> tornadoVMInterpreters[index] =
-                        new TornadoVMInterpreter(graphContext, tornadoVMBytecodes[index],
-                                timeProfiler, graphContext.getDevices().get(index), index));
-
-
-//        tornadoVMInterpreters[0] = new TornadoVMInterpreter(graphContext, tornadoVMBytecodes[0],
-//                timeProfiler, graphContext.getDevices().get(0), 0);
+                .forEach(index -> tornadoVMInterpreters[index] = new TornadoVMInterpreter(graphContext, tornadoVMBytecodes[index], timeProfiler, graphContext.getDevices().get(index), index));
 
     }
-
 
     public TornadoVMBytecodeBuilder[] getTornadoVMBytecodes() {
         return tornadoVMBytecodes;
@@ -106,9 +99,7 @@ public class TornadoVM extends TornadoLogger {
         return runInParallel() ? executeInterpretersMultithreaded() : executeInterpretersSingleThreaded();
     }
 
-
     private Event executeInterpretersSingleThreaded() {
-        System.out.println("iNVALITED " + graphContext.invalidatedContxtId());
         if (graphContext.invalidatedContxtId() == -1) {
             for (TornadoVMInterpreter tornadoVMInterpreter : tornadoVMInterpreters) {
                 tornadoVMInterpreter.execute(false);
@@ -187,6 +178,10 @@ public class TornadoVM extends TornadoLogger {
 
     public void warmup() {
         executeActionOnInterpreters(TornadoVMInterpreter::warmup);
+    }
+
+    public void fetchGlobalStates() {
+        executeActionOnInterpreters(TornadoVMInterpreter::fetchGlobalStates);
     }
 
     public void setGridScheduler(GridScheduler gridScheduler) {
