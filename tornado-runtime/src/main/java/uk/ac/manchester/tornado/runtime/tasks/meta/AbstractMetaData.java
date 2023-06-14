@@ -49,7 +49,7 @@ import static uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.resolveD
 
 public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
-    private static final long[] SEQUENTIAL_GLOBAL_WORK_GROUP = {1, 1, 1};
+    private static final long[] SEQUENTIAL_GLOBAL_WORK_GROUP = { 1, 1, 1 };
     private String id;
     private TornadoAcceleratorDevice device;
     private boolean shouldRecompile;
@@ -58,8 +58,24 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private int deviceIndex;
     private boolean deviceManuallySet;
     private long numThreads;
-    private final HashSet<String> openCLBuiltOptions = new HashSet<>(Arrays.asList("-cl-single-precision-constant", "-cl-denorms-are-zero", "-cl-opt-disable", "-cl-strict-aliasing", "-cl-mad-enable",
-            "-cl-no-signed-zeros", "-cl-unsafe-math-optimizations", "-cl-finite-math-only", "-cl-fast-relaxed-math", "-w", "-cl-std=CL2.0"));
+    private final HashSet<String> openCLBuiltOptions = new HashSet<>(
+            // @formatter:off
+            Arrays.asList(
+                    "-cl-single-precision-constant",
+                    "-cl-denorms-are-zero",
+                    "-cl-opt-disable",
+                    "-cl-strict-aliasing",
+                    "-cl-mad-enable",
+                    "-cl-no-signed-zeros",
+                    "-cl-unsafe-math-optimizations",
+                    "-cl-finite-math-only",
+                    "-cl-fast-relaxed-math",
+                    "-w",
+                    "-cl-std=CL2.0"
+            )
+            // @formatter:on
+    );
+
     private TornadoProfiler profiler;
     private GridScheduler gridScheduler;
     private long[] ptxBlockDim;
@@ -100,7 +116,8 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     /**
      * Set a device in the default driver in Tornado.
      *
-     * @param device {@link TornadoDevice}
+     * @param device
+     *         {@link TornadoDevice}
      */
     public void setDevice(TornadoDevice device) {
         this.driverIndex = device.getDriverIndex();
@@ -114,8 +131,10 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     /**
      * Set a device from a specific Tornado driver.
      *
-     * @param driverIndex Driver Index
-     * @param device      {@link TornadoAcceleratorDevice}
+     * @param driverIndex
+     *         Driver Index
+     * @param device
+     *         {@link TornadoAcceleratorDevice}
      */
     public void setDriverDevice(int driverIndex, TornadoAcceleratorDevice device) {
         this.driverIndex = driverIndex;

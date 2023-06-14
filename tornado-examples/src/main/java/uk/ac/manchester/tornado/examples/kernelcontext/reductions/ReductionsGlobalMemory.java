@@ -33,7 +33,7 @@ import java.util.stream.IntStream;
  * How to run?
  * </p>
  * <code>
- * $ tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.reductions.ReductionsGlobalMemory
+ * $    tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.reductions.ReductionsGlobalMemory
  * </code>
  */
 public class ReductionsGlobalMemory {
