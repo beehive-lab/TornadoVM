@@ -104,7 +104,13 @@ class TornadoVMRunnerTool():
             print("Please ensure the JAVA_HOME environment variable is set correctly")
             sys.exit(0)
 
-        self.commands = {"java": self.java_home + "/bin/java", "python": self.java_home + "/bin/graalpy ", "r": self.java_home + "/bin/Rscript ", "js": self.java_home + "/bin/js "}
+        self.commands = {
+                            "java": self.java_home + "/bin/java", 
+                            "python": self.java_home + "/bin/graalpy ", 
+                            "r": self.java_home + "/bin/Rscript ", 
+                            "js": self.java_home + "/bin/js ", 
+                            "node": self.java_home + "/bin/node "
+                        }
         
         self.isTruffleCommand = args.truffle_language != None
         
@@ -112,7 +118,7 @@ class TornadoVMRunnerTool():
             if (args.truffle_language in self.commands):
                 self.cmd = self.commands[args.truffle_language]
             else:
-                print("Support for " + args.truffle_language + " not provided yet. Please run --truffle with one of the following options: python|r|js")
+                print("Support for " + args.truffle_language + " not provided yet. Please run --truffle with one of the following options: python|r|js|node")
                 sys.exit(0)         
         else:
             self.cmd = self.commands["java"]
