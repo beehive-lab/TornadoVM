@@ -238,14 +238,14 @@ class TornadoInstaller():
         fileContent = fileContent + "export PATH=" + allPaths + "$PATH" "\n"
         fileContent = fileContent + "export CMAKE_ROOT=" + self.env["CMAKE_ROOT"] + "\n"
         fileContent = fileContent + "export TORNADO_SDK=" + self.env["TORNADO_SDK"] + "\n"
-        f = open("source.sh", "w")
+        f = open("setvars.sh", "w")
         f.write(fileContent)
         f.close()
 
         print("........................................[ok]")
         print(" ")
         print(" ")
-        print("To run TornadoVM, first run `. source.sh`")
+        print("To run TornadoVM, first run `source setvars.sh`")
 
     def checkJDKOption(self, args):
         if (args.jdk == None):
