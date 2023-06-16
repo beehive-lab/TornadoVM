@@ -261,7 +261,6 @@ public class TornadoExecutionContext {
     }
 
     public void assignToDevices() {
-        System.out.println("Assing to devices");
         if (independentTasks) {
             for (int i = 0; i < tasks.size(); i++) {
                 assignTask(i, tasks.get(i));
