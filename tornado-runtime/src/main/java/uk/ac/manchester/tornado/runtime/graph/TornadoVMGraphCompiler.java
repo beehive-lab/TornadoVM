@@ -27,6 +27,7 @@ package uk.ac.manchester.tornado.runtime.graph;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.common.BatchConfiguration;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextOpNode;
@@ -41,9 +42,12 @@ public class TornadoVMGraphCompiler {
     /**
      * Generate TornadoVM byte-code from a Tornado Task Graph.
      *
-     * @param graph     TornadoVM execution Graph.
-     * @param context   TornadoVM execution context.
-     * @param batchSize Batch size
+     * @param graph
+     *         TornadoVM execution Graph.
+     * @param context
+     *         TornadoVM execution context.
+     * @param batchSize
+     *         Batch size
      * @return {@link TornadoVMBytecodeBuilder[]}
      */
     public static TornadoVMBytecodeBuilder[] compile(TornadoGraph graph, TornadoExecutionContext context, long batchSize) {
@@ -70,11 +74,10 @@ public class TornadoVMGraphCompiler {
         final boolean isSingleContext = true;
         bytecodes[0] = new TornadoVMBytecodeBuilder();
 
-        System.out.println("SIngle context compilation");
+        Tornado.debug("Single context/interpreter            compilation");
         final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
 
         final IntermediateTornadoGraph intermediateTornadoGraph = new IntermediateTornadoGraph(asyncNodes, graph);
-
 
         // Generate Context + BEGIN bytecode
         bytecodes[0].begin(1, intermediateTornadoGraph.getTasks().cardinality(), intermediateTornadoGraph.getNumberOfDependencies() + 1);
@@ -90,7 +93,8 @@ public class TornadoVMGraphCompiler {
             long nthreads = batchSize / sizeBatch.getNumBytesType();
             for (int i = 0; i < sizeBatch.getTotalChunks(); i++) {
                 offset = (batchSize * i);
-                scheduleAndEmitTornadoVMBytecodes(bytecodes[0], graph, intermediateTornadoGraph.getNodeIds(), intermediateTornadoGraph.getDependencies(), offset, batchSize, nthreads, 1, isSingleContext);
+                scheduleAndEmitTornadoVMBytecodes(bytecodes[0], graph, intermediateTornadoGraph.getNodeIds(), intermediateTornadoGraph.getDependencies(), offset, batchSize, nthreads, 1,
+                        isSingleContext);
             }
             // Last chunk
             if (sizeBatch.getRemainingChunkSize() != 0) {
@@ -98,7 +102,8 @@ public class TornadoVMGraphCompiler {
                 nthreads = sizeBatch.getRemainingChunkSize() / sizeBatch.getNumBytesType();
                 long realBatchSize = sizeBatch.getTotalChunks() == 0 ? 0 : sizeBatch.getRemainingChunkSize();
                 long realOffsetSize = sizeBatch.getTotalChunks() == 0 ? 0 : offset;
-                scheduleAndEmitTornadoVMBytecodes(bytecodes[0], graph, intermediateTornadoGraph.getNodeIds(), intermediateTornadoGraph.getDependencies(), realOffsetSize, realBatchSize, nthreads, 1, isSingleContext);
+                scheduleAndEmitTornadoVMBytecodes(bytecodes[0], graph, intermediateTornadoGraph.getNodeIds(), intermediateTornadoGraph.getDependencies(), realOffsetSize, realBatchSize, nthreads, 1,
+                        isSingleContext);
             }
 
         } else {
@@ -176,7 +181,8 @@ public class TornadoVMGraphCompiler {
         scheduleAndEmitTornadoVMBytecodes(result, graph, nodeIds, deps, 0, 0, 0, id, singleContext);
     }
 
-    private static void scheduleAndEmitTornadoVMBytecodes(TornadoVMBytecodeBuilder bytecodes, TornadoGraph graph, int[] nodeIds, BitSet[] deps, long offset, long bufferBatchSize, long nThreads, int id, boolean singleContext) {
+    private static void scheduleAndEmitTornadoVMBytecodes(TornadoVMBytecodeBuilder bytecodes, TornadoGraph graph, int[] nodeIds, BitSet[] deps, long offset, long bufferBatchSize, long nThreads,
+            int id, boolean singleContext) {
         final BitSet scheduled = new BitSet(deps.length);
         scheduled.clear();
         final BitSet nodes = new BitSet(graph.getValid().length());
@@ -208,8 +214,8 @@ public class TornadoVMGraphCompiler {
                             try {
                                 bytecodes.emitAsyncNode(asyncNode, asyncNode.getContext().getDeviceIndex(), (deps[i].isEmpty()) ? -1 : depLists[i], offset, bufferBatchSize, nThreads);
                             } catch (BufferOverflowException e) {
-                                throw new TornadoRuntimeException("[ERROR] Buffer Overflow exception. Use -Dtornado.tvm.maxbytecodesize=<value> with value > "
-                                        + TornadoVMBytecodeBuilder.MAX_TORNADO_VM_BYTECODE_SIZE + " to increase the buffer code size");
+                                throw new TornadoRuntimeException(
+                                        "[ERROR] Buffer Overflow exception. Use -Dtornado.tvm.maxbytecodesize=<value> with value > " + TornadoVMBytecodeBuilder.MAX_TORNADO_VM_BYTECODE_SIZE + " to increase the buffer code size");
                             }
                         }
 
@@ -229,10 +235,9 @@ public class TornadoVMGraphCompiler {
         }
     }
 
-
     /**
-     * Represents an intermediate graph used during the traversal of a TornadoGraph.
-     * This class provides methods to traverse the intermediate graph and retrieve information about the graph's structure.
+     * Represents an intermediate graph used during the traversal of a TornadoGraph. This class provides methods to traverse the intermediate graph and retrieve information about the graph's
+     * structure.
      */
     private static class IntermediateTornadoGraph {
         private final TornadoGraph graph;
@@ -246,7 +251,8 @@ public class TornadoVMGraphCompiler {
         /**
          * Constructs an IntermediateTornadoGraph with the specified asyncNodes BitSet.
          *
-         * @param asyncNodes The BitSet representing the asynchronous nodes in the graph.
+         * @param asyncNodes
+         *         The BitSet representing the asynchronous nodes in the graph.
          */
         public IntermediateTornadoGraph(BitSet asyncNodes, TornadoGraph graph) {
             this.graph = graph;

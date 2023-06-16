@@ -609,6 +609,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         final ContextNode contextNode = (ContextNode) graph.getNode(deviceContexts.nextSetBit(0));
         contextNode.setDeviceIndex(meta().getDeviceIndex());
         executionContext.setDevice(meta().getDeviceIndex(), meta().getLogicDevice());
+        executionContext.nullContexts(meta().getDeviceIndex());
     }
 
     /**
@@ -623,14 +624,18 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         buffer.limit(hlBuffer.position());
 
         final TornadoGraph tornadoGraph = TornadoGraphBuilder.buildGraph(executionContext, buffer); // pro
+        //        tornadoGraph.dumpTornadoGraph();
+
         if (setNewDevice) {
+            System.out.println("Setting new device *****");
             updateDeviceContext(tornadoGraph);
         }
 
         // TornadoVM byte-code generation
         TornadoVM tornadoVM = new TornadoVM(executionContext, tornadoGraph, timeProfiler, batchSizeBytes, setNewDevice);
 
-        if (meta().shouldDumpSchedule()) {
+        //        if (meta().shouldDumpSchedule()) {
+        if (false) {
             executionContext.dumpExecutionContextMeta();
             tornadoGraph.dumpTornadoGraph();
             Arrays.stream(tornadoVM.getTornadoVMBytecodes()).forEach(TornadoVMBytecodeBuilder::dump);
@@ -660,7 +665,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
      */
     private CompileInfo extractCompileInfo() {
         if (result == null && isLastDeviceListEmpty()) {
-            System.out.println("Com1");
             //            executionContext.setInvalidContext(0);
             return COMPILE_ONLY;
         } else if (result != null && !isLastDeviceListEmpty() && !(compareDevices(executionContext.getLastDevices(), meta().getLogicDevice()))) {

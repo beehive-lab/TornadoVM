@@ -37,18 +37,15 @@ public class TornadoOptions {
     public static final int DEFAULT_DRIVER_INDEX = Integer.parseInt(Tornado.getProperty("tornado.driver", "0"));
     public static final int DEFAULT_DEVICE_INDEX = Integer.parseInt(Tornado.getProperty("tornado.device", "0"));
     /**
-     * Priority of the PTX Backend. The higher the number, the more priority over
-     * the rest of the backends.
+     * Priority of the PTX Backend. The higher the number, the more priority over the rest of the backends.
      */
     public static final int PTX_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.ptx.priority", "0"));
     /**
-     * Priority of the OpenCL Backend. The higher the number, the more priority over
-     * the rest of the backends.
+     * Priority of the OpenCL Backend. The higher the number, the more priority over the rest of the backends.
      */
     public static final int OPENCL_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.opencl.priority", "10"));
     /**
-     * Priority of the SPIRV Backend. The higher the number, the more priority over
-     * the rest of the backends.
+     * Priority of the SPIRV Backend. The higher the number, the more priority over the rest of the backends.
      */
     public static final int SPIRV_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.spirv.priority", "11"));
 
@@ -63,15 +60,14 @@ public class TornadoOptions {
     public static final long DEVICE_AVAILABLE_MEMORY = RuntimeUtilities.parseSize(System.getProperty("tornado.device.memory", "1GB"));
 
     /**
-     * Option to enable exceptions for the OpenCL generated code. This is
-     * experimental.
+     * Option to enable exceptions for the OpenCL generated code. This is experimental.
      */
     public static final boolean ENABLE_EXCEPTIONS = Boolean.parseBoolean(System.getProperty("tornado.exceptions", FALSE));
 
     /**
      * Option to print TornadoVM Internal Bytecodes.
      */
-    public static final boolean PRINT_BYTECODES = getBooleanValue("tornado.print.bytecodes", TRUE);
+    public static final boolean PRINT_BYTECODES = getBooleanValue("tornado.print.bytecodes", FALSE);
 
     /**
      * Option to debug dynamic reconfiguration policies.
@@ -81,8 +77,7 @@ public class TornadoOptions {
     public static final boolean DEBUG_POLICY = getBooleanValue("tornado.dynamic.verbose", FALSE);
 
     /**
-     * Option to enable experimental and new option for performing automatic full
-     * reductions.
+     * Option to enable experimental and new option for performing automatic full reductions.
      */
     public static final boolean EXPERIMENTAL_REDUCE = getBooleanValue("tornado.experimental.reduce", TRUE);
 
@@ -124,8 +119,7 @@ public class TornadoOptions {
      */
     public static final String PRINT_SOURCE_DIRECTORY = getProperty("tornado.print.kernel.dir", "");
     /**
-     * Once the internal buffers storing events are full, it will start to circulate
-     * old events and overwrite them with new ones. Default is True.
+     * Once the internal buffers storing events are full, it will start to circulate old events and overwrite them with new ones. Default is True.
      */
     public static final boolean CIRCULAR_EVENTS = Boolean.parseBoolean(getProperty("tornado.circularevents", TRUE));
     /**
@@ -145,8 +139,7 @@ public class TornadoOptions {
      */
     public static final boolean VIRTUAL_DEVICE_ENABLED = getBooleanValue("tornado.virtual.device", FALSE);
     /**
-     * Specifies the virtual device properties file. Default value is
-     * virtual-device.json.
+     * Specifies the virtual device properties file. Default value is virtual-device.json.
      */
     public static final String VIRTUAL_DEVICE_FILE = Tornado.getProperty("tornado.device.desc", "etc/virtual-device-template.json");
     /**
@@ -154,16 +147,13 @@ public class TornadoOptions {
      */
     public static final String PROFILER_DIRECTORY = getProperty("tornado.profiler.dump.dir", "");
     /**
-     * Dump the Control-Flow-Graph with IGV for the compiled-graph after the last
-     * phase in the Low-Tier.
+     * Dump the Control-Flow-Graph with IGV for the compiled-graph after the last phase in the Low-Tier.
      */
     public static final boolean DUMP_LOW_TIER_WITH_IGV = getBooleanValue("tornado.debug.lowtier", FALSE);
 
     /**
-     * In the case of a TornadoVM runtime, JIT compiler or driver failure (OpenCL,
-     * PTX or SPIRV), this option allows users to automatically execute the code
-     * with plain Java if an exception occurs when compiling or running the parallel
-     * code. This option is True by default.
+     * In the case of a TornadoVM runtime, JIT compiler or driver failure (OpenCL, PTX or SPIRV), this option allows users to automatically execute the code with plain Java if an exception occurs when
+     * compiling or running the parallel code. This option is True by default.
      */
     public static final boolean RECOVER_BAILOUT = getBooleanValue("tornado.recover.bailout", TRUE);
 
@@ -172,8 +162,7 @@ public class TornadoOptions {
      */
     public static final boolean LOG_IP = getBooleanValue("tornado.enable.ip.logging", FALSE);
     /**
-     * Option to send the feature extractions and/or profiler logs to a specific
-     * port.
+     * Option to send the feature extractions and/or profiler logs to a specific port.
      */
     public static final String SOCKET_PORT = getProperty("tornado.dump.to.ip", "");
     /**
@@ -181,8 +170,7 @@ public class TornadoOptions {
      */
     public static final int TORNADO_SKETCHER_THREADS = Integer.parseInt(getProperty("tornado.sketcher.threads", "4"));
     /**
-     * It enables automatic discovery and parallelization of loops. Please note that
-     * this option is experimental and may cause issues if enabled.
+     * It enables automatic discovery and parallelization of loops. Please note that this option is experimental and may cause issues if enabled.
      */
     public static final boolean AUTO_PARALLELISATION = getBooleanValue("tornado.parallelise.auto", FALSE);
     /**
@@ -208,13 +196,11 @@ public class TornadoOptions {
      */
     public static final boolean LEVEL_ZERO_SHARED_MEMORY = getBooleanValue("tornado.spirv.levelzero.memoryAlloc.shared", FALSE);
     /**
-     * Use return as a common label and insert the instruction before function
-     * ending.
+     * Use return as a common label and insert the instruction before function ending.
      */
     public static final boolean SPIRV_RETURN_LABEL = getBooleanValue("tornado.spirv.returnlabel", TRUE);
     /**
-     * Use the heap and frame index for any direct call invocation inside the
-     * generated SPIRV kernel.
+     * Use the heap and frame index for any direct call invocation inside the generated SPIRV kernel.
      */
     public static final boolean SPIRV_DIRECT_CALL_WITH_LOAD_HEAP = getBooleanValue("tornado.spirv.directcall.heap", FALSE);
     /**
@@ -238,8 +224,7 @@ public class TornadoOptions {
      */
     public static final boolean FAST_MATH_OPTIMIZATIONS = getBooleanValue("tornado.enable.fastMathOptimizations", TRUE);
     /**
-     * It optimizes loads and stores for the SPIRV backend. It uses less virtual
-     * registers. Experimental Feature.
+     * It optimizes loads and stores for the SPIRV backend. It uses less virtual registers. Experimental Feature.
      */
     public static final boolean OPTIMIZE_LOAD_STORE_SPIRV = getBooleanValue("tornado.spirv.loadstore", TRUE);
     /**
@@ -247,20 +232,17 @@ public class TornadoOptions {
      */
     public static final boolean USE_LEVELZERO_THREAD_DISPATCHER_SUGGESTIONS = getBooleanValue("tornado.spirv.levelzero.thread.dispatcher", TRUE);
     /**
-     * Memory Alignment for the Level Zero buffers (shared memory and or device
-     * memory)
+     * Memory Alignment for the Level Zero buffers (shared memory and or device memory)
      */
     public static final int LEVEL_ZERO_BUFFER_ALIGNMENT = getIntValue("tornado.spirv.levelzero.alignment", "64");
 
     /**
-     * Enable/Disable the extended memory allocation mode for the Level Zero
-     * Backend. It is enabled by default.
+     * Enable/Disable the extended memory allocation mode for the Level Zero Backend. It is enabled by default.
      */
     public static final boolean LEVEL_ZERO_EXTENDED_MEMORY_MODE = getBooleanValue("tornado.spirv.levelzero.extended.memory", TRUE);
 
     /**
-     * If enabled, the TornadoVM will substitute the last READ (data transfer from
-     * the Device -> Host) using a blocking call for STREAM OUT.
+     * If enabled, the TornadoVM will substitute the last READ (data transfer from the Device -> Host) using a blocking call for STREAM OUT.
      * <p>
      * This is FALSE by default.
      */
@@ -272,8 +254,7 @@ public class TornadoOptions {
     public static StringBuilder FPGA_BINARIES = System.getProperty("tornado.precompiled.binary", null) != null ? new StringBuilder(System.getProperty("tornado.precompiled.binary", null)) : null;
 
     /**
-     * Option to reuse device buffers every time a task-graph is executed. True by
-     * default.
+     * Option to reuse device buffers every time a task-graph is executed. True by default.
      */
     public static boolean isReusedBuffersEnabled() {
         return getBooleanValue("tornado.reuse.device.buffers", TRUE);
@@ -289,8 +270,7 @@ public class TornadoOptions {
     }
 
     /**
-     * Option for enabling partial loop unrolling. The unroll factor can be
-     * configured to take any integer value of power of 2 and less than 32.
+     * Option for enabling partial loop unrolling. The unroll factor can be configured to take any integer value of power of 2 and less than 32.
      *
      * @return boolean.
      */

@@ -123,7 +123,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
         callWrappers = graphContext.getCallWrappers().clone();
         events = new int[buffer.getInt()][MAX_EVENTS];
         eventsIndexes = new int[events.length];
-        installedCodes = new TornadoInstalledCode[taskCount];
+        installedCodes = new TornadoInstalledCode[graphContext.getTasksForDevice(deviceForInterpreter.getDeviceContext().getDeviceIndex()).size()];
 
         for (int i = 0; i < events.length; i++) {
             Arrays.fill(events[i], -1);
@@ -544,7 +544,6 @@ public class TornadoVMInterpreter extends TornadoLogger {
         //        task.enableDefaultThreadScheduler(graphContext.useDefaultThreadScheduler());
 
         if (gridScheduler != null && gridScheduler.get(task.getId()) != null) {
-            System.out.println("+++Grid on ");
             task.setUseGridScheduler(true);
             task.setGridScheduler(gridScheduler);
         }

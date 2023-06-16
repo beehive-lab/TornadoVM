@@ -17,13 +17,7 @@
  */
 package uk.ac.manchester.tornado.unittests.executor;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
-import java.util.Arrays;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -34,6 +28,11 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.unittests.TestHello;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+
+import java.util.Arrays;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * How to run?
@@ -69,13 +68,14 @@ public class TestExecutor extends TornadoTestBase {
 
         // Select the default device for the execution plan. This is optional: if no
         // device is specified, TornadoVM will launch kernels on the default device.
-        // However, developers could print device information from the default devic.
+        // However, developers could print device information from the default device.
         TornadoDevice defaultDevice = TornadoExecutionPlan.DEFAULT_DEVICE;
 
         // e.g., Query the device name
         String deviceName = defaultDevice.getPhysicalDevice().getDeviceName();
         assertNotNull(deviceName);
 
+        System.out.println(" D e e v i c e  n a m e  :" + deviceName);
         // 4. Add optimizations to the execution plan
         executorPlan.withProfiler(ProfilerMode.SILENT) //
                 .withWarmUp() //
@@ -184,8 +184,7 @@ public class TestExecutor extends TornadoTestBase {
     }
 
     /**
-     * Test to show how to program states of data movement across different
-     * executors. A -> B -> A
+     * Test to show how to program states of data movement across different executors. A -> B -> A
      */
     @Test
     public void test04() {

@@ -170,7 +170,6 @@ public class TornadoExecutionContext {
     }
 
     public void setTask(int index, SchedulableTask task) {
-        System.out.println("SET TASK " + task.getId());
         tasks.set(index, task);
     }
 
@@ -223,14 +222,14 @@ public class TornadoExecutionContext {
         }
     }
 
+    // Active table
+    // CodeChange
     public void setDevice(int index, TornadoAcceleratorDevice device) {
         checkDeviceListSize(index);
-        System.out.println("SET DEVICE EXE");
         devices.set(index, device);
     }
 
     private void assignTask(int index, SchedulableTask task) {
-        System.out.println("ASSS DDDD ");
         String id = task.getId();
         TornadoDevice target = task.getDevice();
         TornadoAcceleratorDevice accelerator;
@@ -250,6 +249,15 @@ public class TornadoExecutionContext {
         }
 
         taskToDevice[index] = deviceIndex;
+    }
+
+    public void nullContexts(int deviceIndex) {
+        for (int i = 0; i < devices.size(); i++) {
+            if (i != deviceIndex) {
+                devices.set(i, null);
+            }
+
+        }
     }
 
     public void assignToDevices() {
@@ -328,6 +336,16 @@ public class TornadoExecutionContext {
 
     public List<TornadoAcceleratorDevice> getDevices() {
         return devices;
+    }
+
+    public List<SchedulableTask> getTasksForDevice(int deviceIndex) {
+        List<SchedulableTask> tasksForDevice = new ArrayList<>();
+        for (SchedulableTask task : tasks) {
+            if (task.getDevice().getDeviceContext().getDeviceIndex() == deviceIndex) {
+                tasksForDevice.add(task);
+            }
+        }
+        return tasksForDevice;
     }
 
     /**

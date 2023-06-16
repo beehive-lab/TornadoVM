@@ -86,9 +86,8 @@ public class TornadoVM extends TornadoLogger {
     }
 
     private void bindBytecodesToInterpreters() {
-        System.out.println("TornadoBytecodeBuilder size " + tornadoVMBytecodes.length);
-        System.out.println("GraphCoctext size device : " + graphContext.getDevices().size());
-        System.out.println("Graph context : " + graphContext.meta().shouldDumpSchedule());
+        //        System.out.println("TornadoBytecodeBuilder size " + tornadoVMBytecodes.length);
+        //        System.out.println("GraphCoctext size device : " + graphContext.getDevices().size());
         int bciD;
         for (int i = 0; i < validContextsSize(graphContext); i++) {
             bciD = validContextsSize(graphContext) < graphContext.getDevices().size() ? i + 1 : i;
