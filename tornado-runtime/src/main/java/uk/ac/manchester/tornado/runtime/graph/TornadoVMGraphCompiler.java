@@ -78,6 +78,7 @@ public class TornadoVMGraphCompiler {
         final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
 
         final IntermediateTornadoGraph intermediateTornadoGraph = new IntermediateTornadoGraph(asyncNodes, graph);
+        intermediateTornadoGraph.traverseIntermediateGraph();
 
         // Generate Context + BEGIN bytecode
         bytecodes[0].begin(1, intermediateTornadoGraph.getTasks().cardinality(), intermediateTornadoGraph.getNumberOfDependencies() + 1);
@@ -135,6 +136,8 @@ public class TornadoVMGraphCompiler {
         final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
 
         final IntermediateTornadoGraph intermediateTornadoGraph = new IntermediateTornadoGraph(asyncNodes, graph);
+
+        intermediateTornadoGraph.traverseIntermediateGraph();
 
         for (int i = 0; i < bytecodes.length; i++) {
 
@@ -262,7 +265,6 @@ public class TornadoVMGraphCompiler {
             this.nodeIds = new int[asyncNodes.cardinality()];
             this.index = 0;
             this.numberOfDependencies = 0;
-            traverseIntermediateGraph();
         }
 
         public BitSet[] getDependencies() {
@@ -296,18 +298,18 @@ public class TornadoVMGraphCompiler {
         }
 
         private static BitSet calculateDependencies(TornadoGraph graph, int i) {
-            final BitSet deps = new BitSet(graph.getValid().length());
+            final BitSet dependencies = new BitSet(graph.getValid().length());
             final AbstractNode node = graph.getNode(i);
             for (AbstractNode input : node.getInputs()) {
                 if (input instanceof ContextOpNode) {
                     if (input instanceof DependentReadNode) {
-                        deps.set(((DependentReadNode) input).getDependent().getId());
+                        dependencies.set(((DependentReadNode) input).getDependent().getId());
                     } else {
-                        deps.set(input.getId());
+                        dependencies.set(input.getId());
                     }
                 }
             }
-            return deps;
+            return dependencies;
         }
 
         public void printDependencyMatrix() {

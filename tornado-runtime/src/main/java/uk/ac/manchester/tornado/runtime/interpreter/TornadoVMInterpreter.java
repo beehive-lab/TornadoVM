@@ -106,8 +106,8 @@ public class TornadoVMInterpreter extends TornadoLogger {
     public TornadoVMInterpreter(TornadoExecutionContext graphContext, TornadoVMBytecodeBuilder bytecode, TornadoProfiler timeProfiler, TornadoAcceleratorDevice deviceForContext, int idx) {
         this.graphContext = graphContext;
         this.timeProfiler = timeProfiler;
-
         this.deviceForInterpreter = graphContext.invalidatedContxtId() == -1 ? graphContext.getDeviceForTask(idx) : graphContext.getDeviceForTask(0);
+
         useDependencies = graphContext.meta().enableOooExecution() || VM_USE_DEPS;
         totalTime = 0;
         invocations = 0;
