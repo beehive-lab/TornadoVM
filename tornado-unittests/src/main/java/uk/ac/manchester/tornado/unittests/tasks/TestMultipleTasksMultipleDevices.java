@@ -31,9 +31,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Testing TornadoVM with multiple independent tasks on different devices. The
- * {@link TaskGraph} contains more than one task. If multiple devices are not
- * specified by the user, then the default device is used.
+ * Testing TornadoVM with multiple independent tasks on different devices. The {@link TaskGraph} contains more than one task. If multiple devices are not specified by the user, then the default device
+ * is used.
  * <p>
  * The user needs to specify the target device for each task as follows:
  * </p>
@@ -48,40 +47,6 @@ import static org.junit.Assert.assertTrue;
  * </code>
  **/
 public class TestMultipleTasksMultipleDevices {
-    @Test
-    public void test() {
-        final int numElements = 8192;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int devices = TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
-
-        IntStream.range(0, numElements).forEach(i -> {
-            a[i] = 30;
-            b[i] = 10;
-        });
-
-        if (devices == 1) {
-            assertTrue("This test needs at least 2 OpenCL-compatible devices.", devices == 1);
-        } else {
-            System.setProperty("tornado.debug", "true");
-            System.setProperty("s0.t0.device", "0:1");
-            System.setProperty("s0.t1.device", "0:0");
-        }
-
-        TaskGraph taskGraph = new TaskGraph("s0")//
-                .task("t0", TestMultipleTasksSingleDevice::task0Initialization, b) //
-                .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, b, a); //
-
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
-
-        for (int i = 0; i < a.length; i++) {
-            assertEquals(10, b[i]);
-            assertEquals(360, a[i]);
-        }
-    }
 
     @Test
     public void testTwoTasksTwoDevices() {
@@ -92,7 +57,7 @@ public class TestMultipleTasksMultipleDevices {
 
         IntStream.range(0, numElements).forEach(i -> {
             a[i] = 30;
-            b[i] = 10;
+            b[i] = 1;
         });
 
         if (devices == 1) {
@@ -102,14 +67,17 @@ public class TestMultipleTasksMultipleDevices {
             System.setProperty("s0.t0.device", "0:1");
             System.setProperty("s0.t1.device", "0:0");
         }
-
+        System.setProperty("s0.t0.device", "0:0");
+        System.setProperty("s0.t1.device", "0:1");
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .task("t0", TestMultipleTasksSingleDevice::task0Initialization, b) //
                 .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
         executionPlan.execute();
 
         for (int i = 0; i < a.length; i++) {
@@ -119,7 +87,7 @@ public class TestMultipleTasksMultipleDevices {
     }
 
     @Test
-    public void testThreeTasksThreeDevices() {
+    public void testThreeTasksTwoDevices() {
         final int numElements = 2048;
         int[] a = new int[numElements];
         int[] b = new int[numElements];
@@ -133,13 +101,13 @@ public class TestMultipleTasksMultipleDevices {
             c[i] = 120;
         });
 
-        if (devices < 3) {
+        if (devices < 2) {
             assertTrue("This test needs at least 2 OpenCL-compatible devices.", devices < 3);
         } else {
             System.setProperty("tornado.debug", "true");
             System.setProperty("s0.t0.device", "0:1");
             System.setProperty("s0.t1.device", "0:0");
-            System.setProperty("s0.t2.device", "0:2");
+            System.setProperty("s0.t2.device", "0:1");
         }
 
         TaskGraph taskGraph = new TaskGraph("s0")//
