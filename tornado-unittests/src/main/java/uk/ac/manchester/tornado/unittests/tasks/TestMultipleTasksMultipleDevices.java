@@ -36,15 +36,15 @@ import static org.junit.Assert.assertTrue;
  * <p>
  * The user needs to specify the target device for each task as follows:
  * </p>
- * <code>
+ * <pre>
  * -Ds0.t0.device=0:0 -Ds0.t0.device=0:1
- * </code>
+ * </pre>
  * <p>
  * How to run?
  * </p>
- * <code>
+ * <pre>
  * tornado-test -V uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices
- * </code>
+ * </pre>
  **/
 public class TestMultipleTasksMultipleDevices {
 
@@ -64,8 +64,8 @@ public class TestMultipleTasksMultipleDevices {
             assertTrue("This test needs at least 2 OpenCL-compatible devices.", devices == 1);
         } else {
             System.setProperty("tornado.debug", "true");
-            System.setProperty("s0.t0.device", "0:1");
-            System.setProperty("s0.t1.device", "0:0");
+            System.setProperty("s0.t0.device", "0:0");
+            System.setProperty("s0.t1.device", "0:1");
         }
         System.setProperty("s0.t0.device", "0:0");
         System.setProperty("s0.t1.device", "0:1");
@@ -102,12 +102,12 @@ public class TestMultipleTasksMultipleDevices {
         });
 
         if (devices < 2) {
-            assertTrue("This test needs at least 2 OpenCL-compatible devices.", devices < 3);
+            assertTrue("This test needs at least 2 OpenCL-compatible devices.", devices < 2);
         } else {
             System.setProperty("tornado.debug", "true");
-            System.setProperty("s0.t0.device", "0:1");
-            System.setProperty("s0.t1.device", "0:0");
-            System.setProperty("s0.t2.device", "0:1");
+            System.setProperty("s0.t0.device", "0:0");
+            System.setProperty("s0.t1.device", "0:1");
+            System.setProperty("s0.t2.device", "0:0");
         }
 
         TaskGraph taskGraph = new TaskGraph("s0")//
