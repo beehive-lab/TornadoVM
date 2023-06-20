@@ -41,6 +41,10 @@ public class TornadoVMBytecodeBuilder {
     private final TornadoVMBytecodeAssembler bitcodeASM;
     private int globalTaskID;
 
+    /**
+     * Constructs a new TornadoVMBytecodeBuilder instance.  Initializes the byte array to hold the bytecode with the maximum bytecode size. Initializes the TornadoVMBytecodeAssembler with the byte
+     * array. Initializes the globalTaskID to 0.
+     */
     public TornadoVMBytecodeBuilder() {
         code = new byte[MAX_TORNADO_VM_BYTECODE_SIZE];
         bitcodeASM = new TornadoVMBytecodeAssembler(code);
@@ -85,7 +89,6 @@ public class TornadoVMBytecodeBuilder {
             bitcodeASM.deallocate(((DeallocateNode) node).getValue().getIndex(), contextID);
         } else if (node instanceof TaskNode) {
             final TaskNode taskNode = (TaskNode) node;
-            ;
             bitcodeASM.launch(globalTaskID, taskNode.getContext().getDeviceIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), dependencyBC, offset, nThreads);
             emitArgList(taskNode);
             incrementGlobalTaskIndex();
@@ -134,13 +137,13 @@ public class TornadoVMBytecodeBuilder {
         /**
          * Constructs a new {@code TornadoVMBytecodeAssembler} instance.
          *
-         * @param code The byte array to hold the assembled bytecode.
+         * @param code
+         *         The byte array to hold the assembled bytecode.
          */
         TornadoVMBytecodeAssembler(byte[] code) {
             buffer = ByteBuffer.wrap(code);
             buffer.order(ByteOrder.LITTLE_ENDIAN);
         }
-
 
         public int position() {
             return buffer.position();
@@ -240,6 +243,9 @@ public class TornadoVMBytecodeBuilder {
             buffer.putInt(index);
         }
 
+        /**
+         * Dumps the assembled bytecode by printing it to the console.
+         */
         public void dump() {
             final int width = 16;
             System.out.printf("code  : capacity = %s, in use = %s   \n", RuntimeUtilities.humanReadableByteCount(buffer.capacity(), true),

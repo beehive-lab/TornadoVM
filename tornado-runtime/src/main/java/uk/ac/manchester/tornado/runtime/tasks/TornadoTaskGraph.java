@@ -623,8 +623,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.limit(hlBuffer.position());
 
-        final TornadoGraph tornadoGraph = TornadoGraphBuilder.buildGraph(executionContext, buffer); // pro
-        //        tornadoGraph.dumpTornadoGraph();
+        final TornadoGraph tornadoGraph = TornadoGraphBuilder.buildGraph(executionContext, buffer);
 
         if (setNewDevice) {
             System.out.println("Setting new device *****");
@@ -634,8 +633,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         // TornadoVM byte-code generation
         TornadoVM tornadoVM = new TornadoVM(executionContext, tornadoGraph, timeProfiler, batchSizeBytes, setNewDevice);
 
-        //        if (meta().shouldDumpSchedule()) {
-        if (false) {
+        if (meta().shouldDumpSchedule()) {
             executionContext.dumpExecutionContextMeta();
             tornadoGraph.dumpTornadoGraph();
             Arrays.stream(tornadoVM.getTornadoVMBytecodes()).forEach(TornadoVMBytecodeBuilder::dump);
@@ -665,14 +663,10 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
      */
     private CompileInfo extractCompileInfo() {
         if (result == null && isLastDeviceListEmpty()) {
-            //            executionContext.setInvalidContext(0);
             return COMPILE_ONLY;
         } else if (result != null && !isLastDeviceListEmpty() && !(compareDevices(executionContext.getLastDevices(), meta().getLogicDevice()))) {
-            System.out.println("Com2");
-
             return COMPILE_AND_UPDATE;
         } else if (updateData) {
-            System.out.println("Com3");
             if (gridScheduler == null) {
 
                 return COMPILE_ONLY;

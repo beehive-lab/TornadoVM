@@ -357,17 +357,16 @@ public class TornadoExecutionContext {
 
     public SchedulableTask getTask(String id) {
         for (SchedulableTask task : tasks) {
-            final String canonicalisedId;
-            if (id.startsWith(getId())) {
-                canonicalisedId = id;
-            } else {
-                canonicalisedId = getId() + "." + id;
-            }
-            if (task.getId().equalsIgnoreCase(canonicalisedId)) {
+            String canonicalId = canonicalizeId(id);
+            if (task.getId().equalsIgnoreCase(canonicalId)) {
                 return task;
             }
         }
         return null;
+    }
+
+    private String canonicalizeId(String id) {
+        return id.startsWith(getId()) ? id : getId() + "." + id;
     }
 
     public TornadoAcceleratorDevice getDeviceForTask(String id) {
