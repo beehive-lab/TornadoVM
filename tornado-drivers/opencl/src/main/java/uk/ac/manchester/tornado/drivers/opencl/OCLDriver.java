@@ -124,7 +124,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
 
     @Override
     public TornadoAcceleratorDevice getDefaultDevice() {
-        return getDefaultBackend().getDeviceContext().asMapping();
+        return flatBackends[0].getDeviceContext().asMapping();
     }
 
     @Override
