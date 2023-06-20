@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2023 APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -22,8 +22,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 package uk.ac.manchester.tornado.runtime.sketcher;
 
@@ -37,7 +35,6 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -69,6 +66,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.runtime.common.OCLTokens;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
@@ -104,28 +102,6 @@ public class TornadoSketcher {
     private static final TimerKey Sketcher = DebugContext.timer("Sketcher");
 
     private static final OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
-
-    private static HashSet<String> openCLTokens = new HashSet<>();
-    static {
-        // FIXME: To be completed
-        openCLTokens.add("kernel");
-        openCLTokens.add("__kernel");
-        openCLTokens.add("__global");
-        openCLTokens.add("global");
-        openCLTokens.add("local");
-        openCLTokens.add("__local");
-        openCLTokens.add("private");
-        openCLTokens.add("__private");
-        openCLTokens.add("half");
-        openCLTokens.add("dot");
-        openCLTokens.add("uniform");
-        openCLTokens.add("pipe");
-        openCLTokens.add("auto");
-        openCLTokens.add("cross");
-        openCLTokens.add("distance");
-        openCLTokens.add("normalize");
-        openCLTokens.add("complex");
-    }
 
     private static boolean cacheContainsSketch(ResolvedJavaMethod method, int driverIndex, int deviceIndex) {
         List<TornadoSketcherCacheEntry> entries = cache.get(method);
@@ -181,7 +157,7 @@ public class TornadoSketcher {
         }
 
         @Override
-        public Sketch call() throws Exception {
+        public Sketch call() {
             try (DebugContext.Scope ignored = getDebugContext().scope("SketchCompiler")) {
                 return buildSketch(request.resolvedMethod, request.providers, request.graphBuilderSuite, request.sketchTier, request.driverIndex, request.deviceIndex);
             } catch (Throwable e) {
@@ -210,7 +186,7 @@ public class TornadoSketcher {
         final StructuredGraph graph = builder.build();
 
         // Check legal Kernel Name
-        if (openCLTokens.contains(resolvedMethod.getName())) {
+        if (OCLTokens.openCLTokens.contains(resolvedMethod.getName())) {
             throw new TornadoRuntimeException("[ERROR] Java method name corresponds to an OpenCL Token. Change the Java method's name: " + resolvedMethod.getName());
         }
 
@@ -229,7 +205,7 @@ public class TornadoSketcher {
             // Compile all non-inlined call-targets into a single compilation-unit
             graph.getInvokes() //
                     .forEach(invoke -> { //
-                        if (openCLTokens.contains(invoke.callTarget().targetMethod().getName())) {
+                        if (OCLTokens.openCLTokens.contains(invoke.callTarget().targetMethod().getName())) {
                             throw new TornadoRuntimeException(
                                     "[ERROR] Java method name corresponds to an OpenCL Token. Change the Java method's name: " + invoke.callTarget().targetMethod().getName());
                         }
@@ -259,13 +235,19 @@ public class TornadoSketcher {
      * Merges the {@param calleeAccesses} into the {@param callerAccesses}. For
      * example, given the two {@link Access} arrays below, a merge will look like:
      *
+     * <p>
      * Caller accesses: NONE, READ, WRITE, NONE, READ_WRITE Callee accesses: READ,
      * WRITE, NONE, READ_WRITE, NONE
+     * </p>
      *
+     * <p>
      * Updated caller accesses: READ, READ_WRITE, WRITE, READ_WRITE, READ_WRITE
+     * </p>
      *
+     * <p>
      * This is needed since caller parameters can have different accesses in a
      * callee.
+     * </p>
      */
     private static void mergeAccesses(Access[] callerAccesses, CallTargetNode callTarget, Access[] calleeAccesses) {
         List<ValueNode> callArgs = callTarget.arguments().snapshot();
