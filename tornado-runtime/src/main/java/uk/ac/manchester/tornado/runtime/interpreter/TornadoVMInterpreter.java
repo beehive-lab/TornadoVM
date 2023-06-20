@@ -92,6 +92,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
 
     private final List<Object> constants;
     private final List<SchedulableTask> tasks;
+    private final List<SchedulableTask> localTaskList;
 
     private final ByteBuffer buffer;
 
@@ -103,10 +104,10 @@ public class TornadoVMInterpreter extends TornadoLogger {
     private final TornadoExecutionContext graphContext;
     private GridScheduler gridScheduler;
 
-    public TornadoVMInterpreter(TornadoExecutionContext graphContext, TornadoVMBytecodeBuilder bytecode, TornadoProfiler timeProfiler, TornadoAcceleratorDevice deviceForContext, int idx) {
+    public TornadoVMInterpreter(TornadoExecutionContext graphContext, TornadoVMBytecodeBuilder bytecode, TornadoProfiler timeProfiler, TornadoAcceleratorDevice deviceForContext) {
         this.graphContext = graphContext;
         this.timeProfiler = timeProfiler;
-        this.deviceForInterpreter = graphContext.invalidatedContxtId() == -1 ? graphContext.getDeviceForTask(idx) : graphContext.getDeviceForTask(0);
+        this.deviceForInterpreter = deviceForContext != null ? deviceForContext : graphContext.getDeviceForTask(0);
 
         useDependencies = graphContext.meta().enableOooExecution() || VM_USE_DEPS;
         totalTime = 0;
@@ -114,7 +115,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
 
         buffer = setupBytecodeBuffer(bytecode);
 
-        debug("loading tornado vm...");
+        debug("init tornadovm interpreter...");
 
         TornadoInternalError.guarantee(buffer.get() == TornadoVMBytecodes.INIT.value(), "invalid code");
 
@@ -123,7 +124,10 @@ public class TornadoVMInterpreter extends TornadoLogger {
         callWrappers = graphContext.getCallWrappers().clone();
         events = new int[buffer.getInt()][MAX_EVENTS];
         eventsIndexes = new int[events.length];
-        installedCodes = new TornadoInstalledCode[graphContext.getTasksForDevice(deviceForInterpreter.getDeviceContext().getDeviceIndex()).size()];
+
+        this.localTaskList = graphContext.getTasksForDevice(deviceForInterpreter.getDeviceContext(), deviceForInterpreter.getDriverIndex());
+
+        installedCodes = new TornadoInstalledCode[localTaskList.size()];
 
         for (int i = 0; i < events.length; i++) {
             Arrays.fill(events[i], -1);
@@ -137,6 +141,17 @@ public class TornadoVMInterpreter extends TornadoLogger {
         globalStates = new GlobalObjectState[objects.size()];
         fetchGlobalStates();
 
+        rewindBufferToBegin();
+
+        constants = graphContext.getConstants();
+        tasks = graphContext.getTasks();
+
+        debug("%s - interpreter ready to go", graphContext.getId());
+        buffer.mark();
+
+    }
+
+    private void rewindBufferToBegin() {
         byte op = buffer.get();
         while (op != TornadoVMBytecodes.BEGIN.value()) {
             TornadoInternalError.guarantee(op == TornadoVMBytecodes.CONTEXT.value(), "invalid code: 0x%x", op);
@@ -148,13 +163,6 @@ public class TornadoVMInterpreter extends TornadoLogger {
             debug("loaded in %.9f s", (t1 - t0) * 1e-9);
             op = buffer.get();
         }
-
-        constants = graphContext.getConstants();
-        tasks = graphContext.getTasks();
-
-        debug("%s - interpreter ready to go", graphContext.getId());
-        buffer.mark();
-
     }
 
     private ByteBuffer setupBytecodeBuffer(TornadoVMBytecodeBuilder bytecode) {
@@ -520,6 +528,10 @@ public class TornadoVMInterpreter extends TornadoLogger {
         }
     }
 
+    private int globalToLocalTaskIndex(int taskIndex) {
+        return localTaskList.indexOf(tasks.get(taskIndex)) == -1 ? 0 : localTaskList.indexOf(tasks.get(taskIndex));
+    }
+
     private ExecutionInfo compileTaskFromBytecodeToBinary(final int callWrapperIndex, final int numArgs, final int eventList, final int taskIndex, final long batchThreads) {
 
         if (deviceForInterpreter.getDeviceContext().wasReset() && finishedWarmup) {
@@ -536,19 +548,19 @@ public class TornadoVMInterpreter extends TornadoLogger {
         // Check if a different batch size was used for the same kernel. If true, then
         // the kernel needs to be recompiled.
 
-        if (!shouldCompile(installedCodes[taskIndex]) && task.getBatchThreads() != 0 && task.getBatchThreads() != batchThreads) {
-            installedCodes[taskIndex].invalidate();
+        if (!shouldCompile(installedCodes[globalToLocalTaskIndex(taskIndex)]) && task.getBatchThreads() != 0 && task.getBatchThreads() != batchThreads) {
+            installedCodes[globalToLocalTaskIndex(taskIndex)].invalidate();
         }
         // Set the batch size in the task information
         task.setBatchThreads(batchThreads);
-        //        task.enableDefaultThreadScheduler(graphContext.useDefaultThreadScheduler());
+        task.enableDefaultThreadScheduler(graphContext.useDefaultThreadScheduler());
 
         if (gridScheduler != null && gridScheduler.get(task.getId()) != null) {
             task.setUseGridScheduler(true);
             task.setGridScheduler(gridScheduler);
         }
 
-        if (shouldCompile(installedCodes[taskIndex])) {
+        if (shouldCompile(installedCodes[globalToLocalTaskIndex(taskIndex)])) {
             task.mapTo(deviceForInterpreter);
             try {
                 task.attachProfiler(timeProfiler);
@@ -561,7 +573,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
                 if (doUpdate) {
                     task.forceCompilation();
                 }
-                installedCodes[taskIndex] = deviceForInterpreter.installCode(task);
+                installedCodes[globalToLocalTaskIndex(taskIndex)] = deviceForInterpreter.installCode(task);
                 profilerUpdateForPreCompiledTask(task);
                 doUpdate = false;
             } catch (TornadoBailoutRuntimeException e) {
@@ -590,13 +602,13 @@ public class TornadoVMInterpreter extends TornadoLogger {
         KernelArgs callWrapper = info.callWrapper;
         int[] waitList = info.waitList;
 
-        if (installedCodes[taskIndex] == null) {
+        if (installedCodes[globalToLocalTaskIndex(taskIndex)] == null) {
             // After warming-up, it is possible to get a null pointer in the task-cache due
             // to lazy compilation for FPGAs. In tha case, we check again the code cache.
-            installedCodes[taskIndex] = deviceForInterpreter.getCodeFromCache(task);
+            installedCodes[globalToLocalTaskIndex(taskIndex)] = deviceForInterpreter.getCodeFromCache(task);
         }
 
-        final TornadoInstalledCode installedCode = installedCodes[taskIndex];
+        final TornadoInstalledCode installedCode = installedCodes[globalToLocalTaskIndex(taskIndex)];
         if (installedCode == null) {
             // There was an error during compilation -> bailout
             throw new TornadoBailoutRuntimeException("Code generator Failed");

@@ -80,24 +80,28 @@ public class TornadoVM extends TornadoLogger {
         bindBytecodesToInterpreters();
     }
 
+    /**
+     * Calculates the number of valid contexts in the provided TornadoExecutionContext. A valid context refers to a context that is not null within the list of devices. We do this cause in the
+     * ExecutionContext we don't append devices sequentially, but we place them in the order/index that they are in the driver.
+     *
+     * @param graphContext
+     *         The TornadoExecutionContext to calculate the valid contexts for.
+     * @return The number of valid contexts in the TornadoExecutionContext.
+     */
     private int validContextsSize(TornadoExecutionContext graphContext) {
+        // Count the number of null devices in the context
         int nullDevicesEntries = (int) graphContext.getDevices().stream().filter(device -> device == null).count();
+
+        // Calculate the number of valid contexts by subtracting the number of null devices from the total number of devices
         return graphContext.getDevices().size() - nullDevicesEntries;
     }
 
     private void bindBytecodesToInterpreters() {
-        //        System.out.println("TornadoBytecodeBuilder size " + tornadoVMBytecodes.length);
-        //        System.out.println("GraphCoctext size device : " + graphContext.getDevices().size());
-        int bciD;
+        int indexOfValidContex;
         for (int i = 0; i < validContextsSize(graphContext); i++) {
-            bciD = validContextsSize(graphContext) < graphContext.getDevices().size() ? i + 1 : i;
-            tornadoVMInterpreters[i] = new TornadoVMInterpreter(graphContext, tornadoVMBytecodes[bciD], timeProfiler, graphContext.getDevices().get(i), i);
-
+            indexOfValidContex = validContextsSize(graphContext) < graphContext.getDevices().size() ? i + 1 : i;
+            tornadoVMInterpreters[i] = new TornadoVMInterpreter(graphContext, tornadoVMBytecodes[indexOfValidContex], timeProfiler, graphContext.getDevices().get(i));
         }
-
-        //        IntStream.range(0, validContextsSize(graphContext))
-        //                .forEach(index -> tornadoVMInterpreters[index] = new TornadoVMInterpreter(graphContext, tornadoVMBytecodes[index + 1], timeProfiler, graphContext.getDevices().get(index), index));
-
     }
 
     public TornadoVMBytecodeBuilder[] getTornadoVMBytecodes() {
@@ -109,16 +113,8 @@ public class TornadoVM extends TornadoLogger {
     }
 
     private Event executeInterpretersSingleThreaded() {
-        if (graphContext.invalidatedContxtId() == -1) {
-            for (TornadoVMInterpreter tornadoVMInterpreter : tornadoVMInterpreters) {
-                tornadoVMInterpreter.execute(false);
-            }
-        } else {
-            for (int i = 0; i < graphContext.getDevices().size(); i++) {
-                if (i != graphContext.invalidatedContxtId()) {
-                    tornadoVMInterpreters[i].execute(false);
-                }
-            }
+        for (int i = 0; i < validContextsSize(graphContext); i++) {
+            tornadoVMInterpreters[i].execute(false);
         }
         return new EmptyEvent();
     }

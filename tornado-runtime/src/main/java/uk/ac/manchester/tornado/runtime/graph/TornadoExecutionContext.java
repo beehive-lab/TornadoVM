@@ -25,6 +25,7 @@
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
@@ -56,7 +57,6 @@ public class TornadoExecutionContext {
 
     private final int MAX_TASKS = 256;
     private final int INITIAL_DEVICE_CAPACITY = 16;
-    private int invalidatedCoxtext;
     private final String name;
     private final ScheduleMetaData meta;
     private List<SchedulableTask> tasks;
@@ -79,7 +79,6 @@ public class TornadoExecutionContext {
     private TornadoProfiler profiler;
 
     public TornadoExecutionContext(String id, TornadoProfiler profiler) {
-        this.invalidatedCoxtext = -1;
         name = id;
         meta = new ScheduleMetaData(name);
         tasks = new ArrayList<>();
@@ -222,8 +221,6 @@ public class TornadoExecutionContext {
         }
     }
 
-    // Active table
-    // CodeChange
     public void setDevice(int index, TornadoAcceleratorDevice device) {
         checkDeviceListSize(index);
         devices.set(index, device);
@@ -337,10 +334,11 @@ public class TornadoExecutionContext {
         return devices;
     }
 
-    public List<SchedulableTask> getTasksForDevice(int deviceIndex) {
+    public List<SchedulableTask> getTasksForDevice(TornadoDeviceContext deviceIndex, int driverIndex) {
         List<SchedulableTask> tasksForDevice = new ArrayList<>();
         for (SchedulableTask task : tasks) {
-            if (task.getDevice().getDeviceContext().getDeviceIndex() == deviceIndex) {
+            task.getDevice().getDriverIndex();
+            if (task.getDevice().getDeviceContext() == deviceIndex && task.getDevice().getDriverIndex() == driverIndex) {
                 tasksForDevice.add(task);
             }
         }
@@ -431,14 +429,6 @@ public class TornadoExecutionContext {
 
     public boolean useDefaultThreadScheduler() {
         return defaultScheduler;
-    }
-
-    public int invalidatedContxtId() {
-        return invalidatedCoxtext;
-    }
-
-    public void setInvalidContext(int idx) {
-        invalidatedCoxtext = idx;
     }
 
     public void createImmutableExecutionContext(TornadoExecutionContext executionContext) {

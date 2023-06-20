@@ -115,7 +115,9 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),   
     TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),  
     TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"), 
-    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions"),
+    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices"),
+    TestEntry("uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends"),
 
     ## Test for function calls - We force not to inline methods
     TestEntry(testName="uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions",
