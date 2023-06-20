@@ -28,6 +28,7 @@ import argparse
 import platform
 import tarfile
 import installerConfig as config
+import shutil
 
 try:
     import wget
@@ -137,14 +138,14 @@ class TornadoInstaller():
 
         fileName = self.processFileName(url)
         print("\nChecking dependency: " + fileName)
-        fullPath = self.workDirName + "/" + fileName
+        fullPath = __DIRECTORY_DEPENDENCIES__ + "/" + fileName
 
         if not os.path.exists(fullPath):
             wget.download(url, fullPath)
 
         ## Uncompress file
         tar = tarfile.open(fullPath, 'r:gz')
-        tar.extractall(self.workDirName)
+        tar.extractall(__DIRECTORY_DEPENDENCIES__)
         extractedDirectory = self.getJDKDirectoryName(tar)
         tar.close()
 
@@ -155,7 +156,7 @@ class TornadoInstaller():
             extraPath = "/Maven.app/Contents"
 
         ## Update env-variables
-        self.env["PATH"].append(currentDirectory + "/" + self.workDirName + "/" + extractedDirectory + extraPath + "/bin")
+        self.env["PATH"].append(currentDirectory + "/" + __DIRECTORY_DEPENDENCIES__ + "/" + extractedDirectory + extraPath + "/bin")
 
     def getJDKDirectoryName(self, tar):
         extractedNames = tar.getnames()[1].split("/")
