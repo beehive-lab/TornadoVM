@@ -73,11 +73,12 @@ public class TornadoVMGraphCompiler {
         TornadoVMBytecodeBuilder[] bytecodes = new TornadoVMBytecodeBuilder[1];
         final boolean isSingleContext = true;
         bytecodes[0] = new TornadoVMBytecodeBuilder();
+        Tornado.debug("Compiling bytecodes for a single device...");
 
-        Tornado.debug("Single context/interpreter compilation");
         final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
 
         final IntermediateTornadoGraph intermediateTornadoGraph = new IntermediateTornadoGraph(asyncNodes, graph);
+
         intermediateTornadoGraph.traverseIntermediateGraph();
 
         // Generate Context + BEGIN bytecode
@@ -125,11 +126,17 @@ public class TornadoVMGraphCompiler {
             intermediateTornadoGraph.printDependencyMatrix();
         }
 
+        if (context.meta().shouldDumpSchedule()) {
+            intermediateTornadoGraph.printDependencyMatrix();
+        }
+
         return bytecodes;
     }
 
     private static TornadoVMBytecodeBuilder[] compileMultiContextTornadoGraphToTornadoBytecodes(TornadoGraph graph, TornadoExecutionContext context) {
         TornadoVMBytecodeBuilder[] bytecodes = new TornadoVMBytecodeBuilder[context.getValidContextSize()];
+
+        Tornado.debug("Compiling bytecodes for multiple devices...");
 
         Arrays.fill(bytecodes, new TornadoVMBytecodeBuilder());
 
