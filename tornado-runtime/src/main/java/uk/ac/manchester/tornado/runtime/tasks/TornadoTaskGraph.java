@@ -626,7 +626,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         final TornadoGraph tornadoGraph = TornadoGraphBuilder.buildGraph(executionContext, buffer);
 
         if (setNewDevice) {
-            System.out.println("Setting new device *****");
             updateDeviceContext(tornadoGraph);
         }
 

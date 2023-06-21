@@ -101,11 +101,11 @@ public class TornadoVMInterpreter extends TornadoLogger {
     private final TornadoProfiler timeProfiler;
     private boolean finishedWarmup;
     private boolean doUpdate;
-    private final TornadoExecutionContext graphContext;
+    private final TornadoExecutionContext executionContext;
     private GridScheduler gridScheduler;
 
     public TornadoVMInterpreter(TornadoExecutionContext graphContext, TornadoVMBytecodeBuilder bytecode, TornadoProfiler timeProfiler, TornadoAcceleratorDevice deviceForContext) {
-        this.graphContext = graphContext;
+        this.executionContext = graphContext;
         this.timeProfiler = timeProfiler;
         this.deviceForInterpreter = deviceForContext != null ? deviceForContext : graphContext.getDeviceForTask(0);
 
@@ -125,7 +125,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
         events = new int[buffer.getInt()][MAX_EVENTS];
         eventsIndexes = new int[events.length];
 
-        this.localTaskList = graphContext.getTasksForDevice(deviceForInterpreter.getDeviceContext(), deviceForInterpreter.getDriverIndex());
+        localTaskList = graphContext.getTasksForDevice(deviceForInterpreter.getDeviceContext(), deviceForInterpreter.getDriverIndex());
 
         installedCodes = new TornadoInstalledCode[localTaskList.size()];
 
@@ -306,7 +306,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
             invocations++;
         }
 
-        if (graphContext.meta().isDebug()) {
+        if (executionContext.meta().isDebug()) {
             debug("bc: complete elapsed=%.9f s (%d iterations, %.9f s mean)", elapsed, invocations, (totalTime / invocations));
         }
 
@@ -378,17 +378,12 @@ public class TornadoVMInterpreter extends TornadoLogger {
             String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ONCE") + " [Object Hash Code=0x%x] %s on %s, size=%d, offset=%d [event list=%d]",
                     object.hashCode(), object, InterpreterUtilities.debugDeviceBC(deviceForInterpreter), sizeBatch, offset, eventList);
             tornadoVMBytecodeList.append(verbose).append("\n");
-
         }
 
-        List<Integer> allEvents;
-        if (sizeBatch > 0) {
-            // We need to stream-in when using batches, because the
-            // whole data is not copied yet.
-            allEvents = deviceForInterpreter.streamIn(object, sizeBatch, offset, objectState, waitList);
-        } else {
-            allEvents = deviceForInterpreter.ensurePresent(object, objectState, waitList, sizeBatch, offset);
-        }
+        // We need to stream-in when using batches, because the whole data is not copied yet.
+        List<Integer> allEvents = (sizeBatch > 0)
+                ? deviceForInterpreter.streamIn(object, sizeBatch, offset, objectState, waitList)
+                : deviceForInterpreter.ensurePresent(object, objectState, waitList, sizeBatch, offset);
 
         resetEventIndexes(eventList);
 
@@ -528,6 +523,13 @@ public class TornadoVMInterpreter extends TornadoLogger {
         }
     }
 
+    /**
+     * Converts a global task index to a corresponding local task index within the local task list. This is inorder to preserve the original task list.
+     *
+     * @param taskIndex
+     *         The global task index to convert.
+     * @return The corresponding local task index, or 0 if the task is not found in the local task list.
+     */
     private int globalToLocalTaskIndex(int taskIndex) {
         return localTaskList.indexOf(tasks.get(taskIndex)) == -1 ? 0 : localTaskList.indexOf(tasks.get(taskIndex));
     }
@@ -538,7 +540,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
             throw new TornadoFailureException("[ERROR] reset() was called after warmup()");
         }
 
-        boolean redeployOnDevice = graphContext.redeployOnDevice();
+        boolean redeployOnDevice = executionContext.redeployOnDevice();
 
         final KernelArgs callWrapper = resolveCallWrapper(callWrapperIndex, numArgs, callWrappers, deviceForInterpreter, redeployOnDevice);
 
@@ -553,7 +555,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
         }
         // Set the batch size in the task information
         task.setBatchThreads(batchThreads);
-        task.enableDefaultThreadScheduler(graphContext.useDefaultThreadScheduler());
+        task.enableDefaultThreadScheduler(executionContext.useDefaultThreadScheduler());
 
         if (gridScheduler != null && gridScheduler.get(task.getId()) != null) {
             task.setUseGridScheduler(true);
@@ -687,9 +689,9 @@ public class TornadoVMInterpreter extends TornadoLogger {
         }
 
         TaskMetaData metadata;
-        if (task.meta() instanceof TaskMetaData) {
+        try {
             metadata = (TaskMetaData) task.meta();
-        } else {
+        } catch (ClassCastException e) {
             throw new TornadoRuntimeException("task.meta is not instanceof TaskMetadata");
         }
 
@@ -697,24 +699,19 @@ public class TornadoVMInterpreter extends TornadoLogger {
         metadata.attachProfiler(timeProfiler);
         metadata.setGridScheduler(gridScheduler);
 
-        int lastEvent;
         try {
-            if (useDependencies) {
-                lastEvent = installedCode.launchWithDependencies(callWrapper, bufferAtomics, metadata, batchThreads, waitList);
-            } else {
-                lastEvent = installedCode.launchWithoutDependencies(callWrapper, bufferAtomics, metadata, batchThreads);
-            }
+            int lastEvent = useDependencies
+                    ? installedCode.launchWithDependencies(callWrapper, bufferAtomics, metadata, batchThreads, waitList)
+                    : installedCode.launchWithoutDependencies(callWrapper, bufferAtomics, metadata, batchThreads);
 
             resetEventIndexes(eventList);
-
+            return lastEvent;
         } catch (Exception e) {
-            String re = e.toString();
             if (Tornado.DEBUG) {
                 e.printStackTrace();
             }
-            throw new TornadoBailoutRuntimeException("Bailout from LAUNCH Bytecode: \nReason: " + re, e);
+            throw new TornadoBailoutRuntimeException("Bailout from LAUNCH Bytecode: \nReason: " + e.toString(), e);
         }
-        return lastEvent;
     }
 
     private void executeDependency(StringBuilder tornadoVMBytecodeList, int lastEvent, int eventList) {
@@ -742,7 +739,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
     }
 
     private void throwError(byte op) {
-        if (graphContext.meta().isDebug()) {
+        if (executionContext.meta().isDebug()) {
             debug("bc: invalid op 0x%x(%d)", op, op);
         }
         throw new TornadoRuntimeException("[ERROR] TornadoVM Bytecode not recognized");
@@ -776,7 +773,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
     }
 
     public void dumpEvents() {
-        if (!ENABLE_PROFILING || !graphContext.meta().shouldDumpEvents()) {
+        if (!ENABLE_PROFILING || !executionContext.meta().shouldDumpEvents()) {
             info("profiling and/or event dumping is not enabled");
             return;
         }
@@ -793,7 +790,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
     }
 
     private KernelArgs resolveCallWrapper(int index, int numArgs, KernelArgs[] callWrappers, TornadoAcceleratorDevice device, boolean setNewDevice) {
-        if (graphContext.meta().isDebug() && setNewDevice) {
+        if (executionContext.meta().isDebug() && setNewDevice) {
             debug("Recompiling task on device " + device);
         }
         if (callWrappers[index] == null || setNewDevice) {
@@ -803,7 +800,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
     }
 
     public void dumpProfiles() {
-        if (!graphContext.meta().shouldDumpProfiles()) {
+        if (!executionContext.meta().shouldDumpProfiles()) {
             info("profiling is not enabled");
             return;
         }

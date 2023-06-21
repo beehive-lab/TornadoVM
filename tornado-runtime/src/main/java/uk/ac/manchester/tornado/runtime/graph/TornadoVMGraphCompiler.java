@@ -59,7 +59,7 @@ public class TornadoVMGraphCompiler {
     }
 
     private static boolean isSingleContextCompilation(TornadoExecutionContext context, long batchSize) {
-        boolean isSingleDeviceExecution = context.getDevices().size() == 1;
+        boolean isSingleDeviceExecution = context.getValidContextSize() == 1;
         boolean isBatchEnabled = batchSize != -1;
 
         if (isBatchEnabled && !isSingleDeviceExecution) {
@@ -129,7 +129,7 @@ public class TornadoVMGraphCompiler {
     }
 
     private static TornadoVMBytecodeBuilder[] compileMultiContextTornadoGraphToTornadoBytecodes(TornadoGraph graph, TornadoExecutionContext context) {
-        TornadoVMBytecodeBuilder[] bytecodes = new TornadoVMBytecodeBuilder[context.getDevices().size()];
+        TornadoVMBytecodeBuilder[] bytecodes = new TornadoVMBytecodeBuilder[context.getValidContextSize()];
 
         Arrays.fill(bytecodes, new TornadoVMBytecodeBuilder());
 

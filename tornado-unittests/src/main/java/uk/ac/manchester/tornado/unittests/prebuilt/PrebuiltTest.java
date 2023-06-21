@@ -17,13 +17,7 @@
  */
 package uk.ac.manchester.tornado.unittests.prebuilt;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.Arrays;
-import java.util.stream.IntStream;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -38,12 +32,17 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+import java.util.Arrays;
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
+
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest
+ * tornado-test -V uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest
  * </code>
  */
 public class PrebuiltTest extends TornadoTestBase {
@@ -154,7 +153,7 @@ public class PrebuiltTest extends TornadoTestBase {
     public void testPrebuilt03() {
         assertNotBackend(TornadoVMBackendType.PTX);
 
-        TornadoDevice device = checkSPIRVSupport();
+        TornadoDevice device = getSPIRVSupportedDevice();
 
         if (device == null) {
             assertNotBackend(TornadoVMBackendType.OPENCL);
@@ -205,7 +204,7 @@ public class PrebuiltTest extends TornadoTestBase {
     public void testPrebuilt04() {
         assertNotBackend(TornadoVMBackendType.PTX);
 
-        TornadoDevice device = checkSPIRVSupport();
+        TornadoDevice device = getSPIRVSupportedDevice();
 
         if (device == null) {
             assertNotBackend(TornadoVMBackendType.OPENCL);

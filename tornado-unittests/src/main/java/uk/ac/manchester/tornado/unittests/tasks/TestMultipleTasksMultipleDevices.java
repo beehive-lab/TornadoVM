@@ -18,17 +18,18 @@
 
 package uk.ac.manchester.tornado.unittests.tasks;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
 
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Testing TornadoVM with multiple independent tasks on different devices. The {@link TaskGraph} contains more than one task. If multiple devices are not specified by the user, then the default device
@@ -47,26 +48,37 @@ import static org.junit.Assert.assertTrue;
  * </pre>
  **/
 public class TestMultipleTasksMultipleDevices {
+    private static int devices;
+    private static int numElements;
+    private static int[] a;
+    private static int[] b;
+    private static int[] c;
+    private static int[] d;
 
-    @Test
-    public void testTwoTasksTwoDevices() {
-        final int numElements = 8192;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int devices = TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
+    @BeforeClass
+    public static void setUpBeforeClass() {
+        devices = TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
+        numElements = 8192;
+
+        if (devices < 2) {
+            throw new TornadoVMMultiDeviceNotSupported("This test needs at least 2 devices in the current backend.");
+        }
+
+        a = new int[numElements];
+        b = new int[numElements];
+        c = new int[numElements];
+        d = new int[numElements];
 
         IntStream.range(0, numElements).forEach(i -> {
             a[i] = 30;
             b[i] = 1;
+            c[i] = 120;
         });
 
-        if (devices == 1) {
-            assertTrue("This test needs at least 2 OpenCL-compatible devices.", devices == 1);
-        } else {
-            System.setProperty("tornado.debug", "true");
-            System.setProperty("s0.t0.device", "0:0");
-            System.setProperty("s0.t1.device", "0:1");
-        }
+    }
+
+    @Test
+    public void testTwoTasksTwoDevices() {
         System.setProperty("s0.t0.device", "0:0");
         System.setProperty("s0.t1.device", "0:1");
         TaskGraph taskGraph = new TaskGraph("s0")//
@@ -88,27 +100,9 @@ public class TestMultipleTasksMultipleDevices {
 
     @Test
     public void testThreeTasksTwoDevices() {
-        final int numElements = 2048;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
-        int[] d = new int[numElements];
-        int devices = TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
-
-        IntStream.range(0, numElements).forEach(i -> {
-            a[i] = 30;
-            b[i] = 10;
-            c[i] = 120;
-        });
-
-        if (devices < 2) {
-            assertTrue("This test needs at least 2 OpenCL-compatible devices.", devices < 2);
-        } else {
-            System.setProperty("tornado.debug", "true");
-            System.setProperty("s0.t0.device", "0:0");
-            System.setProperty("s0.t1.device", "0:1");
-            System.setProperty("s0.t2.device", "0:0");
-        }
+        System.setProperty("s0.t0.device", "0:0");
+        System.setProperty("s0.t1.device", "0:1");
+        System.setProperty("s0.t2.device", "0:0");
 
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c) //

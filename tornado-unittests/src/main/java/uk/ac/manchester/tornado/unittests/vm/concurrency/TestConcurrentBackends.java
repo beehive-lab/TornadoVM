@@ -24,12 +24,12 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
 import uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice;
 
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class TestConcurrentBackends {
 
@@ -40,7 +40,11 @@ public class TestConcurrentBackends {
     @BeforeClass
     public static void setUp() {
         int drivers = TornadoRuntime.getTornadoRuntime().getNumDrivers();
-        assertTrue("This test needs at least 2 backends enabled", drivers >= 2);
+
+        if (drivers < 2) {
+            throw new TornadoVMMultiDeviceNotSupported("This test needs at least 2 backends with at least 1 device enabled");
+
+        }
 
         a = new int[NUM_ELEMENTS];
         b = new int[NUM_ELEMENTS];

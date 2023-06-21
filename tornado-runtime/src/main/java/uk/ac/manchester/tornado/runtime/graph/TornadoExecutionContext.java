@@ -267,6 +267,27 @@ public class TornadoExecutionContext {
         }
     }
 
+    /*_
+     * Calculates the number of valid contexts in the provided TornadoExecutionContext. A valid context refers to a
+     * context that is not null within the list of devices. This behavior caused in the ExecutionContext that does not
+     * append devices sequentially, but they are placed  in the order/index that they are in the driver.
+     * Example of device table:
+     * Device Table:
+     *      [0]: null
+     *      [1]: null
+     *      [2]:  [Intel(R) FPGA Emulation Platform for OpenCL(TM)] -- Intel(R) FPGA Emulation Device
+     * @param graphContext
+     *         The TornadoExecutionContext to calculate the valid contexts for.
+     * @return The number of valid contexts in the TornadoExecutionContext.
+     */
+    public int getValidContextSize() {
+        // Count the number of null devices in the context
+        int nullDevicesEntries = (int) getDevices().stream().filter(device -> device == null).count();
+
+        // Calculate the number of valid contexts by subtracting the number of null devices from the total number of devices
+        return getDevices().size() - nullDevicesEntries;
+    }
+
     public TornadoDevice getDeviceFirstTask() {
         return tasks.get(0).getDevice();
     }
