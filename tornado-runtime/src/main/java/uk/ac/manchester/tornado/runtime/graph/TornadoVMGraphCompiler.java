@@ -74,7 +74,7 @@ public class TornadoVMGraphCompiler {
         final boolean isSingleContext = true;
         bytecodes[0] = new TornadoVMBytecodeBuilder();
 
-        Tornado.debug("Single context/interpreter            compilation");
+        Tornado.debug("Single context/interpreter compilation");
         final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
 
         final IntermediateTornadoGraph intermediateTornadoGraph = new IntermediateTornadoGraph(asyncNodes, graph);

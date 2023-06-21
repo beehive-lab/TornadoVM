@@ -492,12 +492,10 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             if (task instanceof CompilableTask) {
                 ResolvedJavaMethod method = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(((CompilableTask) task).getMethod());
                 if (!meta().getLogicDevice().getDeviceContext().isCached(method.getName(), task)) {
-                    System.out.println("Update inner for task");
                     updateInner(i, executionContext.getTask(i));
                 }
             }
         }
-        System.out.println("old device :  " + oldDevice.getDeviceContext().getDeviceIndex() + " \n new device :  " + device.getDeviceContext().getDeviceIndex());
 
         // Release locked buffers from the old device and lock them on the new one.
         for (LocalObjectState localState : executionContext.getObjectStates()) {
@@ -518,7 +516,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             i++;
         }
 
-        // 2. Clear the code caches in the TornadoVMInterpreter instance of the TorandoVM
+        // 2. Clear the code caches in every instance of a TornadoVMInterpreter that TornadoVM instantiated
         if (vm != null) {
             vm.clearInstalledCode();
             vm.setCompileUpdate();
@@ -534,8 +532,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         int driverIndex = task.meta().getDriverIndex();
         Providers providers = TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getProviders();
         TornadoSuitesProvider suites = TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getSuitesProvider();
-
-        // logTaskMethodHandle(task);
 
         executionContext.setTask(index, task);
 
@@ -555,9 +551,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         int driverIndex = task.meta().getDriverIndex();
         Providers providers = TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getProviders();
         TornadoSuitesProvider suites = TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getSuitesProvider();
-
-        // logTaskMethodHandle(task);
-
+        
         int index = executionContext.addTask(task);
 
         if (task instanceof CompilableTask) {
@@ -663,31 +657,40 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private CompileInfo extractCompileInfo() {
         if (result == null && isLastDeviceListEmpty()) {
             return COMPILE_ONLY;
-        } else if (result != null && !isLastDeviceListEmpty() && !(compareDevices(executionContext.getLastDevices(), meta().getLogicDevice()))) {
-            return COMPILE_AND_UPDATE;
-        } else if (updateData) {
-            if (gridScheduler == null) {
+        }
 
+        if (result != null && !isLastDeviceListEmpty() && !(compareDevices(executionContext.getLastDevices(), meta().getLogicDevice()))) {
+            return COMPILE_AND_UPDATE;
+        }
+
+        if (updateData) {
+            if (gridScheduler == null || !hasWorkerGridForAllTasks()) {
                 return COMPILE_ONLY;
             }
-            /*
-             * TornadoVM should not recompile if there is a worker grid for each task.
-             * Otherwise, there is a combination of the
-             *
-             * @Parallel API and the Grid Task. The @Parallel task might need the loop bound
-             * updated. TODO This check will no longer be needed once we pass the loop
-             * bounds via the call wrapper instead of constant folding.
-             */
-            for (TaskPackage taskPackage : taskPackages) {
-                if (!gridScheduler.contains(taskGraphName, taskPackage.getId())) {
-                    return COMPILE_ONLY;
-                }
-            }
         }
+
         if (!compareDevices(executionContext.getLastDevices(), meta().getLogicDevice())) {
             return COMPILE_AND_UPDATE;
         }
+
         return NOT_COMPILE_UPDATE;
+    }
+
+    /*
+     * TornadoVM should not recompile if there is a worker grid for each task.
+     * Otherwise, there is a combination of the
+     *
+     * @Parallel API and the Grid Task. The @Parallel task might need the loop bound
+     * updated. TODO This check will no longer be needed once we pass the loop
+     * bounds via the call wrapper instead of constant folding.
+     */
+    private boolean hasWorkerGridForAllTasks() {
+        for (TaskPackage taskPackage : taskPackages) {
+            if (!gridScheduler.contains(taskGraphName, taskPackage.getId())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean compileToTornadoVMBytecode() {
