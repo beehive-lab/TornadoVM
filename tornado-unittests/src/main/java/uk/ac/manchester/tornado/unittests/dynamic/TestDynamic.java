@@ -36,7 +36,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * <p>
  * <code>
- * tornado-test -V uk.ac.manchester.tornado.unittests.dynamic.TestDynamic
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.dynamic.TestDynamic
  * </code>
  * </p>
  */
