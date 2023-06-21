@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2020, 2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,10 +33,10 @@ function getNanoSecTime() {
 app.get('/', function (req, res) {
 	var text = "Hello World from Graal JS! "
 	text += "<br>"
-	text += Java.type('Mandelbrot').getString()
+	text += Java.type('uk.ac.manchester.tornado.examples.polyglot.node.Mandelbrot').getString()
 	text += "<br>"
 	var start = getNanoSecTime()
-	Arrays.toString(Java.type('Mandelbrot').compute())
+	Arrays.toString(Java.type('uk.ac.manchester.tornado.examples.polyglot.node.Mandelbrot').compute())
 	var end = getNanoSecTime()
 	text += "<br>"
 	text += "Total time (s) = " + ( (end - start) * 1E-9)
@@ -51,10 +51,10 @@ app.get('/', function (req, res) {
 app.get('/java', function (req, res) {
 	var text = "Hello World from Graal JS! "
 	text += "<br>"
-	text += Java.type('Mandelbrot').getString()
+	text += Java.type('uk.ac.manchester.tornado.examples.polyglot.node.Mandelbrot').getString()
 	text += "<br>"
 	var start = getNanoSecTime()
-	Arrays.toString(Java.type('Mandelbrot').sequential())
+	Arrays.toString(Java.type('uk.ac.manchester.tornado.examples.polyglot.node.Mandelbrot').sequential())
 	var end = getNanoSecTime()
 	text += "<br>"
 	text += "Total time (s) = " + ( (end - start) * 1E-9)
