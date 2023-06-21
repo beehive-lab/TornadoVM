@@ -17,8 +17,13 @@
  */
 package uk.ac.manchester.tornado.unittests.vm.concurrency;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.Arrays;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -26,10 +31,6 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
 import uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice;
-
-import java.util.Arrays;
-
-import static org.junit.Assert.assertEquals;
 
 public class TestConcurrentBackends {
 

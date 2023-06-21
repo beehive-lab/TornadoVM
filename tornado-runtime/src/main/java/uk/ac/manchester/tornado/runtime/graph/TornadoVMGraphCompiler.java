@@ -25,6 +25,10 @@
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
+import java.nio.BufferOverflowException;
+import java.util.Arrays;
+import java.util.BitSet;
+
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.common.BatchConfiguration;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -34,20 +38,16 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.ContextOpNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.DependentReadNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
 
-import java.nio.BufferOverflowException;
-import java.util.Arrays;
-import java.util.BitSet;
-
 public class TornadoVMGraphCompiler {
     /**
      * Generate TornadoVM byte-code from a Tornado Task Graph.
      *
      * @param graph
-     *         TornadoVM execution Graph.
+     *            TornadoVM execution Graph.
      * @param context
-     *         TornadoVM execution context.
+     *            TornadoVM execution context.
      * @param batchSize
-     *         Batch size
+     *            Batch size
      * @return {@link TornadoVMBytecodeBuilder[]}
      */
     public static TornadoVMBytecodeBuilder[] compile(TornadoGraph graph, TornadoExecutionContext context, long batchSize) {
@@ -217,8 +217,8 @@ public class TornadoVMGraphCompiler {
                             try {
                                 bytecodes.emitAsyncNode(asyncNode, asyncNode.getContext().getDeviceIndex(), (deps[i].isEmpty()) ? -1 : depLists[i], offset, bufferBatchSize, nThreads);
                             } catch (BufferOverflowException e) {
-                                throw new TornadoRuntimeException(
-                                        "[ERROR] Buffer Overflow exception. Use -Dtornado.tvm.maxbytecodesize=<value> with value > " + TornadoVMBytecodeBuilder.MAX_TORNADO_VM_BYTECODE_SIZE + " to increase the buffer code size");
+                                throw new TornadoRuntimeException("[ERROR] Buffer Overflow exception. Use -Dtornado.tvm.maxbytecodesize=<value> with value > "
+                                        + TornadoVMBytecodeBuilder.MAX_TORNADO_VM_BYTECODE_SIZE + " to increase the buffer code size");
                             }
                         }
 
@@ -239,8 +239,9 @@ public class TornadoVMGraphCompiler {
     }
 
     /**
-     * Represents an intermediate graph used during the traversal of a TornadoGraph. This class provides methods to traverse the intermediate graph and retrieve information about the graph's
-     * structure.
+     * Represents an intermediate graph used during the traversal of a TornadoGraph.
+     * This class provides methods to traverse the intermediate graph and retrieve
+     * information about the graph's structure.
      */
     private static class IntermediateTornadoGraph {
         private final TornadoGraph graph;
@@ -255,7 +256,7 @@ public class TornadoVMGraphCompiler {
          * Constructs an IntermediateTornadoGraph with the specified asyncNodes BitSet.
          *
          * @param asyncNodes
-         *         The BitSet representing the asynchronous nodes in the graph.
+         *            The BitSet representing the asynchronous nodes in the graph.
          */
         public IntermediateTornadoGraph(BitSet asyncNodes, TornadoGraph graph) {
             this.graph = graph;

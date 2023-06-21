@@ -18,8 +18,13 @@
 
 package uk.ac.manchester.tornado.unittests.tasks;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.stream.IntStream;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -27,22 +32,21 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
 
-import java.util.stream.IntStream;
-
-import static org.junit.Assert.assertEquals;
-
 /**
- * Testing TornadoVM with multiple independent tasks on different devices. The {@link TaskGraph} contains more than one task. If multiple devices are not specified by the user, then the default device
- * is used.
+ * Testing TornadoVM with multiple independent tasks on different devices. The
+ * {@link TaskGraph} contains more than one task. If multiple devices are not
+ * specified by the user, then the default device is used.
  * <p>
  * The user needs to specify the target device for each task as follows:
  * </p>
+ * 
  * <pre>
  * -Ds0.t0.device=0:0 -Ds0.t0.device=0:1
  * </pre>
  * <p>
  * How to run?
  * </p>
+ * 
  * <pre>
  * tornado-test -V uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices
  * </pre>

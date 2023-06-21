@@ -41,36 +41,41 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.enums.ProfilerMode;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.ProfilerMode;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+
 /**
- * Object to create and optimize an execution plan for running a set of immutable tasks-graphs. An executor plan contains an executor object, which in turn, contains a set of immutable task-graphs.
- * All actions applied to the execution plan affect to all the immutable graphs associated with it.
+ * Object to create and optimize an execution plan for running a set of
+ * immutable tasks-graphs. An executor plan contains an executor object, which
+ * in turn, contains a set of immutable task-graphs. All actions applied to the
+ * execution plan affect to all the immutable graphs associated with it.
  *
  * @since TornadoVM-0.15
  */
 public class TornadoExecutionPlan {
 
     /**
-     * Method to obtain the default device in TornadoVM. The default one corresponds to the device assigned to the driver (backend) with index 0 and device 0.
+     * Method to obtain the default device in TornadoVM. The default one corresponds
+     * to the device assigned to the driver (backend) with index 0 and device 0.
      */
     public static TornadoDevice DEFAULT_DEVICE = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
 
     /**
-     * Method to obtain a specific device using the driver index (backend index) and device index.
+     * Method to obtain a specific device using the driver index (backend index) and
+     * device index.
      *
      * @param driverIndex
-     *         Integer value that identifies the backend to be used.
+     *            Integer value that identifies the backend to be used.
      * @param deviceIndex
-     *         Integer value that identifies the device within the backend to be used.
+     *            Integer value that identifies the device within the backend to be
+     *            used.
      * @return {@link TornadoDevice}
      */
     public static TornadoDevice getDevice(int driverIndex, int deviceIndex) {
@@ -88,18 +93,23 @@ public class TornadoExecutionPlan {
     private boolean disableProfiler;
 
     /**
-     * Create an Execution Plan: Object to create and optimize an execution plan for running a set of immutable tasks-graphs. An executor plan contains an executor object, which in turn, contains a
-     * set of immutable task-graphs. All actions applied to the execution plan affect to all the immutable graphs associated with it.
+     * Create an Execution Plan: Object to create and optimize an execution plan for
+     * running a set of immutable tasks-graphs. An executor plan contains an
+     * executor object, which in turn, contains a set of immutable task-graphs. All
+     * actions applied to the execution plan affect to all the immutable graphs
+     * associated with it.
      *
      * @param immutableTaskGraphs
-     *         {@link ImmutableTaskGraph}
+     *            {@link ImmutableTaskGraph}
      */
     public TornadoExecutionPlan(ImmutableTaskGraph... immutableTaskGraphs) {
         this.tornadoExecutor = new TornadoExecutor(immutableTaskGraphs);
     }
 
     /**
-     * Execute an execution plan. It returns a {@link TornadoExecutionPlan} for further build different optimization after the execution as well as obtain the profiler results.
+     * Execute an execution plan. It returns a {@link TornadoExecutionPlan} for
+     * further build different optimization after the execution as well as obtain
+     * the profiler results.
      *
      * @return {@link TornadoExecutionPlan}
      */
@@ -127,7 +137,8 @@ public class TornadoExecutionPlan {
     }
 
     /**
-     * It invokes the JIT compiler for all immutable tasks-graphs associated to an executor.
+     * It invokes the JIT compiler for all immutable tasks-graphs associated to an
+     * executor.
      *
      * @return {@link TornadoExecutionPlan}
      */
@@ -138,7 +149,8 @@ public class TornadoExecutionPlan {
     }
 
     /**
-     * It selects a specific device for all immutable tasks graphs associated to an executor.
+     * It selects a specific device for all immutable tasks graphs associated to an
+     * executor.
      *
      * @return {@link TornadoExecutionPlan}
      */
@@ -148,10 +160,12 @@ public class TornadoExecutionPlan {
     }
 
     /**
-     * It obtains the device for a specific immutable task-graph. Note that, ideally, different task immutable task-graph could be executed on different devices.
+     * It obtains the device for a specific immutable task-graph. Note that,
+     * ideally, different task immutable task-graph could be executed on different
+     * devices.
      *
      * @param immutableTaskGraphIndex
-     *         Index of a specific immutable task-graph
+     *            Index of a specific immutable task-graph
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoDevice getDevice(int immutableTaskGraphIndex) {
@@ -159,12 +173,14 @@ public class TornadoExecutionPlan {
     }
 
     /**
-     * Mark all device buffers that correspond to the current execution plan as free in order for the TornadoVM runtime system to reuse those buffers and avoid continuous device memory deallocation
-     * and allocation.
+     * Mark all device buffers that correspond to the current execution plan as free
+     * in order for the TornadoVM runtime system to reuse those buffers and avoid
+     * continuous device memory deallocation and allocation.
      *
      * <p>
-     * Note that, in this context, "free device memory" means the TornadoVM runtime system marks device buffers to be reusable, thus, for the runtime system, device buffers are no longer linked to the
-     * current execution plan.
+     * Note that, in this context, "free device memory" means the TornadoVM runtime
+     * system marks device buffers to be reusable, thus, for the runtime system,
+     * device buffers are no longer linked to the current execution plan.
      * </p>
      *
      * @return {@link TornadoExecutionPlan}
@@ -175,11 +191,12 @@ public class TornadoExecutionPlan {
     }
 
     /**
-     * Use a {@link GridScheduler} for thread dispatch. The same GridScheduler will be applied to all tasks within the executor. Note that the grid-scheduler API can specify all workers for each
-     * task-graph.
+     * Use a {@link GridScheduler} for thread dispatch. The same GridScheduler will
+     * be applied to all tasks within the executor. Note that the grid-scheduler API
+     * can specify all workers for each task-graph.
      *
      * @param gridScheduler
-     *         {@link GridScheduler}
+     *            {@link GridScheduler}
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withGridScheduler(GridScheduler gridScheduler) {
@@ -198,12 +215,13 @@ public class TornadoExecutionPlan {
     }
 
     /**
-     * Use the TornadoVM dynamic reconfiguration (akka live task migration) across visible devices.
+     * Use the TornadoVM dynamic reconfiguration (akka live task migration) across
+     * visible devices.
      *
      * @param policy
-     *         {@link Policy}
+     *            {@link Policy}
      * @param mode
-     *         {@link DRMode}
+     *            {@link DRMode}
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withDynamicReconfiguration(Policy policy, DRMode mode) {
@@ -213,11 +231,13 @@ public class TornadoExecutionPlan {
     }
 
     /**
-     * Enable batch processing. TornadoVM will split the iteration space in smaller batches (with batch size specified by the user). This is used mainly when users want to execute big data
-     * applications that do not fit on the device's global memory.
+     * Enable batch processing. TornadoVM will split the iteration space in smaller
+     * batches (with batch size specified by the user). This is used mainly when
+     * users want to execute big data applications that do not fit on the device's
+     * global memory.
      *
      * @param batchSize
-     *         String in the format a number + "MB" Example "512MB".
+     *            String in the format a number + "MB" Example "512MB".
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withBatch(String batchSize) {
@@ -226,10 +246,12 @@ public class TornadoExecutionPlan {
     }
 
     /**
-     * Enables the profiler. The profiler includes options to query device kernel time, data transfers and compilation at different stages (JIT, driver compilation, Graal, etc).
+     * Enables the profiler. The profiler includes options to query device kernel
+     * time, data transfers and compilation at different stages (JIT, driver
+     * compilation, Graal, etc).
      *
      * @param profilerMode
-     *         {@link ProfilerMode}
+     *            {@link ProfilerMode}
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withProfiler(ProfilerMode profilerMode) {
@@ -249,8 +271,10 @@ public class TornadoExecutionPlan {
     }
 
     /**
-     * Reset the execution context for the current execution plan. The TornadoVM runtime system will clean the code cache and all events associated with the current execution. It resets the internal
-     * GPU/FPGA/CPU execution context to its default values.
+     * Reset the execution context for the current execution plan. The TornadoVM
+     * runtime system will clean the code cache and all events associated with the
+     * current execution. It resets the internal GPU/FPGA/CPU execution context to
+     * its default values.
      *
      * @return {@link TornadoExecutionPlan}
      */
@@ -302,7 +326,7 @@ public class TornadoExecutionPlan {
          * For all task-graphs contained in an Executor, update the device
          *
          * @param device
-         *         {@link TornadoDevice} object
+         *            {@link TornadoDevice} object
          */
         void setDevice(TornadoDevice device) {
             immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.setDevice(device));

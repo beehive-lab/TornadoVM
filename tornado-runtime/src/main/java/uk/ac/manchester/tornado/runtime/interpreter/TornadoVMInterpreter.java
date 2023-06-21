@@ -23,6 +23,20 @@
  */
 package uk.ac.manchester.tornado.runtime.interpreter;
 
+import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_VM_FLUSH;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.WorkerGrid;
@@ -54,23 +68,10 @@ import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_VM_FLUSH;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
-
 /**
- * TornadoVMInterpreter: it is a bytecode interpreter (Tornado bytecodes), a memory manager for all devices (FPGAs, GPUs and multicore that follows the OpenCL programming model), and a JIT compiler
- * from Java bytecode to OpenCL.
+ * TornadoVMInterpreter: it is a bytecode interpreter (Tornado bytecodes), a
+ * memory manager for all devices (FPGAs, GPUs and multicore that follows the
+ * OpenCL programming model), and a JIT compiler from Java bytecode to OpenCL.
  * <p>
  * The JIT compiler extends the Graal JIT Compiler for OpenCL compilation.
  * <p>
@@ -380,9 +381,9 @@ public class TornadoVMInterpreter extends TornadoLogger {
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
 
-        // We need to stream-in when using batches, because the whole data is not copied yet.
-        List<Integer> allEvents = (sizeBatch > 0)
-                ? deviceForInterpreter.streamIn(object, sizeBatch, offset, objectState, waitList)
+        // We need to stream-in when using batches, because the whole data is not copied
+        // yet.
+        List<Integer> allEvents = (sizeBatch > 0) ? deviceForInterpreter.streamIn(object, sizeBatch, offset, objectState, waitList)
                 : deviceForInterpreter.ensurePresent(object, objectState, waitList, sizeBatch, offset);
 
         resetEventIndexes(eventList);
@@ -524,11 +525,13 @@ public class TornadoVMInterpreter extends TornadoLogger {
     }
 
     /**
-     * Converts a global task index to a corresponding local task index within the local task list. This is inorder to preserve the original task list.
+     * Converts a global task index to a corresponding local task index within the
+     * local task list. This is inorder to preserve the original task list.
      *
      * @param taskIndex
-     *         The global task index to convert.
-     * @return The corresponding local task index, or 0 if the task is not found in the local task list.
+     *            The global task index to convert.
+     * @return The corresponding local task index, or 0 if the task is not found in
+     *         the local task list.
      */
     private int globalToLocalTaskIndex(int taskIndex) {
         return localTaskList.indexOf(tasks.get(taskIndex)) == -1 ? 0 : localTaskList.indexOf(tasks.get(taskIndex));
@@ -700,8 +703,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
         metadata.setGridScheduler(gridScheduler);
 
         try {
-            int lastEvent = useDependencies
-                    ? installedCode.launchWithDependencies(callWrapper, bufferAtomics, metadata, batchThreads, waitList)
+            int lastEvent = useDependencies ? installedCode.launchWithDependencies(callWrapper, bufferAtomics, metadata, batchThreads, waitList)
                     : installedCode.launchWithoutDependencies(callWrapper, bufferAtomics, metadata, batchThreads);
 
             resetEventIndexes(eventList);
