@@ -145,7 +145,6 @@ public class TestsVirtualLayer extends TornadoTestBase {
         // new
         // execution.
         executionPlan.withDevice(driver.getDevice(1));
-        System.out.println("Device sss" + driver.getDevice(1).getDeviceName());
         executionPlan.execute();
 
         for (int i = 0; i < numElements; i++) {
