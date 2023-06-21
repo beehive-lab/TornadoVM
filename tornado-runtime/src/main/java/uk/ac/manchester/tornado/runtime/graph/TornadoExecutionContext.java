@@ -66,7 +66,7 @@ public class TornadoExecutionContext {
     private List<LocalObjectState> objectState;
     private List<TornadoAcceleratorDevice> devices;
     private final KernelArgs[] callWrappers;
-    private int[] taskToDevice;
+    private int[] taskToDeviceReferenceMap;
     private int nextTask;
 
     private Set<TornadoAcceleratorDevice> lastDevices;
@@ -88,12 +88,12 @@ public class TornadoExecutionContext {
         objectState = new ArrayList<>();
         devices = new ArrayList<>(INITIAL_DEVICE_CAPACITY);
         callWrappers = new KernelArgs[MAX_TASKS];
-        taskToDevice = new int[MAX_TASKS];
-        Arrays.fill(taskToDevice, -1);
+        taskToDeviceReferenceMap = new int[MAX_TASKS];
+        Arrays.fill(taskToDeviceReferenceMap, -1);
         nextTask = 0;
         lastDevices = new HashSet<>();
         this.profiler = profiler;
-        this.independentTasks = areTasksIndependent();
+        this.independentTasks = checkTaskIndependence();
     }
 
     public KernelArgs[] getCallWrappers() {
@@ -181,11 +181,11 @@ public class TornadoExecutionContext {
     }
 
     public int getDeviceIndexForTask(int index) {
-        return taskToDevice[index];
+        return taskToDeviceReferenceMap[index];
     }
 
     public TornadoAcceleratorDevice getDeviceForTask(int index) {
-        return getDevice(taskToDevice[index]);
+        return getDevice(taskToDeviceReferenceMap[index]);
     }
 
     public TornadoAcceleratorDevice getDevice(int index) {
@@ -202,14 +202,22 @@ public class TornadoExecutionContext {
         }
     }
 
-    public void mapAllTo(TornadoDevice mapping) {
-        if (mapping instanceof TornadoAcceleratorDevice) {
+    /**
+     * Maps all tasks to a specific TornadoDevice.
+     *
+     * @param tornadoDevice
+     *            The TornadoDevice to which all tasks will be mapped.
+     * @throws RuntimeException
+     *             if the current device is not supported.
+     */
+    public void mapAllTasksToSingleDevice(TornadoDevice tornadoDevice) {
+        if (tornadoDevice instanceof TornadoAcceleratorDevice) {
             devices.clear();
-            devices.add(0, (TornadoAcceleratorDevice) mapping);
-            apply(task -> task.mapTo(mapping));
-            Arrays.fill(taskToDevice, 0);
+            devices.add(0, (TornadoAcceleratorDevice) tornadoDevice);
+            apply(task -> task.mapTo(tornadoDevice));
+            Arrays.fill(taskToDeviceReferenceMap, 0);
         } else {
-            throw new RuntimeException("Device " + mapping.getClass() + " not supported yet");
+            throw new RuntimeException("Device " + tornadoDevice.getClass() + " not supported yet");
         }
     }
 
@@ -226,7 +234,19 @@ public class TornadoExecutionContext {
         devices.set(index, device);
     }
 
-    private void assignTask(int index, SchedulableTask task) {
+    /**
+     * Assigns a task to a device based on the current task distribution strategies.
+     * Currently, mapAllTo, automatic if independent and parallel vms enabled or
+     * manually override through runtime flags.
+     *
+     * @param index
+     *            The index of the task.
+     * @param task
+     *            The schedulable task to be assigned.
+     * @throws TornadoRuntimeException
+     *             if the target device is not supported.
+     */
+    private void assignTaskToDevice(int index, SchedulableTask task) {
         String id = task.getId();
         TornadoDevice target = task.getDevice();
         TornadoAcceleratorDevice accelerator;
@@ -245,52 +265,59 @@ public class TornadoExecutionContext {
             setDevice(deviceIndex, accelerator);
         }
 
-        taskToDevice[index] = deviceIndex;
+        taskToDeviceReferenceMap[index] = deviceIndex;
     }
 
-    public void nullContexts(int deviceIndex) {
+    /**
+     * Sets all device entries in the device table to null except the specified
+     * device index.
+     *
+     * @param deviceIndex
+     *            The index of the device to exclude from nullification.
+     */
+    public void nullifyDevicesTableExceptAtIndex(int deviceIndex) {
         for (int i = 0; i < devices.size(); i++) {
             if (i != deviceIndex) {
                 devices.set(i, null);
             }
-
         }
     }
 
-    public void assignToDevices() {
+    public void distributeTasksToDevices() {
         if (independentTasks) {
+            // TODO(mikepapdim): This needs more safeguarding and cross backend testing
             for (int i = 0; i < tasks.size(); i++) {
-                assignTask(i, tasks.get(i));
+                assignTaskToDevice(i, tasks.get(i));
             }
         } else {
-            mapAllTo(getDeviceFirstTask());
+            mapAllTasksToSingleDevice(getDeviceOfFirstTask());
         }
     }
 
-    /*
-     * _ Calculates the number of valid contexts in the provided
-     * TornadoExecutionContext. A valid context refers to a context that is not null
-     * within the list of devices. This behavior caused in the ExecutionContext that
-     * does not append devices sequentially, but they are placed in the order/index
-     * that they are in the driver. Example of device table: Device Table: [0]: null
-     * [1]: null [2]: [Intel(R) FPGA Emulation Platform for OpenCL(TM)] -- Intel(R)
-     * FPGA Emulation Device
-     * 
-     * @param graphContext The TornadoExecutionContext to calculate the valid
-     * contexts for.
-     * 
+    /**
+     * Calculates the number of valid contexts. A valid context refers to a context
+     * that is not null within the list of devices. This behavior caused in the
+     * ExecutionContext that does not append devices sequentially, but they are
+     * placed in the order/index to preserve their order in the driver.
+     *
      * @return The number of valid contexts in the TornadoExecutionContext.
      */
     public int getValidContextSize() {
-        // Count the number of null devices in the context
-        int nullDevicesEntries = (int) getDevices().stream().filter(device -> device == null).count();
-
-        // Calculate the number of valid contexts by subtracting the number of null
-        // devices from the total number of devices
-        return getDevices().size() - nullDevicesEntries;
+        // Count the number of null devices in the current context
+        // Example of device table when using device in [2]:
+        // Device Table:
+        // [0]: null
+        // [1]: null
+        // [2]: [Intel(R) FPGA EmulationPlatform for OpenCL(TM)] -- Intel(R) FPGA
+        return (int) getDevices().stream().filter(device -> device != null).count();
     }
 
-    public TornadoDevice getDeviceFirstTask() {
+    /**
+     * Gets the TornadoDevice of the first task.
+     *
+     * @return The TornadoDevice of the first task.
+     */
+    public TornadoDevice getDeviceOfFirstTask() {
         return tasks.get(0).getDevice();
     }
 
@@ -302,12 +329,19 @@ public class TornadoExecutionContext {
         return objectState.get(replaceVariable(oldObj, newObj));
     }
 
-    private boolean areTasksIndependent() {
+    /**
+     * Checks if the tasks in the list are mutually independent. Tasks are
+     * considered independent if they do not have common arguments and do not have
+     * write access conflicts.
+     *
+     * @return {@code true} if the tasks are mutually independent, {@code false}
+     *         otherwise.
+     */
+    private boolean checkTaskIndependence() {
         for (int i = 0; i < tasks.size(); i++) {
             SchedulableTask task = tasks.get(i);
             for (int j = i + 1; j < tasks.size(); j++) {
                 SchedulableTask otherTask = tasks.get(j);
-
                 if (!isSameTask(task, otherTask) && haveCommonArguments(task, otherTask)) {
                     if (hasWriteAccess(task, otherTask)) {
                         return false;
@@ -357,11 +391,24 @@ public class TornadoExecutionContext {
         return devices;
     }
 
-    public List<SchedulableTask> getTasksForDevice(TornadoDeviceContext deviceIndex, int driverIndex) {
+    /**
+     * Retrieves a list of tasks for a specific device and driver. Both
+     * deviceContext and driverIndex are checked to ensure the correct task
+     * assignment.
+     *
+     * @param deviceContext
+     *            The device context of the device.
+     * @param driverIndex
+     *            The index of the driver.
+     * @return A list of {@link SchedulableTask} objects associated with the
+     *         specified device and driver.
+     */
+    public List<SchedulableTask> getTasksForDevice(TornadoDeviceContext deviceContext, int driverIndex) {
         List<SchedulableTask> tasksForDevice = new ArrayList<>();
         for (SchedulableTask task : tasks) {
             task.getDevice().getDriverIndex();
-            if (task.getDevice().getDeviceContext() == deviceIndex && task.getDevice().getDriverIndex() == driverIndex) {
+            // TODO(mikepapadim) maybe driver index is not needed
+            if (task.getDevice().getDeviceContext() == deviceContext && task.getDevice().getDriverIndex() == driverIndex) {
                 tasksForDevice.add(task);
             }
         }
@@ -369,8 +416,7 @@ public class TornadoExecutionContext {
     }
 
     /**
-     * Default device inspects the driver 0 and device 0 of the internal OpenCL
-     * list.
+     * Default device inspects the driver 0 and device 0 of the internal list.
      *
      * @return {@link TornadoAcceleratorDevice}
      */
@@ -474,7 +520,7 @@ public class TornadoExecutionContext {
         List<TornadoAcceleratorDevice> devicesCopy = new ArrayList<>(devices);
         executionContext.devices = devicesCopy;
 
-        executionContext.taskToDevice = this.taskToDevice.clone();
+        executionContext.taskToDeviceReferenceMap = this.taskToDeviceReferenceMap.clone();
 
         Set<TornadoAcceleratorDevice> lastDeviceCopy = new HashSet<>(lastDevices);
         executionContext.lastDevices = lastDeviceCopy;

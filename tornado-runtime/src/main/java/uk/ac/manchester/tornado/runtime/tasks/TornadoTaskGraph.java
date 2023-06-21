@@ -182,7 +182,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private GridScheduler gridScheduler;
 
     /**
-     * Task Schedule implementation that uses GPU/FPGA and multi-core backends.
+     * Task Schedule implementation that uses GPU/FPGA and multicore backends.
      *
      * @param taskScheduleName
      *            Task-Schedule name
@@ -478,7 +478,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
      */
     @Override
     public TornadoDevice getDevice() {
-        return executionContext.getDeviceFirstTask();
+        return executionContext.getDeviceOfFirstTask();
     }
 
     @Override
@@ -606,7 +606,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         final ContextNode contextNode = (ContextNode) graph.getNode(deviceContexts.nextSetBit(0));
         contextNode.setDeviceIndex(meta().getDeviceIndex());
         executionContext.setDevice(meta().getDeviceIndex(), meta().getLogicDevice());
-        executionContext.nullContexts(meta().getDeviceIndex());
+        executionContext.nullifyDevicesTableExceptAtIndex(meta().getDeviceIndex());
     }
 
     /**
@@ -700,7 +700,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         CompileInfo compileInfo = extractCompileInfo();
         if (compileInfo.compile) {
             timeProfiler.start(ProfilerType.TOTAL_BYTE_CODE_GENERATION);
-            executionContext.assignToDevices();
+            executionContext.distributeTasksToDevices();
             TornadoVM tornadoVM = compile(compileInfo.updateDevice);
             vmTable.put(meta().getLogicDevice(), tornadoVM);
             timeProfiler.stop(ProfilerType.TOTAL_BYTE_CODE_GENERATION);
@@ -737,8 +737,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         boolean compile = false;
         if (TornadoOptions.FPGA_EMULATION) {
             compile = true;
-        } else if (executionContext.getDeviceFirstTask() instanceof TornadoAcceleratorDevice) {
-            TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) executionContext.getDeviceFirstTask();
+        } else if (executionContext.getDeviceOfFirstTask() instanceof TornadoAcceleratorDevice) {
+            TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) executionContext.getDeviceOfFirstTask();
             if (device.isFullJITMode(executionContext.getTask(0))) {
                 compile = true;
             }
@@ -828,7 +828,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void mapAllToInner(TornadoDevice device) {
-        executionContext.mapAllTo(device);
+        executionContext.mapAllTasksToSingleDevice(device);
     }
 
     @Override
