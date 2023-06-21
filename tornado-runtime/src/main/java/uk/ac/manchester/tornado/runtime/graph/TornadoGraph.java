@@ -25,16 +25,17 @@
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
-
 import java.util.BitSet;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
+
 /**
- * The TornadoGraph class represents a graph data structure that stores nodes based on Taskgraphs relationsips.
- * It provides methods to add, retrieve, delete, and filter nodes based on various criteria.
+ * The TornadoGraph class represents a graph data structure that stores nodes
+ * based on Task-graphs relationships. It provides methods to add, retrieve,
+ * delete, and filter nodes based on various criteria.
  */
 public class TornadoGraph {
 

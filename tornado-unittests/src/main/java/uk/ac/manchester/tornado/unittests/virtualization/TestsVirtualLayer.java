@@ -18,9 +18,17 @@
 
 package uk.ac.manchester.tornado.unittests.virtualization;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+
+import java.util.Arrays;
+import java.util.stream.IntStream;
+
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
@@ -30,13 +38,6 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
-
-import java.util.Arrays;
-import java.util.stream.IntStream;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 
 /**
  * <p>
@@ -225,8 +226,9 @@ public class TestsVirtualLayer extends TornadoTestBase {
     }
 
     /**
-     * This test is not legal in Tornado. This test executes everything on the same device, even if the user forces to change. A task schedule is always executed on the same device. Device can change
-     * once the task is executed.
+     * This test is not legal in Tornado. This test executes everything on the same
+     * device, even if the user forces to change. A task schedule is always executed
+     * on the same device. Device can change once the task is executed.
      */
     @Ignore
     public void testVirtualLayer02() {
@@ -263,7 +265,9 @@ public class TestsVirtualLayer extends TornadoTestBase {
     }
 
     /**
-     * Tasks within the same task schedules are always executed on the same device. Currently, it is not possible to change device for a single tasks in a group of tasks.
+     * Tasks within the same task schedules are always executed on the same device.
+     * Currently, it is not possible to change device for a single tasks in a group
+     * of tasks.
      */
     @Test
     public void testVirtualLayer03() {
@@ -293,10 +297,12 @@ public class TestsVirtualLayer extends TornadoTestBase {
     }
 
     /**
-     * It creates one task graph with one task. Then, it executes the same task graph via an executionPlan on different devices.
+     * It creates one task graph with one task. Then, it executes the same task
+     * graph via an executionPlan on different devices.
      *
      * <p>
-     * The task is just one instance for all the devices. The loop iterates over the devices under the same Tornado Driver and executes the task.
+     * The task is just one instance for all the devices. The loop iterates over the
+     * devices under the same Tornado Driver and executes the task.
      * </p>
      */
     @Test
@@ -348,7 +354,8 @@ public class TestsVirtualLayer extends TornadoTestBase {
     }
 
     /**
-     * It creates two task graphs and two tasks and executes them on different devices using different executionPlans.
+     * It creates two task graphs and two tasks and executes them on different
+     * devices using different executionPlans.
      */
     @Test
     public void testSchedulerDevices() {

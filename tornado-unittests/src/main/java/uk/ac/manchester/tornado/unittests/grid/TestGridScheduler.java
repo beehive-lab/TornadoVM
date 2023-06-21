@@ -17,7 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.grid;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.stream.IntStream;
+
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -26,10 +31,6 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-
-import java.util.stream.IntStream;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * <p>
