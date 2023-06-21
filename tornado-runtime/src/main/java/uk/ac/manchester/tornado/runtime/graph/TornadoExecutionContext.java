@@ -25,6 +25,17 @@
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
+import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Consumer;
+
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -41,17 +52,6 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.LocalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Consumer;
-
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
 public class TornadoExecutionContext {
 
@@ -267,24 +267,26 @@ public class TornadoExecutionContext {
         }
     }
 
-    /*_
-     * Calculates the number of valid contexts in the provided TornadoExecutionContext. A valid context refers to a
-     * context that is not null within the list of devices. This behavior caused in the ExecutionContext that does not
-     * append devices sequentially, but they are placed  in the order/index that they are in the driver.
-     * Example of device table:
-     * Device Table:
-     *      [0]: null
-     *      [1]: null
-     *      [2]:  [Intel(R) FPGA Emulation Platform for OpenCL(TM)] -- Intel(R) FPGA Emulation Device
-     * @param graphContext
-     *         The TornadoExecutionContext to calculate the valid contexts for.
+    /*
+     * _ Calculates the number of valid contexts in the provided
+     * TornadoExecutionContext. A valid context refers to a context that is not null
+     * within the list of devices. This behavior caused in the ExecutionContext that
+     * does not append devices sequentially, but they are placed in the order/index
+     * that they are in the driver. Example of device table: Device Table: [0]: null
+     * [1]: null [2]: [Intel(R) FPGA Emulation Platform for OpenCL(TM)] -- Intel(R)
+     * FPGA Emulation Device
+     * 
+     * @param graphContext The TornadoExecutionContext to calculate the valid
+     * contexts for.
+     * 
      * @return The number of valid contexts in the TornadoExecutionContext.
      */
     public int getValidContextSize() {
         // Count the number of null devices in the context
         int nullDevicesEntries = (int) getDevices().stream().filter(device -> device == null).count();
 
-        // Calculate the number of valid contexts by subtracting the number of null devices from the total number of devices
+        // Calculate the number of valid contexts by subtracting the number of null
+        // devices from the total number of devices
         return getDevices().size() - nullDevicesEntries;
     }
 
@@ -367,7 +369,8 @@ public class TornadoExecutionContext {
     }
 
     /**
-     * Default device inspects the driver 0 and device 0 of the internal OpenCL list.
+     * Default device inspects the driver 0 and device 0 of the internal OpenCL
+     * list.
      *
      * @return {@link TornadoAcceleratorDevice}
      */

@@ -203,4 +203,3 @@ public enum TornadoVMBytecodes {
         return value;
     }
 }
-

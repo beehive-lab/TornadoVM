@@ -162,7 +162,6 @@ public final class Tornado implements TornadoCI {
     @Override
     public void setTornadoProperty(String key, String value) {
         Tornado.setProperty(key, value);
-
     }
 
     @Override

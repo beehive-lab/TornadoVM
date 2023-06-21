@@ -23,27 +23,23 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
-
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
+
 /**
- * Represents the configuration for processing data in batches.
- * This class provides methods to compute chunk sizes based on the batch size and input objects.
+ * Represents the configuration for processing data in batches. This class
+ * provides methods to compute chunk sizes based on the batch size and input
+ * objects.
  */
 public class BatchConfiguration {
     private enum DataTypeSize {
-        BYTE(byte.class, (byte) 1),
-        CHAR(char.class, (byte) 2),
-        SHORT(short.class, (byte) 2),
-        INT(int.class, (byte) 4),
-        FLOAT(float.class, (byte) 4),
-        LONG(long.class, (byte) 8),
-        DOUBLE(double.class, (byte) 8);
+        BYTE(byte.class, (byte) 1), CHAR(char.class, (byte) 2), SHORT(short.class, (byte) 2), INT(int.class, (byte) 4), FLOAT(float.class, (byte) 4), LONG(long.class, (byte) 8), DOUBLE(double.class,
+                (byte) 8);
 
         private final Class<?> dataType;
         private final byte size;
@@ -69,9 +65,12 @@ public class BatchConfiguration {
     /**
      * Constructs a BatchConfiguration object with the specified parameters.
      *
-     * @param totalChunks        The total number of chunks.
-     * @param remainingChunkSize The size of the remaining chunk.
-     * @param numBytesType       The number of bytes for the data type.
+     * @param totalChunks
+     *            The total number of chunks.
+     * @param remainingChunkSize
+     *            The size of the remaining chunk.
+     * @param numBytesType
+     *            The number of bytes for the data type.
      */
     BatchConfiguration(int totalChunks, int remainingChunkSize, short numBytesType) {
         this.totalChunks = totalChunks;
@@ -134,9 +133,6 @@ public class BatchConfiguration {
     }
 
     private static DataTypeSize findDataTypeSize(Class<?> dataType) {
-        return Arrays.stream(DataTypeSize.values())
-                .filter(size -> size.getDataType().equals(dataType))
-                .findFirst()
-                .orElse(null);
+        return Arrays.stream(DataTypeSize.values()).filter(size -> size.getDataType().equals(dataType)).findFirst().orElse(null);
     }
 }

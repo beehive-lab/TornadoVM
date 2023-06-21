@@ -25,6 +25,11 @@
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
+import java.nio.ByteBuffer;
+import java.util.BitSet;
+import java.util.List;
+import java.util.Objects;
+
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
@@ -47,11 +52,6 @@ import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.LocalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.TornadoGraphBitcodes;
-
-import java.nio.ByteBuffer;
-import java.util.BitSet;
-import java.util.List;
-import java.util.Objects;
 
 public class TornadoGraphBuilder {
 
@@ -87,10 +87,15 @@ public class TornadoGraphBuilder {
     }
 
     /**
-     * Constructs a TornadoGraph from the provided TornadoExecutionContext and ByteBuffer.
+     * Constructs a TornadoGraph from the provided TornadoExecutionContext and
+     * ByteBuffer.
      *
-     * @param graphContext The TornadoExecutionContext that contains the context of the graph.
-     * @param buffer       The ByteBuffer containing the bytecode representation of the graph.
+     * @param graphContext
+     *            The TornadoExecutionContext that contains the context of the
+     *            graph.
+     * @param buffer
+     *            The ByteBuffer containing the bytecode representation of the
+     *            graph.
      * @return The constructed TornadoGraph.
      */
     public static TornadoGraph buildGraph(TornadoExecutionContext graphContext, ByteBuffer buffer) {

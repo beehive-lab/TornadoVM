@@ -25,6 +25,14 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks.meta;
 
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Integer.parseInt;
+import static uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.resolveDevice;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.WorkerGrid;
@@ -39,14 +47,6 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-
-import static java.lang.Boolean.parseBoolean;
-import static java.lang.Integer.parseInt;
-import static uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.resolveDevice;
-
 public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     private static final long[] SEQUENTIAL_GLOBAL_WORK_GROUP = { 1, 1, 1 };
@@ -59,7 +59,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private boolean deviceManuallySet;
     private long numThreads;
     private final HashSet<String> openCLBuiltOptions = new HashSet<>(
-            // @formatter:off
+    // @formatter:off
             Arrays.asList(
                     "-cl-single-precision-constant",
                     "-cl-denorms-are-zero",
@@ -117,7 +117,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
      * Set a device in the default driver in Tornado.
      *
      * @param device
-     *         {@link TornadoDevice}
+     *            {@link TornadoDevice}
      */
     public void setDevice(TornadoDevice device) {
         this.driverIndex = device.getDriverIndex();
@@ -132,9 +132,9 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
      * Set a device from a specific Tornado driver.
      *
      * @param driverIndex
-     *         Driver Index
+     *            Driver Index
      * @param device
-     *         {@link TornadoAcceleratorDevice}
+     *            {@link TornadoAcceleratorDevice}
      */
     public void setDriverDevice(int driverIndex, TornadoAcceleratorDevice device) {
         this.driverIndex = driverIndex;

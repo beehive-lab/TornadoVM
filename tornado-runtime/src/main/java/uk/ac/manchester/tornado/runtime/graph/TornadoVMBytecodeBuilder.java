@@ -23,15 +23,25 @@
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
-import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.graph.nodes.*;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.List;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateMultipleBuffersNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.ConstantNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.CopyInNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.CopyOutNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.DeallocateNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.DependentReadNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.ObjectNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.StreamInNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
 
 public class TornadoVMBytecodeBuilder {
 
@@ -42,8 +52,10 @@ public class TornadoVMBytecodeBuilder {
     private int globalTaskID;
 
     /**
-     * Constructs a new TornadoVMBytecodeBuilder instance.  Initializes the byte array to hold the bytecode with the maximum bytecode size. Initializes the TornadoVMBytecodeAssembler with the byte
-     * array. Initializes the globalTaskID to 0.
+     * Constructs a new TornadoVMBytecodeBuilder instance. Initializes the byte
+     * array to hold the bytecode with the maximum bytecode size. Initializes the
+     * TornadoVMBytecodeAssembler with the byte array. Initializes the globalTaskID
+     * to 0.
      */
     public TornadoVMBytecodeBuilder() {
         code = new byte[MAX_TORNADO_VM_BYTECODE_SIZE];
@@ -138,7 +150,7 @@ public class TornadoVMBytecodeBuilder {
          * Constructs a new {@code TornadoVMBytecodeAssembler} instance.
          *
          * @param code
-         *         The byte array to hold the assembled bytecode.
+         *            The byte array to hold the assembled bytecode.
          */
         TornadoVMBytecodeAssembler(byte[] code) {
             buffer = ByteBuffer.wrap(code);
