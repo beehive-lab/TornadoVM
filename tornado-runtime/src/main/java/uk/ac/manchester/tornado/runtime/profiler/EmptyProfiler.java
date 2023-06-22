@@ -33,82 +33,82 @@ public class EmptyProfiler implements TornadoProfiler {
     }
 
     @Override
-    public void addValueToMetric(ProfilerType type, String taskName, long value) {
+    public synchronized void addValueToMetric(ProfilerType type, String taskName, long value) {
     }
 
     @Override
-    public void start(ProfilerType type) {
+    public synchronized void start(ProfilerType type) {
     }
 
     @Override
-    public void start(ProfilerType type, String taskName) {
+    public synchronized void start(ProfilerType type, String taskName) {
     }
 
     @Override
-    public void registerDeviceName(String taskName, String deviceInfo) {
-
-    }
-
-    @Override
-    public void registerBackend(String taskName, String backend) {
+    public synchronized void registerDeviceName(String taskName, String deviceInfo) {
 
     }
 
     @Override
-    public void registerDeviceID(String taskName, String deviceID) {
+    public synchronized void registerBackend(String taskName, String backend) {
+
     }
 
     @Override
-    public void registerMethodHandle(ProfilerType type, String taskName, String methodName) {
+    public synchronized void registerDeviceID(String taskName, String deviceID) {
     }
 
     @Override
-    public void stop(ProfilerType type) {
+    public synchronized void registerMethodHandle(ProfilerType type, String taskName, String methodName) {
     }
 
     @Override
-    public void stop(ProfilerType type, String taskName) {
+    public synchronized void stop(ProfilerType type) {
     }
 
     @Override
-    public long getTimer(ProfilerType type) {
+    public synchronized void stop(ProfilerType type, String taskName) {
+    }
+
+    @Override
+    public synchronized long getTimer(ProfilerType type) {
         System.out.println("Enable the profiler with: -Dtornado.profiler=True");
         return 0;
     }
 
     @Override
-    public long getTaskTimer(ProfilerType type, String taskName) {
+    public synchronized long getTaskTimer(ProfilerType type, String taskName) {
         return 0;
     }
 
     @Override
-    public void setTimer(ProfilerType type, long time) {
+    public synchronized void setTimer(ProfilerType type, long time) {
 
     }
 
     @Override
-    public void dump() {
+    public synchronized void dump() {
     }
 
     @Override
-    public String createJson(StringBuffer json, String sectionName) {
+    public synchronized String createJson(StringBuffer json, String sectionName) {
         return null;
     }
 
     @Override
-    public void dumpJson(StringBuffer stringBuffer, String id) {
+    public synchronized void dumpJson(StringBuffer stringBuffer, String id) {
     }
 
     @Override
-    public void clean() {
+    public synchronized void clean() {
     }
 
     @Override
-    public void setTaskTimer(ProfilerType totalKernelTime, String taskId, long timer) {
+    public synchronized void setTaskTimer(ProfilerType totalKernelTime, String taskId, long timer) {
     }
 
     @Override
-    public void sum(ProfilerType type, long sum) {
+    public synchronized void sum(ProfilerType type, long sum) {
 
     }
 

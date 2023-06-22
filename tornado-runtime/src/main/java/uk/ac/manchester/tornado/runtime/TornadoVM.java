@@ -52,8 +52,6 @@ public class TornadoVM extends TornadoLogger {
     private final TornadoExecutionContext executionContext;
     private final boolean setNewDevice;
 
-    private double totalTime;
-    private long invocations;
     private final TornadoProfiler timeProfiler;
 
     private final TornadoVMBytecodeResult[] tornadoVMBytecodes;
@@ -77,8 +75,6 @@ public class TornadoVM extends TornadoLogger {
         this.executionContext = executionContext;
         this.timeProfiler = timeProfiler;
         this.setNewDevice = setNewDevice;
-        totalTime = 0;
-        invocations = 0;
         tornadoVMBytecodes = TornadoVMGraphCompiler.compile(tornadoGraph, executionContext, batchSize);
         tornadoVMInterpreters = new TornadoVMInterpreter[executionContext.getValidContextSize()];
         bindBytecodesToInterpreters();

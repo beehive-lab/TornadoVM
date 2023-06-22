@@ -60,7 +60,7 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
-    public void addValueToMetric(ProfilerType type, String taskName, long value) {
+    public synchronized void addValueToMetric(ProfilerType type, String taskName, long value) {
         if (!taskThroughputMetrics.containsKey(taskName)) {
             taskThroughputMetrics.put(taskName, new HashMap<>());
         }
@@ -70,13 +70,13 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
-    public void start(ProfilerType type) {
+    public synchronized void start(ProfilerType type) {
         long start = System.nanoTime();
         profilerTime.put(type, start);
     }
 
     @Override
-    public void start(ProfilerType type, String taskName) {
+    public synchronized void start(ProfilerType type, String taskName) {
         long start = System.nanoTime();
         if (!taskTimers.containsKey(taskName)) {
             taskTimers.put(taskName, new HashMap<>());
@@ -87,7 +87,7 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
-    public void registerMethodHandle(ProfilerType type, String taskName, String methodName) {
+    public synchronized void registerMethodHandle(ProfilerType type, String taskName, String methodName) {
         if (!taskMethodNames.containsKey(taskName)) {
             taskMethodNames.put(taskName, new HashMap<>());
         }
@@ -97,7 +97,7 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
-    public void registerDeviceName(String taskName, String deviceInfo) {
+    public synchronized void registerDeviceName(String taskName, String deviceInfo) {
         if (!taskDeviceIdentifiers.containsKey(taskName)) {
             taskDeviceIdentifiers.put(taskName, new HashMap<>());
         }
@@ -107,7 +107,7 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
-    public void registerBackend(String taskName, String backend) {
+    public synchronized void registerBackend(String taskName, String backend) {
         if (!taskBackends.containsKey(taskName)) {
             taskBackends.put(taskName, new HashMap<>());
         }
@@ -118,7 +118,7 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
-    public void registerDeviceID(String taskName, String deviceID) {
+    public synchronized void registerDeviceID(String taskName, String deviceID) {
         if (!taskDeviceIdentifiers.containsKey(taskName)) {
             taskDeviceIdentifiers.put(taskName, new HashMap<>());
         }
@@ -128,7 +128,7 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
-    public void stop(ProfilerType type) {
+    public synchronized void stop(ProfilerType type) {
         long end = System.nanoTime();
         long start = profilerTime.get(type);
         long total = end - start;
@@ -136,7 +136,7 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
-    public void stop(ProfilerType type, String taskName) {
+    public synchronized void stop(ProfilerType type, String taskName) {
         long end = System.nanoTime();
         HashMap<ProfilerType, Long> profiledType = taskTimers.get(taskName);
         long start = profiledType.get(type);
@@ -165,12 +165,12 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
-    public void setTimer(ProfilerType type, long time) {
+    public synchronized void setTimer(ProfilerType type, long time) {
         profilerTime.put(type, time);
     }
 
     @Override
-    public void dump() {
+    public synchronized void dump() {
         for (ProfilerType p : profilerTime.keySet()) {
             System.out.println("[PROFILER] " + p.getDescription() + ": " + profilerTime.get(p));
         }
@@ -252,13 +252,13 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
-    public void dumpJson(StringBuffer json, String id) {
+    public synchronized void dumpJson(StringBuffer json, String id) {
         String jsonContent = createJson(json, id);
         System.out.println(jsonContent);
     }
 
     @Override
-    public void clean() {
+    public synchronized void clean() {
         taskThroughputMetrics.clear();
         profilerTime.clear();
         taskTimers.clear();
@@ -266,7 +266,7 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
-    public void setTaskTimer(ProfilerType type, String taskID, long timer) {
+    public synchronized void setTaskTimer(ProfilerType type, String taskID, long timer) {
         if (!taskTimers.containsKey(taskID)) {
             taskTimers.put(taskID, new HashMap<>());
         }
@@ -274,7 +274,7 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
-    public void sum(ProfilerType acc, long value) {
+    public synchronized void sum(ProfilerType acc, long value) {
         long sum = getTimer(acc) + value;
         profilerTime.put(acc, sum);
     }

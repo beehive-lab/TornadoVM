@@ -58,8 +58,8 @@ public class TornadoVMGraphCompiler {
         }
     }
 
-    private static boolean isSingleContextCompilation(TornadoExecutionContext context, long batchSize) {
-        boolean isSingleDeviceExecution = context.getValidContextSize() == 1;
+    private static boolean isSingleContextCompilation(TornadoExecutionContext executionContext, long batchSize) {
+        boolean isSingleDeviceExecution = executionContext.getValidContextSize() == 1;
         boolean isBatchEnabled = batchSize != -1;
 
         if (isBatchEnabled && !isSingleDeviceExecution) {
@@ -69,7 +69,9 @@ public class TornadoVMGraphCompiler {
         return isSingleDeviceExecution;
     }
 
-    private static TornadoVMBytecodeResult[] compileSingleContextTornadoGraphToTornadoBytecodes(TornadoGraph graph, TornadoExecutionContext context, long batchSize) {
+    // TODO: Refactor this method to avoid code duplication with the other compile
+    // method. Split the logc for batches
+    private static TornadoVMBytecodeResult[] compileSingleContextTornadoGraphToTornadoBytecodes(TornadoGraph graph, TornadoExecutionContext executionContext, long batchSize) {
         TornadoVMBytecodeBuilder[] tornadoVMBytecodeBuilder = new TornadoVMBytecodeBuilder[1];
         final boolean isSingleContextCompilation = true;
 
@@ -88,7 +90,7 @@ public class TornadoVMGraphCompiler {
 
         BatchConfiguration batchConfiguration = null;
         if (batchSize != -1) {
-            batchConfiguration = batchConfiguration.computeChunkSizes(context, batchSize);
+            batchConfiguration = batchConfiguration.computeChunkSizes(executionContext, batchSize);
         }
 
         if (batchSize != -1) {
@@ -122,7 +124,7 @@ public class TornadoVMGraphCompiler {
         // Generate END bytecode
         tornadoVMBytecodeBuilder[0].end();
 
-        if (context.meta().shouldDumpTaskGraph()) {
+        if (executionContext.meta().shouldDumpTaskGraph()) {
             intermediateTornadoGraph.printDependencyMatrix();
         }
 
@@ -133,8 +135,8 @@ public class TornadoVMGraphCompiler {
         return tornadoVMBytecodeResults;
     }
 
-    private static TornadoVMBytecodeResult[] compileMultiContextTornadoGraphToTornadoBytecodes(TornadoGraph graph, TornadoExecutionContext context) {
-        final int numContexts = context.getValidContextSize();
+    private static TornadoVMBytecodeResult[] compileMultiContextTornadoGraphToTornadoBytecodes(TornadoGraph graph, TornadoExecutionContext executionContext) {
+        final int numContexts = executionContext.getValidContextSize();
         final boolean isSingleContextCompilation = numContexts == 1;
         TornadoVMBytecodeBuilder[] tornadoVMBytecodeBuilders = new TornadoVMBytecodeBuilder[numContexts];
         TornadoVMBytecodeResult[] tornadoVMBytecodeResults = new TornadoVMBytecodeResult[numContexts];
@@ -173,7 +175,7 @@ public class TornadoVMGraphCompiler {
             tornadoVMBytecodeResults[i] = new TornadoVMBytecodeResult(tornadoVMBytecodeBuilder.getCode(), tornadoVMBytecodeBuilder.getCodeSize());
         }
 
-        if (context.meta().shouldDumpTaskGraph()) {
+        if (executionContext.meta().shouldDumpTaskGraph()) {
             intermediateTornadoGraph.printDependencyMatrix();
         }
 
