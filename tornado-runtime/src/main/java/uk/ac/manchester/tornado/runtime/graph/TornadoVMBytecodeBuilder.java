@@ -48,19 +48,26 @@ public class TornadoVMBytecodeBuilder {
     public static final int MAX_TORNADO_VM_BYTECODE_SIZE = Integer.parseInt(getProperty("tornado.tvm.maxbytecodesize", "4096"));
 
     private final byte[] code;
+
     private final TornadoVMBytecodeAssembler bitcodeASM;
     private int globalTaskID;
 
+    private boolean singleContextBytecodeBuilder;
+
     /**
-     * Constructs a new TornadoVMBytecodeBuilder instance. Initializes the byte
+     * It constructs a new TornadoVMBytecodeBuilder instance. Initializes the byte
      * array to hold the bytecode with the maximum bytecode size. Initializes the
-     * TornadoVMBytecodeAssembler with the byte array. Initializes the globalTaskID
-     * to 0.
+     * TornadoVMBytecodeAssembler with the byte array.
      */
-    public TornadoVMBytecodeBuilder() {
+    public TornadoVMBytecodeBuilder(boolean singleContextBytecodeBuilder) {
         code = new byte[MAX_TORNADO_VM_BYTECODE_SIZE];
         bitcodeASM = new TornadoVMBytecodeAssembler(code);
         globalTaskID = 0;
+        this.singleContextBytecodeBuilder = singleContextBytecodeBuilder;
+    }
+
+    public boolean isSingleContextBytecodeBuilder() {
+        return singleContextBytecodeBuilder;
     }
 
     public void begin(int numContexts, int numStacks, int numDeps) {
@@ -147,7 +154,7 @@ public class TornadoVMBytecodeBuilder {
         private final ByteBuffer buffer;
 
         /**
-         * Constructs a new {@code TornadoVMBytecodeAssembler} instance.
+         * It constructs a new {@link TornadoVMBytecodeAssembler} instance.
          *
          * @param code
          *            The byte array to hold the assembled bytecode.

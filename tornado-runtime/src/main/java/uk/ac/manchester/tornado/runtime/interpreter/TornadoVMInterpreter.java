@@ -61,7 +61,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
-import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodeBuilder;
+import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodeResult;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
@@ -105,7 +105,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
     private final TornadoExecutionContext executionContext;
     private GridScheduler gridScheduler;
 
-    public TornadoVMInterpreter(TornadoExecutionContext graphContext, TornadoVMBytecodeBuilder bytecode, TornadoProfiler timeProfiler, TornadoAcceleratorDevice deviceForContext) {
+    public TornadoVMInterpreter(TornadoExecutionContext graphContext, TornadoVMBytecodeResult bytecode, TornadoProfiler timeProfiler, TornadoAcceleratorDevice deviceForContext) {
         this.executionContext = graphContext;
         this.timeProfiler = timeProfiler;
         this.deviceForInterpreter = deviceForContext != null ? deviceForContext : graphContext.getDeviceForTask(0);
@@ -166,8 +166,8 @@ public class TornadoVMInterpreter extends TornadoLogger {
         }
     }
 
-    private ByteBuffer setupBytecodeBuffer(TornadoVMBytecodeBuilder bytecode) {
-        return ByteBuffer.wrap(bytecode.getCode()).order(ByteOrder.LITTLE_ENDIAN).limit(bytecode.getCodeSize());
+    private ByteBuffer setupBytecodeBuffer(TornadoVMBytecodeResult bytecode) {
+        return ByteBuffer.wrap(bytecode.getBytecode()).order(ByteOrder.LITTLE_ENDIAN).limit(bytecode.getBytecodeSize());
     }
 
     public Event execute(boolean isWarmup) {

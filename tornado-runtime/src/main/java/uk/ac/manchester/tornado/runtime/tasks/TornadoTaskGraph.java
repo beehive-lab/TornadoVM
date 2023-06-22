@@ -610,7 +610,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     /**
-     * Compile a task-schedule into TornadoVM byte-code
+     * Compile a {@link TaskGraph} into TornadoVM byte-code
      *
      * @param setNewDevice:
      *            boolean that specifies if set a new device or not.
@@ -632,7 +632,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         if (meta().shouldDumpSchedule()) {
             executionContext.dumpExecutionContextMeta();
             tornadoGraph.dumpTornadoGraph();
-            Arrays.stream(tornadoVM.getTornadoVMBytecodes()).forEach(TornadoVMBytecodeBuilder::dump);
         }
 
         return tornadoVM;

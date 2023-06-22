@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -242,9 +243,9 @@ public class TornadoExecutionContext {
      * @param index
      *            The index of the task.
      * @param task
-     *            The schedulable task to be assigned.
-     * @throws TornadoRuntimeException
-     *             if the target device is not supported.
+     *            The {@link SchedulableTask} to be assigned.
+     * @throws {@link
+     *             TornadoRuntimeException} if the target device is not supported.
      */
     private void assignTaskToDevice(int index, SchedulableTask task) {
         String id = task.getId();
@@ -269,23 +270,22 @@ public class TornadoExecutionContext {
     }
 
     /**
-     * Sets all device entries in the device table to null except the specified
+     * It sets all device entries in the device table to null except the specified
      * device index.
      *
      * @param deviceIndex
      *            The index of the device to exclude from nullification.
      */
     public void nullifyDevicesTableExceptAtIndex(int deviceIndex) {
-        for (int i = 0; i < devices.size(); i++) {
-            if (i != deviceIndex) {
-                devices.set(i, null);
-            }
-        }
+        devices = devices.stream().map(device -> devices.indexOf(device) == deviceIndex ? device : null).collect(Collectors.toList());
     }
 
+    // TODO: This is the point to hook more intelligent logic for auto task
+    // distribution
     public void distributeTasksToDevices() {
         if (independentTasks) {
-            // TODO(mikepapdim): This needs more safeguarding and cross backend testing
+            // if (independentTasks) {
+            // TODO(mikepapadim): This needs more safeguarding and cross backend testing
             for (int i = 0; i < tasks.size(); i++) {
                 assignTaskToDevice(i, tasks.get(i));
             }
@@ -295,12 +295,12 @@ public class TornadoExecutionContext {
     }
 
     /**
-     * Calculates the number of valid contexts. A valid context refers to a context
-     * that is not null within the list of devices. This behavior caused in the
-     * ExecutionContext that does not append devices sequentially, but they are
+     * It calculates the number of valid contexts. A valid context refers to a
+     * context that is not null within the list of devices. This behavior caused in
+     * the ExecutionContext that does not append devices sequentially, but they are
      * placed in the order/index to preserve their order in the driver.
      *
-     * @return The number of valid contexts in the TornadoExecutionContext.
+     * @return The number of valid contexts in the {@link TornadoExecutionContext}.
      */
     public int getValidContextSize() {
         // Count the number of null devices in the current context
@@ -330,9 +330,7 @@ public class TornadoExecutionContext {
     }
 
     /**
-     * Checks if the tasks in the list are mutually independent. Tasks are
-     * considered independent if they do not have common arguments and do not have
-     * write access conflicts.
+     * Checks if the tasks in the list are mutually independent.
      *
      * @return {@code true} if the tasks are mutually independent, {@code false}
      *         otherwise.

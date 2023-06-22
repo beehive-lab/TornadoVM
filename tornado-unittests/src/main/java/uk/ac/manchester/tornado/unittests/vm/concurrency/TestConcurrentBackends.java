@@ -54,7 +54,7 @@ public class TestConcurrentBackends {
 
         System.setProperty("s0.t0.device", "0:1");
         System.setProperty("s0.t1.device", "1:0");
-        System.setProperty("tornado.parallel.interpreters", "False");
+        System.setProperty("tornado.concurrent.devices", "False");
 
     }
 
@@ -73,7 +73,7 @@ public class TestConcurrentBackends {
 
     @Test
     public void testTwoBackendsConcurrent() {
-        System.setProperty("tornado.parallel.interpreters", "True");
+        System.setProperty("tornado.concurrent.devices", "True");
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b)//

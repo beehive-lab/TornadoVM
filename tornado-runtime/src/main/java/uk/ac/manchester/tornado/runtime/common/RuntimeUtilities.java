@@ -356,12 +356,13 @@ public class RuntimeUtilities {
     }
 
     /**
-     * Prints the induction variables for counted loops in the given
-     * StructuredGraph. This helper can be used for post-processing paralled
-     * induction variables
+     * It prints the induction variables for counted loops in the given
+     * StructuredGraph. This method can be used for post-processing parallel loops
+     * with identify information for the induction variables.
      *
      * @param graph
-     *            The StructuredGraph to analyze and print induction variables for.
+     *            The StructuredGraph to analyze and print induction variables in
+     *            the graph.
      */
     private static void printInductionVariables(StructuredGraph graph) {
         final LoopsData data = new TornadoLoopsData(graph);

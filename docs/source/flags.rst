@@ -92,7 +92,7 @@ List of TornadoVM Flags:
      ``CLBuildProgram``
      `specification <https://www.khronos.org/registry/OpenCL/sdk/1.0/docs/man/xhtml/clBuildProgram.html>`__
      to TornadoVM at runtime. By default it doesn’t enable any.
- -  | ``-Dtornado.parallel.interpreters=true``:
+ -  | ``-Dtornado.concurrent.devices=true``:
     | Allows to run a TaskGraph in multiple devices concurrently.
 
 Optimizations

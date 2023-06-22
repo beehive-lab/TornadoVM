@@ -260,9 +260,8 @@ public class TornadoOptions {
 
     /**
      * If enabled, the TornadoVM will substitute the last READ (data transfer from
-     * the Device -> Host) using a blocking call for STREAM OUT.
-     * <p>
-     * This is FALSE by default.
+     * the Device -> Host) using a blocking call for STREAM OUT. This is FALSE by
+     * default.
      */
     public static final boolean ENABLE_STREAM_OUT_BLOCKING = getBooleanValue("tornado.enable.streamOut.blocking", FALSE);
 
@@ -270,6 +269,12 @@ public class TornadoOptions {
      * Option to load FPGA pre-compiled binaries.
      */
     public static StringBuilder FPGA_BINARIES = System.getProperty("tornado.precompiled.binary", null) != null ? new StringBuilder(System.getProperty("tornado.precompiled.binary", null)) : null;
+
+    /**
+     * Option to run concurrently on multiple device in single or multi-backend
+     * configuration. False by default.
+     */
+    public static final boolean CONCURRENT_INTERPRETERS = Boolean.parseBoolean(System.getProperty("tornado.concurrent.devices", "False"));
 
     /**
      * Option to reuse device buffers every time a task-graph is executed. True by

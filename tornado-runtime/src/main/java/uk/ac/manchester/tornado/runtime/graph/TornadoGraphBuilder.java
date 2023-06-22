@@ -87,16 +87,16 @@ public class TornadoGraphBuilder {
     }
 
     /**
-     * Constructs a TornadoGraph from the provided TornadoExecutionContext and
-     * ByteBuffer.
+     * It constructs a {@link TornadoGraph} from the provided
+     * {@link TornadoExecutionContext} and ByteBuffer.
      *
      * @param graphContext
-     *            The TornadoExecutionContext that contains the context of the
-     *            graph.
+     *            The {@link TornadoExecutionContext} that contains the context of
+     *            the graph.
      * @param buffer
-     *            The ByteBuffer containing the bytecode representation of the
-     *            graph.
-     * @return The constructed TornadoGraph.
+     *            The {@link ByteBuffer} containing the bytecode representation of
+     *            the graph.
+     * @return The constructed {@link TornadoGraph}.
      */
     public static TornadoGraph buildGraph(TornadoExecutionContext graphContext, ByteBuffer buffer) {
         TornadoGraph graph = new TornadoGraph();
