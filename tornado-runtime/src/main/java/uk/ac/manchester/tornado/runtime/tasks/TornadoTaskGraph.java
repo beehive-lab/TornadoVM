@@ -699,7 +699,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         CompileInfo compileInfo = extractCompileInfo();
         if (compileInfo.compile) {
             timeProfiler.start(ProfilerType.TOTAL_BYTE_CODE_GENERATION);
-            executionContext.distributeTasksToDevices();
+            executionContext.scheduleTaskToDevices();
             TornadoVM tornadoVM = compile(compileInfo.updateDevice);
             vmTable.put(meta().getLogicDevice(), tornadoVM);
             timeProfiler.stop(ProfilerType.TOTAL_BYTE_CODE_GENERATION);

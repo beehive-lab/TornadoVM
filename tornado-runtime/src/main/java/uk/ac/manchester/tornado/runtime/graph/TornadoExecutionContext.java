@@ -67,7 +67,7 @@ public class TornadoExecutionContext {
     private List<LocalObjectState> objectState;
     private List<TornadoAcceleratorDevice> devices;
     private final KernelArgs[] callWrappers;
-    private int[] taskToDeviceReferenceMap;
+    private int[] taskToDeviceMapTable;
     private int nextTask;
 
     private Set<TornadoAcceleratorDevice> lastDevices;
@@ -75,7 +75,7 @@ public class TornadoExecutionContext {
     private boolean redeployOnDevice;
     private boolean defaultScheduler;
 
-    private boolean independentTasks;
+    private boolean isDataDependencyDetected;
 
     private TornadoProfiler profiler;
 
@@ -89,12 +89,12 @@ public class TornadoExecutionContext {
         objectState = new ArrayList<>();
         devices = new ArrayList<>(INITIAL_DEVICE_CAPACITY);
         callWrappers = new KernelArgs[MAX_TASKS];
-        taskToDeviceReferenceMap = new int[MAX_TASKS];
-        Arrays.fill(taskToDeviceReferenceMap, -1);
+        taskToDeviceMapTable = new int[MAX_TASKS];
+        Arrays.fill(taskToDeviceMapTable, -1);
         nextTask = 0;
         lastDevices = new HashSet<>();
         this.profiler = profiler;
-        this.independentTasks = checkTaskIndependence();
+        this.isDataDependencyDetected = isDataDependencyInTaskGraph();
     }
 
     public KernelArgs[] getCallWrappers() {
@@ -182,11 +182,11 @@ public class TornadoExecutionContext {
     }
 
     public int getDeviceIndexForTask(int index) {
-        return taskToDeviceReferenceMap[index];
+        return taskToDeviceMapTable[index];
     }
 
     public TornadoAcceleratorDevice getDeviceForTask(int index) {
-        return getDevice(taskToDeviceReferenceMap[index]);
+        return getDevice(taskToDeviceMapTable[index]);
     }
 
     public TornadoAcceleratorDevice getDevice(int index) {
@@ -204,10 +204,10 @@ public class TornadoExecutionContext {
     }
 
     /**
-     * Maps all tasks to a specific TornadoDevice.
+     * It maps all tasks to a specific TornadoDevice.
      *
      * @param tornadoDevice
-     *            The TornadoDevice to which all tasks will be mapped.
+     *            The {@link TornadoDevice} to which all tasks will be mapped.
      * @throws RuntimeException
      *             if the current device is not supported.
      */
@@ -216,7 +216,7 @@ public class TornadoExecutionContext {
             devices.clear();
             devices.add(0, (TornadoAcceleratorDevice) tornadoDevice);
             apply(task -> task.mapTo(tornadoDevice));
-            Arrays.fill(taskToDeviceReferenceMap, 0);
+            Arrays.fill(taskToDeviceMapTable, 0);
         } else {
             throw new RuntimeException("Device " + tornadoDevice.getClass() + " not supported yet");
         }
@@ -236,9 +236,8 @@ public class TornadoExecutionContext {
     }
 
     /**
-     * Assigns a task to a device based on the current task distribution strategies.
-     * Currently, mapAllTo, automatic if independent and parallel vms enabled or
-     * manually override through runtime flags.
+     * It assigns a task to a {@link TornadoAcceleratorDevice} based on the current
+     * task scheduling strategy.
      *
      * @param index
      *            The index of the task.
@@ -266,11 +265,11 @@ public class TornadoExecutionContext {
             setDevice(deviceIndex, accelerator);
         }
 
-        taskToDeviceReferenceMap[index] = deviceIndex;
+        taskToDeviceMapTable[index] = deviceIndex;
     }
 
     /**
-     * It sets all device entries in the device table to null except the specified
+     * It sets all device entries in the device list to null except the specified
      * device index.
      *
      * @param deviceIndex
@@ -280,11 +279,9 @@ public class TornadoExecutionContext {
         devices = devices.stream().map(device -> devices.indexOf(device) == deviceIndex ? device : null).collect(Collectors.toList());
     }
 
-    // TODO: This is the point to hook more intelligent logic for auto task
-    // distribution
-    public void distributeTasksToDevices() {
-        if (independentTasks) {
-            // if (independentTasks) {
+    // TODO: This is the point to hook more intelligent logic for scheduling
+    public void scheduleTaskToDevices() {
+        if (!isDataDependencyDetected) {
             // TODO(mikepapadim): This needs more safeguarding and cross backend testing
             for (int i = 0; i < tasks.size(); i++) {
                 assignTaskToDevice(i, tasks.get(i));
@@ -296,9 +293,9 @@ public class TornadoExecutionContext {
 
     /**
      * It calculates the number of valid contexts. A valid context refers to a
-     * context that is not null within the list of devices. This behavior caused in
-     * the ExecutionContext that does not append devices sequentially, but they are
-     * placed in the order/index to preserve their order in the driver.
+     * context that is not null within the list of devices. This behavior is caused
+     * in the ExecutionContext that does not append devices sequentially, but they
+     * are placed in the order/index to preserve their order in the driver.
      *
      * @return The number of valid contexts in the {@link TornadoExecutionContext}.
      */
@@ -313,9 +310,9 @@ public class TornadoExecutionContext {
     }
 
     /**
-     * Gets the TornadoDevice of the first task.
+     * It gets the {@link TornadoDevice} of the first task.
      *
-     * @return The TornadoDevice of the first task.
+     * @return The {@link TornadoDevice} of the first task.
      */
     public TornadoDevice getDeviceOfFirstTask() {
         return tasks.get(0).getDevice();
@@ -335,26 +332,26 @@ public class TornadoExecutionContext {
      * @return {@code true} if the tasks are mutually independent, {@code false}
      *         otherwise.
      */
-    private boolean checkTaskIndependence() {
+    private boolean isDataDependencyInTaskGraph() {
         for (int i = 0; i < tasks.size(); i++) {
             SchedulableTask task = tasks.get(i);
             for (int j = i + 1; j < tasks.size(); j++) {
                 SchedulableTask otherTask = tasks.get(j);
-                if (!isSameTask(task, otherTask) && haveCommonArguments(task, otherTask)) {
+                if (!isSameTask(task, otherTask) && isCommonArgumentInTasks(task, otherTask)) {
                     if (hasWriteAccess(task, otherTask)) {
-                        return false;
+                        return true;
                     }
                 }
             }
         }
-        return true;
+        return false;
     }
 
     private boolean isSameTask(SchedulableTask task1, SchedulableTask task2) {
         return task1.getTaskName().equals(task2.getTaskName()) && task1.getId().equals(task2.getId());
     }
 
-    private boolean haveCommonArguments(SchedulableTask task1, SchedulableTask task2) {
+    private boolean isCommonArgumentInTasks(SchedulableTask task1, SchedulableTask task2) {
         for (Object arg1 : task1.getArguments()) {
             for (Object arg2 : task2.getArguments()) {
                 if (arg1.equals(arg2)) {
@@ -390,7 +387,7 @@ public class TornadoExecutionContext {
     }
 
     /**
-     * Retrieves a list of tasks for a specific device and driver. Both
+     * It retrieves a list of tasks for a specific device and driver. Both
      * deviceContext and driverIndex are checked to ensure the correct task
      * assignment.
      *
@@ -518,7 +515,7 @@ public class TornadoExecutionContext {
         List<TornadoAcceleratorDevice> devicesCopy = new ArrayList<>(devices);
         executionContext.devices = devicesCopy;
 
-        executionContext.taskToDeviceReferenceMap = this.taskToDeviceReferenceMap.clone();
+        executionContext.taskToDeviceMapTable = this.taskToDeviceMapTable.clone();
 
         Set<TornadoAcceleratorDevice> lastDeviceCopy = new HashSet<>(lastDevices);
         executionContext.lastDevices = lastDeviceCopy;
