@@ -44,7 +44,7 @@ import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurat
  * How to run?
  * </p>
  * <code>
- * tornado-test -V uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer
  * </code>
  */
 public class TestsVirtualLayer extends TornadoTestBase {
@@ -267,6 +267,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
      * Tasks within the same task schedules are always executed on the same device.
      * Currently, it is not possible to change device for a single tasks in a group
      * of tasks.
+     *
      */
     @Test
     public void testVirtualLayer03() {
@@ -338,10 +339,6 @@ public class TestsVirtualLayer extends TornadoTestBase {
             TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
-                if (deviceIndex == 2) {
-                    totalNumDevices = driver.getDevice(deviceIndex).getDescription().contains("FPGA") ? totalNumDevices - 1 : totalNumDevices;
-                    continue;
-                }
                 executionPlan.withDevice(driver.getDevice(deviceIndex)) //
                         .execute();
             }
