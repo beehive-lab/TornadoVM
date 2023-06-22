@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -128,11 +128,11 @@ public class OCLCodeCache {
         return token.startsWith("#");
     }
 
-    private boolean runOnIntelFPGAWithDocker() {
-        if (System.getenv("DOCKER_FPGA_EMULATION") == null) {
+    private boolean runOnIntelFPGAWithOneAPI() {
+        if (System.getenv("ONEAPI_ROOT") == null) {
             return false;
         } else {
-            return System.getenv("DOCKER_FPGA_EMULATION").equals("1");
+            return true;
         }
     }
 
@@ -140,8 +140,8 @@ public class OCLCodeCache {
         if (deviceContext.getDevice().getDeviceVendor().equalsIgnoreCase("xilinx")) {
             return "/etc/xilinx-fpga.conf";
         } else {
-            if (runOnIntelFPGAWithDocker()) {
-                return "/etc/intel-docker-fpga.conf";
+            if (runOnIntelFPGAWithOneAPI()) {
+                return "/etc/intel-oneapi-fpga.conf";
             } else {
                 return "/etc/intel-fpga.conf";
             }
@@ -373,7 +373,7 @@ public class OCLCodeCache {
         return bufferCommand.toString().split(" ");
     }
 
-    private String[] composeIntelHLSCommandForDocker(String inputFile, String outputFile) {
+    private String[] composeIntelHLSCommandForOneAPI(String inputFile, String outputFile) {
         StringJoiner bufferCommand = new StringJoiner(" ");
 
         bufferCommand.add(fpgaCompiler);
@@ -499,8 +499,8 @@ public class OCLCodeCache {
                 linkObjectFiles.add(entryPoint);
                 linkCommand = composeXilinxHLSLinkCommand(entryPoint);
             } else if (isPlatform("intel")) {
-                if (runOnIntelFPGAWithDocker()) {
-                    compilationCommand = composeIntelHLSCommandForDocker(inputFile, outputFile);
+                if (runOnIntelFPGAWithOneAPI()) {
+                    compilationCommand = composeIntelHLSCommandForOneAPI(inputFile, outputFile);
                 } else {
                     compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
                 }
