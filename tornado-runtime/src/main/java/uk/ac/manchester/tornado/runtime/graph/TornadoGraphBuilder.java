@@ -90,7 +90,7 @@ public class TornadoGraphBuilder {
      * It constructs a {@link TornadoGraph} from the provided
      * {@link TornadoExecutionContext} and ByteBuffer.
      *
-     * @param graphContext
+     * @param executionContext
      *            The {@link TornadoExecutionContext} that contains the context of
      *            the graph.
      * @param buffer
@@ -98,7 +98,7 @@ public class TornadoGraphBuilder {
      *            the graph.
      * @return The constructed {@link TornadoGraph}.
      */
-    public static TornadoGraph buildGraph(TornadoExecutionContext graphContext, ByteBuffer buffer) {
+    public static TornadoGraph buildGraph(TornadoExecutionContext executionContext, ByteBuffer buffer) {
         TornadoGraph graph = new TornadoGraph();
         Access[] accesses = null;
         SchedulableTask task;
@@ -109,8 +109,8 @@ public class TornadoGraphBuilder {
         int argIndex = 0;
         int taskIndex = 0;
 
-        final List<Object> constants = graphContext.getConstants();
-        final List<Object> objects = graphContext.getObjects();
+        final List<Object> constants = executionContext.getConstants();
+        final List<Object> objects = executionContext.getObjects();
 
         final ConstantNode[] constantNodes = new ConstantNode[constants.size()];
         for (int i = 0; i < constants.size(); i++) {
@@ -124,7 +124,7 @@ public class TornadoGraphBuilder {
             graph.add(objectNodes[i]);
         }
 
-        final List<LocalObjectState> states = graphContext.getObjectStates();
+        final List<LocalObjectState> states = executionContext.getObjectStates();
 
         boolean shouldExit = false;
         while (!shouldExit && buffer.hasRemaining()) {
@@ -199,9 +199,9 @@ public class TornadoGraphBuilder {
             } else if (op == TornadoGraphBitcodes.CONTEXT.index()) {
                 final int globalTaskId = buffer.getInt();
                 taskIndex = buffer.getInt();
-                task = graphContext.getTask(taskIndex);
+                task = executionContext.getTask(taskIndex);
 
-                context = graph.addUnique(new ContextNode(graphContext.getDeviceIndexForTask(globalTaskId)));
+                context = graph.addUnique(new ContextNode(executionContext.getDeviceIndexForTask(globalTaskId)));
 
                 persist = graph.addUnique(new AllocateMultipleBuffersNode(context));
                 context.addUse(persist);

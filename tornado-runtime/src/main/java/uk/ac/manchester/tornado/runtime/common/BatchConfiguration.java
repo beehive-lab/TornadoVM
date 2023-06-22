@@ -43,7 +43,8 @@ public class BatchConfiguration {
         SHORT(short.class, (byte) 2), //
         INT(int.class, (byte) 4), //
         FLOAT(float.class, (byte) 4), //
-        LONG(long.class, (byte) 8), DOUBLE(double.class, (byte) 8);
+        LONG(long.class, (byte) 8), //
+        DOUBLE(double.class, (byte) 8);
 
         private final Class<?> dataType;
         private final byte size;
