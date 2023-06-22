@@ -13,6 +13,10 @@ public class InterpreterUtilities {
         return ColoursTerminal.RED + " " + bc + " " + ColoursTerminal.RESET;
     }
 
+    static String debugHighLightHelper(String info) {
+        return ColoursTerminal.BLUE + info + " " + ColoursTerminal.RESET;
+    }
+
     static String debugDeviceBC(TornadoAcceleratorDevice device) {
         TornadoVMBackendType tornadoVMBackend = device.getTornadoVMBackend();
         if (tornadoVMBackend == TornadoVMBackendType.OPENCL) {

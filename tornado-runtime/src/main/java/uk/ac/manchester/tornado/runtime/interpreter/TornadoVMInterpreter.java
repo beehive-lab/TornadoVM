@@ -180,7 +180,8 @@ public class TornadoVMInterpreter extends TornadoLogger {
         StringBuilder tornadoVMBytecodeList = null;
         if (TornadoOptions.PRINT_BYTECODES) {
             tornadoVMBytecodeList = new StringBuilder();
-            tornadoVMBytecodeList.append("Bytecodes for : ").append(deviceForInterpreter).append(" Running in thread : ").append(Thread.currentThread().getId()).append("\n");
+            tornadoVMBytecodeList.append(InterpreterUtilities.debugHighLightHelper("Interpreter instance running bytecodes for: ")).append(deviceForInterpreter)
+                    .append(InterpreterUtilities.debugHighLightHelper(" Running in thread: ")).append(Thread.currentThread().getName()).append("\n");
         }
 
         while (buffer.hasRemaining()) {
