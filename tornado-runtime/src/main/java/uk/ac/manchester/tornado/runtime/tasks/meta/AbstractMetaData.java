@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020,2023 APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -20,7 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.runtime.tasks.meta;
@@ -42,7 +41,6 @@ import uk.ac.manchester.tornado.api.memory.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.DeviceBuffer;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -52,36 +50,30 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private static final long[] SEQUENTIAL_GLOBAL_WORK_GROUP = { 1, 1, 1 };
     private String id;
     private TornadoAcceleratorDevice device;
-    private boolean shouldRecompile;
     private final boolean isDeviceDefined;
     private int driverIndex;
     private int deviceIndex;
     private boolean deviceManuallySet;
     private long numThreads;
-    private final HashSet<String> openCLBuiltOptions = new HashSet<>(
-    // @formatter:off
-            Arrays.asList(
-                    "-cl-single-precision-constant",
-                    "-cl-denorms-are-zero",
-                    "-cl-opt-disable",
-                    "-cl-strict-aliasing",
-                    "-cl-mad-enable",
-                    "-cl-no-signed-zeros",
-                    "-cl-unsafe-math-optimizations",
-                    "-cl-finite-math-only",
-                    "-cl-fast-relaxed-math",
-                    "-w",
-                    "-cl-std=CL2.0"
-            )
-            // @formatter:on
-    );
+    private final HashSet<String> openCLBuiltOptions = new HashSet<>(Arrays.asList( //
+            "-cl-single-precision-constant", //
+            "-cl-denorms-are-zero", //
+            "-cl-opt-disable", //
+            "-cl-strict-aliasing", //
+            "-cl-mad-enable", //
+            "-cl-no-signed-zeros", //
+            "-cl-unsafe-math-optimizations", //
+            "-cl-finite-math-only", //
+            "-cl-fast-relaxed-math", //
+            "-w", //
+            "-cl-std=CL2.0" //
+    ));
 
     private TornadoProfiler profiler;
     private GridScheduler gridScheduler;
     private long[] ptxBlockDim;
     private long[] ptxGridDim;
 
-    private DeviceBuffer deviceBuffer;
     private ResolvedJavaMethod graph;
     private boolean useGridScheduler;
 
@@ -114,7 +106,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     }
 
     /**
-     * Set a device in the default driver in Tornado.
+     * Set a device in the default driver.
      *
      * @param device
      *            {@link TornadoDevice}
@@ -176,7 +168,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return dumpProfiles;
     }
 
-    public boolean shouldDumpSchedule() {
+    public boolean shouldDumpTaskGraph() {
         return dumpTaskGraph;
     }
 
@@ -190,14 +182,6 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     public boolean shouldPrintKernelExecutionTime() {
         return printKernelExecutionTime;
-    }
-
-    public boolean shouldRecompile() {
-        return shouldRecompile;
-    }
-
-    public void setRecompiled() {
-        shouldRecompile = false;
     }
 
     public String getCompilerFlags() {
@@ -268,10 +252,6 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return useThreadCoarsener;
     }
 
-    public boolean shouldUseVMDeps() {
-        return vmUseDeps;
-    }
-
     /*
      * Forces the executing kernel to output its arguments before execution
      */
@@ -283,7 +263,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private final boolean printCompileTimes;
     private boolean printKernelExecutionTime;
 
-    // private final boolean forceAllToGpu;
+    // private final boolean forceAllToGpuforceAllToGpu;
     private boolean isOpenclCompilerFlagsDefined;
     private final boolean isOpenclGpuBlockXDefined;
     private final int openclGpuBlockX;
@@ -310,7 +290,6 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private final boolean enableMemChecks;
     private final boolean useThreadCoarsener;
     private final boolean dumpTaskGraph;
-    private final boolean vmUseDeps;
     private final boolean coarsenWithCpuConfig;
     private final boolean isEnableParallelizationDefined;
 
@@ -411,7 +390,6 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     AbstractMetaData(String id, AbstractMetaData parent) {
         this.id = id;
-        shouldRecompile = true;
 
         isDeviceDefined = getProperty(id + ".device") != null;
         if (isDeviceDefined) {
@@ -470,7 +448,6 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         cpuConfig = getDefault("cpu.config", id, null);
         isCpuConfigDefined = getProperty(id + ".cpu.config") != null;
         useThreadCoarsener = Boolean.parseBoolean(getDefault("coarsener", id, "False"));
-        vmUseDeps = Boolean.parseBoolean(getDefault("vm.deps", id, "False"));
     }
 
     public void attachProfiler(TornadoProfiler profiler) {

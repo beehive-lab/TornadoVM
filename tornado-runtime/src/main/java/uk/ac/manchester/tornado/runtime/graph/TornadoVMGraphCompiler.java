@@ -122,7 +122,7 @@ public class TornadoVMGraphCompiler {
         // Generate END bytecode
         tornadoVMBytecodeBuilder[0].end();
 
-        if (context.meta().shouldDumpSchedule()) {
+        if (context.meta().shouldDumpTaskGraph()) {
             intermediateTornadoGraph.printDependencyMatrix();
         }
 
@@ -173,7 +173,7 @@ public class TornadoVMGraphCompiler {
             tornadoVMBytecodeResults[i] = new TornadoVMBytecodeResult(tornadoVMBytecodeBuilder.getCode(), tornadoVMBytecodeBuilder.getCodeSize());
         }
 
-        if (context.meta().shouldDumpSchedule()) {
+        if (context.meta().shouldDumpTaskGraph()) {
             intermediateTornadoGraph.printDependencyMatrix();
         }
 

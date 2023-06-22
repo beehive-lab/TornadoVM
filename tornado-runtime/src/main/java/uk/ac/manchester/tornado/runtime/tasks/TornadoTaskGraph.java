@@ -147,7 +147,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private TornadoExecutionContext executionContext;
     private byte[] highLevelCode = new byte[2048];
     private ByteBuffer hlBuffer;
-    private TornadoVMBytecodeBuilder result;
+    private TornadoVMBytecodeBuilder tornadoVMBytecodeBuilder;
     private long batchSizeBytes = -1;
     private boolean bailout = false;
     // One TornadoVM instance per TaskSchedule
@@ -192,7 +192,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         hlBuffer = ByteBuffer.wrap(highLevelCode);
         hlBuffer.order(ByteOrder.LITTLE_ENDIAN);
         hlBuffer.rewind();
-        result = null;
+        tornadoVMBytecodeBuilder = null;
         event = null;
         this.taskGraphName = taskScheduleName;
         vmTable = new HashMap<>();
@@ -629,7 +629,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         // TornadoVM byte-code generation
         TornadoVM tornadoVM = new TornadoVM(executionContext, tornadoGraph, timeProfiler, batchSizeBytes, setNewDevice);
 
-        if (meta().shouldDumpSchedule()) {
+        if (meta().shouldDumpTaskGraph()) {
             executionContext.dumpExecutionContextMeta();
             tornadoGraph.dumpTornadoGraph();
         }
@@ -657,11 +657,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
      * @return {@link CompileInfo}
      */
     private CompileInfo extractCompileInfo() {
-        if (result == null && isLastDeviceListEmpty()) {
+        if (tornadoVMBytecodeBuilder == null && isLastDeviceListEmpty()) {
             return COMPILE_ONLY;
         }
 
-        if (result != null && !isLastDeviceListEmpty() && !(compareDevices(executionContext.getLastDevices(), meta().getLogicDevice()))) {
+        if (tornadoVMBytecodeBuilder != null && !isLastDeviceListEmpty() && !(compareDevices(executionContext.getLastDevices(), meta().getLogicDevice()))) {
             return COMPILE_AND_UPDATE;
         }
 
