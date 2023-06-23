@@ -129,11 +129,7 @@ public class OCLCodeCache {
     }
 
     private boolean isQuartusHLSRequired() {
-        if (fpgaCompiler.equals("aoc")) {
-            return true;
-        } else {
-            return false;
-        }
+        return (fpgaCompiler.equals("aoc"));
     }
 
     private void assertIfQuartusHLSIsPresent() {
@@ -144,11 +140,7 @@ public class OCLCodeCache {
     }
 
     private boolean runOnIntelFPGAWithOneAPI() {
-        if (System.getenv("ONEAPI_ROOT") == null) {
-            return false;
-        } else {
-            return true;
-        }
+        return (System.getenv("ONEAPI_ROOT") != null);
     }
 
     private String fetchFPGAConfigurationFile() {
