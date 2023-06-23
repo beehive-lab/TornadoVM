@@ -25,6 +25,7 @@ package uk.ac.manchester.tornado.runtime;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -33,6 +34,9 @@ import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
+import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -96,10 +100,10 @@ public class TornadoVM extends TornadoLogger {
      * @return An {@link Event} indicating the completion of execution.
      */
     public Event execute() {
-        return executeThreadManagerForInterpreters();
+        return executeInterpreterThreadManager();
     }
 
-    private int getNumberOfThreadsToSpawn() {
+    private int calculateNumberOfJavaThreads() { // TODO JAVA THREADS in name --> calculate nu
         return shouldRunConcurrently() ? executionContext.getValidContextSize() : 1;
     }
 
@@ -109,10 +113,10 @@ public class TornadoVM extends TornadoLogger {
      *
      * @return An {@link Event} indicating the completion of execution.
      */
-    private Event executeThreadManagerForInterpreters() {
+    private Event executeInterpreterThreadManager() {
         // Create a thread pool with a fixed number of threads
-        int numThreads = getNumberOfThreadsToSpawn();
-        ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+        int numberOfJavaThreads = calculateNumberOfJavaThreads();
+        ExecutorService executor = Executors.newFixedThreadPool(numberOfJavaThreads);
 
         // Create a list to hold the futures of each execution
         List<Future<?>> futures = new ArrayList<>();
@@ -123,16 +127,25 @@ public class TornadoVM extends TornadoLogger {
             futures.add(future);
         }
         // Wait for all tasks to complete
-        for (Future<?> future : futures) {
-            try {
-                future.get(); // Blocking call to wait for the task to complete
-            } catch (Exception e) {
-                // Handle any exceptions that occurred during execution
-                e.printStackTrace();
+        try {
+            for (Future<?> future : futures) {
+                future.get();
             }
+        } catch (ExecutionException | InterruptedException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof TornadoBailoutRuntimeException) {
+                throw new TornadoBailoutRuntimeException(e.getMessage());
+            } else if (cause instanceof TornadoFailureException) {
+                throw new TornadoFailureException(e);
+            } else if (cause instanceof TornadoDeviceFP64NotSupported) {
+                throw new TornadoDeviceFP64NotSupported(e.getMessage());
+            } else {
+                throw new RuntimeException(e);
+            }
+        } finally {
+            // Shutdown the executor after all tasks have completed
+            executor.shutdown();
         }
-        // Shutdown the executor after all tasks have completed
-        executor.shutdown();
 
         return new EmptyEvent();
     }

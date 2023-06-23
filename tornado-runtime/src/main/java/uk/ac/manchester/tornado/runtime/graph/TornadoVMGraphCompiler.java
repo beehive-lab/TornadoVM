@@ -79,7 +79,7 @@ public class TornadoVMGraphCompiler {
                 scheduleAndEmitTornadoVMBytecodes(tornadoVMBytecodeBuilder, graph, intermediateTornadoGraph, 0, 0, 0, i);
             } else {
                 // Generate bytecodes with batches
-                scheduleAndEmitTornadoVMBytecodesWithBatchConfiguration(batchSize, executionContext, tornadoVMBytecodeBuilder, graph, intermediateTornadoGraph);
+                scheduleBatchDependentBytecodes(batchSize, executionContext, tornadoVMBytecodeBuilder, graph, intermediateTornadoGraph);
             }
 
             // Last operation -> perform synchronisation
@@ -113,8 +113,8 @@ public class TornadoVMGraphCompiler {
         return isSingleDeviceExecution;
     }
 
-    private static void scheduleAndEmitTornadoVMBytecodesWithBatchConfiguration(long batchSize, TornadoExecutionContext executionContext, TornadoVMBytecodeBuilder tornadoVMBytecodeBuilder,
-            TornadoGraph graph, IntermediateTornadoGraph intermediateTornadoGraph) {
+    private static void scheduleBatchDependentBytecodes(long batchSize, TornadoExecutionContext executionContext, TornadoVMBytecodeBuilder tornadoVMBytecodeBuilder, TornadoGraph graph,
+            IntermediateTornadoGraph intermediateTornadoGraph) {
         BatchConfiguration batchConfiguration = null;
         if (batchSize != -1) {
             batchConfiguration = batchConfiguration.computeChunkSizes(executionContext, batchSize);

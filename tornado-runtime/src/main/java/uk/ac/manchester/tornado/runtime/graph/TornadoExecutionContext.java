@@ -295,7 +295,7 @@ public class TornadoExecutionContext {
      * It calculates the number of valid contexts. A valid context refers to a
      * context that is not null within the list of devices. This behavior is caused
      * in the ExecutionContext that does not append devices sequentially, but they
-     * are placed in the order/index to preserve their order in the driver.
+     * are placed in an order/index to preserve their original order in the driver.
      *
      * @return The number of valid contexts in the {@link TornadoExecutionContext}.
      */

@@ -541,7 +541,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
     private ExecutionInfo compileTaskFromBytecodeToBinary(final int callWrapperIndex, final int numArgs, final int eventList, final int taskIndex, final long batchThreads) {
 
         if (deviceForInterpreter.getDeviceContext().wasReset() && finishedWarmup) {
-            throw new TornadoFailureException("[ERROR] reset() was called after warmup()");
+            throw new TornadoFailureException("[ERROR] reset() was called after warmup() on device: " + deviceForInterpreter + "!");
         }
 
         boolean redeployOnDevice = executionContext.redeployOnDevice();
