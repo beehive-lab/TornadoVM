@@ -128,6 +128,21 @@ public class OCLCodeCache {
         return token.startsWith("#");
     }
 
+    private boolean isQuartusHLSRequired() {
+        if (fpgaCompiler.equals("aoc")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private void assertIfQuartusHLSIsPresent() {
+        if (System.getenv("QUARTUS_ROOT_DIR") == null) {
+            throw new TornadoRuntimeException("[ERROR] The FPGA compiler (" + fpgaCompiler
+                    + ") requires the installation of the Intel(R) Quartus(R) Prime software. You can check if Quartus is installed and whether the QUARTUS_ROOT_DIR variable is properly set.");
+        }
+    }
+
     private boolean runOnIntelFPGAWithOneAPI() {
         if (System.getenv("ONEAPI_ROOT") == null) {
             return false;
@@ -500,7 +515,12 @@ public class OCLCodeCache {
                 linkCommand = composeXilinxHLSLinkCommand(entryPoint);
             } else if (isPlatform("intel")) {
                 if (runOnIntelFPGAWithOneAPI()) {
-                    compilationCommand = composeIntelHLSCommandForOneAPI(inputFile, outputFile);
+                    if (isQuartusHLSRequired()) {
+                        assertIfQuartusHLSIsPresent();
+                        compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
+                    } else {
+                        compilationCommand = composeIntelHLSCommandForOneAPI(inputFile, outputFile);
+                    }
                 } else {
                     compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
                 }
