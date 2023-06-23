@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
 import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
 
 /**
@@ -81,7 +82,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         super.before();
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
         if (driver.getDeviceCount() < 2) {
-            throw new UnsupportedConfigurationException("Not enough devices to run tests");
+            throw new TornadoVMMultiDeviceNotSupported("Not enough devices to run tests");
         }
     }
 

@@ -59,7 +59,7 @@ public class TestConcurrentBackends {
     }
 
     @Test
-    public void testTwoBackendsSerial() {
+    public void testTwoBackendsSerial() { //TODO: Fix me to guard device indexing
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b)//
@@ -68,7 +68,18 @@ public class TestConcurrentBackends {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b);//
 
         runAndVerifyResults(taskGraph);
+    }
 
+    @Test
+    public void testThreeBackendsSerial() {
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b)//
+                .task("t0", TestMultipleTasksSingleDevice::task0Initialization, b)//
+                .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b);//
+
+        runAndVerifyResults(taskGraph);
     }
 
     @Test
@@ -82,8 +93,21 @@ public class TestConcurrentBackends {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b);//
 
         runAndVerifyResults(taskGraph);
-
     }
+
+    @Test
+    public void testThreeBackendsConcurrent() { //TODO: Fix me to guard device indexing
+        System.setProperty("tornado.concurrent.devices", "True");
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b)//
+                .task("t0", TestMultipleTasksSingleDevice::task0Initialization, b)//
+                .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b);//
+
+        runAndVerifyResults(taskGraph);
+    }
+
 
     private static void runAndVerifyResults(TaskGraph taskGraph) {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -95,4 +119,5 @@ public class TestConcurrentBackends {
             assertEquals(10, b[i]);
         }
     }
+
 }
