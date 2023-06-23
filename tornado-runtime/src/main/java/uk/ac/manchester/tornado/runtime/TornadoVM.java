@@ -54,7 +54,6 @@ import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph;
  */
 public class TornadoVM extends TornadoLogger {
     private final TornadoExecutionContext executionContext;
-    private final boolean setNewDevice;
 
     private final TornadoProfiler timeProfiler;
 
@@ -72,14 +71,11 @@ public class TornadoVM extends TornadoLogger {
      *            the {@link TornadoGraph} representing the TaskGraph
      * @param timeProfiler
      *            the {@link TornadoProfiler} for profiling execution time
-     * @param batchSize
-     *            the batch size when running in batch mode
      */
-    public TornadoVM(TornadoExecutionContext executionContext, TornadoGraph tornadoGraph, TornadoProfiler timeProfiler, long batchSize, boolean setNewDevice) {
+    public TornadoVM(TornadoExecutionContext executionContext, TornadoGraph tornadoGraph, TornadoProfiler timeProfiler) {
         this.executionContext = executionContext;
         this.timeProfiler = timeProfiler;
-        this.setNewDevice = setNewDevice;
-        tornadoVMBytecodes = TornadoVMGraphCompiler.compile(tornadoGraph, executionContext, batchSize);
+        tornadoVMBytecodes = TornadoVMGraphCompiler.compile(tornadoGraph, executionContext);
         tornadoVMInterpreters = new TornadoVMInterpreter[executionContext.getValidContextSize()];
         bindBytecodesToInterpreters();
     }

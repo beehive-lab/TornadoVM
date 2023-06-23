@@ -44,16 +44,14 @@ public class TornadoVMGraphCompiler {
      *            TornadoVM execution Graph.
      * @param executionContext
      *            TornadoVM execution executionContext.
-     * @param batchSize
-     *            Batch size
      * @return {@link TornadoVMBytecodeBuilder[]}
      */
-    public static TornadoVMBytecodeResult[] compile(TornadoGraph graph, TornadoExecutionContext executionContext, long batchSize) {
-        return compileTornadoGraphToTornadoBytecodes(graph, executionContext, batchSize);
+    public static TornadoVMBytecodeResult[] compile(TornadoGraph graph, TornadoExecutionContext executionContext) {
+        return compileTornadoGraphToTornadoBytecodes(graph, executionContext);
     }
 
-    private static TornadoVMBytecodeResult[] compileTornadoGraphToTornadoBytecodes(TornadoGraph graph, TornadoExecutionContext executionContext, long batchSize) {
-        final boolean isSingleContextCompilation = shouldGenerateSingleBytecode(executionContext, batchSize);
+    private static TornadoVMBytecodeResult[] compileTornadoGraphToTornadoBytecodes(TornadoGraph graph, TornadoExecutionContext executionContext) {
+        final boolean isSingleContextCompilation = shouldGenerateSingleBytecode(executionContext);
 
         final int numContexts = isSingleContextCompilation ? 1 : executionContext.getValidContextSize();
 
@@ -75,11 +73,11 @@ public class TornadoVMGraphCompiler {
             tornadoVMBytecodeBuilder.begin(1, 1, intermediateTornadoGraph.getNumberOfDependencies() + 1);
 
             // Generate bytecodes with no batches
-            if (batchSize == -1) {
+            if (executionContext.getBatchSize() == -1) {
                 scheduleAndEmitTornadoVMBytecodes(tornadoVMBytecodeBuilder, graph, intermediateTornadoGraph, 0, 0, 0, i);
             } else {
                 // Generate bytecodes with batches
-                scheduleBatchDependentBytecodes(batchSize, executionContext, tornadoVMBytecodeBuilder, graph, intermediateTornadoGraph);
+                scheduleBatchDependentBytecodes(executionContext, tornadoVMBytecodeBuilder, graph, intermediateTornadoGraph);
             }
 
             // Last operation -> perform synchronisation
@@ -102,9 +100,9 @@ public class TornadoVMGraphCompiler {
         return tornadoVMBytecodeResults;
     }
 
-    private static boolean shouldGenerateSingleBytecode(TornadoExecutionContext executionContext, long batchSize) {
+    private static boolean shouldGenerateSingleBytecode(TornadoExecutionContext executionContext) {
         boolean isSingleDeviceExecution = executionContext.getValidContextSize() == 1;
-        boolean isBatchEnabled = batchSize != -1;
+        boolean isBatchEnabled = executionContext.getBatchSize() != -1;
 
         if (isBatchEnabled && !isSingleDeviceExecution) {
             throw new TornadoRuntimeException("[UNSUPPORTED] Batches can only be enabled for single device execution");
@@ -113,9 +111,12 @@ public class TornadoVMGraphCompiler {
         return isSingleDeviceExecution;
     }
 
-    private static void scheduleBatchDependentBytecodes(long batchSize, TornadoExecutionContext executionContext, TornadoVMBytecodeBuilder tornadoVMBytecodeBuilder, TornadoGraph graph,
+    private static void scheduleBatchDependentBytecodes(TornadoExecutionContext executionContext, TornadoVMBytecodeBuilder tornadoVMBytecodeBuilder, TornadoGraph graph,
             IntermediateTornadoGraph intermediateTornadoGraph) {
         BatchConfiguration batchConfiguration = null;
+
+        final long batchSize = executionContext.getBatchSize();
+
         if (batchSize != -1) {
             batchConfiguration = batchConfiguration.computeChunkSizes(executionContext, batchSize);
         }

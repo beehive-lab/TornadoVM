@@ -70,6 +70,7 @@ public class TornadoExecutionContext {
     private int[] taskToDeviceMapTable;
     private int nextTask;
 
+    private long batchSize;
     private Set<TornadoAcceleratorDevice> lastDevices;
 
     private boolean redeployOnDevice;
@@ -92,6 +93,7 @@ public class TornadoExecutionContext {
         taskToDeviceMapTable = new int[MAX_TASKS];
         Arrays.fill(taskToDeviceMapTable, -1);
         nextTask = 0;
+        batchSize = -1;
         lastDevices = new HashSet<>();
         this.profiler = profiler;
         this.isDataDependencyDetected = isDataDependencyInTaskGraph();
@@ -118,6 +120,14 @@ public class TornadoExecutionContext {
             objectState.add(index, new LocalObjectState(var));
         }
         return index;
+    }
+
+    public void setBatchSize(long size) {
+        this.batchSize = size;
+    }
+
+    public long getBatchSize() {
+        return batchSize;
     }
 
     public int replaceVariable(Object oldObj, Object newObj) {

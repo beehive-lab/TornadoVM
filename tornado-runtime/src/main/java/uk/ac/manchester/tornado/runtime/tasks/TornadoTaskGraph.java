@@ -622,11 +622,13 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         final TornadoGraph tornadoGraph = TornadoGraphBuilder.buildGraph(executionContext, buffer);
 
         if (setNewDevice) {
+            // setNewDevice does not need to propagate any further as executionContext is
+            // updated. So, all the required state is set properly in the executionContext
             updateDeviceContext(tornadoGraph);
         }
 
         // TornadoVM byte-code generation
-        TornadoVM tornadoVM = new TornadoVM(executionContext, tornadoGraph, timeProfiler, batchSizeBytes, setNewDevice);
+        TornadoVM tornadoVM = new TornadoVM(executionContext, tornadoGraph, timeProfiler);
 
         if (meta().shouldDumpTaskGraph()) {
             executionContext.dumpExecutionContextMeta();
@@ -2072,6 +2074,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             default:
                 throw new TornadoRuntimeException("Units not supported: " + units);
         }
+        executionContext.setBatchSize(this.batchSizeBytes);
     }
 
     @Override
