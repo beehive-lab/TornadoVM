@@ -96,7 +96,7 @@ List of TornadoVM Flags:
     | Allows to run a TaskGraph in multiple devices concurrently. The user
       needs explicitly to define the device for each task, otherwise all
       tasks will run on the default device. For instance,
-      ``-Ds0.t0.device=0:0 -Ds0.t1.device=0:1``
+        ``-Ds0.t0.device=0:0 -Ds0.t1.device=0:1``
 
 
 Optimizations
