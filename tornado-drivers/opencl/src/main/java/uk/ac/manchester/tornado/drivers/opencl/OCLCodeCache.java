@@ -66,7 +66,7 @@ public class OCLCodeCache {
     private static final String FALSE = "False";
     private static final String TRUE = "True";
     private static final int SPIRV_MAGIC_NUMBER = 119734787;
-    private final String OPENCL_SOURCE_SUFFIX = ".cl";
+    private static final String OPENCL_SOURCE_SUFFIX = ".cl";
     private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", FALSE));
     private final boolean OPENCL_DUMP_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.dump", FALSE));
     private final boolean OPENCL_DUMP_SOURCE = Boolean.parseBoolean(getProperty("tornado.opencl.source.dump", FALSE));
@@ -74,9 +74,12 @@ public class OCLCodeCache {
     private final String OPENCL_CACHE_DIR = getProperty("tornado.opencl.codecache.dir", "/var/opencl-codecache");
     private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.log.dir", "/var/opencl-logs");
+    private static final String DEFAULT_FPGA_CONFIGURATION_FILE_FOR_INTEL = "/etc/intel-fpga.conf";
+    private static final String DEFAULT_FPGA_CONFIGURATION_FILE_FOR_INTEL_ONEAPI = "/etc/intel-oneapi-fpga.conf";
+    private static final String DEFAULT_FPGA_CONFIGURATION_FILE_FOR_XILINX = "/etc/xilinx-fpga.conf";
     private final String FPGA_CONFIGURATION_FILE = getProperty("tornado.fpga.conf.file", null);
-    private final String FPGA_CLEANUP_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/cleanFpga.sh";
-    private final String FPGA_AWS_AFI_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/aws_post_processing.sh";
+    private static final String FPGA_CLEANUP_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/cleanFpga.sh";
+    private static final String FPGA_AWS_AFI_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/aws_post_processing.sh";
     /**
      * OpenCL Binary Options: -Dtornado.precompiled.binary=<path/to/binary,task>
      *
@@ -145,12 +148,12 @@ public class OCLCodeCache {
 
     private String fetchFPGAConfigurationFile() {
         if (deviceContext.getDevice().getDeviceVendor().equalsIgnoreCase("xilinx")) {
-            return "/etc/xilinx-fpga.conf";
+            return DEFAULT_FPGA_CONFIGURATION_FILE_FOR_XILINX;
         } else {
             if (runOnIntelFPGAWithOneAPI()) {
-                return "/etc/intel-oneapi-fpga.conf";
+                return DEFAULT_FPGA_CONFIGURATION_FILE_FOR_INTEL_ONEAPI;
             } else {
-                return "/etc/intel-fpga.conf";
+                return DEFAULT_FPGA_CONFIGURATION_FILE_FOR_INTEL;
             }
         }
     }
