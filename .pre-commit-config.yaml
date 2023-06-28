@@ -9,9 +9,9 @@ repos:
         - id: check-added-large-files
         - id: check-merge-conflict
         - id: end-of-file-fixer
-        - id: trailing-whitespace
         - id: check-json
         - id: check-xml
         - id: detect-private-key
         - id: no-commit-to-branch
           args: ['--branch', 'develop']
+        - id: trailing-whitespace
