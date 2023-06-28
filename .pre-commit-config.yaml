@@ -15,3 +15,11 @@ repos:
         - id: no-commit-to-branch
           args: ['--branch', 'develop']
         - id: trailing-whitespace
+    - repo: local
+      hooks:
+        - id: run-rst-lint
+          name: Lint rst files ...
+          entry: scripts/validate_rst.py
+          stages: [commit]
+          language: python
+          always_run: true
