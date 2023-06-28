@@ -52,21 +52,21 @@ Step 1: Update/Create the FPGA’s configuration file
 ---------------------------------------------------
 
 Update the “$TORNADO_SDK/etc/vendor-fpga.conf” file with the necessary
-information (i.e. fpga platform name ( DEVICE_NAME), HLS compiler flags
-(FLAGS), HLS directory (DIRECTORY_BITSTREAM). TornadoVM will
+information (i.e. fpga platform name (DEVICE_NAME), HLS compiler (COMPILER),
+HLS compiler flags (FLAGS), HLS directory (DIRECTORY_BITSTREAM). TornadoVM will
 automatically load the user-defined configurations according to the
 vendor of the underlying FPGA device. You can also run TornadoVM with
 your configuration file, by using the ``-Dtornado.fpga.conf.file=FILE``
 flag.
 
-Example of configuration file for Intel FPGAs (Emulation mode) with the `TornadoVM Docker image <https://github.com/beehive-lab/docker-tornado#intel-integrated-graphics>`__:
+Example of a configuration file for Intel FPGAs (Emulation mode) with the `Intel oneAPI Base Tool Kit <https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit.html>`__:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Edit/create the configuration file fo the FPGA:
+Edit/create the configuration file:
 
 .. code:: bash
 
-   $ vim $TORNADO_SDK/etc/intel-docker-fpga.conf
+   $ vim $TORNADO_SDK/etc/intel-oneapi-fpga.conf
 
 .. code:: conf
 
@@ -78,7 +78,7 @@ Edit/create the configuration file fo the FPGA:
    # [options]
    DIRECTORY_BITSTREAM = fpga-source-comp/ # Specify the directory
 
-Example of configuration file for Intel Nallatech-A385 FPGA (Intel Arria 10 GT1150):
+Example of a configuration file for an Intel Nallatech-A385 FPGA (Intel Arria 10 GT1150):
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Edit/create the configuration file fo the FPGA:
@@ -98,7 +98,7 @@ Edit/create the configuration file fo the FPGA:
    FLAGS = -v -report # Configure the compilation flags
    DIRECTORY_BITSTREAM = fpga-source-comp/ # Specify the directory
 
-Example of configuration file for Xilinx KCU1500:
+Example of a configuration file for a Xilinx KCU1500 FPGA:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
@@ -123,7 +123,7 @@ env variables of the SDAccel toolchain as follows:
 
    source /opt/Xilinx/SDx/2018.2/settings64.sh
 
-Example of configuration file for Xilinx Alveo U50:
+Example of a configuration file for a Xilinx Alveo U50 FPGA:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
@@ -149,7 +149,7 @@ env variables of the Vitis toolchain as follows:
    source /opt/Xilinx/Vitis/2020.2/settings64.sh
    source /opt/xilinx/xrt/setup.sh
 
-Example of configuration file for AWS xilinx_aws-vu9p-f1-04261818_dynamic_5_0:
+Example of a configuration file for an AWS xilinx_aws-vu9p-f1-04261818_dynamic_5_0 FPGA:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
@@ -232,7 +232,7 @@ than 64MB of heap size, the following flag can be used
 .. code:: bash
 
    tornado --jvm="-Ds0.t0.device=0:1 -Dtornado.device.memory=64MB "\
-       -m tornadoexamples/uk.ac.manchester.tornado.examples.dynamic.DFTMT \
+       -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTMT \
        --params="1024 normal 1"
 
 3. Emulation Mode
@@ -248,22 +248,14 @@ A) Emulation of an Intel platform:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can run in Emulation mode either by using a Docker container or
-locally:
+locally. In the following examples, we assume that the FPGA device uses
+the identifier ``1:0``.
 
--  Using a Docker Image:
+-  Dockerized execution:
 
-If you use a Docker image provided by `Intel
-OneAPI <https://hub.docker.com/r/intel/oneapi>`__, please set up the
-following variable:
-
-.. code:: bash
-
-   $ export DOCKER_FPGA_EMULATION=1
-
-In case you use the `TornadoVM Docker
+If you use the `TornadoVM Docker
 image <https://github.com/beehive-lab/docker-tornado#intel-integrated-graphics>`__,
-this variable is configured by default. Therefore you can run the
-following example in which the FPGA device uses the identifier ``1:0``.
+you can run the following example.
 
 Example:
 
@@ -274,6 +266,18 @@ Example:
        -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTMT --params="1024 default 10"
 
 -  Local execution:
+
+If you use the ``aocl-ioc64`` emulator compiler/linker provided by the
+Intel oneAPI Base Tool Kit, you can run:
+
+.. code:: bash
+
+   tornado \
+       --jvm="-Ds0.t0.device=1:0 "
+       -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTMT --params="1024 default 10"
+
+Alternatively, if you use the ``aoc`` FPGA SDK compiler that requires you to have the
+Intel(R) Quartus(R) Prime software already installed, you can:
 
 Set the ``CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA`` env variable to ``1``,
 so as to enable the execution on the emulated device.
