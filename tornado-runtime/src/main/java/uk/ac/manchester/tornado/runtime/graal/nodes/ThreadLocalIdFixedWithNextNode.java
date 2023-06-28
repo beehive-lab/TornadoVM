@@ -48,7 +48,7 @@ public class ThreadLocalIdFixedWithNextNode extends FixedWithNextNode implements
     @Input
     ValueNode object;
     private final int dimension;
-    public static final NodeClass<ThreadLocalIdFixedWithNextNode> TYPE = NodeClass.create(ThreadLocalIdFixedWithNextNode.class);
+    public static final NodeClass<ThreadLocalIdFixedWithNextsssNode> TYPE = NodeClass.create(ThreadLocalIdFixedWithNextNode.class);
 
     public ValueNode object() {
         return this.object;
