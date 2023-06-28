@@ -1,0 +1,17 @@
+default_language_version:
+    python: python3.10
+fail_fast: True
+default_stages: [push]
+repos:
+    - repo: https://github.com/pre-commit/pre-commit-hooks
+      rev: v4.4.0
+      hooks:
+        - id: check-added-large-files
+        - id: check-merge-conflict
+        - id: end-of-file-fixer
+        - id: trailing-whitespace
+        - id: check-json
+        - id: check-xml
+        - id: detect-private-key
+        - id: no-commit-to-branch
+          args: ['--branch', 'develop']
