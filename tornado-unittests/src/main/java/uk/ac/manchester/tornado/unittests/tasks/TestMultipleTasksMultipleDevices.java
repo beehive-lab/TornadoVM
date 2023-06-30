@@ -28,8 +28,10 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
 
 /**
@@ -51,32 +53,52 @@ import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupporte
  * tornado-test -V uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices
  * </pre>
  **/
-public class TestMultipleTasksMultipleDevices {
+public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
+    private final static int NUM_ELEMENTS = 8192;
     private static int devices;
-    private static int numElements;
     private static int[] a;
     private static int[] b;
     private static int[] c;
     private static int[] d;
+    private static int[] e;
+
+    public static void task0Initialization(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = i;
+        }
+    }
+
+    public static void task1Multiplication(int[] a, int alpha) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = a[i] * i;
+        }
+    }
+
+    public static void task2Saxpy(int[] a, int[] b, int[] c, int alpha) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            c[i] = alpha * a[i] + b[i];
+        }
+    }
 
     @BeforeClass
     public static void setUpBeforeClass() {
         devices = TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
-        numElements = 8192;
 
         if (devices < 2) {
             throw new TornadoVMMultiDeviceNotSupported("This test needs at least 2 devices in the current backend.");
         }
 
-        a = new int[numElements];
-        b = new int[numElements];
-        c = new int[numElements];
-        d = new int[numElements];
+        a = new int[NUM_ELEMENTS];
+        b = new int[NUM_ELEMENTS];
+        c = new int[NUM_ELEMENTS];
+        d = new int[NUM_ELEMENTS];
+        e = new int[NUM_ELEMENTS];
 
-        IntStream.range(0, numElements).forEach(i -> {
+        IntStream.range(0, NUM_ELEMENTS).forEach(i -> {
             a[i] = 30;
             b[i] = 1;
             c[i] = 120;
+            e[i] = i;
         });
 
     }
@@ -86,8 +108,8 @@ public class TestMultipleTasksMultipleDevices {
         System.setProperty("s0.t0.device", "0:0");
         System.setProperty("s0.t1.device", "0:1");
         TaskGraph taskGraph = new TaskGraph("s0")//
-                .task("t0", TestMultipleTasksSingleDevice::task0Initialization, b) //
-                .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12) //
+                .task("t0", TestMultipleTasksMultipleDevices::task0Initialization, b) //
+                .task("t1", TestMultipleTasksMultipleDevices::task1Multiplication, a, 12) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -97,8 +119,8 @@ public class TestMultipleTasksMultipleDevices {
         executionPlan.execute();
 
         for (int i = 0; i < a.length; i++) {
-            assertEquals(360, a[i]);
-            assertEquals(10, b[i]);
+            assertEquals(30 * i, a[i]);
+            assertEquals(i, b[i]);
         }
     }
 
@@ -109,10 +131,10 @@ public class TestMultipleTasksMultipleDevices {
         System.setProperty("s0.t2.device", "0:0");
 
         TaskGraph taskGraph = new TaskGraph("s0")//
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c) //
-                .task("t0", TestMultipleTasksSingleDevice::task0Initialization, b) //
-                .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12) //
-                .task("t2", TestMultipleTasksSingleDevice::task2Saxpy, c, c, d, 12) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c, e) //
+                .task("t0", TestMultipleTasksMultipleDevices::task0Initialization, b) //
+                .task("t1", TestMultipleTasksMultipleDevices::task1Multiplication, a, 12) //
+                .task("t2", TestMultipleTasksMultipleDevices::task2Saxpy, c, e, d, 12) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b, d); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -120,9 +142,9 @@ public class TestMultipleTasksMultipleDevices {
         executionPlan.execute();
 
         for (int i = 0; i < a.length; i++) {
-            assertEquals(360, a[i]);
-            assertEquals(10, b[i]);
-            assertEquals((12 * 120) + 120, d[i]);
+            assertEquals(30 * i, a[i]);
+            assertEquals(i, b[i]);
+            assertEquals(12L * c[i] + e[i], d[i]);
         }
     }
 }
