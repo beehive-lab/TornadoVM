@@ -27,9 +27,16 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.stream.IntStream;
+
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
+
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
@@ -43,22 +50,15 @@ import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.IntStream;
-
 public final class OCLDriver extends TornadoLogger implements TornadoAcceleratorDriver {
-    public static final List<OCLDeviceType> DEVICE_TYPE_LIST = Arrays.asList( //
+    protected static final List<OCLDeviceType> DEVICE_TYPE_LIST = Arrays.asList( //
             OCLDeviceType.CL_DEVICE_TYPE_GPU, //
             OCLDeviceType.CL_DEVICE_TYPE_CPU, //
             OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR, //
             OCLDeviceType.CL_DEVICE_TYPE_CUSTOM);
-    private OCLBackend[] flatBackends;
     private final OCLBackend[][] backends;
     private final List<OCLExecutionEnvironment> contexts;
+    private OCLBackend[] flatBackends;
 
     public OCLDriver(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
         final int numPlatforms = OpenCL.getNumPlatforms();
@@ -71,7 +71,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         contexts = new ArrayList<>();
         discoverDevices(options, vmRuntime, vmConfig);
         flatBackends = flattenBackends(backends);
-        flatBackends = orderFlattenBackends(DEVICE_TYPE_LIST);
+        flatBackends = orderFlattenBackends();
     }
 
     private OCLBackend[] flattenBackends(OCLBackend[][] backends) {
@@ -85,34 +85,26 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         return flatBackendList;
     }
 
-    private static String getString(String property) {
-        return System.getProperty(property) == null ? null : System.getProperty(property);
-    }
-
     /**
-     * Orders the flat list of OpenCL backends based on the provided device type ordering.
+     * Orders the flat list of OpenCL backends based on the provided device type
+     * ordering.
      *
-     * @param deviceTypeOrdering
-     *         A list of OpenCL device types in the desired order.
-     * @return An array of OpenCL backends ordered according to the device type ordering.
+     * @return An array of OpenCL backends ordered according to the device type
+     *         ordering.
      */
-    private OCLBackend[] orderFlattenBackends(List<OCLDeviceType> deviceTypeOrdering) {
+    private OCLBackend[] orderFlattenBackends() {
         List<OCLBackend> backendList = new ArrayList<>();
-        Map<OCLDeviceType, List<OCLBackend>> deviceTypeMap = new HashMap<>();
+        EnumMap<OCLDeviceType, List<OCLBackend>> deviceTypeMap = new EnumMap<>(OCLDeviceType.class);
 
         // Populate deviceTypeMap with backends for each device type
         for (OCLBackend backend : flatBackends) {
             OCLDeviceType deviceType = backend.getDeviceContext().getDevice().getDeviceType();
-            List<OCLBackend> backendListForDeviceType = deviceTypeMap.get(deviceType);
-            if (backendListForDeviceType == null) {
-                backendListForDeviceType = new ArrayList<>();
-                deviceTypeMap.put(deviceType, backendListForDeviceType);
-            }
+            List<OCLBackend> backendListForDeviceType = deviceTypeMap.computeIfAbsent(deviceType, k -> new ArrayList<>());
             backendListForDeviceType.add(backend);
         }
 
         // Add backends to backendList in the order specified by deviceTypeOrdering
-        for (OCLDeviceType deviceType : deviceTypeOrdering) {
+        for (OCLDeviceType deviceType : OCLDriver.DEVICE_TYPE_LIST) {
             List<OCLBackend> backendListForDeviceType = deviceTypeMap.get(deviceType);
             if (backendListForDeviceType != null) {
                 backendList.addAll(backendListForDeviceType);
@@ -155,7 +147,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         return backend;
     }
 
-    private OCLBackend swapDefaultDevice(final int device) {
+    private void swapDefaultDevice(final int device) {
         OCLBackend tmp = flatBackends[0];
         flatBackends[0] = flatBackends[device];
         flatBackends[device] = tmp;
@@ -164,7 +156,6 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         if (!backend.isInitialised()) {
             backend.init();
         }
-        return backend;
     }
 
     private OCLBackend createOCLJITCompiler(final OptionValues options, final HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig vmConfig, final OCLExecutionEnvironment context,
