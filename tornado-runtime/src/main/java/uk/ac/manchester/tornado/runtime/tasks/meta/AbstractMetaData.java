@@ -48,6 +48,8 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     private static final long[] SEQUENTIAL_GLOBAL_WORK_GROUP = { 1, 1, 1 };
+    private static final String TRUE = "True";
+    private static final String FALSE = "False";
     private final boolean isDeviceDefined;
     private final HashSet<String> openCLBuiltOptions = new HashSet<>(Arrays.asList( //
             "-cl-single-precision-constant", //
@@ -130,34 +132,34 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
             deviceIndex = TornadoOptions.DEFAULT_DEVICE_INDEX;
         }
 
-        debugKernelArgs = parseBoolean(getDefault("debug.kernelargs", id, "True"));
-        printCompileTimes = parseBoolean(getDefault("debug.compiletimes", id, "False"));
+        debugKernelArgs = parseBoolean(getDefault("debug.kernelargs", id, TRUE));
+        printCompileTimes = parseBoolean(getDefault("debug.compiletimes", id, FALSE));
         printKernelExecutionTime = parseBoolean(getProperty("tornado.debug.executionTime"));
-        openclUseRelativeAddresses = parseBoolean(getDefault("opencl.userelative", id, "False"));
-        openclWaitActive = parseBoolean(getDefault("opencl.wait.active", id, "False"));
-        coarsenWithCpuConfig = parseBoolean(getDefault("coarsener.ascpu", id, "False"));
+        openclUseRelativeAddresses = parseBoolean(getDefault("opencl.userelative", id, FALSE));
+        openclWaitActive = parseBoolean(getDefault("opencl.wait.active", id, FALSE));
+        coarsenWithCpuConfig = parseBoolean(getDefault("coarsener.ascpu", id, FALSE));
 
         /*
          * Allows the OpenCL driver to select the size of local work groups
          */
-        openclUseDriverScheduling = parseBoolean(getDefault("opencl.usedriver.schedule", id, "false"));
-        vmWaitEvent = parseBoolean(getDefault("vm.waitevent", id, "False"));
-        enableExceptions = parseBoolean(getDefault("exceptions.enable", id, "False"));
-        enableProfiling = parseBoolean(getDefault("profiling.enable", id, "False"));
-        enableOooExecution = parseBoolean(getDefault("ooo-execution.enable", id, "False"));
-        openclUseBlockingApiCalls = parseBoolean(getDefault("opencl.blocking", id, "False"));
+        openclUseDriverScheduling = parseBoolean(getDefault("opencl.usedriver.schedule", id, FALSE));
+        vmWaitEvent = parseBoolean(getDefault("vm.waitevent", id, FALSE));
+        enableExceptions = parseBoolean(getDefault("exceptions.enable", id, FALSE));
+        enableProfiling = parseBoolean(getDefault("profiling.enable", id, FALSE));
+        enableOooExecution = parseBoolean(getDefault("ooo-execution.enable", id, FALSE));
+        openclUseBlockingApiCalls = parseBoolean(getDefault("opencl.blocking", id, FALSE));
 
-        enableParallelization = parseBoolean(getDefault("parallelise", id, "True"));
+        enableParallelization = parseBoolean(getDefault("parallelise", id, TRUE));
         isEnableParallelizationDefined = getProperty(id + ".parallelise") != null;
 
-        enableVectors = parseBoolean(getDefault("vectors.enable", id, "True"));
-        openclEnableBifs = parseBoolean(getDefault("bifs.enable", id, "False"));
-        threadInfo = parseBoolean(getDefault("threadInfo", id, "False"));
-        debug = parseBoolean(getDefault("debug", id, "False"));
-        enableMemChecks = parseBoolean(getDefault("memory.check", id, "False"));
-        dumpEvents = parseBoolean(getDefault("events.dump", id, "True"));
-        dumpProfiles = parseBoolean(getDefault("profiles.print", id, "False"));
-        dumpTaskGraph = Boolean.parseBoolean(System.getProperty("dump.taskgraph", "False"));
+        enableVectors = parseBoolean(getDefault("vectors.enable", id, TRUE));
+        openclEnableBifs = parseBoolean(getDefault("bifs.enable", id, FALSE));
+        threadInfo = parseBoolean(getDefault("threadInfo", id, FALSE));
+        debug = parseBoolean(getDefault("debug", id, FALSE));
+        enableMemChecks = parseBoolean(getDefault("memory.check", id, FALSE));
+        dumpEvents = parseBoolean(getDefault("events.dump", id, TRUE));
+        dumpProfiles = parseBoolean(getDefault("profiles.print", id, FALSE));
+        dumpTaskGraph = Boolean.parseBoolean(System.getProperty("dump.taskgraph", FALSE));
 
         openclCompilerOptions = (getProperty("tornado.opencl.compiler.options") == null) ? "-w" : getProperty("tornado.opencl.compiler.options");
         isOpenclCompilerFlagsDefined = getProperty("tornado.opencl.compiler.options") != null;
@@ -173,7 +175,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
         cpuConfig = getDefault("cpu.config", id, null);
         isCpuConfigDefined = getProperty(id + ".cpu.config") != null;
-        useThreadCoarsener = Boolean.parseBoolean(getDefault("coarsener", id, "False"));
+        useThreadCoarsener = Boolean.parseBoolean(getDefault("coarsener", id, FALSE));
     }
 
     private static String getProperty(String key) {
@@ -181,18 +183,12 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     }
 
     protected static String getDefault(String keySuffix, String id, String defaultValue) {
-        if (getProperty(id + "." + keySuffix) == null) {
-            return Tornado.getProperty("tornado" + "." + keySuffix, defaultValue);
-        } else {
-            return getProperty(id + "." + keySuffix);
-        }
+        String propertyValue = getProperty(id + "." + keySuffix);
+        return (propertyValue != null) ? propertyValue : Tornado.getProperty("tornado" + "." + keySuffix, defaultValue);
     }
 
     public TornadoAcceleratorDevice getLogicDevice() {
-        if (device == null) {
-            device = resolveDevice(Tornado.getProperty(id + ".device", driverIndex + ":" + deviceIndex));
-        }
-        return device;
+        return device != null ? device : (device = resolveDevice(Tornado.getProperty(id + ".device", driverIndex + ":" + deviceIndex)));
     }
 
     private int getDeviceIndex(int driverIndex, TornadoDevice device) {

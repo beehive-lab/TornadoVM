@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.runtime.graph;
 
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.stream.Collectors;
 
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextOpNode;
@@ -139,15 +140,7 @@ public class IntermediateTornadoGraph {
     }
 
     private String toString(BitSet set) {
-        if (set.isEmpty()) {
-            return "<none>";
-        }
-
-        StringBuilder sb = new StringBuilder();
-        for (int i = set.nextSetBit(0); i != -1 && i < set.length(); i = set.nextSetBit(i + 1)) {
-            sb.append("" + i + " ");
-        }
-        return sb.toString();
+        return set.isEmpty() ? "<none>" : set.stream().mapToObj(String::valueOf).collect(Collectors.joining(" "));
     }
 
 }
