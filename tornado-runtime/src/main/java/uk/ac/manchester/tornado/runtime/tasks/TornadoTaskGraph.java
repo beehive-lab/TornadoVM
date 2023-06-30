@@ -666,10 +666,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             return COMPILE_AND_UPDATE;
         }
 
-        if (updateData) {
-            if (gridScheduler == null || !hasWorkerGridForAllTasks()) {
-                return COMPILE_ONLY;
-            }
+        if (updateData && (gridScheduler == null || !hasWorkerGridForAllTasks())) {
+            return COMPILE_ONLY;
         }
 
         if (!compareDevices(executionContext.getLastDevices(), meta().getLogicDevice())) {
@@ -1210,8 +1208,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         if (TornadoOptions.FORCE_CHECK_PARAMETERS) {
             try {
                 checkAllArgumentsPerTask();
-            } catch (TornadoTaskRuntimeException tre) {
-                throw tre;
+            } catch (TornadoTaskRuntimeException e) {
+                throw new TornadoTaskRuntimeException(e.toString());
             }
         }
 
@@ -1661,7 +1659,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             for (StreamingObject modeObject : outputModeObjects) {
                 performStreamOutThreads(modeObject.mode, task, modeObject.object);
             }
-            // performStreamOutThreads(task, streamOutObjects);
 
             ImmutableTaskGraph immutableTaskGraph = task.snapshot();
             TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);

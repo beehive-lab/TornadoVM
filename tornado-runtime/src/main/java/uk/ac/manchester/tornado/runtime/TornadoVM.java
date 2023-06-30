@@ -88,9 +88,9 @@ public class TornadoVM extends TornadoLogger {
      */
     private void bindBytecodesToInterpreters() {
         assert tornadoVMInterpreters.length == executionContext.getValidContextSize();
-        final Deque activeDevices = executionContext.getActiveDeviceIndexes();
+        final Deque<Integer> activeDevices = executionContext.getActiveDeviceIndexes();
         IntStream.range(0, executionContext.getValidContextSize())
-                .forEach(i -> tornadoVMInterpreters[i] = new TornadoVMInterpreter(executionContext, tornadoVMBytecodes[i], timeProfiler, executionContext.getDevice((Integer) activeDevices.pop())));
+                .forEach(i -> tornadoVMInterpreters[i] = new TornadoVMInterpreter(executionContext, tornadoVMBytecodes[i], timeProfiler, executionContext.getDevice(activeDevices.pop())));
     }
 
     /**

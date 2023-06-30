@@ -648,17 +648,14 @@ public class TornadoVMInterpreter extends TornadoLogger {
         }
 
         final TornadoInstalledCode installedCode = installedCodes[globalToLocalTaskIndex(taskIndex)];
+
         if (installedCode == null) {
-            // There was an error during compilation -> bailout
             throw new TornadoBailoutRuntimeException("Code generator Failed");
         }
 
         int[] atomicsArray;
-        if (task instanceof PrebuiltTask) {
-            atomicsArray = ((PrebuiltTask) task).getAtomics();
-        } else {
-            atomicsArray = deviceForInterpreter.checkAtomicsForTask(task);
-        }
+
+        atomicsArray = (task instanceof PrebuiltTask) ? ((PrebuiltTask) task).getAtomics() : deviceForInterpreter.checkAtomicsForTask(task);
 
         HashMap<Integer, Integer> map = new HashMap<>();
         if (gridScheduler != null && gridScheduler.get(task.getId()) != null) {

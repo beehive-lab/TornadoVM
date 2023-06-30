@@ -350,10 +350,9 @@ public class TornadoExecutionContext {
                 SchedulableTask otherTask = tasks.get(j);
                 if (!doTasksHaveSameIDs(task, otherTask)) {
                     List<Object> commonArgs = getCommonArgumentsInTasks(task, otherTask);
-                    if (commonArgs != Collections.emptyList()) {
-                        if (hasWriteAccess(task, otherTask)) {
-                            return true;
-                        }
+                    if (commonArgs != Collections.emptyList() && (hasWriteAccess(task, otherTask))) {
+                        return true;
+
                     }
                 }
             }
@@ -438,8 +437,7 @@ public class TornadoExecutionContext {
         List<SchedulableTask> tasksForDevice = new ArrayList<>();
         for (SchedulableTask task : tasks) {
             task.getDevice().getDriverIndex();
-            // TODO(mikepapadim) maybe driver index is not needed
-            if (task.getDevice().getDeviceContext() == deviceContext && task.getDevice().getDriverIndex() == driverIndex) {
+            if (task.getDevice().getDeviceContext() == deviceContext) {
                 tasksForDevice.add(task);
             }
         }

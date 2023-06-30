@@ -154,7 +154,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < a.length; i++) {
-            assertEquals(30 * i, a[i]);
+            assertEquals(30L * i, a[i]);
             assertEquals(i, b[i]);
             assertEquals(12L * c[i] + e[i], d[i]);
         }

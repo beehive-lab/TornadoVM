@@ -54,8 +54,8 @@ import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupporte
  * </pre>
  **/
 public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
-    private final static int NUM_ELEMENTS = 8192;
-    private static int devices;
+    private static final int NUM_ELEMENTS = 8192;
+
     private static int[] a;
     private static int[] b;
     private static int[] c;
@@ -82,11 +82,7 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
 
     @BeforeClass
     public static void setUpBeforeClass() {
-        devices = TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
-
-        if (devices < 2) {
-            throw new TornadoVMMultiDeviceNotSupported("This test needs at least 2 devices in the current backend.");
-        }
+        assertAvailableDevices(2);
 
         a = new int[NUM_ELEMENTS];
         b = new int[NUM_ELEMENTS];
@@ -101,6 +97,12 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
             e[i] = i;
         });
 
+    }
+
+    private static void assertAvailableDevices(int limit) {
+        if (TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount() < limit) {
+            throw new TornadoVMMultiDeviceNotSupported("This test needs at least + " + limit + " devices enabled");
+        }
     }
 
     @Test
@@ -119,16 +121,16 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < a.length; i++) {
-            assertEquals(30 * i, a[i]);
+            assertEquals(30L * i, a[i]);
             assertEquals(i, b[i]);
         }
     }
 
     @Test
     public void testThreeTasksTwoDevices() {
-        System.setProperty("s0.t0.device", "0:0");
-        System.setProperty("s0.t1.device", "0:1");
-        System.setProperty("s0.t2.device", "0:0");
+        System.setProperty("s0.t0.device", "0:1");
+        System.setProperty("s0.t1.device", "0:0");
+        System.setProperty("s0.t2.device", "0:1");
 
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c, e) //
@@ -142,9 +144,10 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < a.length; i++) {
-            assertEquals(30 * i, a[i]);
+            assertEquals(30L * i, a[i]);
             assertEquals(i, b[i]);
             assertEquals(12L * c[i] + e[i], d[i]);
         }
     }
+
 }
