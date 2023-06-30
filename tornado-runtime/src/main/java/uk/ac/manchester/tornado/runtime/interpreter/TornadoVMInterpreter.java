@@ -67,10 +67,11 @@ import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 /**
- * TornadoVMInterpreter: it is a bytecode interpreter (Tornado bytecodes), a
- * memory manager for all devices (FPGAs, GPUs and multicore that follows the
- * OpenCL programming model), and a JIT compiler from Java bytecode to OpenCL,
- * PTX and SPIR-V.
+ * TornadoVMInterpreter: serves as a bytecode interpreter for TornadoVM
+ * bytecodes. Also, it functions as a memory manager for various devices,
+ * including FPGAs, GPUs, and multicore processors that adhere to any of the
+ * supported programming models. Additionally, it features a Just-In-Time (JIT)
+ * compiler that compiles Java bytecode to OpenCL, PTX, and SPIR-V.
  */
 public class TornadoVMInterpreter extends TornadoLogger {
     private static final Event EMPTY_EVENT = new EmptyEvent();
@@ -100,6 +101,18 @@ public class TornadoVMInterpreter extends TornadoLogger {
     private boolean doUpdate;
     private GridScheduler gridScheduler;
 
+    /**
+     * It constructs a new TornadoVMInterpreter object.
+     *
+     * @param executionContext
+     *            The {@link TornadoExecutionContext}
+     * @param bytecodeResult
+     *            The {@link TornadoVMBytecodeResult}.
+     * @param timeProfiler
+     *            The {@link TornadoProfiler} for time measurements.
+     * @param device
+     *            The {@link TornadoAcceleratorDevice} device.
+     */
     public TornadoVMInterpreter(TornadoExecutionContext executionContext, TornadoVMBytecodeResult bytecodeResult, TornadoProfiler timeProfiler, TornadoAcceleratorDevice device) {
         this.executionContext = executionContext;
         this.timeProfiler = timeProfiler;
@@ -112,7 +125,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
         totalTime = 0;
         invocations = 0;
 
-        debug("init tornadovm interpreter...");
+        debug("init an instance of a tornadovm interpreter...");
 
         this.bytecodeResult.getLong(); // Skips bytes not needed
 
@@ -141,9 +154,9 @@ public class TornadoVMInterpreter extends TornadoLogger {
         constants = executionContext.getConstants();
         tasks = executionContext.getTasks();
 
-        debug("%s - interpreter ready to go", executionContext.getId());
-        this.bytecodeResult.mark();
+        debug("interpreter for device %s is ready to go", device.toString());
 
+        this.bytecodeResult.mark();
     }
 
     public void fetchGlobalStates() {
@@ -432,7 +445,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
 
         final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
 
-        if (TornadoOptions.PRINT_BYTECODES & isObjectAtomic(object)) {
+        if (TornadoOptions.PRINT_BYTECODES && isObjectAtomic(object)) {
             String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ONCE") + " [Object Hash Code=0x%x] %s on %s, size=%d, offset=%d [event list=%d]",
                     object.hashCode(), object, InterpreterUtilities.debugDeviceBC(deviceForInterpreter), sizeBatch, offset, eventList);
             tornadoVMBytecodeList.append(verbose).append("\n");
@@ -604,13 +617,10 @@ public class TornadoVMInterpreter extends TornadoLogger {
             task.mapTo(deviceForInterpreter);
             try {
                 task.attachProfiler(timeProfiler);
-                if (taskIndex == (tasks.size() - 1)) {
-                    // If it is the last task within the task-schedule -> we force compilation
-                    // This is useful when compiling code for Xilinx/Altera FPGAs, that has to
-                    // be a single source
-                    task.forceCompilation();
-                }
-                if (doUpdate) {
+                if (taskIndex == (tasks.size() - 1) || doUpdate) {
+                    // If it is the last task within the task-schedule or doUpdate is true -> we
+                    // force compilation. This is useful when compiling code for Xilinx/Altera
+                    // FPGAs, that has to be a single source.
                     task.forceCompilation();
                 }
                 installedCodes[globalToLocalTaskIndex(taskIndex)] = deviceForInterpreter.installCode(task);
