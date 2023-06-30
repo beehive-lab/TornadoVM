@@ -50,8 +50,8 @@ import uk.ac.manchester.tornado.runtime.interpreter.TornadoVMInterpreter;
 import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph;
 
 /**
- * * There is an instance of the {@link TornadoVM} per {@link TornadoTaskGraph}.
- * * Each TornadoVM contains the logic to orchestrate the execution on the *
+ * There is an instance of the {@link TornadoVM} per {@link TornadoTaskGraph}.
+ * Each TornadoVM contains the logic to orchestrate the execution on the
  * parallel device (e.g., a GPU).
  */
 public class TornadoVM extends TornadoLogger {

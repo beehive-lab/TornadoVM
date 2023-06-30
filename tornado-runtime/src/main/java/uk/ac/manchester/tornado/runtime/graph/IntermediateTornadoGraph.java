@@ -24,13 +24,13 @@
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
+import java.util.Arrays;
+import java.util.BitSet;
+
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextOpNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.DependentReadNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
-
-import java.util.Arrays;
-import java.util.BitSet;
 
 /**
  * It represents an intermediate graph used during the dependency analysis of a
@@ -40,8 +40,8 @@ import java.util.BitSet;
 public class IntermediateTornadoGraph {
     private final TornadoGraph graph;
     private final BitSet asyncNodes;
-    private BitSet[] dependencies;
     private final BitSet tasks;
+    private BitSet[] dependencies;
     private int[] nodeIds;
     private int index;
     private int numberOfDependencies;
@@ -112,7 +112,7 @@ public class IntermediateTornadoGraph {
     }
 
     public void printDependencyMatrix() {
-        StringBuffer output = new StringBuffer();
+        StringBuilder output = new StringBuilder();
         output.append("TornadoGraph dependency matrix...\n");
 
         int maxNodeId = Arrays.stream(nodeIds).max().getAsInt();
@@ -135,7 +135,7 @@ public class IntermediateTornadoGraph {
             output.append("\n");
         }
 
-        System.out.println(output.toString());
+        System.out.println(output);
     }
 
     private String toString(BitSet set) {

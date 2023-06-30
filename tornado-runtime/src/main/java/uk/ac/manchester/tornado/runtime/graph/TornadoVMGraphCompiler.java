@@ -55,7 +55,7 @@ public class TornadoVMGraphCompiler {
 
         final int numContexts = isSingleContextCompilation ? 1 : executionContext.getValidContextSize();
 
-        final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
+        final BitSet asyncNodes = graph.filter(ContextOpNode.class::isInstance);
 
         final IntermediateTornadoGraph intermediateTornadoGraph = new IntermediateTornadoGraph(asyncNodes, graph);
 
@@ -113,30 +113,25 @@ public class TornadoVMGraphCompiler {
 
     private static void scheduleBatchDependentBytecodes(TornadoExecutionContext executionContext, TornadoVMBytecodeBuilder tornadoVMBytecodeBuilder, TornadoGraph graph,
             IntermediateTornadoGraph intermediateTornadoGraph) {
-        BatchConfiguration batchConfiguration = null;
-
         final long batchSize = executionContext.getBatchSize();
 
-        if (batchSize != -1) {
-            batchConfiguration = batchConfiguration.computeChunkSizes(executionContext, batchSize);
-        }
+        BatchConfiguration batchConfiguration = BatchConfiguration.computeChunkSizes(executionContext, batchSize);
 
-        if (batchSize != -1) {
-            // compute in batches
-            long offset = 0;
-            long nthreads = batchSize / batchConfiguration.getNumBytesType();
-            for (int i = 0; i < batchConfiguration.getTotalChunks(); i++) {
-                offset = (batchSize * i);
-                scheduleAndEmitTornadoVMBytecodes(tornadoVMBytecodeBuilder, graph, intermediateTornadoGraph, offset, batchSize, nthreads, 1);
-            }
-            // Last chunk
-            if (batchConfiguration.getRemainingChunkSize() != 0) {
-                offset += (batchSize);
-                nthreads = batchConfiguration.getRemainingChunkSize() / batchConfiguration.getNumBytesType();
-                long realBatchSize = batchConfiguration.getTotalChunks() == 0 ? 0 : batchConfiguration.getRemainingChunkSize();
-                long realOffsetSize = batchConfiguration.getTotalChunks() == 0 ? 0 : offset;
-                scheduleAndEmitTornadoVMBytecodes(tornadoVMBytecodeBuilder, graph, intermediateTornadoGraph, realOffsetSize, realBatchSize, nthreads, 1);
-            }
+        assert batchConfiguration != null;
+
+        long offset = 0;
+        long nthreads = batchSize / batchConfiguration.getNumBytesType();
+        for (int i = 0; i < batchConfiguration.getTotalChunks(); i++) {
+            offset = (batchSize * i);
+            scheduleAndEmitTornadoVMBytecodes(tornadoVMBytecodeBuilder, graph, intermediateTornadoGraph, offset, batchSize, nthreads, 1);
+        }
+        // Last chunk
+        if (batchConfiguration.getRemainingChunkSize() != 0) {
+            offset += (batchSize);
+            nthreads = batchConfiguration.getRemainingChunkSize() / batchConfiguration.getNumBytesType();
+            long realBatchSize = batchConfiguration.getTotalChunks() == 0 ? 0 : batchConfiguration.getRemainingChunkSize();
+            long realOffsetSize = batchConfiguration.getTotalChunks() == 0 ? 0 : offset;
+            scheduleAndEmitTornadoVMBytecodes(tornadoVMBytecodeBuilder, graph, intermediateTornadoGraph, realOffsetSize, realBatchSize, nthreads, 1);
         }
     }
 

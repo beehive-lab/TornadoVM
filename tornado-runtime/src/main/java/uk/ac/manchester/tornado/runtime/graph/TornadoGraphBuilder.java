@@ -238,7 +238,7 @@ public class TornadoGraphBuilder {
         }
 
         // Add deallocate nodes to the graph for each copy-in/allocate/stream-in
-        final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
+        final BitSet asyncNodes = graph.filter(ContextOpNode.class::isInstance);
         int dependencyIndex = asyncNodes.previousSetBit(asyncNodes.length() - 1);
         ContextOpNode dependencyNode = (ContextOpNode) graph.getNode(dependencyIndex);
         for (int i = asyncNodes.nextSetBit(0); i != -1 && i < asyncNodes.length(); i = asyncNodes.nextSetBit(i + 1)) {

@@ -40,6 +40,7 @@ public class BatchConfiguration {
     private final int totalChunks;
     private final int remainingChunkSize;
     private final short numBytesType;
+
     /**
      * Constructs a BatchConfiguration object with the specified parameters.
      *
@@ -50,7 +51,7 @@ public class BatchConfiguration {
      * @param numBytesType
      *            The number of bytes for the data type.
      */
-    BatchConfiguration(int totalChunks, int remainingChunkSize, short numBytesType) {
+    public BatchConfiguration(int totalChunks, int remainingChunkSize, short numBytesType) {
         this.totalChunks = totalChunks;
         this.remainingChunkSize = remainingChunkSize;
         this.numBytesType = numBytesType;
@@ -85,6 +86,8 @@ public class BatchConfiguration {
                 }
             }
         }
+
+        assert dataTypeSize != null;
 
         int totalChunks = (int) (totalSize / batchSize);
         int remainingChunkSize = (int) (totalSize % batchSize);
