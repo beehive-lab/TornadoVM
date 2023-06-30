@@ -225,7 +225,6 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
             this.device = (TornadoAcceleratorDevice) device;
         }
         deviceManuallySet = true;
-        System.out.println("Set d111");
     }
 
     /**

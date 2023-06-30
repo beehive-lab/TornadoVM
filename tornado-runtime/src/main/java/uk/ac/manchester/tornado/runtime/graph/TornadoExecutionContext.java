@@ -27,8 +27,10 @@ package uk.ac.manchester.tornado.runtime.graph;
 
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -60,13 +62,13 @@ public class TornadoExecutionContext {
     private final int INITIAL_DEVICE_CAPACITY = 16;
     private final String name;
     private final ScheduleMetaData meta;
+    private final KernelArgs[] callWrappers;
     private List<SchedulableTask> tasks;
     private List<Object> constants;
     private Map<Integer, Integer> objectMap;
     private List<Object> objects;
     private List<LocalObjectState> objectState;
     private List<TornadoAcceleratorDevice> devices;
-    private final KernelArgs[] callWrappers;
     private int[] taskToDeviceMapTable;
     private int nextTask;
 
@@ -122,12 +124,12 @@ public class TornadoExecutionContext {
         return index;
     }
 
-    public void setBatchSize(long size) {
-        this.batchSize = size;
-    }
-
     public long getBatchSize() {
         return batchSize;
+    }
+
+    public void setBatchSize(long size) {
+        this.batchSize = size;
     }
 
     public int replaceVariable(Object oldObj, Object newObj) {
@@ -228,7 +230,7 @@ public class TornadoExecutionContext {
             apply(task -> task.mapTo(tornadoDevice));
             Arrays.fill(taskToDeviceMapTable, 0);
         } else {
-            throw new RuntimeException("Device " + tornadoDevice.getClass() + " not supported yet");
+            throw new TornadoRuntimeException("Device " + tornadoDevice.getClass() + " not supported yet");
         }
     }
 
@@ -289,10 +291,8 @@ public class TornadoExecutionContext {
         devices = devices.stream().map(device -> devices.indexOf(device) == deviceIndex ? device : null).collect(Collectors.toList());
     }
 
-    // TODO: This is the point to hook more intelligent logic for scheduling
     public void scheduleTaskToDevices() {
         if (!isDataDependencyDetected) {
-            // TODO(mikepapadim): This needs more safeguarding and cross backend testing
             for (int i = 0; i < tasks.size(); i++) {
                 assignTaskToDevice(i, tasks.get(i));
             }
@@ -394,6 +394,24 @@ public class TornadoExecutionContext {
 
     public List<TornadoAcceleratorDevice> getDevices() {
         return devices;
+    }
+
+    /**
+     * It retrieves a deque of non-null indexes in the device table.
+     *
+     * @return A deque containing the indexes of non-null devices in reverse order.
+     */
+
+    public Deque<Integer> getActiveDeviceIndexes() {
+        Deque<Integer> nonNullIndexes = new ArrayDeque<>();
+
+        for (int i = devices.size() - 1; i >= 0; i--) {
+            TornadoAcceleratorDevice device = devices.get(i);
+            if (device != null) {
+                nonNullIndexes.push(i);
+            }
+        }
+        return nonNullIndexes;
     }
 
     /**

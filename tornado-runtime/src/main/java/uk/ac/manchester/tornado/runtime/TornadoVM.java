@@ -24,6 +24,7 @@
 package uk.ac.manchester.tornado.runtime;
 
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -37,6 +38,7 @@ import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -86,8 +88,9 @@ public class TornadoVM extends TornadoLogger {
      */
     private void bindBytecodesToInterpreters() {
         assert tornadoVMInterpreters.length == executionContext.getValidContextSize();
+        final Deque activeDevices = executionContext.getActiveDeviceIndexes();
         IntStream.range(0, executionContext.getValidContextSize())
-                .forEach(i -> tornadoVMInterpreters[i] = new TornadoVMInterpreter(executionContext, tornadoVMBytecodes[i], timeProfiler, executionContext.getDevices().get(i)));
+                .forEach(i -> tornadoVMInterpreters[i] = new TornadoVMInterpreter(executionContext, tornadoVMBytecodes[i], timeProfiler, executionContext.getDevice((Integer) activeDevices.pop())));
     }
 
     /**
@@ -100,7 +103,7 @@ public class TornadoVM extends TornadoLogger {
         return executeInterpreterThreadManager();
     }
 
-    private int calculateNumberOfJavaThreads() { // TODO JAVA THREADS in name --> calculate nu
+    private int calculateNumberOfJavaThreads() {
         return shouldRunConcurrently() ? executionContext.getValidContextSize() : 1;
     }
 
@@ -134,6 +137,8 @@ public class TornadoVM extends TornadoLogger {
                 throw new TornadoBailoutRuntimeException(e.getMessage());
             } else if (cause instanceof TornadoFailureException) {
                 throw new TornadoFailureException(e);
+            } else if (cause instanceof TornadoRuntimeException) {
+                throw new TornadoRuntimeException(e);
             } else if (cause instanceof TornadoDeviceFP64NotSupported) {
                 throw new TornadoDeviceFP64NotSupported(e.getMessage());
             } else {
