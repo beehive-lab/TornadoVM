@@ -30,6 +30,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -347,9 +348,12 @@ public class TornadoExecutionContext {
             SchedulableTask task = tasks.get(i);
             for (int j = i + 1; j < tasks.size(); j++) {
                 SchedulableTask otherTask = tasks.get(j);
-                if (!isSameTask(task, otherTask) && isCommonArgumentInTasks(task, otherTask)) {
-                    if (hasWriteAccess(task, otherTask)) {
-                        return true;
+                if (!doTasksHaveSameIDs(task, otherTask)) {
+                    List<Object> commonArgs = getCommonArgumentsInTasks(task, otherTask);
+                    if (commonArgs != Collections.emptyList()) {
+                        if (hasWriteAccess(task, otherTask)) {
+                            return true;
+                        }
                     }
                 }
             }
@@ -357,19 +361,23 @@ public class TornadoExecutionContext {
         return false;
     }
 
-    private boolean isSameTask(SchedulableTask task1, SchedulableTask task2) {
+    private boolean doTasksHaveSameIDs(SchedulableTask task1, SchedulableTask task2) {
         return task1.getTaskName().equals(task2.getTaskName()) && task1.getId().equals(task2.getId());
     }
 
-    private boolean isCommonArgumentInTasks(SchedulableTask task1, SchedulableTask task2) {
+    private List<Object> getCommonArgumentsInTasks(SchedulableTask task1, SchedulableTask task2) {
+        List<Object> commonArguments = new ArrayList<>();
+
         for (Object arg1 : task1.getArguments()) {
             for (Object arg2 : task2.getArguments()) {
                 if (arg1.equals(arg2)) {
-                    return true;
+                    commonArguments.add(arg1);
+                    break; // Found a common argument, move to the next argument in task1
                 }
             }
         }
-        return false;
+
+        return commonArguments;
     }
 
     private boolean hasWriteAccess(SchedulableTask task, SchedulableTask otherTask) {

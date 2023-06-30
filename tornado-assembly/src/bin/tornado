@@ -37,7 +37,7 @@ import platform
 # FLAGS FOR TORNADOVM
 # ########################################################
 __TORNADOVM_DEBUG__                     = " -Dtornado.debug=True "
-__TORNADOVM_FULLDEBUG__                 = __TORNADOVM_DEBUG__ + "-Dtornado.fullDebug=True -Ddump.schedule=True "
+__TORNADOVM_FULLDEBUG__                 = __TORNADOVM_DEBUG__ + "-Dtornado.fullDebug=True -Ddump.taskgraph=True "
 __TORNADOVM_THREAD_INFO__               = " -Dtornado.threadInfo=True "
 __TORNADOVM_IGV__                       = " -Dgraal.Dump=*:5 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true "
 __TORNADOVM__IGV_LOW_TIER               = " -Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true -Dtornado.debug.lowtier=True "

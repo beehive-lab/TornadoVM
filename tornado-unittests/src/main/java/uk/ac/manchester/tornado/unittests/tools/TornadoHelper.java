@@ -184,7 +184,7 @@ public class TornadoHelper {
                 }
 
                 if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoVMMultiDeviceNotSupported))) {
-                    message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [MULTI-DEVICE CONFIGURATION REQUIRED [UNSUPPORTED]] " + ColorsTerminal.RESET + "\n");
+                    message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [[UNSUPPORTED] MULTI-DEVICE CONFIGURATION REQUIRED] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
                     bufferFile.append(message);
                     notSupported++;
