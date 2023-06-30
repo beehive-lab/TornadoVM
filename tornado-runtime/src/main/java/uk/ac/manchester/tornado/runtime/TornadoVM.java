@@ -85,6 +85,7 @@ public class TornadoVM extends TornadoLogger {
      * per assigned device.
      */
     private void bindBytecodesToInterpreters() {
+        assert tornadoVMInterpreters.length == executionContext.getValidContextSize();
         IntStream.range(0, executionContext.getValidContextSize())
                 .forEach(i -> tornadoVMInterpreters[i] = new TornadoVMInterpreter(executionContext, tornadoVMBytecodes[i], timeProfiler, executionContext.getDevices().get(i)));
     }

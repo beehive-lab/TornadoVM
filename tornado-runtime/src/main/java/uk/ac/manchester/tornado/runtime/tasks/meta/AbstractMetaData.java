@@ -48,13 +48,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     private static final long[] SEQUENTIAL_GLOBAL_WORK_GROUP = { 1, 1, 1 };
-    private String id;
-    private TornadoAcceleratorDevice device;
     private final boolean isDeviceDefined;
-    private int driverIndex;
-    private int deviceIndex;
-    private boolean deviceManuallySet;
-    private long numThreads;
     private final HashSet<String> openCLBuiltOptions = new HashSet<>(Arrays.asList( //
             "-cl-single-precision-constant", //
             "-cl-denorms-are-zero", //
@@ -68,17 +62,130 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
             "-w", //
             "-cl-std=CL2.0" //
     ));
-
+    /*
+     * Forces the executing kernel to output its arguments before execution
+     */
+    private final boolean threadInfo;
+    private final boolean debug;
+    private final boolean dumpEvents;
+    private final boolean dumpProfiles;
+    private final boolean debugKernelArgs;
+    private final boolean printCompileTimes;
+    private final boolean isOpenclGpuBlockXDefined;
+    private final int openclGpuBlockX;
+    private final boolean isOpenclGpuBlock2DXDefined;
+    private final int openclGpuBlock2DX;
+    private final boolean isOpenclGpuBlock2DYDefined;
+    private final int openclGpuBlock2DY;
+    private final boolean openclUseRelativeAddresses;
+    private final boolean openclEnableBifs;
+    private final boolean openclWaitActive;
+    private final boolean vmWaitEvent;
+    private final boolean enableExceptions;
+    private final boolean enableProfiling;
+    private final boolean enableOooExecution;
+    private final boolean openclUseBlockingApiCalls;
+    private final boolean enableParallelization;
+    private final boolean enableVectors;
+    private final boolean enableMemChecks;
+    private final boolean useThreadCoarsener;
+    private final boolean dumpTaskGraph;
+    private final boolean coarsenWithCpuConfig;
+    private final boolean isEnableParallelizationDefined;
+    private final boolean isCpuConfigDefined;
+    private final String cpuConfig;
+    private String id;
+    private TornadoAcceleratorDevice device;
+    private int driverIndex;
+    private int deviceIndex;
+    private boolean deviceManuallySet;
+    private long numThreads;
     private TornadoProfiler profiler;
     private GridScheduler gridScheduler;
     private long[] ptxBlockDim;
     private long[] ptxGridDim;
-
     private ResolvedJavaMethod graph;
     private boolean useGridScheduler;
+    private boolean printKernelExecutionTime;
+    private boolean isOpenclCompilerFlagsDefined;
+    private String openclCompilerOptions;
+    /*
+     * Allows the OpenCL driver to select the size of local work groups
+     */
+    private boolean openclUseDriverScheduling;
+
+    AbstractMetaData(String id, AbstractMetaData parent) {
+        this.id = id;
+
+        isDeviceDefined = getProperty(id + ".device") != null;
+        if (isDeviceDefined) {
+            int[] a = MetaDataUtils.resolveDriverDeviceIndexes(getProperty(id + ".device"));
+            driverIndex = a[0];
+            deviceIndex = a[1];
+        } else if (null != parent) {
+            driverIndex = parent.getDriverIndex();
+            deviceIndex = parent.getDeviceIndex();
+        } else {
+            driverIndex = TornadoOptions.DEFAULT_DRIVER_INDEX;
+            deviceIndex = TornadoOptions.DEFAULT_DEVICE_INDEX;
+        }
+
+        debugKernelArgs = parseBoolean(getDefault("debug.kernelargs", id, "True"));
+        printCompileTimes = parseBoolean(getDefault("debug.compiletimes", id, "False"));
+        printKernelExecutionTime = parseBoolean(getProperty("tornado.debug.executionTime"));
+        openclUseRelativeAddresses = parseBoolean(getDefault("opencl.userelative", id, "False"));
+        openclWaitActive = parseBoolean(getDefault("opencl.wait.active", id, "False"));
+        coarsenWithCpuConfig = parseBoolean(getDefault("coarsener.ascpu", id, "False"));
+
+        /*
+         * Allows the OpenCL driver to select the size of local work groups
+         */
+        openclUseDriverScheduling = parseBoolean(getDefault("opencl.usedriver.schedule", id, "false"));
+        vmWaitEvent = parseBoolean(getDefault("vm.waitevent", id, "False"));
+        enableExceptions = parseBoolean(getDefault("exceptions.enable", id, "False"));
+        enableProfiling = parseBoolean(getDefault("profiling.enable", id, "False"));
+        enableOooExecution = parseBoolean(getDefault("ooo-execution.enable", id, "False"));
+        openclUseBlockingApiCalls = parseBoolean(getDefault("opencl.blocking", id, "False"));
+
+        enableParallelization = parseBoolean(getDefault("parallelise", id, "True"));
+        isEnableParallelizationDefined = getProperty(id + ".parallelise") != null;
+
+        enableVectors = parseBoolean(getDefault("vectors.enable", id, "True"));
+        openclEnableBifs = parseBoolean(getDefault("bifs.enable", id, "False"));
+        threadInfo = parseBoolean(getDefault("threadInfo", id, "False"));
+        debug = parseBoolean(getDefault("debug", id, "False"));
+        enableMemChecks = parseBoolean(getDefault("memory.check", id, "False"));
+        dumpEvents = parseBoolean(getDefault("events.dump", id, "True"));
+        dumpProfiles = parseBoolean(getDefault("profiles.print", id, "False"));
+        dumpTaskGraph = Boolean.parseBoolean(System.getProperty("dump.taskgraph", "False"));
+
+        openclCompilerOptions = (getProperty("tornado.opencl.compiler.options") == null) ? "-w" : getProperty("tornado.opencl.compiler.options");
+        isOpenclCompilerFlagsDefined = getProperty("tornado.opencl.compiler.options") != null;
+
+        openclGpuBlockX = parseInt(getDefault("opencl.gpu.block.x", id, "256"));
+        isOpenclGpuBlockXDefined = getProperty(id + ".opencl.gpu.block.x") != null;
+
+        openclGpuBlock2DX = parseInt(getDefault("opencl.gpu.block2d.x", id, "4"));
+        isOpenclGpuBlock2DXDefined = getProperty(id + ".opencl.gpu.block2d.x") != null;
+
+        openclGpuBlock2DY = parseInt(getDefault("opencl.gpu.block2d.y", id, "4"));
+        isOpenclGpuBlock2DYDefined = getProperty(id + ".opencl.gpu.block2d.y") != null;
+
+        cpuConfig = getDefault("cpu.config", id, null);
+        isCpuConfigDefined = getProperty(id + ".cpu.config") != null;
+        useThreadCoarsener = Boolean.parseBoolean(getDefault("coarsener", id, "False"));
+    }
 
     private static String getProperty(String key) {
         return System.getProperty(key);
+    }
+
+    protected static String getDefault(String keySuffix, String id, String defaultValue) {
+        if (getProperty(id + "." + keySuffix) == null) {
+            return Tornado.getProperty("tornado" + "." + keySuffix, defaultValue);
+        } else {
+            return getProperty(id + "." + keySuffix);
+        }
     }
 
     public TornadoAcceleratorDevice getLogicDevice() {
@@ -118,6 +225,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
             this.device = (TornadoAcceleratorDevice) device;
         }
         deviceManuallySet = true;
+        System.out.println("Set d111");
     }
 
     /**
@@ -188,6 +296,12 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return composeBuiltOptions(openclCompilerOptions);
     }
 
+    @Override
+    public void setCompilerFlags(String value) {
+        openclCompilerOptions = value;
+        isOpenclCompilerFlagsDefined = true;
+    }
+
     public int getOpenCLGpuBlockX() {
         return openclGpuBlockX;
     }
@@ -252,50 +366,6 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return useThreadCoarsener;
     }
 
-    /*
-     * Forces the executing kernel to output its arguments before execution
-     */
-    private final boolean threadInfo;
-    private final boolean debug;
-    private final boolean dumpEvents;
-    private final boolean dumpProfiles;
-    private final boolean debugKernelArgs;
-    private final boolean printCompileTimes;
-    private boolean printKernelExecutionTime;
-
-    // private final boolean forceAllToGpuforceAllToGpu;
-    private boolean isOpenclCompilerFlagsDefined;
-    private final boolean isOpenclGpuBlockXDefined;
-    private final int openclGpuBlockX;
-    private final boolean isOpenclGpuBlock2DXDefined;
-    private final int openclGpuBlock2DX;
-    private final boolean isOpenclGpuBlock2DYDefined;
-    private final int openclGpuBlock2DY;
-    private final boolean openclUseRelativeAddresses;
-    private final boolean openclEnableBifs;
-    private String openclCompilerOptions;
-
-    /*
-     * Allows the OpenCL driver to select the size of local work groups
-     */
-    private boolean openclUseDriverScheduling;
-    private final boolean openclWaitActive;
-    private final boolean vmWaitEvent;
-    private final boolean enableExceptions;
-    private final boolean enableProfiling;
-    private final boolean enableOooExecution;
-    private final boolean openclUseBlockingApiCalls;
-    private final boolean enableParallelization;
-    private final boolean enableVectors;
-    private final boolean enableMemChecks;
-    private final boolean useThreadCoarsener;
-    private final boolean dumpTaskGraph;
-    private final boolean coarsenWithCpuConfig;
-    private final boolean isEnableParallelizationDefined;
-
-    private final boolean isCpuConfigDefined;
-    private final String cpuConfig;
-
     public boolean isDeviceDefined() {
         return isDeviceDefined;
     }
@@ -306,12 +376,6 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     public boolean isOpenclCompilerFlagsDefined() {
         return isOpenclCompilerFlagsDefined;
-    }
-
-    @Override
-    public void setCompilerFlags(String value) {
-        openclCompilerOptions = value;
-        isOpenclCompilerFlagsDefined = true;
     }
 
     public String composeBuiltOptions(String rawFlags) {
@@ -351,8 +415,18 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     }
 
     @Override
+    public long[] getGlobalWork() {
+        return null;
+    }
+
+    @Override
     public void setGlobalWork(long[] global) {
 
+    }
+
+    @Override
+    public long[] getLocalWork() {
+        return null;
     }
 
     @Override
@@ -361,93 +435,13 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     }
 
     @Override
-    public long[] getGlobalWork() {
-        return null;
-    }
-
-    @Override
-    public long[] getLocalWork() {
-        return null;
-    }
-
-    protected static String getDefault(String keySuffix, String id, String defaultValue) {
-        if (getProperty(id + "." + keySuffix) == null) {
-            return Tornado.getProperty("tornado" + "." + keySuffix, defaultValue);
-        } else {
-            return getProperty(id + "." + keySuffix);
-        }
+    public long getNumThreads() {
+        return numThreads;
     }
 
     @Override
     public void setNumThreads(long threads) {
         this.numThreads = threads;
-    }
-
-    @Override
-    public long getNumThreads() {
-        return numThreads;
-    }
-
-    AbstractMetaData(String id, AbstractMetaData parent) {
-        this.id = id;
-
-        isDeviceDefined = getProperty(id + ".device") != null;
-        if (isDeviceDefined) {
-            int[] a = MetaDataUtils.resolveDriverDeviceIndexes(getProperty(id + ".device"));
-            driverIndex = a[0];
-            deviceIndex = a[1];
-        } else if (null != parent) {
-            driverIndex = parent.getDriverIndex();
-            deviceIndex = parent.getDeviceIndex();
-        } else {
-            driverIndex = TornadoOptions.DEFAULT_DRIVER_INDEX;
-            deviceIndex = TornadoOptions.DEFAULT_DEVICE_INDEX;
-        }
-
-        debugKernelArgs = parseBoolean(getDefault("debug.kernelargs", id, "True"));
-        printCompileTimes = parseBoolean(getDefault("debug.compiletimes", id, "False"));
-        printKernelExecutionTime = parseBoolean(getProperty("tornado.debug.executionTime"));
-        openclUseRelativeAddresses = parseBoolean(getDefault("opencl.userelative", id, "False"));
-        openclWaitActive = parseBoolean(getDefault("opencl.wait.active", id, "False"));
-        coarsenWithCpuConfig = parseBoolean(getDefault("coarsener.ascpu", id, "False"));
-
-        /*
-         * Allows the OpenCL driver to select the size of local work groups
-         */
-        openclUseDriverScheduling = parseBoolean(getDefault("opencl.usedriver.schedule", id, "false"));
-        vmWaitEvent = parseBoolean(getDefault("vm.waitevent", id, "False"));
-        enableExceptions = parseBoolean(getDefault("exceptions.enable", id, "False"));
-        enableProfiling = parseBoolean(getDefault("profiling.enable", id, "False"));
-        enableOooExecution = parseBoolean(getDefault("ooo-execution.enable", id, "False"));
-        openclUseBlockingApiCalls = parseBoolean(getDefault("opencl.blocking", id, "False"));
-
-        enableParallelization = parseBoolean(getDefault("parallelise", id, "True"));
-        isEnableParallelizationDefined = getProperty(id + ".parallelise") != null;
-
-        enableVectors = parseBoolean(getDefault("vectors.enable", id, "True"));
-        openclEnableBifs = parseBoolean(getDefault("bifs.enable", id, "False"));
-        threadInfo = parseBoolean(getDefault("threadInfo", id, "False"));
-        debug = parseBoolean(getDefault("debug", id, "False"));
-        enableMemChecks = parseBoolean(getDefault("memory.check", id, "False"));
-        dumpEvents = parseBoolean(getDefault("events.dump", id, "True"));
-        dumpProfiles = parseBoolean(getDefault("profiles.print", id, "False"));
-        dumpTaskGraph = Boolean.parseBoolean(System.getProperty("dump.schedule", "False"));
-
-        openclCompilerOptions = (getProperty("tornado.opencl.compiler.options") == null) ? "-w" : getProperty("tornado.opencl.compiler.options");
-        isOpenclCompilerFlagsDefined = getProperty("tornado.opencl.compiler.options") != null;
-
-        openclGpuBlockX = parseInt(getDefault("opencl.gpu.block.x", id, "256"));
-        isOpenclGpuBlockXDefined = getProperty(id + ".opencl.gpu.block.x") != null;
-
-        openclGpuBlock2DX = parseInt(getDefault("opencl.gpu.block2d.x", id, "4"));
-        isOpenclGpuBlock2DXDefined = getProperty(id + ".opencl.gpu.block2d.x") != null;
-
-        openclGpuBlock2DY = parseInt(getDefault("opencl.gpu.block2d.y", id, "4"));
-        isOpenclGpuBlock2DYDefined = getProperty(id + ".opencl.gpu.block2d.y") != null;
-
-        cpuConfig = getDefault("cpu.config", id, null);
-        isCpuConfigDefined = getProperty(id + ".cpu.config") != null;
-        useThreadCoarsener = Boolean.parseBoolean(getDefault("coarsener", id, "False"));
     }
 
     public void attachProfiler(TornadoProfiler profiler) {

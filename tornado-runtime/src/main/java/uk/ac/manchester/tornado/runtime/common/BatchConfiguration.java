@@ -37,36 +37,9 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
  * objects.
  */
 public class BatchConfiguration {
-    private enum DataTypeSize {
-        BYTE(byte.class, (byte) 1), //
-        CHAR(char.class, (byte) 2), //
-        SHORT(short.class, (byte) 2), //
-        INT(int.class, (byte) 4), //
-        FLOAT(float.class, (byte) 4), //
-        LONG(long.class, (byte) 8), //
-        DOUBLE(double.class, (byte) 8);
-
-        private final Class<?> dataType;
-        private final byte size;
-
-        DataTypeSize(Class<?> dataType, byte size) {
-            this.dataType = dataType;
-            this.size = size;
-        }
-
-        public Class<?> getDataType() {
-            return dataType;
-        }
-
-        public byte getSize() {
-            return size;
-        }
-    }
-
     private final int totalChunks;
     private final int remainingChunkSize;
     private final short numBytesType;
-
     /**
      * Constructs a BatchConfiguration object with the specified parameters.
      *
@@ -83,18 +56,6 @@ public class BatchConfiguration {
         this.numBytesType = numBytesType;
     }
 
-    public int getTotalChunks() {
-        return totalChunks;
-    }
-
-    public int getRemainingChunkSize() {
-        return remainingChunkSize;
-    }
-
-    public short getNumBytesType() {
-        return numBytesType;
-    }
-
     public static BatchConfiguration computeChunkSizes(TornadoExecutionContext context, long batchSize) {
         // Get the size of the batch
         List<Object> inputObjects = context.getObjects();
@@ -104,7 +65,6 @@ public class BatchConfiguration {
         HashSet<Class<?>> classObjects = new HashSet<>();
         HashSet<Long> inputSizes = new HashSet<>();
 
-        // XXX: Get a list for all objects
         for (Object o : inputObjects) {
             if (o.getClass().isArray()) {
                 Class<?> componentType = o.getClass().getComponentType();
@@ -139,5 +99,43 @@ public class BatchConfiguration {
 
     private static DataTypeSize findDataTypeSize(Class<?> dataType) {
         return Arrays.stream(DataTypeSize.values()).filter(size -> size.getDataType().equals(dataType)).findFirst().orElse(null);
+    }
+
+    public int getTotalChunks() {
+        return totalChunks;
+    }
+
+    public int getRemainingChunkSize() {
+        return remainingChunkSize;
+    }
+
+    public short getNumBytesType() {
+        return numBytesType;
+    }
+
+    private enum DataTypeSize {
+        BYTE(byte.class, (byte) 1), //
+        CHAR(char.class, (byte) 2), //
+        SHORT(short.class, (byte) 2), //
+        INT(int.class, (byte) 4), //
+        FLOAT(float.class, (byte) 4), //
+        LONG(long.class, (byte) 8), //
+        DOUBLE(double.class, (byte) 8);
+
+        private final Class<?> dataType;
+        private final byte size;
+
+        DataTypeSize(Class<?> dataType, byte size) {
+            this.dataType = dataType;
+            this.size = size;
+        }
+
+        public Class<?> getDataType() {
+            return dataType;
+        }
+
+        public byte getSize() {
+            return size;
+        }
     }
 }

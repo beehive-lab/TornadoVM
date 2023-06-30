@@ -23,29 +23,41 @@
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+
 /**
- * It represents the result of a {@link TornadoVMBytecodeBuilder}. It contains
+ * It represents the result of a {@link uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodeBuilder}. It contains
  * the bytecode and its size.
+ */
+/**
+ * The TornadoVMBytecodeResult class represents the result of a TornadoVM
+ * bytecode compilation. It provides methods to access and manipulate the
+ * bytecode.
  */
 public class TornadoVMBytecodeResult {
     private final byte[] bytecode;
-    private final int size;
+    private final ByteBuffer buffer;
 
     /**
-     * It constructs a new TornadoVMBytecodeResult object.
+     * Constructs a new TornadoVMBytecodeResult object with the given bytecode and
+     * size.
      *
      * @param bytecode
      *            the bytecode as a byte array
      * @param size
      *            the size of the bytecode
      */
-    public TornadoVMBytecodeResult(byte[] bytecode, int size) {
+    TornadoVMBytecodeResult(byte[] bytecode, int size) {
         this.bytecode = bytecode;
-        this.size = size;
+        this.buffer = setupBytecodeBuffer(bytecode, size);
+        TornadoInternalError.guarantee(buffer.get() == TornadoVMBytecodes.INIT.value(), "invalid code");
     }
 
     /**
-     * It returns the bytecode as a byte array.
+     * Returns the bytecode as a byte array.
      *
      * @return the bytecode as a byte array
      */
@@ -54,11 +66,71 @@ public class TornadoVMBytecodeResult {
     }
 
     /**
-     * It returns the size of the bytecode.
+     * Sets up the bytecode buffer using the given bytecode array and size. The
+     * buffer is set to little-endian byte order and its limit is set to the given
+     * size.
      *
-     * @return the size of the bytecode
+     * @param bytecode
+     *            the bytecode as a byte array
+     * @param size
+     *            the size of the bytecode
+     * @return the configured ByteBuffer
      */
-    public int getBytecodeSize() {
-        return size;
+    private ByteBuffer setupBytecodeBuffer(byte[] bytecode, int size) {
+        return ByteBuffer.wrap(bytecode).order(ByteOrder.LITTLE_ENDIAN).limit(size);
+    }
+
+    /**
+     * Retrieves the next four bytes from the bytecode buffer and interprets them as
+     * an integer value.
+     *
+     * @return the next integer value in the bytecode buffer
+     */
+    public int getInt() {
+        return buffer.getInt();
+    }
+
+    /**
+     * Retrieves the next byte from the bytecode buffer.
+     *
+     * @return the next byte in the bytecode buffer
+     */
+    public byte get() {
+        return buffer.get();
+    }
+
+    /**
+     * Marks the current position in the bytecode buffer.
+     *
+     * @return the bytecode buffer with the current position marked
+     */
+    public ByteBuffer mark() {
+        return buffer.mark();
+    }
+
+    /**
+     * Retrieves the next eight bytes from the bytecode buffer and interprets them
+     * as a long value.
+     *
+     * @return the next long value in the bytecode buffer
+     */
+    public long getLong() {
+        return buffer.getLong();
+    }
+
+    /**
+     * Checks if there are remaining bytes in the bytecode buffer.
+     *
+     * @return true if there are remaining bytes, false otherwise
+     */
+    public boolean hasRemaining() {
+        return buffer.hasRemaining();
+    }
+
+    /**
+     * Resets the position of the bytecode buffer to the previously marked position.
+     */
+    public void reset() {
+        buffer.reset();
     }
 }

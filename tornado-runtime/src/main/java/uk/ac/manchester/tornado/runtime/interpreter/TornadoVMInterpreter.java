@@ -29,8 +29,6 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_VM_FLUSH;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
@@ -95,38 +93,37 @@ public class TornadoVMInterpreter extends TornadoLogger {
     private final List<SchedulableTask> tasks;
     private final List<SchedulableTask> localTaskList;
 
-    private final ByteBuffer buffer;
-
+    private final TornadoProfiler timeProfiler;
+    private final TornadoExecutionContext executionContext;
     private double totalTime;
     private long invocations;
-    private final TornadoProfiler timeProfiler;
     private boolean finishedWarmup;
     private boolean doUpdate;
-    private final TornadoExecutionContext executionContext;
     private GridScheduler gridScheduler;
 
-    public TornadoVMInterpreter(TornadoExecutionContext graphContext, TornadoVMBytecodeResult bytecode, TornadoProfiler timeProfiler, TornadoAcceleratorDevice deviceForContext) {
-        this.executionContext = graphContext;
-        this.timeProfiler = timeProfiler;
-        this.deviceForInterpreter = deviceForContext != null ? deviceForContext : graphContext.getDeviceForTask(0);
+    private TornadoVMBytecodeResult bytecodeResult;
 
-        useDependencies = graphContext.meta().enableOooExecution() || VM_USE_DEPS;
+    public TornadoVMInterpreter(TornadoExecutionContext executionContext, TornadoVMBytecodeResult bytecodeResult, TornadoProfiler timeProfiler, TornadoAcceleratorDevice device) {
+        this.executionContext = executionContext;
+        this.timeProfiler = timeProfiler;
+        this.bytecodeResult = bytecodeResult;
+
+        assert device != null;
+        this.deviceForInterpreter = device != null ? device : executionContext.getDeviceForTask(0);
+
+        useDependencies = executionContext.meta().enableOooExecution() || VM_USE_DEPS;
         totalTime = 0;
         invocations = 0;
 
-        buffer = setupBytecodeBuffer(bytecode);
-
         debug("init tornadovm interpreter...");
 
-        TornadoInternalError.guarantee(buffer.get() == TornadoVMBytecodes.INIT.value(), "invalid code");
-
-        buffer.getInt();
-        int taskCount = buffer.getInt();
-        callWrappers = graphContext.getCallWrappers().clone();
-        events = new int[buffer.getInt()][MAX_EVENTS];
+        bytecodeResult.getInt();
+        int taskCount = this.bytecodeResult.getInt();
+        callWrappers = executionContext.getCallWrappers().clone();
+        events = new int[this.bytecodeResult.getInt()][MAX_EVENTS];
         eventsIndexes = new int[events.length];
 
-        localTaskList = graphContext.getTasksForDevice(deviceForInterpreter.getDeviceContext(), deviceForInterpreter.getDriverIndex());
+        localTaskList = executionContext.getTasksForDevice(deviceForInterpreter.getDeviceContext(), deviceForInterpreter.getDriverIndex());
 
         installedCodes = new TornadoInstalledCode[localTaskList.size()];
 
@@ -138,36 +135,32 @@ public class TornadoVMInterpreter extends TornadoLogger {
         debug("created %d callWrappers", callWrappers.length);
         debug("created %d event lists", events.length);
 
-        objects = graphContext.getObjects();
+        objects = executionContext.getObjects();
         globalStates = new GlobalObjectState[objects.size()];
         fetchGlobalStates();
 
         rewindBufferToBegin();
 
-        constants = graphContext.getConstants();
-        tasks = graphContext.getTasks();
+        constants = executionContext.getConstants();
+        tasks = executionContext.getTasks();
 
-        debug("%s - interpreter ready to go", graphContext.getId());
-        buffer.mark();
+        debug("%s - interpreter ready to go", executionContext.getId());
+        this.bytecodeResult.mark();
 
     }
 
     private void rewindBufferToBegin() {
-        byte op = buffer.get();
+        byte op = bytecodeResult.get();
         while (op != TornadoVMBytecodes.BEGIN.value()) {
             TornadoInternalError.guarantee(op == TornadoVMBytecodes.CONTEXT.value(), "invalid code: 0x%x", op);
-            final int deviceIndex = buffer.getInt();
+            final int deviceIndex = bytecodeResult.getInt();
             debug("loading context %s", deviceForInterpreter.toString());
             final long t0 = System.nanoTime();
             deviceForInterpreter.ensureLoaded();
             final long t1 = System.nanoTime();
             debug("loaded in %.9f s", (t1 - t0) * 1e-9);
-            op = buffer.get();
+            op = bytecodeResult.get();
         }
-    }
-
-    private ByteBuffer setupBytecodeBuffer(TornadoVMBytecodeResult bytecode) {
-        return ByteBuffer.wrap(bytecode.getBytecode()).order(ByteOrder.LITTLE_ENDIAN).limit(bytecode.getBytecodeSize());
     }
 
     public Event execute(boolean isWarmup) {
@@ -184,66 +177,66 @@ public class TornadoVMInterpreter extends TornadoLogger {
                     .append(InterpreterUtilities.debugHighLightHelper(" Running in thread: ")).append(Thread.currentThread().getName()).append("\n");
         }
 
-        while (buffer.hasRemaining()) {
-            final byte op = buffer.get();
+        while (bytecodeResult.hasRemaining()) {
+            final byte op = bytecodeResult.get();
             if (op == TornadoVMBytecodes.ALLOC.value()) {
-                final int contextIndex = buffer.getInt();
-                final long sizeBatch = buffer.getLong();
-                final int argSize = buffer.getInt();
+                final int contextIndex = bytecodeResult.getInt();
+                final long sizeBatch = bytecodeResult.getLong();
+                final int argSize = bytecodeResult.getInt();
                 final int[] args = new int[argSize];
                 for (int i = 0; i < argSize; i++) {
-                    args[i] = buffer.getInt();
+                    args[i] = bytecodeResult.getInt();
                 }
                 if (isWarmup) {
                     continue;
                 }
                 lastEvent = executeAlloc(tornadoVMBytecodeList, args, contextIndex, sizeBatch);
             } else if (op == TornadoVMBytecodes.DEALLOC.value()) {
-                final int objectIndex = buffer.getInt();
-                final int contextIndex = buffer.getInt();
+                final int objectIndex = bytecodeResult.getInt();
+                final int contextIndex = bytecodeResult.getInt();
                 if (isWarmup) {
                     continue;
                 }
                 lastEvent = executeDeAlloc(tornadoVMBytecodeList, objectIndex, contextIndex);
             } else if (op == TornadoVMBytecodes.TRANSFER_HOST_TO_DEVICE_ONCE.value()) {
-                final int objectIndex = buffer.getInt();
-                final int contextIndex = buffer.getInt();
-                final int eventList = buffer.getInt();
-                final long offset = buffer.getLong();
-                final long sizeBatch = buffer.getLong();
+                final int objectIndex = bytecodeResult.getInt();
+                final int contextIndex = bytecodeResult.getInt();
+                final int eventList = bytecodeResult.getInt();
+                final long offset = bytecodeResult.getLong();
+                final long sizeBatch = bytecodeResult.getLong();
                 final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
                 if (isWarmup) {
                     continue;
                 }
                 transferHostToDeviceOnce(tornadoVMBytecodeList, objectIndex, contextIndex, offset, eventList, sizeBatch, waitList);
             } else if (op == TornadoVMBytecodes.TRANSFER_HOST_TO_DEVICE_ALWAYS.value()) {
-                final int objectIndex = buffer.getInt();
-                final int contextIndex = buffer.getInt();
-                final int eventList = buffer.getInt();
-                final long offset = buffer.getLong();
-                final long sizeBatch = buffer.getLong();
+                final int objectIndex = bytecodeResult.getInt();
+                final int contextIndex = bytecodeResult.getInt();
+                final int eventList = bytecodeResult.getInt();
+                final long offset = bytecodeResult.getLong();
+                final long sizeBatch = bytecodeResult.getLong();
                 final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
                 if (isWarmup) {
                     continue;
                 }
                 transferHostToDeviceAlways(tornadoVMBytecodeList, objectIndex, contextIndex, offset, eventList, sizeBatch, waitList);
             } else if (op == TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()) {
-                final int objectIndex = buffer.getInt();
-                final int contextIndex = buffer.getInt();
-                final int eventList = buffer.getInt();
-                final long offset = buffer.getLong();
-                final long sizeBatch = buffer.getLong();
+                final int objectIndex = bytecodeResult.getInt();
+                final int contextIndex = bytecodeResult.getInt();
+                final int eventList = bytecodeResult.getInt();
+                final long offset = bytecodeResult.getLong();
+                final long sizeBatch = bytecodeResult.getLong();
                 final int[] waitList = (useDependencies) ? events[eventList] : null;
                 if (isWarmup) {
                     continue;
                 }
                 lastEvent = transferDeviceToHost(tornadoVMBytecodeList, objectIndex, contextIndex, offset, eventList, sizeBatch, waitList);
             } else if (op == TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING.value()) {
-                final int objectIndex = buffer.getInt();
-                final int contextIndex = buffer.getInt();
-                final int eventList = buffer.getInt();
-                final long offset = buffer.getLong();
-                final long sizeBatch = buffer.getLong();
+                final int objectIndex = bytecodeResult.getInt();
+                final int contextIndex = bytecodeResult.getInt();
+                final int eventList = bytecodeResult.getInt();
+                final long offset = bytecodeResult.getLong();
+                final long sizeBatch = bytecodeResult.getLong();
 
                 final int[] waitList = (useDependencies) ? events[eventList] : null;
                 if (isWarmup) {
@@ -251,13 +244,13 @@ public class TornadoVMInterpreter extends TornadoLogger {
                 }
                 transferDeviceToHostBlocking(tornadoVMBytecodeList, objectIndex, contextIndex, offset, eventList, sizeBatch, waitList);
             } else if (op == TornadoVMBytecodes.LAUNCH.value()) {
-                final int callWrapperIndex = buffer.getInt();
-                final int contextIndex = buffer.getInt();
-                final int taskIndex = buffer.getInt();
-                final int numArgs = buffer.getInt();
-                final int eventList = buffer.getInt();
-                final long offset = buffer.getLong();
-                final long batchThreads = buffer.getLong();
+                final int callWrapperIndex = bytecodeResult.getInt();
+                final int contextIndex = bytecodeResult.getInt();
+                final int taskIndex = bytecodeResult.getInt();
+                final int numArgs = bytecodeResult.getInt();
+                final int eventList = bytecodeResult.getInt();
+                final long offset = bytecodeResult.getLong();
+                final long batchThreads = bytecodeResult.getLong();
                 ExecutionInfo info = compileTaskFromBytecodeToBinary(callWrapperIndex, numArgs, eventList, taskIndex, batchThreads);
                 if (isWarmup) {
                     popArgumentsFromCall(numArgs);
@@ -265,13 +258,13 @@ public class TornadoVMInterpreter extends TornadoLogger {
                 }
                 lastEvent = executeLaunch(tornadoVMBytecodeList, numArgs, eventList, taskIndex, batchThreads, offset, info);
             } else if (op == TornadoVMBytecodes.ADD_DEPENDENCY.value()) {
-                final int eventList = buffer.getInt();
+                final int eventList = bytecodeResult.getInt();
                 if (isWarmup) {
                     continue;
                 }
                 executeDependency(tornadoVMBytecodeList, lastEvent, eventList);
             } else if (op == TornadoVMBytecodes.BARRIER.value()) {
-                final int eventList = buffer.getInt();
+                final int eventList = bytecodeResult.getInt();
                 final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
                 if (isWarmup) {
                     continue;
@@ -312,7 +305,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
             debug("bc: complete elapsed=%.9f s (%d iterations, %.9f s mean)", elapsed, invocations, (totalTime / invocations));
         }
 
-        buffer.reset();
+        bytecodeResult.reset();
 
         if (TornadoOptions.PRINT_BYTECODES) {
             System.out.println(tornadoVMBytecodeList);
@@ -383,7 +376,6 @@ public class TornadoVMInterpreter extends TornadoLogger {
         }
 
         // We need to stream-in when using batches, because the whole data is not copied
-        // yet.
         List<Integer> allEvents = (sizeBatch > 0) ? deviceForInterpreter.streamIn(object, sizeBatch, offset, objectState, waitList)
                 : deviceForInterpreter.ensurePresent(object, objectState, waitList, sizeBatch, offset);
 
@@ -642,8 +634,8 @@ public class TornadoVMInterpreter extends TornadoLogger {
         ObjectBuffer bufferAtomics = null;
 
         for (int i = 0; i < numArgs; i++) {
-            final byte argType = buffer.get();
-            final int argIndex = buffer.getInt();
+            final byte argType = bytecodeResult.get();
+            final int argIndex = bytecodeResult.getInt();
 
             if (argType == TornadoVMBytecodes.PUSH_CONSTANT_ARGUMENT.value()) {
                 callWrapper.addCallArgument(constants.get(argIndex), false);
@@ -756,8 +748,8 @@ public class TornadoVMInterpreter extends TornadoLogger {
 
     private void popArgumentsFromCall(int numArgs) {
         for (int i = 0; i < numArgs; i++) {
-            buffer.get();
-            buffer.getInt();
+            bytecodeResult.get();
+            bytecodeResult.getInt();
         }
     }
 
