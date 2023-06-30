@@ -13,6 +13,7 @@
     <option name="EXECUTE_SCRIPT_FILE" value="true" />
     <envs>
       <env name="TORNADO_SDK" value="$PROJECT_DIR$/bin/sdk" />
+      <env name="BACKEND" value="opencl" />
     </envs>
     <method v="2">
       <option name="RunConfigurationTask" enabled="true" run_configuration_name="TornadoVM Maven [clean,install]" run_configuration_type="MavenRunConfiguration" />
