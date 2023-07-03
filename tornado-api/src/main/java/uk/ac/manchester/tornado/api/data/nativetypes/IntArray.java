@@ -43,6 +43,7 @@ package uk.ac.manchester.tornado.api.data.nativetypes;
 
 import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ResourceScope;
 
 public class IntArray {
     private MemorySegment segment;
@@ -51,7 +52,7 @@ public class IntArray {
 
     public IntArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segment = MemorySegment.allocateNative(numberOfElements * INT_BYTES).share();
+        segment = MemorySegment.allocateNative(numberOfElements * INT_BYTES, ResourceScope.globalScope()); //.share();
     }
 
 

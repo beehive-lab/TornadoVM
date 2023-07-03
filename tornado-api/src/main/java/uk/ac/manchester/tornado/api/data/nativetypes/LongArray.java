@@ -43,6 +43,7 @@ package uk.ac.manchester.tornado.api.data.nativetypes;
 
 import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ResourceScope;
 
 public class LongArray {
     private MemorySegment segment;
@@ -51,7 +52,7 @@ public class LongArray {
 
     public LongArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segment = MemorySegment.allocateNative(numberOfElements * LONG_BYTES).share();
+        segment = MemorySegment.allocateNative(numberOfElements * LONG_BYTES, ResourceScope.globalScope()); //.share();
     }
 
 

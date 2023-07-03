@@ -43,6 +43,7 @@ package uk.ac.manchester.tornado.api.data.nativetypes;
 
 import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ResourceScope;
 
 public class ShortArray {
     private MemorySegment segment;
@@ -51,7 +52,7 @@ public class ShortArray {
 
     public ShortArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segment = MemorySegment.allocateNative(numberOfElements * SHORT_BYTES);
+        segment = MemorySegment.allocateNative(numberOfElements * SHORT_BYTES, ResourceScope.globalScope());
     }
 
 

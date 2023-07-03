@@ -2,6 +2,7 @@ package uk.ac.manchester.tornado.examples;
 
 import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ResourceScope;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -38,7 +39,7 @@ public class Segments {
         long[] array = new long[ARRAY_SIZE];
 
         //MemorySegment segment = TornadoRuntime.getTornadoRuntime().getPinnedBuffer(device, SIZE_BYTES);
-        MemorySegment segment = MemorySegment.allocateNative(SIZE_BYTES);//TornadoRuntime.getTornadoRuntime().getPinnedBuffer(device, SIZE_BYTES);
+        MemorySegment segment = MemorySegment.allocateNative(SIZE_BYTES, ResourceScope.globalScope());//TornadoRuntime.getTornadoRuntime().getPinnedBuffer(device, SIZE_BYTES);
 
         for (int i = 0; i < ARRAY_SIZE; i++) {
             array[i] = i;
