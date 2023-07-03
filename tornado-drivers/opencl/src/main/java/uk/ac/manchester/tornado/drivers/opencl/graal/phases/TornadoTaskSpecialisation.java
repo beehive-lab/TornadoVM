@@ -218,7 +218,16 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             final LoadFieldNode loadField = (LoadFieldNode) node;
             final ResolvedJavaField field = loadField.field();
             if (field.getType().getJavaKind().isPrimitive()) {
-                ConstantNode constant = lookupPrimField(graph, node, value, field.getName(), field.getJavaKind());
+                ConstantNode constant;
+                if (node.toString().contains("numberOfElements")) {
+                    if (batchThreads <= 0) {
+                        constant = lookupPrimField(graph, node, value, field.getName(), field.getJavaKind());
+                    } else {
+                        constant = ConstantNode.forInt((int) batchThreads);
+                    }
+                } else {
+                    constant = lookupPrimField(graph, node, value, field.getName(), field.getJavaKind());
+                }
                 constant = graph.addOrUnique(constant);
                 node.replaceAtUsages(constant);
                 loadField.clearInputs();
