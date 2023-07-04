@@ -38,6 +38,7 @@ example:
 	tornado --printKernel --debug -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt --params="8192"
 
 tests:
+	rm -f tornado_unittests.log
 	tornado --devices
 	tornado-test.py --ea --verbose
 	tornado-test.py --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03

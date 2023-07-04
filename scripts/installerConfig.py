@@ -59,8 +59,8 @@ CMAKE = {
 ## Maven 
 MAVEN = {
     __LINUX__ : {
-        __X86_64__ : "https://dlcdn.apache.org/maven/maven-3/3.9.1/binaries/apache-maven-3.9.1-bin.tar.gz",
-        __ARM__    : "https://dlcdn.apache.org/maven/maven-3/3.9.1/binaries/apache-maven-3.9.1-bin.tar.gz",
+        __X86_64__ : "https://dlcdn.apache.org/maven/maven-3/3.9.3/binaries/apache-maven-3.9.3-bin.tar.gz",
+        __ARM__    : "https://dlcdn.apache.org/maven/maven-3/3.9.3/binaries/apache-maven-3.9.3-bin.tar.gz",
     },
     __APPLE__ : {
         __X86_64__ : None,   

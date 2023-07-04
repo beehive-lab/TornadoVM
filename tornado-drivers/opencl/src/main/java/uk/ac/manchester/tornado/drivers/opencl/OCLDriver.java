@@ -27,17 +27,9 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.IntStream;
-
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
-
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
@@ -50,6 +42,13 @@ import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.IntStream;
 
 public final class OCLDriver extends TornadoLogger implements TornadoAcceleratorDriver {
     public static final List<OCLDeviceType> DEVICE_TYPE_LIST = Arrays.asList( //
@@ -91,13 +90,11 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
     }
 
     /**
-     * Orders the flat list of OpenCL backends based on the provided device type
-     * ordering.
+     * Orders the flat list of OpenCL backends based on the provided device type ordering.
      *
      * @param deviceTypeOrdering
-     *            A list of OpenCL device types in the desired order.
-     * @return An array of OpenCL backends ordered according to the device type
-     *         ordering.
+     *         A list of OpenCL device types in the desired order.
+     * @return An array of OpenCL backends ordered according to the device type ordering.
      */
     private OCLBackend[] orderFlattenBackends(List<OCLDeviceType> deviceTypeOrdering) {
         List<OCLBackend> backendList = new ArrayList<>();
@@ -127,7 +124,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
 
     @Override
     public TornadoAcceleratorDevice getDefaultDevice() {
-        return getDefaultBackend().getDeviceContext().asMapping();
+        return flatBackends[0].getDeviceContext().asMapping();
     }
 
     @Override
@@ -193,16 +190,10 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
     }
 
     private void discoverDevices(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
-        final int numPlatforms = OpenCL.getNumPlatforms();
-        String platformToIgnore = getString("tornado.ignore.platform");
-        for (int i = 0; i < numPlatforms; i++) {
+        IntStream.range(0, OpenCL.getNumPlatforms()).forEach(i -> {
             final TornadoPlatform platform = OpenCL.getPlatform(i);
-            if (platformToIgnore != null && platform.getName().contains(platformToIgnore)) {
-                info("Ignore " + platform.getName());
-            } else {
-                installDevices(i, platform, options, vmRuntime, vmConfig);
-            }
-        }
+            installDevices(i, platform, options, vmRuntime, vmConfig);
+        });
     }
 
     public OCLBackend getBackend(int platform, int device) {
@@ -212,10 +203,6 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
     @Override
     public OCLBackend getDefaultBackend() {
         return checkAndInitBackend(0, 0);
-    }
-
-    public OCLBackend swapDefaultBackend(int index) {
-        return checkAndInitBackend(0, index);
     }
 
     public int getNumDevices(int platform) {
@@ -232,13 +219,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
     }
 
     public OCLExecutionEnvironment getPlatformContext(final int index) {
-        if (index < contexts.size()) {
-            return contexts.get(index);
-        } else {
-            // We return device 0 by default
-            // This only happens if we ignore a platform
-            return contexts.get(0);
-        }
+        return (index < contexts.size()) ? contexts.get(index) : contexts.get(0);
     }
 
     @Override

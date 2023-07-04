@@ -28,6 +28,7 @@ import argparse
 import platform
 import tarfile
 import installerConfig as config
+import shutil
 
 try:
     import wget
@@ -137,14 +138,14 @@ class TornadoInstaller():
 
         fileName = self.processFileName(url)
         print("\nChecking dependency: " + fileName)
-        fullPath = self.workDirName + "/" + fileName
+        fullPath = __DIRECTORY_DEPENDENCIES__ + "/" + fileName
 
         if not os.path.exists(fullPath):
             wget.download(url, fullPath)
 
         ## Uncompress file
         tar = tarfile.open(fullPath, 'r:gz')
-        tar.extractall(self.workDirName)
+        tar.extractall(__DIRECTORY_DEPENDENCIES__)
         extractedDirectory = self.getJDKDirectoryName(tar)
         tar.close()
 
@@ -155,7 +156,7 @@ class TornadoInstaller():
             extraPath = "/Maven.app/Contents"
 
         ## Update env-variables
-        self.env["PATH"].append(currentDirectory + "/" + self.workDirName + "/" + extractedDirectory + extraPath + "/bin")
+        self.env["PATH"].append(currentDirectory + "/" + __DIRECTORY_DEPENDENCIES__ + "/" + extractedDirectory + extraPath + "/bin")
 
     def getJDKDirectoryName(self, tar):
         extractedNames = tar.getnames()[1].split("/")
@@ -238,14 +239,14 @@ class TornadoInstaller():
         fileContent = fileContent + "export PATH=" + allPaths + "$PATH" "\n"
         fileContent = fileContent + "export CMAKE_ROOT=" + self.env["CMAKE_ROOT"] + "\n"
         fileContent = fileContent + "export TORNADO_SDK=" + self.env["TORNADO_SDK"] + "\n"
-        f = open("source.sh", "w")
+        f = open("setvars.sh", "w")
         f.write(fileContent)
         f.close()
 
         print("........................................[ok]")
         print(" ")
         print(" ")
-        print("To run TornadoVM, first run `. source.sh`")
+        print("To run TornadoVM, first run `source setvars.sh`")
 
     def checkJDKOption(self, args):
         if (args.jdk == None):
@@ -279,7 +280,7 @@ class TornadoInstaller():
         backend = self.composeBackendOption(args)
 
         makeJDK = "jdk-11-plus"
-        if ((args.javaHome != None and args.javaHome.startswith("graal")) or args.jdk.startswith("graal")):
+        if ((args.javaHome != None and "graal" in args.javaHome) or ("graal" in args.jdk)):
             makeJDK = "graal-jdk-11-plus"
         
         if (args.javaHome != None):

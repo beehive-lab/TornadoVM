@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -20,8 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.backend;
 
@@ -39,7 +37,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.graalvm.collections.EconomicSet;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
@@ -64,7 +61,6 @@ import org.graalvm.compiler.phases.util.Providers;
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.code.CompiledCode;
-import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.meta.AllocatableValue;
@@ -104,13 +100,13 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLReferenceMapBui
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FPGAWorkGroupSizeNode;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.common.OCLTokens;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
-    private static final String KERNEL_WARMUP = System.getProperty("tornado.fpga.kernel.warmup");
     final OptionValues options;
 
     final OCLTargetDescription target;
@@ -205,11 +201,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         emitCode((OCLCompilationResultBuilder) crb, lir, method, profiler);
     }
 
-    public EconomicSet<Register> translateToCallerRegisters(EconomicSet<Register> calleeRegisters) {
-        unimplemented();
-        return null;
-    }
-
     public void emitCode(OCLCompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method, TornadoProfiler profiler) {
         TaskMetaData taskMetaData = crb.getTaskMetaData();
         profiler.start(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
@@ -260,6 +251,10 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
                 lirInstruction.forEachOutput((instruction, value, mode, flags) -> {
                     if (value instanceof Variable) {
                         Variable variable = (Variable) value;
+                        if (OCLTokens.openCLTokens.contains(variable.getName())) {
+                            // Change name because the Java variables uses an OpenCL token name
+                            variable.setName("_" + variable.getName());
+                        }
                         if (variable.getName() != null) {
                             addVariableDef(kindToVariable, variable);
                             variableCount.incrementAndGet();
@@ -343,7 +338,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             methodName = OCLUtils.makeMethodName(method);
 
             final JavaKind returnKind = method.getSignature().getReturnKind();
-            String returnStr = "<unknown>";
+            String returnStr;
             if (returnKind == JavaKind.Void) {
                 returnStr = "void";
             } else {
@@ -360,6 +355,14 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             emitVariableDefs(crb, asm, lir);
             asm.eol();
         }
+    }
+
+    private String getParameterName(Local local) {
+        String parameterName = local.getName();
+        if (OCLTokens.openCLTokens.contains(parameterName)) {
+            parameterName = "_" + parameterName;
+        }
+        return parameterName;
     }
 
     private void emitMethodParameters(OCLAssembler asm, ResolvedJavaMethod method, CallingConvention incomingArguments, boolean isKernel) {
@@ -382,7 +385,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
                         continue;
                     }
                     asm.emit(", ");
-                    asm.emit("__global %s *%s", "uchar", locals[i].getName());
+                    String parameterName = getParameterName(locals[i]);
+                    asm.emit("__global %s *%s", "uchar", parameterName);
                 }
             } else {
                 final AllocatableValue param = incomingArguments.getArgument(i);

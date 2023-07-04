@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -66,7 +66,7 @@ public class OCLCodeCache {
     private static final String FALSE = "False";
     private static final String TRUE = "True";
     private static final int SPIRV_MAGIC_NUMBER = 119734787;
-    private final String OPENCL_SOURCE_SUFFIX = ".cl";
+    private static final String OPENCL_SOURCE_SUFFIX = ".cl";
     private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", FALSE));
     private final boolean OPENCL_DUMP_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.dump", FALSE));
     private final boolean OPENCL_DUMP_SOURCE = Boolean.parseBoolean(getProperty("tornado.opencl.source.dump", FALSE));
@@ -74,9 +74,12 @@ public class OCLCodeCache {
     private final String OPENCL_CACHE_DIR = getProperty("tornado.opencl.codecache.dir", "/var/opencl-codecache");
     private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.log.dir", "/var/opencl-logs");
+    private static final String DEFAULT_FPGA_CONFIGURATION_FILE_FOR_INTEL = "/etc/intel-fpga.conf";
+    private static final String DEFAULT_FPGA_CONFIGURATION_FILE_FOR_INTEL_ONEAPI = "/etc/intel-oneapi-fpga.conf";
+    private static final String DEFAULT_FPGA_CONFIGURATION_FILE_FOR_XILINX = "/etc/xilinx-fpga.conf";
     private final String FPGA_CONFIGURATION_FILE = getProperty("tornado.fpga.conf.file", null);
-    private final String FPGA_CLEANUP_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/cleanFpga.sh";
-    private final String FPGA_AWS_AFI_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/aws_post_processing.sh";
+    private static final String FPGA_CLEANUP_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/cleanFpga.sh";
+    private static final String FPGA_AWS_AFI_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/aws_post_processing.sh";
     /**
      * OpenCL Binary Options: -Dtornado.precompiled.binary=<path/to/binary,task>
      *
@@ -128,22 +131,29 @@ public class OCLCodeCache {
         return token.startsWith("#");
     }
 
-    private boolean runOnIntelFPGAWithDocker() {
-        if (System.getenv("DOCKER_FPGA_EMULATION") == null) {
-            return false;
-        } else {
-            return System.getenv("DOCKER_FPGA_EMULATION").equals("1");
+    private boolean isQuartusHLSRequired() {
+        return (fpgaCompiler.equals("aoc"));
+    }
+
+    private void assertIfQuartusHLSIsPresent() {
+        if (System.getenv("QUARTUS_ROOT_DIR") == null) {
+            throw new TornadoRuntimeException("[ERROR] The FPGA compiler (" + fpgaCompiler
+                    + ") requires the installation of the Intel(R) Quartus(R) Prime software. You can check if Quartus is installed and whether the QUARTUS_ROOT_DIR variable is properly set.");
         }
+    }
+
+    private boolean runOnIntelFPGAWithOneAPI() {
+        return (System.getenv("ONEAPI_ROOT") != null);
     }
 
     private String fetchFPGAConfigurationFile() {
         if (deviceContext.getDevice().getDeviceVendor().equalsIgnoreCase("xilinx")) {
-            return "/etc/xilinx-fpga.conf";
+            return DEFAULT_FPGA_CONFIGURATION_FILE_FOR_XILINX;
         } else {
-            if (runOnIntelFPGAWithDocker()) {
-                return "/etc/intel-docker-fpga.conf";
+            if (runOnIntelFPGAWithOneAPI()) {
+                return DEFAULT_FPGA_CONFIGURATION_FILE_FOR_INTEL_ONEAPI;
             } else {
-                return "/etc/intel-fpga.conf";
+                return DEFAULT_FPGA_CONFIGURATION_FILE_FOR_INTEL;
             }
         }
     }
@@ -373,7 +383,7 @@ public class OCLCodeCache {
         return bufferCommand.toString().split(" ");
     }
 
-    private String[] composeIntelHLSCommandForDocker(String inputFile, String outputFile) {
+    private String[] composeIntelHLSCommandForOneAPI(String inputFile, String outputFile) {
         StringJoiner bufferCommand = new StringJoiner(" ");
 
         bufferCommand.add(fpgaCompiler);
@@ -499,8 +509,13 @@ public class OCLCodeCache {
                 linkObjectFiles.add(entryPoint);
                 linkCommand = composeXilinxHLSLinkCommand(entryPoint);
             } else if (isPlatform("intel")) {
-                if (runOnIntelFPGAWithDocker()) {
-                    compilationCommand = composeIntelHLSCommandForDocker(inputFile, outputFile);
+                if (runOnIntelFPGAWithOneAPI()) {
+                    if (isQuartusHLSRequired()) {
+                        assertIfQuartusHLSIsPresent();
+                        compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
+                    } else {
+                        compilationCommand = composeIntelHLSCommandForOneAPI(inputFile, outputFile);
+                    }
                 } else {
                     compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
                 }

@@ -226,7 +226,6 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 final Node node = nodes.get(i);
                 if (node instanceof ValueNode) {
                     final ValueNode valueNode = (ValueNode) node;
-                    // System.out.printf("do block: node=%s\n", valueNode);
                     if (Options.TraceLIRGeneratorLevel.getValue(options) >= 3) {
                         TTY.println("LIRGen for " + valueNode);
                     }
