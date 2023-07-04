@@ -31,6 +31,10 @@ public abstract class TornadoTestBase {
 
     protected static boolean wasDeviceInspected = false;
 
+    public static TornadoRuntimeInterface getTornadoRuntime() {
+        return TornadoRuntime.getTornadoRuntime();
+    }
+
     @Before
     public void before() {
         for (int i = 0; i < TornadoRuntime.getTornadoRuntime().getNumDrivers(); i++) {
@@ -105,32 +109,40 @@ public abstract class TornadoTestBase {
         }
     }
 
+    /**
+     * It returns a TornadoDevice that supports SPIRV.
+     *
+     * @return {@link TornadoDevice} with SPIRV support, or null if not found.
+     */
     protected TornadoDevice getSPIRVSupportedDevice() {
-        TornadoDevice device = null;
         TornadoTestBase.Tuple2<Integer, Integer> driverAndDeviceIndex = getDriverAndDeviceIndex();
+        TornadoRuntimeInterface tornadoRuntime = TornadoRuntime.getTornadoRuntime();
+
+        // Check if a specific device has been selected for testing
         if (driverAndDeviceIndex.f0() != 0) {
-            // If another device has been selected for testing, TornadoVM has swapped with
-            // another device using the position 0 for the selected device. In this case, we
-            // select the chosen device instead of looking for a device with SPIRV support.
-            device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
+            TornadoDriver driver = tornadoRuntime.getDriver(0);
+            TornadoDevice device = driver.getDevice(0);
             assertIfNeeded(device, 0);
-        } else {
-            // Check if SPIRV is supported. We search for a suitable device to run on
-            int numDrivers = TornadoRuntime.getTornadoRuntime().getNumDrivers();
-            for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
-                if (TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getBackendType() != TornadoVMBackendType.PTX) {
-                    int maxDevices = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDeviceCount();
-                    for (int i = 0; i < maxDevices; i++) {
-                        // Search for the device with SPIRV Support
-                        device = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(i);
-                        if (device.isSPIRVSupported()) {
-                            return device;
-                        }
+            return device;
+        }
+
+        // Search for a device with SPIRV support. This method will return even an
+        // OpenCL device if SPIRV is supported.
+        int numDrivers = tornadoRuntime.getNumDrivers();
+        for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
+            TornadoDriver driver = tornadoRuntime.getDriver(driverIndex);
+            if (driver.getBackendType() != TornadoVMBackendType.PTX) {
+                int maxDevices = driver.getDeviceCount();
+                for (int i = 0; i < maxDevices; i++) {
+                    TornadoDevice device = driver.getDevice(i);
+                    if (device.isSPIRVSupported()) {
+                        return device;
                     }
                 }
             }
         }
-        return device;
+
+        return null; // No device with SPIRV support found
     }
 
     protected static class Tuple2<T0, T1> {
@@ -149,10 +161,6 @@ public abstract class TornadoTestBase {
         public T1 f1() {
             return t1;
         }
-    }
-
-    public static TornadoRuntimeInterface getTornadoRuntime() {
-        return TornadoRuntime.getTornadoRuntime();
     }
 
 }

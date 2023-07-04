@@ -17,7 +17,14 @@
  */
 package uk.ac.manchester.tornado.unittests.prebuilt;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.Arrays;
+import java.util.stream.IntStream;
+
+import org.junit.BeforeClass;
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -29,13 +36,9 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import java.util.Arrays;
-import java.util.stream.IntStream;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * <p>
@@ -46,6 +49,18 @@ import static org.junit.Assert.assertEquals;
  * </code>
  */
 public class PrebuiltTest extends TornadoTestBase {
+    private static final String TORNADO_SDK = "TORNADO_SDK";
+    private static TornadoDevice defaultDevice;
+    private static String FILE_PATH;
+    private static TornadoVMBackendType backendType;
+
+    @BeforeClass
+    public static void init() {
+        backendType = TornadoRuntime.getTornadoRuntime().getBackendType(0);
+        defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
+        String tornadoSDK = System.getenv(TORNADO_SDK);
+        FILE_PATH = tornadoSDK + "/examples/generated/";
+    }
 
     @Test
     public void testPrebuilt01() {
@@ -55,38 +70,32 @@ public class PrebuiltTest extends TornadoTestBase {
         int[] b = new int[numElements];
         int[] c = new int[numElements];
 
-        String tornadoSDK = System.getenv("TORNADO_SDK");
-
         Arrays.fill(a, 1);
         Arrays.fill(b, 2);
 
-        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
-        String filePath = tornadoSDK + "/examples/generated/";
-
-        TornadoVMBackendType backendType = TornadoRuntime.getTornadoRuntime().getBackendType(0);
         switch (backendType) {
             case PTX:
-                filePath += "add.ptx";
+                FILE_PATH += "add.ptx";
                 break;
             case OPENCL:
-                filePath += "add.cl";
+                FILE_PATH += "add.cl";
                 break;
             case SPIRV:
-                filePath += "add.spv";
+                FILE_PATH += "add.spv";
                 break;
             default:
-                throw new RuntimeException("Backend not supported");
+                throw new TornadoRuntimeException("Backend not supported");
         }
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .prebuiltTask("t0", //
                         "add", //
-                        filePath, //
-                        new Object[]{a, b, c}, //
-                        new Access[]{Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY}, //
+                        FILE_PATH, //
+                        new Object[] { a, b, c }, //
+                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
                         defaultDevice, //
-                        new int[]{numElements})//
+                        new int[] { numElements })//
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -99,68 +108,16 @@ public class PrebuiltTest extends TornadoTestBase {
     }
 
     @Test
-    public void testPrebuilt02() {
-
-        final int numElements = 8;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
-
-        String tornadoSDK = System.getenv("TORNADO_SDK");
-
-        Arrays.fill(a, 1);
-        Arrays.fill(b, 2);
-
-        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
-        String filePath = tornadoSDK + "/examples/generated/";
-
-        TornadoVMBackendType backendType = TornadoRuntime.getTornadoRuntime().getBackendType(0);
-        switch (backendType) {
-            case PTX:
-                filePath += "add.ptx";
-                break;
-            case OPENCL:
-                filePath += "add.cl";
-                break;
-            case SPIRV:
-                filePath += "add.spv";
-                break;
-            default:
-                throw new RuntimeException("Backend not supported");
-        }
-
-        TaskGraph taskGraph = new TaskGraph("s0")//
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-                .prebuiltTask("t0", //
-                        "add", //
-                        filePath, //
-                        new Object[]{a, b, c}, //
-                        new Access[]{Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY}, //
-                        defaultDevice, //
-                        new int[]{numElements})//
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
-
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i]);
-        }
-    }
-
-    @Test
-    public void testPrebuilt03SPIRV() {
+    public void testPrebuilt02SPIRV() {
         assertNotBackend(TornadoVMBackendType.PTX);
 
         TornadoDevice device = getSPIRVSupportedDevice();
 
-        if (device != null) {
+        if (device == null) {
             assertNotBackend(TornadoVMBackendType.OPENCL);
         }
 
-        String tornadoSDK = System.getenv("TORNADO_SDK");
-        String filePath = tornadoSDK + "/examples/generated/reduce03.spv";
+        FILE_PATH += "reduce03.spv";
 
         final int size = 512;
         final int localSize = 256;
@@ -177,11 +134,11 @@ public class PrebuiltTest extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
                 .prebuiltTask("t0", //
                         "floatReductionAddLocalMemory", //
-                        filePath, //
-                        new Object[]{context, input, reduce}, //
-                        new Access[]{Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY}, //
+                        FILE_PATH, //
+                        new Object[] { context, input, reduce }, //
+                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
                         device, //
-                        new int[]{size})//
+                        new int[] { size })//
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -201,17 +158,16 @@ public class PrebuiltTest extends TornadoTestBase {
     }
 
     @Test
-    public void testPrebuilt04SPIRV() {
+    public void testPrebuilt03SPIRV() {
         assertNotBackend(TornadoVMBackendType.PTX);
 
         TornadoDevice device = getSPIRVSupportedDevice();
 
-        if (device != null) {
+        if (device == null) {
             assertNotBackend(TornadoVMBackendType.OPENCL);
         }
 
-        String tornadoSDK = System.getenv("TORNADO_SDK");
-        String filePath = tornadoSDK + "/examples/generated/reduce04.spv";
+        FILE_PATH += "reduce04.spv";
 
         final int size = 32;
         final int localSize = 32;
@@ -228,11 +184,11 @@ public class PrebuiltTest extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
                 .prebuiltTask("b", //
                         "intReductionAddGlobalMemory", //
-                        filePath, //
-                        new Object[]{context, input, reduce}, //
-                        new Access[]{Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY}, //
+                        FILE_PATH, //
+                        new Object[] { context, input, reduce }, //
+                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
                         device, //
-                        new int[]{size})//
+                        new int[] { size })//
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
