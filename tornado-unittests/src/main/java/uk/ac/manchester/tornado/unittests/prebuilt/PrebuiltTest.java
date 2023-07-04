@@ -110,11 +110,111 @@ public class PrebuiltTest extends TornadoTestBase {
     @Test
     public void testPrebuilt02SPIRV() {
         assertNotBackend(TornadoVMBackendType.PTX);
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+
+        FILE_PATH += "reduce03.spv";
+
+        final int size = 512;
+        final int localSize = 256;
+        float[] input = new float[size];
+        float[] reduce = new float[size / localSize];
+        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = 1);
+
+        WorkerGrid worker = new WorkerGrid1D(size);
+        worker.setLocalWork(256, 1, 1);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
+        KernelContext context = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
+                .prebuiltTask("t0", //
+                        "floatReductionAddLocalMemory", //
+                        FILE_PATH, //
+                        new Object[] { context, input, reduce }, //
+                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
+                        defaultDevice, //
+                        new int[] { size })//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        executionPlan.withGridScheduler(gridScheduler) //
+                .execute();
+
+        // Final SUM
+        float finalSum = 0;
+        for (float v : reduce) {
+            finalSum += v;
+        }
+
+        assertEquals(512, finalSum, 0.0f);
+
+    }
+
+    /**
+     * It tests the functionality of the prebuilt03SPIRV method.
+     *
+     * This test case verifies that the prebuilt03SPIRV runs correctly though a
+     * SPIRV or OpenCL runtime if the device supports SPIRV.
+     *
+     * Expected outcome: - If the current backend type is PTX, the test should have
+     * thrown unsupported exception. - The test should succeed if a SPIR-V supported
+     * device is available, or should use OPENCL as the backend with a device that
+     * device supports SPIRV; otherwise, the test should fail.
+     */
+    @Test
+    public void testPrebuilt03SPIRV() {
+        assertNotBackend(TornadoVMBackendType.PTX);
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+
+        FILE_PATH += "reduce04.spv";
+
+        final int size = 32;
+        final int localSize = 32;
+        int[] input = new int[size];
+        int[] reduce = new int[size / localSize];
+        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = 2);
+
+        WorkerGrid worker = new WorkerGrid1D(size);
+        worker.setLocalWork(32, 1, 1);
+        GridScheduler gridScheduler = new GridScheduler("a.b", worker);
+        KernelContext context = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("a") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
+                .prebuiltTask("b", //
+                        "intReductionAddGlobalMemory", //
+                        FILE_PATH, //
+                        new Object[] { context, input, reduce }, //
+                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
+                        defaultDevice, //
+                        new int[] { size })//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(gridScheduler) //
+                .execute();
+
+        // Final SUM
+        float finalSum = 0;
+        for (int v : reduce) {
+            finalSum += v;
+        }
+
+        assertEquals(64, finalSum, 0.0f);
+
+    }
+
+    @Test
+    public void testPrebuilt04SPIRVThroughOpenCLRuntime() {
+        assertNotBackend(TornadoVMBackendType.PTX);
 
         TornadoDevice device = getSPIRVSupportedDevice();
 
         if (device == null) {
-            assertNotBackend(TornadoVMBackendType.OPENCL);
+            assertNotBackend(TornadoVMBackendType.OPENCL, "No SPIRV supported device found with the current OpenCL backend. The OpenCL version must be >= 2.1 to support SPIR-V execution.");
         }
 
         FILE_PATH += "reduce03.spv";
@@ -154,55 +254,6 @@ public class PrebuiltTest extends TornadoTestBase {
         }
 
         assertEquals(512, finalSum, 0.0f);
-
-    }
-
-    @Test
-    public void testPrebuilt03SPIRV() {
-        assertNotBackend(TornadoVMBackendType.PTX);
-
-        TornadoDevice device = getSPIRVSupportedDevice();
-
-        if (device == null) {
-            assertNotBackend(TornadoVMBackendType.OPENCL);
-        }
-
-        FILE_PATH += "reduce04.spv";
-
-        final int size = 32;
-        final int localSize = 32;
-        int[] input = new int[size];
-        int[] reduce = new int[size / localSize];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = 2);
-
-        WorkerGrid worker = new WorkerGrid1D(size);
-        worker.setLocalWork(32, 1, 1);
-        GridScheduler gridScheduler = new GridScheduler("a.b", worker);
-        KernelContext context = new KernelContext();
-
-        TaskGraph taskGraph = new TaskGraph("a") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
-                .prebuiltTask("b", //
-                        "intReductionAddGlobalMemory", //
-                        FILE_PATH, //
-                        new Object[] { context, input, reduce }, //
-                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
-                        device, //
-                        new int[] { size })//
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
-
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
-
-        // Final SUM
-        float finalSum = 0;
-        for (int v : reduce) {
-            finalSum += v;
-        }
-
-        assertEquals(64, finalSum, 0.0f);
 
     }
 }

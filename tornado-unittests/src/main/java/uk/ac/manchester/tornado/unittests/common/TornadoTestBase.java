@@ -77,15 +77,19 @@ public abstract class TornadoTestBase {
     }
 
     public void assertNotBackend(TornadoVMBackendType backend) {
+        assertNotBackend(backend, null);
+    }
+
+    public void assertNotBackend(TornadoVMBackendType backend, String customBackendAssertionMessage) {
         int driverIndex = TornadoRuntime.getTornadoRuntime().getDefaultDevice().getDriverIndex();
         if (TornadoRuntime.getTornadoRuntime().getBackendType(driverIndex) == backend) {
             switch (backend) {
                 case PTX:
-                    throw new TornadoVMPTXNotSupported("Test not supported for the PTX backend");
+                    throw new TornadoVMPTXNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the PTX backend");
                 case OPENCL:
-                    throw new TornadoVMOpenCLNotSupported("Test not supported for the OpenCL backend");
+                    throw new TornadoVMOpenCLNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the OpenCL backend");
                 case SPIRV:
-                    throw new TornadoVMSPIRVNotSupported("Test not supported for the SPIR-V backend");
+                    throw new TornadoVMSPIRVNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the SPIR-V backend");
             }
         }
     }
@@ -116,11 +120,10 @@ public abstract class TornadoTestBase {
      */
     protected TornadoDevice getSPIRVSupportedDevice() {
         TornadoTestBase.Tuple2<Integer, Integer> driverAndDeviceIndex = getDriverAndDeviceIndex();
-        TornadoRuntimeInterface tornadoRuntime = TornadoRuntime.getTornadoRuntime();
 
         // Check if a specific device has been selected for testing
         if (driverAndDeviceIndex.f0() != 0) {
-            TornadoDriver driver = tornadoRuntime.getDriver(0);
+            TornadoDriver driver = getTornadoRuntime().getDriver(0);
             TornadoDevice device = driver.getDevice(0);
             assertIfNeeded(device, 0);
             return device;
@@ -128,9 +131,9 @@ public abstract class TornadoTestBase {
 
         // Search for a device with SPIRV support. This method will return even an
         // OpenCL device if SPIRV is supported.
-        int numDrivers = tornadoRuntime.getNumDrivers();
+        int numDrivers = getTornadoRuntime().getNumDrivers();
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
-            TornadoDriver driver = tornadoRuntime.getDriver(driverIndex);
+            TornadoDriver driver = getTornadoRuntime().getDriver(driverIndex);
             if (driver.getBackendType() != TornadoVMBackendType.PTX) {
                 int maxDevices = driver.getDeviceCount();
                 for (int i = 0; i < maxDevices; i++) {
