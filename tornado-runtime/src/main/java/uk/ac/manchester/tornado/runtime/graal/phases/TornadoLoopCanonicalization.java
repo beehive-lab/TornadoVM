@@ -27,7 +27,9 @@ import static uk.ac.manchester.tornado.runtime.graal.loop.LoopCanonicalizer.cano
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.loop.LoopEx;
@@ -37,11 +39,15 @@ import org.graalvm.compiler.phases.Phase;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 
 public class TornadoLoopCanonicalization extends Phase {
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
 
     @Override
     protected void run(StructuredGraph graph) {
         if (graph.hasLoops()) {
-            final LoopsData data = new TornadoLoopsData(graph, graph.getLastSchedule().getCFG());
+            final LoopsData data = new TornadoLoopsData(graph);
             final List<LoopEx> loops = data.outerFirst();
             Collections.reverse(loops);
             for (LoopEx loop : loops) {

@@ -36,6 +36,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.Stack;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.Equivalence;
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.spi.CodeGenProviders;
@@ -93,9 +95,9 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     private OCLDeviceContextInterface deviceContext;
 
     public OCLCompilationResultBuilder(CodeGenProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
-            CompilationResult compilationResult) {
-        super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None, null, null, null);
-        nonInlinedMethods = new HashSet<>();
+            CompilationResult compilationResult, LIR lir) {
+        super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None, EconomicMap.create(Equivalence.DEFAULT), NO_VERIFIERS, lir);
+        nonInlinedMethods = new HashSet<ResolvedJavaMethod>();
     }
 
     private static boolean isMergeHIRBlock(HIRBlock block) {
@@ -103,9 +105,9 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     }
 
     /**
-     * Checks if the {@link OCLNodeLIRBuilder#emitLoopBegin(LoopBeginNode)} has been
-     * called right before {@link OCLNodeLIRBuilder#emitIf}. In other words, that
-     * there is no data flow/control flow between the {@link LoopBeginNode} and the
+     * Checks if the {@link OCLNodeLIRBuilder(LoopBeginNode)} has been called right
+     * before {@link OCLNodeLIRBuilder#emitIf}. In other words, that there is no
+     * data flow/control flow between the {@link LoopBeginNode} and the
      * corresponding {@link IfNode} loop condition.
      *
      * @return true if the {@param loopCondIndex} is right after the LIR

@@ -25,13 +25,11 @@
  */
 package uk.ac.manchester.tornado.runtime.sketcher;
 
-import org.graalvm.compiler.graph.Graph;
-
 import uk.ac.manchester.tornado.api.common.Access;
 
 public class Sketch {
 
-    private final Graph graph;
+    private final CachedGraph<?> graph;
 
     /**
      * Argument accesses of the {@link #graph}. If arguments escape to callees, it
@@ -39,12 +37,12 @@ public class Sketch {
      */
     private final Access[] argumentsAccess;
 
-    Sketch(Graph graph, Access[] argumentAccesses) {
+    Sketch(CachedGraph<?> graph, Access[] argumentAccesses) {
         this.graph = graph;
         this.argumentsAccess = argumentAccesses;
     }
 
-    public Graph getGraph() {
+    public CachedGraph<?> getGraph() {
         return graph;
     }
 

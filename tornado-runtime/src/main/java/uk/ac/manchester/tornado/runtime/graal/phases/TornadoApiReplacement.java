@@ -31,10 +31,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
@@ -80,6 +82,11 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
     }
 
     @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
+
+    @Override
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
         replaceLocalAnnotations(graph, context);
     }
@@ -113,7 +120,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
         });
 
         if (graph.hasLoops()) {
-            final LoopsData data = new TornadoLoopsData(graph, graph.getLastSchedule().getCFG());
+            final LoopsData data = new TornadoLoopsData(graph);
             data.detectCountedLoops();
             int loopIndex = 0;
             final List<LoopEx> loops = data.outerFirst();

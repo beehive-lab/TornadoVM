@@ -32,8 +32,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
-import org.graalvm.compiler.debug.DebugContext;
-import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.ConstantNode;
@@ -64,6 +62,7 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkFloatingPointIntrinsicsNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkIntIntrinsicNode;
+import uk.ac.manchester.tornado.runtime.sketcher.CachedGraph;
 
 /**
  * Code analysis class for reductions in TornadoVM.
@@ -176,9 +175,9 @@ public class ReduceCodeAnalysis {
         return getReduceOperation(reduceOperation);
     }
 
-    public static List<REDUCE_OPERATION> getReduceOperatorFromSketch(Graph graph, List<Integer> reduceIndices) {
+    public static List<REDUCE_OPERATION> getReduceOperatorFromSketch(CachedGraph graph, List<Integer> reduceIndices) {
         List<ValueNode> reduceOperation = new ArrayList<>();
-        final StructuredGraph sg = (StructuredGraph) graph.copy(DebugContext.forCurrentThread());
+        final StructuredGraph sg = (StructuredGraph) graph.getMutableCopy(null);
 
         for (Integer paramIndex : reduceIndices) {
 

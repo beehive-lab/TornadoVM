@@ -148,10 +148,16 @@ public class TornadoVMGraphCompiler {
         }
     }
 
+<<<<<<< HEAD
     private static void scheduleAndEmitTornadoVMBytecodes(TornadoVMBytecodeBuilder tornadoVMBytecodeBuilder, TornadoGraph graph, IntermediateTornadoGraph intermediateTornadoGraph, long offset,
             long bufferBatchSize, long nThreads, int id, TornadoExecutionContext executionContext) {
         final int[] nodeIds = intermediateTornadoGraph.getNodeIds();
         final BitSet[] dependencies = intermediateTornadoGraph.getDependencies();
+=======
+    private static void printIvs(StructuredGraph graph) {
+        final LoopsData data = new TornadoLoopsData(graph);
+        data.detectCountedLoops();
+>>>>>>> 9fb658a39 (Stable state, missing fix for Variable name setters)
 
         final BitSet scheduled = new BitSet(dependencies.length);
         scheduled.clear();

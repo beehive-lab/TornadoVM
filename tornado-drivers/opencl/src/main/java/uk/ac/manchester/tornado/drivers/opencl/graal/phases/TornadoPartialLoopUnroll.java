@@ -49,7 +49,7 @@ public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
     private static final int LOOP_BOUND_UPPER_LIMIT = 16384;
 
     private static void partialUnroll(StructuredGraph graph, MidTierContext context) {
-        final LoopsData dataCounted = new TornadoLoopsData(graph, graph.getLastSchedule().getCFG());
+        final LoopsData dataCounted = new TornadoLoopsData(graph);
 
         LoopPolicies loopPolicies = createLoopPolicies();
         CanonicalizerPhase canonicalizer = CanonicalizerPhase.create();

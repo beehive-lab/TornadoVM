@@ -62,8 +62,6 @@ public class OCLMidTier extends TornadoMidTier {
             appendPhase(new TornadoFloatingReadReplacement(canonicalizer));
         }
 
-        appendPhase(new RemoveValueProxyPhase(canonicalizer));
-
         appendPhase(canonicalizer);
 
         if (ConditionalElimination.getValue(options)) {
@@ -76,6 +74,8 @@ public class OCLMidTier extends TornadoMidTier {
 
         if (TornadoOptions.isPartialUnrollEnabled()) {
             appendPhase(new TornadoPartialLoopUnroll());
+            appendPhase(new RemoveValueProxyPhase(canonicalizer));
+
         }
 
         appendPhase(new MidTierLoweringPhase(canonicalizer));

@@ -47,7 +47,6 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
-import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLVariable;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLNullary;
@@ -405,7 +404,7 @@ public final class OCLAssembler extends Assembler {
     public String toString(Value value) {
         String result = "";
         if (value instanceof Variable) {
-            OCLVariable var = (OCLVariable) value;
+            Variable var = (Variable) value;
             return var.toString();
         } else if (value instanceof ConstantValue) {
             if (!((ConstantValue) value).isJavaConstant()) {

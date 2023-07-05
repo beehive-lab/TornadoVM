@@ -21,6 +21,9 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.phases;
 
+import java.util.Optional;
+
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.phases.Phase;
@@ -28,6 +31,11 @@ import org.graalvm.compiler.phases.Phase;
 import uk.ac.manchester.tornado.runtime.graal.nodes.NewArrayNonVirtualizableNode;
 
 public class TornadoNewArrayDevirtualizationReplacement extends Phase {
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
+
     @Override
     protected void run(StructuredGraph graph) {
         graph.getNodes().filter(NewArrayNode.class).forEach(newArrayNode -> {

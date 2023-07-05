@@ -36,7 +36,6 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.FixReadsPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.LowTierLoweringPhase;
-import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.phases.common.UseTrappingNullChecksPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 
@@ -64,9 +63,9 @@ public class OCLLowTier extends TornadoLowTier {
 
         appendPhase(new OCLFP64SupportPhase(tornadoDeviceContext));
 
-        appendPhase(new LowTierLoweringPhase(canonicalizer));
+        // appendPhase(new RemoveValueProxyPhase(canonicalizer));
 
-        appendPhase(new RemoveValueProxyPhase(canonicalizer));
+        appendPhase(new LowTierLoweringPhase(canonicalizer));
 
         if (ConditionalElimination.getValue(options)) {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, false));
@@ -76,10 +75,9 @@ public class OCLLowTier extends TornadoLowTier {
         if (TornadoOptions.ENABLE_FIX_READS) {
             appendPhase(new FixReadsPhase(true, new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS)));
         }
+        appendPhase(new UseTrappingNullChecksPhase());
 
         appendPhase(new AddressLoweringByNodePhase(addressLowering));
-
-        appendPhase(new UseTrappingNullChecksPhase());
 
         appendPhase(new DeadCodeEliminationPhase(Required));
 

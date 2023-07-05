@@ -25,9 +25,11 @@ package uk.ac.manchester.tornado.runtime.graal.phases;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import org.graalvm.compiler.graph.NodeBitMap;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -57,11 +59,16 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
         }
     }
 
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
+
     private int getMaxLevelNestedLoops(StructuredGraph graph) {
         int dimensions = 1;
 
         if (graph.hasLoops()) {
-            final LoopsData data = new TornadoLoopsData(graph, graph.getLastSchedule().getCFG());
+            final LoopsData data = new TornadoLoopsData(graph);
             data.detectCountedLoops();
 
             final List<LoopEx> loops = data.outerFirst();

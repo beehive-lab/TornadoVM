@@ -111,7 +111,7 @@ public class OCLFPGAPragmaPhase extends Phase {
             boolean peeled;
             do {
                 peeled = false;
-                final LoopsData dataCounted = new TornadoLoopsData(graph, graph.getLastSchedule().getCFG());
+                final LoopsData dataCounted = new TornadoLoopsData(graph);
                 dataCounted.detectCountedLoops();
                 for (LoopEx loop : dataCounted.countedLoops()) {
                     if (shouldFullUnrollOrPipeline(graph.getOptions(), loop)) {

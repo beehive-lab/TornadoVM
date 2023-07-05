@@ -250,11 +250,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
                 lirInstruction.forEachOutput((instruction, value, mode, flags) -> {
                     if (value instanceof Variable) {
                         Variable variable = (Variable) value;
-                        if (OCLTokens.openCLTokens.contains(variable.toString())) {
-                            // Change name because the Java variables uses an OpenCL token name
-                            // TODO: NEED THINKING
-                            // variable.setName("_" + variable.toString());
-                        }
+                        // if (OCLTokens.openCLTokens.contains(variable.toString())) {
+                        // // Change name because the Java variables uses an OpenCL token name
+                        // // TODO: NEED THINKING
+                        // // variable.setName("_" + variable.toString());
+                        // }
                         if (variable.toString() != null) {
                             addVariableDef(kindToVariable, variable);
                             variableCount.incrementAndGet();
@@ -409,11 +409,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return ((OCLProviders) getProviders()).getSuitesProvider();
     }
 
-    public OCLCompilationResultBuilder newCompilationResultBuilder(FrameMap frameMap, OCLCompilationResult compilationResult, boolean isKernel, boolean isParallel) {
+    public OCLCompilationResultBuilder newCompilationResultBuilder(FrameMap frameMap, OCLCompilationResult compilationResult, boolean isKernel, boolean isParallel, LIR lir) {
         OCLAssembler asm = createAssembler();
         OCLFrameContext frameContext = new OCLFrameContext();
         DataBuilder dataBuilder = new OCLDataBuilder();
-        OCLCompilationResultBuilder crb = new OCLCompilationResultBuilder(getProviders(), frameMap, asm, dataBuilder, frameContext, options, getDebugContext(), compilationResult);
+        OCLCompilationResultBuilder crb = new OCLCompilationResultBuilder(getProviders(), frameMap, asm, dataBuilder, frameContext, options, getDebugContext(), compilationResult, lir);
         crb.setKernel(isKernel);
         crb.setParallel(isParallel);
         crb.setDeviceContext(deviceContext);
