@@ -33,6 +33,30 @@ public class TornadoOptions {
     public static String PROFILER_LOG = "tornado.log.profiler";
     public static String PROFILER = "tornado.profiler";
 
+    public static final boolean TIME_IN_NANOSECONDS = Boolean.parseBoolean(System.getProperty("tornado.ns.time", TRUE));
+    public static final int DEFAULT_DRIVER_INDEX = Integer.parseInt(Tornado.getProperty("tornado.driver", "0"));
+    public static final int DEFAULT_DEVICE_INDEX = Integer.parseInt(Tornado.getProperty("tornado.device", "0"));
+    /**
+     * Priority of the PTX Backend. The higher the number, the more priority over
+     * the rest of the backends.
+     */
+    public static final int PTX_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.ptx.priority", "0"));
+    /**
+     * Priority of the OpenCL Backend. The higher the number, the more priority over
+     * the rest of the backends.
+     */
+    public static final int OPENCL_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.opencl.priority", "10"));
+    /**
+     * Priority of the SPIRV Backend. The higher the number, the more priority over
+     * the rest of the backends.
+     */
+    public static final int SPIRV_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.spirv.priority", "11"));
+
+    /**
+     * Check if the FPGA emulation mode has been set.
+     */
+    public static final boolean FPGA_EMULATION = isFPGAEmulation();
+
     /**
      * Option to set the device maximum memory usage. It is set to 1GB by default.
      */
@@ -240,7 +264,7 @@ public class TornadoOptions {
      *
      * This is FALSE by default.
      */
-    public static final boolean ENABLE_STREAM_OUT_BLOCKING = getBooleanValue("tornado.enable.streamOut.blocking", FALSE);;
+    public static final boolean ENABLE_STREAM_OUT_BLOCKING = getBooleanValue("tornado.enable.streamOut.blocking", FALSE);
 
     /**
      * Option to load FPGA pre-compiled binaries.
@@ -280,6 +304,12 @@ public class TornadoOptions {
 
     private static int getIntValue(String property, String defaultValue) {
         return Integer.parseInt(System.getProperty(property, defaultValue));
+    }
+
+    private static boolean isFPGAEmulation() {
+        String contextEmulatorIntelFPGA = System.getenv("CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA");
+        String contextEmulatorXilinxFPGA = System.getenv("XCL_EMULATION_MODE");
+        return (contextEmulatorIntelFPGA != null && (contextEmulatorIntelFPGA.equals("1"))) || (contextEmulatorXilinxFPGA != null && (contextEmulatorXilinxFPGA.equals("sw_emu")));
     }
 
 }

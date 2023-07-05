@@ -85,7 +85,7 @@ public class PrebuiltTest extends TornadoTestBase {
                         "add", //
                         filePath, //
                         new Object[] { a, b, c }, //
-                        new Access[] { Access.READ, Access.READ, Access.WRITE }, //
+                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
                         defaultDevice, //
                         new int[] { numElements })//
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
@@ -136,7 +136,7 @@ public class PrebuiltTest extends TornadoTestBase {
                         "add", //
                         filePath, //
                         new Object[] { a, b, c }, //
-                        new Access[] { Access.READ, Access.READ, Access.WRITE }, //
+                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
                         defaultDevice, //
                         new int[] { numElements })//
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
@@ -180,7 +180,7 @@ public class PrebuiltTest extends TornadoTestBase {
                         "floatReductionAddLocalMemory", //
                         filePath, //
                         new Object[] { context, input, reduce }, //
-                        new Access[] { Access.READ, Access.READ, Access.WRITE }, //
+                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
                         device, //
                         new int[] { size })//
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
@@ -231,7 +231,7 @@ public class PrebuiltTest extends TornadoTestBase {
                         "intReductionAddGlobalMemory", //
                         filePath, //
                         new Object[] { context, input, reduce }, //
-                        new Access[] { Access.READ, Access.READ, Access.WRITE }, //
+                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
                         device, //
                         new int[] { size })//
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);

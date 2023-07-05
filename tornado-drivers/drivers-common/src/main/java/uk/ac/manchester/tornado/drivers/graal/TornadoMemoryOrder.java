@@ -1,9 +1,7 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornadovm
- *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
- * The University of Manchester. All rights reserved.
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
+ * Copyright (c) 2009-2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,19 +18,11 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
-package uk.ac.manchester.tornado.runtime.common;
+package uk.ac.manchester.tornado.drivers.graal;
 
-public class StackTracer {
-    
-    public static void printStack(){
-        StackTraceElement[] st = Thread.currentThread().getStackTrace();
-        System.out.println("Stack Trace:");
-        for(int i=2;i<st.length;i++){
-            StackTraceElement e = st[i];
-            System.out.printf("\t at %s.%s(%s:%d)\n",e.getClassName(),e.getMethodName(),e.getFileName(),e.getLineNumber());
-        }
-    }
+import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
+
+public class TornadoMemoryOrder {
+    public static MemoryOrderMode GPU_MEMORY_MODE = null;
 }

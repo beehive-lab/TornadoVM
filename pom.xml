@@ -5,7 +5,7 @@
 
     <groupId>tornado</groupId>
     <artifactId>tornado</artifactId>
-    <version>0.15.1-dev</version>
+    <version>0.15.2-dev</version>
     <packaging>pom</packaging>
     <name>tornado</name>
     <url>https://github.com/beehive-lab/tornadovm</url>
@@ -18,7 +18,7 @@
 
     <properties>
         <tornado.version>${project.version}</tornado.version>
-        <graal.version>22.2.0</graal.version>
+        <graal.version>22.3.2</graal.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <classifier>${platform}</classifier>
         <download.cmake>false</download.cmake>
@@ -240,6 +240,25 @@
             </properties>
         </profile>
         <profile>
+            <id>mac-aarch64-release</id>
+            <activation>
+                <property>
+                    <name>osDetection</name>
+                    <value>!false</value>
+                </property>
+                <os>
+                    <family>mac</family>
+                    <arch>aarch64</arch>
+                </os>
+            </activation>
+            <properties>
+                <platform>mac-aarch64</platform>
+                <build.type>release</build.type>
+                <cmake.classifier>mac-arm</cmake.classifier>
+                <cmake.generator>Unix Makefiles</cmake.generator>
+            </properties>
+        </profile>
+        <profile>
             <id>portable</id>
             <!--
                   Sonatype requires a main jar, even for platform-specific artifacts, so we supply it with an
@@ -281,7 +300,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.8.1</version>
+                        <version>3.11.0</version>
                         <configuration>
                             <forceJavacCompilerUse>true</forceJavacCompilerUse>
                             <source>11</source>
@@ -461,6 +480,10 @@
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.framemap=tornado.runtime</arg>
                                 <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.alloc=tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.core.common.memory=tornado.drivers.common
                                 </arg>
                                 <!-- OpenCL exports-->
                                 <arg>--add-opens</arg>
@@ -1045,7 +1068,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.8.1</version>
+                        <version>3.11.0</version>
                         <configuration>
                             <forceJavacCompilerUse>true</forceJavacCompilerUse>
                             <source>11</source>
@@ -1223,6 +1246,10 @@
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.framemap=tornado.runtime</arg>
                                 <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.alloc=tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.core.common.memory=tornado.drivers.common
                                 </arg>
                                 <!-- OpenCL exports-->
                                 <arg>--add-opens</arg>
@@ -1952,7 +1979,7 @@
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
-                <version>4.13.1</version>
+                <version>4.13.2</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.lucene</groupId>

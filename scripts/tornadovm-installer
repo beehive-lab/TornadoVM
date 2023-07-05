@@ -28,6 +28,7 @@ import argparse
 import platform
 import tarfile
 import installerConfig as config
+import shutil
 
 try:
     import wget
@@ -49,7 +50,7 @@ __SUPPORTED_JDKS__ = [
                        config.__GRAALVM11__,  config.__GRAALVM17__,
                        config.__CORRETTO11__, config.__CORRETTO17__,
                        config.__MANDREL11__,  config.__MANDREL17__,
-                       config.__WINDOWS11__,  config.__WINDOWS17__,
+                       config.__MICROSOFT11__,  config.__MICROSOFT17__,
                        config.__ZULU11__,     config.__ZULU17__
                      ]
 
@@ -92,7 +93,9 @@ class TornadoInstaller():
             url = config.CMAKE[__LINUX__][__X86_64__]
         elif (self.hardware == __ARM__ and self.osPlatform == __LINUX__ ):
             url = config.CMAKE[__LINUX__][__ARM__]
-        elif (self.osPlatform == __APPLE__):
+        elif (self.hardware == __X86_64__ and self.osPlatform == __APPLE__):
+            url = config.CMAKE[__APPLE__][__X86_64__]
+        elif (self.hardware == __ARM__ and self.osPlatform == __APPLE__):
             url = config.CMAKE[__APPLE__][__ARM__]
         
         fileName = self.processFileName(url)
@@ -124,21 +127,25 @@ class TornadoInstaller():
             url = config.MAVEN[__LINUX__][__X86_64__]
         elif (self.hardware == __ARM__ and self.osPlatform == __LINUX__ ):
             url = config.MAVEN[__LINUX__][__ARM__]
-        elif (self.osPlatform == __APPLE__):
+        elif (self.hardware == __ARM__ and self.osPlatform == __APPLE__):
             url = config.MAVEN[__APPLE__][__ARM__]
             if (url == None):
                 return
-            
+        elif (self.hardware == __X86_64__ and self.osPlatform == __APPLE__):
+            url = config.MAVEN[__APPLE__][__X86_64__]
+            if (url == None):
+                return
+
         fileName = self.processFileName(url)
         print("\nChecking dependency: " + fileName)
-        fullPath = self.workDirName + "/" + fileName
+        fullPath = __DIRECTORY_DEPENDENCIES__ + "/" + fileName
 
         if not os.path.exists(fullPath):
             wget.download(url, fullPath)
 
         ## Uncompress file
         tar = tarfile.open(fullPath, 'r:gz')
-        tar.extractall(self.workDirName)
+        tar.extractall(__DIRECTORY_DEPENDENCIES__)
         extractedDirectory = self.getJDKDirectoryName(tar)
         tar.close()
 
@@ -149,7 +156,7 @@ class TornadoInstaller():
             extraPath = "/Maven.app/Contents"
 
         ## Update env-variables
-        self.env["PATH"].append(currentDirectory + "/" + self.workDirName + "/" + extractedDirectory + extraPath + "/bin")
+        self.env["PATH"].append(currentDirectory + "/" + __DIRECTORY_DEPENDENCIES__ + "/" + extractedDirectory + extraPath + "/bin")
 
     def getJDKDirectoryName(self, tar):
         extractedNames = tar.getnames()[1].split("/")
@@ -164,9 +171,11 @@ class TornadoInstaller():
             url = config.JDK[jdk][__LINUX__][__X86_64__]
         elif (self.hardware == __ARM__ and self.osPlatform == __LINUX__ ):
             url = config.JDK[jdk][__LINUX__][__ARM__]
-        elif (self.osPlatform == __APPLE__):
+        elif (self.hardware == __ARM__ and self.osPlatform == __APPLE__):
             url = config.JDK[jdk][__APPLE__][__ARM__]
-        
+        elif (self.hardware == __X86_64__ and self.osPlatform == __APPLE__):
+                   url = config.JDK[jdk][__APPLE__][__X86_64__]
+
         fileName = self.processFileName(url)
         print("\nChecking dependency: " + fileName)
         fullPath = self.workDirName + "/" + fileName
@@ -185,7 +194,7 @@ class TornadoInstaller():
         currentDirectory = self.getCurrentDirectory()
         
         extraPath = ""
-        if (self.osPlatform == __APPLE__):
+        if (self.osPlatform == __APPLE__ and "zulu" not in jdk):
             extraPath = "/Contents/Home"
 
         ## Update env-variables
@@ -230,14 +239,14 @@ class TornadoInstaller():
         fileContent = fileContent + "export PATH=" + allPaths + "$PATH" "\n"
         fileContent = fileContent + "export CMAKE_ROOT=" + self.env["CMAKE_ROOT"] + "\n"
         fileContent = fileContent + "export TORNADO_SDK=" + self.env["TORNADO_SDK"] + "\n"
-        f = open("source.sh", "w")
+        f = open("setvars.sh", "w")
         f.write(fileContent)
         f.close()
 
         print("........................................[ok]")
         print(" ")
         print(" ")
-        print("To run TornadoVM, first run `. source.sh`")
+        print("To run TornadoVM, first run `source setvars.sh`")
 
     def checkJDKOption(self, args):
         if (args.jdk == None):
@@ -271,7 +280,7 @@ class TornadoInstaller():
         backend = self.composeBackendOption(args)
 
         makeJDK = "jdk-11-plus"
-        if ((args.javaHome != None and args.javaHome.startswith("graal")) or args.jdk.startswith("graal")):
+        if ((args.javaHome != None and "graal" in args.javaHome) or ("graal" in args.jdk)):
             makeJDK = "graal-jdk-11-plus"
         
         if (args.javaHome != None):
@@ -298,12 +307,11 @@ def listSupportedJDKs():
     print("""
     jdk11            : Install TornadoVM with OpenJDK 11 (Oracle OpenJDK)"
     jdk17            : Install TornadoVM with OpenJDK 17 (Oracle OpenJDK)"
-    graal-jdk-11     : Install TornadoVM with GraalVM and JDK 11 (GraalVM 22.2.0)"
-    graal-jdk-17     : Install TornadoVM with GraalVM and JDK 17 (GraalVM 22.2.0)"
-    corretto-11      : Install TornadoVM with Corretto JDK 11"
-    corretto-17      : Install TornadoVM with Corretto JDK 17"
-    mandrel-11       : Install TornadoVM with Mandrel 22.2.0 (JDK 11)"
-    mandrel-17       : Install TornadoVM with Mandrel 22.2.0 (JDK 17)"
+    graalvm-jdk-11   : Install TornadoVM with GraalVM and JDK 11 (GraalVM 22.3.2)"
+    graalvm-jdk-17   : Install TornadoVM with GraalVM and JDK 17 (GraalVM 22.3.2)"
+    corretto-jdk-11  : Install TornadoVM with Corretto JDK 11"
+    corretto-jdk-17  : Install TornadoVM with Corretto JDK 17"
+    mandrel-jdk-17   : Install TornadoVM with Mandrel 22.3.2 (JDK 17)"
     microsoft-jdk-11 : Install TornadoVM with Microsoft JDK 11"
     microsoft-jdk-17 : Install TornadoVM with Microsoft JDK 17"
     zulu-jdk-11      : Install TornadoVM with Azul Zulu JDK 11"

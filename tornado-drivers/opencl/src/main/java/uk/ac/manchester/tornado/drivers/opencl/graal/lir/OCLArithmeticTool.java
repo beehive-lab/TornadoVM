@@ -30,6 +30,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCL
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
+import org.graalvm.compiler.core.common.memory.MemoryExtendKind;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRFrameState;
@@ -323,12 +324,30 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
-    public Variable emitLoad(LIRKind lirKind, Value address, LIRFrameState state) {
-        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitLoad: %s <- %s\nstate:%s", lirKind, address, state);
-        final Variable result = getGen().newVariable(lirKind);
+    public Variable emitBitCount(Value input) {
+        unimplemented();
+        return null;
+    }
 
-        guarantee(lirKind.getPlatformKind() instanceof OCLKind, "invalid LIRKind: %s", lirKind);
-        OCLKind oclKind = (OCLKind) lirKind.getPlatformKind();
+    @Override
+    public Variable emitBitScanForward(Value input) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Variable emitBitScanReverse(Value input) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Variable emitLoad(LIRKind kind, Value address, LIRFrameState state, MemoryOrderMode memoryOrder, MemoryExtendKind extendKind) {
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitLoad: %s <- %s\nstate:%s", kind, address, state);
+        final Variable result = getGen().newVariable(kind);
+
+        guarantee(kind.getPlatformKind() instanceof OCLKind, "invalid LIRKind: %s", kind);
+        OCLKind oclKind = (OCLKind) kind.getPlatformKind();
         OCLMemoryBase base = ((MemoryAccess) address).getBase();
 
         if (oclKind.isVector()) {
@@ -336,7 +355,7 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
             OCLAddressCast cast = new OCLAddressCast(base, LIRKind.value(oclKind.getElementKind()));
             emitVectorLoad(result, intrinsic, getOffsetValue(oclKind, (MemoryAccess) address), cast, (MemoryAccess) address);
         } else {
-            OCLAddressCast cast = new OCLAddressCast(base, lirKind);
+            OCLAddressCast cast = new OCLAddressCast(base, kind);
             emitLoad(result, cast, (MemoryAccess) address);
         }
 
@@ -344,15 +363,10 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
-    public Variable emitOrderedLoad(LIRKind kind, Value address, LIRFrameState state, MemoryOrderMode memoryOrder) {
-        return null;
-    }
-
-    @Override
-    public void emitStore(ValueKind<?> lirKind, Value address, Value input, LIRFrameState state) {
-        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitStore: kind=%s, address=%s, input=%s", lirKind, address, input);
-        guarantee(lirKind.getPlatformKind() instanceof OCLKind, "invalid LIRKind: %s", lirKind);
-        OCLKind oclKind = (OCLKind) lirKind.getPlatformKind();
+    public void emitStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state, MemoryOrderMode memoryOrder) {
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitStore: kind=%s, address=%s, input=%s", kind, address, input);
+        guarantee(kind.getPlatformKind() instanceof OCLKind, "invalid LIRKind: %s", kind);
+        OCLKind oclKind = (OCLKind) kind.getPlatformKind();
 
         MemoryAccess memAccess = null;
         Value accumulator = null;
@@ -368,7 +382,7 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
             getGen().append(new VectorStoreStmt(intrinsic, getOffsetValue(oclKind, memAccess), cast, memAccess, input));
         } else {
 
-            /**
+            /*
              * Handling atomic operations introduced during lowering.
              */
             if (oclKind == OCLKind.ATOMIC_ADD_INT || oclKind == OCLKind.ATOMIC_ADD_LONG) {
@@ -412,29 +426,6 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
                 }
             }
         }
-    }
-
-    @Override
-    public void emitOrderedStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state, MemoryOrderMode memoryOrder) {
-        unimplemented();
-    }
-
-    @Override
-    public Variable emitBitCount(Value input) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
-    public Variable emitBitScanForward(Value input) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
-    public Variable emitBitScanReverse(Value input) {
-        unimplemented();
-        return null;
     }
 
     @Override

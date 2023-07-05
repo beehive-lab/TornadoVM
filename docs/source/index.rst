@@ -27,6 +27,7 @@ Contents
    installation
    simple-start
    programming
+   truffle-languages
    profiler
    benchmarking
    fpga-programming

@@ -31,10 +31,10 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 import jdk.vm.ci.code.InstalledCode;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVTool;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.disassembler.Disassembler;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.disassembler.SPIRVDisassemblerOptions;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.disassembler.SPVFileReader;
+import uk.ac.manchester.beehivespirvtoolkit.lib.SPIRVTool;
+import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.Disassembler;
+import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.SPIRVDisassemblerOptions;
+import uk.ac.manchester.beehivespirvtoolkit.lib.disassembler.SPVFileReader;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroModule;
@@ -63,7 +63,7 @@ public abstract class SPIRVInstalledCode extends InstalledCode implements Tornad
     /**
      * Gets the installed SPIR-V binary code and invokes the disassembler. It stores
      * the result in the same path with the asm extension.
-     * 
+     *
      * @param pathToFile
      *            Path of the input SPIR-V Binary code
      * @return String of the whole disassembled SPIR-V module

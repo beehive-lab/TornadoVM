@@ -45,6 +45,7 @@ import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.DeviceBuffer;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
@@ -405,8 +406,8 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
             driverIndex = parent.getDriverIndex();
             deviceIndex = parent.getDeviceIndex();
         } else {
-            driverIndex = Tornado.DEFAULT_DRIVER_INDEX;
-            deviceIndex = Tornado.DEFAULT_DEVICE_INDEX;
+            driverIndex = TornadoOptions.DEFAULT_DRIVER_INDEX;
+            deviceIndex = TornadoOptions.DEFAULT_DEVICE_INDEX;
         }
 
         debugKernelArgs = parseBoolean(getDefault("debug.kernelargs", id, "True"));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2018, 2022-2023, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -63,7 +63,7 @@ public final class OCLAssembler extends Assembler {
     private boolean pushToStack;
 
     public OCLAssembler(TargetDescription target) {
-        super(target);
+        super(target, null);
         indent = 0;
         delimiter = OCLAssemblerConstants.STMT_DELIMITER;
         emitEOL = true;
@@ -652,6 +652,7 @@ public final class OCLAssembler extends Assembler {
         public static final OCLUnaryIntrinsic EXP = new OCLUnaryIntrinsic("exp");
         public static final OCLUnaryIntrinsic SQRT = new OCLUnaryIntrinsic("sqrt");
         public static final OCLUnaryIntrinsic LOG = new OCLUnaryIntrinsic("log");
+        public static final OCLUnaryIntrinsic RADIANS = new OCLUnaryIntrinsic("radians");
         public static final OCLUnaryIntrinsic RSQRT = new OCLUnaryIntrinsic("rsqrt");
         public static final OCLUnaryIntrinsic NATIVE_COS = new OCLUnaryIntrinsic("native_cos");
         public static final OCLUnaryIntrinsic NATIVE_SIN = new OCLUnaryIntrinsic("native_sin");

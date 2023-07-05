@@ -402,6 +402,11 @@ public class PTXLIRGenerator extends LIRGenerator {
         return null;
     }
 
+    @Override
+    public int getArrayLengthOffset() {
+        return 0;
+    }
+
     public Variable newReturnVariable(ValueKind<?> lirKind) {
         final Variable var = super.newVariable(lirKind);
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "newReturnVariable: %s <- %s (%s)", var.toString(), lirKind.toString(), lirKind.getClass().getName());

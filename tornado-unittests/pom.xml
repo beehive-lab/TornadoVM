@@ -1,16 +1,17 @@
 <?xml version="1.0"?>
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>tornado</groupId>
         <artifactId>tornado</artifactId>
-        <version>0.15.1-dev</version>
+        <version>0.15.2-dev</version>
     </parent>
     <artifactId>tornado-unittests</artifactId>
     <name>tornado-unittests</name>
     <dependencies>
-		<dependency>
+        <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>tornado-api</artifactId>
             <version>${project.version}</version>
@@ -19,6 +20,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <version>4.13.2</version>
         </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>

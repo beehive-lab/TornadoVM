@@ -27,6 +27,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.snippets;
 
 import jdk.vm.ci.meta.JavaKind;
 import org.graalvm.compiler.api.replacements.Snippet;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -985,14 +986,13 @@ public class ReduceGPUSnippets implements Snippets {
                 // This is needed because we have nodes in the snippet which have multiple side
                 // effects and this is not allowed (see
                 // SnippetFrameStateAssignment.NodeStateAssignment.INVALID)
-                Arguments args = new Arguments(snippet, StructuredGraph.GuardsStage.AFTER_FSA, tool.getLoweringStage());
+                Arguments args = new Arguments(snippet, GraphState.GuardsStage.AFTER_FSA, tool.getLoweringStage());
                 args.add("inputData", storeAtomicIndexed.getInputArray());
                 args.add("outputArray", storeAtomicIndexed.array());
                 args.add("gidx", globalId);
                 if (extra != null) {
                     args.add("value", extra);
                 }
-
                 SnippetTemplate template = template(storeAtomicIndexed, args);
                 template.instantiate(providers.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
             } else if (node instanceof WriteAtomicNode) {
@@ -1009,7 +1009,7 @@ public class ReduceGPUSnippets implements Snippets {
                 // This is needed because we have nodes in the snippet which have multiple side
                 // effects and this is not allowed (see
                 // SnippetFrameStateAssignment.NodeStateAssignment.INVALID)
-                Arguments args = new Arguments(snippet, StructuredGraph.GuardsStage.AFTER_FSA, tool.getLoweringStage());
+                Arguments args = new Arguments(snippet, GraphState.GuardsStage.AFTER_FSA, tool.getLoweringStage());
                 args.add("inputData", writeAtomic.getInputArray());
                 args.add("outputArray", writeAtomic.getOutArray());
                 args.add("gidx", globalId);

@@ -3,14 +3,16 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
          xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
+    
     <parent>
         <groupId>tornado</groupId>
         <artifactId>tornado</artifactId>
-        <version>0.15.1-dev</version>
+        <version>0.15.2-dev</version>
     </parent>
+
     <artifactId>tornado-benchmarks</artifactId>
     <name>tornado-benchmarks</name>
-    <url>http://maven.apache.org</url>
+
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -21,16 +23,6 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>tornado-matrices</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-core</artifactId>
-            <version>8.2.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>

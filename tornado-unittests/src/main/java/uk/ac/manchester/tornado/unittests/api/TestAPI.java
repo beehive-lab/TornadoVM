@@ -68,7 +68,8 @@ public class TestAPI extends TornadoTestBase {
         // Force data transfers from D->H after the execution of a task-graph
         executionResult.transferToHost(data);
 
-        // Free all device memory associated to the executionPlan
+        // Mark all device memory buffers as free, thus the TornadoVM runtime can reuse
+        // device buffers for other execution plans.
         executionPlan.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {

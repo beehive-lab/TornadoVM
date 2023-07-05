@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2020, APT Group, Department of Computer Science,
@@ -66,7 +66,7 @@ public class CodeAnalysis {
 
     /**
      * Build Graal-IR for an input Java method
-     * 
+     *
      * @param taskInputCode
      *            Input Java method to be compiled by Graal
      * @return {@link StructuredGraph} Control Flow and DataFlow Graphs for the
@@ -100,7 +100,7 @@ public class CodeAnalysis {
 
     /**
      * It compiles and installs the method that represents the object {@code graph}.
-     * 
+     *
      * @param graph
      *            Compile-graph
      * @return {@link InstalledCode}
@@ -117,7 +117,7 @@ public class CodeAnalysis {
         OptionValues options = new OptionValues(opts);
         try (DebugContext.Scope ignored = getDebugContext().scope("compileMethodAndInstall", new DebugDumpScope(String.valueOf(compilationID), true))) {
             PhaseSuite<HighTierContext> graphBuilderPhase = backend.getSuites().getDefaultGraphBuilderSuite();
-            Suites suites = backend.getSuites().getDefaultSuites(options);
+            Suites suites = backend.getSuites().getDefaultSuites(options, providers.getLowerer().getTarget().arch);
             LIRSuites lirSuites = backend.getSuites().getDefaultLIRSuites(options);
             OptimisticOptimizations optimizationsOpts = OptimisticOptimizations.ALL;
             ProfilingInfo profilerInfo = graph.getProfilingInfo(method);

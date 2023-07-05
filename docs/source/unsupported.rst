@@ -27,9 +27,8 @@ This might speed-up user code if the target device contains explicit vector unit
 3. No Dynamic Memory Allocation (*)
 '''''''''''''''''''''''''''''''''''
 
-In general, TornadoVM cannot allocate memory on demand since it must
-know the size of the buffers in advanced. However, TornadoVM performs a
-sort of partial evaluation (PE), in which the JIT compiler evaluates
+In general, TornadoVM cannot allocate memory on demand since it must know the size of the buffers in advanced. 
+However, TornadoVM performs a sort of partial evaluation (PE), in which the JIT compiler evaluates
 expressions and “materializes” values at runtime. Therefore, if the JIT
 compiler can obtain, for example, the size of an array, it will generate
 code based on the values seen at runtime.
@@ -41,26 +40,24 @@ generating the OpenCL C code.
 4. No Support for Traps/Exceptions (*)
 ''''''''''''''''''''''''''''''''''''''
 
-On GPUs there is little support for exceptions. For example, on a
-division by 0 scenario, the CPU sets a flag in one of the special
-registers. Then the Operating System can query those special registers
-and pass that value to the application runtime (in this case, the Java
-runtime). Then Java runtime handles the exception.
+On GPUs there is little support for exceptions. 
+For example, on a division by 0 scenario, the CPU sets a flag in one of the special registers. 
+Then the Operating System can query those special registers and pass that value to the application runtime (in this case, the Java runtime). 
+Then Java runtime handles the exception.
 
 However, there is no such mechanisms on GPUs
 (`link <https://docs.nvidia.com/cuda/floating-point/index.html#differences-from-x86>`__),
-which means that TornadoVM must insert extra control-flow to guarantee
-those exceptions never happen. Currently, since TornadoVM compiles at
-runtime, many of those checks can be assured at runtime. However, we
-plan to integrate exception support for TornadoVM in the future.
+which means that TornadoVM must insert extra control-flow to guarantee those exceptions never happen. 
+Currently, since TornadoVM compiles at runtime, many of those checks can be assured at runtime. 
+However, we plan to integrate exception support for TornadoVM in the future.
 
-6. No Support for static TaskGrapshs and Tasks
+5. No Support for static TaskGraphs and Tasks
 ''''''''''''''''''''''''''''''''''''''''''''
 
 TornadoVM currently does not support static ``TaskGraph`` and Tasks. For
 example, the code below is not considered valid:
 
-::
+.. code-block:: java 
 
        public static void testMethod(int[] in) {
            // ... some code ...
@@ -81,5 +78,4 @@ Note
 ~~~~
 
 Note that if a particular code segment cannot be accelerated with TornadoVM due to unsupported features, then execution falls back to the
-host JVM which will execute your code on the CPU as it would normally
-do.
+host JVM which will execute your code on the CPU as it would normally do.

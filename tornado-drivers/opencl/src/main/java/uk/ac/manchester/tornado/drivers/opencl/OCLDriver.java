@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -27,17 +27,14 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
-
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLHotSpotBackendFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLSuitesProvider;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
@@ -46,9 +43,20 @@ import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-public final class OCLDriver extends TornadoLogger implements TornadoAcceleratorDriver {
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.IntStream;
 
-    private final OCLBackend[] flatBackends;
+public final class OCLDriver extends TornadoLogger implements TornadoAcceleratorDriver {
+    public static final List<OCLDeviceType> DEVICE_TYPE_LIST = Arrays.asList( //
+            OCLDeviceType.CL_DEVICE_TYPE_GPU, //
+            OCLDeviceType.CL_DEVICE_TYPE_CPU, //
+            OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR, //
+            OCLDeviceType.CL_DEVICE_TYPE_CUSTOM);
+    private OCLBackend[] flatBackends;
     private final OCLBackend[][] backends;
     private final List<OCLExecutionEnvironment> contexts;
 
@@ -62,27 +70,61 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         backends = new OCLBackend[numPlatforms][];
         contexts = new ArrayList<>();
         discoverDevices(options, vmRuntime, vmConfig);
-        flatBackends = new OCLBackend[getDeviceCount()];
+        flatBackends = flattenBackends(backends);
+        flatBackends = orderFlattenBackends(DEVICE_TYPE_LIST);
+    }
+
+    private OCLBackend[] flattenBackends(OCLBackend[][] backends) {
+        OCLBackend[] flatBackendList = new OCLBackend[getDeviceCount()];
         int index = 0;
         for (int i = 0; i < getNumPlatforms(); i++) {
             for (int j = 0; j < getNumDevices(i); j++, index++) {
-                flatBackends[index] = backends[i][j];
+                flatBackendList[index] = backends[i][j];
             }
         }
+        return flatBackendList;
     }
 
     private static String getString(String property) {
-        if (System.getProperty(property) == null) {
-            return null;
-        } else {
-            return System.getProperty(property);
+        return System.getProperty(property) == null ? null : System.getProperty(property);
+    }
+
+    /**
+     * Orders the flat list of OpenCL backends based on the provided device type ordering.
+     *
+     * @param deviceTypeOrdering
+     *         A list of OpenCL device types in the desired order.
+     * @return An array of OpenCL backends ordered according to the device type ordering.
+     */
+    private OCLBackend[] orderFlattenBackends(List<OCLDeviceType> deviceTypeOrdering) {
+        List<OCLBackend> backendList = new ArrayList<>();
+        Map<OCLDeviceType, List<OCLBackend>> deviceTypeMap = new HashMap<>();
+
+        // Populate deviceTypeMap with backends for each device type
+        for (OCLBackend backend : flatBackends) {
+            OCLDeviceType deviceType = backend.getDeviceContext().getDevice().getDeviceType();
+            List<OCLBackend> backendListForDeviceType = deviceTypeMap.get(deviceType);
+            if (backendListForDeviceType == null) {
+                backendListForDeviceType = new ArrayList<>();
+                deviceTypeMap.put(deviceType, backendListForDeviceType);
+            }
+            backendListForDeviceType.add(backend);
         }
 
+        // Add backends to backendList in the order specified by deviceTypeOrdering
+        for (OCLDeviceType deviceType : deviceTypeOrdering) {
+            List<OCLBackend> backendListForDeviceType = deviceTypeMap.get(deviceType);
+            if (backendListForDeviceType != null) {
+                backendList.addAll(backendListForDeviceType);
+            }
+        }
+
+        return backendList.toArray(new OCLBackend[0]);
     }
 
     @Override
     public TornadoAcceleratorDevice getDefaultDevice() {
-        return getDefaultBackend().getDeviceContext().asMapping();
+        return flatBackends[0].getDeviceContext().asMapping();
     }
 
     @Override
@@ -101,11 +143,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
 
     @Override
     public int getDeviceCount() {
-        int count = 0;
-        for (int i = 0; i < getNumPlatforms(); i++) {
-            count += getNumDevices(i);
-        }
-        return count;
+        return IntStream.range(0, getNumPlatforms()).map(this::getNumDevices).sum();
     }
 
     private OCLBackend checkAndInitBackend(final int platform, final int device) {
@@ -152,16 +190,10 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
     }
 
     private void discoverDevices(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
-        final int numPlatforms = OpenCL.getNumPlatforms();
-        String platformToIgnore = getString("tornado.ignore.platform");
-        for (int i = 0; i < numPlatforms; i++) {
+        IntStream.range(0, OpenCL.getNumPlatforms()).forEach(i -> {
             final TornadoPlatform platform = OpenCL.getPlatform(i);
-            if (platformToIgnore != null && platform.getName().startsWith(platformToIgnore)) {
-                info("Ignore " + platform.getName());
-            } else {
-                installDevices(i, platform, options, vmRuntime, vmConfig);
-            }
-        }
+            installDevices(i, platform, options, vmRuntime, vmConfig);
+        });
     }
 
     public OCLBackend getBackend(int platform, int device) {
@@ -171,10 +203,6 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
     @Override
     public OCLBackend getDefaultBackend() {
         return checkAndInitBackend(0, 0);
-    }
-
-    public OCLBackend swapDefaultBackend(int index) {
-        return checkAndInitBackend(0, index);
     }
 
     public int getNumDevices(int platform) {
@@ -191,13 +219,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
     }
 
     public OCLExecutionEnvironment getPlatformContext(final int index) {
-        if (index < contexts.size()) {
-            return contexts.get(index);
-        } else {
-            // We return device 0 by default
-            // This only happens if we ignore a platform
-            return contexts.get(0);
-        }
+        return (index < contexts.size()) ? contexts.get(index) : contexts.get(0);
     }
 
     @Override

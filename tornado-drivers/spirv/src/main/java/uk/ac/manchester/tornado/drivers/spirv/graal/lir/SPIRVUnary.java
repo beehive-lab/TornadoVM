@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021-2022 APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,29 +34,29 @@ import org.graalvm.compiler.lir.Variable;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVInstScope;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpCompositeExtract;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpControlBarrier;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpConvertFToS;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpConvertPtrToU;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpConvertSToF;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpConvertUToPtr;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpExtInst;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpFConvert;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpFNegate;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpInBoundsPtrAccessChain;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpLoad;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpReturnValue;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpSConvert;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpSNegate;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpUConvert;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVId;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiteralExtInstInteger;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiteralInteger;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMemoryAccess;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVMultipleOperands;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVOptionalOperand;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVStorageClass;
+import uk.ac.manchester.beehivespirvtoolkit.lib.SPIRVInstScope;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpCompositeExtract;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpControlBarrier;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpConvertFToS;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpConvertPtrToU;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpConvertSToF;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpConvertUToPtr;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpExtInst;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpFConvert;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpFNegate;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpInBoundsPtrAccessChain;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpLoad;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpReturnValue;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpSConvert;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpSNegate;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpUConvert;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVId;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVLiteralExtInstInteger;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVLiteralInteger;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVMemoryAccess;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVMultipleOperands;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVOptionalOperand;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVStorageClass;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVThreadBuiltIn;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
@@ -969,7 +969,6 @@ public class SPIRVUnary {
 
         // @formatter:off
         public enum OpenCLExtendedIntrinsic {
-
             // Math extended instructions
             // https://www.khronos.org/registry/spir-v/specs/unified1/OpenCL.ExtendedInstructionSet.100.html#_a_id_math_a_math_extended_instructions
             ACOS("acos", 0),
@@ -1018,6 +1017,7 @@ public class SPIRVUnary {
             NATIVE_SQRT("native_sqrt", 93),  // Optimization
             NATIVE_TAN("native_tan", 94),  // Optimization
             FCLAMP("flamp", 95),
+            RADIANS("radians", 100),
             SIGN("sign", 103),
             SABS("s_abs", 141),
             SCLAMP("s_clamp", 149),

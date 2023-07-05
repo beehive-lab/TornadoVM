@@ -25,7 +25,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.snippets;
 
 import org.graalvm.compiler.api.replacements.Snippet;
-import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -978,7 +978,7 @@ public class ReduceGPUSnippets implements Snippets {
             // This is needed because we have nodes in the snippet which have multiple side
             // effects and this is not allowed (see
             // SnippetFrameStateAssignment.NodeStateAssignment.INVALID)
-            SnippetTemplate.Arguments args = new SnippetTemplate.Arguments(snippet, StructuredGraph.GuardsStage.AFTER_FSA, tool.getLoweringStage());
+            SnippetTemplate.Arguments args = new SnippetTemplate.Arguments(snippet, GraphState.GuardsStage.AFTER_FSA, tool.getLoweringStage());
             args.add("inputData", storeAtomicIndexed.getInputArray());
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("gidx", globalId);

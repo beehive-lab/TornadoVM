@@ -29,6 +29,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
+import org.graalvm.compiler.core.common.memory.MemoryExtendKind;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRFrameState;
@@ -423,18 +424,8 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         return null;
     }
 
-    private void emitLoad(AllocatableValue result, SPIRVAddressCast cast, MemoryAccess address) {
-        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitLoad STMT: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
-        getGen().append(new SPIRVLIRStmt.LoadStmt(result, cast, address));
-    }
-
-    private void emitLoadVectorType(AllocatableValue result, SPIRVAddressCast cast, MemoryAccess address) {
-        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitLoadVector STMT: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
-        getGen().append(new SPIRVLIRStmt.LoadVectorStmt(result, cast, address));
-    }
-
     @Override
-    public Variable emitLoad(LIRKind kind, Value address, LIRFrameState state) {
+    public Variable emitLoad(LIRKind kind, Value address, LIRFrameState state, MemoryOrderMode memoryOrder, MemoryExtendKind extendKind) {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitLoad: %s <- %s with state:%s", kind, address, state);
         final Variable result = getGen().newVariable(kind);
         if (!(kind.getPlatformKind() instanceof SPIRVKind)) {
@@ -467,35 +458,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
-    public Variable emitOrderedLoad(LIRKind kind, Value address, LIRFrameState state, MemoryOrderMode memoryOrder) {
-        unimplemented();
-        return null;
-    }
-
-    private Value getOffsetValue(SPIRVKind spirvKind, SPIRVUnary.MemoryIndexedAccess memoryAccess) {
-        if (memoryAccess.getMemoryRegion().getMemorySpace() == SPIRVMemorySpace.GLOBAL) {
-            return new ConstantValue(LIRKind.value(OCLKind.INT), PrimitiveConstant.INT_0);
-        } else {
-            return getPrivateOffsetValue(spirvKind, memoryAccess);
-        }
-    }
-
-    private Value getPrivateOffsetValue(SPIRVKind spirvKind, SPIRVUnary.MemoryIndexedAccess memoryAccess) {
-        Value privateOffsetValue = null;
-        if (memoryAccess == null) {
-            return null;
-        }
-        if (memoryAccess.getIndex() instanceof ConstantValue) {
-            ConstantValue constantValue = (ConstantValue) memoryAccess.getIndex();
-            int parsedIntegerIndex = Integer.parseInt(constantValue.getConstant().toValueString());
-            int index = parsedIntegerIndex / spirvKind.getVectorLength();
-            privateOffsetValue = new ConstantValue(LIRKind.value(SPIRVKind.OP_TYPE_INT_64), JavaConstant.forInt(index));
-        }
-        return privateOffsetValue;
-    }
-
-    @Override
-    public void emitStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state) {
+    public void emitStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state, MemoryOrderMode memoryOrder) {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitStore: kind=%s, address=%s, input=%s", kind, address, input);
         guarantee(kind.getPlatformKind() instanceof SPIRVKind, "invalid LIRKind: %s", kind);
         SPIRVKind spirvKind = (SPIRVKind) kind.getPlatformKind();
@@ -539,9 +502,36 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
         }
     }
 
-    @Override
-    public void emitOrderedStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state, MemoryOrderMode memoryOrder) {
+    private void emitLoad(AllocatableValue result, SPIRVAddressCast cast, MemoryAccess address) {
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitLoad STMT: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
+        getGen().append(new SPIRVLIRStmt.LoadStmt(result, cast, address));
+    }
 
+    private void emitLoadVectorType(AllocatableValue result, SPIRVAddressCast cast, MemoryAccess address) {
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitLoadVector STMT: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
+        getGen().append(new SPIRVLIRStmt.LoadVectorStmt(result, cast, address));
+    }
+
+    private Value getOffsetValue(SPIRVKind spirvKind, SPIRVUnary.MemoryIndexedAccess memoryAccess) {
+        if (memoryAccess.getMemoryRegion().getMemorySpace() == SPIRVMemorySpace.GLOBAL) {
+            return new ConstantValue(LIRKind.value(OCLKind.INT), PrimitiveConstant.INT_0);
+        } else {
+            return getPrivateOffsetValue(spirvKind, memoryAccess);
+        }
+    }
+
+    private Value getPrivateOffsetValue(SPIRVKind spirvKind, SPIRVUnary.MemoryIndexedAccess memoryAccess) {
+        Value privateOffsetValue = null;
+        if (memoryAccess == null) {
+            return null;
+        }
+        if (memoryAccess.getIndex() instanceof ConstantValue) {
+            ConstantValue constantValue = (ConstantValue) memoryAccess.getIndex();
+            int parsedIntegerIndex = Integer.parseInt(constantValue.getConstant().toValueString());
+            int index = parsedIntegerIndex / spirvKind.getVectorLength();
+            privateOffsetValue = new ConstantValue(LIRKind.value(SPIRVKind.OP_TYPE_INT_64), JavaConstant.forInt(index));
+        }
+        return privateOffsetValue;
     }
 
     private SPIRVKind getElementKind(SPIRVVectorElementSelect vector) {

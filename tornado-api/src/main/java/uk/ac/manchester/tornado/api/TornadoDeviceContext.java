@@ -60,6 +60,8 @@ public interface TornadoDeviceContext {
 
     boolean isPlatformXilinxFPGA();
 
+    boolean isFP64Supported();
+
     boolean isCached(String methodName, SchedulableTask task);
 
     int getDeviceIndex();

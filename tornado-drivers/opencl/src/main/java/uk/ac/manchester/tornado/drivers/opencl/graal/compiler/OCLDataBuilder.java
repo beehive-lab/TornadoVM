@@ -34,10 +34,17 @@ import jdk.vm.ci.meta.Constant;
 
 public class OCLDataBuilder extends DataBuilder {
 
+    private static final int MAX_DATA_ALIGNMENT = 64;
+
     @Override
     public Data createDataItem(Constant constant) {
         unimplemented("Create Data item in OpenCLDataBuilder not supported yet.");
         return null;
+    }
+
+    @Override
+    public int getMaxSupportedAlignment() {
+        return MAX_DATA_ALIGNMENT;
     }
 
 }

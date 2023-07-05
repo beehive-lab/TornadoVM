@@ -5,7 +5,7 @@ Pre-requisites
 ###############
 
 * Maven Version >= 3.6.3
-* CMake >= 3.6 
+* CMake >= 3.6
 * At least one of following drivers:
       * OpenCL drivers: GPUs and CPUs >= 2.1, FPGAs >= 1.0
       * NVIDIA drivers and CUDA SDK 10.0+
@@ -28,6 +28,8 @@ The following table includes the platforms that TornadoVM can be executed.
 | Fedora >= 21              | OpenCL for GPUs and CPUs >= 2.1, OpenCL for FPGAs >= 1.0  | CUDA 10.0+      | Level-Zero >= 1.2    |
 +---------------------------+-----------------------------------------------------------+-----------------+----------------------+
 | Ubuntu >= 16.04           | OpenCL for GPUs and CPUs >= 2.1, OpenCL for FPGAs >= 1.0  | CUDA 10.0+      | Level-Zero >= 1.2    |
++---------------------------+-----------------------------------------------------------+-----------------+----------------------+
+| Pop!_OS >= 22.04          | OpenCL for GPUs and CPUs >= 2.1, OpenCL for FPGAs >= 1.0  | CUDA 10.0+      | Level-Zero >= 1.2    |
 +---------------------------+-----------------------------------------------------------+-----------------+----------------------+
 | OpenSuse Leap 15.4        | OpenCL for GPUs and CPUs >= 2.1, OpenCL for FPGAs >= 1.0  | CUDA 10.0+      | Level-Zero >= 1.2    |
 +---------------------------+-----------------------------------------------------------+-----------------+----------------------+
@@ -87,7 +89,7 @@ For example, to build TornadoVM with GraalVM and JDK 17:
 .. code-block:: bash 
 
   ## Install with Graal for JDK 17 using PTX, OpenCL and SPIRV backends
-  ./scripts/tornadovm-installer --jdk graal-jdk-17  --backend opencl,ptx,spirv
+  ./scripts/tornadovm-installer --jdk graalvm-jdk-17  --backend opencl,ptx,spirv
 
 
 To build TornadoVM with Red Hat Mandrel JDK 11 with OpenCL and PTX backends:
@@ -141,15 +143,15 @@ At least one backend must be specified at build time to the ``make`` command:
 
 .. _installation_graalvm:
 
-Installation for GraalVM 22.2.0 on Linux and OSx
+Installation for GraalVM 22.3.2 on Linux and OSx
 -------------------------------------------------------------------
 
-1. Download GraalVM Community Edition 22.2.0
+1. Download GraalVM Community Edition 22.3.2
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-GraalVM 22.2.0 builds are available to download at
+GraalVM 22.3.2 builds are available to download at
 
-`https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.2.0 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.2.0>`_.
+`https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.3.2 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.3.2>`_.
 
 The examples below show how to download and extract GraalVM based on JDK 11 and 17 for Linux.
 
@@ -157,17 +159,17 @@ The examples below show how to download and extract GraalVM based on JDK 11 and 
 
 .. code:: bash
 
-   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java11-linux-amd64-22.2.0.tar.gz
-   $ tar -xf graalvm-ce-java11-linux-amd64-22.2.0.tar.gz
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java11-linux-amd64-22.3.2.tar.gz
+   $ tar -xf graalvm-ce-java11-linux-amd64-22.3.2.tar.gz
 
 -  Example for GraalVM based on JDK 17:
 
 .. code:: bash
 
-   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java17-linux-amd64-22.2.0.tar.gz
-   $ tar -xf graalvm-ce-java17-linux-amd64-22.2.0.tar.gz
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java17-linux-amd64-22.3.2.tar.gz
+   $ tar -xf graalvm-ce-java17-linux-amd64-22.3.2.tar.gz
 
-The Java binary will be found in the ``graalvm-ce-java{JDK_VERSION}-22.2.0`` directory. This directory is used as the JAVA_HOME (See step 2).
+The Java binary will be found in the ``graalvm-ce-java{JDK_VERSION}-22.3.2`` directory. This directory is used as the JAVA_HOME (See step 2).
 
 For OSX:
 
@@ -175,13 +177,13 @@ For OSX:
 
 .. code:: bash
 
-   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java11-darwin-amd64-22.2.0.tar.gz
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java11-darwin-amd64-22.3.2.tar.gz
 
 -  Example for GraalVM based on JDK 17:
 
 .. code:: bash
 
-   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java17-darwin-amd64-22.2.0.tar.gz
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java17-darwin-amd64-22.3.2.tar.gz
 
 then ``untar`` it to the OSX standard JDK location
 ``/Library/Java/JavaVirtualMachines/`` or to a folder of your choice.
@@ -208,7 +210,7 @@ ones)**:
 .. code:: bash
 
    #!/bin/bash
-   export JAVA_HOME=<path to GraalVM 22.2.0 jdk> ## This path is produced in Step 1
+   export JAVA_HOME=<path to GraalVM 22.3.2 jdk> ## This path is produced in Step 1
    export PATH=$PWD/bin/bin:$PATH    ## This directory will be automatically generated during Tornado compilation
    export TORNADO_SDK=$PWD/bin/sdk   ## This directory will be automatically generated during Tornado compilation
    export CMAKE_ROOT=/usr            ## or <path/to/cmake/cmake-3.10.2> (see step 4)
@@ -286,7 +288,7 @@ To build with GraalVM and JDK 11 and JDK 17:
 
 .. code:: bash
 
-   $ make graal-jdk-11-plus BACKEND={ptx,opencl}
+   $ make graalvm-jdk-11-plus BACKEND={ptx,opencl}
 
 and done!!
 
@@ -305,15 +307,19 @@ JDKs. Below are listed the Java 11+ JDK distributions against which TornadoVM ha
 
 .. code:: bash
 
-   Red Hat Mandrel 11.0.12 (Mandrel 22.2.0.0 Final)
-   Amazon Corretto >= 11.0.12.7
-   GraalVM LabsJDK 11.0.13+7 (GraalVM 22.2.0)
-   OpenJDK 11.0.13+7
-   OpenJDK 17.0.1
-   Microsoft Build of OpenJDK (OpenJDK 11.0.13+8)
-   Microsoft Build of OpenJDK (OpenJDK 17.0.1)
-   Azul Zulu OpenJDK (OpenJDK 11.0.15)
-   Azul Zulu OpenJDK (OpenJDK 17.0.3)
+  ./scripts/tornadovm-installer --listJDKs
+  jdk11            : Install TornadoVM with OpenJDK 11 (Oracle OpenJDK)
+  jdk17            : Install TornadoVM with OpenJDK 17 (Oracle OpenJDK)
+  graalvm-jdk-11   : Install TornadoVM with GraalVM and JDK 11 (GraalVM 22.3.2)
+  graalvm-jdk-17   : Install TornadoVM with GraalVM and JDK 17 (GraalVM 22.3.2)
+  corretto-jdk-11  : Install TornadoVM with Corretto JDK 11
+  corretto-jdk-17  : Install TornadoVM with Corretto JDK 17
+  mandrel-jdk-17   : Install TornadoVM with Mandrel 22.3.2 (JDK 17)
+  microsoft-jdk-11 : Install TornadoVM with Microsoft JDK 11
+  microsoft-jdk-17 : Install TornadoVM with Microsoft JDK 17
+  zulu-jdk-jdk-11  : Install TornadoVM with Azul Zulu JDK 11
+  zulu-jdk-jdk-17  : Install TornadoVM with Azul Zulu JDK 17
+
 
 1. Download a JDK 11+ distribution
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -468,7 +474,7 @@ To run individual tests:
 TornadoVM for Windows 10/11 using GraalVM 
 ---------------------------------------------------------------
 
-**[DISCLAIMER] Please, notice that, although TornadoVM can run on Windows10, it is still experimental.**
+**[DISCLAIMER] Please, notice that, although TornadoVM can run on Windows10 via MSys2, it is still experimental.**
 
 1. Install prerequisites
 ~~~~~~~~~~~~
@@ -477,8 +483,8 @@ TornadoVM for Windows 10/11 using GraalVM
 Maven
 '''''
 
-Download Apache Maven from the `official site <https://maven.apache.org/download.cgi>`__ and extract it to any
-location on your computer. Below it's assumed that Maven's home is ``C:/Maven``.
+Download Apache Maven (at least 3.9.0) from the `official site <https://maven.apache.org/download.cgi>`__, and extract it to any
+location on your computer. Below it's assumed that Maven's home is ``C:/bin/``, but you can use any other directory. 
 
 MSys2
 '''''
@@ -561,7 +567,7 @@ Example:
 .. code:: bash
 
    #!/usr/bin/env bash
-   C:/bin/apache-maven-3.8.4-bin/apache-maven-3.8.4/bin/mvn.cmd --settings ${HOME}/.m2/settings.xml "$@"
+   C:/bin/apache-maven-3.9.1-bin/apache-maven-3.9.1/bin/mvn.cmd --settings ${HOME}/.m2/settings.xml "$@"
 
 You only need to change the path to your maven installation in Windows.
 
@@ -580,15 +586,15 @@ Clone the latest TornadoVM source code from the GitHub `repository <https://gith
 We will refer hereafter the directory with TornadoVM sources as
 ``<TornadoVM>``.
 
-3. Download Graal 22.2.0
+3. Download Graal 22.3.2
 ~~~~~~~~~~~~
 
 
-TornadoVM can run with JDK 11 and 17. Visit `GraalVM Community Edition 22.2.0 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.2.0>`__
+TornadoVM can run with JDK 11 and 17. Visit `GraalVM Community Edition 22.3.2 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.3.2>`__
 and download either of the following builds:
 
--  `Download for JDK 11 <https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java11-windows-amd64-22.2.0.zip>`__
--  `Download for JDK 17 <https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.2.0/graalvm-ce-java17-windows-amd64-22.2.0.zip>`__
+-  `Download for JDK 11 <https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java11-windows-amd64-22.3.2.zip>`__
+-  `Download for JDK 17 <https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java17-windows-amd64-22.3.2.zip>`__
 
 Extract the downloaded file to any directory.
 
@@ -615,16 +621,12 @@ NVIDIA CUDA Toolkit.
 -  Complete CUDA Toolkit from `CUDA Toolkit
    Downloads <https://developer.nvidia.com/cuda-downloads?target_os=Windows&target_arch=x86_64>`__.
 
-Note that this toolkit includes GPU drivers as well, so you may avoid
-downloading drivers separately. The only thing to note is that GPU
-driver you are currently using should be of the same or higher version
-than the one shipped with CUDA Toolkit. Thus, if you have existing
-driver make sure that it’s version is same or higher, otherwise update
-GPU driver during toolkit installation. Note, that NSight, BLAST libs
-and Visual Studio integration are irrelevant for TornadoVM builds, you
-need just SDK - so you may skip installing them.
+It is important to make sure that the GPU drivers are included with the CUDA Toolkit, so you may avoid downloading drivers separately. 
+The only thing to note is that the GPU driver you are currently using should be of the same or higher version than the one shipped with CUDA Toolkit. 
+Thus, if you have the driver already installed, make sure that the version required by the CUDA SDK is same or higher, otherwise update the GPU driver during toolkit installation. 
+Note, that NSight, BLAST libs and Visual Studio integration are irrelevant for TornadoVM builds, you just need the CUDA SDK - so you may skip installing them.
 
-5. Configure the build
+5. Configure the TornadoVM build: setting ENV variables
 ~~~~~~~~~~~~
 
 
@@ -635,8 +637,9 @@ the following content:
 
    #!/bin/bash
 
-   # UPDATE PATH TO ACTUAL LOCATION OF THE JDK OR GRAAL (REMEMBER OF UNIX_STYLE SLASHES AND SPACES!!!)
-   export JAVA_HOME="C:/graalvm-ce-java11-22.2.0"
+   # UPDATE PATH TO ACTUAL LOCATION OF THE JDK OR GRAAL 
+   export JAVA_HOME="C:\Users\jjfum\bin\jvms\graalvm-ce-java17-windows-amd64-22.3.2\graalvm-ce-java17-22.3.2"
+
 
    ## NEXT TWO LINES NECESSARY TO BUILD PTX (NVIDIA CUDA) BACKEND
    ## COMMENT THEM OUT OR JUST IGNORE IF YOU ARE NOT INTERESTED IN PTX BUILD
@@ -669,8 +672,7 @@ directory, and build TornadoVM as follows:
    source etc/sources.env
    make graal-jdk-11-plus BACKEND=ptx,opencl
 
-The ``BACKEND`` parameter has to be a comma-separated list of ``ptx``
-and ``opencl`` options. You may build ``ptx`` only when NVIDIA GPU
+The ``BACKEND`` parameter has to be a comma-separated list of ``ptx`` and ``opencl`` options. You may build ``ptx`` only when NVIDIA GPU
 Computing Toolkit (CUDA) is installed.
 
 7. Check the installation
@@ -834,13 +836,13 @@ To use the TornadoVM API in your projects, you can checkout our maven repository
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>0.15</version>
+         <version>0.15.1</version>
       </dependency>
 
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-matrices</artifactId>
-         <version>0.15</version>
+         <version>0.15.1</version>
       </dependency>
    </dependencies>
 
@@ -851,6 +853,7 @@ Notice that, for running with TornadoVM, you will need either the docker images 
 Versions available
 ------------------------------------
 
+* 0.15.1
 * 0.15
 * 0.14.1
 * 0.14

@@ -28,18 +28,18 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpCapability;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpTypeBool;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpTypeFloat;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpTypeInt;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpTypePointer;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpTypeVector;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpTypeVoid;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.SPIRVOpUndef;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVCapability;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVId;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVLiteralInteger;
-import uk.ac.manchester.spirvbeehivetoolkit.lib.instructions.operands.SPIRVStorageClass;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpCapability;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpTypeBool;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpTypeFloat;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpTypeInt;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpTypePointer;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpTypeVector;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpTypeVoid;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpUndef;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVCapability;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVId;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVLiteralInteger;
+import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVStorageClass;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 
 public class SPIRVPrimitiveTypes {
@@ -52,14 +52,14 @@ public class SPIRVPrimitiveTypes {
 
     final private Map<SPIRVKind, HashMap<String, SPIRVId>> ptrFunctionToPtrWG;
 
-    private final uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVModule module;
+    private final uk.ac.manchester.beehivespirvtoolkit.lib.SPIRVModule module;
 
     private final Set<SPIRVKind> capabilities;
 
     private boolean vector16Capability;
     private boolean genericCapability;
 
-    public SPIRVPrimitiveTypes(uk.ac.manchester.spirvbeehivetoolkit.lib.SPIRVModule module) {
+    public SPIRVPrimitiveTypes(uk.ac.manchester.beehivespirvtoolkit.lib.SPIRVModule module) {
         this.module = module;
         this.primitives = new HashMap<>();
         this.undefTable = new HashMap<>();

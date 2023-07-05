@@ -29,6 +29,7 @@ import jdk.incubator.foreign.MemorySegment;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
@@ -360,7 +361,8 @@ public class OCLGraphBuilderPlugins {
                 public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index) {
                     MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
                     AddressNode addressNode = b.append(new OffsetAddressNode(segment, mulNode));
-                    JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), OnHeapMemoryAccess.BarrierType.NONE, false);
+                    //TODO: Re-examine the memory order used
+                    JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), OnHeapMemoryAccess.BarrierType.NONE, MemoryOrderMode.PLAIN, false);
                     b.addPush(kind, readNode);
                     return true;
                 }
@@ -381,7 +383,8 @@ public class OCLGraphBuilderPlugins {
                 @Override
                 public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode offset) {
                     AddressNode addressNode = b.append(new OffsetAddressNode(segment, offset));
-                    JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), OnHeapMemoryAccess.BarrierType.NONE, false);
+                    //TODO: Re-examine the memory order used
+                    JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), OnHeapMemoryAccess.BarrierType.NONE,  MemoryOrderMode.PLAIN, false);
                     b.addPush(kind, readNode);
                     return true;
                 }

@@ -17,8 +17,6 @@
  */
 package uk.ac.manchester.tornado.unittests.virtual;
 
-import static uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction.performComparison;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -70,9 +68,7 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
     private void testVirtualDeviceKernel(String expectedCodeFile) {
         float[] input = new float[SIZE];
         float[] result = new float[1];
-        IntStream.range(0, SIZE).forEach(idx -> {
-            input[idx] = idx;
-        });
+        IntStream.range(0, SIZE).forEach(idx -> input[idx] = idx);
 
         Arrays.fill(result, Float.MIN_VALUE);
 
@@ -90,17 +86,17 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
 
         File fileLog = new File(SOURCE_DIR);
         File expectedKernelFile = new File(filePath);
-        byte[] inputBytes = null;
-        byte[] expectedBytes = null;
+        byte[] generatedKernel = null;
+        byte[] expectedKernel = null;
         try {
-            inputBytes = Files.readAllBytes(fileLog.toPath());
-            expectedBytes = Files.readAllBytes(expectedKernelFile.toPath());
+            generatedKernel = Files.readAllBytes(fileLog.toPath());
+            expectedKernel = Files.readAllBytes(expectedKernelFile.toPath());
         } catch (IOException e) {
             e.printStackTrace();
             Assert.fail();
         }
 
-        boolean fileEquivalent = performComparison(inputBytes, expectedBytes);
+        boolean fileEquivalent = TestVirtualDeviceFeatureExtraction.performComparison(generatedKernel, expectedKernel);
         Assert.assertTrue(fileEquivalent);
     }
 

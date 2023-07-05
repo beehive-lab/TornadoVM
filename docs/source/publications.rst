@@ -47,6 +47,10 @@ If you are using Tornado 0.1 (Initial release), please use the following citatio
 
 Full list of publications
 ---------------------------------------------
+- Athanasios Stratikopoulos, Florin Blanaru, Juan Fumero, Maria Xekalaki, Orion Papadakis, Christos Kotselidis. 
+  **Cross-Language Interoperability of Heterogeneous Code**
+  MoreVMs'23. Collocated with Programming 2023. 
+  `Preprint <https://research.manchester.ac.uk/en/publications/cross-language-interoperability-of-heterogeneous-code>`_.
 - Maria Xekalaki, Juan Fumero, Athanasios Stratikopoulos, Katerina Doka, Christos, Katsakioris, Constantinos Bitsakos, Nectarios Koziris, Christos Kotselidis.
   **Enabling Transparent Acceleration of Big Data Frameworks Using Heterogeneous Hardware**.
   49th International Conference on Very Large Data Bases (VLDB 2023).
