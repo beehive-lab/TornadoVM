@@ -34,7 +34,6 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.FixReadsPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.LowTierLoweringPhase;
-import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
@@ -53,10 +52,9 @@ public class PTXLowTier extends TornadoLowTier {
     public PTXLowTier(OptionValues options, TornadoDeviceContext tornadoDeviceContext, AddressLoweringByNodePhase.AddressLowering addressLowering) {
         this.tornadoDeviceContext = tornadoDeviceContext;
         CanonicalizerPhase canonicalizer = CanonicalizerPhase.create();
+        // appendPhase(new RemoveValueProxyPhase(canonicalizer));
 
         appendPhase(new LowTierLoweringPhase(canonicalizer));
-
-        appendPhase(new RemoveValueProxyPhase(canonicalizer));
 
         /*
          * Cleanup IsNull checks resulting from MID_TIER/LOW_TIER lowering and

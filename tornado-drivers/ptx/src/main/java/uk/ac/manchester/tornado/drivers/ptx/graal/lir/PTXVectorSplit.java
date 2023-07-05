@@ -40,7 +40,7 @@ public class PTXVectorSplit {
     public boolean fullUnwrapVector;
 
     public PTXVectorSplit(Variable actualVector) {
-        this(actualVector.getName(), (PTXKind) actualVector.getPlatformKind());
+        this(actualVector.toString(), (PTXKind) actualVector.getPlatformKind());
     }
 
     public PTXVectorSplit(String actualVectorName, PTXKind actualKind) {

@@ -32,6 +32,7 @@ import java.util.Map;
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.Condition;
+import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -83,7 +84,7 @@ public class PTXLIRGenerator extends LIRGenerator {
     private final Map<String, Variable> parameterAllocations;
 
     public PTXLIRGenerator(Providers providers, LIRGenerationResult lirGenRes) {
-        super(new PTXLIRKindTool((PTXTargetDescription) providers.getCodeCache().getTarget()), new PTXArithmeticTool(), new PTXMoveFactory(), providers, lirGenRes);
+        super(new PTXLIRKindTool((PTXTargetDescription) providers.getCodeCache().getTarget()), new PTXArithmeticTool(), new PTXBarrierSetLIRGenerator(), new PTXMoveFactory(), providers, lirGenRes);
 
         ptxGenTool = new PTXGenTool(this);
         parameterAllocations = new HashMap<>();
@@ -208,14 +209,23 @@ public class PTXLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Variable emitLogicCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue, MemoryOrderMode memoryOrder) {
-        unimplemented();
+    public Variable emitLogicCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue, MemoryOrderMode memoryOrder,
+            BarrierType barrierType) {
         return null;
     }
 
     @Override
-    public Value emitValueCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, MemoryOrderMode memoryOrder) {
-        unimplemented();
+    public Value emitValueCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, MemoryOrderMode memoryOrder, BarrierType barrierType) {
+        return null;
+    }
+
+    @Override
+    public Value emitAtomicReadAndAdd(LIRKind accessKind, Value address, Value delta) {
+        return null;
+    }
+
+    @Override
+    public Value emitAtomicReadAndWrite(LIRKind accessKind, Value address, Value newValue, BarrierType barrierType) {
         return null;
     }
 
@@ -341,6 +351,11 @@ public class PTXLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    public Variable emitReverseBytes(Value operand) {
+        return null;
+    }
+
+    @Override
     protected void emitForeignCallOp(ForeignCallLinkage linkage, Value targetAddress, Value result, Value[] arguments, Value[] temps, LIRFrameState info) {
         unimplemented();
     }
@@ -366,12 +381,6 @@ public class PTXLIRGenerator extends LIRGenerator {
     @Override
     protected void emitHashTableSwitch(JavaConstant[] keys, LabelRef defaultTarget, LabelRef[] targets, AllocatableValue value, Value hash) {
 
-    }
-
-    @Override
-    public Variable emitByteSwap(Value operand) {
-        unimplemented();
-        return null;
     }
 
     @Override
@@ -407,6 +416,11 @@ public class PTXLIRGenerator extends LIRGenerator {
         return 0;
     }
 
+    @Override
+    public Register getHeapBaseRegister() {
+        return null;
+    }
+
     public Variable newReturnVariable(ValueKind<?> lirKind) {
         final Variable var = super.newVariable(lirKind);
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "newReturnVariable: %s <- %s (%s)", var.toString(), lirKind.toString(), lirKind.getClass().getName());
@@ -418,7 +432,7 @@ public class PTXLIRGenerator extends LIRGenerator {
             shouldNotReachHere();
         }
 
-        var.setName("retVar");
+        // var.setName("retVar");
         return var;
     }
 
@@ -436,13 +450,14 @@ public class PTXLIRGenerator extends LIRGenerator {
             shouldNotReachHere();
         }
 
-        if (isArray) {
-            var.setName(kind.getRegisterTypeString() + "Arr" + indexForType);
-        } else if (kind.isVector()) {
-            var.setName(kind.getRegisterTypeString() + kind.getVectorLength() + "Vec" + indexForType);
-        } else {
-            var.setName(kind.getRegisterTypeString() + indexForType);
-        }
+        // if (isArray) {
+        // var.setName(kind.getRegisterTypeString() + "Arr" + indexForType);
+        // } else if (kind.isVector()) {
+        // var.setName(kind.getRegisterTypeString() + kind.getVectorLength() + "Vec" +
+        // indexForType);
+        // } else {
+        // var.setName(kind.getRegisterTypeString() + indexForType);
+        // }
 
         return var;
     }

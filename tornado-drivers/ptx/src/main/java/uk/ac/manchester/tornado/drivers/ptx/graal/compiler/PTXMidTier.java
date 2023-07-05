@@ -35,7 +35,6 @@ import org.graalvm.compiler.phases.common.GuardLoweringPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.MidTierLoweringPhase;
 import org.graalvm.compiler.phases.common.ReassociationPhase;
-import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.BoundCheckEliminationPhase;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoFloatingReadReplacement;
@@ -57,7 +56,7 @@ public class PTXMidTier extends TornadoMidTier {
             appendPhase(new TornadoFloatingReadReplacement(canonicalizer));
         }
 
-        appendPhase(new RemoveValueProxyPhase(canonicalizer));
+        // appendPhase(new RemoveValueProxyPhase(canonicalizer));
 
         appendPhase(canonicalizer);
 

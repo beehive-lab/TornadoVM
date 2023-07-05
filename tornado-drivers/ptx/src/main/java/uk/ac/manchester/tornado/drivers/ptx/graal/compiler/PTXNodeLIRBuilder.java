@@ -83,7 +83,7 @@ import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.calc.IntegerTestNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
-import org.graalvm.compiler.nodes.cfg.Block;
+import org.graalvm.compiler.nodes.cfg.HIRBlock;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.options.OptionValues;
 
@@ -257,7 +257,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         return (PTXLIRGenerator) gen;
     }
 
-    public void doBlock(Block block, StructuredGraph graph, BlockMap<List<Node>> blockMap, boolean isKernel) {
+    public void doBlock(HIRBlock block, StructuredGraph graph, BlockMap<List<Node>> blockMap, boolean isKernel) {
         OptionValues options = graph.getOptions();
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "%s - block %s", graph.method().getName(), block);
         try (LIRGeneratorTool.BlockScope blockScope = gen.getBlockScope(block)) {
@@ -337,7 +337,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private void emitLoopExit(LoopExitNode node) {
-        if (gen.getCurrentBlock().getSuccessors().length != 0) {
+        if (gen.getCurrentBlock().getSuccessorCount() != 0) {
             append(new PTXControlFlow.LoopBreakOp(LabelRef.forSuccessor(gen.getResult().getLIR(), gen.getCurrentBlock(), 0), false, false));
         }
     }
@@ -530,7 +530,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
     private void emitLoopBegin(final LoopBeginNode loopBeginNode) {
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "visiting emitLoopBegin %s", loopBeginNode);
 
-        final Block block = (Block) gen.getCurrentBlock();
+        final HIRBlock block = (HIRBlock) gen.getCurrentBlock();
         final LIR lir = getGen().getResult().getLIR();
         final StandardOp.LabelOp label = (StandardOp.LabelOp) lir.getLIRforBlock(block).get(0);
 
@@ -654,12 +654,12 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
      * <b>cvt</b> instructions.
      */
     public Variable getBuiltInAllocation(PTXBuiltInRegister builtIn) {
-        if (builtInAllocations.containsKey(builtIn.getName()))
-            return builtInAllocations.get(builtIn.getName());
+        if (builtInAllocations.containsKey(builtIn.toString()))
+            return builtInAllocations.get(builtIn.toString());
 
         Variable allocateTo = getGen().newVariable(builtIn.getValueKind());
         append(new AssignStmt(allocateTo, builtIn));
-        builtInAllocations.put(builtIn.getName(), allocateTo);
+        builtInAllocations.put(builtIn.toString(), allocateTo);
         return allocateTo;
     }
 }

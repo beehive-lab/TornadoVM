@@ -86,6 +86,7 @@ public final class OCLAssembler extends Assembler {
     public static String convertFormat(String input) {
         String[] parts = input.split("\\|");
 
+        System.out.println("fff " + input);
         if (parts.length == 2) {
             String suffix = parts[0].substring(1);
             String type = parts[1].toLowerCase();

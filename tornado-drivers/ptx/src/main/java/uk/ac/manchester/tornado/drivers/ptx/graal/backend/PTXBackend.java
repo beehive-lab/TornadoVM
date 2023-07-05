@@ -201,11 +201,11 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     }
 
     public PTXCompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenRes, FrameMap frameMap, PTXCompilationResult compilationResult, CompilationResultBuilderFactory factory,
-            boolean isKernel, boolean isParallel, boolean includePrintf) {
+            boolean isKernel, boolean isParallel, boolean includePrintf, LIR lir) {
         PTXAssembler asm = createAssembler((PTXLIRGenerationResult) lirGenRes);
         PTXFrameContext frameContext = new PTXFrameContext();
         DataBuilder dataBuilder = new PTXDataBuilder();
-        PTXCompilationResultBuilder crb = new PTXCompilationResultBuilder(getProviders(), frameMap, asm, dataBuilder, frameContext, options, getDebugContext(), compilationResult);
+        PTXCompilationResultBuilder crb = new PTXCompilationResultBuilder(getProviders(), frameMap, asm, dataBuilder, frameContext, options, getDebugContext(), compilationResult, lir);
         crb.setTaskMetaData(compilationResult.metaData());
         crb.setKernel(isKernel);
         crb.setParallel(isParallel);

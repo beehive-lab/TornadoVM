@@ -51,7 +51,7 @@ import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.nodes.cfg.Block;
+import org.graalvm.compiler.nodes.cfg.HIRBlock;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;
@@ -82,37 +82,11 @@ public class PTXAssembler extends Assembler {
         this.lirGenRes = lirGenRes;
     }
 
-    public void emitSymbol(String sym) {
-        byte[] symBytes = sym.getBytes();
-        if (convertTabToSpace) {
-            byte[] tabBytes = TAB.getBytes();
-            if (Arrays.equals(symBytes, tabBytes)) {
-                symBytes = SPACE.getBytes();
-                convertTabToSpace = false;
-            }
-        }
-        for (byte b : symBytes) {
-            emitByte(b);
-        }
-    }
-
-    public void emitValue(Value value) {
-        emit(toString(value));
-    }
-
-    public void emitValueOrOp(PTXCompilationResultBuilder crb, Value value, Variable dest) {
-        if (value instanceof PTXLIROp) {
-            ((PTXLIROp) value).emit(crb, this, dest);
-        } else {
-            emitValue(value);
-        }
-    }
-
     public static String toString(Value value) {
         String result = "";
         if (value instanceof Variable) {
             Variable var = (Variable) value;
-            return var.getName();
+            return convertFormat(var.toString());
         } else if (value instanceof ConstantValue) {
             if (!((ConstantValue) value).isJavaConstant()) {
                 shouldNotReachHere("constant value: ", value);
@@ -125,6 +99,36 @@ public class PTXAssembler extends Assembler {
             unimplemented("value: toString() type=%s, value=%s", value.getClass().getName(), value);
         }
         return result;
+    }
+
+    public static String convertFormat(String input) {
+        String[] parts = input.split("\\|");
+
+        if (parts.length == 2) {
+            String suffix = parts[0].substring(1);
+            String type = parts[1].toLowerCase();
+            String result = "";
+
+            if (type.equals("ulong")) {
+                result = "ul_" + suffix;
+            } else if (type.equals("int")) {
+                result = "i_" + suffix;
+            } else if (type.equals("long")) {
+                result = "l_" + suffix;
+            } else if (type.equals("boolean")) {
+                result = "b_" + suffix;
+            } else if (type.equals("double")) {
+                result = "d_" + suffix;
+            } else if (type.equals("float")) {
+                result = "f_" + suffix;
+            } else {
+                return "Invalid type";
+            }
+
+            return result;
+        } else {
+            return "Invalid input format";
+        }
     }
 
     public static String formatConstant(ConstantValue cv) {
@@ -158,6 +162,36 @@ public class PTXAssembler extends Assembler {
         return result;
     }
 
+    private static String encodeString(String str) {
+        return str.replace("\n", "\\n").replace("\t", "\\t").replace("\"", "");
+    }
+
+    public void emitSymbol(String sym) {
+        byte[] symBytes = sym.getBytes();
+        if (convertTabToSpace) {
+            byte[] tabBytes = TAB.getBytes();
+            if (Arrays.equals(symBytes, tabBytes)) {
+                symBytes = SPACE.getBytes();
+                convertTabToSpace = false;
+            }
+        }
+        for (byte b : symBytes) {
+            emitByte(b);
+        }
+    }
+
+    public void emitValue(Value value) {
+        emit(toString(value));
+    }
+
+    public void emitValueOrOp(PTXCompilationResultBuilder crb, Value value, Variable dest) {
+        if (value instanceof PTXLIROp) {
+            ((PTXLIROp) value).emit(crb, this, dest);
+        } else {
+            emitValue(value);
+        }
+    }
+
     public void emit(String format, Object... args) {
         emitSubString(String.format(format, args));
     }
@@ -181,6 +215,11 @@ public class PTXAssembler extends Assembler {
     @Override
     public void align(int modulus) {
         // unimplemented();
+    }
+
+    @Override
+    public void halt() {
+
     }
 
     @Override
@@ -274,10 +313,6 @@ public class PTXAssembler extends Assembler {
         eol();
     }
 
-    private static String encodeString(String str) {
-        return str.replace("\n", "\\n").replace("\t", "\\t").replace("\"", "");
-    }
-
     public void emitConstant(ConstantValue constant) {
         emitConstant(constant.getJavaConstant().asLong());
     }
@@ -311,7 +346,7 @@ public class PTXAssembler extends Assembler {
         eol();
     }
 
-    public void emitBlockLabel(Block b) {
+    public void emitBlockLabel(HIRBlock b) {
         emitBlockLabel(b.getId());
     }
 

@@ -200,7 +200,7 @@ public class PTXArchitecture extends Architecture {
 
         protected PTXBuiltInRegister(String name) {
             super(LIRKind.value(PTXKind.U32), 0);
-            setName(name);
+            // setName(name);
         }
     }
 
