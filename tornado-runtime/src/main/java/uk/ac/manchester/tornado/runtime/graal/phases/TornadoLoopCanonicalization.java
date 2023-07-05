@@ -41,7 +41,7 @@ public class TornadoLoopCanonicalization extends Phase {
     @Override
     protected void run(StructuredGraph graph) {
         if (graph.hasLoops()) {
-            final LoopsData data = new TornadoLoopsData(graph);
+            final LoopsData data = new TornadoLoopsData(graph, graph.getLastSchedule().getCFG());
             final List<LoopEx> loops = data.outerFirst();
             Collections.reverse(loops);
             for (LoopEx loop : loops) {

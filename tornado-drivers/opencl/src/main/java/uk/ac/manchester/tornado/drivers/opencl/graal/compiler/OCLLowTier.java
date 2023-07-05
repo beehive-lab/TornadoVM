@@ -29,8 +29,8 @@ import static org.graalvm.compiler.core.common.GraalOptions.ConditionalEliminati
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Required;
 
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.common.AddressLoweringPhase;
-import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
+import org.graalvm.compiler.phases.common.AddressLoweringByNodePhase;
+import org.graalvm.compiler.phases.common.AddressLoweringByNodePhase.AddressLowering;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.FixReadsPhase;
@@ -58,10 +58,6 @@ public class OCLLowTier extends TornadoLowTier {
 
     TornadoDeviceContext tornadoDeviceContext;
 
-    private CanonicalizerPhase getCannonicalizer(OptionValues options) {
-        return CanonicalizerPhase.create();
-    }
-
     public OCLLowTier(OptionValues options, TornadoDeviceContext tornadoDeviceContext, AddressLowering addressLowering) {
         this.tornadoDeviceContext = tornadoDeviceContext;
         CanonicalizerPhase canonicalizer = getCannonicalizer(options);
@@ -81,7 +77,7 @@ public class OCLLowTier extends TornadoLowTier {
             appendPhase(new FixReadsPhase(true, new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS)));
         }
 
-        appendPhase(new AddressLoweringPhase(addressLowering));
+        appendPhase(new AddressLoweringByNodePhase(addressLowering));
 
         appendPhase(new UseTrappingNullChecksPhase());
 
@@ -116,5 +112,9 @@ public class OCLLowTier extends TornadoLowTier {
             appendPhase(new DumpLowTierGraph());
         }
 
+    }
+
+    private CanonicalizerPhase getCannonicalizer(OptionValues options) {
+        return CanonicalizerPhase.create();
     }
 }

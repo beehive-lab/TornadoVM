@@ -94,7 +94,7 @@ public class TornadoLoopUnroller extends BasePhase<CoreProviders> {
             boolean peeled;
             do {
                 peeled = false;
-                final LoopsData dataCounted = new TornadoLoopsData(graph);
+                final LoopsData dataCounted = new TornadoLoopsData(graph, graph.getLastSchedule().getCFG());
                 dataCounted.detectCountedLoops();
                 for (LoopEx loop : dataCounted.countedLoops()) {
                     if (shouldFullUnroll(graph.getOptions(), loop)) {

@@ -40,7 +40,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
-import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.Variable;
@@ -124,6 +123,10 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         architecture = (OCLArchitecture) target.arch;
     }
 
+    public static boolean isDeviceAnFPGAAccelerator(OCLDeviceContextInterface deviceContext) {
+        return deviceContext.isPlatformFPGA();
+    }
+
     @Override
     public String decodeDeopt(long value) {
         return BackendDeopt.decodeDeopt(value, getProviders());
@@ -165,10 +168,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         }
         int driverIndex = TornadoCoreRuntime.getTornadoRuntime().getDriverIndex(OCLDriver.class);
         return new int[] { driverIndex, deviceIndex };
-    }
-
-    public static boolean isDeviceAnFPGAAccelerator(OCLDeviceContextInterface deviceContext) {
-        return deviceContext.isPlatformFPGA();
     }
 
     @Override
@@ -245,17 +244,18 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         final int expectedVariables = lir.numVariables();
         final AtomicInteger variableCount = new AtomicInteger();
 
-        for (AbstractBlockBase<?> b : lir.linearScanOrder()) {
-            for (LIRInstruction lirInstruction : lir.getLIRforBlock(b)) {
+        for (int b : lir.linearScanOrder()) {
+            for (LIRInstruction lirInstruction : lir.getLIRforBlock(lir.getBlockById(b))) {
 
                 lirInstruction.forEachOutput((instruction, value, mode, flags) -> {
                     if (value instanceof Variable) {
                         Variable variable = (Variable) value;
-                        if (OCLTokens.openCLTokens.contains(variable.getName())) {
+                        if (OCLTokens.openCLTokens.contains(variable.toString())) {
                             // Change name because the Java variables uses an OpenCL token name
-                            variable.setName("_" + variable.getName());
+                            // TODO: NEED THINKING
+                            // variable.setName("_" + variable.toString());
                         }
-                        if (variable.getName() != null) {
+                        if (variable.toString() != null) {
                             addVariableDef(kindToVariable, variable);
                             variableCount.incrementAndGet();
                         }

@@ -45,7 +45,7 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.graalvm.compiler.graph.CachedGraph;
+import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -166,7 +166,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerInputs = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, TaskGraph> taskGraphIndex = new ConcurrentHashMap<>();
     private StringBuilder bufferLogProfiler = new StringBuilder();
-    private CachedGraph<?> graph;
+    private Graph graph;
     /**
      * Options for new reductions - experimental
      */

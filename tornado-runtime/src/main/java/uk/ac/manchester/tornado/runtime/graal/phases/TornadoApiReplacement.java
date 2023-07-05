@@ -56,11 +56,6 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 
 public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
 
-    @Override
-    protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
-        replaceLocalAnnotations(graph, context);
-    }
-
     /*
      * A singleton is used because we don't need to support all the logic of loading
      * the desired class bytecode and instantiating the helper classes for the ASM
@@ -71,6 +66,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
      * not allow it.
      */
     private static ASMClassVisitorProvider asmClassVisitorProvider;
+
     static {
         try {
             String tornadoAnnotationImplementation = System.getProperty("tornado.load.annotation.implementation");
@@ -81,6 +77,11 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
             e.printStackTrace();
             throw new RuntimeException("[ERROR] Tornado Annotation Implementation class not found");
         }
+    }
+
+    @Override
+    protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
+        replaceLocalAnnotations(graph, context);
     }
 
     private void replaceLocalAnnotations(StructuredGraph graph, TornadoSketchTierContext context) throws TornadoCompilationException {
@@ -112,7 +113,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
         });
 
         if (graph.hasLoops()) {
-            final LoopsData data = new TornadoLoopsData(graph);
+            final LoopsData data = new TornadoLoopsData(graph, graph.getLastSchedule().getCFG());
             data.detectCountedLoops();
             int loopIndex = 0;
             final List<LoopEx> loops = data.outerFirst();

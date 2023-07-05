@@ -22,11 +22,12 @@
 package uk.ac.manchester.tornado.runtime.graal.nodes;
 
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.loop.LoopsData;
 
 public class TornadoLoopsData extends LoopsData {
 
-    public TornadoLoopsData(StructuredGraph graph) {
-        super(graph);
+    public TornadoLoopsData(StructuredGraph graph, ControlFlowGraph cfg) {
+        super(graph, cfg);
     }
 }

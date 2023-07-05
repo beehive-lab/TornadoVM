@@ -28,7 +28,7 @@ import static org.graalvm.compiler.core.common.GraalOptions.ConditionalEliminati
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Required;
 
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.common.AddressLoweringPhase;
+import org.graalvm.compiler.phases.common.AddressLoweringByNodePhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.FixReadsPhase;
@@ -52,11 +52,7 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopCanonicalization
 
 public class SPIRVLowTier extends TornadoLowTier {
 
-    private CanonicalizerPhase getCannonicalizer(OptionValues options) {
-        return CanonicalizerPhase.create();
-    }
-
-    public SPIRVLowTier(OptionValues options, TornadoDeviceContext deviceContext, AddressLoweringPhase.AddressLowering addressLowering) {
+    public SPIRVLowTier(OptionValues options, TornadoDeviceContext deviceContext, AddressLoweringByNodePhase.AddressLowering addressLowering) {
         CanonicalizerPhase canonicalizer = getCannonicalizer(options);
 
         appendPhase(new SPIRVFP64SupportPhase(deviceContext));
@@ -71,7 +67,7 @@ public class SPIRVLowTier extends TornadoLowTier {
 
         appendPhase(new FixReadsPhase(true, new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS)));
 
-        appendPhase(new AddressLoweringPhase(addressLowering));
+        appendPhase(new AddressLoweringByNodePhase(addressLowering));
 
         appendPhase(new UseTrappingNullChecksPhase());
 
@@ -103,5 +99,9 @@ public class SPIRVLowTier extends TornadoLowTier {
         if (TornadoOptions.DUMP_LOW_TIER_WITH_IGV) {
             appendPhase(new DumpLowTierGraph());
         }
+    }
+
+    private CanonicalizerPhase getCannonicalizer(OptionValues options) {
+        return CanonicalizerPhase.create();
     }
 }

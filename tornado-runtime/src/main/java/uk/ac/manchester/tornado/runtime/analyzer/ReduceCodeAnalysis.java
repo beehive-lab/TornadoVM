@@ -32,7 +32,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
-import org.graalvm.compiler.graph.CachedGraph;
+import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.ConstantNode;
@@ -68,13 +69,6 @@ import uk.ac.manchester.tornado.runtime.graal.phases.MarkIntIntrinsicNode;
  * Code analysis class for reductions in TornadoVM.
  */
 public class ReduceCodeAnalysis {
-
-    public enum REDUCE_OPERATION { //
-        SUM, //
-        MUL, //
-        MIN, //
-        MAX //
-    }
 
     private static boolean checkIfVarIsInLoop(StoreIndexedNode store) {
         Node node = store.predecessor();
@@ -182,9 +176,9 @@ public class ReduceCodeAnalysis {
         return getReduceOperation(reduceOperation);
     }
 
-    public static List<REDUCE_OPERATION> getReduceOperatorFromSketch(CachedGraph<?> graph, List<Integer> reduceIndices) {
+    public static List<REDUCE_OPERATION> getReduceOperatorFromSketch(Graph graph, List<Integer> reduceIndices) {
         List<ValueNode> reduceOperation = new ArrayList<>();
-        final StructuredGraph sg = (StructuredGraph) graph.getMutableCopy(null);
+        final StructuredGraph sg = (StructuredGraph) graph.copy(DebugContext.forCurrentThread());
 
         for (Integer paramIndex : reduceIndices) {
 
@@ -421,5 +415,12 @@ public class ReduceCodeAnalysis {
                 }
             }
         }
+    }
+
+    public enum REDUCE_OPERATION { //
+        SUM, //
+        MUL, //
+        MIN, //
+        MAX //
     }
 }

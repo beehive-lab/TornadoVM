@@ -47,7 +47,6 @@ import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpScope;
 import org.graalvm.compiler.debug.TimerKey;
-import org.graalvm.compiler.graph.CachedGraph;
 import org.graalvm.compiler.nodes.CallTargetNode;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -74,33 +73,9 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
 
 public class TornadoSketcher {
 
-    private static class TornadoSketcherCacheEntry {
-
-        private final int driverIndex;
-        private final int deviceIndex;
-        private final Future<Sketch> sketchFuture;
-
-        private TornadoSketcherCacheEntry(int driverIndex, int deviceIndex, Future<Sketch> sketchFuture) {
-            this.driverIndex = driverIndex;
-            this.deviceIndex = deviceIndex;
-            this.sketchFuture = sketchFuture;
-        }
-
-        public boolean matchesDriverAndDevice(int driverIndex, int deviceIndex) {
-            return this.driverIndex == driverIndex && this.deviceIndex == deviceIndex;
-        }
-
-        public Future<Sketch> getSketchFuture() {
-            return sketchFuture;
-        }
-    }
-
     private static final AtomicInteger sketchId = new AtomicInteger(0);
-
     private static final Map<ResolvedJavaMethod, List<TornadoSketcherCacheEntry>> cache = new ConcurrentHashMap<>();
-
     private static final TimerKey Sketcher = DebugContext.timer("Sketcher");
-
     private static final OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
 
     private static boolean cacheContainsSketch(ResolvedJavaMethod method, int driverIndex, int deviceIndex) {
@@ -148,23 +123,6 @@ public class TornadoSketcher {
             throw new TornadoInternalError(cause);
         }
         return sketch;
-    }
-
-    private static class TornadoSketcherCallable implements Callable<Sketch> {
-        private final SketchRequest request;
-
-        public TornadoSketcherCallable(SketchRequest request) {
-            this.request = request;
-        }
-
-        @Override
-        public Sketch call() {
-            try (DebugContext.Scope ignored = getDebugContext().scope("SketchCompiler")) {
-                return buildSketch(request.resolvedMethod, request.providers, request.graphBuilderSuite, request.sketchTier, request.driverIndex, request.deviceIndex);
-            } catch (Throwable e) {
-                throw getDebugContext().handle(e);
-            }
-        }
     }
 
     static void buildSketch(SketchRequest request) {
@@ -221,7 +179,7 @@ public class TornadoSketcher {
                 mergeAccesses(methodAccesses, invoke.callTarget(), sketch.getArgumentsAccess());
             });
 
-            return new Sketch(CachedGraph.fromReadonlyCopy(graph), methodAccesses);
+            return new Sketch(graph.copy(DebugContext.forCurrentThread()), methodAccesses);
 
         } catch (Throwable e) {
             fatal("unable to build sketch for method: %s (%s)", resolvedMethod.getName(), e.getMessage());
@@ -267,6 +225,44 @@ public class TornadoSketcher {
             Access callerAcc = callerAccesses[paramIndex];
 
             callerAccesses[paramIndex] = Access.asArray()[callerAcc.position | calleeAcc.position];
+        }
+    }
+
+    private static class TornadoSketcherCacheEntry {
+
+        private final int driverIndex;
+        private final int deviceIndex;
+        private final Future<Sketch> sketchFuture;
+
+        private TornadoSketcherCacheEntry(int driverIndex, int deviceIndex, Future<Sketch> sketchFuture) {
+            this.driverIndex = driverIndex;
+            this.deviceIndex = deviceIndex;
+            this.sketchFuture = sketchFuture;
+        }
+
+        public boolean matchesDriverAndDevice(int driverIndex, int deviceIndex) {
+            return this.driverIndex == driverIndex && this.deviceIndex == deviceIndex;
+        }
+
+        public Future<Sketch> getSketchFuture() {
+            return sketchFuture;
+        }
+    }
+
+    private static class TornadoSketcherCallable implements Callable<Sketch> {
+        private final SketchRequest request;
+
+        public TornadoSketcherCallable(SketchRequest request) {
+            this.request = request;
+        }
+
+        @Override
+        public Sketch call() {
+            try (DebugContext.Scope ignored = getDebugContext().scope("SketchCompiler")) {
+                return buildSketch(request.resolvedMethod, request.providers, request.graphBuilderSuite, request.sketchTier, request.driverIndex, request.deviceIndex);
+            } catch (Throwable e) {
+                throw getDebugContext().handle(e);
+            }
         }
     }
 }

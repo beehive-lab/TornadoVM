@@ -61,7 +61,7 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
         int dimensions = 1;
 
         if (graph.hasLoops()) {
-            final LoopsData data = new TornadoLoopsData(graph);
+            final LoopsData data = new TornadoLoopsData(graph, graph.getLastSchedule().getCFG());
             data.detectCountedLoops();
 
             final List<LoopEx> loops = data.outerFirst();
