@@ -64,12 +64,6 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeCleanup;
 
 public class OCLHighTier extends TornadoHighTier {
 
-    private CanonicalizerPhase createCanonicalizerPhase(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer) {
-        CanonicalizerPhase canonicalizerPhase = CanonicalizerPhase.create();
-        return canonicalizerPhase.copyWithCustomSimplification(customCanonicalizer);
-
-    }
-
     public OCLHighTier(OptionValues options, TornadoDeviceContext deviceContext, CanonicalizerPhase.CustomSimplification customCanonicalizer, MetaAccessProvider metaAccessProvider) {
         super(customCanonicalizer);
 
@@ -95,9 +89,6 @@ public class OCLHighTier extends TornadoHighTier {
 
         appendPhase(new TornadoNewArrayDevirtualizationReplacement());
 
-        if (PartialEscapeAnalysis.getValue(options)) {
-            appendPhase(new PartialEscapePhase(true, canonicalizer, options));
-        }
         appendPhase(new TornadoValueTypeCleanup());
 
         if (OptConvertDeoptsToGuards.getValue(options)) {
@@ -121,6 +112,9 @@ public class OCLHighTier extends TornadoHighTier {
 
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
 
+        if (PartialEscapeAnalysis.getValue(options)) {
+            appendPhase(new PartialEscapePhase(true, canonicalizer, options));
+        }
         appendPhase(new HighTierLoweringPhase(canonicalizer));
 
         // After the first Lowering, TornadoVM replaces reductions with snippets
@@ -131,5 +125,11 @@ public class OCLHighTier extends TornadoHighTier {
         appendPhase(new TornadoLocalMemoryAllocation());
 
         appendPhase(new ExceptionSuppression());
+    }
+
+    private CanonicalizerPhase createCanonicalizerPhase(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer) {
+        CanonicalizerPhase canonicalizerPhase = CanonicalizerPhase.create();
+        return canonicalizerPhase.copyWithCustomSimplification(customCanonicalizer);
+
     }
 }

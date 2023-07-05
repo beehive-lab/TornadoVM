@@ -200,7 +200,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         }
     }
 
-    private static boolean isLoopHIRBlock(HIRBlock block, HIRBlock loopHeader) {
+    private static boolean isLoopBlock(HIRBlock block, HIRBlock loopHeader) {
 
         Set<HIRBlock> visited = new HashSet<>();
         Stack<HIRBlock> stack = new Stack<>();
@@ -490,7 +490,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             }
             for (int i = 0; i < basicHIRBlock.getSuccessorCount(); i++) {
                 HIRBlock block = basicHIRBlock.getSuccessorAt(i);
-                boolean isInnerLoop = isLoopHIRBlock(block, basicHIRBlock);
+                boolean isInnerLoop = isLoopBlock(block, basicHIRBlock);
                 if (!isInnerLoop) {
                     assert ifNode != null;
                     if (ifNode.trueSuccessor() == block.getBeginNode() && block.getBeginNode() instanceof LoopExitNode && block.getEndNode() instanceof EndNode) {

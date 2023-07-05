@@ -83,6 +83,36 @@ public final class OCLAssembler extends Assembler {
         }
     }
 
+    public static String convertFormat(String input) {
+        String[] parts = input.split("\\|");
+
+        if (parts.length == 2) {
+            String suffix = parts[0].substring(1);
+            String type = parts[1].toLowerCase();
+            String result = "";
+
+            if (type.equals("ulong")) {
+                result = "ul_" + suffix;
+            } else if (type.equals("int")) {
+                result = "i_" + suffix;
+            } else if (type.equals("long")) {
+                result = "l_" + suffix;
+            } else if (type.equals("boolean")) {
+                result = "b_" + suffix;
+            } else if (type.equals("double")) {
+                result = "d_" + suffix;
+            } else if (type.equals("float")) {
+                result = "f_" + suffix;
+            } else {
+                return "Invalid type";
+            }
+
+            return result;
+        } else {
+            return "Invalid input format";
+        }
+    }
+
     private void emitAtomicIntrinsics() {
         //@formatter:off
         emitLine("inline void atomicAdd_Tornado_Floats(volatile __global float *source, const float operand) {\n" +
@@ -405,7 +435,9 @@ public final class OCLAssembler extends Assembler {
         String result = "";
         if (value instanceof Variable) {
             Variable var = (Variable) value;
-            return var.toString();
+
+            // return var.toString();
+            return convertFormat(var.toString());
         } else if (value instanceof ConstantValue) {
             if (!((ConstantValue) value).isJavaConstant()) {
                 shouldNotReachHere("constant value: ", value);
