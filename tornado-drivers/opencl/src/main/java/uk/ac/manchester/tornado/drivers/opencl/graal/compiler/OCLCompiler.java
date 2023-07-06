@@ -362,7 +362,7 @@ public class OCLCompiler {
     }
 
     public static OCLCompilationResult compileSketchForDevice(Sketch sketch, CompilableTask task, OCLProviders providers, OCLBackend backend, TornadoProfiler profiler) {
-        final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().getMutableCopy(null);
+        final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().copy(getDebugContext());
         ResolvedJavaMethod resolvedMethod = kernelGraph.method();
 
         info("Compiling sketch %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
@@ -412,7 +412,7 @@ public class OCLCompiler {
                 nonInlinedCompiledMethods.add(currentMethod);
             }
             Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
-            final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().getMutableCopy(null);
+            final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().copy(getDebugContext());
 
             String subKernelName = OCLDeviceContext.checkKernelName(currentMethod.getName());
             final OCLCompilationResult compResult = new OCLCompilationResult(task.getId(), subKernelName, taskMeta, backend);

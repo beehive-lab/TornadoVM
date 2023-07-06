@@ -24,7 +24,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
 import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
+import org.graalvm.compiler.core.common.cfg.BasicBlock;
 
 import uk.ac.manchester.beehivespirvtoolkit.lib.SPIRVInstScope;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.SPIRVOpBranch;
@@ -55,9 +55,9 @@ public class SPIRVNullary {
 
     public static class ReturnNoOperands extends NullaryConsumer {
 
-        final AbstractBlockBase<?> currentBLock;
+        final BasicBlock<?> currentBLock;
 
-        public ReturnNoOperands(LIRKind valueKind, AbstractBlockBase<?> currentBLock) {
+        public ReturnNoOperands(LIRKind valueKind, BasicBlock<?> currentBLock) {
             super(valueKind);
             this.currentBLock = currentBLock;
         }

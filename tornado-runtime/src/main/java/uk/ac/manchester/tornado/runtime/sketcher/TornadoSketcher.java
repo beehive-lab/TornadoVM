@@ -65,6 +65,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.OCLTokens;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
@@ -179,7 +180,7 @@ public class TornadoSketcher {
                 mergeAccesses(methodAccesses, invoke.callTarget(), sketch.getArgumentsAccess());
             });
 
-            return new Sketch(CachedGraph.fromReadonlyCopy(graph), methodAccesses);
+            return new Sketch(graph.copy(TornadoCoreRuntime.getDebugContext()), methodAccesses);
 
         } catch (Throwable e) {
             fatal("unable to build sketch for method: %s (%s)", resolvedMethod.getName(), e.getMessage());

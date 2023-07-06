@@ -168,6 +168,8 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
             case 2: {
                 final OCLOp2 op2 = VectorUtil.resolveAssignOp2(getOCLKind());
                 s1 = getParam(gen, tool, 1);
+                System.out.println("ASSIGN EXPR");
+                System.out.println(" xx " + op2.toString() + " " + s0.toString() + "   " + s1.toString());
                 assignExpr = new OCLVectorAssign.Assign2Expr(op2, getOCLKind(), s0, s1);
                 break;
             }
@@ -205,11 +207,6 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
         tool.append(new OCLLIRStmt.AssignStmt(result, assignExpr));
 
         gen.setResult(this, result);
-    }
-
-    // FIXME: Remove unused methods
-    public boolean allLanesUsed() {
-        return (usages().filter(VectorLoadElementNode.class).count() == kind.getVectorLength());
     }
 
     public List<VectorStoreElementProxyNode> getLanesInputs() {

@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 import org.graalvm.compiler.core.common.cfg.Loop;
 import org.graalvm.compiler.graph.Node;
@@ -217,10 +218,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
              */
             if ((block.getDominator().getDominator() != null) && (isIfBlock(block.getDominator().getDominator()))) {
 
-                HIRBlock[] successors = new HIRBlock[block.getDominator().getSuccessorCount()];
-                for (int i = 0; i < block.getDominator().getSuccessorCount(); i++) {
-                    successors[i] = block.getDominator().getSuccessorAt(i);
-                }
+                HIRBlock[] successors = IntStream.range(0, block.getDominator().getSuccessorCount()).mapToObj(i -> block.getDominator().getSuccessorAt(i)).toArray(HIRBlock[]::new);
 
                 int index = 0;
                 if (successors[index] == block) {
@@ -250,10 +248,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
                  * We check that the other else-if block contains the loop-exit -> loop-end
                  * sequence. This means there was a break in the code.
                  */
-                HIRBlock[] successors = new HIRBlock[block.getDominator().getSuccessorCount()];
-                for (int i = 0; i < block.getDominator().getSuccessorCount(); i++) {
-                    successors[i] = block.getDominator().getSuccessorAt(i);
-                }
+                HIRBlock[] successors = IntStream.range(0, block.getDominator().getSuccessorCount()).mapToObj(i -> block.getDominator().getSuccessorAt(i)).toArray(HIRBlock[]::new);
 
                 int index = 0;
                 if (successors[index] == block) {

@@ -837,9 +837,11 @@ public class OCLLIRStmt {
 
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            System.out.println("Emit vstore" + op.toString() + " " + rhs.toString());
             asm.indent();
             asm.emit(op.toString());
             asm.emit("(");
+            // asm.emitValue(crb, OCLAssembler.convertFormat(rhs.toString()));
             asm.emitValue(crb, rhs);
             asm.emit(", ");
             asm.emitValue(crb, index);

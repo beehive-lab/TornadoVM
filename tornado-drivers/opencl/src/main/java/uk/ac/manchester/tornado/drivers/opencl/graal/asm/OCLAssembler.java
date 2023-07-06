@@ -86,7 +86,7 @@ public final class OCLAssembler extends Assembler {
     public static String convertFormat(String input) {
         String[] parts = input.split("\\|");
 
-        System.out.println("fff " + input);
+        // System.out.println("fff " + input);
         if (parts.length == 2) {
             String suffix = parts[0].substring(1);
             String type = parts[1].toLowerCase();
@@ -98,13 +98,26 @@ public final class OCLAssembler extends Assembler {
                 result = "i_" + suffix;
             } else if (type.equals("long")) {
                 result = "l_" + suffix;
-            } else if (type.equals("boolean")) {
+            } else if (type.equals("bool")) {
                 result = "b_" + suffix;
             } else if (type.equals("double")) {
                 result = "d_" + suffix;
+            } else if (type.equals("byte")) {
+                result = "bt_" + suffix;
             } else if (type.equals("float")) {
                 result = "f_" + suffix;
+            } else if (type.equals("char")) {
+                result = "ch_" + suffix;
+            } else if (type.equals("atomic_add_float")) {
+                result = "adf_" + suffix;
+            } else if (type.equals("atomic_add_int")) {
+                result = "adi_" + suffix;
+            } else if (type.equals("float2")) {
+                result = "vf2_" + suffix;
+            } else if (type.equals("short")) {
+                result = "sh_" + suffix;
             } else {
+                System.out.println("else=====================================");
                 return "Invalid type";
             }
 
@@ -433,6 +446,7 @@ public final class OCLAssembler extends Assembler {
     }
 
     public String toString(Value value) {
+        // System.out.println("Val " + value.toString());
         String result = "";
         if (value instanceof Variable) {
             Variable var = (Variable) value;
@@ -994,6 +1008,7 @@ public final class OCLAssembler extends Assembler {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb, Value x, Value y, Value z) {
+            System.out.println("xxxxx");
             final OCLAssembler asm = crb.getAssembler();
             emitOpcode(asm);
             asm.emit("(");
