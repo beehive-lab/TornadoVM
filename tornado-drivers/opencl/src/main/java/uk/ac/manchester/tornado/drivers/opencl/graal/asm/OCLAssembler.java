@@ -110,6 +110,10 @@ public final class OCLAssembler extends Assembler {
                 result = "ch_" + suffix;
             } else if (type.equals("atomic_add_float")) {
                 result = "adf_" + suffix;
+            } else if (type.equals("atomic_add_long")) {
+                result = "adl_" + suffix;
+            } else if (type.equals("atomic_add_double")) {
+                result = "addo_" + suffix;
             } else if (type.equals("atomic_add_int")) {
                 result = "adi_" + suffix;
             } else if (type.equals("float2")) {
@@ -117,7 +121,7 @@ public final class OCLAssembler extends Assembler {
             } else if (type.equals("short")) {
                 result = "sh_" + suffix;
             } else {
-                System.out.println("else=====================================");
+                System.out.println("else=====================================  " + type.toLowerCase());
                 return "Invalid type";
             }
 
