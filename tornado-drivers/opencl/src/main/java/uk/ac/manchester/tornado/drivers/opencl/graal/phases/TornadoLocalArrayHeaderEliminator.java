@@ -10,19 +10,18 @@ import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.phases.BasePhase;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
-//TODO: Make this optional for native types
 public class TornadoLocalArrayHeaderEliminator extends BasePhase<TornadoHighTierContext> {
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
         for (ReadNode r : graph.getNodes().filter(ReadNode.class)) {
-            if (r.inputs().filter(OffsetAddressNode.class).isNotEmpty()) {
+            if (r.inputs().filter(OffsetAddressNode.class).isNotEmpty() && r.getLocationIdentity().isAny()) {
                 OffsetAddressNode offsetAddressNode = r.inputs().filter(OffsetAddressNode.class).first();
                 removeHeaderBytesOffset(offsetAddressNode);
             }
         }
 
         for (WriteNode wr : graph.getNodes().filter(WriteNode.class)) {
-            if (wr.inputs().filter(OffsetAddressNode.class).isNotEmpty()) {
+            if (wr.inputs().filter(OffsetAddressNode.class).isNotEmpty() && wr.getLocationIdentity().isAny()) {
                 OffsetAddressNode offsetAddressNode = wr.inputs().filter(OffsetAddressNode.class).first();
                 removeHeaderBytesOffset(offsetAddressNode);
             }
