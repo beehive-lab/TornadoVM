@@ -31,6 +31,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.LONG;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.ULONG;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.graalvm.compiler.asm.AbstractAddress;
@@ -55,6 +56,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 public final class OCLAssembler extends Assembler {
 
     private static final boolean EMIT_INTRINSICS = false;
+    private static HashMap<Value, String> normalizeVariableNames;
     private int indent;
     private int lastIndent;
     private String delimiter;
@@ -69,6 +71,7 @@ public final class OCLAssembler extends Assembler {
         emitEOL = true;
         operandStack = new ArrayList<>(10);
         pushToStack = false;
+        normalizeVariableNames = new HashMap<Value, String>();
 
         if (((OCLTargetDescription) target).supportsFP64()) {
             emitLine("#pragma OPENCL EXTENSION cl_khr_fp64 : enable  ");
@@ -83,52 +86,67 @@ public final class OCLAssembler extends Assembler {
         }
     }
 
-    public static String convertFormat(String input) {
-        String[] parts = input.split("\\|");
+    public static String convertFormat(Value input) {
+        String type = input.getPlatformKind().name().toLowerCase();
+        String suffix = input.toString();
+        String result;
 
-        // System.out.println("fff " + input);
-        if (parts.length == 2) {
-            String suffix = parts[0].substring(1);
-            String type = parts[1].toLowerCase();
-            String result = "";
+        // Extract the index value between "v" and "|"
+        // v10|DOUBLE --> v->indexValue<-|
+        int startIndex = suffix.indexOf("v") + 1;
+        int endIndex = suffix.indexOf("|");
+        String indexValue = suffix.substring(startIndex, endIndex);
 
-            if (type.equals("ulong")) {
-                result = "ul_" + suffix;
-            } else if (type.equals("int")) {
-                result = "i_" + suffix;
-            } else if (type.equals("long")) {
-                result = "l_" + suffix;
-            } else if (type.equals("bool")) {
-                result = "b_" + suffix;
-            } else if (type.equals("double")) {
-                result = "d_" + suffix;
-            } else if (type.equals("byte")) {
-                result = "bt_" + suffix;
-            } else if (type.equals("float")) {
-                result = "f_" + suffix;
-            } else if (type.equals("char")) {
-                result = "ch_" + suffix;
-            } else if (type.equals("atomic_add_float")) {
-                result = "adf_" + suffix;
-            } else if (type.equals("atomic_add_long")) {
-                result = "adl_" + suffix;
-            } else if (type.equals("atomic_add_double")) {
-                result = "addo_" + suffix;
-            } else if (type.equals("atomic_add_int")) {
-                result = "adi_" + suffix;
-            } else if (type.equals("float2")) {
-                result = "vf2_" + suffix;
-            } else if (type.equals("short")) {
-                result = "sh_" + suffix;
-            } else {
-                System.out.println("else=====================================  " + type.toLowerCase());
+        switch (type) {
+            case "ulong":
+                result = "ul_" + indexValue;
+                break;
+            case "int":
+                result = "i_" + indexValue;
+                break;
+            case "long":
+                result = "l_" + indexValue;
+                break;
+            case "bool":
+                result = "b_" + indexValue;
+                break;
+            case "double":
+                result = "d_" + indexValue;
+                break;
+            case "byte":
+                result = "bt_" + indexValue;
+                break;
+            case "float":
+                result = "f_" + indexValue;
+                break;
+            case "char":
+                result = "ch_" + indexValue;
+                break;
+            case "atomic_add_float":
+                result = "adf_" + indexValue;
+                break;
+            case "atomic_add_long":
+                result = "adl_" + indexValue;
+                break;
+            case "atomic_add_double":
+                result = "addo_" + indexValue;
+                break;
+            case "atomic_add_int":
+                result = "adi_" + indexValue;
+                break;
+            case "float2":
+                result = "vf2_" + indexValue;
+                break;
+            case "short":
+                result = "sh_" + indexValue;
+                break;
+            default:
                 return "Invalid type";
-            }
-
-            return result;
-        } else {
-            return "Invalid input format";
         }
+
+        normalizeVariableNames.putIfAbsent(input, result);
+
+        return result;
     }
 
     private void emitAtomicIntrinsics() {
@@ -450,24 +468,24 @@ public final class OCLAssembler extends Assembler {
     }
 
     public String toString(Value value) {
-        // System.out.println("Val " + value.toString());
         String result = "";
         if (value instanceof Variable) {
             Variable var = (Variable) value;
-
-            // return var.toString();
-            return convertFormat(var.toString());
+            return convertFormat(var);
         } else if (value instanceof ConstantValue) {
             if (!((ConstantValue) value).isJavaConstant()) {
                 shouldNotReachHere("constant value: ", value);
             }
             ConstantValue cv = (ConstantValue) value;
+            System.out.println("+++ " + value.toString());
+
             return formatConstant(cv);
         } else if (value instanceof OCLNullary.Parameter) {
             /*
              * This case covers when we want to pass a caller method parameter further down
              * to a callee and there is no assignment of the parameter inside the caller.
              */
+            System.out.println("000 " + value.toString());
             return value.toString();
         } else {
             unimplemented("value: toString() type=%s, value=%s", value.getClass().getName(), value);
@@ -480,6 +498,16 @@ public final class OCLAssembler extends Assembler {
             ((OCLReturnSlot) value).emit(crb, this);
         } else {
             emit(toString(value));
+        }
+    }
+
+    public void emitValueWithFormat(OCLCompilationResultBuilder crb, Value value) {
+        if (value instanceof OCLReturnSlot) {
+            ((OCLReturnSlot) value).emit(crb, this);
+        } else {
+            System.out.println("ccc");
+            emit(OCLAssembler.convertFormat(value));
+            System.out.println("ccc");
         }
     }
 
