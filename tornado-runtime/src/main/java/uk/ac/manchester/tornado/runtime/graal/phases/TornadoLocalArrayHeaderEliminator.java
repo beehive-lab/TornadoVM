@@ -1,4 +1,4 @@
-package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
+package uk.ac.manchester.tornado.runtime.graal.phases;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.StructuredGraph;
