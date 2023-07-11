@@ -29,10 +29,16 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import jdk.incubator.foreign.MemorySegment;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
@@ -60,6 +66,7 @@ import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVDoubleArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVFloatArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVIntArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVLongArrayWrapper;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMemorySegmentWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMultiDimArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVObjectWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVShortArrayWrapper;
@@ -304,6 +311,24 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
                 throw new RuntimeException("Atomic Integers not supported yet");
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 return new SPIRVVectorWrapper(deviceContext, object, batchSize);
+            } else if (object instanceof MemorySegment) {
+                MemorySegment segment = (MemorySegment) object;
+                return new SPIRVMemorySegmentWrapper(segment, getDeviceContext());
+            } else if (object instanceof IntArray) {
+                MemorySegment segment = ((IntArray) object).getSegment();
+                return new SPIRVMemorySegmentWrapper(segment, getDeviceContext());
+            } else if (object instanceof FloatArray) {
+                MemorySegment segment = ((FloatArray) object).getSegment();
+                return new SPIRVMemorySegmentWrapper(segment, getDeviceContext());
+            } else if (object instanceof DoubleArray) {
+                MemorySegment segment = ((DoubleArray) object).getSegment();
+                return new SPIRVMemorySegmentWrapper(segment, getDeviceContext());
+            } else if (object instanceof LongArray) {
+                MemorySegment segment = ((LongArray) object).getSegment();
+                return new SPIRVMemorySegmentWrapper(segment, getDeviceContext());
+            } else if (object instanceof ShortArray) {
+                MemorySegment segment = ((ShortArray) object).getSegment();
+                return new SPIRVMemorySegmentWrapper(segment, getDeviceContext());
             } else {
                 // Possible a vector type, we encapsulate in an object
                 return new SPIRVObjectWrapper(deviceContext, object);

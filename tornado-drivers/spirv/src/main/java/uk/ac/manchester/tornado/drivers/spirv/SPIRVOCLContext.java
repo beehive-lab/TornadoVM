@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SPIRVOCLContext extends SPIRVContext {
 
@@ -114,6 +113,11 @@ public class SPIRVOCLContext extends SPIRVContext {
     }
 
     @Override
+    public int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, long hostpointer, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
+        throw new RuntimeException("Unimplemented");
+    }
+
+    @Override
     public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
         throw new RuntimeException("Unimplemented");
     }
@@ -145,6 +149,11 @@ public class SPIRVOCLContext extends SPIRVContext {
 
     @Override
     public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
+        throw new RuntimeException("Unimplemented");
+    }
+
+    @Override
+    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, long hostpointer, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
         throw new RuntimeException("Unimplemented");
     }
 

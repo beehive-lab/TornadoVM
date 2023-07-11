@@ -43,16 +43,25 @@ import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryInt
 import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntBinaryIntrinsicNode.SPIRVIntOperation.MAX;
 import static uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntBinaryIntrinsicNode.SPIRVIntOperation.MIN;
 
+import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.MulNode;
+import org.graalvm.compiler.nodes.extended.JavaReadNode;
+import org.graalvm.compiler.nodes.extended.JavaWriteNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import org.graalvm.compiler.nodes.memory.OnHeapMemoryAccess;
+import org.graalvm.compiler.nodes.memory.address.AddressNode;
+import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
+import org.graalvm.word.LocationIdentity;
 
+import jdk.incubator.foreign.MemorySegment;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -91,6 +100,7 @@ public class SPIRVGraphBuilderPlugins {
         registerTornadoVMIntrinsicsPlugins(plugins);
         registerOpenCLBuiltinPlugins(invocationPlugins);
 
+        registerMemoryAccessPlugins(invocationPlugins);
         // Register plugins for the new API
         registerKernelContextPlugins(invocationPlugins);
 
@@ -212,6 +222,57 @@ public class SPIRVGraphBuilderPlugins {
                 return true;
             }
         });
+    }
+
+    private static void registerMemoryAccessPlugins(InvocationPlugins plugins) {
+        Registration r = new Registration(plugins, jdk.incubator.foreign.MemoryAccess.class);
+
+        for (JavaKind kind : JavaKind.values()) {
+            if (kind == JavaKind.Object || kind == JavaKind.Void || kind == JavaKind.Illegal) {
+                continue;
+            }
+            r.register(new InvocationPlugin("get" + kind.name() + "AtIndex", MemorySegment.class, long.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index) {
+                    MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
+                    AddressNode addressNode = b.append(new OffsetAddressNode(segment, mulNode));
+                    JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), OnHeapMemoryAccess.BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+                    b.addPush(kind, readNode);
+                    return true;
+                }
+            });
+
+            r.register(new InvocationPlugin("set" + kind.name() + "AtIndex", MemorySegment.class, long.class, kind.toJavaClass()) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode value) {
+                    MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
+                    AddressNode addressNode = b.append(new OffsetAddressNode(segment, mulNode));
+                    JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, OnHeapMemoryAccess.BarrierType.NONE, false);
+                    b.add(writeNode);
+                    return true;
+                }
+            });
+
+            r.register(new InvocationPlugin("get" + kind.name() + "AtOffset", MemorySegment.class, long.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode offset) {
+                    AddressNode addressNode = b.append(new OffsetAddressNode(segment, offset));
+                    JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), OnHeapMemoryAccess.BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+                    b.addPush(kind, readNode);
+                    return true;
+                }
+            });
+
+            r.register(new InvocationPlugin("set" + kind.name() + "AtOffset", MemorySegment.class, long.class, kind.toJavaClass()) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode offset, ValueNode value) {
+                    AddressNode addressNode = b.append(new OffsetAddressNode(segment, offset));
+                    JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, OnHeapMemoryAccess.BarrierType.NONE, false);
+                    b.add(writeNode);
+                    return true;
+                }
+            });
+        }
     }
 
     private static void registerFPIntrinsics(Registration r) {
