@@ -55,7 +55,8 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
 
     public OCLAddressNode(ValueNode base, ValueNode index, OCLMemoryBase memoryRegister) {
         super(TYPE);
-        System.out.println("Base " + base.toString() + " index : " + index.toString() + " memory reg " + memoryRegister.getName());
+        // System.out.println("Base " + base.toString() + " index : " + index.toString()
+        // + " memory reg " + memoryRegister.getName());
         this.base = base;
         this.index = index;
         this.memoryRegister = memoryRegister;
