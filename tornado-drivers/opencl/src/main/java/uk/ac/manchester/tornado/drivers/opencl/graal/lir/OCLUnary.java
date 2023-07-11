@@ -255,6 +255,8 @@ public class OCLUnary {
         private final OCLMemoryBase base;
         private Value index;
 
+        private String normalizeIndex;
+
         MemoryAccess(OCLMemoryBase base, Value value) {
             super(null, LIRKind.Illegal, value);
             this.base = base;
@@ -264,6 +266,7 @@ public class OCLUnary {
             super(null, LIRKind.Illegal, value);
             this.base = base;
             this.index = index;
+            this.normalizeIndex = toNormalizeVariable();
         }
 
         @Override

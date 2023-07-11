@@ -40,7 +40,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.meta.OCLMemorySpace;
 
 public class OCLLIRStmt {
 
-    protected static abstract class AbstractInstruction extends LIRInstruction {
+    protected abstract static class AbstractInstruction extends LIRInstruction {
 
         protected AbstractInstruction(LIRInstructionClass<? extends AbstractInstruction> c) {
             super(c);
@@ -837,21 +837,42 @@ public class OCLLIRStmt {
 
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            System.out.println("Emit vstore" + op.toString() + " " + rhs.toString());
+            System.out.println("Emit vstore " + op.toString() + " " + rhs.toString() + " " + address.toString() + " index " + index.toString());
             asm.indent();
             asm.emit(op.toString());
             asm.emit("(");
-            // asm.emitValue(crb, OCLAssembler.convertFormat(rhs.toString()));
-            asm.emitValue(crb, rhs);
+            // Value.
+            asm.emitValueWithFormat(crb, rhs);
+            // asm.emitValue(crb, rhs);
             asm.emit(", ");
-            asm.emitValue(crb, index);
+            System.out.println("HERE IS THE 0");
+            // asm.emit();
+            // asm.emitValue(crb, index);
+            asm.emit(absoluteIndex(index));
             asm.emit(", ");
+            System.out.println("HERE IS THE 1");
+
             cast.emit(crb, asm);
+            System.out.println("HERE IS THE 2");
+
             asm.space();
-            address.emit(crb, asm);
+            // address.emit(crb, asm);
+            address.emit(crb);// asm.emitValueWithFormat(crb, address);
+            System.out.println("HERE IS THE");
             asm.emit(")");
             asm.delimiter();
             asm.eol();
+            System.out.println("Emit vstore" + " END!!!");
+
+        }
+
+        private String absoluteIndex(Value value) {
+            System.out.println("val index " + value.toString());
+            int startIndex = value.toString().indexOf('[') + 1;
+            int endIndex = value.toString().indexOf('|');
+
+            return value.toString().substring(startIndex, endIndex).trim();
+
         }
 
         public Value getRhs() {

@@ -55,6 +55,7 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
 
     public OCLAddressNode(ValueNode base, ValueNode index, OCLMemoryBase memoryRegister) {
         super(TYPE);
+        System.out.println("Base " + base.toString() + " index : " + index.toString() + " memory reg " + memoryRegister.getName());
         this.base = base;
         this.index = index;
         this.memoryRegister = memoryRegister;
@@ -79,6 +80,8 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
             }
         }
 
+        // System.out.println("IIIdx 1 " + baseValue.toString());
+        // System.out.println("IIIdx 2 " + index.toString());
         Value indexValue = index == null ? Value.ILLEGAL : gen.operand(index);
         if (index == null) {
             gen.setResult(this, new MemoryAccess(memoryRegister, baseValue));
@@ -112,9 +115,12 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
 
     private void setMemoryAccess(NodeLIRBuilderTool gen, Value baseValue, Value indexValue, OCLLIRGenerator tool) {
         Variable addressValue;
+
         if (isLocalMemoryAccess() || isPrivateMemoryAccess()) {
+            System.out.println("New memory access " + memoryRegister.getName() + " base: " + baseValue.toString() + " indexbal " + indexValue.toString());
             gen.setResult(this, new MemoryAccess(memoryRegister, baseValue, indexValue));
         } else {
+            System.out.println("2New memory access " + memoryRegister.getName() + " base: " + baseValue.toString() + " indexbal " + indexValue.toString());
             addressValue = tool.getArithmetic().emitAdd(baseValue, indexValue, false);
             gen.setResult(this, new MemoryAccess(memoryRegister, addressValue));
         }

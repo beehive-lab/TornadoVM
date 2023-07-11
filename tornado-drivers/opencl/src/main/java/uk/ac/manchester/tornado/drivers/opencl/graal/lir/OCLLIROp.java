@@ -51,4 +51,7 @@ public abstract class OCLLIROp extends Value {
         return (platformKind instanceof OCLKind) ? (OCLKind) platformKind : OCLKind.ILLEGAL;
     }
 
+    public String toNormalizeVariable() {
+        return OCLAssembler.convertFormat(this);
+    }
 }

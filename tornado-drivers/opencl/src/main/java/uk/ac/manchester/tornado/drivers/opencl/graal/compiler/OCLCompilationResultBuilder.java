@@ -195,7 +195,8 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     private static void emitOp(CompilationResultBuilder crb, LIRInstruction op) {
         try {
             trace("op: " + op);
-            // System.out.println("OP : " + op.id() + " " + op.name());
+            // System.out.println("OP : " + op.id() + " " + op.name() + " " +
+            // op.toString());
             op.emitCode(crb);
         } catch (AssertionError | RuntimeException t) {
             throw new TornadoInternalError(t);
@@ -218,7 +219,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             } else if (b == loopHeader) {
                 return true;
             } else {
-
                 HIRBlock[] successors = IntStream.range(0, b.getSuccessorCount()).mapToObj(b::getSuccessorAt).toArray(HIRBlock[]::new);
                 for (HIRBlock successor : successors) {
                     if (!visited.contains(successor)) {
@@ -358,7 +358,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             }
 
             try {
-                // System.out.println("xxx : " + op.ge);
+                // System.out.println("xxx : " + op.toString());
                 emitOp(this, op);
             } catch (TornadoInternalError e) {
                 throw e.addContext("lir instruction", block + "@" + op.id() + " " + op + "\n");

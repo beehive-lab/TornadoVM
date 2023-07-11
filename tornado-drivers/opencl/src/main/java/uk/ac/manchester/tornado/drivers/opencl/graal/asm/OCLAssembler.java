@@ -96,7 +96,7 @@ public final class OCLAssembler extends Assembler {
         int startIndex = suffix.indexOf("v") + 1;
         int endIndex = suffix.indexOf("|");
         String indexValue = suffix.substring(startIndex, endIndex);
-
+        System.out.println(" xxx " + type);
         switch (type) {
             case "ulong":
                 result = "ul_" + indexValue;
@@ -135,7 +135,64 @@ public final class OCLAssembler extends Assembler {
                 result = "adi_" + indexValue;
                 break;
             case "float2":
-                result = "vf2_" + indexValue;
+                result = "v2f_" + indexValue;
+                break;
+            case "float3":
+                result = "v3f_" + indexValue;
+                break;
+            case "float4":
+                result = "v4f_" + indexValue;
+                break;
+            case "float8":
+                result = "v8f_" + indexValue;
+                break;
+            case "int2":
+                result = "v2int_" + indexValue;
+                break;
+            case "int3":
+                result = "v3int_" + indexValue;
+                break;
+            case "int4":
+                result = "v4int_" + indexValue;
+                break;
+            case "int8":
+                result = "v8int_" + indexValue;
+                break;
+            case "double2":
+                result = "v2d_" + indexValue;
+                break;
+            case "double3":
+                result = "v3d_" + indexValue;
+                break;
+            case "double4":
+                result = "v4d_" + indexValue;
+                break;
+            case "double8":
+                result = "v8d_" + indexValue;
+                break;
+            case "char2":
+                result = "ch2_" + indexValue;
+                break;
+            case "char3":
+                result = "ch3_" + indexValue;
+                break;
+            case "char4":
+                result = "ch4_" + indexValue;
+                break;
+            case "char8":
+                result = "ch8_" + indexValue;
+                break;
+            case "byte2":
+                result = "b2_" + indexValue;
+                break;
+            case "byte3":
+                result = "b3_" + indexValue;
+                break;
+            case "byte4":
+                result = "b4_" + indexValue;
+                break;
+            case "byte8":
+                result = "b8_" + indexValue;
                 break;
             case "short":
                 result = "sh_" + indexValue;
@@ -498,6 +555,7 @@ public final class OCLAssembler extends Assembler {
             ((OCLReturnSlot) value).emit(crb, this);
         } else {
             emit(toString(value));
+            // emit(OCLAssembler.convertFormat(value));
         }
     }
 
@@ -566,6 +624,7 @@ public final class OCLAssembler extends Assembler {
     }
 
     public void emitValueOrOp(OCLCompilationResultBuilder crb, Value value) {
+        System.out.println("emit value or op " + value.toString());
         if (value instanceof OCLLIROp) {
             ((OCLLIROp) value).emit(crb, this);
         } else {

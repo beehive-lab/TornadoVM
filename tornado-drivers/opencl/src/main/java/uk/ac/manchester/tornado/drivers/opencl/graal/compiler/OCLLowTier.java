@@ -26,7 +26,6 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
 import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
-import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Required;
 
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.AddressLoweringByNodePhase;
@@ -63,12 +62,12 @@ public class OCLLowTier extends TornadoLowTier {
 
         appendPhase(new OCLFP64SupportPhase(tornadoDeviceContext));
 
-        // appendPhase(new RemoveValueProxyPhase(canonicalizer));
-
         appendPhase(new LowTierLoweringPhase(canonicalizer));
 
+        // appendPhase(new RemoveValueProxyPhase(canonicalizer));
+
         if (ConditionalElimination.getValue(options)) {
-            appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, false));
+            appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, true));
         }
 
         // TODO Investigate why FixReads break kfusion on Nvidia GPUs
@@ -79,7 +78,7 @@ public class OCLLowTier extends TornadoLowTier {
 
         appendPhase(new AddressLoweringByNodePhase(addressLowering));
 
-        appendPhase(new DeadCodeEliminationPhase(Required));
+        appendPhase(new DeadCodeEliminationPhase(DeadCodeEliminationPhase.Optionality.Required));
 
         if (tornadoDeviceContext.isPlatformFPGA()) {
             appendPhase(new OCLFPGAPragmaPhase(tornadoDeviceContext));

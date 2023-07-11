@@ -20,7 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
@@ -40,7 +39,6 @@ import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.HighTierLoweringPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
-import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
@@ -60,6 +58,7 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLocalMemoryAllocation;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoPartialInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoShapeAnalysis;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeCleanup;
 
 public class OCLHighTier extends TornadoHighTier {
 
@@ -88,7 +87,10 @@ public class OCLHighTier extends TornadoHighTier {
 
         appendPhase(new TornadoNewArrayDevirtualizationReplacement());
 
-        // appendPhase(new TornadoValueTypeCleanup());
+        if (PartialEscapeAnalysis.getValue(options)) {
+            appendPhase(new PartialEscapePhase(true, canonicalizer, options));
+        }
+        appendPhase(new TornadoValueTypeCleanup());
 
         if (OptConvertDeoptsToGuards.getValue(options)) {
             appendPhase(new ConvertDeoptimizeToGuardPhase(canonicalizer));
@@ -104,16 +106,13 @@ public class OCLHighTier extends TornadoHighTier {
             appendPhase(new LoopFullUnrollPhase(canonicalizer, loopPolicies));
         }
 
-        appendPhase(canonicalizer);
-        appendPhase(new RemoveValueProxyPhase(canonicalizer));
+        // appendPhase(canonicalizer);
+        // appendPhase(new RemoveValueProxyPhase(canonicalizer));
         appendPhase(canonicalizer);
         appendPhase(new DeadCodeEliminationPhase(Optional));
 
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
 
-        if (PartialEscapeAnalysis.getValue(options)) {
-            appendPhase(new PartialEscapePhase(true, canonicalizer, options));
-        }
         appendPhase(new HighTierLoweringPhase(canonicalizer));
 
         // After the first Lowering, TornadoVM replaces reductions with snippets
