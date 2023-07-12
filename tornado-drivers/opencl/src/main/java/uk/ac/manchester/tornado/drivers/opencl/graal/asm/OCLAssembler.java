@@ -31,6 +31,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.LONG;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.ULONG;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.graalvm.compiler.asm.AbstractAddress;
@@ -45,6 +46,7 @@ import jdk.vm.ci.hotspot.HotSpotObjectConstant;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
@@ -83,118 +85,29 @@ public final class OCLAssembler extends Assembler {
         }
     }
 
-    public static String convertFormat(Value input) {
+    /**
+     * It converts the format of a Value input to a specific format based on its
+     * platform type.
+     *
+     * @param input
+     *            The {@link Value} input to convert.
+     * @return The converted format string.
+     */
+    public static String convertValueFromGraalFormat(Value input) {
         String type = input.getPlatformKind().name().toLowerCase();
-        String suffix = input.toString();
         String result;
 
         // Extract the index value between "v" and "|"
         // v10|DOUBLE --> v->indexValue<-|
-        int startIndex = suffix.indexOf("v") + 1;
-        int endIndex = suffix.indexOf("|");
-        String indexValue = suffix.substring(startIndex, endIndex);
-        switch (type) {
-            case "ulong":
-                result = "ul_" + indexValue;
-                break;
-            case "int":
-                result = "i_" + indexValue;
-                break;
-            case "long":
-                result = "l_" + indexValue;
-                break;
-            case "bool":
-                result = "b_" + indexValue;
-                break;
-            case "double":
-                result = "d_" + indexValue;
-                break;
-            case "byte":
-                result = "bt_" + indexValue;
-                break;
-            case "float":
-                result = "f_" + indexValue;
-                break;
-            case "char":
-                result = "ch_" + indexValue;
-                break;
-            case "atomic_add_float":
-                result = "adf_" + indexValue;
-                break;
-            case "atomic_add_long":
-                result = "adl_" + indexValue;
-                break;
-            case "atomic_add_double":
-                result = "addo_" + indexValue;
-                break;
-            case "atomic_add_int":
-                result = "adi_" + indexValue;
-                break;
-            case "float2":
-                result = "v2f_" + indexValue;
-                break;
-            case "float3":
-                result = "v3f_" + indexValue;
-                break;
-            case "float4":
-                result = "v4f_" + indexValue;
-                break;
-            case "float8":
-                result = "v8f_" + indexValue;
-                break;
-            case "int2":
-                result = "v2int_" + indexValue;
-                break;
-            case "int3":
-                result = "v3int_" + indexValue;
-                break;
-            case "int4":
-                result = "v4int_" + indexValue;
-                break;
-            case "int8":
-                result = "v8int_" + indexValue;
-                break;
-            case "double2":
-                result = "v2d_" + indexValue;
-                break;
-            case "double3":
-                result = "v3d_" + indexValue;
-                break;
-            case "double4":
-                result = "v4d_" + indexValue;
-                break;
-            case "double8":
-                result = "v8d_" + indexValue;
-                break;
-            case "char2":
-                result = "ch2_" + indexValue;
-                break;
-            case "char3":
-                result = "ch3_" + indexValue;
-                break;
-            case "char4":
-                result = "ch4_" + indexValue;
-                break;
-            case "char8":
-                result = "ch8_" + indexValue;
-                break;
-            case "byte2":
-                result = "b2_" + indexValue;
-                break;
-            case "byte3":
-                result = "b3_" + indexValue;
-                break;
-            case "byte4":
-                result = "b4_" + indexValue;
-                break;
-            case "byte8":
-                result = "b8_" + indexValue;
-                break;
-            case "short":
-                result = "sh_" + indexValue;
-                break;
-            default:
-                return "Invalid type";
+        String indexValue = getAbsoluteIndexFromValue(input).replace("v", "");
+
+        // Find the matching TypePrefix enum for the given type
+        OCLVariablePrefix typePrefix = Arrays.stream(OCLVariablePrefix.values()).filter(tp -> tp.getType().equals(type)).findFirst().orElse(null);
+
+        if (typePrefix != null) {
+            result = typePrefix.getPrefix() + indexValue;
+        } else {
+            throw new TornadoRuntimeException("Unsupported type: " + type);
         }
 
         return result;
@@ -203,9 +116,9 @@ public final class OCLAssembler extends Assembler {
     /**
      * It retrieves the absolute index from the given Value object.
      *
-     * @param {@link
-     *            Value} the Value object to extract the index from. It should be in
-     *            the format "int[20|0x14]".
+     * @param value
+     *            the {@link Value} object to extract the index from. It should be
+     *            in the format "int[20|0x14]".
      * @return the absolute index as a String
      */
     public static String getAbsoluteIndexFromValue(Value value) {
@@ -537,7 +450,7 @@ public final class OCLAssembler extends Assembler {
         String result = "";
         if (value instanceof Variable) {
             Variable var = (Variable) value;
-            return convertFormat(var);
+            return convertValueFromGraalFormat(var);
         } else if (value instanceof ConstantValue) {
             if (!((ConstantValue) value).isJavaConstant()) {
                 shouldNotReachHere("constant value: ", value);
@@ -569,7 +482,7 @@ public final class OCLAssembler extends Assembler {
         if (value instanceof OCLReturnSlot) {
             ((OCLReturnSlot) value).emit(crb, this);
         } else {
-            emit(OCLAssembler.convertFormat(value));
+            emit(OCLAssembler.convertValueFromGraalFormat(value));
         }
     }
 

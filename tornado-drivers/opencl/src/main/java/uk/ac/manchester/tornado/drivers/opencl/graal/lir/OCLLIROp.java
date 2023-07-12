@@ -52,6 +52,6 @@ public abstract class OCLLIROp extends Value {
     }
 
     public String toNormalizeVariable() {
-        return OCLAssembler.convertFormat(this);
+        return OCLAssembler.convertValueFromGraalFormat(this);
     }
 }
