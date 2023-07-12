@@ -61,7 +61,6 @@ public class OCLVectorAssign {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            System.out.println("In emit vector === " + opcode.toString());
             asm.emit(opcode.toString());
             asm.emit("(");
             asm.emitValueOrOp(crb, s0);

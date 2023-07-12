@@ -31,7 +31,6 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.LONG;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.ULONG;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import org.graalvm.compiler.asm.AbstractAddress;
@@ -56,7 +55,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 public final class OCLAssembler extends Assembler {
 
     private static final boolean EMIT_INTRINSICS = false;
-    private static HashMap<Value, String> normalizeVariableNames;
     private int indent;
     private int lastIndent;
     private String delimiter;
@@ -71,7 +69,6 @@ public final class OCLAssembler extends Assembler {
         emitEOL = true;
         operandStack = new ArrayList<>(10);
         pushToStack = false;
-        normalizeVariableNames = new HashMap<Value, String>();
 
         if (((OCLTargetDescription) target).supportsFP64()) {
             emitLine("#pragma OPENCL EXTENSION cl_khr_fp64 : enable  ");
@@ -96,7 +93,6 @@ public final class OCLAssembler extends Assembler {
         int startIndex = suffix.indexOf("v") + 1;
         int endIndex = suffix.indexOf("|");
         String indexValue = suffix.substring(startIndex, endIndex);
-        System.out.println(" xxx " + type);
         switch (type) {
             case "ulong":
                 result = "ul_" + indexValue;
@@ -201,9 +197,22 @@ public final class OCLAssembler extends Assembler {
                 return "Invalid type";
         }
 
-        normalizeVariableNames.putIfAbsent(input, result);
-
         return result;
+    }
+
+    /**
+     * It retrieves the absolute index from the given Value object.
+     *
+     * @param {@link
+     *            Value} the Value object to extract the index from. It should be in
+     *            the format "int[20|0x14]".
+     * @return the absolute index as a String
+     */
+    public static String getAbsoluteIndexFromValue(Value value) {
+        int startIndex = value.toString().indexOf('[') + 1;
+        int endIndex = value.toString().indexOf('|');
+
+        return value.toString().substring(startIndex, endIndex).trim();
     }
 
     private void emitAtomicIntrinsics() {
@@ -534,15 +543,12 @@ public final class OCLAssembler extends Assembler {
                 shouldNotReachHere("constant value: ", value);
             }
             ConstantValue cv = (ConstantValue) value;
-            System.out.println("+++ " + value.toString());
-
             return formatConstant(cv);
         } else if (value instanceof OCLNullary.Parameter) {
             /*
              * This case covers when we want to pass a caller method parameter further down
              * to a callee and there is no assignment of the parameter inside the caller.
              */
-            System.out.println("000 " + value.toString());
             return value.toString();
         } else {
             unimplemented("value: toString() type=%s, value=%s", value.getClass().getName(), value);
@@ -563,9 +569,7 @@ public final class OCLAssembler extends Assembler {
         if (value instanceof OCLReturnSlot) {
             ((OCLReturnSlot) value).emit(crb, this);
         } else {
-            System.out.println("ccc");
             emit(OCLAssembler.convertFormat(value));
-            System.out.println("ccc");
         }
     }
 
@@ -592,7 +596,6 @@ public final class OCLAssembler extends Assembler {
         if (((OCLKind) condition.getPlatformKind()) == OCLKind.INT) {
             emit(" == 1");
         }
-        // value(crb, condition);
 
         emitSymbol(OCLAssemblerConstants.CLOSE_PARENTHESIS);
         eol();
@@ -624,7 +627,6 @@ public final class OCLAssembler extends Assembler {
     }
 
     public void emitValueOrOp(OCLCompilationResultBuilder crb, Value value) {
-        System.out.println("emit value or op " + value.toString());
         if (value instanceof OCLLIROp) {
             ((OCLLIROp) value).emit(crb, this);
         } else {
@@ -1099,7 +1101,6 @@ public final class OCLAssembler extends Assembler {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb, Value x, Value y, Value z) {
-            System.out.println("xxxxx");
             final OCLAssembler asm = crb.getAssembler();
             emitOpcode(asm);
             asm.emit("(");

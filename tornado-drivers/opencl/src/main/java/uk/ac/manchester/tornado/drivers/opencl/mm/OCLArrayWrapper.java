@@ -67,9 +67,6 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
         arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
         arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
-        // arrayHeaderSize = 24;
-        System.out.println("arr " + arrayLengthOffset);
-        System.out.println("header s " + arrayHeaderSize);
     }
 
     protected OCLArrayWrapper(final T array, final OCLDeviceContext device, final JavaKind kind, long batchSize) {
@@ -151,11 +148,9 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         final OCLByteBuffer header = getArrayHeader();
         int index = 0;
         while (index < arrayLengthOffset) {
-            System.out.println("pUT");
             header.buffer.put((byte) 0);
             index++;
         }
-        System.out.println("ARRAY SIZE : " + arraySize);
         header.buffer.putInt((int) arraySize);
         return header;
     }
@@ -232,8 +227,6 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     protected abstract int enqueueWriteArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
     private OCLByteBuffer getArrayHeader() {
-        System.out.println("xx" + bufferOffset + " " + arrayHeaderSize + " " + bufferId);
-
         final OCLByteBuffer header = new OCLByteBuffer(deviceContext, bufferId, bufferOffset, arrayHeaderSize);
         header.buffer.clear();
         return header;

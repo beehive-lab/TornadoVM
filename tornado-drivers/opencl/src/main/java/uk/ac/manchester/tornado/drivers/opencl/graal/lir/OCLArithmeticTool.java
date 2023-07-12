@@ -368,7 +368,6 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         guarantee(kind.getPlatformKind() instanceof OCLKind, "invalid LIRKind: %s", kind);
         OCLKind oclKind = (OCLKind) kind.getPlatformKind();
 
-        System.out.println("add " + address.toString() + " in " + input.toString());
         MemoryAccess memAccess = null;
         Value accumulator = null;
         if (address instanceof MemoryAccess) {
@@ -381,8 +380,6 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
             OCLTernaryIntrinsic intrinsic = VectorUtil.resolveStoreIntrinsic(oclKind);
             assert memAccess != null;
             OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind.getElementKind()));
-            System.out.println("emit ve sto re: ");
-            System.out.println("intr " + intrinsic.toString() + " offset " + getOffsetValue(oclKind, memAccess) + " cast " + cast + " memacc " + memAccess + " index is -->" + input.toString());
             getGen().append(new VectorStoreStmt(intrinsic, getOffsetValue(oclKind, memAccess), cast, memAccess, input));
         } else {
 
@@ -484,38 +481,23 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
      * @return {@link Value }
      */
     private Value getPrivateOffsetValue(OCLKind oclKind, MemoryAccess memoryAccess) {
-        Value privateOffsetValue = null;
         if (memoryAccess == null) {
             return null;
         }
-        System.out.println(" Private offset " + memoryAccess.getIndex().toString() + " vector lengt " + oclKind.getVectorLength());
         if (memoryAccess.getIndex() instanceof ConstantValue) {
             ConstantValue constantValue = (ConstantValue) memoryAccess.getIndex();
             int parsedIntegerIndex = Integer.parseInt(constantValue.getConstant().toValueString());
             int index = parsedIntegerIndex / oclKind.getVectorLength();
-            privateOffsetValue = new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(index));
+            return new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(index));
         }
-        // TODO: Here is the issue
-        int index = Integer.parseInt(absoluteIndex(memoryAccess.getIndex())) / oclKind.getVectorLength();
-        // return memoryAccess.getIndex();
+        int index = Integer.parseInt(OCLAssembler.getAbsoluteIndexFromValue(memoryAccess.getIndex())) / oclKind.getVectorLength();
         return new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(index));
     }
 
-    private String absoluteIndex(Value value) {
-        System.out.println("val index " + value.toString());
-        int startIndex = value.toString().indexOf('[') + 1;
-        int endIndex = value.toString().indexOf('|');
-
-        return value.toString().substring(startIndex, endIndex).trim();
-
-    }
-
     private Value getOffsetValue(OCLKind oclKind, MemoryAccess memoryAccess) {
-        System.out.println("Mem " + oclKind.toString() + " mem" + memoryAccess.getBase().getMemorySpace().name());
         if (memoryAccess.getBase().getMemorySpace() == OCLMemorySpace.GLOBAL.getBase().getMemorySpace()) {
             return new ConstantValue(LIRKind.value(OCLKind.INT), PrimitiveConstant.INT_0);
         } else {
-            System.out.println("Memory " + memoryAccess.toString());
             return getPrivateOffsetValue(oclKind, memoryAccess);
         }
     }

@@ -358,7 +358,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             }
 
             try {
-                // System.out.println("xxx : " + op.toString());
                 emitOp(this, op);
             } catch (TornadoInternalError e) {
                 throw e.addContext("lir instruction", block + "@" + op.id() + " " + op + "\n");
