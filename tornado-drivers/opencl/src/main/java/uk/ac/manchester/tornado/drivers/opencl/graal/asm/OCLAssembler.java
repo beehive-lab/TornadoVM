@@ -99,7 +99,7 @@ public final class OCLAssembler extends Assembler {
 
         // Extract the index value between "v" and "|"
         // v10|DOUBLE --> v->indexValue<-|
-        String indexValue = getAbsoluteIndexFromValue(input).replace("v", "");
+        String indexValue = getAbsoluteIndexFromValue(input);
 
         // Find the matching TypePrefix enum for the given type
         OCLVariablePrefix typePrefix = Arrays.stream(OCLVariablePrefix.values()).filter(tp -> tp.getType().equals(type)).findFirst().orElse(null);
@@ -125,7 +125,7 @@ public final class OCLAssembler extends Assembler {
         int startIndex = value.toString().indexOf('[') + 1;
         int endIndex = value.toString().indexOf('|');
 
-        return value.toString().substring(startIndex, endIndex).trim();
+        return value.toString().substring(startIndex, endIndex).trim().replace("v", "");
     }
 
     private void emitAtomicIntrinsics() {
@@ -190,7 +190,7 @@ public final class OCLAssembler extends Assembler {
 
     @Override
     public void halt() {
-
+        // TODO Auto-generated method stub
     }
 
     @Override
@@ -474,7 +474,6 @@ public final class OCLAssembler extends Assembler {
             ((OCLReturnSlot) value).emit(crb, this);
         } else {
             emit(toString(value));
-            // emit(OCLAssembler.convertFormat(value));
         }
     }
 
