@@ -318,7 +318,7 @@ public class SPIRVCompiler {
     }
 
     public static SPIRVCompilationResult compileSketchForDevice(Sketch sketch, CompilableTask task, SPIRVProviders providers, SPIRVBackend backend, TornadoProfiler profiler) {
-        final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().getReadonlyCopy().copy(getDebugContext());
+        final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().copy(getDebugContext());
         ResolvedJavaMethod resolvedJavaMethod = kernelGraph.method();
 
         TornadoLogger.info("Compiling sketch %s on %s", resolvedJavaMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
@@ -370,7 +370,7 @@ public class SPIRVCompiler {
         while (!workList.isEmpty()) {
             final ResolvedJavaMethod currentMethod = workList.pop();
             Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getDriverIndex(), taskMeta.getDeviceIndex());
-            final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().getMutableCopy(null);
+            final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().copy(getDebugContext());
 
             final SPIRVCompilationResult compilationResult = new SPIRVCompilationResult(task.getId(), currentMethod.getName(), taskMeta);
 

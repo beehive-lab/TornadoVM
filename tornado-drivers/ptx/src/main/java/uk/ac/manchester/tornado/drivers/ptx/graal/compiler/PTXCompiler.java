@@ -254,7 +254,7 @@ public class PTXCompiler {
     }
 
     public static PTXCompilationResult compileSketchForDevice(Sketch sketch, CompilableTask task, PTXProviders providers, PTXBackend backend, TornadoProfiler profiler) {
-        final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().getReadonlyCopy().copy(getDebugContext());
+        final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().copy(getDebugContext());
         ResolvedJavaMethod resolvedMethod = kernelGraph.method();
 
         info("Compiling sketch %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
@@ -322,7 +322,7 @@ public class PTXCompiler {
             }
             Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
             final PTXCompilationResult compResult = new PTXCompilationResult(currentMethod.getName(), taskMeta);
-            final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().getMutableCopy(null);
+            final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().copy(getDebugContext());
 
             // @formatter:off
             PTXCompilationRequest methodCompilationRequest = PTXCompilationRequest.PTXCompilationRequestBuilder.getInstance().withGraph(graph)

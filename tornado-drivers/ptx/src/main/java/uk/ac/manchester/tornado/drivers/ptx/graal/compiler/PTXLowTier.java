@@ -52,7 +52,6 @@ public class PTXLowTier extends TornadoLowTier {
     public PTXLowTier(OptionValues options, TornadoDeviceContext tornadoDeviceContext, AddressLoweringByNodePhase.AddressLowering addressLowering) {
         this.tornadoDeviceContext = tornadoDeviceContext;
         CanonicalizerPhase canonicalizer = CanonicalizerPhase.create();
-        // appendPhase(new RemoveValueProxyPhase(canonicalizer));
 
         appendPhase(new LowTierLoweringPhase(canonicalizer));
 
@@ -89,6 +88,5 @@ public class PTXLowTier extends TornadoLowTier {
         if (TornadoOptions.DUMP_LOW_TIER_WITH_IGV) {
             appendPhase(new DumpLowTierGraph());
         }
-
     }
 }

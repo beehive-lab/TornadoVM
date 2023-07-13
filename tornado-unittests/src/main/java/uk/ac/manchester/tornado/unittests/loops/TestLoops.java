@@ -50,6 +50,266 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
+    public static void forConstant02(int[] a, final int n) {
+        for (@Parallel int i = 0; i <= n; i++) {
+            a[i] = 10;
+        }
+    }
+
+    public static void forConstant03(int[] a, int n) {
+        for (@Parallel int i = 0; i < n; i++) {
+            a[i] = 10;
+        }
+    }
+
+    public static void forConstant04(Matrix2DFloat m, int n) {
+        for (@Parallel int i = 0; i <= n; i++) {
+            for (@Parallel int j = 0; j <= n; j++) {
+                m.set(i, j, 10);
+            }
+        }
+    }
+
+    public static void forConstant05(Matrix2DFloat m, int n) {
+        for (@Parallel int i = 0; i < n; i++) {
+            for (@Parallel int j = 0; j < n; j++) {
+                m.set(i, j, 10);
+            }
+        }
+    }
+
+    public static void forConstant06(Matrix2DFloat m2, int n, int m) {
+        for (@Parallel int i = 0; i <= n; i++) {
+            for (@Parallel int j = 0; j <= m; j++) {
+                m2.set(i, j, 10);
+            }
+        }
+    }
+
+    public static void forLoopOneD(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = 10;
+        }
+    }
+
+    public static void steppedLoop(int[] a, int size) {
+        for (@Parallel int i = 0; i < size; i += 2) {
+            a[i] = 200;
+        }
+    }
+
+    public static void steppedLoop2(int[] a, int size) {
+        for (@Parallel int i = 0; i < size; i += 2) {
+            a[i] = 200;
+            a[i + 1] = 200;
+        }
+    }
+
+    public static void steppedLoop3(int[] a, int size) {
+        for (@Parallel int i = 0; i < size; i += 3) {
+            a[i] = 200;
+            a[i + 1] = 200;
+            a[i + 2] = 200;
+        }
+    }
+
+    public static void steppedLoop4(int[] a, int size) {
+        for (@Parallel int i = 0; i < size; i += 4) {
+            a[i] = 200;
+        }
+    }
+
+    public static void steppedLoop5(int[] a, int size) {
+        for (@Parallel int i = 0; i < size; i += 3) {
+            a[i] = 200;
+        }
+    }
+
+    public static void steppedLoop7(int[] a, int size) {
+        for (@Parallel int i = 0; i < size; i += 7) {
+            a[i] = 200;
+        }
+    }
+
+    public static void steppedLoop10(int[] a, int size) {
+        for (@Parallel int i = 0; i < size; i += 10) {
+            a[i] = 200;
+        }
+    }
+
+    public static void conditionalInLoop(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            if (i == 4) {
+                a[i] = 4;
+            } else {
+                a[i] = 10;
+            }
+        }
+    }
+
+    public static void conditionalInLoop2(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            if (i != 4) {
+                a[i] = 10;
+            }
+        }
+    }
+
+    public static void conditionalIfElseLoop(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            if (i == 4) {
+                a[i] = 4;
+            } else if (i == 5) {
+                a[i] = 5;
+            } else {
+                a[i] = 10;
+            }
+        }
+    }
+
+    public static void twoDLoop(int[][] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            for (int j = 0; j < a[i].length; j++) {
+                a[i][j] = 10;
+            }
+        }
+    }
+
+    public static void nestedForLoopOneDArray(int[] a, int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                a[i * size + j] = 10;
+            }
+        }
+    }
+
+    public static void nestedForLoopTwoDArray(int[][] a, int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                a[i][j] = 10;
+            }
+        }
+    }
+
+    // TODO: Thi is a bad test, compiler strips down all control flow and codegen
+    /*-
+     * __kernel void controlFlowBreak(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global uchar *a)
+     * {
+     *   ulong ul_1, ul_0;
+     *
+     *   // BLOCK 0
+     *   ul_0  =  (ulong) a;
+     *   ul_1  =  ul_0 + 32L;
+     *   *((__global int *) ul_1)  =  4;
+     *   return;
+     * }  //  kernel
+     */
+    public static void controlFlowBreak(int[] a) {
+        for (int i = 0; i < a.length; i++) {
+            if (i == 4) {
+                a[i] = 4;
+                break;
+            }
+        }
+    }
+
+    // This test actually prevents optimizing the associated control flow
+    public static void controlFlowBreak2(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            if (a[i] == 2) {
+                a[i] = 10;
+                break;
+            }
+        }
+    }
+
+    public static void controlFlowContinue(int[] a) {
+        for (int i = 0; i < a.length; i++) {
+            if (i == 4) {
+                continue;
+            }
+            a[i] = 150;
+        }
+    }
+
+    public static void nested2ParallelLoops(int[] a, int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (@Parallel int j = 0; j < size; j++) {
+                a[i * size + j] = 10;
+            }
+        }
+    }
+
+    public static void whileLoop(int[] a, int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            int y = 0;
+            while (y < size) {
+                a[i * size + y] = 10;
+                y++;
+            }
+        }
+    }
+
+    public static void dowWhileLoop(int[] a, int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            int y = 1;
+            do {
+                a[i * size + y] = 10;
+                y++;
+            } while (y < size);
+        }
+    }
+
+    public static void forEach(int[] a, int[] c, int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            int idx = 0;
+            for (int j : a) {
+                c[idx] = j + 1;
+                idx++;
+            }
+        }
+    }
+
+    public static void reverseLoop(int[] a) {
+        for (@Parallel int i = a.length - 1; i >= 0; i--) {
+            a[i] = 10;
+        }
+    }
+
+    private static void testSingleThreadLoopCond(int[] in, int[] out) {
+        int otherCompVal = in[0];
+        int i = 0;
+        for (; i < in.length / 4 - 1; i++) {
+            int someNumber = getNumber(in, i, i % 4, 4);
+            in[i] = someNumber + i;
+        }
+
+        if (i == otherCompVal) {
+            int someNumber = getNumber(in, i, i % 4, 4) + 1000;
+            out[i] = someNumber;
+        }
+    }
+
+    private static int getNumber(int[] in, int base, int offset, int multiplier) {
+        // Perform some address computation
+        return in[base * multiplier + offset];
+    }
+
+    private static void testMultipleThreadLoopCond(int[] in, int[] out) {
+        int otherCompVal = in[0];
+
+        @Parallel int i = 0;
+        for (; i < in.length / 4 - 1; i++) {
+            int someNumber = getNumber(in, i, i % 4, 4);
+            in[i] = someNumber + i;
+        }
+
+        if (i == otherCompVal) {
+            int someNumber = getNumber(in, i, i % 4, 4) + 1000;
+            out[i] = someNumber;
+        }
+    }
+
     @Test
     public void testForConstant01() {
         final int size = 256;
@@ -65,12 +325,6 @@ public class TestLoops extends TornadoTestBase {
 
         for (int value : a) {
             assertEquals(10, value);
-        }
-    }
-
-    public static void forConstant02(int[] a, final int n) {
-        for (@Parallel int i = 0; i <= n; i++) {
-            a[i] = 10;
         }
     }
 
@@ -91,12 +345,6 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    public static void forConstant03(int[] a, int n) {
-        for (@Parallel int i = 0; i < n; i++) {
-            a[i] = 10;
-        }
-    }
-
     @Test
     public void testForConstant03() {
         int size = 256;
@@ -112,14 +360,6 @@ public class TestLoops extends TornadoTestBase {
 
         for (int value : a) {
             assertEquals(10, value);
-        }
-    }
-
-    public static void forConstant04(Matrix2DFloat m, int n) {
-        for (@Parallel int i = 0; i <= n; i++) {
-            for (@Parallel int j = 0; j <= n; j++) {
-                m.set(i, j, 10);
-            }
         }
     }
 
@@ -142,14 +382,6 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    public static void forConstant05(Matrix2DFloat m, int n) {
-        for (@Parallel int i = 0; i < n; i++) {
-            for (@Parallel int j = 0; j < n; j++) {
-                m.set(i, j, 10);
-            }
-        }
-    }
-
     @Test
     public void testForConstant05() {
         int size = 256;
@@ -165,14 +397,6 @@ public class TestLoops extends TornadoTestBase {
         for (int i = 0; i < m.getNumRows(); i++) {
             for (int j = 0; j < m.getNumColumns(); j++) {
                 assertEquals(10.0f, m.get(i, j), 0.001f);
-            }
-        }
-    }
-
-    public static void forConstant06(Matrix2DFloat m2, int n, int m) {
-        for (@Parallel int i = 0; i <= n; i++) {
-            for (@Parallel int j = 0; j <= m; j++) {
-                m2.set(i, j, 10);
             }
         }
     }
@@ -197,12 +421,6 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    public static void forLoopOneD(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = 10;
-        }
-    }
-
     @Test
     public void testForLoopOneD() {
         final int size = 10;
@@ -220,12 +438,6 @@ public class TestLoops extends TornadoTestBase {
 
         for (int j : a) {
             assertEquals(10, j);
-        }
-    }
-
-    public static void steppedLoop(int[] a, int size) {
-        for (@Parallel int i = 0; i < size; i += 2) {
-            a[i] = 200;
         }
     }
 
@@ -251,13 +463,6 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    public static void steppedLoop2(int[] a, int size) {
-        for (@Parallel int i = 0; i < size; i += 2) {
-            a[i] = 200;
-            a[i + 1] = 200;
-        }
-    }
-
     @Test
     public void testStepLoop2() {
         final int size = 512;
@@ -274,14 +479,6 @@ public class TestLoops extends TornadoTestBase {
 
         for (int i = 0; i < size; i++) {
             assertEquals(200, a[i]);
-        }
-    }
-
-    public static void steppedLoop3(int[] a, int size) {
-        for (@Parallel int i = 0; i < size; i += 3) {
-            a[i] = 200;
-            a[i + 1] = 200;
-            a[i + 2] = 200;
         }
     }
 
@@ -305,12 +502,6 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    public static void steppedLoop4(int[] a, int size) {
-        for (@Parallel int i = 0; i < size; i += 4) {
-            a[i] = 200;
-        }
-    }
-
     @Test
     public void testStepLoop4() {
         final int size = 512;
@@ -330,12 +521,6 @@ public class TestLoops extends TornadoTestBase {
             for (int j = (i + 1); j < (i + 4) && j < size; j++) {
                 assertEquals(75, a[j]);
             }
-        }
-    }
-
-    public static void steppedLoop5(int[] a, int size) {
-        for (@Parallel int i = 0; i < size; i += 3) {
-            a[i] = 200;
         }
     }
 
@@ -362,12 +547,6 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    public static void steppedLoop7(int[] a, int size) {
-        for (@Parallel int i = 0; i < size; i += 7) {
-            a[i] = 200;
-        }
-    }
-
     @Test
     public void testStepLoop7() {
         final int size = 512;
@@ -390,12 +569,6 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    public static void steppedLoop10(int[] a, int size) {
-        for (@Parallel int i = 0; i < size; i += 10) {
-            a[i] = 200;
-        }
-    }
-
     @Test
     public void testStepLoop10() {
         final int size = 2048;
@@ -414,16 +587,6 @@ public class TestLoops extends TornadoTestBase {
             assertEquals(200, a[i]);
             for (int j = (i + 1); j < (i + 10) && j < size; j++) {
                 assertEquals(75, a[j]);
-            }
-        }
-    }
-
-    public static void conditionalInLoop(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            if (i == 4) {
-                a[i] = 4;
-            } else {
-                a[i] = 10;
             }
         }
     }
@@ -454,14 +617,6 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    public static void conditionalInLoop2(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            if (i != 4) {
-                a[i] = 10;
-            }
-        }
-    }
-
     @Test
     public void testIfInsideForLoop2() {
         final int size = 10;
@@ -483,18 +638,6 @@ public class TestLoops extends TornadoTestBase {
                 assertEquals(1, a[i]);
             } else {
                 assertEquals(10, a[i]);
-            }
-        }
-    }
-
-    public static void conditionalIfElseLoop(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            if (i == 4) {
-                a[i] = 4;
-            } else if (i == 5) {
-                a[i] = 5;
-            } else {
-                a[i] = 10;
             }
         }
     }
@@ -522,14 +665,6 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    public static void twoDLoop(int[][] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            for (int j = 0; j < a[i].length; j++) {
-                a[i][j] = 10;
-            }
-        }
-    }
-
     @Ignore
     public void testTwoDLoopTwoDArray() {
         final int size = 10;
@@ -546,14 +681,6 @@ public class TestLoops extends TornadoTestBase {
         for (int[] ints : a) {
             for (int anInt : ints) {
                 assertEquals(10, anInt);
-            }
-        }
-    }
-
-    public static void nestedForLoopOneDArray(int[] a, int size) {
-        for (@Parallel int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
-                a[i * size + j] = 10;
             }
         }
     }
@@ -575,14 +702,6 @@ public class TestLoops extends TornadoTestBase {
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 assertEquals(10, a[i * size + j]);
-            }
-        }
-    }
-
-    public static void nestedForLoopTwoDArray(int[][] a, int size) {
-        for (@Parallel int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
-                a[i][j] = 10;
             }
         }
     }
@@ -611,27 +730,10 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    public static void controlFlowBreak(int[] a) {
-        for (int i = 0; i < a.length; i++) {
-            if (i == 4) {
-                a[i] = 4;
-                break;
-            }
-        }
-    }
-
-    public static void controlFlowBreak2(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            if (a[i] == 2) {
-                a[i] = 10;
-                break;
-            }
-        }
-    }
-
     /*
      * This test is failing, the reason is that the runtime does not copy in the
      * variable a, just copy out
+     *
      */
     @Test
     public void testLoopControlFlowBreak() {
@@ -683,15 +785,6 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    public static void controlFlowContinue(int[] a) {
-        for (int i = 0; i < a.length; i++) {
-            if (i == 4) {
-                continue;
-            }
-            a[i] = 150;
-        }
-    }
-
     @Test
     public void testLoopControlFlowContinue() {
         final int size = 10;
@@ -714,14 +807,6 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    public static void nested2ParallelLoops(int[] a, int size) {
-        for (@Parallel int i = 0; i < size; i++) {
-            for (@Parallel int j = 0; j < size; j++) {
-                a[i * size + j] = 10;
-            }
-        }
-    }
-
     @Test
     public void testNestedForLoopOneDArray2() {
         final int size = 10;
@@ -740,16 +825,6 @@ public class TestLoops extends TornadoTestBase {
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 assertEquals(10, a[i * size + j]);
-            }
-        }
-    }
-
-    public static void whileLoop(int[] a, int size) {
-        for (@Parallel int i = 0; i < size; i++) {
-            int y = 0;
-            while (y < size) {
-                a[i * size + y] = 10;
-                y++;
             }
         }
     }
@@ -778,16 +853,6 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    public static void dowWhileLoop(int[] a, int size) {
-        for (@Parallel int i = 0; i < size; i++) {
-            int y = 1;
-            do {
-                a[i * size + y] = 10;
-                y++;
-            } while (y < size);
-        }
-    }
-
     @Ignore
     public void testInnerDoWhileLoop() {
         final int size = 100;
@@ -808,16 +873,6 @@ public class TestLoops extends TornadoTestBase {
             while (y < size) {
                 assertEquals(10, a[i * size + y]);
                 y++;
-            }
-        }
-    }
-
-    public static void forEach(int[] a, int[] c, int size) {
-        for (@Parallel int i = 0; i < size; i++) {
-            int idx = 0;
-            for (int j : a) {
-                c[idx] = j + 1;
-                idx++;
             }
         }
     }
@@ -845,12 +900,6 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    public static void reverseLoop(int[] a) {
-        for (@Parallel int i = a.length - 1; i >= 0; i--) {
-            a[i] = 10;
-        }
-    }
-
     @TornadoNotSupported
     public void testReverseOrderLoops() {
         final int size = 10;
@@ -870,25 +919,6 @@ public class TestLoops extends TornadoTestBase {
         for (int j = 0; j < size; j++) {
             assertEquals(10, a[j]);
         }
-    }
-
-    private static void testSingleThreadLoopCond(int[] in, int[] out) {
-        int otherCompVal = in[0];
-        int i = 0;
-        for (; i < in.length / 4 - 1; i++) {
-            int someNumber = getNumber(in, i, i % 4, 4);
-            in[i] = someNumber + i;
-        }
-
-        if (i == otherCompVal) {
-            int someNumber = getNumber(in, i, i % 4, 4) + 1000;
-            out[i] = someNumber;
-        }
-    }
-
-    private static int getNumber(int[] in, int base, int offset, int multiplier) {
-        // Perform some address computation
-        return in[base * multiplier + offset];
     }
 
     /**
@@ -924,21 +954,6 @@ public class TestLoops extends TornadoTestBase {
         testSingleThreadLoopCond(inSeq, outSeq);
 
         Assert.assertArrayEquals(outSeq, outTor);
-    }
-
-    private static void testMultipleThreadLoopCond(int[] in, int[] out) {
-        int otherCompVal = in[0];
-
-        @Parallel int i = 0;
-        for (; i < in.length / 4 - 1; i++) {
-            int someNumber = getNumber(in, i, i % 4, 4);
-            in[i] = someNumber + i;
-        }
-
-        if (i == otherCompVal) {
-            int someNumber = getNumber(in, i, i % 4, 4) + 1000;
-            out[i] = someNumber;
-        }
     }
 
     @Test
