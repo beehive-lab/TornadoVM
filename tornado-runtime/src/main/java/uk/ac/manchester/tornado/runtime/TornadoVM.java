@@ -100,7 +100,13 @@ public class TornadoVM extends TornadoLogger {
      * @return An {@link Event} indicating the completion of execution.
      */
     public Event execute() {
-        return executeInterpreterThreadManager();
+        if (calculateNumberOfJavaThreads() != 1) {
+            return executeInterpreterThreadManager();
+        } else {
+            // TODO: This is a temporary workaround until refactoring the
+            // DynamicReconfiguration
+            return tornadoVMInterpreters[0].execute(false);
+        }
     }
 
     private int calculateNumberOfJavaThreads() {
