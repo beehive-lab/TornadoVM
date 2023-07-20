@@ -215,7 +215,7 @@ class TornadoVMRunnerTool():
                 sys.exit(0)
 
         if (args.dump_profiler != None):
-            tornadoFlags = tornadoFlags + __TORNADOVM_DUMP_PROFILER__ + " " + args.dump_profiler + " "
+            tornadoFlags = tornadoFlags + __TORNADOVM_DUMP_PROFILER__ + args.dump_profiler + " "
             
         tornadoFlags = tornadoFlags + "-Djava.library.path=" + self.sdk + "/lib "
         if (self.java_version == 8):
