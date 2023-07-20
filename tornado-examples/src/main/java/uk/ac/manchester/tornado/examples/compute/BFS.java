@@ -201,7 +201,7 @@ public class BFS {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, vertices, modify);
 
         ImmutableTaskGraph immutableTaskGraph1 = taskGraph1.snapshot();
-        TornadoExecutionPlan executor1 = new TornadoExecutionPlan(immutableTaskGraph) //
+        TornadoExecutionPlan executor1 = new TornadoExecutionPlan(immutableTaskGraph1) //
                 .withDevice(device);
 
         boolean done = false;
