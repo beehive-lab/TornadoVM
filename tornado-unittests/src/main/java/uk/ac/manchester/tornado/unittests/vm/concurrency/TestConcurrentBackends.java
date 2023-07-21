@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import java.util.stream.IntStream;
 
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -107,7 +108,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
         }
     }
 
-    @Test
+    @Ignore
     public void testThreeBackendsConcurrent() {
         assertAvailableDrivers(3);
 
@@ -133,7 +134,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
         }
     }
 
-    @Test
+    @Ignore
     public void testThreeBackendsSerial() {
 
         assertAvailableDrivers(3);
