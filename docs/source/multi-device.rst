@@ -69,6 +69,7 @@ In the given example, we have specified the device assignments for each task of 
 * *-Dblur.blue.device=0:0* This specifies that the blue task of the BlurFilter will also run on device 0:0 (NVIDIA GeForce RTX 3070).
 
 The expected output after execution:
+
 .. code:: bash
 
         Task info: blur.red
@@ -143,11 +144,15 @@ To improve performance and run tasks concurrently on multiple devices, use the -
 
 .. code:: bash
 
-    $ tornado --threadInfo --enableConcurrentDevices --printBytecodes  --jvm=" -Dblur.red.device=0:0 -Dblur.green.device=0:1 -Dblur.blue.device=0:0" -m  tornado.examples/uk.ac.manchester.tornado.examples.compute.BlurFilter
+    $ tornado --threadInfo --enableConcurrentDevices \
+        --printBytecodes \
+        --jvm=" -Dblur.red.device=0:0 -Dblur.green.device=0:1 -Dblur.blue.device=0:0" \
+        -m  tornado.examples/uk.ac.manchester.tornado.examples.compute.BlurFilter
 
 By adding the --enableConcurrentDevices flag, one VM per device will be spawned through a Java thread-pool, allowing both devices to run concurrently.
 
 The expected output after execution:
+
 .. code:: bash
 
         Task info: blur.red
