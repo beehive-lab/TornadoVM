@@ -138,13 +138,14 @@ public class TornadoSketcher {
             if (Tornado.DEBUG) {
                 e.printStackTrace();
             }
-            if (e.getCause() instanceof TornadoRuntimeException) {
-                throw (TornadoRuntimeException) e.getCause();
+            final Throwable cause = e.getCause();
+            if (cause instanceof TornadoRuntimeException) {
+                throw (TornadoRuntimeException) cause;
             }
-            if (e.getCause() instanceof TornadoBailoutRuntimeException) {
-                throw (TornadoBailoutRuntimeException) e.getCause();
+            if (cause instanceof TornadoBailoutRuntimeException) {
+                throw (TornadoBailoutRuntimeException) cause;
             }
-            throw new TornadoInternalError(e);
+            throw new TornadoInternalError(cause);
         }
         return sketch;
     }

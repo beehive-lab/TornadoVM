@@ -69,7 +69,7 @@ public class TestExecutor extends TornadoTestBase {
 
         // Select the default device for the execution plan. This is optional: if no
         // device is specified, TornadoVM will launch kernels on the default device.
-        // However, developers could print device information from the default devic.
+        // However, developers could print device information from the default device.
         TornadoDevice defaultDevice = TornadoExecutionPlan.DEFAULT_DEVICE;
 
         // e.g., Query the device name

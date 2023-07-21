@@ -32,6 +32,7 @@ import subprocess
 import sys
 import time
 
+
 class TestEntry:
     def __init__(self, testName, testMethods=None, testParameters=None):
         self.testName = testName
@@ -60,62 +61,64 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestDoubles"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestInts"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestVectorAllocation"),
-    TestEntry("uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest"), 
-    TestEntry("uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer"),   
-    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice"),     
-    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice"), 
-    TestEntry("uk.ac.manchester.tornado.unittests.temporary.values.TestTemporaryValues"), 
-    TestEntry("uk.ac.manchester.tornado.unittests.images.TestImages"),  
-    TestEntry("uk.ac.manchester.tornado.unittests.images.TestResizeImage"),  
-    TestEntry("uk.ac.manchester.tornado.unittests.branching.TestConditionals"),  
-    TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoops"),  
-    TestEntry("uk.ac.manchester.tornado.unittests.loops.TestParallelDimensions"),  
-    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers"),  
-    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats"),  
+    TestEntry("uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest"),
+    TestEntry("uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer"),
+    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice"),
+    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice"),
+    TestEntry("uk.ac.manchester.tornado.unittests.temporary.values.TestTemporaryValues"),
+    TestEntry("uk.ac.manchester.tornado.unittests.images.TestImages"),
+    TestEntry("uk.ac.manchester.tornado.unittests.images.TestResizeImage"),
+    TestEntry("uk.ac.manchester.tornado.unittests.branching.TestConditionals"),
+    TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoops"),
+    TestEntry("uk.ac.manchester.tornado.unittests.loops.TestParallelDimensions"),
+    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers"),
+    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles"),
-    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsLong"),  
+    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsLong"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.InstanceReduction"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.MultipleReductions"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsAutomatic"),
-    TestEntry("uk.ac.manchester.tornado.unittests.instances.TestInstances"),  
+    TestEntry("uk.ac.manchester.tornado.unittests.instances.TestInstances"),
     TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes"),
-    TestEntry("uk.ac.manchester.tornado.unittests.api.TestAPI"), 
-    TestEntry("uk.ac.manchester.tornado.unittests.api.TestIO"),  
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestAPI"),
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestIO"),
     TestEntry("uk.ac.manchester.tornado.unittests.executor.TestExecutor"),
-    TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),         
-    TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"), 
-    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestCombinedTaskGraph"),  
+    TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),
+    TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestCombinedTaskGraph"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestVectorAdditionKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.KernelContextWorkGroupTests"),
-    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext"), 
-    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsIntegersKernelContext"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsIntegersKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsFloatsKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsDoublesKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsLongKernelContext"),
-    TestEntry("uk.ac.manchester.tornado.unittests.math.TestMath"),        
-    TestEntry("uk.ac.manchester.tornado.unittests.batches.TestBatches"),  
-    TestEntry("uk.ac.manchester.tornado.unittests.lambdas.TestLambdas"), 
-    TestEntry("uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap"), 
-    TestEntry("uk.ac.manchester.tornado.unittests.logic.TestLogic"),     
-    TestEntry("uk.ac.manchester.tornado.unittests.fields.TestFields"),   
-    TestEntry("uk.ac.manchester.tornado.unittests.profiler.TestProfiler"), 
-    TestEntry("uk.ac.manchester.tornado.unittests.bitsets.BitSetTests"),   
-    TestEntry("uk.ac.manchester.tornado.unittests.fails.TestFails"),       
-    TestEntry("uk.ac.manchester.tornado.unittests.fails.RuntimeFail"),     
-    TestEntry("uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection"), 
-    TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestNewArrays"),  
-    TestEntry("uk.ac.manchester.tornado.unittests.dynsize.Resize"),       
-    TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations"),   
-    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion"), 
-    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Types"),    
-    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Inlining"), 
-    TestEntry("uk.ac.manchester.tornado.unittests.fails.CodeFail"),        
+    TestEntry("uk.ac.manchester.tornado.unittests.math.TestMath"),
+    TestEntry("uk.ac.manchester.tornado.unittests.batches.TestBatches"),
+    TestEntry("uk.ac.manchester.tornado.unittests.lambdas.TestLambdas"),
+    TestEntry("uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap"),
+    TestEntry("uk.ac.manchester.tornado.unittests.logic.TestLogic"),
+    TestEntry("uk.ac.manchester.tornado.unittests.fields.TestFields"),
+    TestEntry("uk.ac.manchester.tornado.unittests.profiler.TestProfiler"),
+    TestEntry("uk.ac.manchester.tornado.unittests.bitsets.BitSetTests"),
+    TestEntry("uk.ac.manchester.tornado.unittests.fails.TestFails"),
+    TestEntry("uk.ac.manchester.tornado.unittests.fails.RuntimeFail"),
+    TestEntry("uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection"),
+    TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestNewArrays"),
+    TestEntry("uk.ac.manchester.tornado.unittests.dynsize.Resize"),
+    TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations"),
+    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion"),
+    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Types"),
+    TestEntry("uk.ac.manchester.tornado.unittests.numpromotion.Inlining"),
+    TestEntry("uk.ac.manchester.tornado.unittests.fails.CodeFail"),
     TestEntry("uk.ac.manchester.tornado.unittests.parameters.ParameterTests"),
-    TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGen"),       
-    TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),   
-    TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),  
-    TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"), 
-    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions"), 
+    TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGen"),
+    TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),
+    TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),
+    TestEntry("uk.ac.manchester.tornado.unittests.dynamic.TestDynamic"),
+    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions"),
+    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices"),
+    TestEntry("uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends"),
 
     ## Test for function calls - We force not to inline methods
     TestEntry(testName="uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions",
@@ -176,7 +179,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm2DKernelContext01",
     "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm2DKernelContext02",
 
-    # It might have errors during type casting and type conversion. However the fractals images look correct. 
+    # It might have errors during type casting and type conversion. However, the fractals images look correct.
     # This errors might be related to error precision when running many threads in parallel. 
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testMandelbrot",
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testJuliaSets",
@@ -186,26 +189,33 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
     ## Atomics
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic12",
+
+    ## Multi-backend 
+    "uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends#testTwoBackendsSerial",
+    "uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends#testTwoBackendsConcurrent",
+    "uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends#testThreeBackendsSerial",
+    "uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends#testThreeBackendsConcurrent",
+
 ]
 
 # ################################################################################################################
 ## Default options and flags
 # ################################################################################################################
 __MAIN_TORNADO_TEST_RUNNER_MODULE__ = " tornado.unittests/"
-__MAIN_TORNADO_TEST_RUNNER__        = "uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
-__MAIN_TORNADO_JUNIT_MODULE__       = " junit/"
-__MAIN_TORNADO_JUNIT__              = "org.junit.runner.JUnitCore "
-__IGV_OPTIONS__                     = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true "
-__IGV_LAST_PHASE__                  = "-Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true -Dtornado.debug.lowtier=True "
-__PRINT_OPENCL_KERNEL__             = "-Dtornado.print.kernel=True "
-__DEBUG_TORNADO__                   = "-Dtornado.debug=True "
-__TORNADOVM_FULLDEBUG__             = __DEBUG_TORNADO__ + "-Dtornado.fullDebug=True "
-__THREAD_INFO__                     = "-Dtornado.threadInfo=True "
-__PRINT_EXECUTION_TIMER__           = "-Dtornado.debug.executionTime=True "
-__GC__                              = "-Xmx6g "
-__BASE_OPTIONS__                    = "-Dtornado.recover.bailout=False "
-__VERBOSE_OPTION__                  = "-Dtornado.unittests.verbose="
-__TORNADOVM_PRINT_BC__              = "-Dtornado.print.bytecodes=True "
+__MAIN_TORNADO_TEST_RUNNER__ = "uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
+__MAIN_TORNADO_JUNIT_MODULE__ = " junit/"
+__MAIN_TORNADO_JUNIT__ = "org.junit.runner.JUnitCore "
+__IGV_OPTIONS__ = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true "
+__IGV_LAST_PHASE__ = "-Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true -Dtornado.debug.lowtier=True "
+__PRINT_OPENCL_KERNEL__ = "-Dtornado.print.kernel=True "
+__DEBUG_TORNADO__ = "-Dtornado.debug=True "
+__TORNADOVM_FULLDEBUG__ = __DEBUG_TORNADO__ + "-Dtornado.fullDebug=True "
+__THREAD_INFO__ = "-Dtornado.threadInfo=True "
+__PRINT_EXECUTION_TIMER__ = "-Dtornado.debug.executionTime=True "
+__GC__ = "-Xmx6g "
+__BASE_OPTIONS__ = "-Dtornado.recover.bailout=False "
+__VERBOSE_OPTION__ = "-Dtornado.unittests.verbose="
+__TORNADOVM_PRINT_BC__ = "-Dtornado.print.bytecodes=True "
 # ################################################################################################################
 
 TORNADO_CMD = "tornado "
@@ -221,6 +231,7 @@ except:
     sys.exit(-1)
 
 __TEST_NOT_PASSED__ = False
+
 
 class Colors:
     RED = "\033[1;31m"
@@ -404,7 +415,8 @@ def runTests(args):
             print(Colors.CYAN)
             print(stats)
             coverage = stats["[PASS]"] / float((stats["[PASS]"] + stats["[FAILED]"])) * 100.0
-            coverageTotal = stats["[PASS]"] / float((stats["[PASS]"] + stats["[FAILED]"] + stats["[UNSUPPORTED]"])) * 100.0
+            coverageTotal = stats["[PASS]"] / float(
+                (stats["[PASS]"] + stats["[FAILED]"] + stats["[UNSUPPORTED]"])) * 100.0
             print("Coverage [PASS/(PASS+FAIL)]: " + str(round(coverage, 2)) + "%")
             print("Coverage [PASS/(PASS+FAIL+UNSUPPORTED)]: " + str(round(coverageTotal, 2)) + "%")
             print(Colors.GREEN)
@@ -471,7 +483,8 @@ def runTestTheWorldWithJunit(args):
         command += " --params \"" + t.testName + "\""
         if t.testMethods:
             for testMethod in t.testMethods:
-                print("Unable to run specific test methods with the default JUnit runner: " + t.testName + "#" + testMethod)
+                print(
+                    "Unable to run specific test methods with the default JUnit runner: " + t.testName + "#" + testMethod)
         else:
             os.system(command)
 
@@ -494,9 +507,12 @@ def parseArguments():
     parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Dump GraalIR into IGV")
     parser.add_argument('--igvLowTier', action="store_true", dest="dumpIGVLastTier", default=False,
                         help="Dump OpenCL Low-TIER GraalIR into IGV")
-    parser.add_argument('--printBytecodes', "-pbc", action="store_true", dest="printBytecodes", default=False, help="Print TornadoVM internal bytecodes")
-    parser.add_argument('--debug', "-d", action="store_true", dest="debugTornado", default=False, help="Enable the Debug mode in Tornado")
-    parser.add_argument('--fullDebug', action="store_true", dest="fullDebug", default=False, help="Enable the Full Debug mode. This mode is more verbose compared to --debug only")
+    parser.add_argument('--printBytecodes', "-pbc", action="store_true", dest="printBytecodes", default=False,
+                        help="Print TornadoVM internal bytecodes")
+    parser.add_argument('--debug', "-d", action="store_true", dest="debugTornado", default=False,
+                        help="Enable the Debug mode in Tornado")
+    parser.add_argument('--fullDebug', action="store_true", dest="fullDebug", default=False,
+                        help="Enable the Full Debug mode. This mode is more verbose compared to --debug only")
     parser.add_argument('--fast', "-f", action="store_true", dest="fast", default=False, help="Visualize Fast")
     parser.add_argument('--device', dest="device", default=None, help="Set an specific device. E.g `s0.t0.device=0:1`")
     parser.add_argument('--printExec', dest="printExecution", action="store_true", default=False,

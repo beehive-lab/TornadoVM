@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2023 APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -20,7 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.runtime.graph;
@@ -32,9 +31,14 @@ import java.util.function.Predicate;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 
+/**
+ * The TornadoGraph class represents a graph data structure that stores nodes
+ * based on Task-graphs relationships. It provides methods to add, retrieve,
+ * delete, and filter nodes based on various criteria.
+ */
 public class TornadoGraph {
 
-    private final static int INITIAL_SIZE = 256;
+    private static final int INITIAL_SIZE = 256;
 
     private AbstractNode[] nodes;
     private BitSet valid;
@@ -111,9 +115,13 @@ public class TornadoGraph {
         pApply(valid, consumer);
     }
 
-    public void print() {
-        System.out.println("graph:");
+    public void dumpTornadoGraph() {
+        final String ANSI_CYAN = "\u001B[36m";
+        final String ANSI_RESET = "\u001B[0m";
+        System.out.println("-----------------------------------");
+        System.out.println(ANSI_CYAN + "TaskGraph:" + ANSI_RESET);
         apply(System.out::println);
+        System.out.println("-----------------------------------");
     }
 
     public BitSet getValid() {

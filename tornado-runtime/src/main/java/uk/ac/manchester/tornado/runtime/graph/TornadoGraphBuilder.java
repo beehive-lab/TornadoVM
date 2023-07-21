@@ -86,7 +86,19 @@ public class TornadoGraphBuilder {
         return ((ContextOpNode) arg).getContext().getUses().size() != 1 && contextNode.getDeviceIndex() != ((ContextOpNode) arg).getContext().getDeviceIndex();
     }
 
-    public static TornadoGraph buildGraph(TornadoExecutionContext graphContext, ByteBuffer buffer) {
+    /**
+     * It constructs a {@link TornadoGraph} from the provided
+     * {@link TornadoExecutionContext} and ByteBuffer.
+     *
+     * @param executionContext
+     *            The {@link TornadoExecutionContext} that contains the context of
+     *            the graph.
+     * @param buffer
+     *            The {@link ByteBuffer} containing the bytecode representation of
+     *            the graph.
+     * @return The constructed {@link TornadoGraph}.
+     */
+    public static TornadoGraph buildGraph(TornadoExecutionContext executionContext, ByteBuffer buffer) {
         TornadoGraph graph = new TornadoGraph();
         Access[] accesses = null;
         SchedulableTask task;
@@ -97,8 +109,8 @@ public class TornadoGraphBuilder {
         int argIndex = 0;
         int taskIndex = 0;
 
-        final List<Object> constants = graphContext.getConstants();
-        final List<Object> objects = graphContext.getObjects();
+        final List<Object> constants = executionContext.getConstants();
+        final List<Object> objects = executionContext.getObjects();
 
         final ConstantNode[] constantNodes = new ConstantNode[constants.size()];
         for (int i = 0; i < constants.size(); i++) {
@@ -112,7 +124,7 @@ public class TornadoGraphBuilder {
             graph.add(objectNodes[i]);
         }
 
-        final List<LocalObjectState> states = graphContext.getObjectStates();
+        final List<LocalObjectState> states = executionContext.getObjectStates();
 
         boolean shouldExit = false;
         while (!shouldExit && buffer.hasRemaining()) {
@@ -187,9 +199,9 @@ public class TornadoGraphBuilder {
             } else if (op == TornadoGraphBitcodes.CONTEXT.index()) {
                 final int globalTaskId = buffer.getInt();
                 taskIndex = buffer.getInt();
-                task = graphContext.getTask(taskIndex);
+                task = executionContext.getTask(taskIndex);
 
-                context = graph.addUnique(new ContextNode(graphContext.getDeviceIndexForTask(globalTaskId)));
+                context = graph.addUnique(new ContextNode(executionContext.getDeviceIndexForTask(globalTaskId)));
 
                 persist = graph.addUnique(new AllocateMultipleBuffersNode(context));
                 context.addUse(persist);
@@ -226,7 +238,7 @@ public class TornadoGraphBuilder {
         }
 
         // Add deallocate nodes to the graph for each copy-in/allocate/stream-in
-        final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
+        final BitSet asyncNodes = graph.filter(ContextOpNode.class::isInstance);
         int dependencyIndex = asyncNodes.previousSetBit(asyncNodes.length() - 1);
         ContextOpNode dependencyNode = (ContextOpNode) graph.getNode(dependencyIndex);
         for (int i = asyncNodes.nextSetBit(0); i != -1 && i < asyncNodes.length(); i = asyncNodes.nextSetBit(i + 1)) {

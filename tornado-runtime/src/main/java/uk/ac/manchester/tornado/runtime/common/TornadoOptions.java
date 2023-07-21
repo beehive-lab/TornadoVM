@@ -29,10 +29,6 @@ public class TornadoOptions {
 
     public static final String FALSE = "FALSE";
     public static final String TRUE = "TRUE";
-
-    public static String PROFILER_LOG = "tornado.log.profiler";
-    public static String PROFILER = "tornado.profiler";
-
     public static final boolean TIME_IN_NANOSECONDS = Boolean.parseBoolean(System.getProperty("tornado.ns.time", TRUE));
     public static final int DEFAULT_DRIVER_INDEX = Integer.parseInt(Tornado.getProperty("tornado.driver", "0"));
     public static final int DEFAULT_DEVICE_INDEX = Integer.parseInt(Tornado.getProperty("tornado.device", "0"));
@@ -51,58 +47,42 @@ public class TornadoOptions {
      * the rest of the backends.
      */
     public static final int SPIRV_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.spirv.priority", "11"));
-
     /**
      * Check if the FPGA emulation mode has been set.
      */
     public static final boolean FPGA_EMULATION = isFPGAEmulation();
-
     /**
      * Option to set the device maximum memory usage. It is set to 1GB by default.
      */
     public static final long DEVICE_AVAILABLE_MEMORY = RuntimeUtilities.parseSize(System.getProperty("tornado.device.memory", "1GB"));
-
     /**
      * Option to enable exceptions for the OpenCL generated code. This is
      * experimental.
      */
     public static final boolean ENABLE_EXCEPTIONS = Boolean.parseBoolean(System.getProperty("tornado.exceptions", FALSE));
-
     /**
      * Option to print TornadoVM Internal Bytecodes.
      */
     public static final boolean PRINT_BYTECODES = getBooleanValue("tornado.print.bytecodes", FALSE);
-
     /**
      * Option to debug dynamic reconfiguration policies.
      * <p>
      * Use `-Dtornado.dynamic.verbose=True`.
      */
     public static final boolean DEBUG_POLICY = getBooleanValue("tornado.dynamic.verbose", FALSE);
-
     /**
      * Option to enable experimental and new option for performing automatic full
      * reductions.
      */
     public static final boolean EXPERIMENTAL_REDUCE = getBooleanValue("tornado.experimental.reduce", TRUE);
-
     /**
      * Temporal option for disabling null checks for Apache-Flink.
      */
     public static final boolean IGNORE_NULL_CHECKS = getBooleanValue("tornado.ignore.nullchecks", FALSE);
-
-    /**
-     * Option for enabling saving the profiler into a file.
-     */
-    public static boolean PROFILER_LOGS_ACCUMULATE() {
-        return getBooleanValue(PROFILER_LOG, FALSE);
-    }
-
     /**
      * Option to enable profiler-feature extractions.
      */
     public static final boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", FALSE);
-
     /**
      * Enable/Disable FMA Optimizations. True by default.
      */
@@ -158,7 +138,6 @@ public class TornadoOptions {
      * phase in the Low-Tier.
      */
     public static final boolean DUMP_LOW_TIER_WITH_IGV = getBooleanValue("tornado.debug.lowtier", FALSE);
-
     /**
      * In the case of a TornadoVM runtime, JIT compiler or driver failure (OpenCL,
      * PTX or SPIRV), this option allows users to automatically execute the code
@@ -166,7 +145,6 @@ public class TornadoOptions {
      * code. This option is True by default.
      */
     public static final boolean RECOVER_BAILOUT = getBooleanValue("tornado.recover.bailout", TRUE);
-
     /**
      * Option to log the IP of the current machine on the profiler logs.
      */
@@ -197,12 +175,10 @@ public class TornadoOptions {
      * Use Level Zero as a dispatcher for SPIRV
      */
     public static final boolean USE_LEVELZERO_FOR_SPIRV = getBooleanValue("tornado.spirv.levelzero", TRUE);
-
     /**
      * Check I/O parameters for every task within a task-graph.
      */
     public static final boolean FORCE_CHECK_PARAMETERS = getBooleanValue("tornado.check.parameters", TRUE);
-
     /**
      * Select Shared Memory allocator for SPIRV-Level Zero implementation.
      */
@@ -251,25 +227,35 @@ public class TornadoOptions {
      * memory)
      */
     public static final int LEVEL_ZERO_BUFFER_ALIGNMENT = getIntValue("tornado.spirv.levelzero.alignment", "64");
-
     /**
      * Enable/Disable the extended memory allocation mode for the Level Zero
      * Backend. It is enabled by default.
      */
     public static final boolean LEVEL_ZERO_EXTENDED_MEMORY_MODE = getBooleanValue("tornado.spirv.levelzero.extended.memory", TRUE);
-
     /**
      * If enabled, the TornadoVM will substitute the last READ (data transfer from
-     * the Device -> Host) using a blocking call for STREAM OUT.
-     *
-     * This is FALSE by default.
+     * the TRANSFER_DEVICE_TO_HOST) using a STREAM_OUT_BLOCKING. This is FALSE by
+     * default.
      */
     public static final boolean ENABLE_STREAM_OUT_BLOCKING = getBooleanValue("tornado.enable.streamOut.blocking", FALSE);
-
+    /**
+     * Option to run concurrently on multiple device in single or multi-backend
+     * configuration. False by default.
+     */
+    public static final boolean CONCURRENT_INTERPRETERS = Boolean.parseBoolean(System.getProperty("tornado.concurrent.devices", "False"));
+    public static String PROFILER_LOG = "tornado.log.profiler";
+    public static String PROFILER = "tornado.profiler";
     /**
      * Option to load FPGA pre-compiled binaries.
      */
     public static StringBuilder FPGA_BINARIES = System.getProperty("tornado.precompiled.binary", null) != null ? new StringBuilder(System.getProperty("tornado.precompiled.binary", null)) : null;
+
+    /**
+     * Option for enabling saving the profiler into a file.
+     */
+    public static boolean PROFILER_LOGS_ACCUMULATE() {
+        return getBooleanValue(PROFILER_LOG, FALSE);
+    }
 
     /**
      * Option to reuse device buffers every time a task-graph is executed. True by
