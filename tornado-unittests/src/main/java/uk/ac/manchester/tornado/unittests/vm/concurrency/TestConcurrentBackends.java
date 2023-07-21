@@ -22,7 +22,6 @@ import static org.junit.Assert.assertEquals;
 import java.util.stream.IntStream;
 
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -34,6 +33,9 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
 import uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices;
 
+/**
+ * This tests currently failing for configuration that includes SPIRV.
+ */
 public class TestConcurrentBackends extends TornadoTestBase {
 
     private static final int NUM_ELEMENTS = 8192;
@@ -108,7 +110,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
         }
     }
 
-    @Ignore
+    @Test
     public void testThreeBackendsConcurrent() {
         assertAvailableDrivers(3);
 
@@ -134,7 +136,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
         }
     }
 
-    @Ignore
+    @Test
     public void testThreeBackendsSerial() {
 
         assertAvailableDrivers(3);
