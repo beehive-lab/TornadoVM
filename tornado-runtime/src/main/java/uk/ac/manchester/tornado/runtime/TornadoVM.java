@@ -103,14 +103,21 @@ public class TornadoVM extends TornadoLogger {
         if (calculateNumberOfJavaThreads() != 1) {
             return executeInterpreterThreadManager();
         } else {
-            // TODO: This is a temporary workaround until refactoring the
-            // DynamicReconfiguration
-            return tornadoVMInterpreters[0].execute(false);
+            return executeSingleThreaded();
         }
     }
 
     private int calculateNumberOfJavaThreads() {
         return shouldRunConcurrently() ? executionContext.getValidContextSize() : 1;
+    }
+
+    private Event executeSingleThreaded() {
+        // TODO: This is a temporary workaround until refactoring the
+        // DynamicReconfiguration
+        for (TornadoVMInterpreter tornadoVMInterpreter : tornadoVMInterpreters) {
+            tornadoVMInterpreter.execute(false);
+        }
+        return new EmptyEvent();
     }
 
     /**
