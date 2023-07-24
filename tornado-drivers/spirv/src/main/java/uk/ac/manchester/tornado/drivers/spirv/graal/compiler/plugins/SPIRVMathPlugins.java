@@ -186,6 +186,22 @@ public class SPIRVMathPlugins {
                 return true;
             }
         });
+
+        r.register(new InvocationPlugin("sinpi", type) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SPIRVUnaryOperation.SINPI, kind)));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("cospi", type) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(SPIRVFPUnaryIntrinsicNode.create(value, SPIRVUnaryOperation.COSPI, kind)));
+                return true;
+            }
+        });
     }
 
     private static void registerFloatMath2Plugins(InvocationPlugins.Registration r, Class<?> type, JavaKind kind) {

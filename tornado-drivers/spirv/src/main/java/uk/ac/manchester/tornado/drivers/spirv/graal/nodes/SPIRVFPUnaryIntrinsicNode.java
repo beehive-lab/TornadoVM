@@ -204,6 +204,12 @@ public class SPIRVFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLI
             case RADIANS:
                 result = gen.genFloatRadians(input);
                 break;
+            case COSPI:
+                result = gen.genFloatCospi(input);
+                break;
+            case SINPI:
+                result = gen.genFloatSinpi(input);
+                break;
             default:
                 throw new RuntimeException("Operation not supported");
         }
