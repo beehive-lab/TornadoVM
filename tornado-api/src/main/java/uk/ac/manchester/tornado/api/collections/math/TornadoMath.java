@@ -179,7 +179,6 @@ public class TornadoMath {
     public static double fract(double f) {
         return f - floor(f);
     }
-
     public static boolean isEqual(float[] a, float[] b) {
         boolean result = true;
         for (int i = 0; i < a.length && result; i++) {
@@ -344,5 +343,21 @@ public class TornadoMath {
 
     public static float toRadians(float angdeg) {
         return (float) Math.toRadians(angdeg);
+    }
+
+    public static float sinpi(float angle) {
+        return (float) Math.sin(angle * Math.PI);
+    }
+
+    public static double sinpi(double angle) {
+        return Math.sin(angle * Math.PI);
+    }
+
+    public static float cospi(float angle) {
+        return (float) Math.cos(angle * Math.PI);
+    }
+
+    public static double cospi(double angle) {
+        return Math.cos(angle * Math.PI);
     }
 }
