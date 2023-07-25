@@ -114,7 +114,7 @@ Concurrent Execution on Multiple Devices
 ----------------------------------------------
 
 In the previous example, although the tasks did not share dependencies, they still ran serially, with one device idle while the other executed.
-To improve performance and run tasks concurrently on multiple devices, use the --enableConcurrentDevices flag:
+To improve performance and run tasks concurrently on multiple devices, use the ``--enableConcurrentDevices`` flag:
 
 .. code:: bash
 
@@ -161,9 +161,10 @@ The expected output after execution:
 How to debug
 ----------------------------------------------
 
-Previously, in our example, we enabled debug information solely to display the thread and device configuration for each task. However, there is an additional layer of information that can be acquired by obtaining the TornadoVM bytecodes.
+Previously, we enabled debug information solely to display the thread and device configuration for each task.
+TornadoVM can dump additional information to help developers to trace where the code is executed.
 
-To access this valuable insight, you need to include the --printBytecodes flag in the above example. By adding this flag, you will be presented with the following output in conjunction with the thread information:
+To access this valuable insight, you need to include the ``--printBytecodes`` flag in the above example. By adding this flag, you will be presented with the following output in conjunction with the thread information:
 
 .. code:: bash
 
@@ -202,10 +203,10 @@ To access this valuable insight, you need to include the --printBytecodes flag i
     bc:  BARRIER  event-list 17
     bc:  END
 
-From the provided debug information, our primary interest lies in the first line of each bytecode sequence. Let's take a closer look at one such line: Interpreter instance running bytecodes for: [NVIDIA CUDA] -- NVIDIA GeForce RTX 3070 Running in thread: pool-1-thread-1.
+Let's take a closer look at one such line: Interpreter instance running bytecodes for: [NVIDIA CUDA] -- NVIDIA GeForce RTX 3070 Running in thread: pool-1-thread-1.
 
-This line reveals crucial details about the TornadoVM interpreter's operation. We observe that we have two separate instances of the TornadoVM interpreter, each running independently within distinct Java threads. One instance operates within pool-1-thread-1, while the other resides in pool-1-thread-2.
-On the other hand, in the sequential execution scenario showcased earlier in this tutorial, we would expect all instances of the TornadoVM interpreter to run from the main thread.
+This line reveals details about the TornadoVM interpreter's operation. We observe that we have two separate instances of the TornadoVM interpreter, each running independently within distinct Java threads. One instance operates within pool-1-thread-1, while the other resides in pool-1-thread-2.
+In the sequential execution scenario showcased earlier in this tutorial, we would expect all instances of the TornadoVM interpreter to run from the main thread.
 
 This distinction is essential as it helps us understand how TornadoVM's bytecode execution occurs in parallel, efficiently utilizing available hardware resources, such as the NVIDIA GeForce RTX 3070 GPU and the 13th Gen Intel(R) Core(TM) i7-13700 CPU (based on the earlier debug output).
 
