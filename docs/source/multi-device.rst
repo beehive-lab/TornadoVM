@@ -3,25 +3,25 @@
 Multi-Device Execution
 ==========================================
 
-TornadoVM supports multi-device execution for task-graphs that contains multiple tasks without data dependencies across them.
+TornadoVM supports multi-device execution for task-graphs that contain multiple tasks without data dependencies between them.
 This feature allows users to better utilize the available hardware and potentially improve the overall execution time of their applications.
 
 TornadoVM executes on multiple devices in two modes:
 
 1) Sequential:
-    It will launch each independent task in a different accelerator *sequentially* (i.e., one after the other). This mode is mainly used for debugging.
+    It will launch each independent task on a different accelerator *sequentially* (i.e., one after the other). This mode is mainly used for debugging.
 2) Concurrent:
-    It will launch each independent task in a different accelerator *concurrently* (i.e., one Java thread per accelerator).
+    It will launch each independent task on a different accelerator *concurrently*. In this mode, a separate Java thread per accelerator is spawned.
 
 Prerequisites
 ----------------------------------------------
 
 Before using TornadoVM's multi-device execution, make sure that you have one of the supported backends (e.g., OpenCL, PTX, and SPIRV) with at least 2 available devices.
 
-Ensuring multiple devices are available
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Ensuring that multiple devices are available
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-By running the following option you can obtain a list of the available devices, as well as their unique Tornado device ids that are required later on in this tutorial.
+By running the following command you can obtain the list of the available devices that will be required later on in this tutorial, as well as their unique Tornado device ids.
 
 .. code:: bash
 
@@ -61,8 +61,8 @@ By running the following option you can obtain a list of the available devices, 
 Sequential Execution on Multiple Devices
 ----------------------------------------------
 
-In the following example we are going to use the a `blur filter <https://github.com/beehive-lab/TornadoVM/blob/master/tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/compute/BlurFilter.java>`__
-application that operates on three different pixels(e.g., red, blue, and green) independently as three separate tasks.
+In the following example we are going to use the `blur filter <https://github.com/beehive-lab/TornadoVM/blob/master/tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/compute/BlurFilter.java>`__
+application that operates on three different color channels (e.g., red, blue, and green). Each colour channel is processed by a separate TornadoVM task, resulting in a TaskGraph (named `blur`) composed of three tasks (named `red`, `green` and `blue`).
 Also, from the devices shown above we going to use devices 0:0 (NVIDIA GeForce RTX 3070) and 0:1 (13th Gen Intel(R) Core(TM) i7-13700).
 
 .. code:: bash
@@ -78,7 +78,7 @@ In the given example, we have specified the device assignments for each task of 
 * *-Dblur.green.device=0:1* This specifies that the green task of the BlurFilter will run on device 0:1 (Intel Core i7-13700).
 * *-Dblur.blue.device=0:0* This specifies that the blue task of the BlurFilter will also run on device 0:0 (NVIDIA GeForce RTX 3070).
 
-The expected output after execution:
+The expected output after execution is:
 
 .. code:: bash
 
@@ -113,7 +113,8 @@ The expected output after execution:
 Concurrent Execution on Multiple Devices
 ----------------------------------------------
 
-In the previous example, although the tasks did not share dependencies, they still ran serially, with one device idle while the other executed.
+In the previous example, although the tasks did not share dependencies, they still ran sequentially.
+Thus, one device has been idle, while the tasks were executed one after the other.
 To improve performance and run tasks concurrently on multiple devices, use the ``--enableConcurrentDevices`` flag:
 
 .. code:: bash
@@ -123,9 +124,9 @@ To improve performance and run tasks concurrently on multiple devices, use the `
         --jvm=" -Dblur.red.device=0:0 -Dblur.green.device=0:1 -Dblur.blue.device=0:0" \
         -m  tornado.examples/uk.ac.manchester.tornado.examples.compute.BlurFilter
 
-By adding the --enableConcurrentDevices flag, one VM per device will be spawned through a Java thread-pool, allowing both devices to run concurrently.
+By adding the --enableConcurrentDevices flag, one instance of the TornadoVM Interpreter per device will be spawned through a Java thread-pool, allowing all devices to run concurrently.
 
-The expected output after execution:
+The expected output after execution is:
 
 .. code:: bash
 
@@ -164,7 +165,17 @@ How to debug
 Previously, we enabled debug information solely to display the thread and device configuration for each task.
 TornadoVM can dump additional information to help developers to trace where the code is executed.
 
-To access this valuable insight, you need to include the ``--printBytecodes`` flag in the above example. By adding this flag, you will be presented with the following output in conjunction with the thread information:
+To access this information, you need to include the ``--printBytecodes`` flag in the above example from Section (:ref:`Concurrent Execution on Multiple Devices`). By adding this flag, the following output will be displayed in conjunction with the thread information:
+
+.. code:: bash
+
+    $ tornado --threadInfo \
+        --printBytecodes \
+        --enableConcurrentDevices \
+        --jvm=" -Dblur.red.device=0:0 -Dblur.green.device=0:1 -Dblur.blue.device=0:0" \
+        -m  tornado.examples/uk.ac.manchester.tornado.examples.compute.BlurFilter
+
+The expected output after execution is:
 
 .. code:: bash
 
@@ -203,17 +214,17 @@ To access this valuable insight, you need to include the ``--printBytecodes`` fl
     bc:  BARRIER  event-list 17
     bc:  END
 
-Let's take a closer look at one such line: Interpreter instance running bytecodes for: [NVIDIA CUDA] -- NVIDIA GeForce RTX 3070 Running in thread: pool-1-thread-1.
+Let's take a closer look at the first line: Interpreter instance running bytecodes for: [NVIDIA CUDA] -- NVIDIA GeForce RTX 3070 Running in thread: pool-1-thread-1.
 
-This line reveals details about the TornadoVM interpreter's operation. We observe that we have two separate instances of the TornadoVM interpreter, each running independently within distinct Java threads. One instance operates within pool-1-thread-1, while the other resides in pool-1-thread-2.
-In the sequential execution scenario showcased earlier in this tutorial, we would expect all instances of the TornadoVM interpreter to run from the main thread.
+This line reveals details about the TornadoVM interpreter's operation. We observe that we have two separate instances of the TornadoVM interpreter, each running independently within distinct Java threads. One instance operates within pool-1-thread-1, while the other operates in pool-1-thread-2.
+In the sequential execution scenario showcased earlier in this tutorial (:ref:`Sequential Execution on Multiple Devices`), we would expect all instances of the TornadoVM interpreter to run from the main Java thread.
 
-This distinction is essential as it helps us understand how TornadoVM's bytecode execution occurs in parallel, efficiently utilizing available hardware resources, such as the NVIDIA GeForce RTX 3070 GPU and the 13th Gen Intel(R) Core(TM) i7-13700 CPU (based on the earlier debug output).
+This distinction is essential as it helps us understand how TornadoVM's bytecodes are executed in parallel, while also efficiently utilizing available hardware resources, such as the NVIDIA GeForce RTX 3070 GPU and the 13th Gen Intel(R) Core(TM) i7-13700 CPU (based on the earlier debug output).
 
-By comprehending these details, developers gain valuable insights into how TornadoVM efficiently harnesses multi-threading capabilities, leading to optimized and parallel execution of tasks on various devices, resulting in enhanced performance and overall system efficiency.
+By comprehending these details, developers gain valuable information on how TornadoVM efficiently harnesses multi-threading capabilities.
+The feature of running multiple tasks on multiple devices results in enhanced performance and overall system efficiency.
 
-
-Limitations
+Not Supported
 ----------------------------------------------
 
 * Tasks that share data dependencies can run only on a single device.
