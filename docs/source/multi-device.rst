@@ -1,6 +1,6 @@
 .. _multi-device:
 
-Multi Device Execution
+Multi-Device Execution
 ==========================================
 
 TornadoVM supports multi-device execution for task-graphs that contains multiple tasks without data dependencies across them.
@@ -9,9 +9,9 @@ This feature allows users to better utilize the available hardware and potential
 TornadoVM executes on multiple devices in two modes:
 
 1) Sequential:
-    It will it will launch each independent task in a different accelerator *sequentially* (i.e, one after the other). This mode it is mainly used for debugging.
+    It will launch each independent task in a different accelerator *sequentially* (i.e., one after the other). This mode is mainly used for debugging.
 2) Concurrent:
-    It will it will launch each independent task in a different accelerator *concurrently* (i.e, one Java thread per accelerator).
+    It will launch each independent task in a different accelerator *concurrently* (i.e., one Java thread per accelerator).
 
 Prerequisites
 ----------------------------------------------
@@ -67,7 +67,7 @@ Also, from the devices shown above we going to use devices 0:0 (NVIDIA GeForce R
 
 .. code:: bash
 
-    $ tornado --threadInfo --printBytecodes  \
+    $ tornado --threadInfo  \
             --jvm=" -Dblur.red.device=0:0 -Dblur.green.device=0:1 -Dblur.blue.device=0:0" \
             -m  tornado.examples/uk.ac.manchester.tornado.examples.compute.BlurFilter
 
@@ -118,8 +118,8 @@ To improve performance and run tasks concurrently on multiple devices, use the -
 
 .. code:: bash
 
-    $ tornado --threadInfo --enableConcurrentDevices \
-        --printBytecodes \
+    $ tornado --threadInfo \
+        --enableConcurrentDevices \
         --jvm=" -Dblur.red.device=0:0 -Dblur.green.device=0:1 -Dblur.blue.device=0:0" \
         -m  tornado.examples/uk.ac.manchester.tornado.examples.compute.BlurFilter
 
@@ -157,7 +157,6 @@ The expected output after execution:
         Number of workgroups  : [125, 200]
 
 
-In the above example, the interpreter instance for the NVIDIA GeForce RTX 3070 runs in pool-1-thread-1, while the interpreter instance for the Intel Core i7-13700 runs in pool-1-thread-2.
 
 How to debug
 ----------------------------------------------
@@ -216,6 +215,6 @@ By comprehending these details, developers gain valuable insights into how Torna
 Limitations
 ----------------------------------------------
 
-* Tasks that share data dependencies can run only on a single devices.
+* Tasks that share data dependencies can run only on a single device.
 * Batch processing can run only on a single device.
 * Dynamic reconfiguration only explores single device execution.
