@@ -48,6 +48,18 @@ public class TestTornadoMathCollection extends TornadoTestBase {
         }
     }
 
+    public static void testTornadoCosPI(float[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = TornadoMath.cospi(a[i]);
+        }
+    }
+
+    public static void testTornadoSinPI(float[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = TornadoMath.sinpi(a[i]);
+        }
+    }
+
     public static void testTornadoSignum(float[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = TornadoMath.signum(a[i]);
@@ -208,6 +220,56 @@ public class TestTornadoMathCollection extends TornadoTestBase {
         new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoCos(seq);
+
+        assertArrayEquals(data, seq, 0.01f);
+
+    }
+
+    @Test
+    public void testTornadoMathCosPI() {
+        final int size = 128;
+        float[] data = new float[size];
+        float[] seq = new float[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            data[i] = (float) Math.random();
+            seq[i] = data[i];
+        });
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestTornadoMathCollection::testTornadoCosPI, data) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
+
+        testTornadoCosPI(seq);
+
+        assertArrayEquals(data, seq, 0.01f);
+
+    }
+
+    @Test
+    public void testTornadoMathSinPI() {
+        final int size = 128;
+        float[] data = new float[size];
+        float[] seq = new float[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            data[i] = (float) Math.random();
+            seq[i] = data[i];
+        });
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestTornadoMathCollection::testTornadoSinPI, data) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
+
+        testTornadoSinPI(seq);
 
         assertArrayEquals(data, seq, 0.01f);
 

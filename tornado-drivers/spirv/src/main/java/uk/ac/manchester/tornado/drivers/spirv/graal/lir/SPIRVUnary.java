@@ -1009,6 +1009,7 @@ public class SPIRVUnary {
             REMAINDER("remainder", 51),
             RSQRT("rsqrt", 56),
             SIN("sin", 57),
+            SINPI("sinpi", 60),
             SQRT("sqrt", 61),
             TAN("tan", 62),
             TANH("tanh", 63),
