@@ -18,7 +18,7 @@ Prerequisites
 
 Before using TornadoVM's multi-device execution, make sure that you have one of the supported backends (e.g., OpenCL, PTX, and SPIRV) with at least 2 available devices.
 
-Ensure multiple devices are available
+Ensuring multiple devices are available
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 By running the following option you can obtain a list of the available devices, as well as their unique Tornado device ids that are required later on in this tutorial.
