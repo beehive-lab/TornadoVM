@@ -34,7 +34,12 @@ import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupporte
 import uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices;
 
 /**
- * This tests currently failing for configuration that includes SPIRV.
+ * <p>
+ * How to run?
+ * </p>
+ * <code>
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends
+ * </code>
  */
 public class TestConcurrentBackends extends TornadoTestBase {
 

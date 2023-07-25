@@ -38,7 +38,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run:
  * </p>
  * <code>
- *     tornado-test.py --threadInfo --printKernel --fast -V uk.ac.manchester.tornado.unittests.kernelcontext.api.KernelContextWorkGroupTests
+ *     tornado-test --threadInfo --printKernel --fast -V uk.ac.manchester.tornado.unittests.kernelcontext.api.KernelContextWorkGroupTests
  * </code>
  */
 public class KernelContextWorkGroupTests extends TornadoTestBase {

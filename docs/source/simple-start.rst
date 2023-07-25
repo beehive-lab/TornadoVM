@@ -198,7 +198,7 @@ To run an individual unittest:
 
 .. code-block:: bash 
 
-  $  tornado-test.py uk.ac.manchester.tornado.unittests.TestHello
+  $  tornado-test uk.ac.manchester.tornado.unittests.TestHello
 
 
 Also, it can be executed in verbose mode:
@@ -206,7 +206,7 @@ Also, it can be executed in verbose mode:
 
 .. code-block:: bash 
 
-  $ tornado-test.py --verbose uk.ac.manchester.tornado.unittests.TestHello
+  $ tornado-test --verbose uk.ac.manchester.tornado.unittests.TestHello
 
 
 
@@ -215,7 +215,7 @@ To test just a method of a unittest class:
 
 .. code-block:: bash 
 
-  $ tornado-test.py --verbose uk.ac.manchester.tornado.unittests.TestHello#testHello
+  $ tornado-test --verbose uk.ac.manchester.tornado.unittests.TestHello#testHello
 
 
 To see the OpenCL/PTX generated kernel for a unittest:
@@ -223,7 +223,7 @@ To see the OpenCL/PTX generated kernel for a unittest:
 
 .. code-block:: bash 
 
-  $ tornado-test.py --verbose -pk uk.ac.manchester.tornado.unittests.TestHello#testHello
+  $ tornado-test --verbose -pk uk.ac.manchester.tornado.unittests.TestHello#testHello
 
 
 
@@ -232,7 +232,7 @@ To execute in debug mode:
 
 .. code-block:: bash 
 
-  $ tornado-test.py --verbose --debug uk.ac.manchester.tornado.unittests.TestHello#testHello
+  $ tornado-test --verbose --debug uk.ac.manchester.tornado.unittests.TestHello#testHello
   task info: s0.t0
 	  platform          : NVIDIA CUDA
 	  device            : GeForce GTX 1050 CL_DEVICE_TYPE_GPU (available)

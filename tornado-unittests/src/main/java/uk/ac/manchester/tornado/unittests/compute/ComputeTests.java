@@ -19,7 +19,7 @@ package uk.ac.manchester.tornado.unittests.compute;
 
 import static org.junit.Assert.assertEquals;
 
-import java.awt.Color;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 import java.io.File;
@@ -57,7 +57,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </p>
  *
  * <code>
- *     tornado-test.py -V --fast uk.ac.manchester.tornado.unittests.compute.ComputeTests
+ *     tornado-test -V --fast uk.ac.manchester.tornado.unittests.compute.ComputeTests
  * </code>
  *
  */
