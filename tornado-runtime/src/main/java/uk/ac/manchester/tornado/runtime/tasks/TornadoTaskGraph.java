@@ -30,7 +30,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -105,7 +104,6 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraph;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphBuilder;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodeBuilder;
-import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
@@ -600,12 +598,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
-    private void updateDeviceContext(TornadoGraph graph) {
-        BitSet deviceContexts = graph.filter(ContextNode.class);
-        final ContextNode contextNode = (ContextNode) graph.getNode(deviceContexts.nextSetBit(0));
-        contextNode.setDeviceIndex(meta().getDeviceIndex());
-        executionContext.setDevice(meta().getDeviceIndex(), meta().getLogicDevice());
-        executionContext.nullifyDevicesTableExceptAtIndex(meta().getDeviceIndex());
+    private void updateDeviceContext() {
+        executionContext.setDevice(meta().getLogicDevice());
     }
 
     /**
@@ -624,7 +618,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         if (setNewDevice) {
             // setNewDevice does not need to propagate any further as executionContext is
             // updated. So, all the required state is set properly in the executionContext
-            updateDeviceContext(tornadoGraph);
+            updateDeviceContext();
         }
 
         // TornadoVM byte-code generation
