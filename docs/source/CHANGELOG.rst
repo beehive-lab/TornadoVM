@@ -5,6 +5,41 @@ TornadoVM Changelog
 
 This file summarizes the new features and major changes for each *TornadoVM* version.
 
+
+
+TornadoVM 0.15.2
+----------------
+26/07/2023 
+
+Improvements
+~~~~~~~~~~~~~~~~~~
+
+- Initial Support for Multi-Tasks on Multiple Devices (MTMD): This mode enables the execution of multiple independent tasks on more than one hardware accelerators. Documentation in link: https://tornadovm.readthedocs.io/en/latest/multi-device.html
+- Support for trigonometric ``radian``, ``cospi`` and ``sinpi`` functions for the OpenCL/PTX and SPIR-V backends.
+- Clean-up Java modules not being used and TornadoVM core classes refactored.
+
+
+Compatibility/Integration
+~~~~~~~~~~~~~~~~~~~~~
+
+- Initial integration with ComputeAorta (part of the Codeplay's oneAPI Construction Kit for RISC-V) to run on RISC-V with Vector Instructions (OpenCL backend) in emulation mode.  
+- Beehive SPIR-V Toolkit dependency updated.
+- Tests for prebuilt SPIR-V kernels fixed to dispatch SPIR-V binaries through the Level Zero and OpenCL runtimes. 
+- Deprecated ``javac.py`` script removed. 
+
+
+Bug fixes:
+~~~~~~~~~~~~~~~~~
+
+- TornadoVM OpenCL Runtime throws an exception when the detected hardware does not support FP64.
+- Fix the installer for the older Apple with the x86 architecture using AMD GPUs. 
+- Installer for ARM based systems fixed.
+- Installer fixed for Microsoft WSL and NVIDIA GPUs. 
+- OpenCL code generator fixed to avoid using the reserved OpenCL keywords from Java function parameters.
+- Dump profiler option fixed. 
+
+
+
 TornadoVM 0.15.1
 ----------------
 15/05/2023 

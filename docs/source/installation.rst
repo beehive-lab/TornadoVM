@@ -836,13 +836,13 @@ To use the TornadoVM API in your projects, you can checkout our maven repository
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>0.15.1</version>
+         <version>0.15.2</version>
       </dependency>
 
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-matrices</artifactId>
-         <version>0.15.1</version>
+         <version>0.15.2</version>
       </dependency>
    </dependencies>
 
@@ -853,6 +853,7 @@ Notice that, for running with TornadoVM, you will need either the docker images 
 Versions available
 ------------------------------------
 
+* 0.15.2
 * 0.15.1
 * 0.15
 * 0.14.1
