@@ -25,12 +25,17 @@
  */
 package uk.ac.manchester.tornado.runtime.graph.nodes;
 
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+
 public class ContextNode extends AbstractNode {
 
     private int deviceIndex;
 
-    public ContextNode(int index) {
-        deviceIndex = index;
+    private TornadoAcceleratorDevice device;
+
+    public ContextNode(int index, TornadoAcceleratorDevice device) {
+        this.deviceIndex = index;
+        this.device = device;
     }
 
     @Override
@@ -48,6 +53,14 @@ public class ContextNode extends AbstractNode {
 
     public void setDeviceIndex(int deviceIndex) {
         this.deviceIndex = deviceIndex;
+    }
+
+    public TornadoAcceleratorDevice getDevice() {
+        return this.device;
+    }
+
+    public void setDevice(TornadoAcceleratorDevice device) {
+        this.device = device;
     }
 
     @Override

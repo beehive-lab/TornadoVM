@@ -201,7 +201,7 @@ public class TornadoGraphBuilder {
                 taskIndex = buffer.getInt();
                 task = executionContext.getTask(taskIndex);
 
-                context = graph.addUnique(new ContextNode(executionContext.getDeviceIndexForTask(globalTaskId)));
+                context = graph.addUnique(new ContextNode(executionContext.getDevices().indexOf(executionContext.getDeviceForTask(taskIndex)), executionContext.getDeviceForTask(taskIndex)));
 
                 persist = graph.addUnique(new AllocateMultipleBuffersNode(context));
                 context.addUse(persist);
@@ -232,7 +232,9 @@ public class TornadoGraphBuilder {
                 final StreamInNode streamInNode = new StreamInNode(context);
                 streamInNode.setValue((ObjectNode) objectNodes[i]);
                 graph.add(streamInNode);
+                assert context != null;
                 context.addUse(streamInNode);
+                assert persist != null;
                 persist.addValue((ObjectNode) objectNodes[i]);
             }
         }
