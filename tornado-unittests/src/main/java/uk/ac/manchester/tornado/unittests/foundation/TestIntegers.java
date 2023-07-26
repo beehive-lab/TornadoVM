@@ -35,7 +35,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *      tornado-test.py -V uk.ac.manchester.tornado.unittests.foundation.TestIntegers
+ *      tornado-test -V uk.ac.manchester.tornado.unittests.foundation.TestIntegers
  * </code>
  */
 public class TestIntegers extends TornadoTestBase {

@@ -34,7 +34,7 @@ Running DFT from the unit-test suite
 
 .. code:: bash
 
-   $ tornado-test.py -V --fast --threadInfo --debug uk.ac.manchester.tornado.unittests.compute.ComputeTests#testDFT
+   $ tornado-test -V --fast --threadInfo --debug uk.ac.manchester.tornado.unittests.compute.ComputeTests#testDFT
 
    SPIRV-File : /tmp/tornadoVM-spirv/8442884346950-s0.t0computeDFT.spv
    Set entry point: computeDFT

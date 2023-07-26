@@ -44,7 +44,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test.py -V uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsDoublesKernelContext
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsDoublesKernelContext
  * </code>
  *
  */
