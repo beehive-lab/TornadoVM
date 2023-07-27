@@ -42,7 +42,7 @@ import uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes;
  * How to run?
  * </p>
  * <code>
- *      tornado-test.py -V --debug uk.ac.manchester.tornado.unittests.grid.TestGrid
+ *      tornado-test -V --debug uk.ac.manchester.tornado.unittests.grid.TestGrid
  * </code>
  *
  */

@@ -34,7 +34,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *      tornado-test.py -V uk.ac.manchester.tornado.unittests.foundation.TestLinearAlgebra
+ *      tornado-test -V uk.ac.manchester.tornado.unittests.foundation.TestLinearAlgebra
  * </code>
  */
 public class TestLinearAlgebra extends TornadoTestBase {

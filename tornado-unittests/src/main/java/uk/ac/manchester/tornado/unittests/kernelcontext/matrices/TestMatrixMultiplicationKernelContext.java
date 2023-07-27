@@ -46,7 +46,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test.py -V uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext
  * </code>
  */
 public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {

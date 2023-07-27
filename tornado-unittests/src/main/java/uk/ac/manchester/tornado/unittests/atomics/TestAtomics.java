@@ -251,7 +251,7 @@ public class TestAtomics extends TornadoTestBase {
      * How to test?
      *
      * <code>
-     * $ tornado-test.py -V -pk --debug -J"-Ddevice=0" uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic05_precompiled
+     * $ tornado-test -V -pk --debug -J"-Ddevice=0" uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic05_precompiled
      * </code>
      */
     @Test
