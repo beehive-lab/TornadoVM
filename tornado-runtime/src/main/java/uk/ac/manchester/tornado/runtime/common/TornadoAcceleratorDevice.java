@@ -90,7 +90,7 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
     TornadoInstalledCode getCodeFromCache(SchedulableTask task);
 
     /**
-     * It checks for atomic operations in the specified schedulable task and return
+     * It checks for atomic operations in the specified schedulable task and returns
      * an integer array representing them.
      *
      * @param task
