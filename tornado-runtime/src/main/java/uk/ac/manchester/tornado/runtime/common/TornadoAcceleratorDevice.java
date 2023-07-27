@@ -51,7 +51,7 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
     KernelArgs createCallWrapper(int numArgs);
 
     /**
-     * It creates or reuse an atomic buffer for the specified integer array.
+     * It creates or reuses an atomic buffer for the specified integer array.
      *
      * @param arr
      *            The integer array for which to create or reuse an atomic buffer.
