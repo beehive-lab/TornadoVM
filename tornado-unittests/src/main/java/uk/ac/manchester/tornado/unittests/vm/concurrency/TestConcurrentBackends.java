@@ -41,10 +41,13 @@ import uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices
  * How to test?
  *
  * <code>
- *     tornado-test -V --fullDebug --debug --printBytecodes --jvm="-Dtornado.concurrent.devices=true -Ds0.t0.device=0:0 -Ds0.t1.device=0:0 -Ds0.t2.device=1:0 " uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends
+ *     tornado-test -V --fullDebug --debug --printBytecodes --jvm="-Ds0.t0.device=0:0 -Ds0.t1.device=1:0 -Ds0.t2.device=2:0 " uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends
  * </code>
  */
 public class TestConcurrentBackends extends TornadoTestBase {
+    private static final String[] DEVICES_FOR_TASKS = { "s0.t0.device", "s0.t1.device", "s0.t2.device" };
+    // Statically assigns tasks to devices 0:0 and 0:1 of the default backend.
+    private static final String[] DEFAULT_DEVICES = { "0:0", "1:0", "2:0" };
 
     private static final int NUM_ELEMENTS = 8192;
 
@@ -56,6 +59,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
 
     @BeforeClass
     public static void setUp() {
+        setDefaultDevices();
 
         a = new int[NUM_ELEMENTS];
         b = new int[NUM_ELEMENTS];
@@ -69,6 +73,20 @@ public class TestConcurrentBackends extends TornadoTestBase {
             c[i] = 120 + i;
             e[i] = i;
         });
+    }
+
+    /**
+     * It sets the default device values for tasks if they are not already set.
+     */
+    public static void setDefaultDevices() {
+        for (int i = 0; i < DEVICES_FOR_TASKS.length; i++) {
+            String taskProperty = DEVICES_FOR_TASKS[i];
+            String defaultDevice = DEFAULT_DEVICES[i];
+
+            if (System.getProperty(taskProperty) == null) {
+                System.setProperty(taskProperty, defaultDevice);
+            }
+        }
     }
 
     @Test

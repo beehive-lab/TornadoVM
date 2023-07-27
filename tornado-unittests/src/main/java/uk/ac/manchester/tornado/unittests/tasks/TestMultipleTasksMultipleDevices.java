@@ -47,6 +47,10 @@ import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupporte
 public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
     private static final int NUM_ELEMENTS = 8192;
 
+    private static final String[] DEVICES_FOR_TASKS = { "s0.t0.device", "s0.t1.device", "s0.t2.device" };
+    // Statically assigns tasks to devices 0:0 and 0:1 of the default backend.
+    private static final String[] DEFAULT_DEVICES = { "0:0", "0:1", "0:0" };
+
     private static int[] a;
     private static int[] b;
     private static int[] c;
@@ -74,6 +78,8 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
     @BeforeClass
     public static void setUpBeforeClass() {
         assertAvailableDevices();
+        setDefaultDevices();
+        System.setProperty("tornado.concurrent.devices", "True");
 
         a = new int[NUM_ELEMENTS];
         b = new int[NUM_ELEMENTS];
@@ -93,6 +99,20 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
     private static void assertAvailableDevices() {
         if (TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount() < 2) {
             throw new TornadoVMMultiDeviceNotSupported("This test needs at least + " + 2 + " devices enabled");
+        }
+    }
+
+    /**
+     * It sets the default device values for tasks if they are not already set.
+     */
+    public static void setDefaultDevices() {
+        for (int i = 0; i < DEVICES_FOR_TASKS.length; i++) {
+            String taskProperty = DEVICES_FOR_TASKS[i];
+            String defaultDevice = DEFAULT_DEVICES[i];
+
+            if (System.getProperty(taskProperty) == null) {
+                System.setProperty(taskProperty, defaultDevice);
+            }
         }
     }
 
@@ -134,5 +154,4 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
             assertEquals(12L * c[i] + e[i], d[i]);
         }
     }
-
 }
