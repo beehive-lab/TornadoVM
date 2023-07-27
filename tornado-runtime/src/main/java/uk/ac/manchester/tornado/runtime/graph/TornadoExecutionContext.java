@@ -257,12 +257,12 @@ public class TornadoExecutionContext {
             throw new TornadoRuntimeException("Device " + target.getClass() + " not supported yet");
         }
 
-        int deviceIndex = devices.indexOf(target);
-        info("assigning %s to %s", id, target.getDeviceName());
-
-        if (deviceIndex == -1) {
+        // If the device is not in the list of devices, add it
+        if (!devices.contains(accelerator)) {
             setDevice(accelerator);
         }
+
+        info("assigning %s to %s", id, target.getDeviceName());
 
         taskToDeviceMapTable[index] = accelerator;
     }

@@ -34,7 +34,15 @@ import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupporte
 import uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices;
 
 /**
- * This tests currently failing for configuration that includes SPIRV.
+ * Test running two and three tasks in serial and concurrent on two devices and
+ * three devices on different backends if are available. You need to build with
+ * multiple backends (e.g. make graal-jdk-11-plus BACKEND=opencl,ptx,spirv).
+ *
+ * How to test?
+ *
+ * <code>
+ *     tornado-test -V --fullDebug --debug --printBytecodes --jvm="-Dtornado.concurrent.devices=true -Ds0.t0.device=0:0 -Ds0.t1.device=0:0 -Ds0.t2.device=1:0 " uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends
+ * </code>
  */
 public class TestConcurrentBackends extends TornadoTestBase {
 
@@ -78,7 +86,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < a.length; i++) {
-            assertEquals((30L+i) * i, a[i]);
+            assertEquals((30L + i) * i, a[i]);
             assertEquals(i, b[i]);
         }
     }
@@ -87,7 +95,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
     public void testTwoBackendsConcurrent() {
         assertAvailableDrivers(2);
 
-//        System.setProperty("tornado.concurrent.devices", "True");
+        System.setProperty("tornado.concurrent.devices", "True");
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b)//
@@ -100,7 +108,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < a.length; i++) {
-            assertEquals((30L+i) * i, a[i]);
+            assertEquals((30L + i) * i, a[i]);
             assertEquals(i, b[i]);
         }
     }
@@ -108,10 +116,8 @@ public class TestConcurrentBackends extends TornadoTestBase {
     @Test
     public void testThreeBackendsConcurrent() {
         assertAvailableDrivers(3);
-//
-//        System.setProperty("s0.t0.device", "0:0");
-//        System.setProperty("s0.t1.device", "1:0");
-//        System.setProperty("s0.t2.device", "2:0");
+
+        System.setProperty("tornado.concurrent.devices", "True");
 
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c, e) //
@@ -125,7 +131,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < a.length; i++) {
-            assertEquals((30L+i) * i, a[i]);
+            assertEquals((30L + i) * i, a[i]);
             assertEquals(i, b[i]);
             assertEquals(12L * c[i] + e[i], d[i]);
         }
@@ -133,12 +139,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
 
     @Test
     public void testThreeBackendsSerial() {
-
         assertAvailableDrivers(3);
-
-//        System.setProperty("s0.t0.device", "0:0");
-//        System.setProperty("s0.t1.device", "1:0");
-//        System.setProperty("s0.t2.device", "2:0");
 
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c, e) //
@@ -152,7 +153,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < a.length; i++) {
-            assertEquals((30L+i) * i, a[i]);
+            assertEquals((30L + i) * i, a[i]);
             assertEquals(i, b[i]);
             assertEquals(12L * c[i] + e[i], d[i]);
         }

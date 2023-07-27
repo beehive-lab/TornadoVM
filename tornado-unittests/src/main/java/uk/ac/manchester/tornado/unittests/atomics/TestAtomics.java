@@ -52,7 +52,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 public class TestAtomics extends TornadoTestBase {
 
     /**
-     * Approach using a compiler-instrinsic in TornadoVM.
+     * Approach using a compiler-intrinsic in TornadoVM.
      *
      * @param a
      *            Input array. It stores the addition with an atomic variable.

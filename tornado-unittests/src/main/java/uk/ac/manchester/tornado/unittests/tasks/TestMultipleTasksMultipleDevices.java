@@ -35,24 +35,15 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
 
 /**
- * Testing TornadoVM with multiple independent tasks on different devices. The
- * {@link TaskGraph} contains more than one task. If multiple devices are not
- * specified by the user, then the default device is used.
- * <p>
- * The user needs to specify the target device for each task as follows:
- * </p>
- * 
- * <pre>
- * -Ds0.t0.device=0:0 -Ds0.t0.device=0:1
- * </pre>
- * <p>
- * How to run?
- * </p>
- * 
- * <pre>
- * tornado-test -V uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices
- * </pre>
- **/
+ * Test running two and three tasks in parallel on two devices on the same
+ * backend.
+ *
+ * How to test?
+ *
+ * <code>
+ *    tornado-test -V --fullDebug --debug --printBytecodes --jvm="-Dtornado.concurrent.devices=true -Ds0.t0.device=0:0 -Ds0.t1.device=0:0 -Ds0.t2.device=1:0 " uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices
+ * </code>
+ */
 public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
     private static final int NUM_ELEMENTS = 8192;
 
@@ -82,7 +73,7 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
 
     @BeforeClass
     public static void setUpBeforeClass() {
-//        assertAvailableDevices();
+        assertAvailableDevices();
 
         a = new int[NUM_ELEMENTS];
         b = new int[NUM_ELEMENTS];
@@ -119,7 +110,7 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < a.length; i++) {
-            assertEquals((30L+i) * i, a[i]);
+            assertEquals((30L + i) * i, a[i]);
             assertEquals(i, b[i]);
         }
     }
@@ -138,7 +129,7 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < a.length; i++) {
-            assertEquals((30L+i) * i, a[i]);
+            assertEquals((30L + i) * i, a[i]);
             assertEquals(i, b[i]);
             assertEquals(12L * c[i] + e[i], d[i]);
         }
