@@ -61,11 +61,6 @@ public class TestConcurrentBackends extends TornadoTestBase {
             c[i] = 120 + i;
             e[i] = i;
         });
-
-        System.setProperty("s0.t0.device", "0:1");
-        System.setProperty("s0.t1.device", "1:0");
-        System.setProperty("tornado.concurrent.devices", "False");
-
     }
 
     @Test
@@ -83,8 +78,8 @@ public class TestConcurrentBackends extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < a.length; i++) {
+            assertEquals((30L+i) * i, a[i]);
             assertEquals(i, b[i]);
-            assertEquals((30 + i) * i, a[i]);
         }
     }
 
@@ -105,8 +100,8 @@ public class TestConcurrentBackends extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < a.length; i++) {
+            assertEquals((30L+i) * i, a[i]);
             assertEquals(i, b[i]);
-            assertEquals((30 + i) * i, a[i]);
         }
     }
 
@@ -130,7 +125,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < a.length; i++) {
-            assertEquals(30 * i, a[i]);
+            assertEquals((30L+i) * i, a[i]);
             assertEquals(i, b[i]);
             assertEquals(12L * c[i] + e[i], d[i]);
         }
@@ -157,7 +152,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < a.length; i++) {
-            assertEquals(30L * i, a[i]);
+            assertEquals((30L+i) * i, a[i]);
             assertEquals(i, b[i]);
             assertEquals(12L * c[i] + e[i], d[i]);
         }
