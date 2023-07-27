@@ -40,13 +40,13 @@ example:
 tests:
 	rm -f tornado_unittests.log
 	tornado --devices
-	tornado-test.py --ea --verbose
-	tornado-test.py --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	tornado-test --ea --verbose
+	tornado-test --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
 tests-opt:
 	tornado --devices
-	tornado-test.py -V --fast --ea --verbose -J"-Dtornado.spirv.loadstore=True" --printKernel  
+	tornado-test -V --fast --ea --verbose -J"-Dtornado.spirv.loadstore=True" --printKernel  
 
 test-slam:
-	tornado-test.py -V --fast uk.ac.manchester.tornado.unittests.slam.graphics.GraphicsTests 
+	tornado-test -V --fast uk.ac.manchester.tornado.unittests.slam.graphics.GraphicsTests 

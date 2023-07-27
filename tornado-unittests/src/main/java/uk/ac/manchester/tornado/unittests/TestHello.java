@@ -123,7 +123,7 @@ public class TestHello extends TornadoTestBase {
      * How to test:
      *
      * <code>
-     *     $  tornado-test.py -V -J"-Dtornado.print.bytecodes=True" uk.ac.manchester.tornado.unittests.TestHello#testSimpleCompute
+     *     $  tornado-test -V -J"-Dtornado.print.bytecodes=True" uk.ac.manchester.tornado.unittests.TestHello#testSimpleCompute
      * </code>
      */
     @Test

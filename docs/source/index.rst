@@ -35,6 +35,7 @@ Contents
    cloud 
    spirv-backend
    cuda-backend
+   multi-device
    flags
    ide-integration
    faq

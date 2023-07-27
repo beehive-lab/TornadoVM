@@ -152,7 +152,7 @@ example also makes use of loop tiling. There are three main steps to leverage th
        // Index thread in the first dimension ( get_global_id(0) )
        int row = context.localIdx;
 
-       // Index thread in the seconbd dimension ( get_global_id(1) )
+       // Index thread in the second dimension ( get_global_id(1) )
        int col = context.localIdy;
 
        int globalRow = TS * context.groupIdx + row;

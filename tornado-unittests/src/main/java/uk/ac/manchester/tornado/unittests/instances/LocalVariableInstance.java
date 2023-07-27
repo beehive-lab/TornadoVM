@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  * How to run?
  * </p>
  * <code>
- *      tornado-test.py -V uk.ac.manchester.tornado.unittests.instances.LocalVariableInstance
+ *      tornado-test -V uk.ac.manchester.tornado.unittests.instances.LocalVariableInstance
  * </code>
  *
  */
