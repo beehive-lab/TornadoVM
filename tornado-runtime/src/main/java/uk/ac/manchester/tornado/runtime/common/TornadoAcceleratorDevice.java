@@ -34,7 +34,7 @@ import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 public interface TornadoAcceleratorDevice extends TornadoDevice {
 
     /**
-     * It gets the preferred scheduling strategy for the Tornado accelerator device.
+     * It returns the preferred scheduling strategy for the Tornado accelerator device.
      *
      * @return The preferred scheduling strategy.
      */
