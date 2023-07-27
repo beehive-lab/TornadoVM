@@ -201,6 +201,9 @@ public class TornadoGraphBuilder {
                 taskIndex = buffer.getInt();
                 task = executionContext.getTask(taskIndex);
 
+                // Note, the device index is the index in the ArrayList devices in
+                // TornadoExecutionContext. So, internally there is a different indexing
+                // compared to the one appeared in tornado devices.
                 context = graph.addUnique(new ContextNode(executionContext.getDevices().indexOf(executionContext.getDeviceForTask(taskIndex)), executionContext.getDeviceForTask(taskIndex)));
 
                 persist = graph.addUnique(new AllocateMultipleBuffersNode(context));

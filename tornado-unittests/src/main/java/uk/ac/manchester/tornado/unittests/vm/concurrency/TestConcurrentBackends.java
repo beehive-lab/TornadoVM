@@ -87,7 +87,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
     public void testTwoBackendsConcurrent() {
         assertAvailableDrivers(2);
 
-        System.setProperty("tornado.concurrent.devices", "True");
+//        System.setProperty("tornado.concurrent.devices", "True");
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b)//
@@ -108,10 +108,10 @@ public class TestConcurrentBackends extends TornadoTestBase {
     @Test
     public void testThreeBackendsConcurrent() {
         assertAvailableDrivers(3);
-
-        System.setProperty("s0.t0.device", "0:0");
-        System.setProperty("s0.t1.device", "1:0");
-        System.setProperty("s0.t2.device", "2:0");
+//
+//        System.setProperty("s0.t0.device", "0:0");
+//        System.setProperty("s0.t1.device", "1:0");
+//        System.setProperty("s0.t2.device", "2:0");
 
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c, e) //
@@ -136,9 +136,9 @@ public class TestConcurrentBackends extends TornadoTestBase {
 
         assertAvailableDrivers(3);
 
-        System.setProperty("s0.t0.device", "0:0");
-        System.setProperty("s0.t1.device", "1:0");
-        System.setProperty("s0.t2.device", "2:0");
+//        System.setProperty("s0.t0.device", "0:0");
+//        System.setProperty("s0.t1.device", "1:0");
+//        System.setProperty("s0.t2.device", "2:0");
 
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c, e) //
