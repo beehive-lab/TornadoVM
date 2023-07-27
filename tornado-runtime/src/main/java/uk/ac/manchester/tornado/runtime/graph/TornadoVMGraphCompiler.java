@@ -74,7 +74,7 @@ public class TornadoVMGraphCompiler {
 
             // Generate bytecodes with no batches
             if (executionContext.getBatchSize() == -1) {
-                scheduleAndEmitTornadoVMBytecodes(tornadoVMBytecodeBuilder, graph, intermediateTornadoGraph, 0, 0, 0, i);
+                scheduleAndEmitTornadoVMBytecodes(tornadoVMBytecodeBuilder, graph, intermediateTornadoGraph, 0, 0, 0, i, executionContext);
             } else {
                 // Generate bytecodes with batches
                 scheduleBatchDependentBytecodes(executionContext, tornadoVMBytecodeBuilder, graph, intermediateTornadoGraph);
@@ -91,6 +91,7 @@ public class TornadoVMGraphCompiler {
             tornadoVMBytecodeBuilder.end();
 
             tornadoVMBytecodeResults[i] = new TornadoVMBytecodeResult(tornadoVMBytecodeBuilder.getCode(), tornadoVMBytecodeBuilder.getCodeSize());
+
         }
 
         if (executionContext.meta().shouldDumpTaskGraph()) {
@@ -123,7 +124,7 @@ public class TornadoVMGraphCompiler {
         long nthreads = batchSize / batchConfiguration.getNumBytesType();
         for (int i = 0; i < batchConfiguration.getTotalChunks(); i++) {
             offset = (batchSize * i);
-            scheduleAndEmitTornadoVMBytecodes(tornadoVMBytecodeBuilder, graph, intermediateTornadoGraph, offset, batchSize, nthreads, 1);
+            scheduleAndEmitTornadoVMBytecodes(tornadoVMBytecodeBuilder, graph, intermediateTornadoGraph, offset, batchSize, nthreads, 1, executionContext);
         }
         // Last chunk
         if (batchConfiguration.getRemainingChunkSize() != 0) {
@@ -131,7 +132,7 @@ public class TornadoVMGraphCompiler {
             nthreads = batchConfiguration.getRemainingChunkSize() / batchConfiguration.getNumBytesType();
             long realBatchSize = batchConfiguration.getTotalChunks() == 0 ? 0 : batchConfiguration.getRemainingChunkSize();
             long realOffsetSize = batchConfiguration.getTotalChunks() == 0 ? 0 : offset;
-            scheduleAndEmitTornadoVMBytecodes(tornadoVMBytecodeBuilder, graph, intermediateTornadoGraph, realOffsetSize, realBatchSize, nthreads, 1);
+            scheduleAndEmitTornadoVMBytecodes(tornadoVMBytecodeBuilder, graph, intermediateTornadoGraph, realOffsetSize, realBatchSize, nthreads, 1, executionContext);
         }
     }
 
@@ -148,7 +149,7 @@ public class TornadoVMGraphCompiler {
     }
 
     private static void scheduleAndEmitTornadoVMBytecodes(TornadoVMBytecodeBuilder tornadoVMBytecodeBuilder, TornadoGraph graph, IntermediateTornadoGraph intermediateTornadoGraph, long offset,
-            long bufferBatchSize, long nThreads, int id) {
+            long bufferBatchSize, long nThreads, int id, TornadoExecutionContext executionContext) {
         final int[] nodeIds = intermediateTornadoGraph.getNodeIds();
         final BitSet[] dependencies = intermediateTornadoGraph.getDependencies();
 
@@ -179,7 +180,7 @@ public class TornadoVMGraphCompiler {
                     if (outstandingDeps.isEmpty()) {
                         final ContextOpNode asyncNode = (ContextOpNode) graph.getNode(nodeIds[i]);
 
-                        if (shouldEmitAsyncNodeForTheCurrentContext(id, asyncNode, tornadoVMBytecodeBuilder.isSingleContextBytecodeBuilder())) {
+                        if (shouldEmitAsyncNodeForTheCurrentContext(id, asyncNode, tornadoVMBytecodeBuilder.isSingleContextBytecodeBuilder(), executionContext)) {
                             try {
                                 tornadoVMBytecodeBuilder.emitAsyncNode(asyncNode, asyncNode.getContext().getDeviceIndex(), (dependencies[i].isEmpty()) ? -1 : depLists[i], offset, bufferBatchSize,
                                         nThreads);
@@ -205,7 +206,27 @@ public class TornadoVMGraphCompiler {
         }
     }
 
-    private static boolean shouldEmitAsyncNodeForTheCurrentContext(int id, ContextOpNode asyncNode, boolean singleContext) {
-        return asyncNode.getContext().getDeviceIndex() == id || singleContext;
+    /**
+     * It determines whether an asynchronous node should be emitted for the current
+     * context based on the provided parameters.
+     *
+     * @param id
+     *            The index of the device in the list of devices from the execution
+     *            context.
+     * @param asyncNode
+     *            The asynchronous node being considered for emission.
+     * @param singleContext
+     *            A flag indicating if the operation is being executed in a single
+     *            context. If true, the method will always return true. If false, it
+     *            will check the context's device at the given index.
+     * @param executionContext
+     *            The {@link TornadoExecutionContext} containing the list of
+     *            devices.
+     * @return True if the asynchronous node should be emitted for the current
+     *         context, otherwise false.
+     */
+    private static boolean shouldEmitAsyncNodeForTheCurrentContext(int id, ContextOpNode asyncNode, boolean singleContext, TornadoExecutionContext executionContext) throws IndexOutOfBoundsException {
+        return singleContext || (id >= 0 && id < executionContext.getDevices().size() && asyncNode.getContext().getDevice() == executionContext.getDevices().get(id));
     }
+
 }

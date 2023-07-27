@@ -201,7 +201,22 @@ public class TornadoGraphBuilder {
                 taskIndex = buffer.getInt();
                 task = executionContext.getTask(taskIndex);
 
-                context = graph.addUnique(new ContextNode(executionContext.getDeviceIndexForTask(globalTaskId)));
+                /**
+                 * Note, {@code executionContext.getDevices().indexOf} retrieves the device
+                 * index in the {@code Device[]} array, which is different from the device index
+                 * that appears in the output of the Tornado devices command. So, internally, we
+                 * refer to the device index in the {@code Device[]} array and not in the output
+                 * of the Tornado devices command.
+                 *
+                 * For example, in case of three backends with three devices of 0:0, 1:0, 2:0,
+                 * the {@code Devices[]} array will have indexes from 0 to 2, but the order of
+                 * the devices is not guaranteed. It relies on the order that tasks are added to
+                 * the execution context. So, the first device for {@code t0}, then the device
+                 * for {@code t2}, etc., may occupy indexes 0, 1, etc. respectively in the
+                 * array.
+                 *
+                 */
+                context = graph.addUnique(new ContextNode(executionContext.getDevices().indexOf(executionContext.getDeviceForTask(taskIndex)), executionContext.getDeviceForTask(taskIndex)));
 
                 persist = graph.addUnique(new AllocateMultipleBuffersNode(context));
                 context.addUse(persist);
@@ -232,7 +247,9 @@ public class TornadoGraphBuilder {
                 final StreamInNode streamInNode = new StreamInNode(context);
                 streamInNode.setValue((ObjectNode) objectNodes[i]);
                 graph.add(streamInNode);
+                assert context != null;
                 context.addUse(streamInNode);
+                assert persist != null;
                 persist.addValue((ObjectNode) objectNodes[i]);
             }
         }
