@@ -123,7 +123,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
         // update the array that contains the number of devices
         numDevices[0] = deviceCountNumber;
     } else {
-        // Update object javaDeviceHandler
+        // Update object deviceHandlerArray
         for (int i = 0; i < deviceCountNumber; i++) {
             deviceHandlerArray[i] = reinterpret_cast<jlong>(*(&(deviceHandler) + i));
         }
