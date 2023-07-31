@@ -225,14 +225,17 @@ public class TornadoExecutionContext {
             devices.clear();
             devices.add(0, (TornadoAcceleratorDevice) tornadoDevice);
             apply(task -> task.mapTo(tornadoDevice));
-            Arrays.fill(taskToDeviceMapTable, 0);
+            Arrays.fill(taskToDeviceMapTable, tornadoDevice);
         } else {
             throw new TornadoRuntimeException("Device " + tornadoDevice.getClass() + " not supported yet");
         }
     }
 
     public void setDevice(TornadoAcceleratorDevice device) {
-        devices.add(device);
+        // If the device is not in the list of devices, add it
+        if (!devices.contains(device)) {
+            devices.add(device);
+        }
     }
 
     /**
@@ -257,10 +260,7 @@ public class TornadoExecutionContext {
             throw new TornadoRuntimeException("Device " + target.getClass() + " not supported yet");
         }
 
-        // If the device is not in the list of devices, add it
-        if (!devices.contains(accelerator)) {
-            setDevice(accelerator);
-        }
+        setDevice(accelerator);
 
         info("assigning %s to %s", id, target.getDeviceName());
 
