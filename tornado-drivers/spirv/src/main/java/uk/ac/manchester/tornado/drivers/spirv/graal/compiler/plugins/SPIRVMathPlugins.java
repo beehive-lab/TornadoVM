@@ -46,11 +46,12 @@ public class SPIRVMathPlugins {
         InvocationPlugins.Registration registration = new InvocationPlugins.Registration(plugins, TornadoMath.class);
 
         registerFloatMath1Plugins(registration, float.class, JavaKind.Float);
-        registerTrigonometric1Plugins(registration, float.class, JavaKind.Float);
         registerFloatMath2Plugins(registration, float.class, JavaKind.Float);
+        registerTrigonometric1Plugins(registration, float.class, JavaKind.Float);
 
         registerFloatMath1Plugins(registration, double.class, JavaKind.Double);
         registerFloatMath2Plugins(registration, double.class, JavaKind.Double);
+        registerTrigonometric1Plugins(registration, double.class, JavaKind.Double);
 
         registerIntMath1Plugins(registration, int.class, JavaKind.Int);
         registerIntMath2Plugins(registration, int.class, JavaKind.Int);

@@ -70,13 +70,12 @@ public class OCLMathPlugins {
         Registration registration = new Registration(plugins, TornadoMath.class);
 
         registerFloatMath1Plugins(registration, float.class, JavaKind.Float);
-        registerTrigonometric1Plugins(registration, float.class, JavaKind.Float);
         registerFloatMath2Plugins(registration, float.class, JavaKind.Float);
-        registerFloatMath3Plugins(registration, float.class, JavaKind.Float);
+        registerTrigonometric1Plugins(registration, float.class, JavaKind.Float);
 
         registerFloatMath1Plugins(registration, double.class, JavaKind.Double);
         registerFloatMath2Plugins(registration, double.class, JavaKind.Double);
-        registerFloatMath3Plugins(registration, double.class, JavaKind.Double);
+        registerTrigonometric1Plugins(registration, double.class, JavaKind.Double);
 
         registerIntMath1Plugins(registration, int.class, JavaKind.Int);
         registerIntMath2Plugins(registration, int.class, JavaKind.Int);
@@ -252,10 +251,6 @@ public class OCLMathPlugins {
                 return true;
             }
         });
-    }
-
-    private static void registerFloatMath3Plugins(Registration r, Class<?> type, JavaKind kind) {
-
     }
 
     private static void registerIntMath1Plugins(Registration r, Class<?> type, JavaKind kind) {
