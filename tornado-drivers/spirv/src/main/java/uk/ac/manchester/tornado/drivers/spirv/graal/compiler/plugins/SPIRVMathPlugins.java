@@ -51,6 +51,7 @@ public class SPIRVMathPlugins {
 
         registerFloatMath1Plugins(registration, double.class, JavaKind.Double);
         registerFloatMath2Plugins(registration, double.class, JavaKind.Double);
+        registerTrigonometric1Plugins(registration, double.class, JavaKind.Double);
 
         registerIntMath1Plugins(registration, int.class, JavaKind.Int);
         registerIntMath2Plugins(registration, int.class, JavaKind.Int);
