@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+import os
+import subprocess
+import sys
+
+# Access the TORNADO_SDK and JAVA_HOME environment variables
+TORNADO_SDK = os.environ.get('TORNADO_SDK', '')  # Replace the default value ('') with your actual TornadoVM SDK path
+JAVA_CMD = os.path.join(os.environ.get('JAVA_HOME', ''), 'bin',
+                        'java')  # Replace the default value ('') with your actual Java executable path
+JAVA_VERSION_OUTPUT = subprocess.check_output([JAVA_CMD, '-version'], stderr=subprocess.STDOUT, text=True)
+JAVA_VERSION = JAVA_VERSION_OUTPUT.split()[1].split('.')[1] if 'GraalVM' not in JAVA_VERSION_OUTPUT else '8'
+
+
+# Function to check Java version and pull Graal jars if needed
+def check_and_pull_graal_jars():
+    if JAVA_VERSION != '8' and 'GraalVM' not in JAVA_VERSION_OUTPUT:
+        subprocess.run(['bash', './bin/pullGraalJars.sh'], check=True)
+
+
+# Function to clean up the Maven build
+def cleanup_maven():
+    subprocess.run(['mvn', '-Popencl-backend,ptx-backend,spirv-backend', 'clean'], check=True)
+
+
+# Function to build with selected backends and offline mode
+def build_with_selected_backends(selected_backends, offline_mode):
+    options = f"-T1.5C -Dcmake.root.dir=$CMAKE_ROOT -P{sys.argv[1]},{selected_backends}"
+    if offline_mode:
+        options = f"-o {options}"
+
+    # Split the options string into a list of individual arguments
+    arguments = options.split()
+
+    subprocess.run(['mvn'] + arguments + ['install'], check=True)
+
+
+# Function to update paths and backend file after successful build
+def update_paths_and_backend_file():
+    subprocess.run(['bash', './bin/updatePATHS.sh'], check=True)
+    with open(os.path.join(TORNADO_SDK, 'etc', 'tornado.backend'), 'w') as backend_file:
+        backend_file.write(f"tornado.backends={selected_backends}")
+
+
+# Function to copy Graal jars if needed
+def copy_graal_jars():
+    if JAVA_VERSION != '8' and 'GraalVM' not in JAVA_VERSION_OUTPUT:
+        os.makedirs(os.path.join(TORNADO_SDK, 'share', 'java', 'graalJars'), exist_ok=True)
+        subprocess.run(
+            ['cp', os.path.join(PWD, 'graalJars', '*'), os.path.join(TORNADO_SDK, 'share', 'java', 'graalJars')],
+            check=True)
+
+
+if __name__ == '__main__':
+    # Parse command-line arguments
+    selected_backends = sys.argv[2].replace(',', '-backend,') + '-backend'
+    offline_mode = len(sys.argv) > 3 and sys.argv[3] == 'OFFLINE'
+
+    # Check Java version and pull Graal jars if needed
+    check_and_pull_graal_jars()
+
+    # Clean up the Maven build
+    cleanup_maven()
+
+    # Build with selected backends and offline mode
+    build_with_selected_backends(selected_backends, offline_mode)
+
+    # Update paths and backend file after successful build
+    update_paths_and_backend_file()
+
+    # Copy Graal jars if needed
+    copy_graal_jars()
