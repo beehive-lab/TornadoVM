@@ -22,6 +22,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -57,6 +58,13 @@ public class ParameterTests extends TornadoTestBase {
         z = 0;
     }
 
+    private static void testWithScalarValues03(long[] x, long y, int[] z) {
+        for (@Parallel int i = 0; i < x.length; i++) {
+            long tmp = x[i] + y;
+            z[i] = (int) tmp;
+        }
+    }
+
     /**
      * This test throws a {@link TornadoRuntimeException} because scalar values are
      * used as output parameters. This type of code is not legal in TornadoVM.
@@ -87,6 +95,22 @@ public class ParameterTests extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", ParameterTests::testWithOnlyScalarValues2, z) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, z);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+    }
+
+    @Test
+    public void testScalarParameters03() {
+        long[] x = new long[] { 3 };
+        long y = 10L;
+        int[] z = new int[1];
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, x, y) //
+                .task("t0", ParameterTests::testWithScalarValues03, x, y, z) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, z);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
