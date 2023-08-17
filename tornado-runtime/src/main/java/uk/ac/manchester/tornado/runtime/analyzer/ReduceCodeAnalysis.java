@@ -58,6 +58,7 @@ import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkFloatingPointIntrinsicsNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkIntIntrinsicNode;
 
@@ -215,6 +216,18 @@ public class ReduceCodeAnalysis {
                         reduceOperation.add(value);
                     } else if (store.value() instanceof InvokeNode) {
                         InvokeNode invoke = (InvokeNode) store.value();
+                        if (invoke.callTarget().targetName().startsWith("Math")) {
+                            reduceOperation.add(invoke);
+                        }
+                    }
+                } else if (node instanceof WriteAtomicNode) {
+                    WriteAtomicNode write = (WriteAtomicNode) node;
+
+                    if (write.value() instanceof BinaryNode || write.value() instanceof BinaryArithmeticNode) {
+                        ValueNode value = write.value();
+                        reduceOperation.add(value);
+                    } else if (write.value() instanceof InvokeNode) {
+                        InvokeNode invoke = (InvokeNode) write.value();
                         if (invoke.callTarget().targetName().startsWith("Math")) {
                             reduceOperation.add(invoke);
                         }
