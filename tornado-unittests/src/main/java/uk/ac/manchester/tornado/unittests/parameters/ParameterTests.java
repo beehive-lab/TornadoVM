@@ -27,6 +27,8 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * How to test?
  *
@@ -104,17 +106,27 @@ public class ParameterTests extends TornadoTestBase {
 
     @Test
     public void testScalarParameters03() {
-        long[] x = new long[] { 3 };
+        final int size = 16;
+        long[] x = new long[size];
         long y = 10L;
-        int[] z = new int[1];
+        int[] z = new int[size];
+
+        for (int i = 0; i < size; i++) {
+            x[i] = i;
+            z[i] = -1;
+        }
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, x, y) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, x) //
                 .task("t0", ParameterTests::testWithScalarValues03, x, y, z) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, z);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
+
+        for (int i = 0; i < z.length; i++) {
+            assertEquals(y + x[i], z[i]);
+        }
     }
 }
