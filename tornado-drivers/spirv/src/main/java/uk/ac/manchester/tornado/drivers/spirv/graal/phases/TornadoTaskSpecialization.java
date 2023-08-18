@@ -253,6 +253,8 @@ public class TornadoTaskSpecialization extends BasePhase<TornadoHighTierContext>
             result = ConstantNode.forInt((int) obj);
         } else if (obj instanceof Double) {
             result = ConstantNode.forDouble((double) obj);
+        } else if (obj instanceof Long) {
+            result = ConstantNode.forLong((long) obj);
         } else {
             unimplemented("createConstantFromObject: %s", obj);
         }
