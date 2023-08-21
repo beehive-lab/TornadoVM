@@ -38,7 +38,6 @@ import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
@@ -51,7 +50,6 @@ import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.*;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
-import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
@@ -513,23 +511,17 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 result = new OCLVectorWrapper(deviceContext, object, batchSize);
             }  else if (object instanceof MemorySegment) {
-                MemorySegment segment = (MemorySegment) object;
-                result = new OCLMemorySegmentWrapper(segment, deviceContext);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else if (object instanceof IntArray) {
-                MemorySegment segment = ((IntArray) object).getSegment();
-                result = new OCLMemorySegmentWrapper(segment, deviceContext);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else if (object instanceof FloatArray) {
-                MemorySegment segment = ((FloatArray) object).getSegment();
-                result = new OCLMemorySegmentWrapper(segment, deviceContext);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else if (object instanceof DoubleArray) {
-                MemorySegment segment = ((DoubleArray) object).getSegment();
-                result = new OCLMemorySegmentWrapper(segment, deviceContext);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else if (object instanceof LongArray) {
-                MemorySegment segment = ((LongArray) object).getSegment();
-                result = new OCLMemorySegmentWrapper(segment, deviceContext);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else if (object instanceof ShortArray) {
-                MemorySegment segment = ((ShortArray) object).getSegment();
-                result = new OCLMemorySegmentWrapper(segment, deviceContext);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else {
                 result = new OCLObjectWrapper(deviceContext, object);
             }
@@ -570,11 +562,13 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     public int allocate(Object object, long batchSize, TornadoDeviceObjectState state) {
         final ObjectBuffer buffer;
         if (state.hasObjectBuffer() && state.isLockedBuffer()) {
+            System.out.println("------------------------- has object and it's locked");
             buffer = state.getObjectBuffer();
             if (batchSize != 0) {
                 buffer.setSizeSubRegion(batchSize);
             }
         } else {
+            System.out.println("-------------------- else");
             buffer = newDeviceBufferAllocation(object, batchSize, state);
         }
 
@@ -583,9 +577,12 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         }
 
         final Class<?> type = object.getClass();
-        if (!type.isArray()) {
-            checkBatchSize(batchSize);
-        }
+        System.out.println("batch size " + batchSize);
+
+        //TODO: FIX
+//        if (!type.isArray()) {
+//            checkBatchSize(batchSize);
+//        }
         return -1;
     }
 

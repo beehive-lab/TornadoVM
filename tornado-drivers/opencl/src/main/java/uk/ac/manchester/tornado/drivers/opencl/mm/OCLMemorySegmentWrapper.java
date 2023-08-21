@@ -16,17 +16,25 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
 public class OCLMemorySegmentWrapper implements ObjectBuffer {
 
-    private final MemorySegment segment;
     private final OCLDeviceContext deviceContext;
 
     private long bufferId;
-
+    private long bufferOffset;
     private boolean onDevice;
     private static final int INIT_VALUE = -1;
 
-    public OCLMemorySegmentWrapper(MemorySegment segment, OCLDeviceContext deviceContext) {
-        this.segment = segment;
+    private final long batchSize;
+
+    private long bufferSize;
+
+    private long setSubRegionSize;
+
+    public OCLMemorySegmentWrapper(OCLDeviceContext deviceContext, long batchSize) {
         this.deviceContext = deviceContext;
+        this.batchSize = batchSize;
+        this.bufferSize = INIT_VALUE; // this is in bytes, should it be in elements?
+        this.bufferId = INIT_VALUE;
+        this.bufferOffset = 0;
         onDevice = false;
     }
 
@@ -38,22 +46,24 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
 
     @Override
     public void setBuffer(ObjectBufferWrapper bufferWrapper) {
+        this.bufferId = bufferWrapper.buffer;
+        this.bufferOffset = bufferWrapper.bufferOffset;
 
+        bufferWrapper.bufferOffset += bufferSize;
     }
 
     @Override
     public long getBufferOffset() {
-        // Will always be 0 since there is not parent buffer.
-        return 0;
+        return bufferOffset;
     }
 
     @Override
-    public void read(Object reference) {
-
+    public void read(final Object reference) {
+        read(reference, 0, null, false);
     }
 
     @Override
-    public int read(Object reference, long hostOffset, int[] events, boolean useDeps) {
+    public int read(final Object reference, long hostOffset, int[] events, boolean useDeps) {
         MemorySegment segment;
         if (reference instanceof IntArray) {
             segment = ((IntArray) reference).getSegment();
@@ -70,26 +80,59 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         }
 
         final int returnEvent;
-        returnEvent = deviceContext.readBuffer(toBuffer(), 0, segment.byteSize(),
+        final long numBytes = getSizeSubRegion() > 0 ? getSizeSubRegion() : bufferSize;
+   //     System.out.println("==== [READ] bufferOffset: " + bufferOffset + " bufferSize: " + numBytes + " hostOffset: " + hostOffset + " seg.get(0): " + ((IntArray) reference).get(0) + " seg.size: " + ((IntArray) reference).getSize() + " seg pointer: " + segment.address().toRawLongValue());
+        returnEvent = deviceContext.readBuffer(toBuffer(), bufferOffset, numBytes,
                 segment.address().toRawLongValue(), hostOffset, (useDeps) ? events : null);
         return useDeps ? returnEvent : -1;
     }
 
     @Override
     public void write(Object reference) {
-        MemorySegment segment = (MemorySegment) reference;
-        OCLBufferInfo bufferInfo = deviceContext.getSegmentToBufferMap().get(segment);
-        deviceContext.writeBuffer(bufferInfo.getBufferId(), 0, bufferInfo.getBufferSize(), bufferInfo.getHostBufferPointer(), 0, null);
+        MemorySegment seg;
+        if (reference instanceof IntArray) {
+            seg = ((IntArray) reference).getSegment();
+        } else if(reference instanceof FloatArray) {
+            seg = ((FloatArray) reference).getSegment();
+        } else if(reference instanceof DoubleArray) {
+            seg = ((DoubleArray) reference).getSegment();
+        } else if(reference instanceof LongArray) {
+            seg = ((LongArray) reference).getSegment();
+        } else if (reference instanceof ShortArray) {
+            seg = ((ShortArray) reference).getSegment();
+        } else {
+            seg = (MemorySegment) reference;
+        }
+        //OCLBufferInfo bufferInfo = deviceContext.getSegmentToBufferMap().get(segment);
+        System.out.println("==== [WRITE] bufferOffset: " + bufferOffset + " bufferSize: " + bufferSize + " hostOffset: 0");
+        deviceContext.writeBuffer(toBuffer(), bufferOffset, bufferSize, seg.address().toRawLongValue(), 0, null);
+        onDevice = true;
     }
 
     @Override
     public int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps) {
-        MemorySegment segment = (MemorySegment) reference;
-        OCLBufferInfo bufferInfo = deviceContext.getSegmentToBufferMap().get(segment);
+
+        MemorySegment seg;
+        if (reference instanceof IntArray) {
+            seg = ((IntArray) reference).getSegment();
+        } else if(reference instanceof FloatArray) {
+            seg = ((FloatArray) reference).getSegment();
+        } else if(reference instanceof DoubleArray) {
+            seg = ((DoubleArray) reference).getSegment();
+        } else if(reference instanceof LongArray) {
+            seg = ((LongArray) reference).getSegment();
+        } else if (reference instanceof ShortArray) {
+            seg = ((ShortArray) reference).getSegment();
+        } else {
+            seg = (MemorySegment) reference;
+        }
+        //OCLBufferInfo bufferInfo = deviceContext.getSegmentToBufferMap().get(segment);
 
         final int returnEvent;
-        returnEvent = deviceContext.enqueueReadBuffer(toBuffer(), 0, bufferInfo.getBufferSize(),
-                bufferInfo.getHostBufferPointer(), hostOffset, (useDeps) ? events : null);
+        // is the address correct for batches?
+ //       System.out.println("==== [ENQUEUEREAD] bufferOffset: " + bufferOffset + " bufferSize: " + bufferSize + " hostOffset: " + hostOffset);
+        returnEvent = deviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, bufferSize,
+                seg.address().toRawLongValue(), hostOffset, (useDeps) ? events : null);
         return useDeps ? returnEvent : -1;
     }
 
@@ -111,8 +154,9 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
             seg = (MemorySegment) reference;
         }
 
-        int internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), 0,
-                seg.byteSize(), seg.address().toRawLongValue(), hostOffset, (useDeps) ? events : null);
+//        System.out.println("==== [ENQUEUEWRITE] bufferOffset: " + bufferOffset + " bufferSize: " + bufferSize + " hostOffset: " + hostOffset  + " seg.get(0): " + ((IntArray) reference).get(0)  + " seg.size: " + ((IntArray) reference).getSize()  + " seg pointer: " + seg.address().toRawLongValue());
+        int internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset,
+                bufferSize, seg.address().toRawLongValue(), hostOffset, (useDeps) ? events : null);
         returnEvents.add(internalEvent);
 
         onDevice = true;
@@ -135,7 +179,13 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         } else {
             memref = (MemorySegment) reference;
         }
-        long bufferSize = memref.byteSize();
+
+        if (batchSize <= 0) {
+            bufferSize = memref.byteSize();
+        } else {
+            bufferSize = batchSize;
+
+        }
 
         if (bufferSize <= 0) {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
@@ -153,8 +203,7 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
     @Override
     public void deallocate() throws TornadoMemoryException {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
-        MemorySegment memref = segment;
-        long bufferSize = memref.byteSize();
+        //long bufferSize = memref.byteSize();
         deviceContext.getBufferProvider().markBufferReleased(bufferId, bufferSize);
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
@@ -167,16 +216,20 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
 
     @Override
     public long size() {
-        return deviceContext.getSegmentToBufferMap().get(segment).getBufferSize();
+        return bufferSize;
     }
 
     @Override
     public void setSizeSubRegion(long batchSize) {
-
+        this.setSubRegionSize = batchSize;
     }
 
     @Override
     public long getSizeSubRegion() {
-        return 0;
+        return setSubRegionSize;
+    }
+
+    public long getBatchSize() {
+        return batchSize;
     }
 }

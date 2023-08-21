@@ -39,6 +39,7 @@ import org.graalvm.compiler.nodes.loop.BasicInductionVariable;
 import org.graalvm.compiler.nodes.loop.LoopEx;
 import org.graalvm.compiler.nodes.loop.LoopsData;
 
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -131,6 +132,10 @@ public class TornadoVMGraphCompiler {
                 if (inputSizes.size() > 1) {
                     throw new TornadoRuntimeException("[UNSUPPORTED] Input objects with different sizes not currently supported");
                 }
+            } else if (o instanceof IntArray) {
+                totalSize = ((IntArray) o).getSize() * 4;
+                inputSizes.add(totalSize);
+                typeSize = 4;
             }
         }
 
