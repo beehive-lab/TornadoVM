@@ -16,12 +16,11 @@ __kernel void add(__global long *_kernel_context, __constant uchar *_constant_re
     // BLOCK 2
     l_5  =  (long) i_4;
     l_6  =  l_5 << 2;
-    l_7  =  l_6 + 24L;
-    ul_8  =  ul_0 + l_7;
+    ul_8  =  ul_0 + l_6;
     i_9  =  *((__global int *) ul_8);
-    ul_10  =  ul_1 + l_7;
+    ul_10  =  ul_1 + l_6;
     i_11  =  *((__global int *) ul_10);
-    ul_12  =  ul_2 + l_7;
+    ul_12  =  ul_2 + l_6;
     i_13  =  i_9 + i_11;
     *((__global int *) ul_12)  =  i_13;
     i_14  =  get_global_size(0);

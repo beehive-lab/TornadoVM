@@ -27,6 +27,7 @@ import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
@@ -44,14 +45,16 @@ public class MatrixMul1D {
     public static final int WARMUP_ITERATIONS = 15;
     public static final int EXECUTE_ITERATIONS = 100;
 
-    private static void matrixMultiplication(final float[] A, final float[] B, final float[] C, final int size) {
+    private static void matrixMultiplication(final FloatArray A, final FloatArray B, final FloatArray C, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
             for (@Parallel int j = 0; j < size; j++) {
                 float sum = 0.0f;
                 for (int k = 0; k < size; k++) {
-                    sum += A[(i * size) + k] * B[(k * size) + j];
+                    sum += A.get((i * size) + k) * B.get((k * size) + j);
+                    //sum += A[(i * size) + k] * B[(k * size) + j];
                 }
-                C[(i * size) + j] = sum;
+                //C[(i * size) + j] = sum;
+                C.set((i * size) + j, sum);
             }
         }
     }
@@ -62,15 +65,15 @@ public class MatrixMul1D {
             N = Integer.parseInt(args[0]);
         }
 
-        float[] matrixA = new float[N * N];
-        float[] matrixB = new float[N * N];
-        float[] matrixCSeq = new float[N * N];
-        float[] matrixCCUDA = new float[N * N];
-        float[] matrixCOCL = new float[N * N];
+        FloatArray matrixA = new FloatArray(N * N);
+        FloatArray matrixB = new FloatArray(N * N);
+        FloatArray matrixCSeq = new FloatArray(N * N);
+        FloatArray matrixCCUDA = new FloatArray(N * N);
+        FloatArray matrixCOCL = new FloatArray(N * N);
 
         IntStream.range(0, N * N).parallel().forEach(idx -> {
-            matrixA[idx] = 2.5f;
-            matrixB[idx] = 3.5f;
+            matrixA.set(idx, 2.5f);
+            matrixB.set(idx, 3.5f);
         });
 
         TaskGraph cudaTaskGraph = new TaskGraph("cuda_old_api") //

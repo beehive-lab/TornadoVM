@@ -70,7 +70,7 @@ public class BlackAndWhiteTransform {
 
         private static final boolean PARALLEL_COMPUTATION = Boolean.parseBoolean(System.getProperty("run::parallel", "False"));
 
-        private static final String IMAGE_FILE = "/home/mary/Pictures/Wallpapers/test.jpg";
+        private static final String IMAGE_FILE = "/tmp/image.jpg";
 
         private static TornadoExecutionPlan executor;
 
