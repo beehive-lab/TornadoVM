@@ -17,7 +17,13 @@
  */
 package uk.ac.manchester.tornado.unittests.reductions;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.Random;
+import java.util.stream.IntStream;
+
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -26,11 +32,6 @@ import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import java.util.Random;
-import java.util.stream.IntStream;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * <p>
@@ -64,10 +65,6 @@ public class InstanceReduction extends TornadoTestBase {
         IntStream.range(0, N).forEach(i -> {
             input.set(i, rand.nextFloat());
         });
-
-//        for (float v : input) {
-//            expected[0] += v;
-//        }
 
         for (int i = 0; i < N; i++) {
             expected.set(0, expected.get(0) + input.get(i));

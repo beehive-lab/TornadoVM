@@ -41,6 +41,8 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
+
 public class TornadoVM_Intrinsics {
 
     /**
@@ -52,9 +54,9 @@ public class TornadoVM_Intrinsics {
      * @param value
      * @return old value
      */
-    public static synchronized int atomic_add(int[] array, int index, int value) {
-        int old = array[index];
-        array[index] = array[index] + value;
+    public static synchronized int atomic_add(IntArray array, int index, int value) {
+        int old = array.get(index);
+        array.set(index, array.get(index) + value);
         return old;
     }
 }

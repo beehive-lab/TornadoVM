@@ -28,6 +28,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
@@ -53,13 +54,13 @@ public class TestMultipleTasksMultipleDevices {
     @Test
     public void testTwoTasksTwoDevices() {
         final int numElements = 8192;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
         int devices = TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
 
         IntStream.range(0, numElements).forEach(i -> {
-            a[i] = 30;
-            b[i] = 10;
+            a.set(i, 30);
+            b.set(i, 10);
         });
 
         if (devices == 1) {
@@ -79,25 +80,25 @@ public class TestMultipleTasksMultipleDevices {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < a.length; i++) {
-            assertEquals(360, a[i]);
-            assertEquals(10, b[i]);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(360, a.get(i));
+            assertEquals(10, b.get(i));
         }
     }
 
     @Test
     public void testThreeTasksThreeDevices() {
         final int numElements = 2048;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
-        int[] d = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
+        IntArray d = new IntArray(numElements);
         int devices = TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
 
         IntStream.range(0, numElements).forEach(i -> {
-            a[i] = 30;
-            b[i] = 10;
-            c[i] = 120;
+            a.set(i, 30);
+            b.set(i, 10);
+            c.set(i, 120);
         });
 
         if (devices < 3) {
@@ -120,10 +121,10 @@ public class TestMultipleTasksMultipleDevices {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < a.length; i++) {
-            assertEquals(360, a[i]);
-            assertEquals(10, b[i]);
-            assertEquals((12 * 120) + 120, d[i]);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(360, a.get(i));
+            assertEquals(10, b.get(i));
+            assertEquals((12 * 120) + 120, d.get(i));
         }
     }
 }

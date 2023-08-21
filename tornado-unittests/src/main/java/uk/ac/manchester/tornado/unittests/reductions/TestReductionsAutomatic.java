@@ -45,12 +45,14 @@ import static org.junit.Assert.assertEquals;
 public class TestReductionsAutomatic extends TornadoTestBase {
 
     public static void test(IntArray input, @Reduce IntArray output) {
+        output.set(0, 0);
         for (@Parallel int i = 0; i < input.getSize(); i++) {
             output.set(0, output.get(0) + input.get(i));
         }
     }
 
     private static void testFloat(FloatArray input, @Reduce FloatArray output) {
+        output.set(0, 0);
         for (@Parallel int i = 0; i < input.getSize(); i++) {
             output.set(0, output.get(0) + input.get(i));
         }
@@ -129,6 +131,7 @@ public class TestReductionsAutomatic extends TornadoTestBase {
     }
 
     private static void testDouble(DoubleArray input, @Reduce DoubleArray output) {
+        output.set(0, 0);
         for (@Parallel int i = 0; i < input.getSize(); i++) {
             output.set(0, output.get(0) + input.get(i));
         }

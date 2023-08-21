@@ -29,6 +29,11 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
@@ -50,47 +55,47 @@ public class TestBatches extends TornadoTestBase {
         System.setProperty("tornado.reuse.device.buffers", "False");
     }
 
-    public static void compute(float[] array) {
-        for (@Parallel int i = 0; i < array.length; i++) {
+    public static void compute(FloatArray array) {
+        for (@Parallel int i = 0; i < array.getSize(); i++) {
             // This assignment is on purpose for testing the whole array after merging all
             // batches.
-            array[i] = array[i];
+            array.set(i, array.get(i));
         }
     }
 
-    public static void compute(float[] arrayA, float[] arrayB) {
-        for (@Parallel int i = 0; i < arrayA.length; i++) {
-            arrayB[i] = arrayA[i] + 100;
+    public static void compute(FloatArray arrayA, FloatArray arrayB) {
+        for (@Parallel int i = 0; i < arrayA.getSize(); i++) {
+            arrayB.set(i, arrayA.get(i) + 100);
         }
     }
 
-    public static void compute(float[] arrayA, float[] arrayB, float[] arrayC) {
-        for (@Parallel int i = 0; i < arrayA.length; i++) {
-            arrayC[i] = arrayA[i] + arrayB[i];
+    public static void compute(FloatArray arrayA, FloatArray arrayB, FloatArray arrayC) {
+        for (@Parallel int i = 0; i < arrayA.getSize(); i++) {
+            arrayC.set(i, arrayA.get(i) + arrayB.get(i));
         }
     }
 
-    public static void compute(int[] arrayA, int[] arrayB, int[] arrayC) {
-        for (@Parallel int i = 0; i < arrayA.length; i++) {
-            arrayC[i] = arrayA[i] + arrayB[i];
+    public static void compute(IntArray arrayA, IntArray arrayB, IntArray arrayC) {
+        for (@Parallel int i = 0; i < arrayA.getSize(); i++) {
+            arrayC.set(i, arrayA.get(i) + arrayB.get(i));
         }
     }
 
-    public static void compute(long[] arrayA, long[] arrayB, long[] arrayC) {
-        for (@Parallel int i = 0; i < arrayA.length; i++) {
-            arrayC[i] = arrayA[i] + arrayB[i];
+    public static void compute(LongArray arrayA, LongArray arrayB, LongArray arrayC) {
+        for (@Parallel int i = 0; i < arrayA.getSize(); i++) {
+            arrayC.set(i, arrayA.get(i) + arrayB.get(i));
         }
     }
 
-    public static void compute(double[] arrayA, double[] arrayB, double[] arrayC) {
-        for (@Parallel int i = 0; i < arrayA.length; i++) {
-            arrayC[i] = arrayA[i] + arrayB[i];
+    public static void compute(DoubleArray arrayA, DoubleArray arrayB, DoubleArray arrayC) {
+        for (@Parallel int i = 0; i < arrayA.getSize(); i++) {
+            arrayC.set(i, arrayA.get(i) + arrayB.get(i));
         }
     }
 
-    public static void compute(short[] arrayA, short[] arrayB, short[] arrayC) {
-        for (@Parallel int i = 0; i < arrayA.length; i++) {
-            arrayC[i] = (short) (arrayA[i] + arrayB[i]);
+    public static void compute(ShortArray arrayA, ShortArray arrayB, ShortArray arrayC) {
+        for (@Parallel int i = 0; i < arrayA.getSize(); i++) {
+            arrayC.set(i, (short) (arrayA.get(i) + arrayB.get(i)));
         }
     }
 
@@ -105,10 +110,10 @@ public class TestBatches extends TornadoTestBase {
         if (size * 4 > maxAllocMemory) {
             size = (int) ((maxAllocMemory / 4 / 2) * 0.9);
         }
-        float[] arrayA = new float[size];
-        float[] arrayB = new float[size];
+        FloatArray arrayA = new FloatArray(size);
+        FloatArray arrayB = new FloatArray(size);
 
-        IntStream.range(0, arrayA.length).sequential().forEach(idx -> arrayA[idx] = idx);
+        IntStream.range(0, arrayA.getSize()).sequential().forEach(idx -> arrayA.set(idx, idx));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA) //
@@ -120,8 +125,8 @@ public class TestBatches extends TornadoTestBase {
         executionPlan.withBatch("100MB") // Slots of 100 MB
                 .execute();
 
-        for (int i = 0; i < arrayB.length; i++) {
-            assertEquals(arrayA[i] + 100, arrayB[i], 0.1f);
+        for (int i = 0; i < arrayB.getSize(); i++) {
+            assertEquals(arrayA.get(i) + 100, arrayB.get(i), 0.1f);
         }
 
         executionPlan.freeDeviceMemory();
@@ -138,11 +143,11 @@ public class TestBatches extends TornadoTestBase {
         if (size * 4 > maxAllocMemory) {
             size = (int) ((maxAllocMemory / 4 / 2) * 0.9);
         }
-        float[] arrayA = new float[size];
-        float[] arrayB = new float[size];
+        FloatArray arrayA = new FloatArray(size);
+        FloatArray arrayB = new FloatArray(size);
 
         Random r = new Random();
-        IntStream.range(0, arrayA.length).sequential().forEach(idx -> arrayA[idx] = r.nextFloat());
+        IntStream.range(0, arrayA.getSize()).sequential().forEach(idx -> arrayA.set(idx, r.nextFloat()));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA) //
@@ -154,8 +159,8 @@ public class TestBatches extends TornadoTestBase {
         executionPlan.withBatch("300MB") // Slots of 300 MB
                 .execute();
 
-        for (int i = 0; i < arrayB.length; i++) {
-            assertEquals(arrayA[i] + 100, arrayB[i], 1.0f);
+        for (int i = 0; i < arrayB.getSize(); i++) {
+            assertEquals(arrayA.get(i) + 100, arrayB.get(i), 1.0f);
         }
 
         executionPlan.freeDeviceMemory();
@@ -172,9 +177,9 @@ public class TestBatches extends TornadoTestBase {
         if (size * 4 > maxAllocMemory) {
             size = (int) ((maxAllocMemory / 4) * 0.9);
         }
-        float[] arrayA = new float[size];
+        FloatArray arrayA = new FloatArray(size);
 
-        IntStream.range(0, arrayA.length).sequential().forEach(idx -> arrayA[idx] = idx);
+        IntStream.range(0, arrayA.getSize()).sequential().forEach(idx -> arrayA.set(idx, idx));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA) //
@@ -186,8 +191,8 @@ public class TestBatches extends TornadoTestBase {
         executionPlan.withBatch("512MB") // Slots of 512 MB
                 .execute();
 
-        for (int i = 0; i < arrayA.length; i++) {
-            assertEquals(i, arrayA[i], 0.1f);
+        for (int i = 0; i < arrayA.getSize(); i++) {
+            assertEquals(i, arrayA.get(i), 0.1f);
         }
 
         executionPlan.freeDeviceMemory();
@@ -204,13 +209,13 @@ public class TestBatches extends TornadoTestBase {
         if (size * 4 > maxAllocMemory) {
             size = (int) ((maxAllocMemory / 4 / 3) * 0.9);
         }
-        float[] arrayA = new float[size];
-        float[] arrayB = new float[size];
-        float[] arrayC = new float[size];
+        FloatArray arrayA = new FloatArray(size);
+        FloatArray arrayB = new FloatArray(size);
+        FloatArray arrayC = new FloatArray(size);
 
-        IntStream.range(0, arrayA.length).sequential().forEach(idx -> {
-            arrayA[idx] = idx;
-            arrayB[idx] = idx;
+        IntStream.range(0, arrayA.getSize()).sequential().forEach(idx -> {
+            arrayA.set(idx, idx);
+            arrayB.set(idx, idx);
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -223,8 +228,8 @@ public class TestBatches extends TornadoTestBase {
         executionPlan.withBatch("50MB") // Slots of 50 MB
                 .execute();
 
-        for (int i = 0; i < arrayA.length; i++) {
-            assertEquals(arrayA[i] + arrayB[i], arrayC[i], 0.1f);
+        for (int i = 0; i < arrayA.getSize(); i++) {
+            assertEquals(arrayA.get(i) + arrayB.get(i), arrayC.get(i), 0.1f);
         }
 
         executionPlan.freeDeviceMemory();
@@ -241,13 +246,13 @@ public class TestBatches extends TornadoTestBase {
         if (size * 4 > maxAllocMemory) {
             size = (int) ((maxAllocMemory / 4 / 3) * 0.9);
         }
-        int[] arrayA = new int[size];
-        int[] arrayB = new int[size];
-        int[] arrayC = new int[size];
+        IntArray arrayA = new IntArray(size);
+        IntArray arrayB = new IntArray(size);
+        IntArray arrayC = new IntArray(size);
 
-        IntStream.range(0, arrayA.length).sequential().forEach(idx -> {
-            arrayA[idx] = idx;
-            arrayB[idx] = idx;
+        IntStream.range(0, arrayA.getSize()).sequential().forEach(idx -> {
+            arrayA.set(idx, idx);
+            arrayB.set(idx, idx);
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -260,8 +265,8 @@ public class TestBatches extends TornadoTestBase {
         executionPlan.withBatch("50MB") // Slots of 50 MB
                 .execute();
 
-        for (int i = 0; i < arrayA.length; i++) {
-            assertEquals(arrayA[i] + arrayB[i], arrayC[i]);
+        for (int i = 0; i < arrayA.getSize(); i++) {
+            assertEquals(arrayA.get(i) + arrayB.get(i), arrayC.get(i));
         }
         executionPlan.freeDeviceMemory();
     }
@@ -277,14 +282,14 @@ public class TestBatches extends TornadoTestBase {
         if (size * 2 > maxAllocMemory) {
             size = (int) ((maxAllocMemory / 2 / 3) * 0.9);
         }
-        short[] arrayA = new short[size];
-        short[] arrayB = new short[size];
-        short[] arrayC = new short[size];
+        ShortArray arrayA = new ShortArray(size);
+        ShortArray arrayB = new ShortArray(size);
+        ShortArray arrayC = new ShortArray(size);
 
         Random r = new Random();
-        IntStream.range(0, arrayA.length).sequential().forEach(idx -> {
-            arrayA[idx] = (short) r.nextInt(Short.MAX_VALUE / 2);
-            arrayB[idx] = (short) r.nextInt(Short.MAX_VALUE / 2);
+        IntStream.range(0, arrayA.getSize()).sequential().forEach(idx -> {
+            arrayA.set(idx, (short) r.nextInt(Short.MAX_VALUE / 2));
+            arrayB.set(idx, (short) r.nextInt(Short.MAX_VALUE / 2));
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -297,8 +302,8 @@ public class TestBatches extends TornadoTestBase {
         executionPlan.withBatch("50MB") // Slots of 50 MB
                 .execute();
 
-        for (int i = 0; i < arrayA.length; i++) {
-            assertEquals(arrayA[i] + arrayB[i], arrayC[i]);
+        for (int i = 0; i < arrayA.getSize(); i++) {
+            assertEquals(arrayA.get(i) + arrayB.get(i), arrayC.get(i));
         }
         executionPlan.freeDeviceMemory();
     }
@@ -313,13 +318,13 @@ public class TestBatches extends TornadoTestBase {
         if (size * 8 > maxAllocMemory) {
             size = (int) ((maxAllocMemory / 8 / 3) * 0.9);
         }
-        double[] arrayA = new double[size];
-        double[] arrayB = new double[size];
-        double[] arrayC = new double[size];
+        DoubleArray arrayA = new DoubleArray(size);
+        DoubleArray arrayB = new DoubleArray(size);
+        DoubleArray arrayC = new DoubleArray(size);
 
-        IntStream.range(0, arrayA.length).sequential().forEach(idx -> {
-            arrayA[idx] = idx;
-            arrayB[idx] = idx;
+        IntStream.range(0, arrayA.getSize()).sequential().forEach(idx -> {
+            arrayA.set(idx, idx);
+            arrayB.set(idx, idx);
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -332,8 +337,8 @@ public class TestBatches extends TornadoTestBase {
         executionPlan.withBatch("50MB") // Slots of 50 MB
                 .execute();
 
-        for (int i = 0; i < arrayA.length; i++) {
-            assertEquals(arrayA[i] + arrayB[i], arrayC[i], 0.01);
+        for (int i = 0; i < arrayA.getSize(); i++) {
+            assertEquals(arrayA.get(i) + arrayB.get(i), arrayC.get(i), 0.01);
         }
         executionPlan.freeDeviceMemory();
     }
@@ -349,13 +354,13 @@ public class TestBatches extends TornadoTestBase {
         if (size * 8 > maxAllocMemory) {
             size = (int) ((maxAllocMemory / 8 / 3) * 0.9);
         }
-        long[] arrayA = new long[size];
-        long[] arrayB = new long[size];
-        long[] arrayC = new long[size];
+        LongArray arrayA = new LongArray(size);
+        LongArray arrayB = new LongArray(size);
+        LongArray arrayC = new LongArray(size);
 
-        IntStream.range(0, arrayA.length).sequential().forEach(idx -> {
-            arrayA[idx] = idx;
-            arrayB[idx] = idx;
+        IntStream.range(0, arrayA.getSize()).sequential().forEach(idx -> {
+            arrayA.set(idx, idx);
+            arrayB.set(idx, idx);
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -368,8 +373,8 @@ public class TestBatches extends TornadoTestBase {
         executionPlan.withBatch("50MB") // Slots of 50 MB
                 .execute();
 
-        for (int i = 0; i < arrayA.length; i++) {
-            assertEquals(arrayA[i] + arrayB[i], arrayC[i]);
+        for (int i = 0; i < arrayA.getSize(); i++) {
+            assertEquals(arrayA.get(i) + arrayB.get(i), arrayC.get(i));
         }
         executionPlan.freeDeviceMemory();
     }

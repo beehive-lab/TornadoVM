@@ -20,14 +20,13 @@ package uk.ac.manchester.tornado.unittests.profiler;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Arrays;
-
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -61,12 +60,12 @@ public class TestProfiler extends TornadoTestBase {
     @Test
     public void testProfilerEnabled() {
         int numElements = 16;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
 
-        Arrays.fill(a, 1);
-        Arrays.fill(b, 2);
+        a.init(1);
+        b.init(2);
 
         // testProfilerDisabled might execute first. We must make sure that the code
         // cache is reset.
@@ -116,12 +115,12 @@ public class TestProfiler extends TornadoTestBase {
     @Test
     public void testProfilerDisabled() {
         int numElements = 16;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
 
-        Arrays.fill(a, 1);
-        Arrays.fill(b, 2);
+        a.init(1);
+        b.init(2);
 
         // Disable profiler
         System.setProperty("tornado.profiler", "False");
@@ -155,12 +154,13 @@ public class TestProfiler extends TornadoTestBase {
     @Test
     public void testProfilerFromexecutionPlan() {
         int numElements = 16;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
 
-        Arrays.fill(a, 1);
-        Arrays.fill(b, 2);
+        a.init(1);
+        b.init(2);
+
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
@@ -202,12 +202,13 @@ public class TestProfiler extends TornadoTestBase {
     @Test
     public void testProfilerOnAndOff() {
         int numElements = 16;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
 
-        Arrays.fill(a, 1);
-        Arrays.fill(b, 2);
+        a.init(1);
+        b.init(2);
+
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //

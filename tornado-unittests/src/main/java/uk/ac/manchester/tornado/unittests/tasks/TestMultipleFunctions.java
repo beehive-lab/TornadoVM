@@ -30,6 +30,8 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -48,52 +50,66 @@ public class TestMultipleFunctions extends TornadoTestBase {
     private static class TestArrays {
         final int N1 = 1024;
 
-        int[] calleeReadTor;
-        int[] callerReadCalleeWriteTor;
-        int[] callerReadTor;
-        int[] callerWriteTor;
-        int[] callerReadWriteTor;
-        int[] callee1WriteTor;
-        int[] callee2ReadTor;
+        IntArray calleeReadTor;
+        IntArray callerReadCalleeWriteTor;
+        IntArray callerReadTor;
+        IntArray callerWriteTor;
+        IntArray callerReadWriteTor;
+        IntArray callee1WriteTor;
+        IntArray callee2ReadTor;
 
-        int[] calleeReadSeq;
-        int[] callerReadCalleeWriteSeq;
-        int[] callerReadSeq;
-        int[] callerWriteSeq;
-        int[] callerReadWriteSeq;
-        int[] callee1WriteSeq;
-        int[] callee2ReadSeq;
+        IntArray calleeReadSeq;
+        IntArray callerReadCalleeWriteSeq;
+        IntArray callerReadSeq;
+        IntArray callerWriteSeq;
+        IntArray callerReadWriteSeq;
+        IntArray callee1WriteSeq;
+        IntArray callee2ReadSeq;
 
         int ignoreParam1 = 10;
         int ignoreParam2 = -500;
 
         public TestArrays() {
-            calleeReadTor = new int[N1];
-            callerReadCalleeWriteTor = new int[N1];
-            callerReadTor = new int[N1];
-            callerWriteTor = new int[N1];
-            callerReadWriteTor = new int[N1];
-            callee1WriteTor = new int[N1];
-            callee2ReadTor = new int[N1];
+            calleeReadTor = new IntArray(N1);
+            callerReadCalleeWriteTor = new IntArray(N1);
+            callerReadTor = new IntArray(N1);
+            callerWriteTor = new IntArray(N1);
+            callerReadWriteTor = new IntArray(N1);
+            callee1WriteTor = new IntArray(N1);
+            callee2ReadTor = new IntArray(N1);
+            calleeReadSeq = new IntArray(N1);
+            callerReadCalleeWriteSeq = new IntArray(N1);
+            callerReadSeq = new IntArray(N1);
+            callerWriteSeq = new IntArray(N1);
+            callerReadWriteSeq = new IntArray(N1);
+            callee1WriteSeq = new IntArray(N1);
+            callee2ReadSeq = new IntArray(N1);
 
             Random random = new Random();
             for (int i = 0; i < N1; i++) {
-                calleeReadTor[i] = random.nextInt();
-                callerReadCalleeWriteTor[i] = random.nextInt();
-                callerReadTor[i] = random.nextInt();
-                callerWriteTor[i] = random.nextInt();
-                callerReadWriteTor[i] = random.nextInt();
-                callee1WriteTor[i] = random.nextInt();
-                callee2ReadTor[i] = random.nextInt();
+                calleeReadTor.set(i, random.nextInt());
+                calleeReadSeq.set(i, calleeReadTor.get(i));
+                callerReadCalleeWriteTor.set(i, random.nextInt());
+                callerReadCalleeWriteSeq.set(i, callerReadCalleeWriteTor.get(i));
+                callerReadTor.set(i, random.nextInt());
+                callerReadSeq.set(i, callerReadTor.get(i));
+                callerWriteTor.set(i, random.nextInt());
+                callerWriteSeq.set(i, callerWriteTor.get(i));
+                callerReadWriteTor.set(i, random.nextInt());
+                callerReadWriteSeq.set(i, callerReadWriteTor.get(i));
+                callee1WriteTor.set(i, random.nextInt());
+                callee1WriteSeq.set(i, callee1WriteTor.get(i));
+                callee2ReadTor.set(i, random.nextInt());
+                callee2ReadSeq.set(i, callee2ReadTor.get(i));
             }
 
-            calleeReadSeq = calleeReadTor.clone();
-            callerReadCalleeWriteSeq = callerReadCalleeWriteTor.clone();
-            callerReadSeq = callerReadTor.clone();
-            callerWriteSeq = callerWriteTor.clone();
-            callerReadWriteSeq = callerReadWriteTor.clone();
-            callee1WriteSeq = callee1WriteTor.clone();
-            callee2ReadSeq = callee2ReadTor.clone();
+//            calleeReadSeq = calleeReadTor.clone();
+//            callerReadCalleeWriteSeq = callerReadCalleeWriteTor.clone();
+//            callerReadSeq = callerReadTor.clone();
+//            callerWriteSeq = callerWriteTor.clone();
+//            callerReadWriteSeq = callerReadWriteTor.clone();
+//            callee1WriteSeq = callee1WriteTor.clone();
+//            callee2ReadSeq = callee2ReadTor.clone();
         }
     }
 
@@ -101,9 +117,9 @@ public class TestMultipleFunctions extends TornadoTestBase {
         return a + b;
     }
 
-    public static void vectorAddInteger(int[] a, int[] b, int[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = operation(a[i], b[i]);
+    public static void vectorAddInteger(IntArray a, IntArray b, IntArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, operation(a.get(i), b.get(i)));
         }
     }
 
@@ -111,9 +127,9 @@ public class TestMultipleFunctions extends TornadoTestBase {
         return a + operation(a, b);
     }
 
-    public static void vectorAddInteger2(int[] a, int[] b, int[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = operation2(a[i], b[i]);
+    public static void vectorAddInteger2(IntArray a, IntArray b, IntArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, operation2(a.get(i), b.get(i)));
         }
     }
 
@@ -121,9 +137,9 @@ public class TestMultipleFunctions extends TornadoTestBase {
         return a + operation2(a, b);
     }
 
-    public static void vectorAddInteger3(int[] a, int[] b, int[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = operation3(a[i], b[i]);
+    public static void vectorAddInteger3(IntArray a, IntArray b, IntArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, operation3(a.get(i), b.get(i)));
         }
     }
 
@@ -151,15 +167,15 @@ public class TestMultipleFunctions extends TornadoTestBase {
         return Float4.mult(a, a);
     }
 
-    public static void vectorAddInteger4(int[] a, int[] b, int[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = foo(a[i]) + bar(b[i]);
+    public static void vectorAddInteger4(IntArray a, IntArray b, IntArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, foo(a.get(i)) + bar(b.get(i)));
         }
     }
 
-    public static void vectorAddFloats(float[] a, float[] b, float[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = foo(a[i]) + bar(b[i]);
+    public static void vectorAddFloats(FloatArray a, FloatArray b, FloatArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, foo(a.get(i)) + bar(b.get(i)));
         }
     }
 
@@ -174,14 +190,14 @@ public class TestMultipleFunctions extends TornadoTestBase {
     @Test
     public void test01() {
         final int numElements = 4096;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
 
         Random r = new Random();
         IntStream.range(0, numElements).sequential().forEach(i -> {
-            a[i] = r.nextInt();
-            b[i] = r.nextInt();
+            a.set(i, r.nextInt());
+            b.set(i, r.nextInt());
         });
 
         TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b).task("t0", TestMultipleFunctions::vectorAddInteger, a, b, c)
@@ -191,8 +207,8 @@ public class TestMultipleFunctions extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals((a[i] + b[i]), c[i]);
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals((a.get(i) + b.get(i)), c.get(i));
         }
     }
 
@@ -200,14 +216,14 @@ public class TestMultipleFunctions extends TornadoTestBase {
     public void test02() {
 
         final int numElements = 4096;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
 
         Random r = new Random();
         IntStream.range(0, numElements).sequential().forEach(i -> {
-            a[i] = r.nextInt();
-            b[i] = r.nextInt();
+            a.set(i, r.nextInt());
+            b.set(i, r.nextInt());
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -219,8 +235,8 @@ public class TestMultipleFunctions extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals((a[i] + (a[i] + b[i])), c[i]);
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals((a.get(i) + (a.get(i) + b.get(i))), c.get(i));
         }
     }
 
@@ -228,14 +244,14 @@ public class TestMultipleFunctions extends TornadoTestBase {
     public void test03() {
 
         final int numElements = 4096;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
 
         Random r = new Random();
         IntStream.range(0, numElements).sequential().forEach(i -> {
-            a[i] = r.nextInt();
-            b[i] = r.nextInt();
+            a.set(i, r.nextInt());
+            b.set(i, r.nextInt());
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -247,8 +263,8 @@ public class TestMultipleFunctions extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals((a[i] + (a[i] + (a[i] + b[i]))), c[i]);
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals((a.get(i) + (a.get(i) + (a.get(i) + b.get(i)))), c.get(i));
         }
     }
 
@@ -256,14 +272,14 @@ public class TestMultipleFunctions extends TornadoTestBase {
     public void test04() {
 
         final int numElements = 4096;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
 
         Random r = new Random();
         IntStream.range(0, numElements).sequential().forEach(i -> {
-            a[i] = r.nextInt();
-            b[i] = r.nextInt();
+            a.set(i, r.nextInt());
+            b.set(i, r.nextInt());
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -275,23 +291,23 @@ public class TestMultipleFunctions extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals((a[i] + a[i]) + (b[i] * b[i]), c[i]);
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals((a.get(i) + a.get(i)) + (b.get(i) * b.get(i)), c.get(i));
         }
     }
 
     @Test
     public void test05() {
         final int numElements = 8192 * 4;
-        float[] a = new float[numElements];
-        float[] b = new float[numElements];
-        float[] c = new float[numElements];
-        float[] checker = new float[numElements];
+        FloatArray a = new FloatArray(numElements);
+        FloatArray b = new FloatArray(numElements);
+        FloatArray c = new FloatArray(numElements);
+        FloatArray checker = new FloatArray(numElements);
 
         Random r = new Random();
         IntStream.range(0, numElements).sequential().forEach(i -> {
-            a[i] = r.nextInt(10);
-            b[i] = r.nextInt(10);
+            a.set(i, r.nextInt(10));
+            b.set(i, r.nextInt(10));
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -305,8 +321,8 @@ public class TestMultipleFunctions extends TornadoTestBase {
 
         vectorAddFloats(a, b, checker);
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(checker[i], c[i], 0.01f);
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(checker.get(i), c.get(i), 0.01f);
         }
     }
 
@@ -342,33 +358,33 @@ public class TestMultipleFunctions extends TornadoTestBase {
      * Tests {@link uk.ac.manchester.tornado.api.common.Access} pattern when calling
      * a method and writing to one of the parameters in the callee.
      */
-    public void caller1(int[] calleeRead, int ignoreParam1, int[] callerReadCalleeWrite, int ignoreParam2, int[] callerRead, int[] callerWrite) {
-        for (int i = 0; i < callerRead.length; i++) {
-            callerWrite[i] = callerRead[i] + callerReadCalleeWrite[i] + 10;
+    public void caller1(IntArray calleeRead, int ignoreParam1, IntArray callerReadCalleeWrite, int ignoreParam2, IntArray callerRead, IntArray callerWrite) {
+        for (int i = 0; i < callerRead.getSize(); i++) {
+            callerWrite.set(i, callerRead.get(i) + callerReadCalleeWrite.get(i) + 10);
         }
 
         callee1(calleeRead, callerReadCalleeWrite);
     }
 
-    public void callee1(int[] calleeRead, int[] calleeWrite) {
-        for (int i = 0; i < calleeRead.length; i++) {
-            calleeWrite[i] = calleeRead[i] + 1;
+    public void callee1(IntArray calleeRead, IntArray calleeWrite) {
+        for (int i = 0; i < calleeRead.getSize(); i++) {
+            calleeWrite.set(i, calleeRead.get(i) + 1);
         }
     }
 
-    public void caller2(int[] calleeReadWrite, int[] calleeRead) {
+    public void caller2(IntArray calleeReadWrite, IntArray calleeRead) {
         callee2(calleeReadWrite, calleeRead);
     }
 
-    public static void callee2(int[] calleeReadWrite, int[] calleeRead) {
-        for (int i = 0; i < calleeReadWrite.length; i++) {
-            calleeReadWrite[i] = calleeReadWrite[i] - calleeRead[i];
+    public static void callee2(IntArray calleeReadWrite, IntArray calleeRead) {
+        for (int i = 0; i < calleeReadWrite.getSize(); i++) {
+            calleeReadWrite.set(i, calleeReadWrite.get(i) - calleeRead.get(i));
         }
     }
 
-    public void caller3(int[] callerReadWrite, int[] callee1Read, int[] callee1Write, int[] callee2ReadWrite, int[] callee2Read) {
-        for (int i = 0; i < callerReadWrite.length; i++) {
-            callerReadWrite[i] = callerReadWrite[i] + 20;
+    public void caller3(IntArray callerReadWrite, IntArray callee1Read, IntArray callee1Write, IntArray callee2ReadWrite, IntArray callee2Read) {
+        for (int i = 0; i < callerReadWrite.getSize(); i++) {
+            callerReadWrite.set(i, callerReadWrite.get(i) + 20);
         }
         callee1(callee1Read, callee1Write);
         callee2(callee2ReadWrite, callee2Read);
@@ -404,10 +420,18 @@ public class TestMultipleFunctions extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        Assert.assertArrayEquals(testArrays.calleeReadSeq, testArrays.calleeReadTor);
-        Assert.assertArrayEquals(testArrays.callerReadCalleeWriteSeq, testArrays.callerReadCalleeWriteTor);
-        Assert.assertArrayEquals(testArrays.callerReadSeq, testArrays.callerReadTor);
-        Assert.assertArrayEquals(testArrays.callerWriteSeq, testArrays.callerWriteTor);
+        for (int i = 0; i < testArrays.calleeReadTor.getSize(); i++) {
+            Assert.assertEquals(testArrays.calleeReadSeq.get(i), testArrays.calleeReadTor.get(i));
+        }
+        for (int i = 0; i < testArrays.callerReadCalleeWriteSeq.getSize(); i++) {
+            Assert.assertEquals(testArrays.callerReadCalleeWriteSeq.get(i), testArrays.callerReadCalleeWriteTor.get(i));
+        }
+        for (int i = 0; i < testArrays.callerReadSeq.getSize(); i++) {
+            Assert.assertEquals(testArrays.callerReadSeq.get(i), testArrays.callerReadTor.get(i));
+        }
+        for (int i = 0; i < testArrays.callerWriteSeq.getSize(); i++) {
+            Assert.assertEquals(testArrays.callerWriteSeq.get(i), testArrays.callerWriteSeq.get(i));
+        }
     }
 
     /**
@@ -441,10 +465,18 @@ public class TestMultipleFunctions extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        Assert.assertArrayEquals(testArrays.calleeReadSeq, testArrays.calleeReadTor);
-        Assert.assertArrayEquals(testArrays.callerReadCalleeWriteSeq, testArrays.callerReadCalleeWriteTor);
-        Assert.assertArrayEquals(testArrays.callerReadSeq, testArrays.callerReadTor);
-        Assert.assertArrayEquals(testArrays.callerWriteSeq, testArrays.callerWriteTor);
+        for (int i = 0; i < testArrays.calleeReadTor.getSize(); i++) {
+            Assert.assertEquals(testArrays.calleeReadSeq.get(i), testArrays.calleeReadTor.get(i));
+        }
+        for (int i = 0; i < testArrays.callerReadCalleeWriteSeq.getSize(); i++) {
+            Assert.assertEquals(testArrays.callerReadCalleeWriteSeq.get(i), testArrays.callerReadCalleeWriteTor.get(i));
+        }
+        for (int i = 0; i < testArrays.callerReadSeq.getSize(); i++) {
+            Assert.assertEquals(testArrays.callerReadSeq.get(i), testArrays.callerReadTor.get(i));
+        }
+        for (int i = 0; i < testArrays.callerWriteSeq.getSize(); i++) {
+            Assert.assertEquals(testArrays.callerWriteSeq.get(i), testArrays.callerWriteSeq.get(i));
+        }
     }
 
     /**
@@ -490,30 +522,44 @@ public class TestMultipleFunctions extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        Assert.assertArrayEquals(arrays.calleeReadSeq, arrays.calleeReadTor);
-        Assert.assertArrayEquals(arrays.callerReadCalleeWriteSeq, arrays.callerReadCalleeWriteTor);
-        Assert.assertArrayEquals(arrays.callerReadSeq, arrays.callerReadTor);
-        Assert.assertArrayEquals(arrays.callerWriteSeq, arrays.callerWriteTor);
-        Assert.assertArrayEquals(arrays.callerReadWriteSeq, arrays.callerReadWriteTor);
-        Assert.assertArrayEquals(arrays.callee1WriteSeq, arrays.callee1WriteTor);
-        Assert.assertArrayEquals(arrays.callee2ReadSeq, arrays.callee2ReadTor);
+        for (int i = 0; i < arrays.calleeReadTor.getSize(); i++) {
+            Assert.assertEquals(arrays.calleeReadSeq.get(i), arrays.calleeReadTor.get(i));
+        }
+        for (int i = 0; i < arrays.callerReadCalleeWriteSeq.getSize(); i++) {
+            Assert.assertEquals(arrays.callerReadCalleeWriteSeq.get(i), arrays.callerReadCalleeWriteTor.get(i));
+        }
+        for (int i = 0; i < arrays.callerReadSeq.getSize(); i++) {
+            Assert.assertEquals(arrays.callerReadSeq.get(i), arrays.callerReadTor.get(i));
+        }
+        for (int i = 0; i < arrays.callerWriteSeq.getSize(); i++) {
+            Assert.assertEquals(arrays.callerWriteSeq.get(i), arrays.callerWriteSeq.get(i));
+        }
+        for (int i = 0; i < arrays.callerReadWriteSeq.getSize(); i++) {
+            Assert.assertEquals(arrays.callerReadWriteSeq.get(i), arrays.callerReadWriteTor.get(i));
+        }
+        for (int i = 0; i < arrays.callee1WriteSeq.getSize(); i++) {
+            Assert.assertEquals(arrays.callee1WriteSeq.get(i), arrays.callee1WriteTor.get(i));
+        }
+        for (int i = 0; i < arrays.callee2ReadSeq.getSize(); i++) {
+            Assert.assertEquals(arrays.callee2ReadSeq.get(i), arrays.callee2ReadTor.get(i));
+        }
     }
 
-    private static void functionA(int[] arr) {
+    private static void functionA(IntArray arr) {
         functionB(arr);
         functionC(arr);
     }
 
-    private static void functionB(int[] arr) {
+    private static void functionB(IntArray arr) {
         functionD(arr);
     }
 
-    private static void functionC(int[] arr) {
+    private static void functionC(IntArray arr) {
         functionD(arr);
     }
 
-    private static void functionD(int[] arr) {
-        arr[0] = -1;
+    private static void functionD(IntArray arr) {
+        arr.set(0, -1);
     }
 
     //@formatter:off
@@ -525,7 +571,9 @@ public class TestMultipleFunctions extends TornadoTestBase {
     //@formatter:on
     @Test
     public void testNoDoubleCompilation() {
-        int[] arr = new int[] { 0 };
+        IntArray arr = new IntArray(1);
+        arr.init(0);
+
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestMultipleFunctions::functionA, arr)//
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, arr);
@@ -534,7 +582,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        Assert.assertEquals(-1, arr[0]);
+        Assert.assertEquals(-1, arr.get(0));
     }
 
 }

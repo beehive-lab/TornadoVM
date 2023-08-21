@@ -28,6 +28,11 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -66,27 +71,27 @@ public class Types extends TornadoTestBase {
         }
     }
 
-    private static void i2l(int[] input, long[] output) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            output[i] = input[i];
+    private static void i2l(IntArray input, LongArray output) {
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            output.set(i, input.get(i));
         }
     }
 
-    private static void s2i(short[] input, int[] output) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            output[i] = input[i];
+    private static void s2i(ShortArray input, IntArray output) {
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            output.set(i, input.get(i));
         }
     }
 
-    private static void f2d(float[] input, double[] output) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            output[i] = input[i];
+    private static void f2d(FloatArray input, DoubleArray output) {
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            output.set(i, input.get(i));
         }
     }
 
-    private static void i2d(int[] input, double[] output) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            output[i] = input[i];
+    private static void i2d(IntArray input, DoubleArray output) {
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            output.set(i, input.get(i));
         }
     }
 
@@ -217,12 +222,12 @@ public class Types extends TornadoTestBase {
     @Test
     public void testIntToLong() {
         int size = 512;
-        int[] input = new int[size];
-        long[] output = new long[size];
-        long[] seq = new long[size];
+        IntArray input = new IntArray(size);
+        LongArray output = new LongArray(size);
+        LongArray seq = new LongArray(size);
 
         Random r = new Random(System.nanoTime());
-        IntStream.range(0, input.length).forEach(x -> input[x] = r.nextInt());
+        IntStream.range(0, input.getSize()).forEach(x -> input.set(x, r.nextInt()));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
@@ -234,20 +239,20 @@ public class Types extends TornadoTestBase {
         executionPlan.execute();
 
         i2l(input, seq);
-        for (int i = 0; i < seq.length; i++) {
-            assertEquals(seq[i], output[i]);
+        for (int i = 0; i < seq.getSize(); i++) {
+            assertEquals(seq.get(i), output.get(i));
         }
     }
 
     @TornadoNotSupported
     public void testShortToInt() {
         int size = 512;
-        short[] input = new short[size];
-        int[] output = new int[size];
-        int[] seq = new int[size];
+        ShortArray input = new ShortArray(size);
+        IntArray output = new IntArray(size);
+        IntArray seq = new IntArray(size);
 
         Random r = new Random(System.nanoTime());
-        IntStream.range(0, input.length).forEach(x -> input[x] = (short) r.nextInt(256));
+        IntStream.range(0, input.getSize()).forEach(x -> input.set(x, (short) r.nextInt(256)));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
@@ -259,20 +264,20 @@ public class Types extends TornadoTestBase {
         executionPlan.execute();
 
         s2i(input, seq);
-        for (int i = 0; i < seq.length; i++) {
-            assertEquals(seq[i], output[i]);
+        for (int i = 0; i < seq.getSize(); i++) {
+            assertEquals(seq.get(i), output.get(i));
         }
     }
 
     @Test
     public void testFloatToDouble() {
         int size = 512;
-        float[] input = new float[size];
-        double[] output = new double[size];
-        double[] seq = new double[size];
+        FloatArray input = new FloatArray(size);
+        DoubleArray output = new DoubleArray(size);
+        DoubleArray seq = new DoubleArray(size);
 
         Random r = new Random(System.nanoTime());
-        IntStream.range(0, input.length).forEach(x -> input[x] = r.nextFloat());
+        IntStream.range(0, input.getSize()).forEach(x -> input.set(x, r.nextFloat()));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
@@ -284,20 +289,20 @@ public class Types extends TornadoTestBase {
         executionPlan.execute();
 
         f2d(input, seq);
-        for (int i = 0; i < seq.length; i++) {
-            assertEquals(seq[i], output[i], 0.001f);
+        for (int i = 0; i < seq.getSize(); i++) {
+            assertEquals(seq.get(i), output.get(i), 0.001f);
         }
     }
 
     @Test
     public void testIntToDouble() {
         int size = 512;
-        int[] input = new int[size];
-        double[] output = new double[size];
-        double[] seq = new double[size];
+        IntArray input = new IntArray(size);
+        DoubleArray output = new DoubleArray(size);
+        DoubleArray seq = new DoubleArray(size);
 
         Random r = new Random(System.nanoTime());
-        IntStream.range(0, input.length).forEach(x -> input[x] = r.nextInt());
+        IntStream.range(0, input.getSize()).forEach(x -> input.set(x, r.nextInt()));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
@@ -309,8 +314,8 @@ public class Types extends TornadoTestBase {
         executionPlan.execute();
 
         i2d(input, seq);
-        for (int i = 0; i < seq.length; i++) {
-            assertEquals(seq[i], output[i], 0.001f);
+        for (int i = 0; i < seq.getSize(); i++) {
+            assertEquals(seq.get(i), output.get(i), 0.001f);
         }
     }
 }

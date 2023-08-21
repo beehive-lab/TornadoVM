@@ -21,7 +21,6 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 
-import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -30,6 +29,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -44,17 +44,18 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 public class TestLoops extends TornadoTestBase {
 
-    public static void forConstant01(int[] a, final int n) {
+    public static void forConstant01(IntArray a, final int n) {
         for (@Parallel int i = 0; i < n; i++) {
-            a[i] = 10;
+            a.set(i, 10);
         }
     }
 
     @Test
     public void testForConstant01() {
         final int size = 256;
-        int[] a = new int[size];
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size);
+        a.init(1);
+
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestLoops::forConstant01, a, size) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
@@ -63,22 +64,23 @@ public class TestLoops extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int value : a) {
-            assertEquals(10, value);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(10, a.get(i));
         }
     }
 
-    public static void forConstant02(int[] a, final int n) {
+    public static void forConstant02(IntArray a, final int n) {
         for (@Parallel int i = 0; i <= n; i++) {
-            a[i] = 10;
+            a.set(i, 10);
         }
     }
 
     @Test
     public void testForConstant02() {
         final int size = 256;
-        int[] a = new int[size];
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size);
+        a.init(1);
+
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestLoops::forConstant02, a, (size - 1)) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
@@ -86,22 +88,23 @@ public class TestLoops extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int value : a) {
-            assertEquals(10, value);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(10, a.get(i));
         }
     }
 
-    public static void forConstant03(int[] a, int n) {
+    public static void forConstant03(IntArray a, int n) {
         for (@Parallel int i = 0; i < n; i++) {
-            a[i] = 10;
+            a.set(i, 10);
         }
     }
 
     @Test
     public void testForConstant03() {
         int size = 256;
-        int[] a = new int[size];
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size);
+        a.init(1);
+
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestLoops::forConstant03, a, size) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
@@ -110,8 +113,8 @@ public class TestLoops extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int value : a) {
-            assertEquals(10, value);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(10, a.get(i));
         }
     }
 
@@ -197,9 +200,9 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    public static void forLoopOneD(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = 10;
+    public static void forLoopOneD(IntArray a) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            a.set(i, 10);
         }
     }
 
@@ -207,9 +210,8 @@ public class TestLoops extends TornadoTestBase {
     public void testForLoopOneD() {
         final int size = 10;
 
-        int[] a = new int[size];
-
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size);
+        a.init(1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestLoops::forLoopOneD, a) //
@@ -218,14 +220,14 @@ public class TestLoops extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int j : a) {
-            assertEquals(10, j);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(10, a.get(i));
         }
     }
 
-    public static void steppedLoop(int[] a, int size) {
+    public static void steppedLoop(IntArray a, int size) {
         for (@Parallel int i = 0; i < size; i += 2) {
-            a[i] = 200;
+            a.set(i, 200);
         }
     }
 
@@ -233,9 +235,8 @@ public class TestLoops extends TornadoTestBase {
     public void testStepLoop() {
         final int size = 16;
 
-        int[] a = new int[size];
-
-        Arrays.fill(a, 75);
+        IntArray a = new IntArray(size);
+        a.init(75);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -246,15 +247,15 @@ public class TestLoops extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < size; i += 2) {
-            assertEquals(200, a[i]);
-            assertEquals(75, a[i + 1]);
+            assertEquals(200, a.get(i));
+            assertEquals(75, a.get(i + 1));
         }
     }
 
-    public static void steppedLoop2(int[] a, int size) {
+    public static void steppedLoop2(IntArray a, int size) {
         for (@Parallel int i = 0; i < size; i += 2) {
-            a[i] = 200;
-            a[i + 1] = 200;
+            a.set(i, 200);
+            a.set(i + 1, 200);
         }
     }
 
@@ -262,8 +263,8 @@ public class TestLoops extends TornadoTestBase {
     public void testStepLoop2() {
         final int size = 512;
 
-        int[] a = new int[size];
-        Arrays.fill(a, 75);
+        IntArray a = new IntArray(size);
+        a.init(75);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestLoops::steppedLoop2, a, size) //
@@ -273,15 +274,15 @@ public class TestLoops extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
-            assertEquals(200, a[i]);
+            assertEquals(200, a.get(i));
         }
     }
 
-    public static void steppedLoop3(int[] a, int size) {
+    public static void steppedLoop3(IntArray a, int size) {
         for (@Parallel int i = 0; i < size; i += 3) {
-            a[i] = 200;
-            a[i + 1] = 200;
-            a[i + 2] = 200;
+            a.set(i, 200);
+            a.set(i + 1, 200);
+            a.set(i + 2, 200);
         }
     }
 
@@ -289,8 +290,8 @@ public class TestLoops extends TornadoTestBase {
     public void testStepLoop3() {
         final int size = 512;
 
-        int[] a = new int[size];
-        Arrays.fill(a, 75);
+        IntArray a = new IntArray(size);
+        a.init(75);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestLoops::steppedLoop3, a, size) //
@@ -301,13 +302,13 @@ public class TestLoops extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
-            assertEquals(200, a[i]);
+            assertEquals(200, a.get(i));
         }
     }
 
-    public static void steppedLoop4(int[] a, int size) {
+    public static void steppedLoop4(IntArray a, int size) {
         for (@Parallel int i = 0; i < size; i += 4) {
-            a[i] = 200;
+            a.set(i, 200);
         }
     }
 
@@ -315,8 +316,8 @@ public class TestLoops extends TornadoTestBase {
     public void testStepLoop4() {
         final int size = 512;
 
-        int[] a = new int[size];
-        Arrays.fill(a, 75);
+        IntArray a = new IntArray(size);
+        a.init(75);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestLoops::steppedLoop4, a, size) //
@@ -326,16 +327,16 @@ public class TestLoops extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < size; i += 4) {
-            assertEquals(200, a[i]);
+            assertEquals(200, a.get(i));
             for (int j = (i + 1); j < (i + 4) && j < size; j++) {
-                assertEquals(75, a[j]);
+                assertEquals(75, a.get(j));
             }
         }
     }
 
-    public static void steppedLoop5(int[] a, int size) {
+    public static void steppedLoop5(IntArray a, int size) {
         for (@Parallel int i = 0; i < size; i += 3) {
-            a[i] = 200;
+            a.set(i, 200);
         }
     }
 
@@ -343,8 +344,8 @@ public class TestLoops extends TornadoTestBase {
     public void testStepLoop5() {
         final int size = 512;
 
-        int[] a = new int[size];
-        Arrays.fill(a, 75);
+        IntArray a = new IntArray(size);
+        a.init(75);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestLoops::steppedLoop5, a, size) //
@@ -355,16 +356,16 @@ public class TestLoops extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < size; i += 3) {
-            assertEquals(200, a[i]);
+            assertEquals(200, a.get(i));
             for (int j = (i + 1); j < (i + 3) && j < size; j++) {
-                assertEquals(75, a[j]);
+                assertEquals(75, a.get(j));
             }
         }
     }
 
-    public static void steppedLoop7(int[] a, int size) {
+    public static void steppedLoop7(IntArray a, int size) {
         for (@Parallel int i = 0; i < size; i += 7) {
-            a[i] = 200;
+            a.set(i, 200);
         }
     }
 
@@ -372,8 +373,8 @@ public class TestLoops extends TornadoTestBase {
     public void testStepLoop7() {
         final int size = 512;
 
-        int[] a = new int[size];
-        Arrays.fill(a, 75);
+        IntArray a = new IntArray(size);
+        a.init(75);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestLoops::steppedLoop7, a, size) //
@@ -383,16 +384,16 @@ public class TestLoops extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < size; i += 7) {
-            assertEquals(200, a[i]);
+            assertEquals(200, a.get(i));
             for (int j = (i + 1); j < (i + 7) && j < size; j++) {
-                assertEquals(75, a[j]);
+                assertEquals(75, a.get(j));
             }
         }
     }
 
-    public static void steppedLoop10(int[] a, int size) {
+    public static void steppedLoop10(IntArray a, int size) {
         for (@Parallel int i = 0; i < size; i += 10) {
-            a[i] = 200;
+            a.set(i, 200);
         }
     }
 
@@ -400,8 +401,8 @@ public class TestLoops extends TornadoTestBase {
     public void testStepLoop10() {
         final int size = 2048;
 
-        int[] a = new int[size];
-        Arrays.fill(a, 75);
+        IntArray a = new IntArray(size);
+        a.init(75);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestLoops::steppedLoop10, a, size) //
@@ -411,19 +412,19 @@ public class TestLoops extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < size; i += 10) {
-            assertEquals(200, a[i]);
+            assertEquals(200, a.get(i));
             for (int j = (i + 1); j < (i + 10) && j < size; j++) {
-                assertEquals(75, a[j]);
+                assertEquals(75, a.get(j));
             }
         }
     }
 
-    public static void conditionalInLoop(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
+    public static void conditionalInLoop(IntArray a) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
             if (i == 4) {
-                a[i] = 4;
+                a.set(i, 4);
             } else {
-                a[i] = 10;
+                a.set(i, 10);
             }
         }
     }
@@ -432,9 +433,8 @@ public class TestLoops extends TornadoTestBase {
     public void testIfInsideForLoop() {
         final int size = 10;
 
-        int[] a = new int[size];
-
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size);
+        a.init(1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
@@ -445,19 +445,19 @@ public class TestLoops extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < a.length; i++) {
+        for (int i = 0; i < a.getSize(); i++) {
             if (i == 4) {
-                assertEquals(4, a[i]);
+                assertEquals(4, a.get(i));
             } else {
-                assertEquals(10, a[i]);
+                assertEquals(10, a.get(i));
             }
         }
     }
 
-    public static void conditionalInLoop2(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
+    public static void conditionalInLoop2(IntArray a) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
             if (i != 4) {
-                a[i] = 10;
+                a.set(i, 10);
             }
         }
     }
@@ -466,9 +466,8 @@ public class TestLoops extends TornadoTestBase {
     public void testIfInsideForLoop2() {
         final int size = 10;
 
-        int[] a = new int[size];
-
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size);
+        a.init(1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
@@ -478,23 +477,23 @@ public class TestLoops extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < a.length; i++) {
+        for (int i = 0; i < a.getSize(); i++) {
             if (i == 4) {
-                assertEquals(1, a[i]);
+                assertEquals(1, a.get(i));
             } else {
-                assertEquals(10, a[i]);
+                assertEquals(10, a.get(i));
             }
         }
     }
 
-    public static void conditionalIfElseLoop(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
+    public static void conditionalIfElseLoop(IntArray a) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
             if (i == 4) {
-                a[i] = 4;
+                a.set(i, 4);
             } else if (i == 5) {
-                a[i] = 5;
+                a.set(i, 5);
             } else {
-                a[i] = 10;
+                a.set(i, 10);
             }
         }
     }
@@ -502,7 +501,7 @@ public class TestLoops extends TornadoTestBase {
     @Test
     public void testIfElseElseInLoop() {
         final int size = 10;
-        int[] a = new int[size];
+        IntArray a = new IntArray(size);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestLoops::conditionalIfElseLoop, a) //
@@ -511,13 +510,13 @@ public class TestLoops extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < a.length; i++) {
+        for (int i = 0; i < a.getSize(); i++) {
             if (i == 4) {
-                assertEquals(4, a[i]);
+                assertEquals(4, a.get(i));
             } else if (i == 5) {
-                assertEquals(5, a[i]);
+                assertEquals(5, a.get(i));
             } else {
-                assertEquals(10, a[i]);
+                assertEquals(10, a.get(i));
             }
         }
     }
@@ -550,10 +549,10 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    public static void nestedForLoopOneDArray(int[] a, int size) {
+    public static void nestedForLoopOneDArray(IntArray a, int size) {
         for (@Parallel int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
-                a[i * size + j] = 10;
+                a.set(i * size + j, 10);
             }
         }
     }
@@ -562,8 +561,8 @@ public class TestLoops extends TornadoTestBase {
     public void testNestedForLoopOneDArray() {
         final int size = 10;
 
-        int[] a = new int[size * size];
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size * size);
+        a.init(1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestLoops::nestedForLoopOneDArray, a, size) //
@@ -574,7 +573,7 @@ public class TestLoops extends TornadoTestBase {
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
-                assertEquals(10, a[i * size + j]);
+                assertEquals(10, a.get(i * size + j));
             }
         }
     }
@@ -611,19 +610,19 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    public static void controlFlowBreak(int[] a) {
-        for (int i = 0; i < a.length; i++) {
+    public static void controlFlowBreak(IntArray a) {
+        for (int i = 0; i < a.getSize(); i++) {
             if (i == 4) {
-                a[i] = 4;
+                a.set(i, 4);
                 break;
             }
         }
     }
 
-    public static void controlFlowBreak2(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            if (a[i] == 2) {
-                a[i] = 10;
+    public static void controlFlowBreak2(IntArray a) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            if (a.get(i) == 2) {
+                a.set(i, 10);
                 break;
             }
         }
@@ -637,8 +636,8 @@ public class TestLoops extends TornadoTestBase {
     public void testLoopControlFlowBreak() {
         final int size = 10;
 
-        int[] a = new int[size];
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size);
+        a.init(1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
@@ -648,11 +647,11 @@ public class TestLoops extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < a.length; i++) {
+        for (int i = 0; i < a.getSize(); i++) {
             if (i == 4) {
-                assertEquals(4, a[i]);
+                assertEquals(4, a.get(i));
             } else {
-                assertEquals(1, a[i]);
+                assertEquals(1, a.get(i));
             }
         }
     }
@@ -661,10 +660,10 @@ public class TestLoops extends TornadoTestBase {
     public void testLoopControlFlowBreak2() {
         final int size = 10;
 
-        int[] a = new int[size];
+        IntArray a = new IntArray(size);
+        a.init(1000);
 
-        Arrays.fill(a, 1000);
-        a[2] = 2;
+        a.set(2, 2);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
@@ -674,29 +673,29 @@ public class TestLoops extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < a.length; i++) {
+        for (int i = 0; i < a.getSize(); i++) {
             if (i == 2) {
-                assertEquals(10, a[i]);
+                assertEquals(10, a.get(i));
             } else {
-                assertEquals(1000, a[i]);
+                assertEquals(1000, a.get(i));
             }
         }
     }
 
-    public static void controlFlowContinue(int[] a) {
-        for (int i = 0; i < a.length; i++) {
+    public static void controlFlowContinue(IntArray a) {
+        for (int i = 0; i < a.getSize(); i++) {
             if (i == 4) {
                 continue;
             }
-            a[i] = 150;
+            a.set(i, 150);
         }
     }
 
     @Test
     public void testLoopControlFlowContinue() {
         final int size = 10;
-        int[] foo = new int[size];
-        Arrays.fill(foo, 50);
+        IntArray foo = new IntArray(size);
+        foo.init(50);
 
         TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.EVERY_EXECUTION, foo) //
                 .task("t0", TestLoops::controlFlowContinue, foo) //
@@ -705,19 +704,19 @@ public class TestLoops extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < foo.length; i++) {
+        for (int i = 0; i < foo.getSize(); i++) {
             if (i == 4) {
-                assertEquals(50, foo[i]);
+                assertEquals(50, foo.get(i));
             } else {
-                assertEquals(150, foo[i]);
+                assertEquals(150, foo.get(i));
             }
         }
     }
 
-    public static void nested2ParallelLoops(int[] a, int size) {
+    public static void nested2ParallelLoops(IntArray a, int size) {
         for (@Parallel int i = 0; i < size; i++) {
             for (@Parallel int j = 0; j < size; j++) {
-                a[i * size + j] = 10;
+                a.set(i * size + j, 10);
             }
         }
     }
@@ -726,8 +725,8 @@ public class TestLoops extends TornadoTestBase {
     public void testNestedForLoopOneDArray2() {
         final int size = 10;
 
-        int[] a = new int[size * size];
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size * size);
+        a.init(1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
@@ -739,16 +738,16 @@ public class TestLoops extends TornadoTestBase {
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
-                assertEquals(10, a[i * size + j]);
+                assertEquals(10, a.get(i * size + j));
             }
         }
     }
 
-    public static void whileLoop(int[] a, int size) {
+    public static void whileLoop(IntArray a, int size) {
         for (@Parallel int i = 0; i < size; i++) {
             int y = 0;
             while (y < size) {
-                a[i * size + y] = 10;
+                a.set(i * size + y, 10);
                 y++;
             }
         }
@@ -758,8 +757,8 @@ public class TestLoops extends TornadoTestBase {
     public void testInnerWhileLoop() {
         final int size = 100;
 
-        int[] a = new int[size * size];
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size * size);
+        a.init(1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -772,17 +771,17 @@ public class TestLoops extends TornadoTestBase {
         for (int i = 0; i < size; i++) {
             int y = 0;
             while (y < size) {
-                assertEquals(10, a[i * size + y]);
+                assertEquals(10, a.get(i * size + y));
                 y++;
             }
         }
     }
 
-    public static void dowWhileLoop(int[] a, int size) {
+    public static void dowWhileLoop(IntArray a, int size) {
         for (@Parallel int i = 0; i < size; i++) {
             int y = 1;
             do {
-                a[i * size + y] = 10;
+                a.set(i * size + y, 10);
                 y++;
             } while (y < size);
         }
@@ -792,8 +791,8 @@ public class TestLoops extends TornadoTestBase {
     public void testInnerDoWhileLoop() {
         final int size = 100;
 
-        int[] a = new int[size * size];
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size * size);
+        a.init(1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -806,7 +805,7 @@ public class TestLoops extends TornadoTestBase {
         for (int i = 0; i < size; i++) {
             int y = 0;
             while (y < size) {
-                assertEquals(10, a[i * size + y]);
+                assertEquals(10, a.get(i * size + y));
                 y++;
             }
         }
@@ -845,9 +844,9 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    public static void reverseLoop(int[] a) {
-        for (@Parallel int i = a.length - 1; i >= 0; i--) {
-            a[i] = 10;
+    public static void reverseLoop(IntArray a) {
+        for (@Parallel int i = a.getSize() - 1; i >= 0; i--) {
+            a.set(i, 10);
         }
     }
 
@@ -855,9 +854,8 @@ public class TestLoops extends TornadoTestBase {
     public void testReverseOrderLoops() {
         final int size = 10;
 
-        int[] a = new int[size];
-
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size);
+        a.init(1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -868,27 +866,27 @@ public class TestLoops extends TornadoTestBase {
         executionPlan.execute();
 
         for (int j = 0; j < size; j++) {
-            assertEquals(10, a[j]);
+            assertEquals(10, a.get(j));
         }
     }
 
-    private static void testSingleThreadLoopCond(int[] in, int[] out) {
-        int otherCompVal = in[0];
+    private static void testSingleThreadLoopCond(IntArray in, IntArray out) {
+        int otherCompVal = in.get(0);
         int i = 0;
-        for (; i < in.length / 4 - 1; i++) {
+        for (; i < in.getSize() / 4 - 1; i++) {
             int someNumber = getNumber(in, i, i % 4, 4);
-            in[i] = someNumber + i;
+            in.set(i, someNumber + i);
         }
 
         if (i == otherCompVal) {
             int someNumber = getNumber(in, i, i % 4, 4) + 1000;
-            out[i] = someNumber;
+            out.set(i, someNumber);
         }
     }
 
-    private static int getNumber(int[] in, int base, int offset, int multiplier) {
+    private static int getNumber(IntArray in, int base, int offset, int multiplier) {
         // Perform some address computation
-        return in[base * multiplier + offset];
+        return in.get(base * multiplier + offset);
     }
 
     /**
@@ -900,17 +898,20 @@ public class TestLoops extends TornadoTestBase {
     public void testSingleThreadLoopCondition() {
 
         int size = 1024;
-        int[] inTor = new int[size];
-        int[] outTor = new int[size];
+        IntArray inTor = new IntArray(size);
+        IntArray outTor = new IntArray(size);
+        IntArray inSeq = new IntArray(size);
+        IntArray outSeq = new IntArray(size);
         for (int i = 0; i < size; i++) {
-            inTor[i] = i;
-            outTor[i] = i;
+            inTor.set(i, i);
+            outTor.set(i, i);
+            inSeq.set(i, i);
+            outSeq.set(i, i);
         }
 
-        int[] inSeq = inTor.clone();
-        int[] outSeq = outTor.clone();
-
-        inTor[0] = inSeq[0] = size / 4 - 1;
+        inTor.set(0, size / 4 - 1);
+        inSeq.set(0, size / 4 - 1);
+       // inTor[0] = inSeq[0] = size / 4 - 1;
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, inTor) //
@@ -923,21 +924,23 @@ public class TestLoops extends TornadoTestBase {
 
         testSingleThreadLoopCond(inSeq, outSeq);
 
-        Assert.assertArrayEquals(outSeq, outTor);
+        for (int i = 0; i < size; i++) {
+            assertEquals(outSeq.get(i), outTor.get(i));
+        }
     }
 
-    private static void testMultipleThreadLoopCond(int[] in, int[] out) {
-        int otherCompVal = in[0];
+    private static void testMultipleThreadLoopCond(IntArray in, IntArray out) {
+        int otherCompVal = in.get(0);
 
         @Parallel int i = 0;
-        for (; i < in.length / 4 - 1; i++) {
+        for (; i < in.getSize() / 4 - 1; i++) {
             int someNumber = getNumber(in, i, i % 4, 4);
-            in[i] = someNumber + i;
+            in.set(i, someNumber + i);
         }
 
         if (i == otherCompVal) {
             int someNumber = getNumber(in, i, i % 4, 4) + 1000;
-            out[i] = someNumber;
+            out.set(i, someNumber);
         }
     }
 
@@ -946,17 +949,20 @@ public class TestLoops extends TornadoTestBase {
         // Same test as testSingleThreadLoopCondition, but in parallel.
         int size = 1024;
 
-        int[] inTor = new int[size];
-        int[] outTor = new int[size];
+        IntArray inTor = new IntArray(size);
+        IntArray outTor = new IntArray(size);
+        IntArray inSeq = new IntArray(size);
+        IntArray outSeq = new IntArray(size);
         for (int i = 0; i < size; i++) {
-            inTor[i] = i;
-            outTor[i] = i;
+            inTor.set(i, i);
+            outTor.set(i, i);
+            inSeq.set(i, i);
+            outSeq.set(i, i);
         }
 
-        int[] inSeq = inTor.clone();
-        int[] outSeq = outTor.clone();
-
-        inTor[0] = inSeq[0] = size / 4 - 1;
+        inTor.set(0, size / 4 - 1);
+        inSeq.set(0, size / 4 - 1);
+       // inTor[0] = inSeq[0] = size / 4 - 1;
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, inTor) //
@@ -969,6 +975,9 @@ public class TestLoops extends TornadoTestBase {
 
         testMultipleThreadLoopCond(inSeq, outSeq);
 
-        Assert.assertArrayEquals(outSeq, outTor);
+        for (int i = 0; i < size; i++) {
+            assertEquals(outSeq.get(i), outTor.get(i));
+        }
+        //Assert.assertArrayEquals(outSeq, outTor);
     }
 }
