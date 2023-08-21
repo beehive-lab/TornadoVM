@@ -4,9 +4,10 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
-import org.graalvm.compiler.phases.BasePhase;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
+import org.graalvm.compiler.phases.BasePhase;
+
+import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNode;
 
 public class TornadoNativeTypeElimination extends BasePhase<TornadoHighTierContext> {
 
@@ -14,6 +15,9 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoHighTierConte
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
         for (Node n : graph.getNodes().filter(LoadFieldNode.class)) {
             if (n.toString().contains("segment")) {
+                if (!TornadoLocalArrayHeaderEliminator.nativeTypes) {
+                    TornadoLocalArrayHeaderEliminator.nativeTypes = true;
+                }
                 for (Node in : n.inputs()) {
                     if (in instanceof PiNode) {
                         for (Node us : n.usages()) {
@@ -27,6 +31,11 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoHighTierConte
                 deleteFixed(n);
             }
         }
+        // check if reduction
+        if (graph.getNodes().filter(WriteAtomicNode.class).isNotEmpty()) {
+            TornadoLocalArrayHeaderEliminator.isReduction = true;
+        }
+
     }
 
     public static void deleteFixed(Node n) {
