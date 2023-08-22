@@ -47,7 +47,7 @@ Usage
 -  Examples of how to use TornadoVM: :ref:`examples`.
 -  `Code examples <https://github.com/beehive-lab/TornadoVM/tree/master/tornado-examples/src/main/java/uk/ac/manchester/tornado/examples>`__
 
-1. Which programming languages does TornadoVM support?
+4. Which programming languages does TornadoVM support?
 ------------------------------------------------------
 
 TornadoVM primarily supports Java. However, with the integration with GraalVM you can call your TornadoVM-compatible Java code through other
@@ -70,7 +70,7 @@ b) Define execution plans.
 
 No, TornadoVM supports a subset of the Java programming language. A list of unsupported features along with the reasoning behind it can be found  here: :ref:`unsupported`.
 
-1. Can TornadoVM degrade the performance of my application?
+7. Can TornadoVM degrade the performance of my application?
 -----------------------------------------------------------
 
 No, TornadoVM can only increase the performance of your application because it can dynamically change the execution of a program at runtime
