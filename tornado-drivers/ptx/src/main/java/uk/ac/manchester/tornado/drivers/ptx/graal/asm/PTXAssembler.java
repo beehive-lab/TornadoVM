@@ -60,6 +60,8 @@ import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXVariablePrefix;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerationResult;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
@@ -86,7 +88,7 @@ public class PTXAssembler extends Assembler {
         String result = "";
         if (value instanceof Variable) {
             Variable var = (Variable) value;
-            return convertFormat(var.toString());
+            return convertValueFromGraalFormat(var);
         } else if (value instanceof ConstantValue) {
             if (!((ConstantValue) value).isJavaConstant()) {
                 shouldNotReachHere("constant value: ", value);
@@ -99,6 +101,49 @@ public class PTXAssembler extends Assembler {
             unimplemented("value: toString() type=%s, value=%s", value.getClass().getName(), value);
         }
         return result;
+    }
+
+    /**
+     * It converts the format of a Value input to a specific format based on its
+     * platform type.
+     *
+     * @param input
+     *            The {@link Value} input to convert.
+     * @return The converted format string.
+     */
+    public static String convertValueFromGraalFormat(Value input) {
+        String type = input.getPlatformKind().name().toLowerCase();
+        String result;
+
+        // Extract the index value between "v" and "|"
+        // v10|DOUBLE --> v->indexValue<-|
+        String indexValue = getAbsoluteIndexFromValue(input);
+
+        // Find the matching TypePrefix enum for the given type
+        PTXVariablePrefix typePrefix = Arrays.stream(PTXVariablePrefix.values()).filter(tp -> tp.getType().equals(type)).findFirst().orElse(null);
+
+        if (typePrefix != null) {
+            result = typePrefix.getPrefix() + indexValue;
+        } else {
+            throw new TornadoRuntimeException("Unsupported type: " + type);
+        }
+
+        return result;
+    }
+
+    /**
+     * It retrieves the absolute index from the given Value object.
+     *
+     * @param value
+     *            the {@link Value} object to extract the index from. It should be
+     *            in the format "int[20|0x14]".
+     * @return the absolute index as a String
+     */
+    public static String getAbsoluteIndexFromValue(Value value) {
+        int startIndex = value.toString().indexOf('[') + 1;
+        int endIndex = value.toString().indexOf('|');
+
+        return value.toString().substring(startIndex, endIndex).trim().replace("v", "");
     }
 
     public static String convertFormat(String input) {

@@ -56,8 +56,6 @@ public class PTXMidTier extends TornadoMidTier {
             appendPhase(new TornadoFloatingReadReplacement(canonicalizer));
         }
 
-        // appendPhase(new RemoveValueProxyPhase(canonicalizer));
-
         appendPhase(canonicalizer);
 
         if (ConditionalElimination.getValue(options)) {
