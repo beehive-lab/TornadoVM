@@ -456,9 +456,10 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
                     || (isCurrentHIRBlockAFalseBranch(ifNode, basicBlock) //
                             && isTrueBranchALoopExitNode(ifNode) //
                             && isTrueBranchWithEndNodeOrNotControlSplit(blockTrueBranch))) {
-                for (int i = 0; i < basicBlock.getSuccessorCount(); i++) {
-                    if (basicBlock.getSuccessorAt(i).getBeginNode() == ifNode.trueSuccessor() && !visited.contains(basicBlock.getSuccessorAt(i))) {
-                        pending.put(basicBlock, basicBlock.getSuccessorAt(i));
+                for (int i = 0; i < basicBlock.getDominator().getSuccessorCount(); i++) {
+                    HIRBlock successor = basicBlock.getDominator().getSuccessorAt(i);
+                    if (successor.getBeginNode() == ifNode.trueSuccessor() && !visited.contains(successor)) {
+                        pending.put(basicBlock, successor);
                         rescheduleBasicBlock(basicBlock, visitor, visited, pending);
                     }
                 }
