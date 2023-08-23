@@ -48,7 +48,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AbstractInst
 
 public class OCLControlFlow {
 
-    protected static abstract class AbstractBlockEndOp extends AbstractInstruction implements BlockEndOp {
+    protected abstract static class AbstractBlockEndOp extends AbstractInstruction implements BlockEndOp {
 
         public AbstractBlockEndOp(LIRInstructionClass<? extends AbstractInstruction> type) {
             super(type);

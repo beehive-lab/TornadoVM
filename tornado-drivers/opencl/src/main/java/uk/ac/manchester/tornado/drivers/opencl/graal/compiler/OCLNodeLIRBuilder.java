@@ -34,7 +34,6 @@ import java.util.Collection;
 import java.util.List;
 
 import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -559,6 +558,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         if (node instanceof LoopBeginNode) {
             emitLoopBegin((LoopBeginNode) node);
         } else if (node instanceof LoopExitNode) {
+            System.out.println("Emit exit : ++ " + node.toString());
             emitLoopExit((LoopExitNode) node);
         } else if (node instanceof ShortCircuitOrNode) {
             emitShortCircuitOrNode((ShortCircuitOrNode) node);
@@ -640,34 +640,6 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
     @Override
     protected boolean peephole(final ValueNode value) {
         return false;
-    }
-
-    // FIXME: Remove this code
-    public String toOpenCLSymbol(final Condition condition) {
-        switch (condition) {
-            case AE:
-                return ">=";
-            case AT:
-                return ">";
-            case BE:
-                return "=<";
-            case BT:
-                return "<";
-            case EQ:
-                return "==";
-            case GE:
-                return ">=";
-            case GT:
-                return ">";
-            case LE:
-                return "=<";
-            case LT:
-                return "<";
-            case NE:
-                return "!=";
-            default:
-                return String.format("<invalid op (%s)>", condition.operator);
-        }
     }
 
     @Override

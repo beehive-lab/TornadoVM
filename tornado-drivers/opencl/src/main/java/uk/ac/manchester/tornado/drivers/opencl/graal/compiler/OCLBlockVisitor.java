@@ -384,6 +384,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
             } else if (!merges.contains(pdom) && isMergeBlock(pdom) && switches.contains(block) && isSwitchBlock(block.getDominator())) {
                 closeSwitchStatement(block);
             } else {
+
                 checkClosingBlockInsideIf(block, pdom);
             }
         } else {
@@ -470,16 +471,16 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
         return dominator != null && isMerge && pendingBlocks && sameDominator && isReturn && !dominator.isLoopHeader() && isIfBlock(dominator);
     }
 
-    public HIRBlock getEarliestPostDominated(HIRBlock b) {
+    public HIRBlock getEarliestPostDominated(HIRBlock block) {
         while (true) {
-            HIRBlock dom = b.getDominator();
-            if (dom != null && dom.getPostdominator() == b) {
-                b = dom;
+            HIRBlock dom = block.getDominator();
+            if (dom != null && dom.getPostdominator() == block) {
+                block = dom;
             } else {
                 break;
             }
         }
-        return b;
+        return block;
     }
 
     private boolean isIfBlockNode(HIRBlock block) {
