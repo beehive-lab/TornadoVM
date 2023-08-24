@@ -43,6 +43,7 @@ import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.nodes.AbstractDeoptimizeNode;
 import org.graalvm.compiler.nodes.CompressionNode;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.FieldLocationIdentity;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.InvokeNode;
@@ -531,7 +532,8 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         Stamp loadStamp = loadStamp(loadField.stamp(NodeView.DEFAULT), field.getJavaKind());
         AddressNode address = createFieldAddress(graph, object, field);
         assert address != null : "Field that is loaded must not be eliminated: " + field.getDeclaringClass().toJavaName(true) + "." + field.getName();
-        ReadNode memoryRead = graph.add(new ReadNode(address, fieldLocationIdentity(field), loadStamp, BarrierType.NONE, TornadoMemoryOrder.GPU_MEMORY_MODE));
+        FieldLocationIdentity fieldLocationIdentity = new FieldLocationIdentity(field);
+        ReadNode memoryRead = graph.add(new ReadNode(address, fieldLocationIdentity, loadStamp, BarrierType.NONE, TornadoMemoryOrder.GPU_MEMORY_MODE));
         loadField.replaceAtUsages(memoryRead);
         graph.replaceFixed(loadField, memoryRead);
     }
@@ -543,7 +545,8 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         ValueNode object = storeField.isStatic() ? staticFieldBase(graph, field) : storeField.object();
         AddressNode address = createFieldAddress(graph, object, field);
         assert address != null;
-        WriteNode memoryWrite = graph.add(new WriteNode(address, fieldLocationIdentity(field), storeField.value(), BarrierType.NONE, TornadoMemoryOrder.GPU_MEMORY_MODE));
+        FieldLocationIdentity fieldLocationIdentity = new FieldLocationIdentity(field);
+        WriteNode memoryWrite = graph.add(new WriteNode(address, fieldLocationIdentity, storeField.value(), BarrierType.NONE, TornadoMemoryOrder.GPU_MEMORY_MODE));
         memoryWrite.setStateAfter(storeField.stateAfter());
         graph.replaceFixed(storeField, memoryWrite);
     }

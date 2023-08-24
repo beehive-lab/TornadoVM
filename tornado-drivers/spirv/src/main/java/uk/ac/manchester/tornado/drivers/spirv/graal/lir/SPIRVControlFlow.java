@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
-import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
+import org.graalvm.compiler.core.common.cfg.BasicBlock;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.LabelRef;
@@ -72,7 +72,7 @@ public class SPIRVControlFlow {
 
         // We only declare the IDs
         protected SPIRVId getIdForBranch(LabelRef ref, SPIRVAssembler asm) {
-            AbstractBlockBase<?> targetBlock = ref.getTargetBlock();
+            BasicBlock<?> targetBlock = ref.getTargetBlock();
             String blockName = targetBlock.toString();
             SPIRVId branch = asm.getLabel(blockName);
             if (branch == null) {

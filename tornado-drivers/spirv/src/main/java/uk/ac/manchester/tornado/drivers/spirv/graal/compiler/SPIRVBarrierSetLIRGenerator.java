@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009-2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -22,28 +22,20 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.spirv.graal;
+package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-import org.graalvm.compiler.lir.asm.FrameContext;
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.memory.BarrierType;
+import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
+import org.graalvm.compiler.lir.LIRFrameState;
+import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.lir.gen.BarrierSetLIRGenerator;
 
-/**
- * Mapping for a native frame.
- */
-public class SPIRVFrameContext implements FrameContext {
+import jdk.vm.ci.meta.Value;
+
+public class SPIRVBarrierSetLIRGenerator extends BarrierSetLIRGenerator {
     @Override
-    public void enter(CompilationResultBuilder crb) {
-
+    public Variable emitBarrieredLoad(LIRKind kind, Value address, LIRFrameState state, MemoryOrderMode memoryOrder, BarrierType barrierType) {
+        return null;
     }
-
-    @Override
-    public void leave(CompilationResultBuilder crb) {
-
-    }
-
-    @Override
-    public void returned(CompilationResultBuilder crb) {
-
-    }
-
 }

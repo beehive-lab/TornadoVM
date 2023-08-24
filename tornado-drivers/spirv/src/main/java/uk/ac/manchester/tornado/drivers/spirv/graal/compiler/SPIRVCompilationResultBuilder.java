@@ -29,7 +29,10 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.Stack;
+import java.util.stream.IntStream;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.Equivalence;
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.spi.CodeGenProviders;
@@ -65,15 +68,18 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
 
     private final Set<ResolvedJavaMethod> nonInlinedMethods;
+    protected LIR lir;
+
     HashSet<HIRBlock> rescheduledBasicBlocks;
     private boolean isKernel;
     private boolean isParallel;
     private SPIRVDeviceContext deviceContext;
 
     public SPIRVCompilationResultBuilder(CodeGenProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
-            CompilationResult compilationResult) {
-        super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None);
-        nonInlinedMethods = new HashSet<>();Z
+            CompilationResult compilationResult, LIR lir) {
+        super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None, EconomicMap.create(Equivalence.DEFAULT), NO_VERIFIERS, lir);
+
+        nonInlinedMethods = new HashSet<>();
     }
 
     private static boolean isLoopBlock(HIRBlock block, HIRBlock loopHeader) {
@@ -92,10 +98,10 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
             } else if (b == loopHeader) {
                 return true;
             } else {
-                HIRBlock[] successors = b.getSuccessors();
-                for (HIRBlock bl : successors) {
-                    if (!visited.contains(bl)) {
-                        stack.push(bl);
+                HIRBlock[] successors = IntStream.range(0, b.getSuccessorCount()).mapToObj(b::getSuccessorAt).toArray(HIRBlock[]::new);
+                for (HIRBlock successor : successors) {
+                    if (!visited.contains(successor)) {
+                        stack.push(successor);
                     }
                 }
             }
@@ -169,11 +175,11 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
         rescheduledBasicBlocks.add(block);
     }
 
-    private HIRBlock getBlockTrueBranch(HIRBlock basicBlock) {
-        IfNode ifNode = (IfNode) basicBlock.getDominator().getEndNode();
-        for (HIRBlock b : basicBlock.getDominator().getSuccessors()) {
-            if (ifNode.trueSuccessor() == b.getBeginNode()) {
-                return b;
+    private HIRBlock getBlockTrueBranch(HIRBlock basicHIRBlock) {
+        IfNode ifNode = (IfNode) basicHIRBlock.getDominator().getEndNode();
+        for (int i = 0; i < basicHIRBlock.getDominator().getSuccessorCount(); i++) {
+            if (ifNode.trueSuccessor() == basicHIRBlock.getDominator().getSuccessorAt(i).getBeginNode()) {
+                return basicHIRBlock.getDominator().getSuccessorAt(i);
             }
         }
         return null;
@@ -219,10 +225,10 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
                     || (isCurrentBlockAFalseBranch(ifNode, basicBlock) //
                             && isTrueBranchALoopExitNode(ifNode) //
                             && isTrueBranchWithEndNodeOrNotControlSplit(blockTrueBranch))) {
-                HIRBlock[] successors = basicBlock.getDominator().getSuccessors();
-                for (HIRBlock b : successors) {
-                    if (b.getBeginNode() == ifNode.trueSuccessor() && !visited.contains(b)) {
-                        pending.put(basicBlock, b);
+                for (int i = 0; i < basicBlock.getDominator().getSuccessorCount(); i++) {
+                    HIRBlock successor = basicBlock.getDominator().getSuccessorAt(i);
+                    if (successor.getBeginNode() == ifNode.trueSuccessor() && !visited.contains(successor)) {
+                        pending.put(basicBlock, successor);
                         rescheduleBasicBlock(basicBlock, visitor, visited, pending);
                     }
                 }
@@ -247,7 +253,7 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
         queue.add(firstDominated);
 
         if (basicBlock.isLoopHeader()) {
-            HIRBlock[] successors = basicBlock.getSuccessors();
+            HIRBlock[] successors = IntStream.range(0, basicBlock.getSuccessorCount()).mapToObj(basicBlock::getSuccessorAt).toArray(HIRBlock[]::new);
             LinkedList<HIRBlock> last = new LinkedList<>();
             LinkedList<HIRBlock> pendingList = new LinkedList<>();
 
@@ -296,7 +302,7 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
         }
 
         if (rescheduledBasicBlocks == null || (!rescheduledBasicBlocks.contains(basicBlock))) {
-            visitor.exit(basicBlock);
+            visitor.exit(basicBlock, null);
         }
     }
 
