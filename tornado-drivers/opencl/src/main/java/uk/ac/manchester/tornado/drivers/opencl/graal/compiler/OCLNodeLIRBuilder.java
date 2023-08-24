@@ -558,7 +558,6 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         if (node instanceof LoopBeginNode) {
             emitLoopBegin((LoopBeginNode) node);
         } else if (node instanceof LoopExitNode) {
-            System.out.println("Emit exit : ++ " + node.toString());
             emitLoopExit((LoopExitNode) node);
         } else if (node instanceof ShortCircuitOrNode) {
             emitShortCircuitOrNode((ShortCircuitOrNode) node);
