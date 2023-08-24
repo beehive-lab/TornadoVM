@@ -242,6 +242,21 @@ public class TestFloats extends TornadoTestBase {
         }
     }
 
+    private static Float3 vectorComputation(final Float4 value) {
+        Float3 output = new Float3();
+        output.setX(value.getX() + value.getY());
+        output.setY(value.getY());
+        output.setZ(value.getW());
+        return output;
+        // return new Float3(value.getX() + value.getY(), value.getY(), value.getW());
+    }
+
+    private static void vectorComputation(VectorFloat4 value, VectorFloat3 output) {
+        for (@Parallel int i = 0; i < output.getLength(); i++) {
+            output.set(i, vectorComputation(value.get(i)));
+        }
+    }
+
     @Test
     public void testSimpleDotProductFloat2() {
         Float2 a = new Float2(1f, 2f);
@@ -747,6 +762,40 @@ public class TestFloats extends TornadoTestBase {
             assertEquals(sequentialOutput.get(i).getY(), output.get(i).getY(), DELTA);
             assertEquals(sequentialOutput.get(i).getZ(), output.get(i).getZ(), DELTA);
             assertEquals(sequentialOutput.get(i).getW(), output.get(i).getW(), DELTA);
+        }
+    }
+
+    @Test
+    public void testInternalSetMethodOfFloat4() {
+        final int size = 16;
+        VectorFloat4 tornadoInput = new VectorFloat4(size);
+        VectorFloat4 sequentialInput = new VectorFloat4(size);
+        VectorFloat3 tornadoOutput = new VectorFloat3(size);
+        VectorFloat3 sequentialOutput = new VectorFloat3(size);
+
+        for (int i = 0; i < size; i++) {
+            float value = (float) Math.random();
+            Float4 float4 = new Float4(value, value, value, value);
+            tornadoInput.set(i, float4);
+            sequentialInput.set(i, float4);
+        }
+
+        TaskGraph graph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, tornadoInput) //
+                .task("t0", TestFloats::vectorComputation, tornadoInput, tornadoOutput) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
+
+        ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        executionPlan.execute();
+
+        vectorComputation(sequentialInput, sequentialOutput);
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(sequentialOutput.get(i).getX(), tornadoOutput.get(i).getX(), DELTA);
+            assertEquals(sequentialOutput.get(i).getY(), tornadoOutput.get(i).getY(), DELTA);
+            assertEquals(sequentialOutput.get(i).getZ(), tornadoOutput.get(i).getZ(), DELTA);
         }
     }
 
