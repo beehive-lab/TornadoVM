@@ -195,8 +195,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     private static void emitOp(CompilationResultBuilder crb, LIRInstruction op) {
         try {
             trace("op: " + op);
-            // System.out.println("OP : " + op.id() + " " + op.name() + " " +
-            // op.toString());
             op.emitCode(crb);
         } catch (AssertionError | RuntimeException t) {
             throw new TornadoInternalError(t);
