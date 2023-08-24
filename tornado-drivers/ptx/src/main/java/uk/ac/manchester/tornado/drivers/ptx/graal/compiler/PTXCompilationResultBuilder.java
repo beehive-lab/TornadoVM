@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.Stack;
+import java.util.stream.IntStream;
 
 import org.graalvm.collections.EconomicMap;
 import org.graalvm.collections.Equivalence;
@@ -179,6 +180,10 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
 
         final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
         trace("Traversing CFG: ", cfg.graph.name);
+        System.out.println("cfg " + cfg.graph.toString());
+        for (HIRBlock b : cfg.getBlocks()) {
+            System.out.println("b " + b.getId());
+        }
         cfg.computePostdominators();
         traverseControlFlowGraph(cfg, new PTXBlockVisitor(this, asm));
 
@@ -241,9 +246,9 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
 
     private void traverseControlFlowGraph(ControlFlowGraph cfg, PTXBlockVisitor visitor) {
         traverseControlFlowGraph(cfg.getStartBlock(), visitor, new HashSet<>(), new HashMap<>());
-        if (rescheduledBasicBlocks != null) {
-            rescheduledBasicBlocks.clear();
-        }
+        // if (rescheduledBasicBlocks != null) {
+        // rescheduledBasicBlocks.clear();
+        // }
     }
 
     private void rescheduleBasicBlock(HIRBlock block, PTXBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
@@ -258,11 +263,21 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
         rescheduledBasicBlocks.add(HIRBlock);
     }
 
-    private HIRBlock getBlockTrueBranch(HIRBlock HIRBlock) {
-        IfNode ifNode = (IfNode) HIRBlock.getDominator().getEndNode();
-        for (int i = 0; i < HIRBlock.getDominator().getSuccessorCount(); i++) {
-            if (ifNode.trueSuccessor() == HIRBlock.getSuccessorAt(i).getBeginNode()) {
-                return HIRBlock.getSuccessorAt(i);
+    // private HIRBlock getBlockTrueBranch(HIRBlock HIRBlock) {
+    // IfNode ifNode = (IfNode) HIRBlock.getDominator().getEndNode();
+    // for (int i = 0; i < HIRBlock.getDominator().getSuccessorCount(); i++) {
+    // if (ifNode.trueSuccessor() == HIRBlock.getSuccessorAt(i).getBeginNode()) {
+    // return HIRBlock.getSuccessorAt(i);
+    // }
+    // }
+    // return null;
+    // }
+
+    private HIRBlock getBlockTrueBranch(HIRBlock basicHIRBlock) {
+        IfNode ifNode = (IfNode) basicHIRBlock.getDominator().getEndNode();
+        for (int i = 0; i < basicHIRBlock.getDominator().getSuccessorCount(); i++) {
+            if (ifNode.trueSuccessor() == basicHIRBlock.getDominator().getSuccessorAt(i).getBeginNode()) {
+                return basicHIRBlock.getDominator().getSuccessorAt(i);
             }
         }
         return null;
@@ -300,73 +315,68 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
      * @param pending
      *            {@link HashMap}
      */
-    private void rescheduleTrueBranchConditionsIfNeeded(HIRBlock HIRBlock, PTXBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
-        if (!HIRBlock.isLoopHeader() && HIRBlock.getDominator() != null && HIRBlock.getDominator().getEndNode() instanceof IfNode) {
-            IfNode ifNode = (IfNode) HIRBlock.getDominator().getEndNode();
-            HIRBlock blockTrueBranch = getBlockTrueBranch(HIRBlock);
-            if (isFalseSuccessorWithLoopEnd(ifNode, HIRBlock) //
-                    || (isCurrentBlockAFalseBranch(ifNode, HIRBlock) //
+    private void rescheduleTrueBranchConditionsIfNeeded(HIRBlock basicBlock, PTXBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
+        if (!basicBlock.isLoopHeader() && basicBlock.getDominator() != null && basicBlock.getDominator().getEndNode() instanceof IfNode) {
+            IfNode ifNode = (IfNode) basicBlock.getDominator().getEndNode();
+            HIRBlock blockTrueBranch = getBlockTrueBranch(basicBlock);
+            if (isFalseSuccessorWithLoopEnd(ifNode, basicBlock) //
+                    || (isCurrentBlockAFalseBranch(ifNode, basicBlock) //
                             && isTrueBranchALoopExitNode(ifNode) //
                             && isTrueBranchWithEndNodeOrNotControlSplit(blockTrueBranch))) {
-                HIRBlock[] successors = new HIRBlock[HIRBlock.getDominator().getSuccessorCount()];
-                for (int i = 0; i < HIRBlock.getDominator().getSuccessorCount(); i++) {
-                    successors[i] = HIRBlock.getDominator().getSuccessorAt(i);
-                }
-                for (HIRBlock b : successors) {
-                    if (b.getBeginNode() == ifNode.trueSuccessor() && !visited.contains(b)) {
-                        pending.put(HIRBlock, b);
-                        rescheduleBasicBlock(HIRBlock, visitor, visited, pending);
+                for (int i = 0; i < basicBlock.getDominator().getSuccessorCount(); i++) {
+                    HIRBlock successor = basicBlock.getDominator().getSuccessorAt(i);
+                    if (successor.getBeginNode() == ifNode.trueSuccessor() && !visited.contains(successor)) {
+                        pending.put(basicBlock, successor);
+                        rescheduleBasicBlock(basicBlock, visitor, visited, pending);
                     }
                 }
             }
         }
     }
 
-    private void traverseControlFlowGraph(HIRBlock HIRBlock, PTXBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
-        if (pending.containsKey(HIRBlock) && !visited.contains(pending.get(HIRBlock))) {
-            rescheduleBasicBlock(HIRBlock, visitor, visited, pending);
+    private void traverseControlFlowGraph(HIRBlock basicBlock, PTXBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
+        System.out.println("BASIC BLOCK " + basicBlock.getId());
+
+        if (pending.containsKey(basicBlock) && !visited.contains(pending.get(basicBlock))) {
+            rescheduleBasicBlock(basicBlock, visitor, visited, pending);
         }
 
         // New call due to the integration with Graal-IR 22.1.0
-        rescheduleTrueBranchConditionsIfNeeded(HIRBlock, visitor, visited, pending);
+        rescheduleTrueBranchConditionsIfNeeded(basicBlock, visitor, visited, pending);
 
-        visitor.enter(HIRBlock);
-        visited.add(HIRBlock);
+        visitor.enter(basicBlock);
+        visited.add(basicBlock);
 
-        HIRBlock firstDominated = HIRBlock.getFirstDominated();
+        HIRBlock firstDominated = basicBlock.getFirstDominated();
         LinkedList<HIRBlock> queue = new LinkedList<>();
         queue.add(firstDominated);
 
-        if (HIRBlock.isLoopHeader()) {
-            HIRBlock[] successors = new HIRBlock[HIRBlock.getSuccessorCount()];
-            for (int i = 0; i < HIRBlock.getSuccessorCount(); i++) {
-                successors[i] = HIRBlock.getSuccessorAt(i);
-            }
+        if (basicBlock.isLoopHeader()) {
+            HIRBlock[] successors = IntStream.range(0, basicBlock.getSuccessorCount()).mapToObj(basicBlock::getSuccessorAt).toArray(HIRBlock[]::new);
             LinkedList<HIRBlock> last = new LinkedList<>();
             LinkedList<HIRBlock> pendingList = new LinkedList<>();
-            FixedNode endNode = HIRBlock.getEndNode();
+
+            FixedNode endNode = basicBlock.getEndNode();
             IfNode ifNode = null;
             if (endNode instanceof IfNode) {
                 ifNode = (IfNode) endNode;
             }
             for (HIRBlock block : successors) {
-                boolean isInnerLoop = isLoopBlock(HIRBlock, HIRBlock);
+                boolean isInnerLoop = isLoopBlock(block, basicBlock);
                 if (!isInnerLoop) {
-                    last.add(HIRBlock);
                     assert ifNode != null;
-                    if (ifNode.trueSuccessor() == HIRBlock.getBeginNode() && HIRBlock.getBeginNode() instanceof LoopExitNode && HIRBlock.getEndNode() instanceof EndNode) {
-                        pendingList.addFirst(HIRBlock);
-                        if (HIRBlock.getPostdominator().getBeginNode() instanceof MergeNode) {
-                            // We may need to reschedule this HIRBlock if it is not closed before visiting
-                            // the
+                    if (ifNode.trueSuccessor() == block.getBeginNode() && block.getBeginNode() instanceof LoopExitNode && block.getEndNode() instanceof EndNode) {
+                        pendingList.addFirst(block);
+                        if (block.getPostdominator().getBeginNode() instanceof MergeNode) {
+                            // We may need to reschedule this block if it is not closed before visiting the
                             // postDominator.
-                            pending.put(HIRBlock.getPostdominator(), HIRBlock);
+                            pending.put(block.getPostdominator(), block);
                         }
                     } else {
-                        last.addLast(HIRBlock);
+                        last.addLast(block);
                     }
                 } else {
-                    queue.addLast(HIRBlock);
+                    queue.addLast(block);
                 }
             }
 
@@ -389,8 +399,9 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
                 firstDominated = firstDominated.getDominatedSibling();
             }
         }
-        if (rescheduledBasicBlocks == null || (!rescheduledBasicBlocks.contains(HIRBlock))) {
-            visitor.exit(HIRBlock, null);
+
+        if (rescheduledBasicBlocks == null || (!rescheduledBasicBlocks.contains(basicBlock))) {
+            visitor.exit(basicBlock, null);
         }
     }
 

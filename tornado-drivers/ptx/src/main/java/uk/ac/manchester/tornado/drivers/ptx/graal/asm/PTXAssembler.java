@@ -146,38 +146,6 @@ public class PTXAssembler extends Assembler {
         return value.toString().substring(startIndex, endIndex).trim().replace("v", "");
     }
 
-    public static String convertFormat(String input) {
-        String[] parts = input.split("\\|");
-
-        System.out.println("Input  " + input.toString());
-        if (parts.length == 2) {
-            String suffix = parts[0].substring(1);
-            String type = parts[1].toLowerCase();
-            String result = "";
-
-            System.out.println("tyep " + type.toString());
-            if (type.equals("ulong")) {
-                result = "ul_" + suffix;
-            } else if (type.equals("int")) {
-                result = "i_" + suffix;
-            } else if (type.equals("long")) {
-                result = "l_" + suffix;
-            } else if (type.equals("boolean")) {
-                result = "b_" + suffix;
-            } else if (type.equals("double")) {
-                result = "d_" + suffix;
-            } else if (type.equals("float")) {
-                result = "f_" + suffix;
-            } else {
-                return "Invalid type";
-            }
-
-            return result;
-        } else {
-            return "Invalid input format";
-        }
-    }
-
     public static String formatConstant(ConstantValue cv) {
         String result = "";
         JavaConstant javaConstant = cv.getJavaConstant();
