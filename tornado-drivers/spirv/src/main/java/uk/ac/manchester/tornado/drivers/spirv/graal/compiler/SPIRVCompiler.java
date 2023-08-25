@@ -48,7 +48,6 @@ import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.alloc.LinearScanOrder;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.cfg.BasicBlock;
-import org.graalvm.compiler.core.common.cfg.CodeEmissionOrder;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpScope;
@@ -214,7 +213,6 @@ public class SPIRVCompiler {
 
             LIR lir = null;
             try (DebugContext.Scope s = getDebugContext().scope("ComputeLinearScanOrder", lir)) {
-                CodeEmissionOrder<?> blockOrder = backend.newBlockOrder(blocks.length, startBlock);
                 int[] linearScanOrder = LinearScanOrder.computeLinearScanOrder(blocks.length, startBlock);
                 lir = new LIR(schedule.getCFG(), linearScanOrder, graph.getOptions(), graph.getDebug());
                 getDebugContext().dump(DebugContext.INFO_LEVEL, lir, "After linear scan order");

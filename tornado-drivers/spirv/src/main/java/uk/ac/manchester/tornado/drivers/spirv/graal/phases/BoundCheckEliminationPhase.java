@@ -24,6 +24,8 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.phases;
 
+import java.util.Optional;
+
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.GuardNode;
@@ -33,12 +35,11 @@ import org.graalvm.compiler.phases.Phase;
 
 import jdk.vm.ci.meta.DeoptimizationReason;
 
-import java.util.Optional;
-
 public class BoundCheckEliminationPhase extends Phase {
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
         return ALWAYS_APPLICABLE;
     }
+
     @Override
     protected void run(StructuredGraph graph) {
 

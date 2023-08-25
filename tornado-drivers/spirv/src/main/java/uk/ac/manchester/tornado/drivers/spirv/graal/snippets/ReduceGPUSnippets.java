@@ -37,8 +37,6 @@ import org.graalvm.compiler.replacements.Snippets;
 
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.TornadoSnippetTypeInference;
 import uk.ac.manchester.tornado.drivers.spirv.builtins.SPIRVOCLIntrinsics;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.GlobalThreadSizeNode;
@@ -942,7 +940,7 @@ public class ReduceGPUSnippets implements Snippets {
         public SnippetTemplate.SnippetInfo inferFloatSnippet(ValueNode value, ValueNode extra) {
             SnippetTemplate.SnippetInfo snippet;
             if (value instanceof TornadoReduceAddNode) {
-                snippet = (extra == null) ? snippet(partialReduceAddFloatSnippet) :snippet( partialReduceAddFloatSnippetCarrierValue);
+                snippet = (extra == null) ? snippet(partialReduceAddFloatSnippet) : snippet(partialReduceAddFloatSnippetCarrierValue);
             } else if (value instanceof TornadoReduceMulNode) {
                 snippet = (extra == null) ? snippet(partialReduceFloatMultSnippet) : snippet(partialReduceFloatMultSnippetCarrierValue);
             } else if (value instanceof SPIRVFPBinaryIntrinsicNode) {
@@ -952,7 +950,6 @@ public class ReduceGPUSnippets implements Snippets {
             }
             return snippet;
         }
-
 
         private SnippetTemplate.SnippetInfo getSnippetFromOCLBinaryNodeDouble(SPIRVFPBinaryIntrinsicNode value, ValueNode extra) {
             switch (value.operation()) {
@@ -979,7 +976,6 @@ public class ReduceGPUSnippets implements Snippets {
             }
             return snippet;
         }
-
 
         @Override
         public SnippetTemplate.SnippetInfo getSnippetInstance(JavaKind elementKind, ValueNode value, ValueNode extra) {
@@ -1019,7 +1015,6 @@ public class ReduceGPUSnippets implements Snippets {
 
             SnippetTemplate template = template(tool, storeAtomicIndexed, args);
             template.instantiate(tool.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
-
 
         }
     }

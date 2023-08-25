@@ -195,9 +195,11 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
         });
         return true;
     }
+
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
         return ALWAYS_APPLICABLE;
     }
+
     @Override
     public float codeSizeIncrease() {
         return 1.50f;

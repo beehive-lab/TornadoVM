@@ -70,7 +70,7 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeReplacement
 public class TornadoTaskSpecialization extends BasePhase<TornadoHighTierContext> {
 
     private static final int MAX_ITERATIONS = 15;
-
+    private static final String WARNING_GRID_SCHEDULER_DYNAMIC_LOOP_BOUNDS = "[TornadoVM] Warning: The loop bounds will be configured by the GridScheduler. Check the grid by using the flag --threadInfo.";
     private final CanonicalizerPhase canonicalizer;
     private final TornadoValueTypeReplacement valueTypeReplacement;
     private final DeadCodeEliminationPhase deadCodeElimination;
@@ -78,10 +78,7 @@ public class TornadoTaskSpecialization extends BasePhase<TornadoHighTierContext>
     private long batchThreads;
     private boolean gridScheduling;
     private int index;
-
     private boolean printOnce = true;
-
-    private static final String WARNING_GRID_SCHEDULER_DYNAMIC_LOOP_BOUNDS = "[TornadoVM] Warning: The loop bounds will be configured by the GridScheduler. Check the grid by using the flag --threadInfo.";
 
     public TornadoTaskSpecialization(CanonicalizerPhase canonicalizer) {
         this.canonicalizer = canonicalizer;
@@ -105,11 +102,6 @@ public class TornadoTaskSpecialization extends BasePhase<TornadoHighTierContext>
             }
         }
         return f;
-    }
-
-    @FunctionalInterface
-    private interface FunctionThatThrows<T, R> {
-        R apply(T t) throws IllegalArgumentException, IllegalAccessException;
     }
 
     private <T> T lookup(Object object, TornadoTaskSpecialization.FunctionThatThrows<Object, T> function) throws IllegalArgumentException, IllegalAccessException {
@@ -386,5 +378,10 @@ public class TornadoTaskSpecialization extends BasePhase<TornadoHighTierContext>
         Tornado.debug("TaskSpecialisation ran %d iterations", iterations);
         Tornado.debug("valid graph? %s", graph.verify());
         index = 0;
+    }
+
+    @FunctionalInterface
+    private interface FunctionThatThrows<T, R> {
+        R apply(T t) throws IllegalArgumentException, IllegalAccessException;
     }
 }

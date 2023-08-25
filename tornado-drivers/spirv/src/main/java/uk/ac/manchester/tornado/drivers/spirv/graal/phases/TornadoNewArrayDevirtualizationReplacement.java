@@ -39,7 +39,6 @@ public class TornadoNewArrayDevirtualizationReplacement extends Phase {
         return ALWAYS_APPLICABLE;
     }
 
-
     @Override
     protected void run(StructuredGraph graph) {
         graph.getNodes().filter(NewArrayNode.class).forEach(newArrayNode -> {

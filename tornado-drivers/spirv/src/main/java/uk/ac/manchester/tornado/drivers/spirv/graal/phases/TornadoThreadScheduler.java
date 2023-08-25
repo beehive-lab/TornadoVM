@@ -24,6 +24,8 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.phases;
 
+import java.util.Optional;
+
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.GraphState;
@@ -34,8 +36,6 @@ import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.LocalWorkGroupDimensionsNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.ThreadConfigurationNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
-
-import java.util.Optional;
 
 public class TornadoThreadScheduler extends BasePhase<TornadoHighTierContext> {
 
@@ -49,6 +49,7 @@ public class TornadoThreadScheduler extends BasePhase<TornadoHighTierContext> {
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
         return ALWAYS_APPLICABLE;
     }
+
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
         if (graph.hasLoops() && (context.getDeviceMapping().getDeviceType() == TornadoDeviceType.ACCELERATOR)) {

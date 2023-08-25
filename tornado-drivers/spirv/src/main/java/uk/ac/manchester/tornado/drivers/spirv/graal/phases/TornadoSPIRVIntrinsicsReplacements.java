@@ -25,8 +25,8 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.phases;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import java.util.Optional;
 
+import java.util.Optional;
 
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
@@ -72,6 +72,7 @@ public class TornadoSPIRVIntrinsicsReplacements extends BasePhase<TornadoHighTie
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
         return ALWAYS_APPLICABLE;
     }
+
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
         NodeIterable<InvokeNode> invokeNodes = graph.getNodes().filter(InvokeNode.class);
