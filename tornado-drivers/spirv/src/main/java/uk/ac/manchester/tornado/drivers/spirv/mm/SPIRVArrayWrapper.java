@@ -85,13 +85,13 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
         }
     }
 
-    abstract protected int readArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
+    protected abstract int readArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
-    abstract protected void writeArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
+    protected abstract void writeArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
-    abstract protected int enqueueReadArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
+    protected abstract int enqueueReadArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
-    abstract protected int enqueueWriteArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
+    protected abstract int enqueueWriteArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
     @Override
     public long toBuffer() {
