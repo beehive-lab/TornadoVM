@@ -59,7 +59,6 @@ public class SPIRVLowTier extends TornadoLowTier {
 
         appendPhase(new LowTierLoweringPhase(canonicalizer));
 
-        appendPhase(new RemoveValueProxyPhase(canonicalizer));
 
         if (ConditionalElimination.getValue(options)) {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, false));
@@ -67,9 +66,9 @@ public class SPIRVLowTier extends TornadoLowTier {
 
         appendPhase(new FixReadsPhase(true, new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS)));
 
-        appendPhase(new AddressLoweringByNodePhase(addressLowering));
-
         appendPhase(new UseTrappingNullChecksPhase());
+
+        appendPhase(new AddressLoweringByNodePhase(addressLowering));
 
         appendPhase(new DeadCodeEliminationPhase(Required));
 

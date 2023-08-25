@@ -25,6 +25,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.phases;
 
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatDivNode;
@@ -33,8 +34,12 @@ import org.graalvm.compiler.phases.Phase;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.RSqrtNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode;
 
-public class InverseSquareRootPhase extends Phase {
+import java.util.Optional;
 
+public class InverseSquareRootPhase extends Phase {
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
     @Override
     protected void run(StructuredGraph graph) {
 

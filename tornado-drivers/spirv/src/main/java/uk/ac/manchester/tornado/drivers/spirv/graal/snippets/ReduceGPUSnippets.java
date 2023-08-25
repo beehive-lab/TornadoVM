@@ -864,6 +864,7 @@ public class ReduceGPUSnippets implements Snippets {
 
         public Templates(OptionValues options, Providers providers) {
             super(options, providers);
+            this.providers = providers;
         }
 
         private SnippetInfo snippet(Tuple2<Class<? extends ReduceGPUSnippets>, String> tuple2) {
@@ -895,13 +896,13 @@ public class ReduceGPUSnippets implements Snippets {
 
         @Override
         public SnippetTemplate.SnippetInfo inferIntSnippet(ValueNode value, ValueNode extra) {
-            SnippetInfo snippet;
+            SnippetTemplate.SnippetInfo snippet;
             if (value instanceof TornadoReduceAddNode) {
                 snippet = (extra == null) ? snippet(partialReduceIntSnippet) : snippet(partialReduceIntSnippetCarrierValue);
             } else if (value instanceof TornadoReduceMulNode) {
                 // operation = ATOMIC_OPERATION.MUL;
                 snippet = (extra == null) ? snippet(partialReduceIntMultSnippet) : snippet(partialReduceIntMultSnippetCarrierValue);
-            } else if (value instanceof OCLIntBinaryIntrinsicNode) {
+            } else if (value instanceof SPIRVIntBinaryIntrinsicNode) {
                 SPIRVIntBinaryIntrinsicNode op = (SPIRVIntBinaryIntrinsicNode) value;
                 snippet = getSnippetFromOCLBinaryNodeInteger(op, extra);
             } else {
@@ -912,12 +913,12 @@ public class ReduceGPUSnippets implements Snippets {
 
         @Override
         public SnippetTemplate.SnippetInfo inferLongSnippet(ValueNode value, ValueNode extra) {
-            SnippetInfo snippet;
+            SnippetTemplate.SnippetInfo snippet;
             if (value instanceof TornadoReduceAddNode) {
                 snippet = (extra == null) ? snippet(partialReduceLongSnippet) : snippet(partialReduceLongSnippetCarrierValue);
             } else if (value instanceof TornadoReduceMulNode) {
                 snippet = (extra == null) ? snippet(partialReduceLongMultSnippet) : snippet(partialReduceLongMultSnippetCarrierValue);
-            } else if (value instanceof OCLIntBinaryIntrinsicNode) {
+            } else if (value instanceof SPIRVIntBinaryIntrinsicNode) {
                 SPIRVIntBinaryIntrinsicNode op = (SPIRVIntBinaryIntrinsicNode) value;
                 snippet = getSnippetFromOCLBinaryNodeLong(op, extra);
             } else {
@@ -939,18 +940,19 @@ public class ReduceGPUSnippets implements Snippets {
 
         @Override
         public SnippetTemplate.SnippetInfo inferFloatSnippet(ValueNode value, ValueNode extra) {
-            SnippetInfo snippet;
+            SnippetTemplate.SnippetInfo snippet;
             if (value instanceof TornadoReduceAddNode) {
-                snippet = (extra == null) ? snippet(partialReduceAddFloatSnippet) : snippet(partialReduceAddFloatSnippetCarrierValue);
+                snippet = (extra == null) ? snippet(partialReduceAddFloatSnippet) :snippet( partialReduceAddFloatSnippetCarrierValue);
             } else if (value instanceof TornadoReduceMulNode) {
                 snippet = (extra == null) ? snippet(partialReduceFloatMultSnippet) : snippet(partialReduceFloatMultSnippetCarrierValue);
-            } else if (value instanceof OCLFPBinaryIntrinsicNode) {
+            } else if (value instanceof SPIRVFPBinaryIntrinsicNode) {
                 snippet = getSnippetFromOCLBinaryNodeInteger((SPIRVFPBinaryIntrinsicNode) value, extra);
             } else {
                 throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
             }
             return snippet;
         }
+
 
         private SnippetTemplate.SnippetInfo getSnippetFromOCLBinaryNodeDouble(SPIRVFPBinaryIntrinsicNode value, ValueNode extra) {
             switch (value.operation()) {
@@ -965,18 +967,19 @@ public class ReduceGPUSnippets implements Snippets {
 
         @Override
         public SnippetTemplate.SnippetInfo inferDoubleSnippet(ValueNode value, ValueNode extra) {
-            SnippetInfo snippet = null;
+            SnippetTemplate.SnippetInfo snippet;
             if (value instanceof TornadoReduceAddNode) {
                 snippet = (extra == null) ? snippet(partialReduceAddDoubleSnippet) : snippet(partialReduceAddDoubleSnippetCarrierValue);
             } else if (value instanceof TornadoReduceMulNode) {
                 snippet = (extra == null) ? snippet(partialReduceDoubleMultSnippet) : snippet(partialReduceDoubleMultSnippetCarrierValue);
-            } else if (value instanceof OCLFPBinaryIntrinsicNode) {
+            } else if (value instanceof SPIRVFPBinaryIntrinsicNode) {
                 snippet = getSnippetFromOCLBinaryNodeDouble((SPIRVFPBinaryIntrinsicNode) value, extra);
             } else {
                 throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
             }
             return snippet;
         }
+
 
         @Override
         public SnippetTemplate.SnippetInfo getSnippetInstance(JavaKind elementKind, ValueNode value, ValueNode extra) {
@@ -1016,6 +1019,8 @@ public class ReduceGPUSnippets implements Snippets {
 
             SnippetTemplate template = template(tool, storeAtomicIndexed, args);
             template.instantiate(tool.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
+
+
         }
     }
 

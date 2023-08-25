@@ -20,6 +20,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.phases;
 
 import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.calc.SqrtNode;
@@ -30,6 +31,8 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPUnaryIntrinsicNode;
+
+import java.util.Optional;
 
 public class SPIRVFP64SupportPhase extends Phase {
 
@@ -69,6 +72,9 @@ public class SPIRVFP64SupportPhase extends Phase {
         }
     }
 
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
     @Override
     protected void run(StructuredGraph graph) {
 

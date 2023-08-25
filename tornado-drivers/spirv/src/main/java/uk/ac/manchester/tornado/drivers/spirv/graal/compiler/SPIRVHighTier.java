@@ -113,8 +113,6 @@ public class SPIRVHighTier extends TornadoHighTier {
         }
 
         appendPhase(canonicalizer);
-        appendPhase(new RemoveValueProxyPhase(canonicalizer));
-        appendPhase(canonicalizer);
         appendPhase(new DeadCodeEliminationPhase(Optional));
 
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));

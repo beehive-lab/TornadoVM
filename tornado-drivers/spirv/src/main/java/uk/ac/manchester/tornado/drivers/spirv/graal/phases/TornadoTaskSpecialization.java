@@ -30,6 +30,7 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContex
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
@@ -38,6 +39,7 @@ import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.LogicConstantNode;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
@@ -295,6 +297,10 @@ public class TornadoTaskSpecialization extends BasePhase<TornadoHighTierContext>
                 evaluate(graph, n, args[parameterNode.index()]);
             });
         }
+    }
+
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
     }
 
     @Override

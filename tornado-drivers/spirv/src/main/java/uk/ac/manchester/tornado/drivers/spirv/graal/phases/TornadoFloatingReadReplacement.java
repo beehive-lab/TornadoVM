@@ -29,6 +29,7 @@ import static org.graalvm.word.LocationIdentity.init;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
 import org.graalvm.collections.EconomicMap;
 import org.graalvm.collections.EconomicSet;
@@ -194,7 +195,9 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
         });
         return true;
     }
-
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
     @Override
     public float codeSizeIncrease() {
         return 1.50f;

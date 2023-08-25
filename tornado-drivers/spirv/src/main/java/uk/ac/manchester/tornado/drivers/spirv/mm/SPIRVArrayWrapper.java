@@ -216,7 +216,8 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
             header.buffer.put((byte) 0);
             index++;
         }
-        header.buffer.putLong(arraySize);
+//        header.buffer.putLong(arraySize);
+        header.buffer.putInt((int) arraySize);
         return header;
     }
 

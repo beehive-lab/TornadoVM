@@ -25,6 +25,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.phases;
 
 import org.graalvm.compiler.core.common.GraalOptions;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.loop.DefaultLoopPolicies;
 import org.graalvm.compiler.nodes.loop.LoopEx;
@@ -38,6 +39,8 @@ import org.graalvm.compiler.phases.tiers.MidTierContext;
 
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
+
+import java.util.Optional;
 
 public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
 
@@ -61,7 +64,9 @@ public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
         }
         new DeadCodeEliminationPhase().apply(graph);
     }
-
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
     private static int getUnrollFactor() {
         return (isPowerOfTwo(Tornado.UNROLL_FACTOR) && Tornado.UNROLL_FACTOR <= 32) ? Tornado.UNROLL_FACTOR : LOOP_UNROLL_FACTOR_DEFAULT;
     }
