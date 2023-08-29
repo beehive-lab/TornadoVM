@@ -45,14 +45,11 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
 
     private static final int INIT_VALUE = -1;
-
+    protected PTXDeviceContext deviceContext;
     private int arrayHeaderSize;
     private int arrayLengthOffset;
-
     private long buffer;
     private long bufferSize;
-
-    protected PTXDeviceContext deviceContext;
     private JavaKind kind;
     private long setSubRegionSize;
 
@@ -204,7 +201,7 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
             header.buffer.put((byte) 0);
             index++;
         }
-        header.buffer.putLong(arraySize);
+        header.buffer.putInt((int) arraySize);
         return header;
     }
 
@@ -288,12 +285,12 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
     protected abstract void writeArrayData(long address, long bytes, T value, int hostOffset, int[] waitEvents);
 
     @Override
-    public void setSizeSubRegion(long batchSize) {
-        this.setSubRegionSize = batchSize;
+    public long getSizeSubRegion() {
+        return setSubRegionSize;
     }
 
     @Override
-    public long getSizeSubRegion() {
-        return setSubRegionSize;
+    public void setSizeSubRegion(long batchSize) {
+        this.setSubRegionSize = batchSize;
     }
 }

@@ -144,7 +144,7 @@ public class SPIRVControlFlow {
 
             Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVOpBranchConditional: " + condition + "? " + lirTrueBlock + ":" + lirFalseBlock);
 
-            SPIRVId bool = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_BOOL);
+            // SPIRVId bool = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_BOOL);
             // SPIRVId resultLoad = asm.module.getNextId();
             //
             // asm.currentBlockScope().add(new SPIRVOpLoad( //

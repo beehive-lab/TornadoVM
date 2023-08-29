@@ -860,6 +860,8 @@ public class PTXGPUReduceSnippets implements Snippets {
 
         public Templates(OptionValues options, Providers providers) {
             super(options, providers);
+            this.providers = providers;
+
         }
 
         private SnippetInfo snippet(PTXGPUReduceSnippets.Tuple2<Class<? extends PTXGPUReduceSnippets>, String> tuple2) {
