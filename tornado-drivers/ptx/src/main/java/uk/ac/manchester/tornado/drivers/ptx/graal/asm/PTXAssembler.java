@@ -76,6 +76,8 @@ public class PTXAssembler extends Assembler {
 
     // private static
     private static Map<Value, String> variableMap;
+
+    private static Map<String, Integer> vectorVariableMap;
     private boolean pushToStack;
     private List<String> operandStack;
     private boolean emitEOL;
@@ -91,11 +93,7 @@ public class PTXAssembler extends Assembler {
         this.lirGenRes = lirGenRes;
         localIndexes = new ConcurrentHashMap<>();
         variableMap = new ConcurrentHashMap<>();
-    }
-
-    public static void cleanUpVarsMapNaming() {
-        localIndexes.clear();
-        variableMap.clear();
+        vectorVariableMap = new ConcurrentHashMap<>();
     }
 
     /**
@@ -132,6 +130,7 @@ public class PTXAssembler extends Assembler {
 
             if (javaConstant.getJavaKind() == JavaKind.Float) {
                 float value = javaConstant.asFloat();
+                System.out.println("here");
                 result = String.format("0F%08X", Float.floatToRawIntBits(value));
             } else if (javaConstant.getJavaKind() == JavaKind.Double) {
                 double value = javaConstant.asDouble();
@@ -141,6 +140,7 @@ public class PTXAssembler extends Assembler {
             }
 
         }
+        System.out.println("Consant " + result.toLowerCase());
         return result;
     }
 
@@ -161,7 +161,8 @@ public class PTXAssembler extends Assembler {
             ConstantValue cv = (ConstantValue) value;
             return formatConstant(cv);
         } else if (value instanceof PTXVectorElementSelect) {
-            return convertValueFromGraalFormat(value);
+            System.out.println("Vector " + value);
+            return value.toString();
         } else {
             unimplemented("value: toString() type=%s, value=%s", value.getClass().getName(), value);
         }
@@ -194,19 +195,75 @@ public class PTXAssembler extends Assembler {
 
             String indexValue = String.valueOf(localIndexes.get(ptxKind));
 
-            // Find the matching TypePrefix enum for the given type
-            PTXVariablePrefix typePrefix = Arrays.stream(PTXVariablePrefix.values()).filter(tp -> tp.getType().equals(type)).findFirst().orElse(null);
-
-            if (typePrefix != null) {
-                result = typePrefix.getPrefix() + indexValue;
+            // Find the matching TypePrefix enum for the given typ
+            System.out.println("vector " + input + "   " + input.getPlatformKind().getVectorLength());
+            if (input instanceof PTXVectorElementSelect) {
+                // result = (typePrefix.getPrefix() + input.getPlatformKind().getVectorLength()
+                // + "Vec" + indexValue);
+                result = input.toString().contains("|") ? convertVariableName(input.toString()) : input.toString();
+                System.out.println("RESYLT " + result);
             } else {
-                throw new TornadoRuntimeException("Unsupported type: " + type);
+                PTXVariablePrefix typePrefix = Arrays.stream(PTXVariablePrefix.values()).filter(tp -> tp.getType().equals(type)).findFirst().orElse(null);
+                if (typePrefix != null) {
+                    result = typePrefix.getPrefix() + indexValue;
+                } else {
+                    throw new TornadoRuntimeException("Unsupported type: " + type);
+                }
             }
 
+            System.out.println("Type  " + input + " " + result);
             variableMap.put(input, result);
         }
 
         return variableMap.get(input);
+    }
+
+    public static String convertVariableName(Value value) {
+        String originalName = value.toString();
+        String[] parts = originalName.split("\\|");
+        String[] floatParts = parts[1].split("FLOAT");
+
+        String type = value.getPlatformKind().name().toLowerCase();
+        PTXVariablePrefix typePrefix = Arrays.stream(PTXVariablePrefix.values()).filter(tp -> tp.getType().equals(type)).findFirst().orElse(null);
+
+        // kind = (PTXKind) value.getPlatformKind();
+
+        System.out.println("CONVERT " + value);
+        // System.exit(0);
+        int vectorLength = Integer.parseInt(floatParts[1].substring(0, 1));
+        int variableIndex = Integer.parseInt(floatParts[1].substring(floatParts[1].length() - 1));
+
+        return "rfi" + vectorLength + "Vec" + variableIndex;
+    }
+
+    private static String convertVariableName(String originalName) {
+        System.out.println("XXX " + originalName);
+        String[] parts = originalName.split("\\|");
+        String[] floatParts = parts[1].split("FLOAT");
+
+        // PTXVariablePrefix typePrefix =
+        // Arrays.stream(PTXVariablePrefix.values()).filter(tp ->
+        // tp.getType().equals(type)).findFirst().orElse(null);
+
+        System.out.println("Orginal " + originalName);
+
+        int vectorLength = Integer.parseInt(floatParts[1].substring(0, 1));
+        int variableIndex = Integer.parseInt(floatParts[1].substring(floatParts[1].length() - 1));
+
+        String intermediateName = "rfi" + parts[0] + vectorLength + "Vec";
+        return intermediateName + getOrCreateCounter(intermediateName);
+    }
+
+    private static int getOrCreateCounter(String variableName) {
+        vectorVariableMap.putIfAbsent(variableName, 0);
+        int counter = vectorVariableMap.get(variableName) + 1;
+        vectorVariableMap.put(variableName, counter);
+        return counter - 1; // Return the previous counter value before incrementing
+    }
+
+    public void cleanUpVarsMapNaming() {
+        localIndexes.clear();
+        variableMap.clear();
     }
 
     public void emitSymbol(String sym) {
@@ -231,11 +288,11 @@ public class PTXAssembler extends Assembler {
         emit(ptxBuiltInRegister.getName());
     }
 
-    public void emitValueOrOp(PTXCompilationResultBuilder crb, Value value, Variable dest) {
+    public void emitVectorIndex(Value vector) {
+        emit(convertVariableName(vector));
+    }
 
-        if (value instanceof PTXArchitecture.PTXBuiltInRegister) {
-            System.out.println("emit built in " + ((PTXArchitecture.PTXBuiltInRegister) value).getName());
-        }
+    public void emitValueOrOp(PTXCompilationResultBuilder crb, Value value, Variable dest) {
 
         if (value instanceof PTXLIROp) {
             System.out.println("LIR OP  " + value.toString());
@@ -346,12 +403,29 @@ public class PTXAssembler extends Assembler {
         emitValue(values[values.length - 1]);
     }
 
+    public void emitValuesOrOpVect(PTXCompilationResultBuilder crb, Value[] values, Variable dest) {
+        for (int i = 0; i < values.length - 1; i++) {
+            System.out.println("VAL O OP " + values[i].getPlatformKind().getVectorLength());
+            emitVectorIndex(values[i]);
+            // emitValueOrOp(crb, values[i], dest);
+            emitSymbol(COMMA);
+            space();
+        }
+        emitVectorIndex(values[values.length - 1]);
+
+        // emitValueOrOp(crb, values[values.length - 1], dest);
+    }
+
     public void emitValuesOrOp(PTXCompilationResultBuilder crb, Value[] values, Variable dest) {
         for (int i = 0; i < values.length - 1; i++) {
+            System.out.println("VAL O OP " + values[i].getPlatformKind().getVectorLength());
+            // emitVectorIndex(values[i]);
             emitValueOrOp(crb, values[i], dest);
             emitSymbol(COMMA);
             space();
         }
+        // emitVectorIndex(values[values.length - 1]);
+
         emitValueOrOp(crb, values[values.length - 1], dest);
     }
 

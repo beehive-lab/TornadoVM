@@ -24,13 +24,6 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.Opcode;
-import org.graalvm.compiler.lir.Variable;
-import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
-import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXNullaryOp;
-import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
-
 import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.getFPURoundingMode;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXNullaryTemplate;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.COMMA;
@@ -39,6 +32,14 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstan
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.MOVE;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.SPACE;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TAB;
+
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.lir.Opcode;
+import org.graalvm.compiler.lir.Variable;
+
+import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
+import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXNullaryOp;
+import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
 
 public class PTXNullary {
     /**
@@ -78,9 +79,15 @@ public class PTXNullary {
         public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
             PTXKind lhsKind = (PTXKind) dest.getPlatformKind();
             PTXKind rhsKind = (PTXKind) getLIRKind().getPlatformKind();
+            System.out.println("-------------------------");
 
             if (lhsKind.isVector() && rhsKind.isVector()) {
                 PTXVectorSplit destVectorSplit = new PTXVectorSplit(dest);
+
+                // PTXVectorSplit rhsVectorSplit = new
+                // PTXVectorSplit(convertValueFromGraalFormat(opcode.), rhsKind);
+                System.out.println("OP CODE " + opcode.toString());
+
                 PTXVectorSplit rhsVectorSplit = new PTXVectorSplit(opcode.toString(), rhsKind);
                 PTXVectorAssign.doVectorToVectorAssign(asm, destVectorSplit, rhsVectorSplit);
             } else {
@@ -101,6 +108,7 @@ public class PTXNullary {
                 asm.emitValue(dest);
                 asm.emitSymbol(COMMA);
                 asm.emitSymbol(SPACE);
+                System.out.println("OP CODE " + opcode.toString());
                 asm.emit(opcode.toString());
             }
         }

@@ -236,6 +236,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         profiler.stop(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
         profiler.sum(ProfilerType.TOTAL_CODE_GENERATION_TIME, profiler.getTaskTimer(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId()));
 
+        asm.cleanUpVarsMapNaming();
         // CLEANUP LOOK SPIRV
     }
 
@@ -331,7 +332,10 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
             }
             guarantee(ptxKind != PTXKind.ILLEGAL, "illegal type for %s", param.getPlatformKind());
             if (ptxKind.isVector()) {
+
                 PTXVectorSplit vectorSplitData = new PTXVectorSplit(locals[i].getName(), ptxKind);
+                System.out.println("+vect " + locals[i].getName());
+
                 for (int j = 0; j < vectorSplitData.vectorNames.length; j++) {
                     asm.emit(".reg .%s %s", ptxKind.getElementKind(), vectorSplitData.vectorNames[j]);
                     if (j < vectorSplitData.vectorNames.length - 1) {
@@ -339,6 +343,8 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
                     }
                 }
             } else {
+                System.out.println("+vect " + locals[i].getName());
+
                 asm.emit(".reg .%s %s", ptxKind, locals[i].getName());
             }
             if (i < params.length - 1) {
@@ -371,8 +377,10 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
                     regVarCount++;
                 }
                 if (kind.isVector()) {
+                    System.out.println("=============");
                     PTXVectorSplit vectorSplitData = new PTXVectorSplit(varData.variable);
                     if (vectorSplitData.fullUnwrapVector) {
+                        System.out.println("========ssssssssssss=====");
                         IntStream.range(0, vectorSplitData.vectorNames.length).forEach(i -> asm.emitLine("\t.reg .%s %s;", type.getElementKind(), vectorSplitData.vectorNames[i]));
                     } else {
                         IntStream.range(0, vectorSplitData.vectorNames.length)

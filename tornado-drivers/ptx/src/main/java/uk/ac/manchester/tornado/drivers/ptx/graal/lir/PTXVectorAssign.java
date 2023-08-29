@@ -53,6 +53,8 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstan
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TAB;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AssignStmt.shouldEmitMove;
 
+import java.util.Arrays;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Variable;
@@ -62,6 +64,37 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
 
 public class PTXVectorAssign {
+
+    public static void doVectorToVectorAssign(PTXAssembler asm, PTXVectorSplit lhsVectorSplit, PTXVectorSplit rhsVectorSplit) {
+        PTXKind destElementKind = lhsVectorSplit.newKind;
+        PTXKind srcElementKind = rhsVectorSplit.newKind;
+
+        for (int i = 0; i < rhsVectorSplit.vectorNames.length; i++) {
+            asm.emitSymbol(TAB);
+            if (shouldEmitMove(destElementKind, srcElementKind)) {
+                asm.emit(MOVE + "." + destElementKind.toString());
+            } else {
+                asm.emit(CONVERT + ".");
+                if ((destElementKind.isFloating() || srcElementKind.isFloating()) && getFPURoundingMode(destElementKind, srcElementKind) != null) {
+                    asm.emit(getFPURoundingMode(destElementKind, srcElementKind));
+                    asm.emitSymbol(DOT);
+                }
+                asm.emit(destElementKind.toString());
+                asm.emitSymbol(DOT);
+                asm.emit(srcElementKind.toString());
+            }
+            asm.emitSymbol(TAB);
+            asm.emitSymbol(lhsVectorSplit.vectorNames[i]);
+            asm.emitSymbol(COMMA);
+            asm.emitSymbol(SPACE);
+            asm.emitSymbol(rhsVectorSplit.vectorNames[i]);
+
+            if (i < rhsVectorSplit.vectorNames.length - 1) {
+                asm.delimiter();
+                asm.eol();
+            }
+        }
+    }
 
     /**
      * PTX vector assignment expression
@@ -105,43 +138,13 @@ public class PTXVectorAssign {
                 asm.emitSymbol(vectorSplitData.vectorNames[i]);
                 asm.emitSymbol(COMMA);
                 asm.emitSymbol(SPACE);
+                System.out.println("Interime values " + Arrays.toString(vectorSplitData.vectorNames));
                 asm.emitValuesOrOp(crb, intermValues, dest);
 
                 if (i < vectorSplitData.vectorNames.length - 1) {
                     asm.delimiter();
                     asm.eol();
                 }
-            }
-        }
-    }
-
-    public static void doVectorToVectorAssign(PTXAssembler asm, PTXVectorSplit lhsVectorSplit, PTXVectorSplit rhsVectorSplit) {
-        PTXKind destElementKind = lhsVectorSplit.newKind;
-        PTXKind srcElementKind = rhsVectorSplit.newKind;
-
-        for (int i = 0; i < rhsVectorSplit.vectorNames.length; i++) {
-            asm.emitSymbol(TAB);
-            if (shouldEmitMove(destElementKind, srcElementKind)) {
-                asm.emit(MOVE + "." + destElementKind.toString());
-            } else {
-                asm.emit(CONVERT + ".");
-                if ((destElementKind.isFloating() || srcElementKind.isFloating()) && getFPURoundingMode(destElementKind, srcElementKind) != null) {
-                    asm.emit(getFPURoundingMode(destElementKind, srcElementKind));
-                    asm.emitSymbol(DOT);
-                }
-                asm.emit(destElementKind.toString());
-                asm.emitSymbol(DOT);
-                asm.emit(srcElementKind.toString());
-            }
-            asm.emitSymbol(TAB);
-            asm.emitSymbol(lhsVectorSplit.vectorNames[i]);
-            asm.emitSymbol(COMMA);
-            asm.emitSymbol(SPACE);
-            asm.emitSymbol(rhsVectorSplit.vectorNames[i]);
-
-            if (i < rhsVectorSplit.vectorNames.length - 1) {
-                asm.delimiter();
-                asm.eol();
             }
         }
     }
