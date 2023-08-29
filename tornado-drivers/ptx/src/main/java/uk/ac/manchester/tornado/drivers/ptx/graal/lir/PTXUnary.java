@@ -118,6 +118,13 @@ public class PTXUnary {
 
     }
 
+    public static class ThreadIndexing extends UnaryConsumer {
+
+        ThreadIndexing(PTXUnaryOp opcode, LIRKind lirKind, Value value) {
+            super(opcode, lirKind, value);
+        }
+    }
+
     public static class MemoryAccess extends UnaryConsumer {
 
         private final PTXMemoryBase base;

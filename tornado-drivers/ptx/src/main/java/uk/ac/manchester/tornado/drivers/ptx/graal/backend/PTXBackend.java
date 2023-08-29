@@ -235,6 +235,8 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
 
         profiler.stop(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
         profiler.sum(ProfilerType.TOTAL_CODE_GENERATION_TIME, profiler.getTaskTimer(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId()));
+
+        // CLEANUP LOOK SPIRV
     }
 
     private void emitEpilogue(PTXAssembler asm) {
@@ -381,6 +383,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
 
             if (regVarCount != 0) {
                 asm.emitLine("\t.reg .%s %s<%d>;", type, type.getRegisterTypeString(), regVarCount + 1);
+                // asm.emitLine("\t.reg .%s %s<%d>;", type, type.getRegisterTypeString(), 300);
             }
         }
 

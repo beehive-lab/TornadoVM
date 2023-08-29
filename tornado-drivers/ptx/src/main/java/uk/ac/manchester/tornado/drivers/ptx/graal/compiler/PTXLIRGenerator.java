@@ -438,7 +438,7 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     public Variable newVariable(ValueKind<?> lirKind, boolean isArray) {
         final Variable var = super.newVariable(lirKind);
-        Logger.traceBuildLIR(Logger.BACKEND.PTX, "newVariable: %s <- %s (%s)", var.toString(), lirKind.toString(), lirKind.getClass().getName());
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "[PTX] newVariable: %s <- %s (%s)", var.toString(), lirKind.toString(), lirKind.getClass().getName());
 
         PTXLIRGenerationResult res = (PTXLIRGenerationResult) getResult();
         int indexForType = res.insertVariableAndGetIndex(var, isArray);
@@ -458,6 +458,9 @@ public class PTXLIRGenerator extends LIRGenerator {
         // } else {
         // var.setName(kind.getRegisterTypeString() + indexForType);
         // }
+
+        // PTXLIRGenerationResult res = getResult();
+        // res.insertVariable(variable);
 
         return var;
     }
@@ -484,5 +487,26 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     public Variable getParameterAllocation(PTXArchitecture.PTXParam param) {
         return parameterAllocations.get(param.getName());
+    }
+
+    public static class ArrayVariable extends Variable {
+
+        private Variable variable;
+        private Value length;
+
+        public ArrayVariable(Variable variable, Value length) {
+            super(variable.getValueKind(), variable.index);
+            this.variable = variable;
+            this.length = length;
+        }
+
+        public Value getLength() {
+            return length;
+        }
+
+        public Variable getVariable() {
+            return variable;
+        }
+
     }
 }

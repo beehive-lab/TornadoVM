@@ -654,12 +654,12 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
      * <b>cvt</b> instructions.
      */
     public Variable getBuiltInAllocation(PTXBuiltInRegister builtIn) {
-        if (builtInAllocations.containsKey(builtIn.toString()))
-            return builtInAllocations.get(builtIn.toString());
+        if (builtInAllocations.containsKey(builtIn.getName()))
+            return builtInAllocations.get(builtIn.getName());
 
         Variable allocateTo = getGen().newVariable(builtIn.getValueKind());
         append(new AssignStmt(allocateTo, builtIn));
-        builtInAllocations.put(builtIn.toString(), allocateTo);
+        builtInAllocations.put(builtIn.getName(), allocateTo);
         return allocateTo;
     }
 }

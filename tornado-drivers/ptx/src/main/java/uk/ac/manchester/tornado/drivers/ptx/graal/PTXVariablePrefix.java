@@ -35,7 +35,7 @@ public enum PTXVariablePrefix {
         B32("b32", "rui"),
         B64("b64", "b64_"),
         S8("s8", "s8_"),
-        S16("s16", "s16_"),
+        S16("s16", "rsh"),
         S32("s32", "rsi"),
         S64("s64", "rsd"),
         U8("u8", "u8_"),

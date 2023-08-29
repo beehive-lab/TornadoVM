@@ -198,9 +198,27 @@ public class PTXArchitecture extends Architecture {
 
     public static class PTXBuiltInRegister extends Variable {
 
+        private final String name;
+
         protected PTXBuiltInRegister(String name) {
             super(LIRKind.value(PTXKind.U32), 0);
-            // setName(name);
+            this.name = name;
+        }
+
+        // private void setName(String name) {
+        // this.name = name;
+        // }
+
+        public String getName() {
+            return name;
+        }
+
+        // public ValueKind getValueKind() {
+        // return LIRKind.value(PTXKind.U32);
+        // }
+
+        public PTXKind getPtxKind() {
+            return PTXKind.U32;
         }
     }
 

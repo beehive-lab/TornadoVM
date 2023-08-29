@@ -44,6 +44,8 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstan
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.graalvm.compiler.asm.AbstractAddress;
 import org.graalvm.compiler.asm.Assembler;
@@ -61,6 +63,7 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXVariablePrefix;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerationResult;
@@ -69,6 +72,10 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIROp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXVectorElementSelect;
 
 public class PTXAssembler extends Assembler {
+    private static Map<PTXKind, Integer> localIndexes;
+
+    // private static
+    private static Map<Value, String> variableMap;
     private boolean pushToStack;
     private List<String> operandStack;
     private boolean emitEOL;
@@ -82,53 +89,13 @@ public class PTXAssembler extends Assembler {
         convertTabToSpace = false;
         operandStack = new ArrayList<>(10);
         this.lirGenRes = lirGenRes;
+        localIndexes = new ConcurrentHashMap<>();
+        variableMap = new ConcurrentHashMap<>();
     }
 
-    public static String toString(Value value) {
-        String result = "";
-        if (value instanceof Variable) {
-            Variable var = (Variable) value;
-            return convertValueFromGraalFormat(var);
-        } else if (value instanceof ConstantValue) {
-            if (!((ConstantValue) value).isJavaConstant()) {
-                shouldNotReachHere("constant value: ", value);
-            }
-            ConstantValue cv = (ConstantValue) value;
-            return formatConstant(cv);
-        } else if (value instanceof PTXVectorElementSelect) {
-            return value.toString();
-        } else {
-            unimplemented("value: toString() type=%s, value=%s", value.getClass().getName(), value);
-        }
-        return result;
-    }
-
-    /**
-     * It converts the format of a Value input to a specific format based on its
-     * platform type.
-     *
-     * @param input
-     *            The {@link Value} input to convert.
-     * @return The converted format string.
-     */
-    public static String convertValueFromGraalFormat(Value input) {
-        String type = input.getPlatformKind().name().toLowerCase();
-        String result;
-
-        // Extract the index value between "v" and "|"
-        // v10|DOUBLE --> v->indexValue<-|
-        String indexValue = getAbsoluteIndexFromValue(input);
-
-        // Find the matching TypePrefix enum for the given type
-        PTXVariablePrefix typePrefix = Arrays.stream(PTXVariablePrefix.values()).filter(tp -> tp.getType().equals(type)).findFirst().orElse(null);
-
-        if (typePrefix != null) {
-            result = typePrefix.getPrefix() + indexValue;
-        } else {
-            throw new TornadoRuntimeException("Unsupported type: " + type);
-        }
-
-        return result;
+    public static void cleanUpVarsMapNaming() {
+        localIndexes.clear();
+        variableMap.clear();
     }
 
     /**
@@ -181,6 +148,67 @@ public class PTXAssembler extends Assembler {
         return str.replace("\n", "\\n").replace("\t", "\\t").replace("\"", "");
     }
 
+    public static String toString(Value value) {
+        String result = "";
+        if (value instanceof Variable) {
+            Variable var = (Variable) value;
+            result = convertValueFromGraalFormat(var);
+            return result;
+        } else if (value instanceof ConstantValue) {
+            if (!((ConstantValue) value).isJavaConstant()) {
+                shouldNotReachHere("constant value: ", value);
+            }
+            ConstantValue cv = (ConstantValue) value;
+            return formatConstant(cv);
+        } else if (value instanceof PTXVectorElementSelect) {
+            return convertValueFromGraalFormat(value);
+        } else {
+            unimplemented("value: toString() type=%s, value=%s", value.getClass().getName(), value);
+        }
+        return result;
+    }
+
+    /**
+     * It converts the format of a Value input to a specific format based on its
+     * platform type.
+     *
+     * @param input
+     *            The {@link Value} input to convert.
+     * @return The converted format string.
+     */
+    public static String convertValueFromGraalFormat(Value input) {
+        String type = input.getPlatformKind().name().toLowerCase();
+        String result;
+
+        if (!variableMap.containsKey(input)) {
+
+            PTXKind ptxKind = (PTXKind) input.getPlatformKind();
+            if (localIndexes.containsKey(ptxKind)) {
+                localIndexes.put(ptxKind, localIndexes.get(ptxKind) + 1);
+            } else {
+                localIndexes.put(ptxKind, 0);
+            }
+            // Extract the index value between "v" and "|"
+            // v10|DOUBLE --> v->indexValue<-|
+            // String indexValue = getAbsoluteIndexFromValue(input);
+
+            String indexValue = String.valueOf(localIndexes.get(ptxKind));
+
+            // Find the matching TypePrefix enum for the given type
+            PTXVariablePrefix typePrefix = Arrays.stream(PTXVariablePrefix.values()).filter(tp -> tp.getType().equals(type)).findFirst().orElse(null);
+
+            if (typePrefix != null) {
+                result = typePrefix.getPrefix() + indexValue;
+            } else {
+                throw new TornadoRuntimeException("Unsupported type: " + type);
+            }
+
+            variableMap.put(input, result);
+        }
+
+        return variableMap.get(input);
+    }
+
     public void emitSymbol(String sym) {
         byte[] symBytes = sym.getBytes();
         if (convertTabToSpace) {
@@ -199,12 +227,25 @@ public class PTXAssembler extends Assembler {
         emit(toString(value));
     }
 
+    public void emitBuiltIn(PTXArchitecture.PTXBuiltInRegister ptxBuiltInRegister) {
+        emit(ptxBuiltInRegister.getName());
+    }
+
     public void emitValueOrOp(PTXCompilationResultBuilder crb, Value value, Variable dest) {
+
+        if (value instanceof PTXArchitecture.PTXBuiltInRegister) {
+            System.out.println("emit built in " + ((PTXArchitecture.PTXBuiltInRegister) value).getName());
+        }
+
         if (value instanceof PTXLIROp) {
+            System.out.println("LIR OP  " + value.toString());
+
             ((PTXLIROp) value).emit(crb, this, dest);
         } else {
+            System.out.println("Val " + value.toString());
             emitValue(value);
         }
+
     }
 
     public void emit(String format, Object... args) {
@@ -776,4 +817,5 @@ public class PTXAssembler extends Assembler {
             asm.emit(")");
         }
     }
+
 }

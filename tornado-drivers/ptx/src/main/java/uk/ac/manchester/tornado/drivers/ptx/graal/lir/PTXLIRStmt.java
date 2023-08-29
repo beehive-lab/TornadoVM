@@ -52,6 +52,7 @@ import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXNullaryOp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
@@ -95,6 +96,13 @@ public class PTXLIRStmt {
             this.rhsKind = rhsKind;
         }
 
+        // public AssignStmt(Variable allocateTo, PTXArchitecture.PTXBuiltInRegister
+        // builtIn) {
+        // super(TYPE);
+        // this(allocateTo, (PTXKind) allocateTo.getPlatformKind(), builtIn,
+        // builtIn.getPtxKind());
+        // }
+
         public static boolean shouldEmitMove(PTXKind lhsKind, PTXKind rhsKind) {
             return lhsKind == rhsKind && !lhsKind.is8Bit();
         }
@@ -109,6 +117,25 @@ public class PTXLIRStmt {
                 PTXVectorSplit rhsVectorSplit = new PTXVectorSplit(rhsVar);
                 PTXVectorSplit lhsVectorSplit = new PTXVectorSplit(lhsVar);
                 PTXVectorAssign.doVectorToVectorAssign(asm, lhsVectorSplit, rhsVectorSplit);
+            } else if (rhs instanceof PTXArchitecture.PTXBuiltInRegister) {
+                asm.emitSymbol(TAB);
+                if (shouldEmitMove(lhsKind, rhsKind)) {
+                    asm.emit(MOVE + DOT + lhsKind.toString());
+                } else {
+                    asm.emit(CONVERT + DOT);
+                    if ((lhsKind.isFloating() || rhsKind.isFloating()) && getFPURoundingMode(lhsKind, rhsKind) != null) {
+                        asm.emit(getFPURoundingMode(lhsKind, rhsKind));
+                        asm.emitSymbol(DOT);
+                    }
+                    asm.emit(lhsKind.toString());
+                    asm.emitSymbol(DOT);
+                    asm.emit(rhsKind.toString());
+                }
+                asm.emitSymbol(TAB);
+                asm.emitValue(lhs);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitBuiltIn((PTXArchitecture.PTXBuiltInRegister) rhs);
+
             } else {
                 asm.emitSymbol(TAB);
                 if (shouldEmitMove(lhsKind, rhsKind)) {
