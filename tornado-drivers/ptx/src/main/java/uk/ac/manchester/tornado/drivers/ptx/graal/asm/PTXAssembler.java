@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.graalvm.compiler.asm.AbstractAddress;
@@ -78,11 +79,11 @@ public class PTXAssembler extends Assembler {
     private static Map<Value, String> variableMap;
 
     private static Map<String, Integer> vectorVariableMap;
+    private static PTXLIRGenerationResult lirGenRes;
     private boolean pushToStack;
     private List<String> operandStack;
     private boolean emitEOL;
     private boolean convertTabToSpace;
-    private PTXLIRGenerationResult lirGenRes;
 
     public PTXAssembler(TargetDescription target, PTXLIRGenerationResult lirGenRes) {
         super(target, null);
@@ -196,12 +197,30 @@ public class PTXAssembler extends Assembler {
             String indexValue = String.valueOf(localIndexes.get(ptxKind));
 
             // Find the matching TypePrefix enum for the given typ
-            System.out.println("vector " + input + "   " + input.getPlatformKind().getVectorLength());
+
+            // System.out.println("xxx " + getLir().getVariableTable().get(ptxKind).);
+            Set<PTXLIRGenerationResult.VariableData> vars = getLir().getVariableTable().get(ptxKind);
+            boolean isArray = false;
+
+            // vars.stream().findFirst().get()
+            if (vars != null) {
+                for (PTXLIRGenerationResult.VariableData var : vars) {
+                    if (var.variable.equals(input)) {
+                        System.out.println("+++var " + input + " is array " + var.isArray);
+                    }
+                }
+                PTXLIRGenerationResult.VariableData foundVariableData = vars.stream().filter(variableData -> variableData.variable.equals(input)).findFirst().orElse(null);
+
+                isArray = foundVariableData != null ? foundVariableData.isArray : isArray;
+
+            }
+
             if (input instanceof PTXVectorElementSelect) {
-                // result = (typePrefix.getPrefix() + input.getPlatformKind().getVectorLength()
-                // + "Vec" + indexValue);
                 result = input.toString().contains("|") ? convertVariableName(input.toString()) : input.toString();
                 System.out.println("RESYLT " + result);
+            } else if (isArray) {
+                PTXVariablePrefix typePrefix = Arrays.stream(PTXVariablePrefix.values()).filter(tp -> tp.getType().equals(type)).findFirst().orElse(null);
+                result = typePrefix.getPrefix() + "Arr" + indexValue;
             } else {
                 PTXVariablePrefix typePrefix = Arrays.stream(PTXVariablePrefix.values()).filter(tp -> tp.getType().equals(type)).findFirst().orElse(null);
                 if (typePrefix != null) {
@@ -261,6 +280,10 @@ public class PTXAssembler extends Assembler {
         return counter - 1; // Return the previous counter value before incrementing
     }
 
+    private static PTXLIRGenerationResult getLir() {
+        return lirGenRes;
+    }
+
     public void cleanUpVarsMapNaming() {
         localIndexes.clear();
         variableMap.clear();
@@ -286,10 +309,6 @@ public class PTXAssembler extends Assembler {
 
     public void emitBuiltIn(PTXArchitecture.PTXBuiltInRegister ptxBuiltInRegister) {
         emit(ptxBuiltInRegister.getName());
-    }
-
-    public void emitVectorIndex(Value vector) {
-        emit(convertVariableName(vector));
     }
 
     public void emitValueOrOp(PTXCompilationResultBuilder crb, Value value, Variable dest) {
@@ -401,19 +420,6 @@ public class PTXAssembler extends Assembler {
             space();
         }
         emitValue(values[values.length - 1]);
-    }
-
-    public void emitValuesOrOpVect(PTXCompilationResultBuilder crb, Value[] values, Variable dest) {
-        for (int i = 0; i < values.length - 1; i++) {
-            System.out.println("VAL O OP " + values[i].getPlatformKind().getVectorLength());
-            emitVectorIndex(values[i]);
-            // emitValueOrOp(crb, values[i], dest);
-            emitSymbol(COMMA);
-            space();
-        }
-        emitVectorIndex(values[values.length - 1]);
-
-        // emitValueOrOp(crb, values[values.length - 1], dest);
     }
 
     public void emitValuesOrOp(PTXCompilationResultBuilder crb, Value[] values, Variable dest) {
