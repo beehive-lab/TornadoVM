@@ -73,10 +73,10 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXVectorElementSelect;
 
 public class PTXAssembler extends Assembler {
     private static Map<PTXKind, Integer> localIndexes;
+    private static Map<PTXKind, Integer> arraylocalIndexes;
 
     private static Map<Value, String> variableMap;
 
-    private static Map<String, Integer> vectorVariableMap;
     private static PTXLIRGenerationResult lirGenRes;
     private boolean pushToStack;
     private List<String> operandStack;
@@ -92,7 +92,7 @@ public class PTXAssembler extends Assembler {
         this.lirGenRes = lirGenRes;
         localIndexes = new ConcurrentHashMap<>();
         variableMap = new ConcurrentHashMap<>();
-        vectorVariableMap = new ConcurrentHashMap<>();
+        arraylocalIndexes = new ConcurrentHashMap<>();
     }
 
     public static String formatConstant(ConstantValue cv) {
@@ -150,37 +150,49 @@ public class PTXAssembler extends Assembler {
     }
 
     /**
-     * It converts the format of a Value input from the Graal format (e.g.,
-     * V23|FLOAT to a normalized format for the current PTX backend based on its
-     * platform type.
+     * Converts the format of a given input Value from the Graal format (e.g.,
+     * V23|FLOAT) to a normalized format suitable for the current PTX backend based
+     * on its platform type.
+     *
+     * This method analyzes the input Value's platform kind and generates a
+     * corresponding format string in the normalized PTX format. It keeps track of
+     * variables and their mappings to ensure uniqueness and consistency of
+     * generated format strings.
      *
      * @param input
-     *            The {@link Value} input to convert.
-     * @return The converted format string.
+     *            The {@link Value} input to be converted.
+     * @return The converted format string in the PTX backend format.
      */
     public static String convertValueFromGraalFormat(Value input) {
+        // Extract the PTXKind of the input Value.
         PTXKind ptxKind = (PTXKind) input.getPlatformKind();
+
+        // Retrieve the set of variables and the return variable associated with the
+        // PTXKind.
         Set<PTXLIRGenerationResult.VariableData> vars = getLir().getVariableTable().get(ptxKind);
         Variable retVar = getLir().getReturnVariable(ptxKind);
 
+        // Check if the input Value matches the return variable as it does not require
+        // indexing.
         if (retVar != null && retVar.equals(input)) {
             variableMap.put(input, "retVar");
         } else if (!variableMap.containsKey(input)) {
-
-            localIndexes.compute(ptxKind, (key, oldValue) -> oldValue != null ? oldValue + 1 : 0);
-            String indexValue = String.valueOf(localIndexes.get(ptxKind));
-
             boolean isArray = vars != null && vars.stream().filter(variableData -> variableData.variable.equals(input)).findFirst().map(variableData -> variableData.isArray).orElse(false);
 
+            if (isArray) {
+                arraylocalIndexes.compute(ptxKind, (key, oldValue) -> oldValue != null ? oldValue + 1 : 0);
+            } else {
+                localIndexes.compute(ptxKind, (key, oldValue) -> oldValue != null ? oldValue + 1 : 0);
+            }
+
+            // Find the PTXVariablePrefix corresponding to the input's platform type.
             PTXVariablePrefix typePrefix = Arrays.stream(PTXVariablePrefix.values()).filter(tp -> tp.getType().equals(input.getPlatformKind().name().toLowerCase())).findFirst()
                     .orElseThrow(AssertionError::new);
 
+            // Create the formatted index value.
+            String indexValue = isArray ? arraylocalIndexes.get(ptxKind).toString() : String.valueOf(localIndexes.get(ptxKind));
             String result = typePrefix.getPrefix() + (isArray ? "Arr" : "") + indexValue;
-            // FIX INDEXES
 
-            if (isArray) {
-                localIndexes.put(ptxKind, localIndexes.get(ptxKind) - 1);
-            }
             variableMap.put(input, result);
         }
 
@@ -194,7 +206,7 @@ public class PTXAssembler extends Assembler {
     public void cleanUpVarsMapNaming() {
         localIndexes.clear();
         variableMap.clear();
-        vectorVariableMap.clear();
+        arraylocalIndexes.clear();
     }
 
     public void emitSymbol(String sym) {
