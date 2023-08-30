@@ -32,10 +32,11 @@ else:
 __LINUX__ = "linux"
 __APPLE__ = "darwin"
 
+__JDK20__ = "jdk20"
 __JDK17__ = "jdk17"
 __JDK11__ = "jdk11"
-__GRAALVM11__ = "graalvm-jdk-11"
 __GRAALVM17__ = "graalvm-jdk-17"
+__GRAALVM20__ = "graalvm-jdk-20"
 __MANDREL11__ = "mandrel-jdk-11"
 __MANDREL17__ = "mandrel-jdk-17"
 __CORRETTO11__ = "corretto-jdk-11"
@@ -91,24 +92,34 @@ JDK = {
             __ARM__: "https://download.oracle.com/java/17/latest/jdk-17_macos-aarch64_bin.tar.gz",
         }
     },
-    __GRAALVM11__: {
+    __JDK20__: {
         __LINUX__: {
-            __X86_64__: None,
-            __ARM__: None,
+            __X86_64__: "https://download.oracle.com/java/20/latest/jdk-20_linux-x64_bin.tar.gz",
+            __ARM__: "https://download.oracle.com/java/17/latest/jdk-20_linux-aarch64_bin.tar.gz",
         },
         __APPLE__: {
-            __X86_64__: None,
-            __ARM__: None,
+            __X86_64__: "https://download.oracle.com/java/20/latest/jdk-20_macos-x64_bin.tar.gz",
+            __ARM__: "https://download.oracle.com/java/20/latest/jdk-20_macos-aarch64_bin.tar.gz",
         }
     },
     __GRAALVM17__: {
         __LINUX__: {
-            __X86_64__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.7/graalvm-community-jdk-17.0.7_linux-x64_bin.tar.gz",
-            __ARM__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.7/graalvm-community-jdk-17.0.7_linux-aarch64_bin.tar.gz",
+            __X86_64__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.8/graalvm-community-jdk-17.0.8_linux-x64_bin.tar.gz",
+            __ARM__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.8/graalvm-community-jdk-17.0.8_linux-aarch64_bin.tar.gz",
         },
         __APPLE__: {
-            __X86_64__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.7/graalvm-community-jdk-17.0.7_macos-x64_bin.tar.gz",
-            __ARM__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.7/graalvm-community-jdk-17.0.7_macos-aarch64_bin.tar.gz",
+            __X86_64__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.8/graalvm-community-jdk-17.0.8_macos-x64_bin.tar.gz",
+            __ARM__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.8/graalvm-community-jdk-17.0.8_macos-aarch64_bin.tar.gz",
+        }
+    },
+    __GRAALVM20__: {
+        __LINUX__: {
+            __X86_64__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-20.0.2/graalvm-community-jdk-20.0.2_linux-x64_bin.tar.gz",
+            __ARM__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-20.0.2/graalvm-community-jdk-20.0.2_linux-aarch64_bin.tar.gz",
+        },
+        __APPLE__: {
+            __X86_64__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-20.0.2/graalvm-community-jdk-20.0.2_macos-x64_bin.tar.gz",
+            __ARM__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-20.0.2/graalvm-community-jdk-20.0.2_macos-aarch64_bin.tar.gz",
         }
     },
     __CORRETTO11__: {
