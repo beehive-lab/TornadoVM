@@ -30,23 +30,19 @@ public enum PTXVariablePrefix {
      * variables.
      */
     // @formatter:off
-        B8("b8", "b8_"),
-        B16("b16", "b16_"),
+        B8("b8", "rub"),
         B32("b32", "rui"),
-        B64("b64", "b64_"),
+        B64("b64", "rbd"),
         S8("s8", "rsb"),
         S16("s16", "rsh"),
         S32("s32", "rsi"),
         S64("s64", "rsd"),
-        U8("u8", "u8_"),
-        U16("u16", "u16_"),
         U32("u32", "rui"),
         U64("u64", "rud"),
-        F16("f16", "f16_"),
         F32("f32", "rfi"),
         F64("f64", "rfd"),
         PRED("pred", "rpb");
-        // @formatter:on
+    // @formatter:on
 
     private final String type;
     private final String prefix;

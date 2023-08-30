@@ -79,15 +79,9 @@ public class PTXNullary {
         public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
             PTXKind lhsKind = (PTXKind) dest.getPlatformKind();
             PTXKind rhsKind = (PTXKind) getLIRKind().getPlatformKind();
-            System.out.println("-------------------------");
 
             if (lhsKind.isVector() && rhsKind.isVector()) {
                 PTXVectorSplit destVectorSplit = new PTXVectorSplit(dest);
-
-                // PTXVectorSplit rhsVectorSplit = new
-                // PTXVectorSplit(convertValueFromGraalFormat(opcode.), rhsKind);
-                System.out.println("OP CODE " + opcode.toString());
-
                 PTXVectorSplit rhsVectorSplit = new PTXVectorSplit(opcode.toString(), rhsKind);
                 PTXVectorAssign.doVectorToVectorAssign(asm, destVectorSplit, rhsVectorSplit);
             } else {
@@ -108,7 +102,6 @@ public class PTXNullary {
                 asm.emitValue(dest);
                 asm.emitSymbol(COMMA);
                 asm.emitSymbol(SPACE);
-                System.out.println("OP CODE " + opcode.toString());
                 asm.emit(opcode.toString());
             }
         }

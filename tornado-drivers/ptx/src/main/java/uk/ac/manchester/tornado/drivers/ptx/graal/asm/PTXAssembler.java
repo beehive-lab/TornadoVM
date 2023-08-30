@@ -63,7 +63,6 @@ import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXVariablePrefix;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
@@ -97,21 +96,6 @@ public class PTXAssembler extends Assembler {
         vectorVariableMap = new ConcurrentHashMap<>();
     }
 
-    /**
-     * It retrieves the absolute index from the given Value object.
-     *
-     * @param value
-     *            the {@link Value} object to extract the index from. It should be
-     *            in the format "int[20|0x14]".
-     * @return the absolute index as a String
-     */
-    public static String getAbsoluteIndexFromValue(Value value) {
-        int startIndex = value.toString().indexOf('[') + 1;
-        int endIndex = value.toString().indexOf('|');
-
-        return value.toString().substring(startIndex, endIndex).trim().replace("v", "");
-    }
-
     public static String formatConstant(ConstantValue cv) {
         String result = "";
         JavaConstant javaConstant = cv.getJavaConstant();
@@ -131,7 +115,6 @@ public class PTXAssembler extends Assembler {
 
             if (javaConstant.getJavaKind() == JavaKind.Float) {
                 float value = javaConstant.asFloat();
-                System.out.println("here");
                 result = String.format("0F%08X", Float.floatToRawIntBits(value));
             } else if (javaConstant.getJavaKind() == JavaKind.Double) {
                 double value = javaConstant.asDouble();
@@ -141,7 +124,6 @@ public class PTXAssembler extends Assembler {
             }
 
         }
-        System.out.println("Consant " + result.toLowerCase());
         return result;
     }
 
@@ -152,8 +134,7 @@ public class PTXAssembler extends Assembler {
     public static String toString(Value value) {
         String result = "";
         if (value instanceof Variable) {
-            Variable var = (Variable) value;
-            result = convertValueFromGraalFormat(var);
+            result = convertValueFromGraalFormat(value);
             return result;
         } else if (value instanceof ConstantValue) {
             if (!((ConstantValue) value).isJavaConstant()) {
@@ -162,7 +143,6 @@ public class PTXAssembler extends Assembler {
             ConstantValue cv = (ConstantValue) value;
             return formatConstant(cv);
         } else if (value instanceof PTXVectorElementSelect) {
-            System.out.println("Vector " + value);
             return value.toString();
         } else {
             unimplemented("value: toString() type=%s, value=%s", value.getClass().getName(), value);
@@ -171,7 +151,8 @@ public class PTXAssembler extends Assembler {
     }
 
     /**
-     * It converts the format of a Value input to a specific format based on its
+     * It converts the format of a Value input from the Graal format (e.g.,
+     * V23|FLOAT to a normalized format for the current PTX backend based on its
      * platform type.
      *
      * @param input
@@ -179,105 +160,26 @@ public class PTXAssembler extends Assembler {
      * @return The converted format string.
      */
     public static String convertValueFromGraalFormat(Value input) {
-        String type = input.getPlatformKind().name().toLowerCase();
-        String result;
+        PTXKind ptxKind = (PTXKind) input.getPlatformKind();
+        Set<PTXLIRGenerationResult.VariableData> vars = getLir().getVariableTable().get(ptxKind);
 
         if (!variableMap.containsKey(input)) {
-
-            PTXKind ptxKind = (PTXKind) input.getPlatformKind();
-            if (localIndexes.containsKey(ptxKind)) {
-                localIndexes.put(ptxKind, localIndexes.get(ptxKind) + 1);
-            } else {
-                localIndexes.put(ptxKind, 0);
-            }
-            // Extract the index value between "v" and "|"
-            // v10|DOUBLE --> v->indexValue<-|
-            // String indexValue = getAbsoluteIndexFromValue(input);
-
+            localIndexes.compute(ptxKind, (key, oldValue) -> oldValue != null ? oldValue + 1 : 0);
             String indexValue = String.valueOf(localIndexes.get(ptxKind));
 
-            // Find the matching TypePrefix enum for the given typ
+            boolean isArray = vars != null && vars.stream().filter(variableData -> variableData.variable.equals(input)).findFirst().map(variableData -> variableData.isArray).orElse(false);
 
-            // System.out.println("xxx " + getLir().getVariableTable().get(ptxKind).);
-            Set<PTXLIRGenerationResult.VariableData> vars = getLir().getVariableTable().get(ptxKind);
-            boolean isArray = false;
+            PTXVariablePrefix typePrefix = Arrays.stream(PTXVariablePrefix.values()).filter(tp -> tp.getType().equals(input.getPlatformKind().name().toLowerCase())).findFirst()
+                    .orElseThrow(AssertionError::new);
 
-            // vars.stream().findFirst().get()
-            if (vars != null) {
-                for (PTXLIRGenerationResult.VariableData var : vars) {
-                    if (var.variable.equals(input)) {
-                        System.out.println("+++var " + input + " is array " + var.isArray);
-                    }
-                }
-                PTXLIRGenerationResult.VariableData foundVariableData = vars.stream().filter(variableData -> variableData.variable.equals(input)).findFirst().orElse(null);
-
-                isArray = foundVariableData != null ? foundVariableData.isArray : isArray;
-
+            String result = typePrefix.getPrefix() + (isArray ? "Arr" : "") + indexValue;
+            if (isArray) {
+                localIndexes.put(ptxKind, localIndexes.get(ptxKind) - 1);
             }
-
-            if (input instanceof PTXVectorElementSelect) {
-                result = input.toString().contains("|") ? convertVariableName(input.toString()) : input.toString();
-                System.out.println("RESYLT " + result);
-            } else if (isArray) {
-                PTXVariablePrefix typePrefix = Arrays.stream(PTXVariablePrefix.values()).filter(tp -> tp.getType().equals(type)).findFirst().orElse(null);
-                result = typePrefix.getPrefix() + "Arr" + indexValue;
-            } else {
-                PTXVariablePrefix typePrefix = Arrays.stream(PTXVariablePrefix.values()).filter(tp -> tp.getType().equals(type)).findFirst().orElse(null);
-                if (typePrefix != null) {
-                    result = typePrefix.getPrefix() + indexValue;
-                } else {
-                    throw new TornadoRuntimeException("Unsupported type: " + type);
-                }
-            }
-
-            System.out.println("Type  " + input + " " + result);
             variableMap.put(input, result);
         }
 
         return variableMap.get(input);
-    }
-
-    public static String convertVariableName(Value value) {
-        String originalName = value.toString();
-        String[] parts = originalName.split("\\|");
-        String[] floatParts = parts[1].split("FLOAT");
-
-        String type = value.getPlatformKind().name().toLowerCase();
-        PTXVariablePrefix typePrefix = Arrays.stream(PTXVariablePrefix.values()).filter(tp -> tp.getType().equals(type)).findFirst().orElse(null);
-
-        // kind = (PTXKind) value.getPlatformKind();
-
-        System.out.println("CONVERT " + value);
-        // System.exit(0);
-        int vectorLength = Integer.parseInt(floatParts[1].substring(0, 1));
-        int variableIndex = Integer.parseInt(floatParts[1].substring(floatParts[1].length() - 1));
-
-        return "rfi" + vectorLength + "Vec" + variableIndex;
-    }
-
-    private static String convertVariableName(String originalName) {
-        System.out.println("XXX " + originalName);
-        String[] parts = originalName.split("\\|");
-        String[] floatParts = parts[1].split("FLOAT");
-
-        // PTXVariablePrefix typePrefix =
-        // Arrays.stream(PTXVariablePrefix.values()).filter(tp ->
-        // tp.getType().equals(type)).findFirst().orElse(null);
-
-        System.out.println("Orginal " + originalName);
-
-        int vectorLength = Integer.parseInt(floatParts[1].substring(0, 1));
-        int variableIndex = Integer.parseInt(floatParts[1].substring(floatParts[1].length() - 1));
-
-        String intermediateName = "rfi" + parts[0] + vectorLength + "Vec";
-        return intermediateName + getOrCreateCounter(intermediateName);
-    }
-
-    private static int getOrCreateCounter(String variableName) {
-        vectorVariableMap.putIfAbsent(variableName, 0);
-        int counter = vectorVariableMap.get(variableName) + 1;
-        vectorVariableMap.put(variableName, counter);
-        return counter - 1; // Return the previous counter value before incrementing
     }
 
     private static PTXLIRGenerationResult getLir() {
@@ -287,6 +189,7 @@ public class PTXAssembler extends Assembler {
     public void cleanUpVarsMapNaming() {
         localIndexes.clear();
         variableMap.clear();
+        vectorVariableMap.clear();
     }
 
     public void emitSymbol(String sym) {
@@ -312,16 +215,11 @@ public class PTXAssembler extends Assembler {
     }
 
     public void emitValueOrOp(PTXCompilationResultBuilder crb, Value value, Variable dest) {
-
         if (value instanceof PTXLIROp) {
-            System.out.println("LIR OP  " + value.toString());
-
             ((PTXLIROp) value).emit(crb, this, dest);
         } else {
-            System.out.println("Val " + value.toString());
             emitValue(value);
         }
-
     }
 
     public void emit(String format, Object... args) {
@@ -424,13 +322,10 @@ public class PTXAssembler extends Assembler {
 
     public void emitValuesOrOp(PTXCompilationResultBuilder crb, Value[] values, Variable dest) {
         for (int i = 0; i < values.length - 1; i++) {
-            System.out.println("VAL O OP " + values[i].getPlatformKind().getVectorLength());
-            // emitVectorIndex(values[i]);
             emitValueOrOp(crb, values[i], dest);
             emitSymbol(COMMA);
             space();
         }
-        // emitVectorIndex(values[values.length - 1]);
 
         emitValueOrOp(crb, values[values.length - 1], dest);
     }

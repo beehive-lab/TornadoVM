@@ -27,7 +27,6 @@ package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.DOT;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -36,7 +35,6 @@ import java.util.regex.Pattern;
 import org.graalvm.compiler.lir.Variable;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.drivers.ptx.graal.PTXVariablePrefix;
 
 public class PTXVectorSplit {
     private static final int MAX_VECTOR_SIZE_BYTES = 16;
@@ -104,9 +102,7 @@ public class PTXVectorSplit {
 
         int vectorLength = extractVectorLength(variableName);
 
-        PTXVariablePrefix typePrefix = Arrays.stream(PTXVariablePrefix.values()).filter(tp -> tp.getType().equals(actualKind)).findFirst().orElse(null);
-
-        String intermediateName = typePrefix + parts[0] + vectorLength + "Vec";
+        String intermediateName = actualKind.getRegisterTypeString() + parts[0] + vectorLength + "Vec";
         return intermediateName + getOrCreateCounter(intermediateName);
     }
 

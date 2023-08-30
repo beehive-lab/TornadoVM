@@ -53,8 +53,6 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstan
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TAB;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIRStmt.AssignStmt.shouldEmitMove;
 
-import java.util.Arrays;
-
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Variable;
@@ -138,7 +136,6 @@ public class PTXVectorAssign {
                 asm.emitSymbol(vectorSplitData.vectorNames[i]);
                 asm.emitSymbol(COMMA);
                 asm.emitSymbol(SPACE);
-                System.out.println("Interime values " + Arrays.toString(vectorSplitData.vectorNames));
                 asm.emitValuesOrOp(crb, intermValues, dest);
 
                 if (i < vectorSplitData.vectorNames.length - 1) {

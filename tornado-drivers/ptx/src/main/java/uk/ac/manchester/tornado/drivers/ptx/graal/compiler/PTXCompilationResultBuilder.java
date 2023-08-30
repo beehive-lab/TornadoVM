@@ -180,10 +180,7 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
 
         final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
         trace("Traversing CFG: ", cfg.graph.name);
-        System.out.println("cfg " + cfg.graph.toString());
-        for (HIRBlock b : cfg.getBlocks()) {
-            System.out.println("b " + b.getId());
-        }
+
         cfg.computePostdominators();
         traverseControlFlowGraph(cfg, new PTXBlockVisitor(this, asm));
 
@@ -246,9 +243,9 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
 
     private void traverseControlFlowGraph(ControlFlowGraph cfg, PTXBlockVisitor visitor) {
         traverseControlFlowGraph(cfg.getStartBlock(), visitor, new HashSet<>(), new HashMap<>());
-        // if (rescheduledBasicBlocks != null) {
-        // rescheduledBasicBlocks.clear();
-        // }
+        if (rescheduledBasicBlocks != null) {
+            rescheduledBasicBlocks.clear();
+        }
     }
 
     private void rescheduleBasicBlock(HIRBlock block, PTXBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
@@ -262,16 +259,6 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
         }
         rescheduledBasicBlocks.add(HIRBlock);
     }
-
-    // private HIRBlock getBlockTrueBranch(HIRBlock HIRBlock) {
-    // IfNode ifNode = (IfNode) HIRBlock.getDominator().getEndNode();
-    // for (int i = 0; i < HIRBlock.getDominator().getSuccessorCount(); i++) {
-    // if (ifNode.trueSuccessor() == HIRBlock.getSuccessorAt(i).getBeginNode()) {
-    // return HIRBlock.getSuccessorAt(i);
-    // }
-    // }
-    // return null;
-    // }
 
     private HIRBlock getBlockTrueBranch(HIRBlock basicHIRBlock) {
         IfNode ifNode = (IfNode) basicHIRBlock.getDominator().getEndNode();
@@ -335,7 +322,6 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
     }
 
     private void traverseControlFlowGraph(HIRBlock basicBlock, PTXBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
-        System.out.println("BASIC BLOCK " + basicBlock.getId());
 
         if (pending.containsKey(basicBlock) && !visited.contains(pending.get(basicBlock))) {
             rescheduleBasicBlock(basicBlock, visitor, visited, pending);

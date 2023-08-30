@@ -70,7 +70,6 @@ public class GlobalThreadSizeNode extends FloatingNode implements LIRLowerable {
         Variable gridDim = ptxNodeBuilder.getBuiltInAllocation(builtIns.gridDim);
         Variable blockDim = ptxNodeBuilder.getBuiltInAllocation(builtIns.blockDim);
 
-        System.out.println("grid " + gridDim + " \n" + "blockdim " + blockDim);
         Value var = tool.append(new PTXLIRStmt.AssignStmt(result, new PTXBinary.Expr(MUL_WIDE, LIRKind.value(PTXKind.U32), gridDim, blockDim))).getResult();
 
         Variable actualResult = tool.newVariable(LIRKind.value(PTXKind.S32));
