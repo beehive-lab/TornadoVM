@@ -272,7 +272,10 @@ public class PTXLIRGenerator extends LIRGenerator {
                 append(new PTXLIRStmt.AssignStmt(returnVar, input));
             }
         }
+        System.out.println("reach here");
         append(new ExprStmt(new PTXNullary.Expr(PTXNullaryOp.RETURN, LIRKind.Illegal)));
+        System.out.println("reach here2");
+
     }
 
     @Override
@@ -437,7 +440,7 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     public Variable newVariable(ValueKind<?> lirKind, boolean isArray) {
         final Variable var = super.newVariable(lirKind);
-        Logger.traceBuildLIR(Logger.BACKEND.PTX, "[PTX] newVariable: %s <- %s (%s)", var.toString(), lirKind.toString(), lirKind.getClass().getName());
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "newVariable: %s <- %s (%s)", var.toString(), lirKind.toString(), lirKind.getClass().getName());
 
         PTXLIRGenerationResult res = (PTXLIRGenerationResult) getResult();
         res.insertVariableAndGetIndex(var, isArray);

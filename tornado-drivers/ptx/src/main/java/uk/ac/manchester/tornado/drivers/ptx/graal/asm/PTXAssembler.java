@@ -161,8 +161,12 @@ public class PTXAssembler extends Assembler {
     public static String convertValueFromGraalFormat(Value input) {
         PTXKind ptxKind = (PTXKind) input.getPlatformKind();
         Set<PTXLIRGenerationResult.VariableData> vars = getLir().getVariableTable().get(ptxKind);
+        Variable retVar = getLir().getReturnVariable(ptxKind);
 
-        if (!variableMap.containsKey(input)) {
+        if (retVar != null && retVar.equals(input)) {
+            variableMap.put(input, "retVar");
+        } else if (!variableMap.containsKey(input)) {
+
             localIndexes.compute(ptxKind, (key, oldValue) -> oldValue != null ? oldValue + 1 : 0);
             String indexValue = String.valueOf(localIndexes.get(ptxKind));
 
@@ -172,6 +176,8 @@ public class PTXAssembler extends Assembler {
                     .orElseThrow(AssertionError::new);
 
             String result = typePrefix.getPrefix() + (isArray ? "Arr" : "") + indexValue;
+            // FIX INDEXES
+
             if (isArray) {
                 localIndexes.put(ptxKind, localIndexes.get(ptxKind) - 1);
             }

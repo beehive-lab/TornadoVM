@@ -35,7 +35,6 @@ import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.lir.LIR;
-import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
 import org.graalvm.compiler.lir.asm.DataBuilder;
@@ -310,11 +309,11 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         } else {
             final ResolvedJavaType returnType = method.getSignature().getReturnType(null).resolve(method.getDeclaringClass());
             PTXKind returnPtxKind = (returnType.getAnnotation(Vector.class) == null) ? getTarget().getPTXKind(returnKind) : PTXKind.fromResolvedJavaType(returnType);
-            Variable returnVar = lirGenRes.getReturnVariable(returnPtxKind);
             if (returnPtxKind.isVector()) {
-                asm.emit(".func (.param .align 8 .b8 %s[%d]) %s (", returnVar, returnPtxKind.getSizeInBytes(), methodName);
+                System.out.println("xxxxxxxxxxx  " + methodName + "   " + returnPtxKind.toString());
+                asm.emit(".func (.param .align 8 .b8 %s[%d]) %s (", "retVar", returnPtxKind.getSizeInBytes(), methodName);
             } else {
-                asm.emit(".func (.reg .%s %s) %s (", returnPtxKind, returnVar, methodName);
+                asm.emit(".func (.reg .%s %s) %s (", returnPtxKind, "retVar", methodName);
             }
         }
 
