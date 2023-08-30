@@ -106,8 +106,6 @@ public class OCLHighTier extends TornadoHighTier {
             appendPhase(new LoopFullUnrollPhase(canonicalizer, loopPolicies));
         }
 
-        // appendPhase(canonicalizer);
-        // appendPhase(new RemoveValueProxyPhase(canonicalizer));
         appendPhase(canonicalizer);
         appendPhase(new DeadCodeEliminationPhase(Optional));
 

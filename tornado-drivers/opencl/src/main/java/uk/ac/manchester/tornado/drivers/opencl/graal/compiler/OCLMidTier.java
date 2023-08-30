@@ -61,8 +61,6 @@ public class OCLMidTier extends TornadoMidTier {
             appendPhase(new TornadoFloatingReadReplacement(canonicalizer));
         }
 
-        // appendPhase(new IncrementalCanonicalizerPhase(canonicalizer, new
-
         appendPhase(canonicalizer);
 
         if (ConditionalElimination.getValue(options)) {

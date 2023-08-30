@@ -74,7 +74,6 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXVectorElementSelect;
 public class PTXAssembler extends Assembler {
     private static Map<PTXKind, Integer> localIndexes;
 
-    // private static
     private static Map<Value, String> variableMap;
 
     private static Map<String, Integer> vectorVariableMap;

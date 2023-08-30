@@ -64,8 +64,6 @@ public class OCLLowTier extends TornadoLowTier {
 
         appendPhase(new LowTierLoweringPhase(canonicalizer));
 
-        // appendPhase(new RemoveValueProxyPhase(canonicalizer));
-
         if (ConditionalElimination.getValue(options)) {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, true));
         }

@@ -432,7 +432,6 @@ public class PTXLIRGenerator extends LIRGenerator {
             shouldNotReachHere();
         }
 
-        // var.setName("retVar");
         return var;
     }
 
@@ -441,26 +440,7 @@ public class PTXLIRGenerator extends LIRGenerator {
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "[PTX] newVariable: %s <- %s (%s)", var.toString(), lirKind.toString(), lirKind.getClass().getName());
 
         PTXLIRGenerationResult res = (PTXLIRGenerationResult) getResult();
-        int indexForType = res.insertVariableAndGetIndex(var, isArray);
-
-        PTXKind kind = null;
-        if (var.getPlatformKind() instanceof PTXKind) {
-            kind = (PTXKind) var.getPlatformKind();
-        } else {
-            shouldNotReachHere();
-        }
-
-        // if (isArray) {
-        // var.setName(kind.getRegisterTypeString() + "Arr" + indexForType);
-        // } else if (kind.isVector()) {
-        // var.setName(kind.getRegisterTypeString() + kind.getVectorLength() + "Vec" +
-        // indexForType);
-        // } else {
-        // var.setName(kind.getRegisterTypeString() + indexForType);
-        // }
-
-        // PTXLIRGenerationResult res = getResult();
-        // res.insertVariable(variable);
+        res.insertVariableAndGetIndex(var, isArray);
 
         return var;
     }
@@ -489,24 +469,4 @@ public class PTXLIRGenerator extends LIRGenerator {
         return parameterAllocations.get(param.getName());
     }
 
-    public static class ArrayVariable extends Variable {
-
-        private Variable variable;
-        private Value length;
-
-        public ArrayVariable(Variable variable, Value length) {
-            super(variable.getValueKind(), variable.index);
-            this.variable = variable;
-            this.length = length;
-        }
-
-        public Value getLength() {
-            return length;
-        }
-
-        public Variable getVariable() {
-            return variable;
-        }
-
-    }
 }

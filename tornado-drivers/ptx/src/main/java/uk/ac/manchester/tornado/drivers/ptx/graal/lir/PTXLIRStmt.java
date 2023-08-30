@@ -96,13 +96,6 @@ public class PTXLIRStmt {
             this.rhsKind = rhsKind;
         }
 
-        // public AssignStmt(Variable allocateTo, PTXArchitecture.PTXBuiltInRegister
-        // builtIn) {
-        // super(TYPE);
-        // this(allocateTo, (PTXKind) allocateTo.getPlatformKind(), builtIn,
-        // builtIn.getPtxKind());
-        // }
-
         public static boolean shouldEmitMove(PTXKind lhsKind, PTXKind rhsKind) {
             return lhsKind == rhsKind && !lhsKind.is8Bit();
         }
