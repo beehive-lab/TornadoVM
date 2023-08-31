@@ -49,7 +49,7 @@ __SUPPORTED_JDKS__ = [
     config.__JDK20__, config.__GRAALVM20__,
     config.__GRAALVM17__,
     config.__CORRETTO11__, config.__CORRETTO17__,
-    config.__MANDREL11__, config.__MANDREL17__,
+    config.__MANDREL17__, config.__MANDREL20__,
     config.__MICROSOFT11__, config.__MICROSOFT17__,
     config.__ZULU11__, config.__ZULU17__
 ]
@@ -312,7 +312,8 @@ def listSupportedJDKs():
     graalvm-jdk-20   : Install TornadoVM with GraalVM and JDK 17 (GraalVM 23.0.0)"
     corretto-jdk-11  : Install TornadoVM with Corretto JDK 11"
     corretto-jdk-17  : Install TornadoVM with Corretto JDK 17"
-    mandrel-jdk-17   : Install TornadoVM with Mandrel 22.3.2 (JDK 17)"
+    mandrel-jdk-17   : Install TornadoVM with Mandrel 23.0.0 (JDK 17)"
+    mandrel-jdk-20   : Install TornadoVM with Mandrel 23.0.0 (JDK 20)"
     microsoft-jdk-11 : Install TornadoVM with Microsoft JDK 11"
     microsoft-jdk-17 : Install TornadoVM with Microsoft JDK 17"
     zulu-jdk-11      : Install TornadoVM with Azul Zulu JDK 11"

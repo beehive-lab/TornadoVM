@@ -39,6 +39,7 @@ __GRAALVM17__ = "graalvm-jdk-17"
 __GRAALVM20__ = "graalvm-jdk-20"
 __MANDREL11__ = "mandrel-jdk-11"
 __MANDREL17__ = "mandrel-jdk-17"
+__MANDREL20__ = "mandrel-jdk-20"
 __CORRETTO11__ = "corretto-jdk-11"
 __CORRETTO17__ = "corretto-jdk-17"
 __MICROSOFT11__ = "microsoft-jdk-11"
@@ -142,20 +143,19 @@ JDK = {
             __ARM__: "https://corretto.aws/downloads/latest/amazon-corretto-17-aarch64-macos-jdk.tar.gz",
         }
     },
-    __MANDREL11__: {
+    __MANDREL17__: {
         __LINUX__: {
-            __X86_64__: None,
-            __ARM__: None,
+            __X86_64__: "https://github.com/graalvm/mandrel/releases/download/mandrel-23.0.0.0-Final/mandrel-java17-linux-amd64-23.0.0.0-Final.tar.gz",
+            __ARM__: "https://github.com/graalvm/mandrel/releases/download/mandrel-23.0.0.0-Final/mandrel-java17-linux-aarch64-23.0.0.0-Final.tar.gz",
         },
         __APPLE__: {
-            __X86_64__: None,
             __ARM__: None,
         }
     },
-    __MANDREL17__: {
+    __MANDREL20__: {
         __LINUX__: {
-            __X86_64__: "https://github.com/graalvm/mandrel/releases/download/mandrel-22.3.2.0-Final/mandrel-java17-linux-amd64-22.3.2.0-Final.tar.gz",
-            __ARM__: "https://github.com/graalvm/mandrel/releases/download/mandrel-22.3.2.0-Final/mandrel-java17-linux-aarch64-22.3.2.0-Final.tar.gz",
+            __X86_64__: "https://github.com/graalvm/mandrel/releases/download/mandrel-23.0.0.0-Final/mandrel-java20-linux-amd64-23.0.0.0-Final.tar.gz",
+            __ARM__: "https://github.com/graalvm/mandrel/releases/download/mandrel-23.0.0.0-Final/mandrel-java20-linux-aarch64-23.0.0.0-Final.tar.gz",
         },
         __APPLE__: {
             __ARM__: None,
