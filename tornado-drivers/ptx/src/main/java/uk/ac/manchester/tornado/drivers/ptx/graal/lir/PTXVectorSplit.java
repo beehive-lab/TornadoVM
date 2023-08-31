@@ -75,6 +75,7 @@ public class PTXVectorSplit {
             names[i] = baseName + i;
         }
         return names;
+
     }
 
     /**
@@ -98,12 +99,17 @@ public class PTXVectorSplit {
     private String convertVariableName(String originalName, PTXKind actualKind) {
         String[] parts = originalName.split("\\|");
 
-        String variableName = parts[1];
+        if (parts.length != 1) {
+            String variableName = parts[1];
+            int vectorLength = extractVectorLength(variableName);
+            String intermediateName = actualKind.getRegisterTypeString() + parts[0] + vectorLength + "Vec";
+            return intermediateName + getOrCreateCounter(intermediateName);
+        } else {
+            // This case covers when we pass around vectors on multiple func call aka a0 for
+            // example
+            return parts[0];
+        }
 
-        int vectorLength = extractVectorLength(variableName);
-
-        String intermediateName = actualKind.getRegisterTypeString() + parts[0] + vectorLength + "Vec";
-        return intermediateName + getOrCreateCounter(intermediateName);
     }
 
     /**

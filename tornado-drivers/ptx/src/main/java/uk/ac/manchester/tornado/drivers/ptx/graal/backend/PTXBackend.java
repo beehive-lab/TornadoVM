@@ -236,7 +236,6 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         profiler.sum(ProfilerType.TOTAL_CODE_GENERATION_TIME, profiler.getTaskTimer(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId()));
 
         asm.cleanUpVarsMapNaming();
-        // CLEANUP LOOK SPIRV
     }
 
     private void emitEpilogue(PTXAssembler asm) {
@@ -310,7 +309,6 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
             final ResolvedJavaType returnType = method.getSignature().getReturnType(null).resolve(method.getDeclaringClass());
             PTXKind returnPtxKind = (returnType.getAnnotation(Vector.class) == null) ? getTarget().getPTXKind(returnKind) : PTXKind.fromResolvedJavaType(returnType);
             if (returnPtxKind.isVector()) {
-                System.out.println("xxxxxxxxxxx  " + methodName + "   " + returnPtxKind.toString());
                 asm.emit(".func (.param .align 8 .b8 %s[%d]) %s (", "retVar", returnPtxKind.getSizeInBytes(), methodName);
             } else {
                 asm.emit(".func (.reg .%s %s) %s (", returnPtxKind, "retVar", methodName);
@@ -330,6 +328,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
                 }
             }
             guarantee(ptxKind != PTXKind.ILLEGAL, "illegal type for %s", param.getPlatformKind());
+
             if (ptxKind.isVector()) {
                 PTXVectorSplit vectorSplitData = new PTXVectorSplit(locals[i].getName(), ptxKind);
                 for (int j = 0; j < vectorSplitData.vectorNames.length; j++) {
@@ -338,6 +337,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
                         asm.emit(", ");
                     }
                 }
+
             } else {
                 asm.emit(".reg .%s %s", ptxKind, locals[i].getName());
             }
@@ -385,6 +385,5 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
                 asm.emitLine("\t.reg .%s %s<%d>;", type, type.getRegisterTypeString(), regVarCount + 1);
             }
         }
-
     }
 }
