@@ -1993,7 +1993,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             if (!Tornado.DEBUG) {
                 System.out.println(WARNING_DEOPT_MESSAGE);
             } else {
-                e.printStackTrace();
+                throw new TornadoBailoutRuntimeException(e.getMessage());
             }
         }
     }
@@ -2022,7 +2022,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             if (!Tornado.DEBUG) {
                 System.out.println(WARNING_DEOPT_MESSAGE);
             } else {
-                e.printStackTrace();
+                throw new TornadoBailoutRuntimeException(e.getMessage());
             }
         }
     }

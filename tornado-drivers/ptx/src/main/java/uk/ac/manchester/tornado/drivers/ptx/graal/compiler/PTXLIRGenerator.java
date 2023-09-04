@@ -272,9 +272,7 @@ public class PTXLIRGenerator extends LIRGenerator {
                 append(new PTXLIRStmt.AssignStmt(returnVar, input));
             }
         }
-        System.out.println("reach here");
         append(new ExprStmt(new PTXNullary.Expr(PTXNullaryOp.RETURN, LIRKind.Illegal)));
-        System.out.println("reach here2");
 
     }
 
