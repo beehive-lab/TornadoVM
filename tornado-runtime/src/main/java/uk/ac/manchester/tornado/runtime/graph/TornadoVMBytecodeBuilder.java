@@ -50,24 +50,22 @@ public class TornadoVMBytecodeBuilder {
     private final byte[] code;
 
     private final TornadoVMBytecodeAssembler bitcodeASM;
-    private int globalTaskID;
 
-    private boolean singleContextBytecodeBuilder;
+    private boolean isSingleContext;
 
     /**
      * It constructs a new TornadoVMBytecodeBuilder instance. Initializes the byte
      * array to hold the bytecode with the maximum bytecode size. Initializes the
      * TornadoVMBytecodeAssembler with the byte array.
      */
-    public TornadoVMBytecodeBuilder(boolean singleContextBytecodeBuilder) {
+    public TornadoVMBytecodeBuilder(boolean isSingleContext) {
         code = new byte[MAX_TORNADO_VM_BYTECODE_SIZE];
         bitcodeASM = new TornadoVMBytecodeAssembler(code);
-        globalTaskID = 0;
-        this.singleContextBytecodeBuilder = singleContextBytecodeBuilder;
+        this.isSingleContext = isSingleContext;
     }
 
-    public boolean isSingleContextBytecodeBuilder() {
-        return singleContextBytecodeBuilder;
+    public boolean isSingleContext() {
+        return isSingleContext;
     }
 
     public void begin(int numContexts, int numStacks, int numDeps) {
@@ -84,10 +82,6 @@ public class TornadoVMBytecodeBuilder {
 
     public void end() {
         bitcodeASM.end();
-    }
-
-    private void incrementGlobalTaskIndex() {
-        globalTaskID++;
     }
 
     void emitAsyncNode(AbstractNode node, int dependencyBC, long offset, long batchSize, long nThreads) {
@@ -108,9 +102,8 @@ public class TornadoVMBytecodeBuilder {
             bitcodeASM.deallocate(((DeallocateNode) node).getValue().getIndex());
         } else if (node instanceof TaskNode) {
             final TaskNode taskNode = (TaskNode) node;
-            bitcodeASM.launch(globalTaskID, taskNode.getContext().getDeviceIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), dependencyBC, offset, nThreads);
+            bitcodeASM.launch(taskNode.getContext().getDeviceIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), dependencyBC, offset, nThreads);
             emitArgList(taskNode);
-            incrementGlobalTaskIndex();
         }
     }
 
@@ -231,10 +224,9 @@ public class TornadoVMBytecodeBuilder {
             buffer.putLong(size);
         }
 
-        void launch(int gtid, int deviceIndex, int taskIndex, int numParameters, int dep, long offset, long size) {
+        void launch(int callStackDeviceIndex, int taskIndex, int numParameters, int dep, long offset, long size) {
             buffer.put(TornadoVMBytecodes.LAUNCH.value);
-            buffer.putInt(gtid);
-            buffer.putInt(deviceIndex);
+            buffer.putInt(callStackDeviceIndex);
             buffer.putInt(taskIndex);
             buffer.putInt(numParameters);
             buffer.putInt(dep);

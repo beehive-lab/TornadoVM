@@ -78,8 +78,8 @@ public class TornadoVM extends TornadoLogger {
     public TornadoVM(TornadoExecutionContext executionContext, TornadoGraph tornadoGraph, TornadoProfiler timeProfiler) {
         this.executionContext = executionContext;
         this.timeProfiler = timeProfiler;
-        tornadoVMBytecodes = TornadoVMGraphCompiler.compile(tornadoGraph, executionContext);
-        tornadoVMInterpreters = new TornadoVMInterpreter[executionContext.getValidContextSize()];
+        this.tornadoVMBytecodes = TornadoVMGraphCompiler.compile(tornadoGraph, executionContext);
+        this.tornadoVMInterpreters = new TornadoVMInterpreter[executionContext.getValidContextSize()];
         bindBytecodesToInterpreters();
     }
 

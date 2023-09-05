@@ -180,7 +180,7 @@ public class TornadoVMGraphCompiler {
                     if (outstandingDeps.isEmpty()) {
                         final ContextOpNode asyncNode = (ContextOpNode) graph.getNode(nodeIds[i]);
 
-                        if (shouldEmitAsyncNodeForTheCurrentContext(id, asyncNode, tornadoVMBytecodeBuilder.isSingleContextBytecodeBuilder(), executionContext)) {
+                        if (shouldEmitAsyncNodeForTheCurrentContext(id, asyncNode, tornadoVMBytecodeBuilder.isSingleContext(), executionContext)) {
                             try {
                                 tornadoVMBytecodeBuilder.emitAsyncNode(asyncNode, (dependencies[i].isEmpty()) ? -1 : depLists[i], offset, bufferBatchSize, nThreads);
                             } catch (BufferOverflowException e) {

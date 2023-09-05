@@ -319,7 +319,6 @@ public class TornadoVMInterpreter extends TornadoLogger {
                 transferDeviceToHostBlocking(tornadoVMBytecodeList, objectIndex, offset, eventList, sizeBatch, waitList);
             } else if (op == TornadoVMBytecodes.LAUNCH.value()) {
                 final int callWrapperIndex = bytecodeResult.getInt();
-                this.bytecodeResult.getInt(); // Skips deprecated value
                 final int taskIndex = bytecodeResult.getInt();
                 final int numArgs = bytecodeResult.getInt();
                 final int eventList = bytecodeResult.getInt();
