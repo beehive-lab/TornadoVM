@@ -22,36 +22,29 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.compiler;
 
-import jdk.vm.ci.code.CallingConvention;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
+
+import jdk.vm.ci.code.CallingConvention;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
-
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 
 public class PTXLIRGenerationResult extends LIRGenerationResult {
 
-    public static class VariableData {
-        public boolean isArray;
-        public Variable variable;
-
-        public VariableData(Variable variable, boolean isArray) {
-            this.variable = variable;
-            this.isArray = isArray;
-        }
-    }
-
     private final Map<PTXKind, Set<VariableData>> variableTable;
-    private final Map<PTXKind, Variable> returnVariables;
+    private final Map<PTXKind, List<Variable>> returnVariables;
 
     public PTXLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig, CallingConvention callingConvention) {
         super(identifier, lir, frameMapBuilder, registerAllocationConfig, callingConvention);
@@ -75,13 +68,20 @@ public class PTXLIRGenerationResult extends LIRGenerationResult {
 
     public void setReturnVariable(Variable var) {
         PTXKind ptxKind = (PTXKind) var.getPlatformKind();
-
-        if (!returnVariables.containsKey(ptxKind)) {
-            returnVariables.put(ptxKind, var);
-        }
+        returnVariables.computeIfAbsent(ptxKind, k -> new ArrayList<>()).add(var);
     }
 
-    public Variable getReturnVariable(PTXKind kind) {
+    public List<Variable> getReturnVariables(PTXKind kind) {
         return returnVariables.get(kind);
+    }
+
+    public static class VariableData {
+        public boolean isArray;
+        public Variable variable;
+
+        public VariableData(Variable variable, boolean isArray) {
+            this.variable = variable;
+            this.isArray = isArray;
+        }
     }
 }

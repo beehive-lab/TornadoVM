@@ -170,11 +170,9 @@ public class PTXAssembler extends Assembler {
         // Retrieve the set of variables and the return variable associated with the
         // PTXKind.
         Set<PTXLIRGenerationResult.VariableData> vars = getLir().getVariableTable().get(ptxKind);
-        Variable retVar = getLir().getReturnVariable(ptxKind);
+        List<Variable> retVars = getLir().getReturnVariables(ptxKind);
 
-        // Check if the input Value matches the return variable as it does not require
-        // indexing.
-        if (retVar != null && retVar.equals(input)) {
+        if (retVars != null && retVars.contains(input)) {
             variableMap.put(input, "retVar");
         } else if (!variableMap.containsKey(input)) {
             boolean isArray = vars != null && vars.stream().filter(variableData -> variableData.variable.equals(input)).findFirst().map(variableData -> variableData.isArray).orElse(false);
