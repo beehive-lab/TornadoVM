@@ -166,7 +166,6 @@ public class OCLLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitCacheWritebackSync(boolean isPreSync) {
-
     }
 
     @Override
@@ -176,32 +175,23 @@ public class OCLLIRGenerator extends LIRGenerator {
 
     @Override
     public LIRKind getLIRKind(Stamp stamp) {
-        if (stamp instanceof OCLStamp) {
-            return LIRKind.value(((OCLStamp) stamp).getOCLKind());
-        } else {
-            return super.getLIRKind(stamp);
-        }
+        return (stamp instanceof OCLStamp) ? LIRKind.value(((OCLStamp) stamp).getOCLKind()) : super.getLIRKind(stamp);
     }
 
     @Override
     public Variable newVariable(ValueKind<?> valueKind) {
         PlatformKind pk = valueKind.getPlatformKind();
-        ValueKind<?> actualLIRKind = valueKind;
-        OCLKind oclKind = OCLKind.ILLEGAL;
-        if (pk instanceof OCLKind) {
-            oclKind = (OCLKind) pk;
-        } else {
+        if (!(pk instanceof OCLKind)) {
             shouldNotReachHere();
         }
 
-        final Variable var = super.newVariable(actualLIRKind);
-        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "newVariable: %s <- %s (%s)", var.toString(), actualLIRKind.toString(), actualLIRKind.getClass().getName());
+        final Variable variable = super.newVariable(valueKind);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "newVariable: %s <- %s (%s)", variable.toString(), valueKind.toString(), valueKind.getClass().getName());
 
-        // var.setName(oclKind.getTypePrefix() + "_" + var.index);
         OCLLIRGenerationResult res = (OCLLIRGenerationResult) getResult();
-        res.insertVariable(var);
+        res.insertVariable(variable);
 
-        return var;
+        return variable;
     }
 
     @Override

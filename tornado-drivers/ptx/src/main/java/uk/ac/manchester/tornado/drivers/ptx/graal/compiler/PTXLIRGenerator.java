@@ -418,27 +418,27 @@ public class PTXLIRGenerator extends LIRGenerator {
     }
 
     public Variable newReturnVariable(ValueKind<?> lirKind) {
-        final Variable var = super.newVariable(lirKind);
-        Logger.traceBuildLIR(Logger.BACKEND.PTX, "newReturnVariable: %s <- %s (%s)", var.toString(), lirKind.toString(), lirKind.getClass().getName());
+        final Variable variable = super.newVariable(lirKind);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "newReturnVariable: %s <- %s (%s)", variable.toString(), lirKind.toString(), lirKind.getClass().getName());
 
         PTXLIRGenerationResult res = (PTXLIRGenerationResult) getResult();
-        res.setReturnVariable(var);
+        res.setReturnVariable(variable);
 
-        if (!(var.getPlatformKind() instanceof PTXKind)) {
+        if (!(variable.getPlatformKind() instanceof PTXKind)) {
             shouldNotReachHere();
         }
 
-        return var;
+        return variable;
     }
 
     public Variable newVariable(ValueKind<?> lirKind, boolean isArray) {
-        final Variable var = super.newVariable(lirKind);
-        Logger.traceBuildLIR(Logger.BACKEND.PTX, "newVariable: %s <- %s (%s)", var.toString(), lirKind.toString(), lirKind.getClass().getName());
+        final Variable variable = super.newVariable(lirKind);
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "newVariable: %s <- %s (%s)", variable.toString(), lirKind.toString(), lirKind.getClass().getName());
 
         PTXLIRGenerationResult res = (PTXLIRGenerationResult) getResult();
-        res.insertVariableAndGetIndex(var, isArray);
+        res.insertVariableAndGetIndex(variable, isArray);
 
-        return var;
+        return variable;
     }
 
     @Override

@@ -53,11 +53,11 @@ public class PTXLIRGenerationResult extends LIRGenerationResult {
         returnVariables = new HashMap<>();
     }
 
-    public int insertVariableAndGetIndex(Variable var, boolean isArray) {
-        guarantee(var.getPlatformKind() instanceof PTXKind, "invalid variable kind: %s", var.getValueKind());
-        PTXKind kind = (PTXKind) var.getPlatformKind();
+    public int insertVariableAndGetIndex(Variable variable, boolean isArray) {
+        guarantee(variable.getPlatformKind() instanceof PTXKind, "invalid variable kind: %s", variable.getValueKind());
+        PTXKind kind = (PTXKind) variable.getPlatformKind();
 
-        variableTable.computeIfAbsent(kind, k -> new HashSet<>()).add(new VariableData(var, isArray));
+        variableTable.computeIfAbsent(kind, k -> new HashSet<>()).add(new VariableData(variable, isArray));
         int arrayCount = isArray ? 0 : (int) variableTable.get(kind).stream().filter(varData -> varData.isArray).count();
         return variableTable.get(kind).size() - arrayCount - 1;
     }
@@ -66,9 +66,9 @@ public class PTXLIRGenerationResult extends LIRGenerationResult {
         return variableTable;
     }
 
-    public void setReturnVariable(Variable var) {
-        PTXKind ptxKind = (PTXKind) var.getPlatformKind();
-        returnVariables.computeIfAbsent(ptxKind, k -> new ArrayList<>()).add(var);
+    public void setReturnVariable(Variable variable) {
+        PTXKind ptxKind = (PTXKind) variable.getPlatformKind();
+        returnVariables.computeIfAbsent(ptxKind, k -> new ArrayList<>()).add(variable);
     }
 
     public List<Variable> getReturnVariables(PTXKind kind) {
