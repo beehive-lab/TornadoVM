@@ -183,6 +183,7 @@ public class TaskUtils {
                     case "floatValue":
                     case "doubleValue":
                     case "intValue":
+                    case "longValue":
                         continue;
                 }
 
