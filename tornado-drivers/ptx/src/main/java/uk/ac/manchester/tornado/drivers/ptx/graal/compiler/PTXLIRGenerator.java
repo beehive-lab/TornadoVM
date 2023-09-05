@@ -85,7 +85,6 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     public PTXLIRGenerator(Providers providers, LIRGenerationResult lirGenRes) {
         super(new PTXLIRKindTool((PTXTargetDescription) providers.getCodeCache().getTarget()), new PTXArithmeticTool(), new PTXBarrierSetLIRGenerator(), new PTXMoveFactory(), providers, lirGenRes);
-
         ptxGenTool = new PTXGenTool(this);
         parameterAllocations = new HashMap<>();
         ptxBuiltinTool = new PTXBuiltinTool();
@@ -191,11 +190,7 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     @Override
     public LIRKind getLIRKind(Stamp stamp) {
-        if (stamp instanceof PTXStamp) {
-            return LIRKind.value(((PTXStamp) stamp).getPTXKind());
-        } else {
-            return super.getLIRKind(stamp);
-        }
+        return (stamp instanceof PTXStamp) ? LIRKind.value(((PTXStamp) stamp).getPTXKind()) : super.getLIRKind(stamp);
     }
 
     @Override
