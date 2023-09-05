@@ -182,8 +182,7 @@ public class TornadoVMGraphCompiler {
 
                         if (shouldEmitAsyncNodeForTheCurrentContext(id, asyncNode, tornadoVMBytecodeBuilder.isSingleContextBytecodeBuilder(), executionContext)) {
                             try {
-                                tornadoVMBytecodeBuilder.emitAsyncNode(asyncNode, asyncNode.getContext().getDeviceIndex(), (dependencies[i].isEmpty()) ? -1 : depLists[i], offset, bufferBatchSize,
-                                        nThreads);
+                                tornadoVMBytecodeBuilder.emitAsyncNode(asyncNode, (dependencies[i].isEmpty()) ? -1 : depLists[i], offset, bufferBatchSize, nThreads);
                             } catch (BufferOverflowException e) {
                                 throw new TornadoRuntimeException("[ERROR] Buffer Overflow exception. Use -Dtornado.tvm.maxbytecodesize=<value> with value > "
                                         + TornadoVMBytecodeBuilder.MAX_TORNADO_VM_BYTECODE_SIZE + " to increase the buffer code size");

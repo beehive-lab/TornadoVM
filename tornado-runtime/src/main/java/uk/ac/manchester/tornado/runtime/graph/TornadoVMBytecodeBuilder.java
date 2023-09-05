@@ -90,22 +90,22 @@ public class TornadoVMBytecodeBuilder {
         globalTaskID++;
     }
 
-    void emitAsyncNode(AbstractNode node, int contextID, int dependencyBC, long offset, long batchSize, long nThreads) {
+    void emitAsyncNode(AbstractNode node, int dependencyBC, long offset, long batchSize, long nThreads) {
         if (node instanceof AllocateMultipleBuffersNode) {
-            bitcodeASM.allocate(((AllocateMultipleBuffersNode) node).getValues(), contextID, batchSize);
+            bitcodeASM.allocate(((AllocateMultipleBuffersNode) node).getValues(), batchSize);
         } else if (node instanceof CopyInNode) {
-            bitcodeASM.transferToDeviceOnce(((CopyInNode) node).getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
+            bitcodeASM.transferToDeviceOnce(((CopyInNode) node).getValue().getIndex(), dependencyBC, offset, batchSize);
         } else if (node instanceof AllocateNode) {
             TornadoLogger.info("[%s]: Skipping deprecated node %s", getClass().getSimpleName(), AllocateNode.class.getSimpleName());
         } else if (node instanceof CopyOutNode) {
             ObjectNode value = ((CopyOutNode) node).getValue().getValue();
             if (value != null) {
-                bitcodeASM.transferToHost(value.getIndex(), contextID, dependencyBC, offset, batchSize);
+                bitcodeASM.transferToHost(value.getIndex(), dependencyBC, offset, batchSize);
             }
         } else if (node instanceof StreamInNode) {
-            bitcodeASM.transferToDeviceAlways(((StreamInNode) node).getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
+            bitcodeASM.transferToDeviceAlways(((StreamInNode) node).getValue().getIndex(), dependencyBC, offset, batchSize);
         } else if (node instanceof DeallocateNode) {
-            bitcodeASM.deallocate(((DeallocateNode) node).getValue().getIndex(), contextID);
+            bitcodeASM.deallocate(((DeallocateNode) node).getValue().getIndex());
         } else if (node instanceof TaskNode) {
             final TaskNode taskNode = (TaskNode) node;
             bitcodeASM.launch(globalTaskID, taskNode.getContext().getDeviceIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), dependencyBC, offset, nThreads);
@@ -193,9 +193,8 @@ public class TornadoVMBytecodeBuilder {
             buffer.putInt(index);
         }
 
-        public void allocate(List<AbstractNode> values, int ctx, long batchSize) {
+        public void allocate(List<AbstractNode> values, long batchSize) {
             buffer.put(TornadoVMBytecodes.ALLOC.value);
-            buffer.putInt(ctx);
             buffer.putLong(batchSize);
             buffer.putInt(values.size());
             for (AbstractNode node : values) {
@@ -203,44 +202,40 @@ public class TornadoVMBytecodeBuilder {
             }
         }
 
-        public void deallocate(int object, int ctx) {
+        public void deallocate(int object) {
             buffer.put(TornadoVMBytecodes.DEALLOC.value);
             buffer.putInt(object);
-            buffer.putInt(ctx);
         }
 
-        void transferToDeviceOnce(int obj, int ctx, int dep, long offset, long size) {
+        void transferToDeviceOnce(int obj, int dep, long offset, long size) {
             buffer.put(TornadoVMBytecodes.TRANSFER_HOST_TO_DEVICE_ONCE.value);
             buffer.putInt(obj);
-            buffer.putInt(ctx);
             buffer.putInt(dep);
             buffer.putLong(offset);
             buffer.putLong(size);
         }
 
-        void transferToDeviceAlways(int obj, int ctx, int dep, long offset, long size) {
+        void transferToDeviceAlways(int obj, int dep, long offset, long size) {
             buffer.put(TornadoVMBytecodes.TRANSFER_HOST_TO_DEVICE_ALWAYS.value);
             buffer.putInt(obj);
-            buffer.putInt(ctx);
             buffer.putInt(dep);
             buffer.putLong(offset);
             buffer.putLong(size);
         }
 
-        void transferToHost(int obj, int ctx, int dep, long offset, long size) {
+        void transferToHost(int obj, int dep, long offset, long size) {
             buffer.put(TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS.value);
             buffer.putInt(obj);
-            buffer.putInt(ctx);
             buffer.putInt(dep);
             buffer.putLong(offset);
             buffer.putLong(size);
         }
 
-        void launch(int gtid, int ctx, int task, int numParameters, int dep, long offset, long size) {
+        void launch(int gtid, int deviceIndex, int taskIndex, int numParameters, int dep, long offset, long size) {
             buffer.put(TornadoVMBytecodes.LAUNCH.value);
             buffer.putInt(gtid);
-            buffer.putInt(ctx);
-            buffer.putInt(task);
+            buffer.putInt(deviceIndex);
+            buffer.putInt(taskIndex);
             buffer.putInt(numParameters);
             buffer.putInt(dep);
             buffer.putLong(offset);
