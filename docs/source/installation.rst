@@ -116,7 +116,7 @@ Linux
 ~~~~~~~~
 
 - TornadoVM with GraalVM for Linux and OSx (JDK 17 and JDK 20): see the installation guide here: :ref:`installation_graalvm`.
-- TornadoVM with JDK17+ (e.g. OpenJDK [11-17], Red Hat Mandrel, Amazon Corretto): see the installation guide: :ref:`installation_jdk11plus`.
+- TornadoVM with JDK17+ (e.g. OpenJDK [17-20], Red Hat Mandrel, Amazon Corretto): see the installation guide: :ref:`installation_jdk11plus`.
 
 Windows
 ~~~~~~~~~~
@@ -143,31 +143,32 @@ At least one backend must be specified at build time to the ``make`` command:
 
 .. _installation_graalvm:
 
-Installation for GraalVM for JDK17 and JDK20 on Linux and OSx
--------------------------------------------------------------------
+Installation for GraalVM for JDK 20.0.2 and GraalVM for JDK 17.0.8 on Linux and OSx
+-----------------------------------------------------------------------------------
 
-1. Download GraalVM for JDK17 or JDK20
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1. Download GraalVM for JDK 17.0.8 or JDK 20.0.2
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-GraalVM 23.0.1 builds are available to download at
+GraalVM Community Edition builds are available to download at:
 
-`https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.3.2 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.3.2>`_.
+`https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-20.0.2 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-20.0.2>`_.
+`https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-17.0.8 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-17.0.8>`_.
 
-The examples below show how to download and extract GraalVM based on JDK 11 and 17 for Linux.
+The examples below show how to download and extract GraalVM for JDK 20.0.2 and GraalVM for JDK 17.0.8 for Linux.
 
 -  Example for GraalVM for JDK 17 Community 17.0.8:
 
 .. code:: bash
 
-   $ wget https://download.oracle.com/graalvm/17/latest/graalvm-jdk-17_linux-x64_bin.tar.gz
-   $ tar -xf graalvm-jdk-17_linux-x64_bin.tar.gz
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.8/graalvm-community-jdk-17.0.8_linux-x64_bin.tar.gz
+   $ tar -xf graalvm-community-jdk-17.0.8_linux-x64_bin.tar.gz
 
 -  Example for GraalVM for JDK 20 Community 20.0.2:
 
 .. code:: bash
 
-   $ wget https://download.oracle.com/graalvm/20/latest/graalvm-jdk-20_linux-x64_bin.tar.gz
-   $ tar -xf graalvm-jdk-20_linux-x64_bin.tar.gz
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-20.0.2/graalvm-community-jdk-20.0.2_linux-x64_bin.tar.gz
+   $ tar -xf graalvm-community-jdk-20.0.2_linux-x64_bin.tar.gz
 
 The Java binary will be found in the `graalvm-jdk-{JDK_VERSION}-23.0.1`` directory. This directory is used as the JAVA_HOME (See step 2).
 
@@ -177,13 +178,12 @@ For OSX:
 
 .. code:: bash
 
-   $ wget https://download.oracle.com/graalvm/20/latest/graalvm-jdk-17_macos-x64_bin.tar.gz
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.8/graalvm-community-jdk-17.0.8_linux-x64_bin.tar.gz
 
 -  Example for GraalVM for JDK 20 Community 20.0.2:
 
 .. code:: bash
-
-   $ wget https://download.oracle.com/graalvm/20/latest/graalvm-jdk-20_macos-x64_bin.tar.gz
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-20.0.2/graalvm-community-jdk-20.0.2_macos-x64_bin.tar.gz
 
 then ``untar`` it to the OSX standard JDK location
 ``/Library/Java/JavaVirtualMachines/`` or to a folder of your choice.
@@ -430,7 +430,7 @@ then
 
 which can be added to ``~/.profile``
 
-4. Compile TornadoVM for JDK 11+
+4. Compile TornadoVM for JDK 17+
 ~~~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
@@ -438,15 +438,15 @@ which can be added to ``~/.profile``
    $ cd ~/tornadovm
    $ . etc/sources.env
 
-To build with a distribution of JDK 11+
+To build with a distribution of JDK 17+
 
 .. code:: bash
 
-   $ make jdk-11-plus BACKEND={ptx,opencl}
+   $ make jdk-17-plus BACKEND={ptx,opencl}
 
 and done!!
 
-Running with JDK 11+
+Running with JDK 17+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 TornadoVM uses modules:
