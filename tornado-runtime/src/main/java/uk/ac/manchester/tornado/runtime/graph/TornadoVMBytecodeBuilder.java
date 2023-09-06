@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2022-2023 APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -143,7 +143,7 @@ public class TornadoVMBytecodeBuilder {
         return bitcodeASM.position();
     }
 
-    public class TornadoVMBytecodeAssembler {
+    private static class TornadoVMBytecodeAssembler {
         private final ByteBuffer buffer;
 
         /**
