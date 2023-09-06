@@ -42,7 +42,7 @@ except:
     exit()
 
 __DIRECTORY_DEPENDENCIES__ = "etc/dependencies"
-__VERSION__ = "v0.15.1-dev"
+__VERSION__ = "v0.16-dev"
 
 __SUPPORTED_JDKS__ = [
     config.__JDK17__, config.__JDK20__,
