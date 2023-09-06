@@ -288,7 +288,7 @@ To build with GraalVM and JDK 17 and JDK 20:
 
 .. code:: bash
 
-   $ make graalvm-jdk-11-plus BACKEND={ptx,opencl}
+   $ make graalvm-jdk-17-plus BACKEND={ptx,opencl}
 
 and done!!
 
