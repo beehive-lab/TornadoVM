@@ -1992,9 +1992,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             this.bailout = true;
             if (!Tornado.DEBUG) {
                 System.out.println(WARNING_DEOPT_MESSAGE);
-            } else {
-                throw new TornadoBailoutRuntimeException(e.getMessage());
             }
+            throw e;
         }
     }
 
@@ -2021,9 +2020,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             this.bailout = true;
             if (!Tornado.DEBUG) {
                 System.out.println(WARNING_DEOPT_MESSAGE);
-            } else {
-                throw new TornadoBailoutRuntimeException(e.getMessage());
             }
+            throw e; // Rethrow the same exception
         }
     }
 
