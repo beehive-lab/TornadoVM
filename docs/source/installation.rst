@@ -116,7 +116,7 @@ Linux
 ~~~~~~~~
 
 - TornadoVM with GraalVM for Linux and OSx (JDK 17 and JDK 20): see the installation guide here: :ref:`installation_graalvm`.
-- TornadoVM with JDK17+ (e.g. OpenJDK [17-20], Red Hat Mandrel, Amazon Corretto): see the installation guide: :ref:`installation_jdk11plus`.
+- TornadoVM with JDK17+ (e.g. OpenJDK [17-20], Red Hat Mandrel, Amazon Corretto): see the installation guide: :ref:`installation_jdk17plus`.
 
 Windows
 ~~~~~~~~~~
