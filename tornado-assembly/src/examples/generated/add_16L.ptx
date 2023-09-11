@@ -32,7 +32,7 @@ BLOCK_2:
 	// compute array offsets to read/store from/to in rud4 rud5 and rud6
 	cvt.s64.s32	rsd0, rsi1;
 	shl.b64	rsd1, rsd0, 2;
-	add.s64	rsd2, rsd1, 24;
+	add.s64	rsd2, rsd1, 16;
 	add.u64	rud4, rud1, rsd2;
 
 	// load from the first array

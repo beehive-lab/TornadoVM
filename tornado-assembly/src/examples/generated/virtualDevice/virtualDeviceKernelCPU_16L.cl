@@ -1,12 +1,12 @@
-#pragma OPENCL EXTENSION cl_khr_fp64 : enable  
-#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable  
+#pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 __kernel void maxReduction(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global uchar *input, __global uchar *result)
 {
-  ulong ul_1, ul_0, ul_16, ul_21; 
-  float f_23, f_22, f_17; 
-  long l_19, l_20, l_18, l_15, l_13, l_14; 
-  int i_2, i_4, i_3, i_6, i_5, i_8, i_24, i_7, i_10, i_9, i_12; 
-  bool z_11; 
+  bool b_11;
+  ulong ul_0, ul_16, ul_1, ul_21;
+  long l_13, l_14, l_19, l_20, l_18, l_15;
+  int i_2, i_3, i_4, i_5, i_6, i_7, i_8, i_24, i_9, i_10, i_12;
+  float f_17, f_22, f_23;
 
   // BLOCK 0
   ul_0  =  (ulong) input;
@@ -25,8 +25,8 @@ __kernel void maxReduction(__global long *_kernel_context, __constant uchar *_co
     // BLOCK 2
     barrier(CLK_LOCAL_MEM_FENCE);
     i_10  =  i_9 + 1;
-    z_11  =  i_9 < 0;
-    if(z_11)
+    b_11  =  i_9 < 0;
+    if(b_11)
     {
       // BLOCK 3
     }  // B3
@@ -36,12 +36,12 @@ __kernel void maxReduction(__global long *_kernel_context, __constant uchar *_co
       i_12  =  i_5 + 1;
       l_13  =  (long) i_12;
       l_14  =  l_13 << 2;
-      l_15  =  l_14 + 24L;
+      l_15  =  l_14 + 16L;
       ul_16  =  ul_1 + l_15;
       f_17  =  *((__global float *) ul_16);
       l_18  =  i_9;
       l_19  =  l_18 << 2;
-      l_20  =  l_19 + 24L;
+      l_20  =  l_19 + 16L;
       ul_21  =  ul_0 + l_20;
       f_22  =  *((__global float *) ul_21);
       f_23  =  fmax(f_17, f_22);
@@ -55,40 +55,40 @@ __kernel void maxReduction(__global long *_kernel_context, __constant uchar *_co
   return;
 }  //  kernel
 
-#pragma OPENCL EXTENSION cl_khr_fp64 : enable  
-#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable  
+#pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 __kernel void rMax(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global uchar *array, __private int size)
 {
-  ulong ul_1, ul_0, ul_5, ul_3, ul_25, ul_23, ul_17, ul_15, ul_21, ul_19, ul_9, ul_7, ul_13, ul_11; 
-  float f_12, f_14, f_8, f_10, f_4, f_6, f_2, f_37, f_36, f_38, f_33, f_32, f_35, f_34, f_29, f_28, f_31, f_30, f_24, f_27, f_26, f_20, f_22, f_16, f_18; 
+  ulong ul_0, ul_3, ul_1, ul_23, ul_21, ul_25, ul_15, ul_13, ul_19, ul_17, ul_7, ul_5, ul_11, ul_9;
+  float f_18, f_16, f_22, f_20, f_10, f_8, f_14, f_12, f_33, f_34, f_31, f_32, f_37, f_38, f_35, f_36, f_26, f_24, f_29, f_30, f_27, f_28, f_2, f_6, f_4;
 
   // BLOCK 0
   ul_0  =  (ulong) array;
-  ul_1  =  ul_0 + 24L;
+  ul_1  =  ul_0 + 16L;
   f_2  =  *((__global float *) ul_1);
-  ul_3  =  ul_0 + 28L;
+  ul_3  =  ul_0 + 20L;
   f_4  =  *((__global float *) ul_3);
-  ul_5  =  ul_0 + 32L;
+  ul_5  =  ul_0 + 24L;
   f_6  =  *((__global float *) ul_5);
-  ul_7  =  ul_0 + 36L;
+  ul_7  =  ul_0 + 28L;
   f_8  =  *((__global float *) ul_7);
-  ul_9  =  ul_0 + 40L;
+  ul_9  =  ul_0 + 32L;
   f_10  =  *((__global float *) ul_9);
-  ul_11  =  ul_0 + 44L;
+  ul_11  =  ul_0 + 36L;
   f_12  =  *((__global float *) ul_11);
-  ul_13  =  ul_0 + 48L;
+  ul_13  =  ul_0 + 40L;
   f_14  =  *((__global float *) ul_13);
-  ul_15  =  ul_0 + 52L;
+  ul_15  =  ul_0 + 44L;
   f_16  =  *((__global float *) ul_15);
-  ul_17  =  ul_0 + 56L;
+  ul_17  =  ul_0 + 48L;
   f_18  =  *((__global float *) ul_17);
-  ul_19  =  ul_0 + 60L;
+  ul_19  =  ul_0 + 52L;
   f_20  =  *((__global float *) ul_19);
-  ul_21  =  ul_0 + 64L;
+  ul_21  =  ul_0 + 56L;
   f_22  =  *((__global float *) ul_21);
-  ul_23  =  ul_0 + 68L;
+  ul_23  =  ul_0 + 60L;
   f_24  =  *((__global float *) ul_23);
-  ul_25  =  ul_0 + 72L;
+  ul_25  =  ul_0 + 64L;
   f_26  =  *((__global float *) ul_25);
   f_27  =  fmax(f_2, f_4);
   f_28  =  fmax(f_27, f_6);
