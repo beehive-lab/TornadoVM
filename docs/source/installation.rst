@@ -149,7 +149,7 @@ Installation for GraalVM for JDK 20.0.2 and GraalVM for JDK 17.0.8 on Linux and 
 1. Download GraalVM for JDK 17.0.8 or JDK 20.0.2
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-GraalVM Community Edition builds are available to download at:
+GraalVM **Community Edition** builds are available to download at:
 
 `https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-20.0.2 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-20.0.2>`_.
 `https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-17.0.8 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-17.0.8>`_.
@@ -317,7 +317,6 @@ JDKs. Below are listed the Java 17 JDK distributions against which TornadoVM has
   mandrel-jdk-17   : Install TornadoVM with Mandrel 23.0.1 (JDK 17)
   mandrel-jdk-20   : Install TornadoVM with Mandrel 23.0.1 (JDK 20)
   microsoft-jdk-17 : Install TornadoVM with Microsoft JDK 17
-  microsoft-jdk-20 : Install TornadoVM with Microsoft JDK 20
   zulu-jdk-jdk-17  : Install TornadoVM with Azul Zulu JDK 17
   zulu-jdk-jdk-20  : Install TornadoVM with Azul Zulu JDK 20
 
@@ -587,7 +586,7 @@ Clone the latest TornadoVM source code from the GitHub `repository <https://gith
 We will refer hereafter the directory with TornadoVM sources as
 ``<TornadoVM>``.
 
-3. Download GraalVM
+3. Download GraalVM for JDK 20 Community 20.0.2
 ~~~~~~~~~~~~
 
 
