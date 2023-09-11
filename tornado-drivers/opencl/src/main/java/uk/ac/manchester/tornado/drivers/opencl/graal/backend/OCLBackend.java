@@ -250,11 +250,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
                 lirInstruction.forEachOutput((instruction, value, mode, flags) -> {
                     if (value instanceof Variable) {
                         Variable variable = (Variable) value;
-                        // if (OCLTokens.openCLTokens.contains(variable.toString())) {
-                        // // Change name because the Java variables uses an OpenCL token name
-                        // // TODO: NEED THINKING
-                        // // variable.setName("_" + variable.toString());
-                        // }
                         if (variable.toString() != null) {
                             addVariableDef(kindToVariable, variable);
                             variableCount.incrementAndGet();
