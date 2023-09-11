@@ -239,11 +239,6 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
         gen.setResult(this, result);
     }
 
-    // FIXME: Remove unused methods
-    public boolean allLanesUsed() {
-        return (usages().filter(VectorLoadElementNode.class).count() == kind.getVectorLength());
-    }
-
     public List<VectorStoreElementProxyNode> getLanesInputs() {
         return usages().filter(VectorStoreElementProxyNode.class).snapshot();
     }

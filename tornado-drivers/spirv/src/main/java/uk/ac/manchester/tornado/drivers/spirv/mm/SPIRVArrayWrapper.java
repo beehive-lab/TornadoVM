@@ -45,18 +45,14 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
 
     private static final int INIT_VALUE = -1;
-
+    protected final SPIRVDeviceContext deviceContext;
     private final int arrayHeaderSize;
     private final int arrayLengthOffset;
-
+    private final JavaKind kind;
+    private final long batchSize;
     private long bufferId;
     private long bufferOffset;
     private long bufferSize;
-
-    protected final SPIRVDeviceContext deviceContext;
-
-    private final JavaKind kind;
-    private final long batchSize;
     private long setSubRegionSize;
 
     public SPIRVArrayWrapper(SPIRVDeviceContext deviceContext, JavaKind javaKind, long batchSize) {
@@ -89,13 +85,13 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
         }
     }
 
-    abstract protected int readArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
+    protected abstract int readArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
-    abstract protected void writeArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
+    protected abstract void writeArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
-    abstract protected int enqueueReadArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
+    protected abstract int enqueueReadArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
-    abstract protected int enqueueWriteArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
+    protected abstract int enqueueWriteArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
     @Override
     public long toBuffer() {
@@ -216,7 +212,7 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
             header.buffer.put((byte) 0);
             index++;
         }
-        header.buffer.putLong(arraySize);
+        header.buffer.putInt((int) arraySize);
         return header;
     }
 
@@ -298,13 +294,13 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
     }
 
     @Override
-    public void setSizeSubRegion(long batchSize) {
-        this.setSubRegionSize = batchSize;
+    public long getSizeSubRegion() {
+        return setSubRegionSize;
     }
 
     @Override
-    public long getSizeSubRegion() {
-        return setSubRegionSize;
+    public void setSizeSubRegion(long batchSize) {
+        this.setSubRegionSize = batchSize;
     }
 
 }

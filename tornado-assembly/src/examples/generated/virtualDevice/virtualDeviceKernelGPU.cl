@@ -1,17 +1,17 @@
-#pragma OPENCL EXTENSION cl_khr_fp64 : enable  
-#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable  
+#pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 __kernel void maxReduction(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global uchar *input, __global uchar *result)
 {
-  float f_19, f_21, f_22, f_26, f_12; 
-  int i_5, i_6, i_3, i_4, i_33, i_27, i_28, i_23, i_24, i_20, i_17, i_15, i_16, i_13, i_14, i_7; 
-  bool z_18, z_25; 
-  ulong ul_11, ul_0, ul_32, ul_1; 
-  long l_9, l_8, l_31, l_30, l_29, l_10; 
+  long l_10, l_29, l_30, l_31, l_8, l_9;
+  int i_33, i_27, i_28, i_7, i_5, i_6, i_3, i_4, i_17, i_15, i_16, i_13, i_14, i_23, i_24, i_20;
+  ulong ul_11, ul_0, ul_32, ul_1;
+  bool b_18, b_25;
+  float f_19, f_21, f_22, f_26, f_12;
 
   // BLOCK 0
   ul_0  =  (ulong) input;
   ul_1  =  (ulong) result;
-  __local float f_2[1024];
+  __local float adf_2[1024];
   i_3  =  get_global_size(0);
   i_4  =  get_global_id(0);
   // BLOCK 1 MERGES [0 11 ]
@@ -23,10 +23,10 @@ __kernel void maxReduction(__global long *_kernel_context, __constant uchar *_co
     i_7  =  get_local_size(0);
     l_8  =  (long) i_5;
     l_9  =  l_8 << 2;
-    l_10  =  l_9 + 24L;
+    l_10  =  l_9 + 16L;
     ul_11  =  ul_0 + l_10;
     f_12  =  *((__global float *) ul_11);
-    f_2[i_6]  =  f_12;
+    adf_2[i_6]  =  f_12;
     i_13  =  i_7 >> 31;
     i_14  =  i_13 + i_7;
     i_15  =  i_14 >> 1;
@@ -37,15 +37,15 @@ __kernel void maxReduction(__global long *_kernel_context, __constant uchar *_co
       // BLOCK 4
       barrier(CLK_LOCAL_MEM_FENCE);
       i_17  =  i_16 >> 1;
-      z_18  =  i_6 < i_16;
-      if(z_18)
+      b_18  =  i_6 < i_16;
+      if(b_18)
       {
         // BLOCK 5
-        f_19  =  f_2[i_6];
+        f_19  =  adf_2[i_6];
         i_20  =  i_16 + i_6;
-        f_21  =  f_2[i_20];
+        f_21  =  adf_2[i_20];
         f_22  =  fmax(f_19, f_21);
-        f_2[i_6]  =  f_22;
+        adf_2[i_6]  =  f_22;
       }  // B5
       else
       {
@@ -58,16 +58,16 @@ __kernel void maxReduction(__global long *_kernel_context, __constant uchar *_co
     // BLOCK 8
     barrier(CLK_GLOBAL_MEM_FENCE);
     i_24  =  i_3 + i_5;
-    z_25  =  i_6 == 0;
-    if(z_25)
+    b_25  =  i_6 == 0;
+    if(b_25)
     {
       // BLOCK 9
-      f_26  =  f_2[0];
+      f_26  =  adf_2[0];
       i_27  =  get_group_id(0);
       i_28  =  i_27 + 1;
       l_29  =  (long) i_28;
       l_30  =  l_29 << 2;
-      l_31  =  l_30 + 24L;
+      l_31  =  l_30 + 16L;
       ul_32  =  ul_1 + l_31;
       *((__global float *) ul_32)  =  f_26;
     }  // B9
@@ -83,32 +83,32 @@ __kernel void maxReduction(__global long *_kernel_context, __constant uchar *_co
   return;
 }  //  kernel
 
-#pragma OPENCL EXTENSION cl_khr_fp64 : enable  
-#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable  
+#pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 __kernel void rMax(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global uchar *array, __private int size)
 {
-  float f_2, f_4, f_6, f_23, f_24, f_25, f_26, f_16, f_18, f_19, f_20, f_21, f_22, f_8, f_10, f_12, f_14; 
-  ulong ul_5, ul_7, ul_9, ul_11, ul_13, ul_0, ul_15, ul_1, ul_17, ul_3; 
+  ulong ul_7, ul_5, ul_11, ul_9, ul_15, ul_0, ul_13, ul_3, ul_1, ul_17;
+  float f_2, f_4, f_6, f_8, f_10, f_12, f_14, f_16, f_19, f_18, f_21, f_20, f_23, f_22, f_25, f_24, f_26;
 
   // BLOCK 0
   ul_0  =  (ulong) array;
-  ul_1  =  ul_0 + 24L;
+  ul_1  =  ul_0 + 16L;
   f_2  =  *((__global float *) ul_1);
-  ul_3  =  ul_0 + 28L;
+  ul_3  =  ul_0 + 20L;
   f_4  =  *((__global float *) ul_3);
-  ul_5  =  ul_0 + 32L;
+  ul_5  =  ul_0 + 24L;
   f_6  =  *((__global float *) ul_5);
-  ul_7  =  ul_0 + 36L;
+  ul_7  =  ul_0 + 28L;
   f_8  =  *((__global float *) ul_7);
-  ul_9  =  ul_0 + 40L;
+  ul_9  =  ul_0 + 32L;
   f_10  =  *((__global float *) ul_9);
-  ul_11  =  ul_0 + 44L;
+  ul_11  =  ul_0 + 36L;
   f_12  =  *((__global float *) ul_11);
-  ul_13  =  ul_0 + 48L;
+  ul_13  =  ul_0 + 40L;
   f_14  =  *((__global float *) ul_13);
-  ul_15  =  ul_0 + 52L;
+  ul_15  =  ul_0 + 44L;
   f_16  =  *((__global float *) ul_15);
-  ul_17  =  ul_0 + 56L;
+  ul_17  =  ul_0 + 48L;
   f_18  =  *((__global float *) ul_17);
   f_19  =  fmax(f_2, f_4);
   f_20  =  fmax(f_19, f_6);

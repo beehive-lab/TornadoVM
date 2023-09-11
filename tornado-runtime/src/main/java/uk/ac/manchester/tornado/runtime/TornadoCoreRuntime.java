@@ -148,6 +148,7 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeI
         opts.put(GraalOptions.RemoveNeverExecutedCode, false);
         opts.put(ConstantLoadOptimization.Options.LIROptConstantLoadOptimization, false);
         opts.put(PostAllocationOptimizationStage.Options.LIROptRedundantMoveElimination, false);
+        opts.put(GraalOptions.OptConvertDeoptsToGuards, true); 
 
         options = new OptionValues(opts);
     }

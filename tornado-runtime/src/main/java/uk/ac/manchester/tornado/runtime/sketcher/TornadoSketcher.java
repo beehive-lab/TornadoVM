@@ -1,28 +1,28 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework:
- * https://github.com/beehive-lab/tornadovm
- *
- * Copyright (c) 2020, 2023 APT Group, Department of Computer Science,
- * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
- * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- */
+* This file is part of Tornado: A heterogeneous programming framework:
+* https://github.com/beehive-lab/tornadovm
+*
+* Copyright (c) 2020, 2023 APT Group, Department of Computer Science,
+* School of Engineering, The University of Manchester. All rights reserved.
+* Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+* The University of Manchester. All rights reserved.
+* DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+*
+* This code is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License version 2 only, as
+* published by the Free Software Foundation.
+*
+* This code is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+* version 2 for more details (a copy is included in the LICENSE file that
+* accompanied this code).
+*
+* You should have received a copy of the GNU General Public License version
+* 2 along with this work; if not, write to the Free Software Foundation,
+* Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+*
+*/
 package uk.ac.manchester.tornado.runtime.sketcher;
 
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
@@ -47,7 +47,6 @@ import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpScope;
 import org.graalvm.compiler.debug.TimerKey;
-import org.graalvm.compiler.graph.CachedGraph;
 import org.graalvm.compiler.nodes.CallTargetNode;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -66,6 +65,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.OCLTokens;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
@@ -74,33 +74,9 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
 
 public class TornadoSketcher {
 
-    private static class TornadoSketcherCacheEntry {
-
-        private final int driverIndex;
-        private final int deviceIndex;
-        private final Future<Sketch> sketchFuture;
-
-        private TornadoSketcherCacheEntry(int driverIndex, int deviceIndex, Future<Sketch> sketchFuture) {
-            this.driverIndex = driverIndex;
-            this.deviceIndex = deviceIndex;
-            this.sketchFuture = sketchFuture;
-        }
-
-        public boolean matchesDriverAndDevice(int driverIndex, int deviceIndex) {
-            return this.driverIndex == driverIndex && this.deviceIndex == deviceIndex;
-        }
-
-        public Future<Sketch> getSketchFuture() {
-            return sketchFuture;
-        }
-    }
-
     private static final AtomicInteger sketchId = new AtomicInteger(0);
-
     private static final Map<ResolvedJavaMethod, List<TornadoSketcherCacheEntry>> cache = new ConcurrentHashMap<>();
-
     private static final TimerKey Sketcher = DebugContext.timer("Sketcher");
-
     private static final OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
 
     private static boolean cacheContainsSketch(ResolvedJavaMethod method, int driverIndex, int deviceIndex) {
@@ -148,23 +124,6 @@ public class TornadoSketcher {
             throw new TornadoInternalError(cause);
         }
         return sketch;
-    }
-
-    private static class TornadoSketcherCallable implements Callable<Sketch> {
-        private final SketchRequest request;
-
-        public TornadoSketcherCallable(SketchRequest request) {
-            this.request = request;
-        }
-
-        @Override
-        public Sketch call() {
-            try (DebugContext.Scope ignored = getDebugContext().scope("SketchCompiler")) {
-                return buildSketch(request.resolvedMethod, request.providers, request.graphBuilderSuite, request.sketchTier, request.driverIndex, request.deviceIndex);
-            } catch (Throwable e) {
-                throw getDebugContext().handle(e);
-            }
-        }
     }
 
     static void buildSketch(SketchRequest request) {
@@ -221,7 +180,7 @@ public class TornadoSketcher {
                 mergeAccesses(methodAccesses, invoke.callTarget(), sketch.getArgumentsAccess());
             });
 
-            return new Sketch(CachedGraph.fromReadonlyCopy(graph), methodAccesses);
+            return new Sketch(graph.copy(TornadoCoreRuntime.getDebugContext()), methodAccesses);
 
         } catch (Throwable e) {
             fatal("unable to build sketch for method: %s (%s)", resolvedMethod.getName(), e.getMessage());
@@ -267,6 +226,44 @@ public class TornadoSketcher {
             Access callerAcc = callerAccesses[paramIndex];
 
             callerAccesses[paramIndex] = Access.asArray()[callerAcc.position | calleeAcc.position];
+        }
+    }
+
+    private static class TornadoSketcherCacheEntry {
+
+        private final int driverIndex;
+        private final int deviceIndex;
+        private final Future<Sketch> sketchFuture;
+
+        private TornadoSketcherCacheEntry(int driverIndex, int deviceIndex, Future<Sketch> sketchFuture) {
+            this.driverIndex = driverIndex;
+            this.deviceIndex = deviceIndex;
+            this.sketchFuture = sketchFuture;
+        }
+
+        public boolean matchesDriverAndDevice(int driverIndex, int deviceIndex) {
+            return this.driverIndex == driverIndex && this.deviceIndex == deviceIndex;
+        }
+
+        public Future<Sketch> getSketchFuture() {
+            return sketchFuture;
+        }
+    }
+
+    private static class TornadoSketcherCallable implements Callable<Sketch> {
+        private final SketchRequest request;
+
+        public TornadoSketcherCallable(SketchRequest request) {
+            this.request = request;
+        }
+
+        @Override
+        public Sketch call() {
+            try (DebugContext.Scope ignored = getDebugContext().scope("SketchCompiler")) {
+                return buildSketch(request.resolvedMethod, request.providers, request.graphBuilderSuite, request.sketchTier, request.driverIndex, request.deviceIndex);
+            } catch (Throwable e) {
+                throw getDebugContext().handle(e);
+            }
         }
     }
 }

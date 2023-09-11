@@ -23,9 +23,12 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
+import java.util.Optional;
+
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.BasePhase;
 
@@ -37,6 +40,10 @@ import org.graalvm.compiler.phases.BasePhase;
  *
  */
 public class TornadoLocalMemoryAllocation extends BasePhase<TornadoHighTierContext> {
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
 
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -19,29 +19,20 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.ptx.graal;
+package uk.ac.manchester.tornado.drivers.ptx.graal.compiler;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.memory.BarrierType;
+import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
+import org.graalvm.compiler.lir.LIRFrameState;
+import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.lir.gen.BarrierSetLIRGenerator;
 
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-import org.graalvm.compiler.lir.asm.FrameContext;
+import jdk.vm.ci.meta.Value;
 
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-
-public class PTXFrameContext extends TornadoLogger implements FrameContext {
+public class PTXBarrierSetLIRGenerator extends BarrierSetLIRGenerator {
     @Override
-    public void enter(CompilationResultBuilder crb) {
-        trace("FrameContext.enter()");
-
-    }
-
-    @Override
-    public void leave(CompilationResultBuilder crb) {
-        trace("FrameContext.leave()");
-    }
-
-    @Override
-    public void returned(CompilationResultBuilder crb) {
-        unimplemented();
+    public Variable emitBarrieredLoad(LIRKind kind, Value address, LIRFrameState state, MemoryOrderMode memoryOrder, BarrierType barrierType) {
+        return null;
     }
 }

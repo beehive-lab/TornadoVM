@@ -39,7 +39,6 @@ import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.HighTierLoweringPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
-import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
@@ -62,11 +61,6 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoShapeAnalysis;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeCleanup;
 
 public class SPIRVHighTier extends TornadoHighTier {
-
-    private CanonicalizerPhase createCanonicalizerPhase(CanonicalizerPhase.CustomSimplification customCanonicalizer) {
-        CanonicalizerPhase canonicalizer = CanonicalizerPhase.create();
-        return canonicalizer.copyWithCustomSimplification(customCanonicalizer);
-    }
 
     public SPIRVHighTier(OptionValues options, TornadoDeviceContext deviceContext, CanonicalizerPhase.CustomSimplification customCanonicalizer, MetaAccessProvider metaAccessProvider) {
         super(customCanonicalizer);
@@ -113,8 +107,6 @@ public class SPIRVHighTier extends TornadoHighTier {
         }
 
         appendPhase(canonicalizer);
-        appendPhase(new RemoveValueProxyPhase(canonicalizer));
-        appendPhase(canonicalizer);
         appendPhase(new DeadCodeEliminationPhase(Optional));
 
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
@@ -125,5 +117,10 @@ public class SPIRVHighTier extends TornadoHighTier {
         appendPhase(new TornadoLocalMemoryAllocation());
         appendPhase(new ExceptionSuppression());
 
+    }
+
+    private CanonicalizerPhase createCanonicalizerPhase(CanonicalizerPhase.CustomSimplification customCanonicalizer) {
+        CanonicalizerPhase canonicalizer = CanonicalizerPhase.create();
+        return canonicalizer.copyWithCustomSimplification(customCanonicalizer);
     }
 }

@@ -19,13 +19,17 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.phases;
 
+import java.util.Optional;
+
 import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.calc.SqrtNode;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.phases.Phase;
+
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFPBinaryIntrinsicNode;
@@ -67,6 +71,10 @@ public class SPIRVFP64SupportPhase extends Phase {
         if (isStampFP64Type && !deviceContext.isFP64Supported()) {
             throw new TornadoDeviceFP64NotSupported("The current SPIRV device (" + deviceContext.getDeviceName() + ") does not support FP64");
         }
+    }
+
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
     }
 
     @Override

@@ -24,10 +24,12 @@ package uk.ac.manchester.tornado.runtime.graal.phases;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 
 import java.util.ArrayList;
+import java.util.Optional;
 
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.extended.UnboxNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
@@ -49,6 +51,10 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadLocalIdFixedWithNextNo
  * SPIR-V and PTX code emission.
  */
 public class TornadoKernelContextReplacement extends BasePhase<TornadoSketchTierContext> {
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
 
     private void replaceKernelContextNode(StructuredGraph graph, ArrayList<Node> nodesToBeRemoved, LoadFieldNode oldNode, FixedWithNextNode newNode) {
         for (Node n : oldNode.successors()) {

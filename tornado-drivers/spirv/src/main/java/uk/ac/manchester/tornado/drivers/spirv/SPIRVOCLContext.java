@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SPIRVOCLContext extends SPIRVContext {
 

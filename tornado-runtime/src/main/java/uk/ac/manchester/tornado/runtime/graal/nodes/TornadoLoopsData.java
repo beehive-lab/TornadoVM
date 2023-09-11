@@ -27,6 +27,6 @@ import org.graalvm.compiler.nodes.loop.LoopsData;
 public class TornadoLoopsData extends LoopsData {
 
     public TornadoLoopsData(StructuredGraph graph) {
-        super(graph);
+        super(graph, null);
     }
 }

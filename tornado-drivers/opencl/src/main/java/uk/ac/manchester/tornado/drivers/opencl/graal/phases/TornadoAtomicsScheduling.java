@@ -23,11 +23,14 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 
+import java.util.Optional;
+
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StartNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.memory.WriteNode;
@@ -52,6 +55,10 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerN
  * @since v0.15.1
  */
 public class TornadoAtomicsScheduling extends Phase {
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
 
     private Node getAtomicUsage(NodeAtomic nodeAtomic) {
         Node atomicUsage = nodeAtomic.usages().first();

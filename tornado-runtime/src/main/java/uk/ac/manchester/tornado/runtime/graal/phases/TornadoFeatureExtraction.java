@@ -24,9 +24,11 @@
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
 import java.util.LinkedHashMap;
+import java.util.Optional;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.ParameterNode;
@@ -69,6 +71,11 @@ public class TornadoFeatureExtraction extends Phase {
 
     public TornadoFeatureExtraction(TornadoDeviceContext tornadoDeviceContext) {
         this.tornadoDeviceContext = tornadoDeviceContext;
+    }
+
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
     }
 
     protected void run(StructuredGraph graph) {

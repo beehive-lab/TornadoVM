@@ -31,6 +31,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.Condition;
+import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.spi.CodeGenProviders;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
@@ -83,9 +84,40 @@ public class OCLLIRGenerator extends LIRGenerator {
     private final OCLGenTool oclGenTool;
 
     public OCLLIRGenerator(CodeGenProviders providers, LIRGenerationResult res) {
-        super(new OCLLIRKindTool((OCLTargetDescription) providers.getCodeCache().getTarget()), new OCLArithmeticTool(), new OCLMoveFactory(), providers, res);
+        super(new OCLLIRKindTool((OCLTargetDescription) providers.getCodeCache().getTarget()), new OCLArithmeticTool(), new OCLBarrierSetLIRGenerator() {
+
+        }, new OCLMoveFactory(), providers, res);
         this.oclBuiltinTool = new OCLBuiltinTool();
         this.oclGenTool = new OCLGenTool(this);
+    }
+
+    public static OCLBinaryOp getConditionalOp(Condition condition) {
+        switch (condition) {
+            case AE:
+            case GE:
+                return OCLBinaryOp.RELATIONAL_GTE;
+            case AT:
+            case GT:
+                return OCLBinaryOp.RELATIONAL_GT;
+
+            case EQ:
+                return OCLBinaryOp.RELATIONAL_EQ;
+
+            case BE:
+            case LE:
+                return OCLBinaryOp.RELATIONAL_LTE;
+
+            case BT:
+            case LT:
+                return OCLBinaryOp.RELATIONAL_LT;
+            case NE:
+                return OCLBinaryOp.RELATIONAL_NE;
+            default:
+                shouldNotReachHere();
+                break;
+
+        }
+        return null;
     }
 
     @Override
@@ -134,7 +166,6 @@ public class OCLLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitCacheWritebackSync(boolean isPreSync) {
-
     }
 
     @Override
@@ -144,32 +175,23 @@ public class OCLLIRGenerator extends LIRGenerator {
 
     @Override
     public LIRKind getLIRKind(Stamp stamp) {
-        if (stamp instanceof OCLStamp) {
-            return LIRKind.value(((OCLStamp) stamp).getOCLKind());
-        } else {
-            return super.getLIRKind(stamp);
-        }
+        return (stamp instanceof OCLStamp) ? LIRKind.value(((OCLStamp) stamp).getOCLKind()) : super.getLIRKind(stamp);
     }
 
     @Override
     public Variable newVariable(ValueKind<?> valueKind) {
         PlatformKind pk = valueKind.getPlatformKind();
-        ValueKind<?> actualLIRKind = valueKind;
-        OCLKind oclKind = OCLKind.ILLEGAL;
-        if (pk instanceof OCLKind) {
-            oclKind = (OCLKind) pk;
-        } else {
+        if (!(pk instanceof OCLKind)) {
             shouldNotReachHere();
         }
 
-        final Variable var = super.newVariable(actualLIRKind);
-        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "newVariable: %s <- %s (%s)", var.toString(), actualLIRKind.toString(), actualLIRKind.getClass().getName());
+        final Variable variable = super.newVariable(valueKind);
+        Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "newVariable: %s <- %s (%s)", variable.toString(), valueKind.toString(), valueKind.getClass().getName());
 
-        var.setName(oclKind.getTypePrefix() + "_" + var.index);
         OCLLIRGenerationResult res = (OCLLIRGenerationResult) getResult();
-        res.insertVariable(var);
+        res.insertVariable(variable);
 
-        return var;
+        return variable;
     }
 
     @Override
@@ -186,6 +208,11 @@ public class OCLLIRGenerator extends LIRGenerator {
     @Override
     public int getArrayLengthOffset() {
         return 0;
+    }
+
+    @Override
+    public Register getHeapBaseRegister() {
+        return null;
     }
 
     public OCLGenTool getOCLGenTool() {
@@ -205,54 +232,8 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Variable emitByteSwap(Value value) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
-    public void emitStringLatin1Inflate(Value src, Value dst, Value len) {
-        unimplemented();
-    }
-
-    @Override
-    public Variable emitStringUTF16Compress(Value src, Value dst, Value len) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
     public void emitCompareBranch(PlatformKind pk, Value value, Value value1, Condition cndtn, boolean bln, LabelRef lr, LabelRef lr1, double d) {
         unimplemented();
-    }
-
-    public static OCLBinaryOp getConditionalOp(Condition condition) {
-        switch (condition) {
-            case AE:
-            case GE:
-                return OCLBinaryOp.RELATIONAL_GTE;
-            case AT:
-            case GT:
-                return OCLBinaryOp.RELATIONAL_GT;
-
-            case EQ:
-                return OCLBinaryOp.RELATIONAL_EQ;
-
-            case BE:
-            case LE:
-                return OCLBinaryOp.RELATIONAL_LTE;
-
-            case BT:
-            case LT:
-                return OCLBinaryOp.RELATIONAL_LT;
-            case NE:
-                return OCLBinaryOp.RELATIONAL_NE;
-            default:
-                shouldNotReachHere();
-                break;
-
-        }
-        return null;
     }
 
     @Override
@@ -303,6 +284,11 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    public Variable emitReverseBytes(Value operand) {
+        return null;
+    }
+
+    @Override
     protected void emitForeignCallOp(ForeignCallLinkage linkage, Value targetAddress, Value result, Value[] arguments, Value[] temps, LIRFrameState info) {
 
     }
@@ -341,24 +327,23 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Variable emitLogicCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue, MemoryOrderMode memoryOrder) {
+    public Variable emitLogicCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue, MemoryOrderMode memoryOrder,
+            BarrierType barrierType) {
         return null;
     }
 
     @Override
-    public Value emitValueCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, MemoryOrderMode memoryOrder) {
+    public Value emitValueCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, MemoryOrderMode memoryOrder, BarrierType barrierType) {
         return null;
     }
 
     @Override
-    public Value emitAtomicReadAndAdd(Value address, ValueKind<?> valueKind, Value delta) {
-        unimplemented();
+    public Value emitAtomicReadAndAdd(LIRKind accessKind, Value address, Value delta) {
         return null;
     }
 
     @Override
-    public Value emitAtomicReadAndWrite(Value address, ValueKind<?> valueKind, Value newValue) {
-        unimplemented();
+    public Value emitAtomicReadAndWrite(LIRKind accessKind, Value address, Value newValue, BarrierType barrierType) {
         return null;
     }
 
