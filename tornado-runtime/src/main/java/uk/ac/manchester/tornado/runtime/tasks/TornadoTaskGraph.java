@@ -168,7 +168,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerInputs = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, TaskGraph> taskGraphIndex = new ConcurrentHashMap<>();
     private StringBuilder bufferLogProfiler = new StringBuilder();
-    private Graph graph;
+    private Graph compilationGraph;
     /**
      * Options for new reductions - experimental
      */
@@ -440,7 +440,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         newTaskGraph.executionContext.withProfiler(timeProfiler);
 
         // The graph object is used when rewriting task-graphs (e.g., reductions)
-        newTaskGraph.graph = this.graph;
+        newTaskGraph.compilationGraph = this.compilationGraph;
 
         return newTaskGraph;
     }
@@ -467,6 +467,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     public void disableProfiler(ProfilerMode profilerMode) {
         setProfiler(profilerMode, TornadoOptions.FALSE);
         this.timeProfiler = null;
+        this.profilerMode = null;
     }
 
     @Override
@@ -552,7 +553,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             new SketchRequest(resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex()).run();
 
             Sketch sketchGraph = TornadoSketcher.lookup(resolvedMethod, taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex());
-            this.graph = sketchGraph.getGraph();
+            this.compilationGraph = sketchGraph.getGraph();
         }
     }
 
@@ -571,7 +572,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             new SketchRequest(resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex()).run();
 
             Sketch lookup = TornadoSketcher.lookup(resolvedMethod, compilableTask.meta().getDriverIndex(), compilableTask.meta().getDeviceIndex());
-            this.graph = lookup.getGraph();
+            this.compilationGraph = lookup.getGraph();
         }
 
         // Prepare Initial Graph before the TornadoVM bytecode generation
@@ -1094,7 +1095,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private void rewriteTaskForReduceSkeleton(MetaReduceCodeAnalysis analysisTaskSchedule) {
-        reduceTaskGraph = new ReduceTaskGraph(this.getId(), taskPackages, streamInObjects, inputModesObjects, streamOutObjects, outputModeObjects, graph, this.profilerMode);
+        reduceTaskGraph = new ReduceTaskGraph(this.getId(), taskPackages, streamInObjects, inputModesObjects, streamOutObjects, outputModeObjects, compilationGraph, profilerMode, this);
         reduceTaskGraph.scheduleWithReduction(analysisTaskSchedule);
         reduceExpressionRewritten = true;
     }
@@ -2181,6 +2182,14 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public String getProfileLog() {
         return bufferLogProfiler.toString();
+    }
+
+    boolean isProfilerEnabled() {
+        return timeProfiler != null;
+    }
+
+    ProfilerMode getProfilerMode() {
+        return profilerMode;
     }
 
     // Timer implementation within the Task Schedule

@@ -77,6 +77,7 @@ class ReduceTaskGraph {
     private static AtomicInteger counterSeqName = new AtomicInteger(0);
     private final List<StreamingObject> inputModeObjects;
     private final List<StreamingObject> outputModeObjects;
+    private final TornadoTaskGraph originalTaskGraph;
 
     private String idTaskGraph;
     private List<TaskPackage> taskPackages;
@@ -100,10 +101,11 @@ class ReduceTaskGraph {
     private TornadoExecutionResult executionResult;
 
     ReduceTaskGraph(String taskScheduleID, List<TaskPackage> taskPackages, List<Object> streamInObjects, List<StreamingObject> streamingObjects, List<Object> streamOutObjects,
-            List<StreamingObject> outputModeObjects, Graph graph, ProfilerMode profilerMode) {
+            List<StreamingObject> outputModeObjects, Graph graph, ProfilerMode profilerMode, TornadoTaskGraph originalTaskGraph) {
         this.idTaskGraph = taskScheduleID;
         this.sketchGraph = graph;
         this.profilerMode = profilerMode;
+        this.originalTaskGraph = originalTaskGraph;
 
         // We need to make all lists mutable again in order to re-write the expressions
         // and the data IN/OUT the tasks. Task-Graph rewriting is the mechanism of
@@ -609,10 +611,6 @@ class ReduceTaskGraph {
         ImmutableTaskGraph immutableTaskGraph = rewrittenTaskGraph.snapshot();
         this.executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
-        if (profilerMode != null) {
-            executionPlan.withProfiler(profilerMode);
-        }
-
         executeExpression();
         counterName.incrementAndGet();
         return rewrittenTaskGraph;
@@ -643,6 +641,12 @@ class ReduceTaskGraph {
 
     void executeExpression() {
 
+        if (originalTaskGraph.isProfilerEnabled()) {
+            executionPlan.withProfiler(originalTaskGraph.getProfilerMode());
+        } else {
+            executionPlan.withoutProfiler();
+        }
+
         // check parameter list
         if (TornadoOptions.FORCE_CHECK_PARAMETERS) {
             checkAllArgumentsPerTask();
@@ -655,7 +659,7 @@ class ReduceTaskGraph {
             for (HybridThreadMeta meta : hybridThreadMetas) {
                 threadSequentialExecution.add(new SequentialExecutionThread(meta.compilationThread, meta.taskPackage, hostHybridVariables));
             }
-            threadSequentialExecution.stream().forEach(Thread::start);
+            threadSequentialExecution.forEach(Thread::start);
         }
 
         executionResult = executionPlan.execute();

@@ -282,4 +282,33 @@ public class TestProfiler extends TornadoTestBase {
         assertTrue(kernelTime > 0);
     }
 
+    @Test
+    public void testProfilerReductionOnAndOff() {
+
+        final int SIZE = 1024;
+        float[] inputArray = new float[SIZE];
+        float[] outputArray = new float[1];
+
+        Random r = new Random();
+        IntStream.range(0, SIZE).forEach(i -> inputArray[i] = r.nextFloat());
+
+        TaskGraph taskGraph = new TaskGraph("compute");
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, inputArray) //
+                .task("reduce", TestProfiler::reduction, inputArray, outputArray) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outputArray);
+
+        ImmutableTaskGraph itg = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(itg);
+        executionPlan.withProfiler(ProfilerMode.CONSOLE);
+
+        TornadoExecutionResult executionResult = executionPlan.execute();
+        long kernelTime = executionResult.getProfilerResult().getDeviceKernelTime();
+        assertTrue(kernelTime > 0);
+
+        executionPlan.withoutProfiler();
+
+        executionPlan.execute();
+        executionPlan.execute();
+    }
+
 }
