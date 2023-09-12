@@ -87,10 +87,10 @@ public class TestProfiler extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Build executionPlan
-        TornadoExecutionPlan executionPlanPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionPlan plan = new TornadoExecutionPlan(immutableTaskGraph);
 
         // Execute the plan (default TornadoVM optimization choices)
-        TornadoExecutionResult executionResult = executionPlanPlan.execute();
+        TornadoExecutionResult executionResult = plan.execute();
 
         assertTrue(executionResult.getProfilerResult().getTotalTime() > 0);
         assertTrue(executionResult.getProfilerResult().getTornadoCompilerTime() > 0);
@@ -110,7 +110,7 @@ public class TestProfiler extends TornadoTestBase {
         assertEquals(executionResult.getProfilerResult().getTornadoCompilerTime() + executionResult.getProfilerResult().getDriverInstallTime(), executionResult.getProfilerResult().getCompileTime());
 
         // Disable profiler
-        System.setProperty("tornado.profiler", "False");
+        plan.withoutProfiler();
     }
 
     @Test
@@ -153,7 +153,7 @@ public class TestProfiler extends TornadoTestBase {
     }
 
     @Test
-    public void testProfilerFromexecutionPlan() {
+    public void testProfilerFromExecutionPlan() {
         int numElements = 16;
         int[] a = new int[numElements];
         int[] b = new int[numElements];

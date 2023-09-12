@@ -45,9 +45,11 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
@@ -92,12 +94,16 @@ class ReduceTaskGraph {
     private boolean hybridMode;
     private Map<Object, REDUCE_OPERATION> hybridMergeTable;
     private boolean hybridInitialized;
-    private TornadoExecutionPlan executor;
+    private TornadoExecutionPlan executionPlan;
+
+    private ProfilerMode profilerMode;
+    private TornadoExecutionResult executionResult;
 
     ReduceTaskGraph(String taskScheduleID, List<TaskPackage> taskPackages, List<Object> streamInObjects, List<StreamingObject> streamingObjects, List<Object> streamOutObjects,
-            List<StreamingObject> outputModeObjects, Graph graph) {
+            List<StreamingObject> outputModeObjects, Graph graph, ProfilerMode profilerMode) {
         this.idTaskGraph = taskScheduleID;
         this.sketchGraph = graph;
+        this.profilerMode = profilerMode;
 
         // We need to make all lists mutable again in order to re-write the expressions
         // and the data IN/OUT the tasks. Task-Graph rewriting is the mechanism of
@@ -597,11 +603,15 @@ class ReduceTaskGraph {
             }
         }
 
-        // Copy-OUT Re-Writen Rule for Reductions sets the outputs to EVERY_EXECUTION
+        // Copy-OUT Rewritten Rule for Reductions sets the outputs to EVERY_EXECUTION
         // mode.
         TornadoTaskGraph.performStreamOutThreads(DataTransferMode.EVERY_EXECUTION, rewrittenTaskGraph, streamOutObjects);
         ImmutableTaskGraph immutableTaskGraph = rewrittenTaskGraph.snapshot();
-        this.executor = new TornadoExecutionPlan(immutableTaskGraph);
+        this.executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        if (profilerMode != null) {
+            executionPlan.withProfiler(profilerMode);
+        }
 
         executeExpression();
         counterName.incrementAndGet();
@@ -627,6 +637,10 @@ class ReduceTaskGraph {
         return true;
     }
 
+    TornadoExecutionResult getExecutionResult() {
+        return this.executionResult;
+    }
+
     void executeExpression() {
 
         // check parameter list
@@ -643,8 +657,8 @@ class ReduceTaskGraph {
             }
             threadSequentialExecution.stream().forEach(Thread::start);
         }
-        // rewrittenTaskGraph.execute();
-        executor.execute();
+
+        executionResult = executionPlan.execute();
 
         updateOutputArrays();
     }
