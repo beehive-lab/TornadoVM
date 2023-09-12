@@ -83,7 +83,7 @@ public class TornadoExecutionContext {
 
     private TornadoProfiler profiler;
 
-    public TornadoExecutionContext(String id, TornadoProfiler profiler) {
+    public TornadoExecutionContext(String id) {
         name = id;
         meta = new ScheduleMetaData(name);
         tasks = new ArrayList<>();
@@ -98,7 +98,7 @@ public class TornadoExecutionContext {
         nextTask = 0;
         batchSize = -1;
         lastDevices = new HashSet<>();
-        this.profiler = profiler;
+        this.profiler = null;
         this.isDataDependencyDetected = isDataDependencyInTaskGraph();
     }
 
@@ -562,5 +562,9 @@ public class TornadoExecutionContext {
             System.out.printf("[%d]: %s\n", i, task.getFullName());
         }
         System.out.println("-----------------------------------");
+    }
+
+    public void withProfiler(TornadoProfiler timeProfiler) {
+        this.profiler = timeProfiler;
     }
 }
