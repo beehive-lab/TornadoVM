@@ -186,21 +186,58 @@ public class PTXArchitecture extends Architecture {
         }
     }
 
+    /**
+     * It represents a base class for PTX memory objects.
+     */
     public static class PTXMemoryBase extends PTXRegister {
 
         public final PTXMemorySpace memorySpace;
 
+        /**
+         * It constructs a new {@link PTXMemoryBase} with the specified memory space.
+         *
+         * @param memorySpace
+         *            The {@link PTXMemorySpace} to associate with this memory base.
+         */
         public PTXMemoryBase(PTXMemorySpace memorySpace) {
             super(memorySpace.getName(), PTXKind.B64);
             this.memorySpace = memorySpace;
         }
     }
 
+    /**
+     * It represents a built-in register in PTX.
+     */
     public static class PTXBuiltInRegister extends Variable {
+        private final String name;
 
+        /**
+         * It constructs a new PTXBuiltInRegister with the specified name.
+         *
+         * @param name
+         *            The name of the built-in register.
+         */
         protected PTXBuiltInRegister(String name) {
             super(LIRKind.value(PTXKind.U32), 0);
-            setName(name);
+            this.name = name;
+        }
+
+        /**
+         * It gets the name of the built-in register.
+         *
+         * @return The name of the built-in register.
+         */
+        public String getName() {
+            return name;
+        }
+
+        /**
+         * It gets the PTXKind associated with this built-in register.
+         *
+         * @return The PTXKind associated with this built-in register.
+         */
+        public PTXKind getPtxKind() {
+            return PTXKind.U32;
         }
     }
 

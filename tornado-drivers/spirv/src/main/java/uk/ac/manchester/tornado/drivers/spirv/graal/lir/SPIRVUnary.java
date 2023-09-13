@@ -24,7 +24,7 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
 import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
+import org.graalvm.compiler.core.common.cfg.BasicBlock;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction.Def;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
@@ -1170,12 +1170,12 @@ public class SPIRVUnary {
 
     public static class ReturnWithValue extends SPIRVLIROp {
 
-        private AbstractBlockBase<?> currentBlock;
+        private BasicBlock<?> currentBlock;
 
         @Use
         private Value input;
 
-        public ReturnWithValue(LIRKind lirKind, Value input, AbstractBlockBase<?> currentBlock) {
+        public ReturnWithValue(LIRKind lirKind, Value input, BasicBlock<?> currentBlock) {
             super(lirKind);
             this.currentBlock = currentBlock;
             this.input = input;

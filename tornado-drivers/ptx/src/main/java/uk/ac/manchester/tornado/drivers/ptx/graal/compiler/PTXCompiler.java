@@ -50,7 +50,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.graalvm.compiler.core.common.alloc.LinearScanOrder;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
-import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.cfg.CodeEmissionOrder;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
@@ -65,7 +64,7 @@ import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.lir.phases.AllocationPhase;
 import org.graalvm.compiler.lir.phases.PreAllocationOptimizationPhase;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.cfg.Block;
+import org.graalvm.compiler.nodes.cfg.HIRBlock;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
@@ -141,7 +140,8 @@ public class PTXCompiler {
     private static void emitCode(PTXCompilationRequest r, LIRGenerationResult lirGenRes, boolean isParallel) {
         try (DebugCloseable a = EmitCode.start(getDebugContext())) {
             FrameMap frameMap = lirGenRes.getFrameMap();
-            final PTXCompilationResultBuilder crb = r.backend.newCompilationResultBuilder(lirGenRes, frameMap, r.compilationResult, r.factory, r.isKernel, isParallel, r.includePrintf);
+            final PTXCompilationResultBuilder crb = r.backend.newCompilationResultBuilder(lirGenRes, frameMap, r.compilationResult, r.factory, r.isKernel, isParallel, r.includePrintf,
+                    lirGenRes.getLIR());
             crb.setPTXLIRGenerationResult((PTXLIRGenerationResult) lirGenRes);
             r.backend.emitCode(crb, lirGenRes.getLIR(), r.installedCodeOwner, r.profiler);
 
@@ -170,15 +170,15 @@ public class PTXCompiler {
         try (DebugContext.Scope ds = getDebugContext().scope("EmitLIR"); DebugCloseable a = EmitLIR.start(getDebugContext())) {
             OptionValues options = r.graph.getOptions();
             StructuredGraph.ScheduleResult schedule = r.graph.getLastSchedule();
-            Block[] blocks = schedule.getCFG().getBlocks();
-            Block startBlock = schedule.getCFG().getStartBlock();
+            HIRBlock[] blocks = schedule.getCFG().getBlocks();
+            HIRBlock startBlock = schedule.getCFG().getStartBlock();
             assert startBlock != null;
             assert startBlock.getPredecessorCount() == 0;
 
             LIR lir = null;
             try (DebugContext.Scope s = getDebugContext().scope("ComputeLinearScanOrder", lir)) {
                 CodeEmissionOrder<?> blockOrder = r.backend.newBlockOrder(blocks.length, startBlock);
-                AbstractBlockBase<?>[] linearScanOrder = LinearScanOrder.computeLinearScanOrder(blocks.length, startBlock);
+                int[] linearScanOrder = LinearScanOrder.computeLinearScanOrder(blocks.length, startBlock);
                 lir = new LIR(schedule.getCFG(), linearScanOrder, r.graph.getOptions(), r.graph.getDebug());
                 getDebugContext().dump(DebugContext.INFO_LEVEL, lir, "After linear scan order");
             } catch (Throwable e) {
@@ -254,7 +254,7 @@ public class PTXCompiler {
     }
 
     public static PTXCompilationResult compileSketchForDevice(Sketch sketch, CompilableTask task, PTXProviders providers, PTXBackend backend, TornadoProfiler profiler) {
-        final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().getReadonlyCopy().copy(getDebugContext());
+        final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().copy(getDebugContext());
         ResolvedJavaMethod resolvedMethod = kernelGraph.method();
 
         info("Compiling sketch %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
@@ -322,7 +322,7 @@ public class PTXCompiler {
             }
             Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
             final PTXCompilationResult compResult = new PTXCompilationResult(currentMethod.getName(), taskMeta);
-            final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().getMutableCopy(null);
+            final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().copy(getDebugContext());
 
             // @formatter:off
             PTXCompilationRequest methodCompilationRequest = PTXCompilationRequest.PTXCompilationRequestBuilder.getInstance().withGraph(graph)

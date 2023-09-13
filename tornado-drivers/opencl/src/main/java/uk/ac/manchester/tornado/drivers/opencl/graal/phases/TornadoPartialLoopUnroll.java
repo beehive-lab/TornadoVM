@@ -48,23 +48,6 @@ public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
     private static final int LOOP_UNROLL_FACTOR_DEFAULT = 2;
     private static final int LOOP_BOUND_UPPER_LIMIT = 16384;
 
-    @Override
-    protected void run(StructuredGraph graph, MidTierContext context) {
-
-        if (!graph.hasLoops()) {
-            return;
-        }
-
-        int initialNodeCount = graph.getNodeCount();
-        int unrollFactor = getUnrollFactor();
-
-        for (int i = 0; Math.pow(2, i) < unrollFactor; i++) {
-            if (graph.getNodeCount() < getUpperGraphLimit(initialNodeCount, graph)) {
-                partialUnroll(graph, context);
-            }
-        }
-    }
-
     private static void partialUnroll(StructuredGraph graph, MidTierContext context) {
         final LoopsData dataCounted = new TornadoLoopsData(graph);
 
@@ -97,5 +80,22 @@ public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
 
     private static boolean isPowerOfTwo(int number) {
         return number > 0 && ((number & (number - 1)) == 0);
+    }
+
+    @Override
+    protected void run(StructuredGraph graph, MidTierContext context) {
+
+        if (!graph.hasLoops()) {
+            return;
+        }
+
+        int initialNodeCount = graph.getNodeCount();
+        int unrollFactor = getUnrollFactor();
+
+        for (int i = 0; Math.pow(2, i) < unrollFactor; i++) {
+            if (graph.getNodeCount() < getUpperGraphLimit(initialNodeCount, graph)) {
+                partialUnroll(graph, context);
+            }
+        }
     }
 }

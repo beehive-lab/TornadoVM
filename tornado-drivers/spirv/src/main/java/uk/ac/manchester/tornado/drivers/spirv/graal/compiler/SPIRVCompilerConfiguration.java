@@ -29,7 +29,7 @@ import org.graalvm.compiler.lir.phases.PostAllocationOptimizationStage;
 import org.graalvm.compiler.lir.phases.PreAllocationOptimizationPhase;
 import org.graalvm.compiler.lir.phases.PreAllocationOptimizationStage;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.common.AddressLoweringPhase;
+import org.graalvm.compiler.phases.common.AddressLoweringByNodePhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -66,7 +66,7 @@ public class SPIRVCompilerConfiguration implements TornadoCompilerConfiguration 
     }
 
     @Override
-    public TornadoLowTier createLowTier(OptionValues options, TornadoDeviceContext deviceContext, AddressLoweringPhase.AddressLowering addressLowering) {
+    public TornadoLowTier createLowTier(OptionValues options, TornadoDeviceContext deviceContext, AddressLoweringByNodePhase.AddressLowering addressLowering) {
         return new SPIRVLowTier(options, deviceContext, addressLowering);
     }
 

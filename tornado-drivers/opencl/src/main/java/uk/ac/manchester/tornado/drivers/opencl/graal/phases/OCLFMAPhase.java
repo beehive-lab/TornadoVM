@@ -21,12 +21,16 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
-import jdk.vm.ci.meta.JavaKind;
+import java.util.Optional;
+
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.phases.Phase;
+
+import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFMANode;
 
 public class OCLFMAPhase extends Phase {
@@ -54,6 +58,11 @@ public class OCLFMAPhase extends Phase {
      */
     private boolean isValidType(ValueNode x) {
         return (x.getStackKind() == JavaKind.Float || x.getStackKind() == JavaKind.Double);
+    }
+
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
     }
 
     @Override

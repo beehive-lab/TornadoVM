@@ -31,6 +31,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.LONG;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.ULONG;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.graalvm.compiler.asm.AbstractAddress;
@@ -45,6 +46,7 @@ import jdk.vm.ci.hotspot.HotSpotObjectConstant;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
@@ -81,6 +83,49 @@ public final class OCLAssembler extends Assembler {
         if (EMIT_INTRINSICS) {
             emitAtomicIntrinsics();
         }
+    }
+
+    /**
+     * It converts the format of a Value input to a specific format based on its
+     * platform type.
+     *
+     * @param input
+     *            The {@link Value} input to convert.
+     * @return The converted format string.
+     */
+    public static String convertValueFromGraalFormat(Value input) {
+        String type = input.getPlatformKind().name().toLowerCase();
+        String result;
+
+        // Extract the index value between "v" and "|"
+        // v10|DOUBLE --> v->indexValue<-|
+        String indexValue = getAbsoluteIndexFromValue(input);
+
+        // Find the matching TypePrefix enum for the given type
+        OCLVariablePrefix typePrefix = Arrays.stream(OCLVariablePrefix.values()).filter(tp -> tp.getType().equals(type)).findFirst().orElse(null);
+
+        if (typePrefix != null) {
+            result = typePrefix.getPrefix() + indexValue;
+        } else {
+            throw new TornadoRuntimeException("Unsupported type: " + type);
+        }
+
+        return result;
+    }
+
+    /**
+     * It retrieves the absolute index from the given Value object.
+     *
+     * @param value
+     *            the {@link Value} object to extract the index from. It should be
+     *            in the format "int[20|0x14]".
+     * @return the absolute index as a String
+     */
+    public static String getAbsoluteIndexFromValue(Value value) {
+        int startIndex = value.toString().indexOf('[') + 1;
+        int endIndex = value.toString().indexOf('|');
+
+        return value.toString().substring(startIndex, endIndex).trim().replace("v", "");
     }
 
     private void emitAtomicIntrinsics() {
@@ -141,6 +186,11 @@ public final class OCLAssembler extends Assembler {
     public void align(int arg0) {
         // TODO Auto-generated method stub
 
+    }
+
+    @Override
+    public void halt() {
+        // TODO Auto-generated method stub
     }
 
     @Override
@@ -400,7 +450,7 @@ public final class OCLAssembler extends Assembler {
         String result = "";
         if (value instanceof Variable) {
             Variable var = (Variable) value;
-            return var.getName();
+            return convertValueFromGraalFormat(var);
         } else if (value instanceof ConstantValue) {
             if (!((ConstantValue) value).isJavaConstant()) {
                 shouldNotReachHere("constant value: ", value);
@@ -427,6 +477,14 @@ public final class OCLAssembler extends Assembler {
         }
     }
 
+    public void emitValueWithFormat(OCLCompilationResultBuilder crb, Value value) {
+        if (value instanceof OCLReturnSlot) {
+            ((OCLReturnSlot) value).emit(crb, this);
+        } else {
+            emit(OCLAssembler.convertValueFromGraalFormat(value));
+        }
+    }
+
     public String getStringValue(OCLCompilationResultBuilder crb, Value value) {
         if (value instanceof OCLReturnSlot) {
             return ((OCLReturnSlot) value).getStringFormat();
@@ -450,7 +508,6 @@ public final class OCLAssembler extends Assembler {
         if (((OCLKind) condition.getPlatformKind()) == OCLKind.INT) {
             emit(" == 1");
         }
-        // value(crb, condition);
 
         emitSymbol(OCLAssemblerConstants.CLOSE_PARENTHESIS);
         eol();

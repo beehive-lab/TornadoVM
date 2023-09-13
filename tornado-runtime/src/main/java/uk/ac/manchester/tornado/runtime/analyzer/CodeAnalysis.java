@@ -60,6 +60,7 @@ import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.SpeculationLog;
 import jdk.vm.ci.runtime.JVMCI;
 
 public class CodeAnalysis {
@@ -82,11 +83,17 @@ public class CodeAnalysis {
         ResolvedJavaMethod resolvedJavaMethod = metaAccess.lookupJavaMethod(methodToCompile);
         CompilationIdentifier compilationIdentifier = backend.getCompilationIdentifier(resolvedJavaMethod);
 
+        SpeculationLog speculationLog = resolvedJavaMethod.getSpeculationLog();
+        if (speculationLog != null) {
+            speculationLog.collectFailedSpeculations();
+        }
+
         try (DebugContext.Scope ignored = getDebugContext().scope("compileMethodAndInstall", new DebugDumpScope("TornadoVM-Code-Analysis", true))) {
             EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
             opts.putAll(HotSpotGraalOptionValues.defaultOptions().getMap());
             OptionValues options = new OptionValues(opts);
-            StructuredGraph graph = new StructuredGraph.Builder(options, getDebugContext(), AllowAssumptions.YES).method(resolvedJavaMethod).compilationId(compilationIdentifier).build();
+            StructuredGraph graph = new StructuredGraph.Builder(options, getDebugContext(), AllowAssumptions.YES).speculationLog(speculationLog).method(resolvedJavaMethod)
+                    .compilationId(compilationIdentifier).build();
             PhaseSuite<HighTierContext> graphBuilderSuite = new PhaseSuite<>();
             graphBuilderSuite.appendPhase(new GraphBuilderPhase(GraphBuilderConfiguration.getDefault(new Plugins(new InvocationPlugins()))));
             graphBuilderSuite.apply(graph, new HighTierContext(providers, graphBuilderSuite, OptimisticOptimizations.ALL));

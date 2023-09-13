@@ -38,7 +38,7 @@ import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.cfg.Block;
+import org.graalvm.compiler.nodes.cfg.HIRBlock;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;
@@ -337,7 +337,7 @@ public final class SPIRVAssembler extends Assembler {
         return labelTable.get(blockName);
     }
 
-    public void emitBlockLabelIfNotPresent(Block b, SPIRVInstScope functionScope) {
+    public void emitBlockLabelIfNotPresent(HIRBlock b, SPIRVInstScope functionScope) {
         String blockName = composeUniqueLabelName(b.toString());
         if (!labelTable.containsKey(blockName)) {
             SPIRVId label = module.getNextId();
@@ -593,6 +593,11 @@ public final class SPIRVAssembler extends Assembler {
 
     @Override
     public void align(int modulus) {
+
+    }
+
+    @Override
+    public void halt() {
 
     }
 

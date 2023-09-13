@@ -36,7 +36,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.graalvm.compiler.graph.CachedGraph;
+import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.nodes.StructuredGraph;
 
 import jdk.vm.ci.code.InstalledCode;
@@ -45,9 +45,11 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
@@ -75,6 +77,7 @@ class ReduceTaskGraph {
     private static AtomicInteger counterSeqName = new AtomicInteger(0);
     private final List<StreamingObject> inputModeObjects;
     private final List<StreamingObject> outputModeObjects;
+    private final TornadoTaskGraph originalTaskGraph;
 
     private String idTaskGraph;
     private List<TaskPackage> taskPackages;
@@ -88,16 +91,21 @@ class ReduceTaskGraph {
     private Map<Object, Object> neutralElementsOriginal = new HashMap<>();
     private TaskGraph rewrittenTaskGraph;
     private Map<Object, List<Integer>> reduceOperandTable;
-    private CachedGraph<?> sketchGraph;
+    private Graph sketchGraph;
     private boolean hybridMode;
     private Map<Object, REDUCE_OPERATION> hybridMergeTable;
     private boolean hybridInitialized;
-    private TornadoExecutionPlan executor;
+    private TornadoExecutionPlan executionPlan;
+
+    private ProfilerMode profilerMode;
+    private TornadoExecutionResult executionResult;
 
     ReduceTaskGraph(String taskScheduleID, List<TaskPackage> taskPackages, List<Object> streamInObjects, List<StreamingObject> streamingObjects, List<Object> streamOutObjects,
-            List<StreamingObject> outputModeObjects, CachedGraph<?> graph) {
+            List<StreamingObject> outputModeObjects, Graph graph, ProfilerMode profilerMode, TornadoTaskGraph originalTaskGraph) {
         this.idTaskGraph = taskScheduleID;
         this.sketchGraph = graph;
+        this.profilerMode = profilerMode;
+        this.originalTaskGraph = originalTaskGraph;
 
         // We need to make all lists mutable again in order to re-write the expressions
         // and the data IN/OUT the tasks. Task-Graph rewriting is the mechanism of
@@ -597,11 +605,11 @@ class ReduceTaskGraph {
             }
         }
 
-        // Copy-OUT Re-Writen Rule for Reductions sets the outputs to EVERY_EXECUTION
+        // Copy-OUT Rewritten Rule for Reductions sets the outputs to EVERY_EXECUTION
         // mode.
         TornadoTaskGraph.performStreamOutThreads(DataTransferMode.EVERY_EXECUTION, rewrittenTaskGraph, streamOutObjects);
         ImmutableTaskGraph immutableTaskGraph = rewrittenTaskGraph.snapshot();
-        this.executor = new TornadoExecutionPlan(immutableTaskGraph);
+        this.executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
         executeExpression();
         counterName.incrementAndGet();
@@ -627,7 +635,17 @@ class ReduceTaskGraph {
         return true;
     }
 
+    TornadoExecutionResult getExecutionResult() {
+        return this.executionResult;
+    }
+
     void executeExpression() {
+
+        if (originalTaskGraph.isProfilerEnabled()) {
+            executionPlan.withProfiler(originalTaskGraph.getProfilerMode());
+        } else {
+            executionPlan.withoutProfiler();
+        }
 
         // check parameter list
         if (TornadoOptions.FORCE_CHECK_PARAMETERS) {
@@ -641,10 +659,10 @@ class ReduceTaskGraph {
             for (HybridThreadMeta meta : hybridThreadMetas) {
                 threadSequentialExecution.add(new SequentialExecutionThread(meta.compilationThread, meta.taskPackage, hostHybridVariables));
             }
-            threadSequentialExecution.stream().forEach(Thread::start);
+            threadSequentialExecution.forEach(Thread::start);
         }
-        // rewrittenTaskGraph.execute();
-        executor.execute();
+
+        executionResult = executionPlan.execute();
 
         updateOutputArrays();
     }

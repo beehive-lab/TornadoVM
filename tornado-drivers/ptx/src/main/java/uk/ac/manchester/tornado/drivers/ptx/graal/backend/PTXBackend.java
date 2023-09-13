@@ -35,7 +35,6 @@ import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.lir.LIR;
-import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
 import org.graalvm.compiler.lir.asm.DataBuilder;
@@ -201,11 +200,11 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     }
 
     public PTXCompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenRes, FrameMap frameMap, PTXCompilationResult compilationResult, CompilationResultBuilderFactory factory,
-            boolean isKernel, boolean isParallel, boolean includePrintf) {
+            boolean isKernel, boolean isParallel, boolean includePrintf, LIR lir) {
         PTXAssembler asm = createAssembler((PTXLIRGenerationResult) lirGenRes);
         PTXFrameContext frameContext = new PTXFrameContext();
         DataBuilder dataBuilder = new PTXDataBuilder();
-        PTXCompilationResultBuilder crb = new PTXCompilationResultBuilder(getProviders(), frameMap, asm, dataBuilder, frameContext, options, getDebugContext(), compilationResult);
+        PTXCompilationResultBuilder crb = new PTXCompilationResultBuilder(getProviders(), frameMap, asm, dataBuilder, frameContext, options, getDebugContext(), compilationResult, lir);
         crb.setTaskMetaData(compilationResult.metaData());
         crb.setKernel(isKernel);
         crb.setParallel(isParallel);
@@ -235,6 +234,8 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
 
         profiler.stop(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId());
         profiler.sum(ProfilerType.TOTAL_CODE_GENERATION_TIME, profiler.getTaskTimer(ProfilerType.TASK_CODE_GENERATION_TIME, taskMetaData.getId()));
+
+        asm.cleanUpVarsMapNaming();
     }
 
     private void emitEpilogue(PTXAssembler asm) {
@@ -307,11 +308,10 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         } else {
             final ResolvedJavaType returnType = method.getSignature().getReturnType(null).resolve(method.getDeclaringClass());
             PTXKind returnPtxKind = (returnType.getAnnotation(Vector.class) == null) ? getTarget().getPTXKind(returnKind) : PTXKind.fromResolvedJavaType(returnType);
-            Variable returnVar = lirGenRes.getReturnVariable(returnPtxKind);
             if (returnPtxKind.isVector()) {
-                asm.emit(".func (.param .align 8 .b8 %s[%d]) %s (", returnVar, returnPtxKind.getSizeInBytes(), methodName);
+                asm.emit(".func (.param .align 8 .b8 %s[%d]) %s (", "retVar", returnPtxKind.getSizeInBytes(), methodName);
             } else {
-                asm.emit(".func (.reg .%s %s) %s (", returnPtxKind, returnVar, methodName);
+                asm.emit(".func (.reg .%s %s) %s (", returnPtxKind, "retVar", methodName);
             }
         }
 
@@ -328,6 +328,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
                 }
             }
             guarantee(ptxKind != PTXKind.ILLEGAL, "illegal type for %s", param.getPlatformKind());
+
             if (ptxKind.isVector()) {
                 PTXVectorSplit vectorSplitData = new PTXVectorSplit(locals[i].getName(), ptxKind);
                 for (int j = 0; j < vectorSplitData.vectorNames.length; j++) {
@@ -336,6 +337,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
                         asm.emit(", ");
                     }
                 }
+
             } else {
                 asm.emit(".reg .%s %s", ptxKind, locals[i].getName());
             }
@@ -383,6 +385,5 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
                 asm.emitLine("\t.reg .%s %s<%d>;", type, type.getRegisterTypeString(), regVarCount + 1);
             }
         }
-
     }
 }

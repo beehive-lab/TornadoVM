@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -811,6 +811,181 @@ public class TestInts extends TornadoTestBase {
             assertEquals(sequentialOutput.get(i).getS5(), tornadoOutput.get(i).getS5());
             assertEquals(sequentialOutput.get(i).getS6(), tornadoOutput.get(i).getS6());
             assertEquals(sequentialOutput.get(i).getS7(), tornadoOutput.get(i).getS7());
+        }
+    }
+
+    private static void vectorComputation01(VectorInt2 value, VectorInt2 output) {
+        for (@Parallel int i = 0; i < output.getLength(); i++) {
+            Int2 int2 = new Int2();
+            int2.setX(value.get(i).getX() + value.get(i).getY());
+            int2.setY(value.get(i).getX() * 2);
+            output.set(i, int2);
+        }
+    }
+
+    @Test
+    public void testInternalSetMethod01() {
+        final int size = 16;
+        VectorInt2 tornadoInput = new VectorInt2(size);
+        VectorInt2 sequentialInput = new VectorInt2(size);
+        VectorInt2 tornadoOutput = new VectorInt2(size);
+        VectorInt2 sequentialOutput = new VectorInt2(size);
+
+        for (int i = 0; i < size; i++) {
+            int value = (int) Math.random();
+            Int2 int2 = new Int2(value, value);
+            tornadoInput.set(i, int2);
+            sequentialInput.set(i, int2);
+        }
+
+        TaskGraph graph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, tornadoInput) //
+                .task("t0", TestInts::vectorComputation01, tornadoInput, tornadoOutput) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
+
+        ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        executionPlan.execute();
+
+        vectorComputation01(sequentialInput, sequentialOutput);
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(sequentialOutput.get(i).getX(), tornadoOutput.get(i).getX());
+            assertEquals(sequentialOutput.get(i).getY(), tornadoOutput.get(i).getY());
+        }
+    }
+
+    private static void vectorComputation02(VectorInt3 value, VectorInt3 output) {
+        for (@Parallel int i = 0; i < output.getLength(); i++) {
+            Int3 int3 = new Int3();
+            int3.setX(value.get(i).getX() + value.get(i).getY());
+            int3.setY(value.get(i).getZ() * 2);
+            output.set(i, int3);
+        }
+    }
+
+    @Test
+    public void testInternalSetMethod02() {
+        final int size = 16;
+        VectorInt3 tornadoInput = new VectorInt3(size);
+        VectorInt3 sequentialInput = new VectorInt3(size);
+        VectorInt3 tornadoOutput = new VectorInt3(size);
+        VectorInt3 sequentialOutput = new VectorInt3(size);
+
+        for (int i = 0; i < size; i++) {
+            int value = (int) Math.random();
+            Int3 int3 = new Int3(value, value, value);
+            tornadoInput.set(i, int3);
+            sequentialInput.set(i, int3);
+        }
+
+        TaskGraph graph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, tornadoInput) //
+                .task("t0", TestInts::vectorComputation02, tornadoInput, tornadoOutput) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
+
+        ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        executionPlan.execute();
+
+        vectorComputation02(sequentialInput, sequentialOutput);
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(sequentialOutput.get(i).getX(), tornadoOutput.get(i).getX());
+            assertEquals(sequentialOutput.get(i).getY(), tornadoOutput.get(i).getY());
+            assertEquals(sequentialOutput.get(i).getZ(), tornadoOutput.get(i).getZ());
+        }
+    }
+
+    private static Int3 vectorComputation03(final Int4 value) {
+        Int3 output = new Int3();
+        output.setX(value.getX() + value.getY());
+        output.setY(value.getY());
+        output.setZ(value.getW());
+        return output;
+    }
+
+    private static void vectorComputation03(VectorInt4 value, VectorInt3 output) {
+        for (@Parallel int i = 0; i < output.getLength(); i++) {
+            output.set(i, vectorComputation03(value.get(i)));
+        }
+    }
+
+    @Test
+    public void testInternalSetMethod03() {
+        final int size = 16;
+        VectorInt4 tornadoInput = new VectorInt4(size);
+        VectorInt4 sequentialInput = new VectorInt4(size);
+        VectorInt3 tornadoOutput = new VectorInt3(size);
+        VectorInt3 sequentialOutput = new VectorInt3(size);
+
+        for (int i = 0; i < size; i++) {
+            int value = (int) Math.random();
+            Int4 int4 = new Int4(value, value, value, value);
+            tornadoInput.set(i, int4);
+            sequentialInput.set(i, int4);
+        }
+
+        TaskGraph graph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, tornadoInput) //
+                .task("t0", TestInts::vectorComputation03, tornadoInput, tornadoOutput) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
+
+        ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        executionPlan.execute();
+
+        vectorComputation03(sequentialInput, sequentialOutput);
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(sequentialOutput.get(i).getX(), tornadoOutput.get(i).getX());
+            assertEquals(sequentialOutput.get(i).getY(), tornadoOutput.get(i).getY());
+            assertEquals(sequentialOutput.get(i).getZ(), tornadoOutput.get(i).getZ());
+        }
+    }
+
+    private static void vectorComputation04(VectorInt8 value, VectorInt2 output) {
+        for (@Parallel int i = 0; i < output.getLength(); i++) {
+            Int2 int2 = new Int2();
+            int2.setX(value.get(i).getS0() + value.get(i).getS1());
+            int2.setY(value.get(i).getS1());
+            output.set(i, int2);
+        }
+    }
+
+    @Test
+    public void testInternalSetMethod04() {
+        final int size = 16;
+        VectorInt8 tornadoInput = new VectorInt8(size);
+        VectorInt8 sequentialInput = new VectorInt8(size);
+        VectorInt2 tornadoOutput = new VectorInt2(size);
+        VectorInt2 sequentialOutput = new VectorInt2(size);
+
+        for (int i = 0; i < size; i++) {
+            int value = (int) Math.random();
+            Int8 int8 = new Int8(value, value, value, value, value, value, value, value);
+            tornadoInput.set(i, int8);
+            sequentialInput.set(i, int8);
+        }
+
+        TaskGraph graph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, tornadoInput) //
+                .task("t0", TestInts::vectorComputation04, tornadoInput, tornadoOutput) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, tornadoOutput);
+
+        ImmutableTaskGraph immutableTaskGraph = graph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        executionPlan.execute();
+
+        vectorComputation04(sequentialInput, sequentialOutput);
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(sequentialOutput.get(i).getX(), tornadoOutput.get(i).getX());
+            assertEquals(sequentialOutput.get(i).getY(), tornadoOutput.get(i).getY());
         }
     }
 
