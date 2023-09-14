@@ -29,8 +29,11 @@ package uk.ac.manchester.tornado.drivers.opencl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.graalvm.compiler.options.OptionValues;
@@ -110,6 +113,30 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
                 backendList.addAll(backendListForDeviceType);
             }
         }
+
+        Map<OCLDeviceType, List<OCLBackend>> groupedByDeviceType = backendList.stream().collect(Collectors.groupingBy(backend -> backend.getDeviceContext().getDevice().getDeviceType()));
+
+        // Sort each sublist by size in descending order
+        groupedByDeviceType.forEach((deviceType, sublist) -> Collections.sort(sublist, (backend1, backend2) -> {
+            long size1 = backend1.getDeviceContext().getDevice().getDeviceContext().getDevice().getMaxThreadsPerBlock();
+            long size2 = backend2.getDeviceContext().getDevice().getDeviceContext().getDevice().getMaxThreadsPerBlock();
+            return Long.compare(size2, size1); // Sort in descending order
+        }));
+
+        // Create a list to hold the sorted backends
+        List<OCLBackend> sortedBackends = new ArrayList<>();
+
+        // Iterate through 'OCLDriver.DEVICE_TYPE_LIST' and add backends in the
+        // specified order
+        for (OCLDeviceType deviceType : OCLDriver.DEVICE_TYPE_LIST) {
+            List<OCLBackend> backendsOfType = groupedByDeviceType.get(deviceType);
+            if (backendsOfType != null) {
+                sortedBackends.addAll(backendsOfType);
+            }
+        }
+
+        // Update 'backendList' with the sorted backends
+        backendList = sortedBackends;
 
         return backendList.toArray(new OCLBackend[0]);
     }
