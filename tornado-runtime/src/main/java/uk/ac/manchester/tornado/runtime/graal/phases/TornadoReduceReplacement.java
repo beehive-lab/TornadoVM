@@ -24,11 +24,13 @@
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
 import java.lang.annotation.Annotation;
+import java.util.Optional;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.FixedNode;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.MergeNode;
@@ -57,6 +59,10 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceMulNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceSubNode;
 
 public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext> {
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
 
     @Override
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
@@ -126,21 +132,6 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             }
         }
         return false;
-    }
-
-    private static class ReductionMetadataNode {
-        private final ValueNode value;
-        private final ValueNode accumulator;
-        private final ValueNode inputArray;
-        private final ValueNode startNode;
-
-        ReductionMetadataNode(ValueNode value, ValueNode accumulator, ValueNode inputArray, ValueNode startNode) {
-            super();
-            this.value = value;
-            this.accumulator = accumulator;
-            this.inputArray = inputArray;
-            this.startNode = startNode;
-        }
     }
 
     private ValueNode obtainInputArray(ValueNode currentNode, ValueNode outputArray) {
@@ -370,6 +361,21 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                     processReduceAnnotation(graph, index);
                 }
             }
+        }
+    }
+
+    private static class ReductionMetadataNode {
+        private final ValueNode value;
+        private final ValueNode accumulator;
+        private final ValueNode inputArray;
+        private final ValueNode startNode;
+
+        ReductionMetadataNode(ValueNode value, ValueNode accumulator, ValueNode inputArray, ValueNode startNode) {
+            super();
+            this.value = value;
+            this.accumulator = accumulator;
+            this.inputArray = inputArray;
+            this.startNode = startNode;
         }
     }
 }

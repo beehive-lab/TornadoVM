@@ -21,6 +21,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
+import java.util.Random;
+import java.util.stream.IntStream;
 
 import org.junit.Test;
 
@@ -28,6 +30,8 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -87,10 +91,10 @@ public class TestProfiler extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Build executionPlan
-        TornadoExecutionPlan executionPlanPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        TornadoExecutionPlan plan = new TornadoExecutionPlan(immutableTaskGraph);
 
         // Execute the plan (default TornadoVM optimization choices)
-        TornadoExecutionResult executionResult = executionPlanPlan.execute();
+        TornadoExecutionResult executionResult = plan.execute();
 
         assertTrue(executionResult.getProfilerResult().getTotalTime() > 0);
         assertTrue(executionResult.getProfilerResult().getTornadoCompilerTime() > 0);
@@ -110,7 +114,7 @@ public class TestProfiler extends TornadoTestBase {
         assertEquals(executionResult.getProfilerResult().getTornadoCompilerTime() + executionResult.getProfilerResult().getDriverInstallTime(), executionResult.getProfilerResult().getCompileTime());
 
         // Disable profiler
-        System.setProperty("tornado.profiler", "False");
+        plan.withoutProfiler();
     }
 
     @Test
@@ -153,7 +157,7 @@ public class TestProfiler extends TornadoTestBase {
     }
 
     @Test
-    public void testProfilerFromexecutionPlan() {
+    public void testProfilerFromExecutionPlan() {
         int numElements = 16;
         int[] a = new int[numElements];
         int[] b = new int[numElements];
@@ -247,4 +251,64 @@ public class TestProfiler extends TornadoTestBase {
         executionPlan.withoutProfiler().execute();
 
     }
+
+    private static void reduction(float[] input, @Reduce float[] output) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            output[0] += input[i];
+        }
+    }
+
+    @Test
+    public void testProfilerReduction() {
+
+        final int SIZE = 1024;
+        float[] inputArray = new float[SIZE];
+        float[] outputArray = new float[1];
+
+        Random r = new Random();
+        IntStream.range(0, SIZE).forEach(i -> inputArray[i] = r.nextFloat());
+
+        TaskGraph taskGraph = new TaskGraph("compute");
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, inputArray) //
+                .task("reduce", TestProfiler::reduction, inputArray, outputArray) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outputArray);
+
+        ImmutableTaskGraph itg = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(itg);
+        executionPlan.withProfiler(ProfilerMode.CONSOLE);
+
+        TornadoExecutionResult executionResult = executionPlan.execute();
+        long kernelTime = executionResult.getProfilerResult().getDeviceKernelTime();
+        assertTrue(kernelTime > 0);
+    }
+
+    @Test
+    public void testProfilerReductionOnAndOff() {
+
+        final int SIZE = 1024;
+        float[] inputArray = new float[SIZE];
+        float[] outputArray = new float[1];
+
+        Random r = new Random();
+        IntStream.range(0, SIZE).forEach(i -> inputArray[i] = r.nextFloat());
+
+        TaskGraph taskGraph = new TaskGraph("compute");
+        taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, inputArray) //
+                .task("reduce", TestProfiler::reduction, inputArray, outputArray) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outputArray);
+
+        ImmutableTaskGraph itg = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(itg);
+        executionPlan.withProfiler(ProfilerMode.CONSOLE);
+
+        TornadoExecutionResult executionResult = executionPlan.execute();
+        long kernelTime = executionResult.getProfilerResult().getDeviceKernelTime();
+        assertTrue(kernelTime > 0);
+
+        executionPlan.withoutProfiler();
+
+        executionPlan.execute();
+        executionPlan.execute();
+    }
+
 }

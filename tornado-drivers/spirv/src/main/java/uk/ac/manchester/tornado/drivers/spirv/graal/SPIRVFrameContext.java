@@ -46,8 +46,4 @@ public class SPIRVFrameContext implements FrameContext {
 
     }
 
-    @Override
-    public boolean hasFrame() {
-        return false;
-    }
 }

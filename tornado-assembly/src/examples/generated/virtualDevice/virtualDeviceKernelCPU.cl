@@ -2,11 +2,11 @@
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable  
 __kernel void maxReduction(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global uchar *input, __global uchar *result)
 {
+  bool b_11; 
+  float f_17, f_22, f_23; 
   ulong ul_1, ul_0, ul_16, ul_21; 
-  float f_23, f_22, f_17; 
-  long l_19, l_20, l_18, l_15, l_13, l_14; 
-  int i_2, i_4, i_3, i_6, i_5, i_8, i_24, i_7, i_10, i_9, i_12; 
-  bool z_11; 
+  int i_2, i_4, i_3, i_10, i_9, i_12, i_6, i_5, i_8, i_24, i_7; 
+  long l_15, l_18, l_14, l_13, l_20, l_19; 
 
   // BLOCK 0
   ul_0  =  (ulong) input;
@@ -25,8 +25,8 @@ __kernel void maxReduction(__global long *_kernel_context, __constant uchar *_co
     // BLOCK 2
     barrier(CLK_LOCAL_MEM_FENCE);
     i_10  =  i_9 + 1;
-    z_11  =  i_9 < 0;
-    if(z_11)
+    b_11  =  i_9 < 0;
+    if(b_11)
     {
       // BLOCK 3
     }  // B3
@@ -59,8 +59,8 @@ __kernel void maxReduction(__global long *_kernel_context, __constant uchar *_co
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable  
 __kernel void rMax(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global uchar *array, __private int size)
 {
-  ulong ul_1, ul_0, ul_5, ul_3, ul_25, ul_23, ul_17, ul_15, ul_21, ul_19, ul_9, ul_7, ul_13, ul_11; 
-  float f_12, f_14, f_8, f_10, f_4, f_6, f_2, f_37, f_36, f_38, f_33, f_32, f_35, f_34, f_29, f_28, f_31, f_30, f_24, f_27, f_26, f_20, f_22, f_16, f_18; 
+  float f_10, f_8, f_14, f_12, f_18, f_16, f_22, f_20, f_2, f_6, f_4, f_26, f_27, f_24, f_30, f_31, f_28, f_29, f_34, f_35, f_32, f_33, f_38, f_36, f_37; 
+  ulong ul_3, ul_1, ul_0, ul_11, ul_9, ul_7, ul_5, ul_19, ul_17, ul_15, ul_13, ul_25, ul_23, ul_21; 
 
   // BLOCK 0
   ul_0  =  (ulong) array;
@@ -105,3 +105,4 @@ __kernel void rMax(__global long *_kernel_context, __constant uchar *_constant_r
   *((__global float *) ul_1)  =  f_38;
   return;
 }  //  kernel
+

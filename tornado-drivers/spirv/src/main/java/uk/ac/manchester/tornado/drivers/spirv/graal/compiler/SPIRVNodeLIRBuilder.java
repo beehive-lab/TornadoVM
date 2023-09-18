@@ -84,7 +84,7 @@ import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.calc.IntegerTestNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
-import org.graalvm.compiler.nodes.cfg.Block;
+import org.graalvm.compiler.nodes.cfg.HIRBlock;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.nodes.extended.SwitchNode;
 import org.graalvm.compiler.options.OptionValues;
@@ -277,7 +277,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         }
     }
 
-    public void doBlock(final Block block, final StructuredGraph graph, final BlockMap<List<Node>> blockMap, boolean isKernel) {
+    public void doBlock(final HIRBlock block, final StructuredGraph graph, final BlockMap<List<Node>> blockMap, boolean isKernel) {
         OptionValues options = graph.getOptions();
         try (BlockScope ignored = gen.getBlockScope(block)) {
 
@@ -604,9 +604,10 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
                 // another basic block.
                 List<PhiHolder> phiHolderList = new LinkedList<>();
 
-                final Block block = (Block) gen.getCurrentBlock();
+                final HIRBlock block = (HIRBlock) gen.getCurrentBlock();
                 for (int i = 0; i < phi.values().size(); i++) {
-                    PhiHolder ph = new PhiHolder(operand(phi.valueAt(i)), block.getPredecessors()[i]);
+
+                    PhiHolder ph = new PhiHolder(operand(phi.valueAt(i)), block.getPredecessorAt(i));
                     phiHolderList.add(ph);
                 }
 
@@ -659,18 +660,19 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
         }
     }
 
-    private Block getPhiDependentBlock(Block block) {
-        Block dependentPhiValueBlock = block.getFirstSuccessor();
-        for (Block b : block.getPredecessors()) {
-            if (!b.equals(block.getDominator())) {
-                dependentPhiValueBlock = b;
+    private HIRBlock getPhiDependentBlock(HIRBlock block) {
+        HIRBlock dependentPhiValueBlock = block.getFirstSuccessor();
+        int predecessorCount = block.getPredecessorCount();
+        for (int i = 0; i < predecessorCount; i++) {
+            if (!block.getPredecessorAt(i).equals(block.getDominator())) {
+                dependentPhiValueBlock = block.getPredecessorAt(i);
                 break;
             }
         }
         return dependentPhiValueBlock;
     }
 
-    private void generateOpPhiInstruction(LIRPhiVars phiVars, Block dependentPhiValueBlock, final Block predBlock) {
+    private void generateOpPhiInstruction(LIRPhiVars phiVars, HIRBlock dependentPhiValueBlock, final HIRBlock predBlock) {
         // When we optimize the code, we need to insert all OpPhi Values after the
         // loop-header label. Therefore, if the list of OpPhi variables is not null,
         // that means that we need to generate the OpPhi instruction.
@@ -683,9 +685,9 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
     private void emitLoopBegin(final LoopBeginNode loopBeginNode) {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "visiting emitLoopBegin %s", loopBeginNode);
 
-        final Block block = (Block) gen.getCurrentBlock();
-        final Block predBlock = block.getFirstPredecessor();
-        Block dependentPhiValueBlock = getPhiDependentBlock(block);
+        final HIRBlock block = (HIRBlock) gen.getCurrentBlock();
+        final HIRBlock predBlock = block.getFirstPredecessor();
+        HIRBlock dependentPhiValueBlock = getPhiDependentBlock(block);
         final LIR lir = getGen().getResult().getLIR();
         final LabelOp label = (LabelOp) lir.getLIRforBlock(block).get(0);
 
@@ -727,7 +729,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     private void emitLoopExit(LoopExitNode node) {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "LoopExitNode: %s", node);
-        if (gen.getCurrentBlock().getSuccessors().length != 0) {
+        if (gen.getCurrentBlock().getSuccessorCount() != 0) {
             LabelRef labelRef = LabelRef.forSuccessor(gen.getResult().getLIR(), gen.getCurrentBlock(), 0);
             append(new SPIRVControlFlow.BranchLoopConditional(labelRef, false, false));
         }
@@ -751,9 +753,9 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
 
     public static class PhiHolder {
         public Value value;
-        public Block block;
+        public HIRBlock block;
 
-        public PhiHolder(Value value, Block block) {
+        public PhiHolder(Value value, HIRBlock block) {
             this.value = value;
             this.block = block;
         }
@@ -762,7 +764,7 @@ public class SPIRVNodeLIRBuilder extends NodeLIRBuilder {
             return value;
         }
 
-        public Block getBlock() {
+        public HIRBlock getBlock() {
             return block;
         }
     }

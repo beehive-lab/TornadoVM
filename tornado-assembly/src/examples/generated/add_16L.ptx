@@ -1,0 +1,66 @@
+// kernel function
+.visible .entry s0_t0_add_int8_int8_int8(.param .align 8 .u64 stack_pointer, .param .align 8 .u64 a, .param .align 8 .u64 b, .param .align 8 .u64 c) {
+    // register declaration
+	.reg .u64 rud<9>;
+	.reg .s64 rsd<4>;
+	.reg .u32 rui<5>;
+	.reg .pred rpb<2>;
+	.reg .s32 rsi<8>;
+
+BLOCK_0:
+    // load arguments
+        ld.param.u64    rud0, [stack_pointer];
+        ld.param.u64    rud1, [a];
+        ld.param.u64    rud2, [b];
+        ld.param.u64    rud3, [c];
+
+	// getGlobalId() in rsi0
+	mov.u32	rui0, %tid.x;
+	mov.u32	rui1, %ntid.x;
+	mov.u32	rui2, %ctaid.x;
+	mad.lo.s32	rsi0, rui2, rui1, rui0;
+
+BLOCK_1:
+    // set loop counter in rsi1
+	mov.s32	rsi1, rsi0;
+LOOP_COND_1:
+    // loop condition
+	setp.lt.s32	rpb0, rsi1, 8;
+	@!rpb0 bra	BLOCK_3;
+
+BLOCK_2:
+	// compute array offsets to read/store from/to in rud4 rud5 and rud6
+	cvt.s64.s32	rsd0, rsi1;
+	shl.b64	rsd1, rsd0, 2;
+	add.s64	rsd2, rsd1, 16;
+	add.u64	rud4, rud1, rsd2;
+
+	// load from the first array
+	ld.global.s32	rsi2, [rud4];
+	add.u64	rud5, rud2, rsd2;
+
+	// load from the second array
+	ld.global.s32	rsi3, [rud5];
+	add.u64	rud6, rud3, rsd2;
+
+	// compute the of the sum of the two elements
+	add.s32	rsi4, rsi2, rsi3;
+
+	// store to the result array
+	st.global.s32	[rud6], rsi4;
+
+	// getNumGroups() in rui3
+	mov.u32	rui3, %nctaid.x;
+
+	// multiply getNumGroups() with getLocalSize() to obtain getGlobalSize() in rud7
+	mul.wide.u32	rud7, rui3, rui1;
+
+	// increment the loop counter by getGlobalSize()
+	cvt.s32.u64	rsi5, rud7;
+	add.s32	rsi6, rsi5, rsi1;
+	mov.s32	rsi1, rsi6;
+	bra.uni	LOOP_COND_1;
+
+BLOCK_3:
+	ret;
+}

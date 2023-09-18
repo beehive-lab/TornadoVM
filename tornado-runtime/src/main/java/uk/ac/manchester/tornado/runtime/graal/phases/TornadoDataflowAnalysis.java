@@ -27,6 +27,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 
 import java.util.ArrayDeque;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Queue;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
@@ -34,6 +35,7 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.BeginNode;
 import org.graalvm.compiler.nodes.BinaryOpLogicNode;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
@@ -75,29 +77,9 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
         }
     }
 
-    private static class MetaControlFlow {
-        private boolean isWrittenTrueCondition;
-        private boolean isWrittenFalseCondition;
-        private IfNode fatherNodeStore;
-
-        public MetaControlFlow(boolean isWrittenTrueCondition, boolean isWrittenFalseCondition, IfNode fatherNodeStore) {
-            super();
-            this.isWrittenTrueCondition = isWrittenTrueCondition;
-            this.isWrittenFalseCondition = isWrittenFalseCondition;
-            this.fatherNodeStore = fatherNodeStore;
-        }
-
-        public boolean isWrittenTrueCondition() {
-            return isWrittenTrueCondition;
-        }
-
-        public boolean isWrittenFalseCondition() {
-            return isWrittenFalseCondition;
-        }
-
-        public IfNode getFatherNodeStore() {
-            return fatherNodeStore;
-        }
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
     }
 
     private boolean checkIgnoreStride(ParallelRangeNode range) {
@@ -323,6 +305,31 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
             }
         }
         return false;
+    }
+
+    private static class MetaControlFlow {
+        private boolean isWrittenTrueCondition;
+        private boolean isWrittenFalseCondition;
+        private IfNode fatherNodeStore;
+
+        public MetaControlFlow(boolean isWrittenTrueCondition, boolean isWrittenFalseCondition, IfNode fatherNodeStore) {
+            super();
+            this.isWrittenTrueCondition = isWrittenTrueCondition;
+            this.isWrittenFalseCondition = isWrittenFalseCondition;
+            this.fatherNodeStore = fatherNodeStore;
+        }
+
+        public boolean isWrittenTrueCondition() {
+            return isWrittenTrueCondition;
+        }
+
+        public boolean isWrittenFalseCondition() {
+            return isWrittenFalseCondition;
+        }
+
+        public IfNode getFatherNodeStore() {
+            return fatherNodeStore;
+        }
     }
 
 }

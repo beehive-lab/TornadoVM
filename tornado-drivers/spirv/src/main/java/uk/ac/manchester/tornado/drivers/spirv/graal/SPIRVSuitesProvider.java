@@ -27,7 +27,7 @@ import org.graalvm.compiler.java.GraphBuilderPhase;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.PhaseSuite;
-import org.graalvm.compiler.phases.common.AddressLoweringPhase;
+import org.graalvm.compiler.phases.common.AddressLoweringByNodePhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -46,12 +46,12 @@ import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 public class SPIRVSuitesProvider implements TornadoSuitesProvider {
 
     private final PhaseSuite<HighTierContext> graphBuilderSuite;
+    private final SPIRVCanonicalizer canonicalizer;
     private TornadoSuites suites;
     private TornadoLIRSuites lirSuites;
-    private final SPIRVCanonicalizer canonicalizer;
 
     public SPIRVSuitesProvider(OptionValues options, SPIRVDeviceContext deviceContext, GraphBuilderConfiguration.Plugins plugins, MetaAccessProvider metaAccessProvider,
-            SPIRVCompilerConfiguration compilerConfig, AddressLoweringPhase.AddressLowering addressLowering) {
+            SPIRVCompilerConfiguration compilerConfig, AddressLoweringByNodePhase.AddressLowering addressLowering) {
         this.graphBuilderSuite = createGraphBuilderSuite(plugins);
         this.canonicalizer = new SPIRVCanonicalizer();
         suites = new TornadoSuites(options, deviceContext, compilerConfig, metaAccessProvider, canonicalizer, addressLowering);

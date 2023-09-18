@@ -47,7 +47,7 @@ Usage
 -  Examples of how to use TornadoVM: :ref:`examples`.
 -  `Code examples <https://github.com/beehive-lab/TornadoVM/tree/master/tornado-examples/src/main/java/uk/ac/manchester/tornado/examples>`__
 
-1. Which programming languages does TornadoVM support?
+4. Which programming languages does TornadoVM support?
 ------------------------------------------------------
 
 TornadoVM primarily supports Java. However, with the integration with GraalVM you can call your TornadoVM-compatible Java code through other
@@ -70,7 +70,7 @@ b) Define execution plans.
 
 No, TornadoVM supports a subset of the Java programming language. A list of unsupported features along with the reasoning behind it can be found  here: :ref:`unsupported`.
 
-1. Can TornadoVM degrade the performance of my application?
+7. Can TornadoVM degrade the performance of my application?
 -----------------------------------------------------------
 
 No, TornadoVM can only increase the performance of your application because it can dynamically change the execution of a program at runtime
@@ -138,3 +138,13 @@ and tasks.
 
 Partially yes. TornadoVM currently supports calls to the Math library.
 However, invocations that imply I/O are not supported.
+Note that this restriction also applies to low-level parallel programming models such as OpenCL, SYCL, oneAPI and CUDA. 
+
+
+15. Do I need a GPU to run TornadoVM? 
+------------------------------------------------------------
+
+No. TornadoVM can also run on multi-core CPUs and/or FPGAs. What TornadoVM needs is a compatible driver/runtime installed in the machine. 
+For example, to enable TornadoVM getting access to an Intel CPU, developers can use the Intel OpenCL runtime (e.g., from the `Intel oneAPI base Toolkit <https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit.html>`__).
+
+To enable TornadoVM accessing FPGAs, developers can use the Intel and AMD OpenCL implementations for the Intel and Xilinx FPGAs, respectively. 

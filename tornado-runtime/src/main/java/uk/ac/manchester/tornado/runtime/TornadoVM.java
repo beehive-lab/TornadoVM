@@ -24,6 +24,7 @@
 package uk.ac.manchester.tornado.runtime;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -77,8 +78,8 @@ public class TornadoVM extends TornadoLogger {
     public TornadoVM(TornadoExecutionContext executionContext, TornadoGraph tornadoGraph, TornadoProfiler timeProfiler) {
         this.executionContext = executionContext;
         this.timeProfiler = timeProfiler;
-        tornadoVMBytecodes = TornadoVMGraphCompiler.compile(tornadoGraph, executionContext);
-        tornadoVMInterpreters = new TornadoVMInterpreter[executionContext.getValidContextSize()];
+        this.tornadoVMBytecodes = TornadoVMGraphCompiler.compile(tornadoGraph, executionContext);
+        this.tornadoVMInterpreters = new TornadoVMInterpreter[executionContext.getValidContextSize()];
         bindBytecodesToInterpreters();
     }
 
@@ -114,9 +115,7 @@ public class TornadoVM extends TornadoLogger {
     private Event executeSingleThreaded() {
         // TODO: This is a temporary workaround until refactoring the
         // DynamicReconfiguration
-        for (TornadoVMInterpreter tornadoVMInterpreter : tornadoVMInterpreters) {
-            tornadoVMInterpreter.execute(false);
-        }
+        Arrays.stream(tornadoVMInterpreters).forEach(TornadoVMInterpreter::execute);
         return new EmptyEvent();
     }
 
@@ -136,7 +135,7 @@ public class TornadoVM extends TornadoLogger {
 
         // Submit each task to the thread pool
         for (TornadoVMInterpreter tornadoVMInterpreter : tornadoVMInterpreters) {
-            Future<?> future = executor.submit(() -> tornadoVMInterpreter.execute(false));
+            Future<?> future = executor.submit(tornadoVMInterpreter::execute);
             futures.add(future);
         }
         // Wait for all tasks to complete
@@ -170,9 +169,7 @@ public class TornadoVM extends TornadoLogger {
     }
 
     public void executeActionOnInterpreters(Consumer<TornadoVMInterpreter> action) {
-        for (TornadoVMInterpreter tornadoVMInterpreter : tornadoVMInterpreters) {
-            action.accept(tornadoVMInterpreter);
-        }
+        Arrays.stream(tornadoVMInterpreters).forEach(action::accept);
     }
 
     public void clearInstalledCode() {
@@ -208,9 +205,7 @@ public class TornadoVM extends TornadoLogger {
     }
 
     public void setGridScheduler(GridScheduler gridScheduler) {
-        for (TornadoVMInterpreter interpreter : tornadoVMInterpreters) {
-            interpreter.setGridScheduler(gridScheduler);
-        }
+        Arrays.stream(tornadoVMInterpreters).forEach(interpreter -> interpreter.setGridScheduler(gridScheduler));
     }
 
 }

@@ -25,7 +25,12 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.loop;
 
-import org.graalvm.compiler.nodes.*;
+import org.graalvm.compiler.nodes.EndNode;
+import org.graalvm.compiler.nodes.LoopBeginNode;
+import org.graalvm.compiler.nodes.LoopEndNode;
+import org.graalvm.compiler.nodes.MergeNode;
+import org.graalvm.compiler.nodes.PhiNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
 
 /**
  *
@@ -66,7 +71,7 @@ public class LoopCanonicalizer {
         index = 0;
         for (final PhiNode oldPhi : oldPhiNodes) {
             PhiNode newPhi = (PhiNode) oldPhi.copyWithInputs(true);
-            newPhi.clearValues();
+            newPhi.clearInputs();
             newPhi.setMerge(mergeNode);
 
             for (int i = 0; i < numBackedges; i++) {

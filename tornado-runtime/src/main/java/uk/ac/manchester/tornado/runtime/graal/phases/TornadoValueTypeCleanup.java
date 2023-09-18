@@ -23,8 +23,11 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
+import java.util.Optional;
+
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodePredicate;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.java.NewInstanceNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
@@ -32,13 +35,17 @@ import org.graalvm.compiler.nodes.virtual.VirtualInstanceNode;
 import org.graalvm.compiler.phases.BasePhase;
 
 public class TornadoValueTypeCleanup extends BasePhase<TornadoHighTierContext> {
-
     private static final NodePredicate valueTypeFilter = new NodePredicate() {
         @Override
         public boolean apply(Node node) {
             return ((VirtualInstanceNode) node).hasNoUsages();
         }
     };
+
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
 
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {

@@ -25,7 +25,10 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
+import java.util.Optional;
+
 import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -33,6 +36,10 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.phases.BasePhase;
 
 public class TornadoStampResolver extends BasePhase<TornadoSketchTierContext> {
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
 
     @Override
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {

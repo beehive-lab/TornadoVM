@@ -42,7 +42,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
-import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRInstruction;
@@ -266,7 +265,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         return new SPIRVNodeLIRBuilder(graph, lirGen, new SPIRVNodeMatchRules(lirGen));
     }
 
-    public SPIRVCompilationResultBuilder newCompilationResultBuilder(FrameMap frameMap, SPIRVCompilationResult compilationResult, boolean isKernel, boolean isParallel) {
+    public SPIRVCompilationResultBuilder newCompilationResultBuilder(FrameMap frameMap, SPIRVCompilationResult compilationResult, boolean isKernel, boolean isParallel, LIR lir) {
 
         SPIRVAssembler asm;
         if (compilationResult.getAssembler() == null) {
@@ -276,7 +275,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         }
         SPIRVFrameContext frameContext = new SPIRVFrameContext();
         DataBuilder dataBuilder = new SPIRVDataBuilder();
-        SPIRVCompilationResultBuilder crb = new SPIRVCompilationResultBuilder(getProviders(), frameMap, asm, dataBuilder, frameContext, options, getDebugContext(), compilationResult);
+        SPIRVCompilationResultBuilder crb = new SPIRVCompilationResultBuilder(getProviders(), frameMap, asm, dataBuilder, frameContext, options, getDebugContext(), compilationResult, lir);
         crb.setKernel(isKernel);
         crb.setParallel(isParallel);
         crb.setDeviceContext(deviceContext);
@@ -418,8 +417,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         final AtomicInteger variableCount = new AtomicInteger();
 
         ArrayList<AllocatableValue> resultArrays = new ArrayList<>();
-        for (AbstractBlockBase<?> b : lir.linearScanOrder()) {
-            for (LIRInstruction lirInstruction : lir.getLIRforBlock(b)) {
+        for (int block : lir.linearScanOrder()) {
+            for (LIRInstruction lirInstruction : lir.getLIRforBlock(lir.getBlockById(block))) {
 
                 lirInstruction.forEachOutput((instruction, value, mode, flags) -> {
                     if (value instanceof ArrayVariable) {
@@ -430,7 +429,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
                         resultArrays.add(variable);
                     } else if (value instanceof Variable) {
                         Variable variable = (Variable) value;
-                        if (variable.getName() != null) {
+                        if (variable.toString() != null) {
                             addVariableDef(kindToVariable, variable);
                             variableCount.incrementAndGet();
                         }

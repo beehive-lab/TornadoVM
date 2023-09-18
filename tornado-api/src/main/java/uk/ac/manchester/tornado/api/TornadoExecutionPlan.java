@@ -134,7 +134,6 @@ public class TornadoExecutionPlan {
         } else if (this.profilerMode != null) {
             tornadoExecutor.disableProfiler(profilerMode);
         }
-
     }
 
     /**

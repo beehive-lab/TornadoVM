@@ -83,7 +83,7 @@ public class TornadoExecutionContext {
 
     private TornadoProfiler profiler;
 
-    public TornadoExecutionContext(String id, TornadoProfiler profiler) {
+    public TornadoExecutionContext(String id) {
         name = id;
         meta = new ScheduleMetaData(name);
         tasks = new ArrayList<>();
@@ -98,7 +98,7 @@ public class TornadoExecutionContext {
         nextTask = 0;
         batchSize = -1;
         lastDevices = new HashSet<>();
-        this.profiler = profiler;
+        this.profiler = null;
         this.isDataDependencyDetected = isDataDependencyInTaskGraph();
     }
 
@@ -225,14 +225,17 @@ public class TornadoExecutionContext {
             devices.clear();
             devices.add(0, (TornadoAcceleratorDevice) tornadoDevice);
             apply(task -> task.mapTo(tornadoDevice));
-            Arrays.fill(taskToDeviceMapTable, 0);
+            Arrays.fill(taskToDeviceMapTable, tornadoDevice);
         } else {
             throw new TornadoRuntimeException("Device " + tornadoDevice.getClass() + " not supported yet");
         }
     }
 
     public void setDevice(TornadoAcceleratorDevice device) {
-        devices.add(device);
+        // If the device is not in the list of devices, add it
+        if (!devices.contains(device)) {
+            devices.add(device);
+        }
     }
 
     /**
@@ -257,10 +260,7 @@ public class TornadoExecutionContext {
             throw new TornadoRuntimeException("Device " + target.getClass() + " not supported yet");
         }
 
-        // If the device is not in the list of devices, add it
-        if (!devices.contains(accelerator)) {
-            setDevice(accelerator);
-        }
+        setDevice(accelerator);
 
         info("assigning %s to %s", id, target.getDeviceName());
 
@@ -562,5 +562,9 @@ public class TornadoExecutionContext {
             System.out.printf("[%d]: %s\n", i, task.getFullName());
         }
         System.out.println("-----------------------------------");
+    }
+
+    public void withProfiler(TornadoProfiler timeProfiler) {
+        this.profiler = timeProfiler;
     }
 }
