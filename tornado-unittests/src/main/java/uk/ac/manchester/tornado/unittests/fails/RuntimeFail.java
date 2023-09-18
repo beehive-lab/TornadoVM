@@ -58,7 +58,7 @@ public class RuntimeFail extends TornadoTestBase {
      * How to run?
      *
      * <code>
-     *     tornado-test.py -V -pk --debug uk.ac.manchester.tornado.unittests.fails.RuntimeFail#test01
+     *     tornado-test -V -pk --debug uk.ac.manchester.tornado.unittests.fails.RuntimeFail#test01
      * </code>
      */
     @Test(expected = TornadoTaskRuntimeException.class)

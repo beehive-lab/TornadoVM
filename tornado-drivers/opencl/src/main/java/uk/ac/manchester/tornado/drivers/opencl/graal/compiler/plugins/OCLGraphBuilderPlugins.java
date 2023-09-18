@@ -29,6 +29,7 @@ import jdk.incubator.foreign.MemorySegment;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
@@ -49,7 +50,6 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registratio
 import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
-import org.graalvm.compiler.nodes.memory.OnHeapMemoryAccess;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
@@ -362,7 +362,7 @@ public class OCLGraphBuilderPlugins {
                     MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
                     AddressNode addressNode = b.append(new OffsetAddressNode(segment, mulNode));
                     //TODO: Re-examine the memory order used
-                    JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), OnHeapMemoryAccess.BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+                    JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
                     b.addPush(kind, readNode);
                     return true;
                 }
@@ -373,7 +373,7 @@ public class OCLGraphBuilderPlugins {
                 public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode value) {
                     MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
                     AddressNode addressNode = b.append(new OffsetAddressNode(segment, mulNode));
-                    JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, OnHeapMemoryAccess.BarrierType.NONE, false);
+                    JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
                     b.add(writeNode);
                     return true;
                 }
@@ -384,7 +384,7 @@ public class OCLGraphBuilderPlugins {
                 public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode offset) {
                     AddressNode addressNode = b.append(new OffsetAddressNode(segment, offset));
                     //TODO: Re-examine the memory order used
-                    JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), OnHeapMemoryAccess.BarrierType.NONE,  MemoryOrderMode.PLAIN, false);
+                    JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE,  MemoryOrderMode.PLAIN, false);
                     b.addPush(kind, readNode);
                     return true;
                 }
@@ -394,7 +394,7 @@ public class OCLGraphBuilderPlugins {
                 @Override
                 public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode offset, ValueNode value) {
                     AddressNode addressNode = b.append(new OffsetAddressNode(segment, offset));
-                    JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, OnHeapMemoryAccess.BarrierType.NONE, false);
+                    JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
                     b.add(writeNode);
                     return true;
                 }

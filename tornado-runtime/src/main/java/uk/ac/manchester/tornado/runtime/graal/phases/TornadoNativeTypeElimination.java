@@ -1,5 +1,8 @@
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
+import java.util.Optional;
+
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -10,6 +13,11 @@ import org.graalvm.compiler.phases.BasePhase;
 import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNode;
 
 public class TornadoNativeTypeElimination extends BasePhase<TornadoHighTierContext> {
+
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
 
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {

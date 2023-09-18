@@ -92,11 +92,11 @@ For example, to build TornadoVM with GraalVM and JDK 17:
   ./scripts/tornadovm-installer --jdk graalvm-jdk-17  --backend opencl,ptx,spirv
 
 
-To build TornadoVM with Red Hat Mandrel JDK 11 with OpenCL and PTX backends:
+To build TornadoVM with Red Hat Mandrel JDK 17 with OpenCL and PTX backends:
 
 .. code-block:: bash 
 
-  ./scripts/tornadovmInstaller.sh --jdk mandrel-jdk-11 --backend opencl,ptx
+  ./scripts/tornadovmInstaller.sh --jdk mandrel-jdk-17 --backend opencl,ptx
 
 
 After the installation, the scripts create a directory with the TornadoVM SDK. The directory also includes a source file with all variables needed to start using TornadoVM. 
@@ -115,8 +115,8 @@ TornadoVM can be executed with the following configurations:
 Linux
 ~~~~~~~~
 
-- TornadoVM with GraalVM for Linux and OSx (JDK 11 and JDK 17): see the installation guide here: :ref:`installation_graalvm`.
-- TornadoVM with JDK11+ (e.g. OpenJDK [11-17], Red Hat Mandrel, Amazon Corretto): see the installation guide: :ref:`installation_jdk11plus`.
+- TornadoVM with GraalVM for Linux and OSx (JDK 17 and JDK 20): see the installation guide here: :ref:`installation_graalvm`.
+- TornadoVM with JDK17+ (e.g. OpenJDK [17-20], Red Hat Mandrel, Amazon Corretto): see the installation guide: :ref:`installation_jdk17plus`.
 
 Windows
 ~~~~~~~~~~
@@ -143,47 +143,47 @@ At least one backend must be specified at build time to the ``make`` command:
 
 .. _installation_graalvm:
 
-Installation for GraalVM 22.3.2 on Linux and OSx
--------------------------------------------------------------------
+Installation for GraalVM for JDK 20.0.2 and GraalVM for JDK 17.0.8 on Linux and OSx
+-----------------------------------------------------------------------------------
 
-1. Download GraalVM Community Edition 22.3.2
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1. Download GraalVM for JDK 17.0.8 or JDK 20.0.2
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-GraalVM 22.3.2 builds are available to download at
+GraalVM **Community Edition** builds are available to download at:
 
-`https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.3.2 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.3.2>`_.
+`https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-20.0.2 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-20.0.2>`_.
+`https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-17.0.8 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-17.0.8>`_.
 
-The examples below show how to download and extract GraalVM based on JDK 11 and 17 for Linux.
+The examples below show how to download and extract GraalVM for JDK 20.0.2 and GraalVM for JDK 17.0.8 for Linux.
 
--  Example for GraalVM based on JDK 11:
-
-.. code:: bash
-
-   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java11-linux-amd64-22.3.2.tar.gz
-   $ tar -xf graalvm-ce-java11-linux-amd64-22.3.2.tar.gz
-
--  Example for GraalVM based on JDK 17:
+-  Example for GraalVM for JDK 17 Community 17.0.8:
 
 .. code:: bash
 
-   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java17-linux-amd64-22.3.2.tar.gz
-   $ tar -xf graalvm-ce-java17-linux-amd64-22.3.2.tar.gz
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.8/graalvm-community-jdk-17.0.8_linux-x64_bin.tar.gz
+   $ tar -xf graalvm-community-jdk-17.0.8_linux-x64_bin.tar.gz
 
-The Java binary will be found in the ``graalvm-ce-java{JDK_VERSION}-22.3.2`` directory. This directory is used as the JAVA_HOME (See step 2).
+-  Example for GraalVM for JDK 20 Community 20.0.2:
+
+.. code:: bash
+
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-20.0.2/graalvm-community-jdk-20.0.2_linux-x64_bin.tar.gz
+   $ tar -xf graalvm-community-jdk-20.0.2_linux-x64_bin.tar.gz
+
+The Java binary will be found in the `graalvm-jdk-{JDK_VERSION}-23.0.1`` directory. This directory is used as the JAVA_HOME (See step 2).
 
 For OSX:
 
--  Example for GraalVM based on JDK 11:
+-  Example for GraalVM for JDK 17 Community 17.0.8:
 
 .. code:: bash
 
-   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java11-darwin-amd64-22.3.2.tar.gz
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.8/graalvm-community-jdk-17.0.8_linux-x64_bin.tar.gz
 
--  Example for GraalVM based on JDK 17:
+-  Example for GraalVM for JDK 20 Community 20.0.2:
 
 .. code:: bash
-
-   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java17-darwin-amd64-22.3.2.tar.gz
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-20.0.2/graalvm-community-jdk-20.0.2_macos-x64_bin.tar.gz
 
 then ``untar`` it to the OSX standard JDK location
 ``/Library/Java/JavaVirtualMachines/`` or to a folder of your choice.
@@ -210,7 +210,7 @@ ones)**:
 .. code:: bash
 
    #!/bin/bash
-   export JAVA_HOME=<path to GraalVM 22.3.2 jdk> ## This path is produced in Step 1
+   export JAVA_HOME=<path to GraalVM jdk> ## This path is produced in Step 1
    export PATH=$PWD/bin/bin:$PATH    ## This directory will be automatically generated during Tornado compilation
    export TORNADO_SDK=$PWD/bin/sdk   ## This directory will be automatically generated during Tornado compilation
    export CMAKE_ROOT=/usr            ## or <path/to/cmake/cmake-3.10.2> (see step 4)
@@ -284,18 +284,18 @@ which can be added to ``~/.profile``
    $ cd ~/tornadovm
    $ . etc/sources.env
 
-To build with GraalVM and JDK 11 and JDK 17:
+To build with GraalVM and JDK 17 and JDK 20:
 
 .. code:: bash
 
-   $ make graalvm-jdk-11-plus BACKEND={ptx,opencl}
+   $ make graalvm-jdk-17-plus BACKEND={ptx,opencl}
 
 and done!!
 
 
 .. _installation_jdk11plus:
 
-TornadoVM for JDK 11+ on Linux and OSx
+TornadoVM for JDK 17+ on Linux and OSx
 --------------------------------------
 
 
@@ -303,25 +303,25 @@ TornadoVM for JDK 11+ on Linux and OSx
            
 TornadoVM is based on the Graal compiler that depends on JVMCI (Java Virtual Machine Compiler Interface). Different JDKs come with different
 versions of JVMCI. Therefore, the version of the Graal compiler that TornadoVM uses might not be compatible with the JVMCI version of some
-JDKs. Below are listed the Java 11+ JDK distributions against which TornadoVM has been tested, but compatibility is not guaranteed.
+JDKs. Below are listed the Java 17 JDK distributions against which TornadoVM has been tested, but compatibility is not guaranteed.
 
 .. code:: bash
 
   ./scripts/tornadovm-installer --listJDKs
-  jdk11            : Install TornadoVM with OpenJDK 11 (Oracle OpenJDK)
   jdk17            : Install TornadoVM with OpenJDK 17 (Oracle OpenJDK)
-  graalvm-jdk-11   : Install TornadoVM with GraalVM and JDK 11 (GraalVM 22.3.2)
-  graalvm-jdk-17   : Install TornadoVM with GraalVM and JDK 17 (GraalVM 22.3.2)
-  corretto-jdk-11  : Install TornadoVM with Corretto JDK 11
+  jdk20            : Install TornadoVM with OpenJDK 20 (Oracle OpenJDK)
+  graalvm-jdk-17   : Install TornadoVM with GraalVM and JDK 17 (GraalVM 23.0.1)
+  graalvm-jdk-20   : Install TornadoVM with GraalVM and JDK 20 (GraalVM 23.0.1)
   corretto-jdk-17  : Install TornadoVM with Corretto JDK 17
-  mandrel-jdk-17   : Install TornadoVM with Mandrel 22.3.2 (JDK 17)
-  microsoft-jdk-11 : Install TornadoVM with Microsoft JDK 11
+  corretto-jdk-20  : Install TornadoVM with Corretto JDK 20
+  mandrel-jdk-17   : Install TornadoVM with Mandrel 23.0.1 (JDK 17)
+  mandrel-jdk-20   : Install TornadoVM with Mandrel 23.0.1 (JDK 20)
   microsoft-jdk-17 : Install TornadoVM with Microsoft JDK 17
-  zulu-jdk-jdk-11  : Install TornadoVM with Azul Zulu JDK 11
   zulu-jdk-jdk-17  : Install TornadoVM with Azul Zulu JDK 17
+  zulu-jdk-jdk-20  : Install TornadoVM with Azul Zulu JDK 20
 
 
-1. Download a JDK 11+ distribution
+1. Download a JDK 17+ distribution
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - OpenJDK distributions are available to download at https://adoptium.net/. 
@@ -336,9 +336,9 @@ Example:
 
 .. code:: bash
 
-    $ wget https://corretto.aws/downloads/latest/amazon-corretto-11-x64-linux-jdk.tar.gz
-    $ tar xf amazon-corretto-11-x64-linux-jdk.tar.gz
-    $ export JAVA_HOME=$PWD/amazon-corretto-11.0.15.9.1-linux-x64
+    $ wget https://corretto.aws/downloads/latest/amazon-corretto-20-x64-linux-jdk.tar.gz
+    $ tar xf amazon-corretto-20-x64-linux-jdk.tar.gz
+    $ export JAVA_HOME=$PWD/amazon-corretto-20-x64-linux
 
 2. Download TornadoVM
 ~~~~~~~~~~~~~~~~~~~~~
@@ -361,7 +361,7 @@ ones)**:
 .. code:: bash
 
    #!/bin/bash
-   export JAVA_HOME=<path to JDK11+> ## This path is produced in Step 1
+   export JAVA_HOME=<path to JDK17+> ## This path is produced in Step 1
    export PATH=$PWD/bin/bin:$PATH    ## This directory will be automatically generated during Tornado compilation
    export TORNADO_SDK=$PWD/bin/sdk   ## This directory will be automatically generated during Tornado compilation
    export CMAKE_ROOT=/usr            ## or <path/to/cmake/cmake-3.10.2> (see step 4)
@@ -429,7 +429,7 @@ then
 
 which can be added to ``~/.profile``
 
-4. Compile TornadoVM for JDK 11+
+4. Compile TornadoVM for JDK 17+
 ~~~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
@@ -437,15 +437,15 @@ which can be added to ``~/.profile``
    $ cd ~/tornadovm
    $ . etc/sources.env
 
-To build with a distribution of JDK 11+
+To build with a distribution of JDK 17+
 
 .. code:: bash
 
-   $ make jdk-11-plus BACKEND={ptx,opencl}
+   $ make jdk-17-plus BACKEND={ptx,opencl}
 
 and done!!
 
-Running with JDK 11+
+Running with JDK 17+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 TornadoVM uses modules:
@@ -586,15 +586,15 @@ Clone the latest TornadoVM source code from the GitHub `repository <https://gith
 We will refer hereafter the directory with TornadoVM sources as
 ``<TornadoVM>``.
 
-3. Download Graal 22.3.2
+3. Download GraalVM for JDK 20 Community 20.0.2
 ~~~~~~~~~~~~
 
 
-TornadoVM can run with JDK 11 and 17. Visit `GraalVM Community Edition 22.3.2 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/vm-22.3.2>`__
+TornadoVM can run with JDK 17 and 20. Visit `GraalVM for JDK17 and JDK20 <https://www.graalvm.org/downloads/>`__
 and download either of the following builds:
 
--  `Download for JDK 11 <https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java11-windows-amd64-22.3.2.zip>`__
--  `Download for JDK 17 <https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.3.2/graalvm-ce-java17-windows-amd64-22.3.2.zip>`__
+-  `Download for JDK 17 <https://download.oracle.com/graalvm/20/latest/graalvm-jdk-17_windows-x64_bin.zip>`__
+-  `Download for JDK 20 <https://download.oracle.com/graalvm/20/latest/graalvm-jdk-20_windows-x64_bin.zip>`__
 
 Extract the downloaded file to any directory.
 
@@ -836,13 +836,13 @@ To use the TornadoVM API in your projects, you can checkout our maven repository
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>0.15.1</version>
+         <version>0.15.2</version>
       </dependency>
 
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-matrices</artifactId>
-         <version>0.15.1</version>
+         <version>0.15.2</version>
       </dependency>
    </dependencies>
 
@@ -853,6 +853,7 @@ Notice that, for running with TornadoVM, you will need either the docker images 
 Versions available
 ------------------------------------
 
+* 0.15.2
 * 0.15.1
 * 0.15
 * 0.14.1

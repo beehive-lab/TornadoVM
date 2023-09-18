@@ -39,10 +39,12 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXUna
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
+import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 
 public class PTXBuiltinTool {
 
@@ -104,6 +106,18 @@ public class PTXBuiltinTool {
     public Value genFloatCos(Value input) {
         Logger.traceBuildLIR(Logger.BACKEND.PTX, "genCos: cos(%s)", input);
         return new PTXUnary.Intrinsic(COS, LIRKind.value(input.getPlatformKind()), input);
+    }
+
+    public Value genFloatCosPI(Value input, Value piConstant, Value resultMult, LIRGeneratorTool gen) {
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "cospi: cos(%s * PI)", input);
+        Value multResult = gen.append(new PTXLIRStmt.AssignStmt(resultMult, new PTXBinary.Expr(PTXAssembler.PTXBinaryOp.MUL, LIRKind.value(PTXKind.F32), input, piConstant))).getResult();
+        return new PTXUnary.Intrinsic(COS, LIRKind.value(input.getPlatformKind()), multResult);
+    }
+
+    public Value genFloatSinPI(Value input, Value piConstant, Value resultMult, LIRGeneratorTool gen) {
+        Logger.traceBuildLIR(Logger.BACKEND.PTX, "sinpi: sin(%s * PI)", input);
+        Value multResult = gen.append(new PTXLIRStmt.AssignStmt(resultMult, new PTXBinary.Expr(PTXAssembler.PTXBinaryOp.MUL, LIRKind.value(PTXKind.F32), input, piConstant))).getResult();
+        return new PTXUnary.Intrinsic(SIN, LIRKind.value(input.getPlatformKind()), multResult);
     }
 
     public Value genFloatCosh(Value input) {

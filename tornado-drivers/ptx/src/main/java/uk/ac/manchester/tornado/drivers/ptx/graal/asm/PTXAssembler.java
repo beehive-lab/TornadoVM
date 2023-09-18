@@ -44,6 +44,9 @@ import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstan
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.graalvm.compiler.asm.AbstractAddress;
 import org.graalvm.compiler.asm.Assembler;
@@ -51,7 +54,7 @@ import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.nodes.cfg.Block;
+import org.graalvm.compiler.nodes.cfg.HIRBlock;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;
@@ -60,6 +63,8 @@ import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXVariablePrefix;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXLIRGenerationResult;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
@@ -67,11 +72,16 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXLIROp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXVectorElementSelect;
 
 public class PTXAssembler extends Assembler {
+    private static Map<PTXKind, Integer> localIndexes;
+    private static Map<PTXKind, Integer> arraylocalIndexes;
+
+    private static Map<Value, String> variableMap;
+
+    private static PTXLIRGenerationResult lirGenRes;
     private boolean pushToStack;
     private List<String> operandStack;
     private boolean emitEOL;
     private boolean convertTabToSpace;
-    private PTXLIRGenerationResult lirGenRes;
 
     public PTXAssembler(TargetDescription target, PTXLIRGenerationResult lirGenRes) {
         super(target, null);
@@ -80,51 +90,9 @@ public class PTXAssembler extends Assembler {
         convertTabToSpace = false;
         operandStack = new ArrayList<>(10);
         this.lirGenRes = lirGenRes;
-    }
-
-    public void emitSymbol(String sym) {
-        byte[] symBytes = sym.getBytes();
-        if (convertTabToSpace) {
-            byte[] tabBytes = TAB.getBytes();
-            if (Arrays.equals(symBytes, tabBytes)) {
-                symBytes = SPACE.getBytes();
-                convertTabToSpace = false;
-            }
-        }
-        for (byte b : symBytes) {
-            emitByte(b);
-        }
-    }
-
-    public void emitValue(Value value) {
-        emit(toString(value));
-    }
-
-    public void emitValueOrOp(PTXCompilationResultBuilder crb, Value value, Variable dest) {
-        if (value instanceof PTXLIROp) {
-            ((PTXLIROp) value).emit(crb, this, dest);
-        } else {
-            emitValue(value);
-        }
-    }
-
-    public static String toString(Value value) {
-        String result = "";
-        if (value instanceof Variable) {
-            Variable var = (Variable) value;
-            return var.getName();
-        } else if (value instanceof ConstantValue) {
-            if (!((ConstantValue) value).isJavaConstant()) {
-                shouldNotReachHere("constant value: ", value);
-            }
-            ConstantValue cv = (ConstantValue) value;
-            return formatConstant(cv);
-        } else if (value instanceof PTXVectorElementSelect) {
-            return value.toString();
-        } else {
-            unimplemented("value: toString() type=%s, value=%s", value.getClass().getName(), value);
-        }
-        return result;
+        localIndexes = new ConcurrentHashMap<>();
+        variableMap = new ConcurrentHashMap<>();
+        arraylocalIndexes = new ConcurrentHashMap<>();
     }
 
     public static String formatConstant(ConstantValue cv) {
@@ -158,6 +126,117 @@ public class PTXAssembler extends Assembler {
         return result;
     }
 
+    private static String encodeString(String str) {
+        return str.replace("\n", "\\n").replace("\t", "\\t").replace("\"", "");
+    }
+
+    public static String toString(Value value) {
+        String result = "";
+        if (value instanceof Variable) {
+            result = convertValueFromGraalFormat(value);
+            return result;
+        } else if (value instanceof ConstantValue) {
+            if (!((ConstantValue) value).isJavaConstant()) {
+                shouldNotReachHere("constant value: ", value);
+            }
+            ConstantValue cv = (ConstantValue) value;
+            return formatConstant(cv);
+        } else if (value instanceof PTXVectorElementSelect) {
+            return value.toString();
+        } else {
+            unimplemented("value: toString() type=%s, value=%s", value.getClass().getName(), value);
+        }
+        return result;
+    }
+
+    /**
+     * Converts the format of a given input Value from the Graal format (e.g.,
+     * V23|FLOAT) to a normalized format suitable for the current PTX backend based
+     * on its platform type.
+     *
+     * This method analyzes the input Value's platform kind and generates a
+     * corresponding format string in the normalized PTX format. It keeps track of
+     * variables and their mappings to ensure uniqueness and consistency of
+     * generated format strings.
+     *
+     * @param input
+     *            The {@link Value} input to be converted.
+     * @return The converted format string in the PTX backend format.
+     */
+    public static String convertValueFromGraalFormat(Value input) {
+        // Extract the PTXKind of the input Value.
+        PTXKind ptxKind = (PTXKind) input.getPlatformKind();
+
+        // Retrieve the set of variables and the return variable associated with the
+        // PTXKind.
+        Set<PTXLIRGenerationResult.VariableData> vars = getLir().getVariableTable().get(ptxKind);
+        List<Variable> retVars = getLir().getReturnVariables(ptxKind);
+
+        if (retVars != null && retVars.contains(input)) {
+            variableMap.put(input, "retVar");
+        } else if (!variableMap.containsKey(input)) {
+            boolean isArray = vars != null && vars.stream().filter(variableData -> variableData.variable.equals(input)).findFirst().map(variableData -> variableData.isArray).orElse(false);
+
+            if (isArray) {
+                arraylocalIndexes.compute(ptxKind, (key, oldValue) -> oldValue != null ? oldValue + 1 : 0);
+            } else {
+                localIndexes.compute(ptxKind, (key, oldValue) -> oldValue != null ? oldValue + 1 : 0);
+            }
+
+            // Find the PTXVariablePrefix corresponding to the input's platform type.
+            PTXVariablePrefix typePrefix = Arrays.stream(PTXVariablePrefix.values()).filter(tp -> tp.getType().equals(input.getPlatformKind().name().toLowerCase())).findFirst()
+                    .orElseThrow(AssertionError::new);
+
+            // Create the formatted index value.
+            String indexValue = isArray ? arraylocalIndexes.get(ptxKind).toString() : String.valueOf(localIndexes.get(ptxKind));
+            String result = typePrefix.getPrefix() + (isArray ? "Arr" : "") + indexValue;
+
+            variableMap.put(input, result);
+        }
+
+        return variableMap.get(input);
+    }
+
+    private static PTXLIRGenerationResult getLir() {
+        return lirGenRes;
+    }
+
+    public void cleanUpVarsMapNaming() {
+        localIndexes.clear();
+        variableMap.clear();
+        arraylocalIndexes.clear();
+    }
+
+    public void emitSymbol(String sym) {
+        byte[] symBytes = sym.getBytes();
+        if (convertTabToSpace) {
+            byte[] tabBytes = TAB.getBytes();
+            if (Arrays.equals(symBytes, tabBytes)) {
+                symBytes = SPACE.getBytes();
+                convertTabToSpace = false;
+            }
+        }
+        for (byte b : symBytes) {
+            emitByte(b);
+        }
+    }
+
+    public void emitValue(Value value) {
+        emit(toString(value));
+    }
+
+    public void emitBuiltIn(PTXArchitecture.PTXBuiltInRegister ptxBuiltInRegister) {
+        emit(ptxBuiltInRegister.getName());
+    }
+
+    public void emitValueOrOp(PTXCompilationResultBuilder crb, Value value, Variable dest) {
+        if (value instanceof PTXLIROp) {
+            ((PTXLIROp) value).emit(crb, this, dest);
+        } else {
+            emitValue(value);
+        }
+    }
+
     public void emit(String format, Object... args) {
         emitSubString(String.format(format, args));
     }
@@ -181,6 +260,11 @@ public class PTXAssembler extends Assembler {
     @Override
     public void align(int modulus) {
         // unimplemented();
+    }
+
+    @Override
+    public void halt() {
+
     }
 
     @Override
@@ -257,6 +341,7 @@ public class PTXAssembler extends Assembler {
             emitSymbol(COMMA);
             space();
         }
+
         emitValueOrOp(crb, values[values.length - 1], dest);
     }
 
@@ -272,10 +357,6 @@ public class PTXAssembler extends Assembler {
     public void emitLine(String format, Object... args) {
         emit(format, args);
         eol();
-    }
-
-    private static String encodeString(String str) {
-        return str.replace("\n", "\\n").replace("\t", "\\t").replace("\"", "");
     }
 
     public void emitConstant(ConstantValue constant) {
@@ -311,7 +392,7 @@ public class PTXAssembler extends Assembler {
         eol();
     }
 
-    public void emitBlockLabel(Block b) {
+    public void emitBlockLabel(HIRBlock b) {
         emitBlockLabel(b.getId());
     }
 
@@ -726,4 +807,5 @@ public class PTXAssembler extends Assembler {
             asm.emit(")");
         }
     }
+
 }

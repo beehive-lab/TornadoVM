@@ -63,7 +63,7 @@ public enum ProfilerType {
         this.description = description;
     }
 
-    public String getDescription() {
+    public synchronized String getDescription() {
         return this.description;
     }
 

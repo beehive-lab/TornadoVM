@@ -20,7 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
@@ -62,13 +61,13 @@ public class OCLMidTier extends TornadoMidTier {
             appendPhase(new TornadoFloatingReadReplacement(canonicalizer));
         }
 
-        appendPhase(new RemoveValueProxyPhase(canonicalizer));
-
         appendPhase(canonicalizer);
 
         if (ConditionalElimination.getValue(options)) {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, true));
         }
+
+        appendPhase(new RemoveValueProxyPhase(canonicalizer));
 
         appendPhase(new GuardLoweringPhase());
 

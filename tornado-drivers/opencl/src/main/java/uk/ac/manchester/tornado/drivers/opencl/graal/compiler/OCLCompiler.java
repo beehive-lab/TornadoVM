@@ -49,7 +49,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.alloc.LinearScanOrder;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
-import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.cfg.CodeEmissionOrder;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
@@ -67,7 +66,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.StructuredGraph.Builder;
 import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
-import org.graalvm.compiler.nodes.cfg.Block;
+import org.graalvm.compiler.nodes.cfg.HIRBlock;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
@@ -82,7 +81,6 @@ import jdk.vm.ci.meta.DefaultProfilingInfo;
 import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.TriState;
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
@@ -239,15 +237,15 @@ public class OCLCompiler {
         try (DebugContext.Scope ds = getDebugContext().scope("EmitLIR"); DebugCloseable a = EmitLIR.start(getDebugContext())) {
             OptionValues options = graph.getOptions();
             ScheduleResult schedule = graph.getLastSchedule();
-            Block[] blocks = schedule.getCFG().getBlocks();
-            Block startBlock = schedule.getCFG().getStartBlock();
+            HIRBlock[] blocks = schedule.getCFG().getBlocks();
+            HIRBlock startBlock = schedule.getCFG().getStartBlock();
             assert startBlock != null;
             assert startBlock.getPredecessorCount() == 0;
 
             LIR lir = null;
             try (DebugContext.Scope s = getDebugContext().scope("ComputeLinearScanOrder", lir)) {
                 CodeEmissionOrder<?> blockOrder = backend.newBlockOrder(blocks.length, startBlock);
-                AbstractBlockBase<?>[] linearScanOrder = LinearScanOrder.computeLinearScanOrder(blocks.length, startBlock);
+                int[] linearScanOrder = LinearScanOrder.computeLinearScanOrder(blocks.length, startBlock);
                 lir = new LIR(schedule.getCFG(), linearScanOrder, graph.getOptions(), graph.getDebug());
 
                 getDebugContext().dump(DebugContext.INFO_LEVEL, lir, "After linear scan order");
@@ -290,7 +288,7 @@ public class OCLCompiler {
             OCLCompilationResult compilationResult, ResolvedJavaMethod installedCodeOwner, boolean isKernel, boolean isParallel, TornadoProfiler profiler) {
         try (DebugCloseable a = EmitCode.start(getDebugContext())) {
             FrameMap frameMap = lirGenRes.getFrameMap();
-            final OCLCompilationResultBuilder crb = backend.newCompilationResultBuilder(frameMap, compilationResult, isKernel, isParallel);
+            final OCLCompilationResultBuilder crb = backend.newCompilationResultBuilder(frameMap, compilationResult, isKernel, isParallel, lirGenRes.getLIR());
             backend.emitCode(crb, lirGenRes.getLIR(), installedCodeOwner, profiler);
 
             if (assumptions != null && !assumptions.isEmpty()) {
@@ -364,7 +362,7 @@ public class OCLCompiler {
     }
 
     public static OCLCompilationResult compileSketchForDevice(Sketch sketch, CompilableTask task, OCLProviders providers, OCLBackend backend, TornadoProfiler profiler) {
-        final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().getReadonlyCopy().copy(getDebugContext());
+        final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().copy(getDebugContext());
         ResolvedJavaMethod resolvedMethod = kernelGraph.method();
 
         info("Compiling sketch %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
@@ -414,7 +412,7 @@ public class OCLCompiler {
                 nonInlinedCompiledMethods.add(currentMethod);
             }
             Sketch currentSketch = TornadoSketcher.lookup(currentMethod, task.meta().getDriverIndex(), task.meta().getDeviceIndex());
-            final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().getMutableCopy(null);
+            final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().copy(getDebugContext());
 
             String subKernelName = OCLDeviceContext.checkKernelName(currentMethod.getName());
             final OCLCompilationResult compResult = new OCLCompilationResult(task.getId(), subKernelName, taskMeta, backend);

@@ -96,4 +96,6 @@ public class PTXAssemblerConstants {
      * which is used to convert degrees to radians.
      */
     public static final float DEGREES_TO_RADIANS = 0.0174533f;
+
+    public static final float PI = (float) Math.PI;
 }

@@ -49,6 +49,11 @@ public class SPIRVBuiltinTool {
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.ACOSPI, LIRKind.value(input.getPlatformKind()), input);
     }
 
+    public Value genFloatCospi(Value input) {
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "gen: cospi(%s)", input);
+        return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.COSPI, LIRKind.value(input.getPlatformKind()), input);
+    }
+
     public Value genFloatASin(Value input) {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "gen: asin(%s)", input);
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.ASIN, LIRKind.value(input.getPlatformKind()), input);
@@ -62,6 +67,11 @@ public class SPIRVBuiltinTool {
     public Value genFloatASinpi(Value input) {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "gen: asinpi(%s)", input);
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.ASINPI, LIRKind.value(input.getPlatformKind()), input);
+    }
+
+    public Value genFloatSinpi(Value input) {
+        Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "gen: sinpi(%s)", input);
+        return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.SINPI, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatATan(Value input) {
@@ -103,10 +113,6 @@ public class SPIRVBuiltinTool {
         return new SPIRVUnary.Intrinsic(SPIRVUnary.Intrinsic.OpenCLExtendedIntrinsic.COSH, LIRKind.value(input.getPlatformKind()), input);
     }
 
-    public Value genFloatCospi(Value input) {
-        unimplemented();
-        return null;
-    }
 
     public Value genFloatErfc(Value input) {
         unimplemented();
@@ -215,11 +221,6 @@ public class SPIRVBuiltinTool {
     }
 
     public Value genFloatSinh(Value input) {
-        unimplemented();
-        return null;
-    }
-
-    public Value genFloatSinpi(Value input) {
         unimplemented();
         return null;
     }

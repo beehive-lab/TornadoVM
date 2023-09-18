@@ -1,6 +1,9 @@
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
+import java.util.Optional;
+
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.LeftShiftNode;
@@ -13,6 +16,12 @@ public class TornadoLocalArrayHeaderEliminator extends BasePhase<TornadoHighTier
 
     public static boolean isReduction = false;
     public static boolean nativeTypes = false;
+
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
+
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
         for (ReadNode r : graph.getNodes().filter(ReadNode.class)) {

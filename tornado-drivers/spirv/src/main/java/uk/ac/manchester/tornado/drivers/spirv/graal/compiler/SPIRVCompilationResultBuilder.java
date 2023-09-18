@@ -29,7 +29,10 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.Stack;
+import java.util.stream.IntStream;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.Equivalence;
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.spi.CodeGenProviders;
@@ -49,8 +52,8 @@ import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.MergeNode;
-import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
+import org.graalvm.compiler.nodes.cfg.HIRBlock;
 import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.Register;
@@ -65,27 +68,29 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
 
     private final Set<ResolvedJavaMethod> nonInlinedMethods;
-    HashSet<Block> rescheduledBasicBlocks;
-    private boolean isKernel;
+    protected LIR lir;
 
+    HashSet<HIRBlock> rescheduledBasicBlocks;
+    private boolean isKernel;
     private boolean isParallel;
     private SPIRVDeviceContext deviceContext;
 
     public SPIRVCompilationResultBuilder(CodeGenProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
-            CompilationResult compilationResult) {
-        super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None);
+            CompilationResult compilationResult, LIR lir) {
+        super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None, EconomicMap.create(Equivalence.DEFAULT), NO_VERIFIERS, lir);
+
         nonInlinedMethods = new HashSet<>();
     }
 
-    private static boolean isLoopBlock(Block block, Block loopHeader) {
+    private static boolean isLoopBlock(HIRBlock block, HIRBlock loopHeader) {
 
-        Set<Block> visited = new HashSet<>();
-        Stack<Block> stack = new Stack<>();
+        Set<HIRBlock> visited = new HashSet<>();
+        Stack<HIRBlock> stack = new Stack<>();
         stack.push(block);
 
         while (!stack.isEmpty()) {
 
-            Block b = stack.pop();
+            HIRBlock b = stack.pop();
             visited.add(b);
 
             if (b.getId() < loopHeader.getId()) {
@@ -93,10 +98,10 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
             } else if (b == loopHeader) {
                 return true;
             } else {
-                Block[] successors = b.getSuccessors();
-                for (Block bl : successors) {
-                    if (!visited.contains(bl)) {
-                        stack.push(bl);
+                HIRBlock[] successors = IntStream.range(0, b.getSuccessorCount()).mapToObj(b::getSuccessorAt).toArray(HIRBlock[]::new);
+                for (HIRBlock successor : successors) {
+                    if (!visited.contains(successor)) {
+                        stack.push(successor);
                     }
                 }
             }
@@ -133,7 +138,6 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
      * Emits code for {@code lir} in its {@linkplain LIR#codeEmittingOrder()} code
      * emitting order.
      */
-    @Override
     public void emit(LIR lir) {
         assert this.lir == null;
         assert currentBlockIndex == 0;
@@ -159,10 +163,10 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
         }
     }
 
-    private void rescheduleBasicBlock(Block basicBlock, SPIRVBlockVisitor visitor, HashSet<Block> visited, HashMap<Block, Block> pending) {
-        Block block = pending.get(basicBlock);
+    private void rescheduleBasicBlock(HIRBlock basicBlock, SPIRVBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
+        HIRBlock block = pending.get(basicBlock);
         visitor.enter(block);
-        visitor.exit(block, null);
+        visitor.exit(block);
         visited.add(block);
         pending.remove(block);
         if (rescheduledBasicBlocks == null) {
@@ -171,21 +175,21 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
         rescheduledBasicBlocks.add(block);
     }
 
-    private Block getBlockTrueBranch(Block basicBlock) {
-        IfNode ifNode = (IfNode) basicBlock.getDominator().getEndNode();
-        for (Block b : basicBlock.getDominator().getSuccessors()) {
-            if (ifNode.trueSuccessor() == b.getBeginNode()) {
-                return b;
+    private HIRBlock getBlockTrueBranch(HIRBlock basicHIRBlock) {
+        IfNode ifNode = (IfNode) basicHIRBlock.getDominator().getEndNode();
+        for (int i = 0; i < basicHIRBlock.getDominator().getSuccessorCount(); i++) {
+            if (ifNode.trueSuccessor() == basicHIRBlock.getDominator().getSuccessorAt(i).getBeginNode()) {
+                return basicHIRBlock.getDominator().getSuccessorAt(i);
             }
         }
         return null;
     }
 
-    private boolean isFalseSuccessorWithLoopEnd(IfNode ifNode, Block basicBlock) {
+    private boolean isFalseSuccessorWithLoopEnd(IfNode ifNode, HIRBlock basicBlock) {
         return isCurrentBlockAFalseBranch(ifNode, basicBlock) && basicBlock.getEndNode() instanceof LoopEndNode;
     }
 
-    private boolean isCurrentBlockAFalseBranch(IfNode ifNode, Block basicBlock) {
+    private boolean isCurrentBlockAFalseBranch(IfNode ifNode, HIRBlock basicBlock) {
         return ifNode.falseSuccessor() == basicBlock.getBeginNode();
     }
 
@@ -193,7 +197,7 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
         return ifNode.trueSuccessor() instanceof AbstractBeginNode;
     }
 
-    private boolean isTrueBranchWithEndNodeOrNotControlSplit(Block blockTrueBranch) {
+    private boolean isTrueBranchWithEndNodeOrNotControlSplit(HIRBlock blockTrueBranch) {
         return ((blockTrueBranch.getEndNode() instanceof AbstractEndNode) || !(blockTrueBranch.getEndNode() instanceof ControlSplitNode));
     }
 
@@ -205,7 +209,7 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
      * control Split (due to nested control-flow).
      *
      * @param basicBlock
-     *            {@link Block}
+     *            {@link HIRBlock}
      * @param visitor
      *            {@link OCLBlockVisitor}
      * @param visited
@@ -213,18 +217,18 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
      * @param pending
      *            {@link HashMap}
      */
-    private void rescheduleTrueBranchConditionsIfNeeded(Block basicBlock, SPIRVBlockVisitor visitor, HashSet<Block> visited, HashMap<Block, Block> pending) {
+    private void rescheduleTrueBranchConditionsIfNeeded(HIRBlock basicBlock, SPIRVBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
         if (!basicBlock.isLoopHeader() && basicBlock.getDominator() != null && basicBlock.getDominator().getEndNode() instanceof IfNode) {
             IfNode ifNode = (IfNode) basicBlock.getDominator().getEndNode();
-            Block blockTrueBranch = getBlockTrueBranch(basicBlock);
+            HIRBlock blockTrueBranch = getBlockTrueBranch(basicBlock);
             if (isFalseSuccessorWithLoopEnd(ifNode, basicBlock) //
                     || (isCurrentBlockAFalseBranch(ifNode, basicBlock) //
                             && isTrueBranchALoopExitNode(ifNode) //
                             && isTrueBranchWithEndNodeOrNotControlSplit(blockTrueBranch))) {
-                Block[] successors = basicBlock.getDominator().getSuccessors();
-                for (Block b : successors) {
-                    if (b.getBeginNode() == ifNode.trueSuccessor() && !visited.contains(b)) {
-                        pending.put(basicBlock, b);
+                for (int i = 0; i < basicBlock.getDominator().getSuccessorCount(); i++) {
+                    HIRBlock successor = basicBlock.getDominator().getSuccessorAt(i);
+                    if (successor.getBeginNode() == ifNode.trueSuccessor() && !visited.contains(successor)) {
+                        pending.put(basicBlock, successor);
                         rescheduleBasicBlock(basicBlock, visitor, visited, pending);
                     }
                 }
@@ -232,7 +236,7 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
         }
     }
 
-    private void traverseControlFlowGraph(Block basicBlock, SPIRVBlockVisitor visitor, HashSet<Block> visited, HashMap<Block, Block> pending) {
+    private void traverseControlFlowGraph(HIRBlock basicBlock, SPIRVBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
 
         if (pending.containsKey(basicBlock) && !visited.contains(pending.get(basicBlock))) {
             rescheduleBasicBlock(basicBlock, visitor, visited, pending);
@@ -244,21 +248,21 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
         visitor.enter(basicBlock);
         visited.add(basicBlock);
 
-        Block firstDominated = basicBlock.getFirstDominated();
-        LinkedList<Block> queue = new LinkedList<>();
+        HIRBlock firstDominated = basicBlock.getFirstDominated();
+        LinkedList<HIRBlock> queue = new LinkedList<>();
         queue.add(firstDominated);
 
         if (basicBlock.isLoopHeader()) {
-            Block[] successors = basicBlock.getSuccessors();
-            LinkedList<Block> last = new LinkedList<>();
-            LinkedList<Block> pendingList = new LinkedList<>();
+            HIRBlock[] successors = IntStream.range(0, basicBlock.getSuccessorCount()).mapToObj(basicBlock::getSuccessorAt).toArray(HIRBlock[]::new);
+            LinkedList<HIRBlock> last = new LinkedList<>();
+            LinkedList<HIRBlock> pendingList = new LinkedList<>();
 
             FixedNode endNode = basicBlock.getEndNode();
             IfNode ifNode = null;
             if (endNode instanceof IfNode) {
                 ifNode = (IfNode) endNode;
             }
-            for (Block block : successors) {
+            for (HIRBlock block : successors) {
                 boolean isInnerLoop = isLoopBlock(block, basicBlock);
                 if (!isInnerLoop) {
                     assert ifNode != null;
@@ -277,17 +281,17 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
                 }
             }
 
-            for (Block l : pendingList) {
+            for (HIRBlock l : pendingList) {
                 last.addLast(l);
             }
 
-            for (Block l : last) {
+            for (HIRBlock l : last) {
                 queue.addLast(l);
             }
             queue.removeFirst();
         }
 
-        for (Block block : queue) {
+        for (HIRBlock block : queue) {
             firstDominated = block;
             while (firstDominated != null) {
                 if (!visited.contains(firstDominated)) {
@@ -311,7 +315,7 @@ public class SPIRVCompilationResultBuilder extends CompilationResultBuilder {
         }
     }
 
-    void emitBlock(Block block) {
+    void emitBlock(HIRBlock block) {
         if (block == null) {
             return;
         }

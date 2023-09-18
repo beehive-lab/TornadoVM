@@ -27,6 +27,11 @@ package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.DOT;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.graalvm.compiler.lir.Variable;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
@@ -39,18 +44,102 @@ public class PTXVectorSplit {
     public PTXKind newKind;
     public boolean fullUnwrapVector;
 
+    private Map<String, Integer> vectorVariableMap;
+
     public PTXVectorSplit(Variable actualVector) {
-        this(actualVector.getName(), (PTXKind) actualVector.getPlatformKind());
+        this(actualVector.toString(), (PTXKind) actualVector.getPlatformKind());
     }
 
     public PTXVectorSplit(String actualVectorName, PTXKind actualKind) {
         this.actualKind = actualKind;
-
+        this.vectorVariableMap = new HashMap<>();
         this.newKind = lowerVectorPTXKind(actualKind);
-        this.vectorNames = new String[actualKind.getVectorLength() / newKind.getVectorLength()];
-        for (int i = 0; i < vectorNames.length; i++) {
-            vectorNames[i] = actualVectorName + i;
+        this.vectorNames = generateVectorNames(actualVectorName, actualKind.getVectorLength(), newKind.getVectorLength());
+        convertVectorNames();
+    }
+
+    /**
+     * It generates an array of vector names.
+     *
+     * @param baseName
+     *            The base name for vector names.
+     * @param actualVectorLength
+     *            The actual vector length.
+     * @param newVectorLength
+     *            The new vector length.
+     * @return An array of generated vector names.
+     */
+    private String[] generateVectorNames(String baseName, int actualVectorLength, int newVectorLength) {
+        String[] names = new String[actualVectorLength / newVectorLength];
+        for (int i = 0; i < names.length; i++) {
+            names[i] = baseName + i;
         }
+        return names;
+
+    }
+
+    /**
+     * It converts vector names using the provided conversion logic.
+     */
+    private void convertVectorNames() {
+        for (int i = 0; i < vectorNames.length; i++) {
+            vectorNames[i] = convertVariableName(vectorNames[i], actualKind);
+        }
+    }
+
+    /**
+     * It converts the original variable name to a formatted intermediate name.
+     *
+     * @param originalName
+     *            The original variable name in the format "vXX|StringXY".
+     * @param actualKind
+     *            The actual kind of the variable (e.g., PTXKind).
+     * @return The formatted intermediate variable name.
+     */
+    private String convertVariableName(String originalName, PTXKind actualKind) {
+        String[] parts = originalName.split("\\|");
+
+        if (parts.length != 1) {
+            String variableName = parts[1];
+            int vectorLength = extractVectorLength(variableName);
+            String intermediateName = actualKind.getRegisterTypeString() + parts[0] + vectorLength + "Vec";
+            return intermediateName + getOrCreateCounter(intermediateName);
+        } else {
+            // This case covers when we pass around vectors on multiple func call aka a0 for
+            // example
+            return parts[0];
+        }
+
+    }
+
+    /**
+     * It extracts the vector length from the variable name.
+     *
+     * @param variableName
+     *            The variable name containing the vector length.
+     * @return The extracted vector length.
+     */
+    private int extractVectorLength(String variableName) {
+        Pattern pattern = Pattern.compile("\\d+");
+        Matcher matcher = pattern.matcher(variableName);
+        if (matcher.find()) {
+            return Integer.parseInt(matcher.group());
+        }
+        return 0;
+    }
+
+    /**
+     * It gets or creates a counter for the given variable name.
+     *
+     * @param variableName
+     *            The variable name for which to get or create the counter.
+     * @return The counter value before incrementing.
+     */
+    private int getOrCreateCounter(String variableName) {
+        vectorVariableMap.putIfAbsent(variableName, 0);
+        int counter = vectorVariableMap.get(variableName) + 1;
+        vectorVariableMap.put(variableName, counter);
+        return counter - 1; // Return the previous counter value before incrementing
     }
 
     /**

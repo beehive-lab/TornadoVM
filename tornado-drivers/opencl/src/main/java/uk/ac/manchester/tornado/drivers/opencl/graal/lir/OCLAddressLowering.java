@@ -31,7 +31,12 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.FloatingReadNode;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
-import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
+//<<<<<<< HEAD
+//import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
+//=======
+import org.graalvm.compiler.phases.common.AddressLoweringByNodePhase;
+
+//>>>>>>> develop
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
@@ -39,7 +44,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.calc.TornadoAddressArithmeticNode;
 
-public class OCLAddressLowering extends AddressLowering {
+public class OCLAddressLowering extends AddressLoweringByNodePhase.AddressLowering {
 
     @Override
     public AddressNode lower(ValueNode base, ValueNode offset) {
@@ -48,8 +53,8 @@ public class OCLAddressLowering extends AddressLowering {
             memoryRegister = ((FixedArrayNode) base).getMemoryRegister();
         } else if (base instanceof LocalArrayNode) {
             memoryRegister = ((LocalArrayNode) base).getMemoryRegister();
-        } else if (!((base instanceof TornadoAddressArithmeticNode) || (base instanceof ParameterNode)
-                || (base instanceof ReadNode) || (base instanceof FloatingReadNode) || (base instanceof PiNode))) {
+        } else if (!((base instanceof TornadoAddressArithmeticNode) || (base instanceof ParameterNode) || (base instanceof ReadNode) || (base instanceof FloatingReadNode)
+                || (base instanceof PiNode))) {
             TornadoInternalError.unimplemented("address origin unimplemented: %s", base.getClass().getName());
         }
 

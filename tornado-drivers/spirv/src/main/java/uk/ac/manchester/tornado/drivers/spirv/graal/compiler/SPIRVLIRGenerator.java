@@ -30,7 +30,8 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.Condition;
-import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
+import org.graalvm.compiler.core.common.cfg.BasicBlock;
+import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.spi.CodeGenProviders;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
@@ -77,7 +78,8 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     private SPIRVBuiltinTool spirvBuiltinTool;
 
     public SPIRVLIRGenerator(CodeGenProviders providers, LIRGenerationResult lirGenRes, final int methodIndex) {
-        super(new SPIRVLIRKindTool((SPIRVTargetDescription) providers.getCodeCache().getTarget()), new SPIRVArithmeticTool(), new SPIRVMoveFactory(), providers, lirGenRes);
+        super(new SPIRVLIRKindTool((SPIRVTargetDescription) providers.getCodeCache().getTarget()), new SPIRVArithmeticTool(), new SPIRVBarrierSetLIRGenerator(), new SPIRVMoveFactory(), providers,
+                lirGenRes);
         spirvGenTool = new SPIRVGenTool(this);
         spirvBuiltinTool = new SPIRVBuiltinTool();
         this.methodIndex = methodIndex;
@@ -103,12 +105,23 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Variable emitLogicCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue, MemoryOrderMode memoryOrder) {
+    public Variable emitLogicCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue, MemoryOrderMode memoryOrder,
+            BarrierType barrierType) {
         return null;
     }
 
     @Override
-    public Value emitValueCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, MemoryOrderMode memoryOrder) {
+    public Value emitValueCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, MemoryOrderMode memoryOrder, BarrierType barrierType) {
+        return null;
+    }
+
+    @Override
+    public Value emitAtomicReadAndAdd(LIRKind accessKind, Value address, Value delta) {
+        return null;
+    }
+
+    @Override
+    public Value emitAtomicReadAndWrite(LIRKind accessKind, Value address, Value newValue, BarrierType barrierType) {
         return null;
     }
 
@@ -172,7 +185,7 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     @Override
     public void emitReturn(JavaKind javaKind, Value input) {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "emitReturn: input=%s", input);
-        AbstractBlockBase<?> currentBlock = getCurrentBlock();
+        BasicBlock<?> currentBlock = getCurrentBlock();
         if (input != null) {
             LIRKind lirKind = LIRKind.value(input.getPlatformKind());
             append(new SPIRVLIRStmt.ExprStmt(new SPIRVUnary.ReturnWithValue(lirKind, input, currentBlock)));
@@ -243,6 +256,11 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    public Variable emitReverseBytes(Value operand) {
+        return null;
+    }
+
+    @Override
     protected void emitForeignCallOp(ForeignCallLinkage linkage, Value targetAddress, Value result, Value[] arguments, Value[] temps, LIRFrameState info) {
         unimplemented();
     }
@@ -261,12 +279,6 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     @Override
     protected void emitHashTableSwitch(JavaConstant[] keys, LabelRef defaultTarget, LabelRef[] targets, AllocatableValue value, Value hash) {
         unimplemented();
-    }
-
-    @Override
-    public Variable emitByteSwap(Value operand) {
-        unimplemented();
-        return null;
     }
 
     @Override
@@ -320,6 +332,12 @@ public class SPIRVLIRGenerator extends LIRGenerator {
     }
 
     @Override
+    public Register getHeapBaseRegister() {
+        unimplemented();
+        return null;
+    }
+
+    @Override
     public Variable newVariable(ValueKind<?> valueKind) {
         PlatformKind pk = valueKind.getPlatformKind();
         ValueKind<?> actualLIRKind = valueKind;
@@ -335,7 +353,8 @@ public class SPIRVLIRGenerator extends LIRGenerator {
         Logger.traceBuildLIR(Logger.BACKEND.SPIRV, "[SPIR-V] newVariable: %s <- %s (%s)", variable.toString(), actualLIRKind.toString(), actualLIRKind.getClass().getName());
 
         // Format of the variable "<type>_<number>"
-        variable.setName("spirv_" + spirvKind.getTypePrefix() + "_" + variable.index + "F" + methodIndex);
+        // variable.setName("spirv_" + spirvKind.getTypePrefix() + "_" + variable.index
+        // + "F" + methodIndex);
         SPIRVLIRGenerationResult res = (SPIRVLIRGenerationResult) getResult();
         res.insertVariable(variable);
         return variable;
@@ -356,17 +375,6 @@ public class SPIRVLIRGenerator extends LIRGenerator {
 
     public SPIRVBuiltinTool getSpirvBuiltinTool() {
         return spirvBuiltinTool;
-    }
-
-    @Override
-    public void emitStringLatin1Inflate(Value src, Value dst, Value len) {
-        unimplemented();
-    }
-
-    @Override
-    public Variable emitStringUTF16Compress(Value src, Value dst, Value len) {
-        unimplemented();
-        return null;
     }
 
     @Override
@@ -397,7 +405,6 @@ public class SPIRVLIRGenerator extends LIRGenerator {
             super(variable.getValueKind(), variable.index);
             this.variable = variable;
             this.length = length;
-            this.setName(variable.getName());
         }
 
         public Value getLength() {
@@ -408,9 +415,5 @@ public class SPIRVLIRGenerator extends LIRGenerator {
             return variable;
         }
 
-        @Override
-        public String getName() {
-            return variable.getName();
-        }
     }
 }

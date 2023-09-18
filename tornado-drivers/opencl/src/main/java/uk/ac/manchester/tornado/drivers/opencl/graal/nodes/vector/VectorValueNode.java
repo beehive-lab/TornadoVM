@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2018, 2020, 2023, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -28,6 +28,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimp
 import java.util.List;
 
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.lir.ConstantValue;
@@ -94,9 +95,40 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
         return values.get(index);
     }
 
+    /**
+     * This method replaces the input of the current {@link VectorValueNode} that is
+     * at a specific index with a replacement node.
+     *
+     * @param replacement
+     * @param index
+     */
+    private void replaceInputAtIndex(Node replacement, int index) {
+        int i = 0;
+        for (Node input : this.inputs()) {
+            if (i++ == index) {
+                this.replaceFirstInput(input, replacement);
+                break;
+            }
+        }
+    }
+
+    private boolean isInputValueAtIndexSet(int index) {
+        return values.get(index) != null;
+    }
+
+    /**
+     * This method sets a {@link ValueNode} as an input value of the current
+     * {@link VectorValueNode} at a specific index. If the input value has been
+     * already set (not null), the input that corresponds to the index is replaced
+     * by the argument value. Otherwise, the input value is set by the argument
+     * value.
+     * 
+     * @param index
+     * @param value
+     */
     public void setElement(int index, ValueNode value) {
-        if (values.get(index) != null) {
-            values.get(index).replaceAtUsages(value);
+        if (isInputValueAtIndexSet(index)) {
+            replaceInputAtIndex(value, index);
         } else {
             values.set(index, value);
         }
@@ -205,11 +237,6 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
         tool.append(new OCLLIRStmt.AssignStmt(result, assignExpr));
 
         gen.setResult(this, result);
-    }
-
-    // FIXME: Remove unused methods
-    public boolean allLanesUsed() {
-        return (usages().filter(VectorLoadElementNode.class).count() == kind.getVectorLength());
     }
 
     public List<VectorStoreElementProxyNode> getLanesInputs() {

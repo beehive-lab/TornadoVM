@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
@@ -35,6 +36,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -43,10 +45,22 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest
+ * tornado-test -V uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest
  * </code>
  */
 public class PrebuiltTest extends TornadoTestBase {
+    private static final String TORNADO_SDK = "TORNADO_SDK";
+    private static TornadoDevice defaultDevice;
+    private static String FILE_PATH;
+    private static TornadoVMBackendType backendType;
+
+    @BeforeClass
+    public static void init() {
+        backendType = TornadoRuntime.getTornadoRuntime().getBackendType(0);
+        defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
+        String tornadoSDK = System.getenv(TORNADO_SDK);
+        FILE_PATH = tornadoSDK + "/examples/generated/";
+    }
 
     @Test
     public void testPrebuilt01() {
@@ -56,34 +70,28 @@ public class PrebuiltTest extends TornadoTestBase {
         int[] b = new int[numElements];
         int[] c = new int[numElements];
 
-        String tornadoSDK = System.getenv("TORNADO_SDK");
-
         Arrays.fill(a, 1);
         Arrays.fill(b, 2);
 
-        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
-        String filePath = tornadoSDK + "/examples/generated/";
-
-        TornadoVMBackendType backendType = TornadoRuntime.getTornadoRuntime().getBackendType(0);
         switch (backendType) {
             case PTX:
-                filePath += "add.ptx";
+                FILE_PATH += "add.ptx";
                 break;
             case OPENCL:
-                filePath += "add.cl";
+                FILE_PATH += "add.cl";
                 break;
             case SPIRV:
-                filePath += "add.spv";
+                FILE_PATH += "add.spv";
                 break;
             default:
-                throw new RuntimeException("Backend not supported");
+                throw new TornadoRuntimeException("Backend not supported");
         }
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .prebuiltTask("t0", //
                         "add", //
-                        filePath, //
+                        FILE_PATH, //
                         new Object[] { a, b, c }, //
                         new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
                         defaultDevice, //
@@ -100,68 +108,11 @@ public class PrebuiltTest extends TornadoTestBase {
     }
 
     @Test
-    public void testPrebuilt02() {
-
-        final int numElements = 8;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
-
-        String tornadoSDK = System.getenv("TORNADO_SDK");
-
-        Arrays.fill(a, 1);
-        Arrays.fill(b, 2);
-
-        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
-        String filePath = tornadoSDK + "/examples/generated/";
-
-        TornadoVMBackendType backendType = TornadoRuntime.getTornadoRuntime().getBackendType(0);
-        switch (backendType) {
-            case PTX:
-                filePath += "add.ptx";
-                break;
-            case OPENCL:
-                filePath += "add.cl";
-                break;
-            case SPIRV:
-                filePath += "add.spv";
-                break;
-            default:
-                throw new RuntimeException("Backend not supported");
-        }
-
-        TaskGraph taskGraph = new TaskGraph("s0")//
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-                .prebuiltTask("t0", //
-                        "add", //
-                        filePath, //
-                        new Object[] { a, b, c }, //
-                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
-                        defaultDevice, //
-                        new int[] { numElements })//
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
-
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
-
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i]);
-        }
-    }
-
-    @Test
-    public void testPrebuilt03() {
+    public void testPrebuilt02SPIRV() {
         assertNotBackend(TornadoVMBackendType.PTX);
+        assertNotBackend(TornadoVMBackendType.OPENCL);
 
-        TornadoDevice device = checkSPIRVSupport();
-
-        if (device == null) {
-            assertNotBackend(TornadoVMBackendType.OPENCL);
-        }
-
-        String tornadoSDK = System.getenv("TORNADO_SDK");
-        String filePath = tornadoSDK + "/examples/generated/reduce03.spv";
+        FILE_PATH += "reduce03.spv";
 
         final int size = 512;
         final int localSize = 256;
@@ -178,10 +129,10 @@ public class PrebuiltTest extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
                 .prebuiltTask("t0", //
                         "floatReductionAddLocalMemory", //
-                        filePath, //
+                        FILE_PATH, //
                         new Object[] { context, input, reduce }, //
                         new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
-                        device, //
+                        defaultDevice, //
                         new int[] { size })//
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
 
@@ -201,18 +152,23 @@ public class PrebuiltTest extends TornadoTestBase {
 
     }
 
+    /**
+     * It tests the functionality of the prebuilt03SPIRV method.
+     *
+     * This test case verifies that the prebuilt03SPIRV runs correctly though a
+     * SPIRV or OpenCL runtime if the device supports SPIRV.
+     *
+     * Expected outcome: - If the current backend type is PTX, the test should have
+     * thrown unsupported exception. - The test should succeed if a SPIR-V supported
+     * device is available, or should use OPENCL as the backend with a device that
+     * device supports SPIRV; otherwise, the test should fail.
+     */
     @Test
-    public void testPrebuilt04() {
+    public void testPrebuilt03SPIRV() {
         assertNotBackend(TornadoVMBackendType.PTX);
+        assertNotBackend(TornadoVMBackendType.OPENCL);
 
-        TornadoDevice device = checkSPIRVSupport();
-
-        if (device == null) {
-            assertNotBackend(TornadoVMBackendType.OPENCL);
-        }
-
-        String tornadoSDK = System.getenv("TORNADO_SDK");
-        String filePath = tornadoSDK + "/examples/generated/reduce04.spv";
+        FILE_PATH += "reduce04.spv";
 
         final int size = 32;
         final int localSize = 32;
@@ -229,10 +185,10 @@ public class PrebuiltTest extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
                 .prebuiltTask("b", //
                         "intReductionAddGlobalMemory", //
-                        filePath, //
+                        FILE_PATH, //
                         new Object[] { context, input, reduce }, //
                         new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
-                        device, //
+                        defaultDevice, //
                         new int[] { size })//
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
 
@@ -248,6 +204,56 @@ public class PrebuiltTest extends TornadoTestBase {
         }
 
         assertEquals(64, finalSum, 0.0f);
+
+    }
+
+    @Test
+    public void testPrebuilt04SPIRVThroughOpenCLRuntime() {
+        assertNotBackend(TornadoVMBackendType.PTX);
+
+        TornadoDevice device = getSPIRVSupportedDevice();
+
+        if (device == null) {
+            assertNotBackend(TornadoVMBackendType.OPENCL, "No SPIRV supported device found with the current OpenCL backend. The OpenCL version must be >= 2.1 to support SPIR-V execution.");
+        }
+
+        FILE_PATH += "reduce03.spv";
+
+        final int size = 512;
+        final int localSize = 256;
+        float[] input = new float[size];
+        float[] reduce = new float[size / localSize];
+        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = 1);
+
+        WorkerGrid worker = new WorkerGrid1D(size);
+        worker.setLocalWork(256, 1, 1);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
+        KernelContext context = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
+                .prebuiltTask("t0", //
+                        "floatReductionAddLocalMemory", //
+                        FILE_PATH, //
+                        new Object[] { context, input, reduce }, //
+                        new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
+                        device, //
+                        new int[] { size })//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, reduce);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        executionPlan.withGridScheduler(gridScheduler) //
+                .execute();
+
+        // Final SUM
+        float finalSum = 0;
+        for (float v : reduce) {
+            finalSum += v;
+        }
+
+        assertEquals(512, finalSum, 0.0f);
 
     }
 }

@@ -38,7 +38,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  * How to run?
  * </p>
  * <code>
- *      tornado-test.py -V --debug uk.ac.manchester.tornado.unittests.grid.TestGridScheduler
+ *      tornado-test -V --debug uk.ac.manchester.tornado.unittests.grid.TestGridScheduler
  * </code>
  *
  */

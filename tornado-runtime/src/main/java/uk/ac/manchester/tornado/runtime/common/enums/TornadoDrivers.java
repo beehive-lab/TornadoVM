@@ -51,4 +51,8 @@ public enum TornadoDrivers {
     public int value() {
         return priority;
     }
+
+    public String status() {
+        return status;
+    }
 }

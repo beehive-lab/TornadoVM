@@ -5,23 +5,21 @@ all: build
 BACKEND?=opencl
 BACKENDS?=$(BACKEND)
 
-jdk-8:
-	./bin/compile.sh jdk-8 $(BACKENDS)
 
-build jdk-11-plus:
-	./bin/compile.sh jdk-11-plus $(BACKENDS)
+build jdk-17-plus:
+	./bin/compile.sh jdk-17-plus $(BACKENDS)
 
-graal-jdk-11-plus:
-	./bin/compile.sh graal-jdk-11-plus $(BACKENDS)
+graal-jdk-17-plus:
+	./bin/compile.sh graal-jdk-17-plus $(BACKENDS)
 
 ptx:
 	./bin/compile.sh jdk-11-plus BACKENDS=ptx,opencl
 
 spirv:
-	./bin/compile.sh jdk-11-plus BACKENDS=spirv,ptx,opencl
+	./bin/compile.sh jdk-17-plus BACKENDS=spirv,ptx,opencl
 
 offline:
-	./bin/compile.sh jdk-11-plus $(BACKENDS) OFFLINE
+	./bin/compile.sh jdk-17-plus $(BACKENDS) OFFLINE
 
 # Variable passed for the preparation of the Xilinx FPGA emulated target device. The default device is `xilinx_u50_gen3x16_xdma_201920_3`.
 # make xilinx_emulation FPGA_PLATFORM=<platform_name> NUM_OF_FPGA_DEVICES=<number_of_devices>
@@ -40,13 +38,13 @@ example:
 tests:
 	rm -f tornado_unittests.log
 	tornado --devices
-	tornado-test.py --ea --verbose
-	tornado-test.py --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	tornado-test --ea --verbose
+	tornado-test --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh
 
 tests-opt:
 	tornado --devices
-	tornado-test.py -V --fast --ea --verbose -J"-Dtornado.spirv.loadstore=True" --printKernel  
+	tornado-test -V --fast --ea --verbose -J"-Dtornado.spirv.loadstore=True" --printKernel  
 
 test-slam:
-	tornado-test.py -V --fast uk.ac.manchester.tornado.unittests.slam.graphics.GraphicsTests 
+	tornado-test -V --fast uk.ac.manchester.tornado.unittests.slam.graphics.GraphicsTests 

@@ -29,10 +29,16 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaType;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+
+import java.util.Optional;
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.CallTargetNode;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -51,9 +57,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OpenCLPrintf;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-
 public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTierContext> {
 
     private MetaAccessProvider metaAccess;
@@ -66,6 +69,11 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
     private ConstantNode getConstantNodeFromArguments(InvokeNode invoke, int index) {
         NodeInputList<ValueNode> arguments = invoke.callTarget().arguments();
         return (ConstantNode) arguments.get(index);
+    }
+
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
     }
 
     @Override

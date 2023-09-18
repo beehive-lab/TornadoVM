@@ -24,6 +24,9 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.phases;
 
+import java.util.Optional;
+
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
@@ -34,6 +37,10 @@ import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVFMANode;
 
 public class SPIRVFMAPhase extends Phase {
+
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
 
     private boolean isValidType(ValueNode x) {
         return (x.getStackKind() == JavaKind.Float || x.getStackKind() == JavaKind.Double);

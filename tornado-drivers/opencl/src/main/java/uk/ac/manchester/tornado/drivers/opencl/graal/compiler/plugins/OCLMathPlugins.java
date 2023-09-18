@@ -33,12 +33,14 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntr
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.ASIN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.ATAN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.COS;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.COSPI;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.EXP;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.FABS;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.FLOOR;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.LOG;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.RADIANS;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.SIN;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.SINPI;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.SQRT;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.TAN;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.TANH;
@@ -68,13 +70,12 @@ public class OCLMathPlugins {
         Registration registration = new Registration(plugins, TornadoMath.class);
 
         registerFloatMath1Plugins(registration, float.class, JavaKind.Float);
-        registerTrigonometric1Plugins(registration, float.class, JavaKind.Float);
         registerFloatMath2Plugins(registration, float.class, JavaKind.Float);
-        registerFloatMath3Plugins(registration, float.class, JavaKind.Float);
+        registerTrigonometric1Plugins(registration, float.class, JavaKind.Float);
 
         registerFloatMath1Plugins(registration, double.class, JavaKind.Double);
         registerFloatMath2Plugins(registration, double.class, JavaKind.Double);
-        registerFloatMath3Plugins(registration, double.class, JavaKind.Double);
+        registerTrigonometric1Plugins(registration, double.class, JavaKind.Double);
 
         registerIntMath1Plugins(registration, int.class, JavaKind.Int);
         registerIntMath2Plugins(registration, int.class, JavaKind.Int);
@@ -207,6 +208,22 @@ public class OCLMathPlugins {
                 return true;
             }
         });
+
+        r.register(new InvocationPlugin("sinpi", type) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, SINPI, kind)));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("cospi", type) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, COSPI, kind)));
+                return true;
+            }
+        });
     }
 
     private static void registerFloatMath2Plugins(Registration r, Class<?> type, JavaKind kind) {
@@ -234,10 +251,6 @@ public class OCLMathPlugins {
                 return true;
             }
         });
-    }
-
-    private static void registerFloatMath3Plugins(Registration r, Class<?> type, JavaKind kind) {
-
     }
 
     private static void registerIntMath1Plugins(Registration r, Class<?> type, JavaKind kind) {

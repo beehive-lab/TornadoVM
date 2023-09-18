@@ -378,6 +378,7 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
         if (oclKind.isVector()) {
             OCLTernaryIntrinsic intrinsic = VectorUtil.resolveStoreIntrinsic(oclKind);
+            assert memAccess != null;
             OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind.getElementKind()));
             getGen().append(new VectorStoreStmt(intrinsic, getOffsetValue(oclKind, memAccess), cast, memAccess, input));
         } else {
@@ -477,10 +478,9 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
      *            the kind for getting the size of the element type in a vector
      * @param memoryAccess
      *            the object that holds the index of an element in a vector
-     * @return
+     * @return {@link Value }
      */
     private Value getPrivateOffsetValue(OCLKind oclKind, MemoryAccess memoryAccess) {
-        Value privateOffsetValue = null;
         if (memoryAccess == null) {
             return null;
         }
@@ -488,9 +488,10 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
             ConstantValue constantValue = (ConstantValue) memoryAccess.getIndex();
             int parsedIntegerIndex = Integer.parseInt(constantValue.getConstant().toValueString());
             int index = parsedIntegerIndex / oclKind.getVectorLength();
-            privateOffsetValue = new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(index));
+            return new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(index));
         }
-        return privateOffsetValue;
+        int index = Integer.parseInt(OCLAssembler.getAbsoluteIndexFromValue(memoryAccess.getIndex())) / oclKind.getVectorLength();
+        return new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(index));
     }
 
     private Value getOffsetValue(OCLKind oclKind, MemoryAccess memoryAccess) {
