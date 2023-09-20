@@ -115,8 +115,8 @@ TornadoVM can be executed with the following configurations:
 Linux
 ~~~~~~~~
 
-- TornadoVM with GraalVM for Linux and OSx (JDK 17 and JDK 20): see the installation guide here: :ref:`installation_graalvm`.
-- TornadoVM with JDK17+ (e.g. OpenJDK [17-20], Red Hat Mandrel, Amazon Corretto): see the installation guide: :ref:`installation_jdk17plus`.
+- TornadoVM with GraalVM for Linux and OSx (JDK 17 and JDK 21): see the installation guide here: :ref:`installation_graalvm`.
+- TornadoVM with JDK17+ (e.g. OpenJDK [17-21], Red Hat Mandrel, Amazon Corretto): see the installation guide: :ref:`installation_jdk17plus`.
 
 Windows
 ~~~~~~~~~~
@@ -143,18 +143,18 @@ At least one backend must be specified at build time to the ``make`` command:
 
 .. _installation_graalvm:
 
-Installation for GraalVM for JDK 20.0.2 and GraalVM for JDK 17.0.8 on Linux and OSx
+Installation for GraalVM for JDK 21.0.0 and GraalVM for JDK 17.0.8 on Linux and OSx
 -----------------------------------------------------------------------------------
 
-1. Download GraalVM for JDK 17.0.8 or JDK 20.0.2
+1. Download GraalVM for JDK 17.0.8 or JDK 21.0.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 GraalVM **Community Edition** builds are available to download at:
 
-`https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-20.0.2 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-20.0.2>`_.
+`https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-21.0.0 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-21.0.0>`_.
 `https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-17.0.8 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-17.0.8>`_.
 
-The examples below show how to download and extract GraalVM for JDK 20.0.2 and GraalVM for JDK 17.0.8 for Linux.
+The examples below show how to download and extract GraalVM for JDK 21.0.0 and GraalVM for JDK 17.0.8 for Linux.
 
 -  Example for GraalVM for JDK 17 Community 17.0.8:
 
@@ -163,12 +163,12 @@ The examples below show how to download and extract GraalVM for JDK 20.0.2 and G
    $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.8/graalvm-community-jdk-17.0.8_linux-x64_bin.tar.gz
    $ tar -xf graalvm-community-jdk-17.0.8_linux-x64_bin.tar.gz
 
--  Example for GraalVM for JDK 20 Community 20.0.2:
+-  Example for GraalVM for JDK 21 Community 21.0.0:
 
 .. code:: bash
 
-   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-20.0.2/graalvm-community-jdk-20.0.2_linux-x64_bin.tar.gz
-   $ tar -xf graalvm-community-jdk-20.0.2_linux-x64_bin.tar.gz
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.0/graalvm-community-jdk-21.0.0_linux-x64_bin.tar.gz
+   $ tar -xf graalvm-community-jdk-21.0.0_linux-x64_bin.tar.gz
 
 The Java binary will be found in the `graalvm-jdk-{JDK_VERSION}-23.0.1`` directory. This directory is used as the JAVA_HOME (See step 2).
 
@@ -180,10 +180,10 @@ For OSX:
 
    $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.8/graalvm-community-jdk-17.0.8_linux-x64_bin.tar.gz
 
--  Example for GraalVM for JDK 20 Community 20.0.2:
+-  Example for GraalVM for JDK 21 Community 21.0.0:
 
 .. code:: bash
-   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-20.0.2/graalvm-community-jdk-20.0.2_macos-x64_bin.tar.gz
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.0/graalvm-community-jdk-21.0.0.0.2_macos-x64_bin.tar.gz
 
 then ``untar`` it to the OSX standard JDK location
 ``/Library/Java/JavaVirtualMachines/`` or to a folder of your choice.
@@ -284,7 +284,7 @@ which can be added to ``~/.profile``
    $ cd ~/tornadovm
    $ . etc/sources.env
 
-To build with GraalVM and JDK 17 and JDK 20:
+To build with GraalVM and JDK 17 and JDK 21:
 
 .. code:: bash
 
@@ -309,16 +309,16 @@ JDKs. Below are listed the Java 17 JDK distributions against which TornadoVM has
 
   ./scripts/tornadovm-installer --listJDKs
   jdk17            : Install TornadoVM with OpenJDK 17 (Oracle OpenJDK)
-  jdk20            : Install TornadoVM with OpenJDK 20 (Oracle OpenJDK)
+  jdk21            : Install TornadoVM with OpenJDK 21 (Oracle OpenJDK)
   graalvm-jdk-17   : Install TornadoVM with GraalVM and JDK 17 (GraalVM 23.0.1)
-  graalvm-jdk-20   : Install TornadoVM with GraalVM and JDK 20 (GraalVM 23.0.1)
+  graalvm-jdk-21   : Install TornadoVM with GraalVM and JDK 21 (GraalVM 23.0.1)
   corretto-jdk-17  : Install TornadoVM with Corretto JDK 17
-  corretto-jdk-20  : Install TornadoVM with Corretto JDK 20
+  corretto-jdk-21  : Install TornadoVM with Corretto JDK 21
   mandrel-jdk-17   : Install TornadoVM with Mandrel 23.0.1 (JDK 17)
-  mandrel-jdk-20   : Install TornadoVM with Mandrel 23.0.1 (JDK 20)
+  mandrel-jdk-21   : Install TornadoVM with Mandrel 23.0.1 (JDK 21)
   microsoft-jdk-17 : Install TornadoVM with Microsoft JDK 17
   zulu-jdk-jdk-17  : Install TornadoVM with Azul Zulu JDK 17
-  zulu-jdk-jdk-20  : Install TornadoVM with Azul Zulu JDK 20
+  zulu-jdk-jdk-21  : Install TornadoVM with Azul Zulu JDK 21
 
 
 1. Download a JDK 17+ distribution
@@ -336,9 +336,9 @@ Example:
 
 .. code:: bash
 
-    $ wget https://corretto.aws/downloads/latest/amazon-corretto-20-x64-linux-jdk.tar.gz
-    $ tar xf amazon-corretto-20-x64-linux-jdk.tar.gz
-    $ export JAVA_HOME=$PWD/amazon-corretto-20-x64-linux
+    $ wget https://corretto.aws/downloads/latest/amazon-corretto-21-x64-linux-jdk.tar.gz
+    $ tar xf amazon-corretto-21-x64-linux-jdk.tar.gz
+    $ export JAVA_HOME=$PWD/amazon-corretto-21-x64-linux
 
 2. Download TornadoVM
 ~~~~~~~~~~~~~~~~~~~~~
@@ -586,15 +586,15 @@ Clone the latest TornadoVM source code from the GitHub `repository <https://gith
 We will refer hereafter the directory with TornadoVM sources as
 ``<TornadoVM>``.
 
-3. Download GraalVM for JDK 20 Community 20.0.2
+3. Download GraalVM for JDK 21 Community 21.0.0
 ~~~~~~~~~~~~
 
 
-TornadoVM can run with JDK 17 and 20. Visit `GraalVM for JDK17 and JDK20 <https://www.graalvm.org/downloads/>`__
+TornadoVM can run with JDK 17 and 21. Visit `GraalVM for JDK17 and JDK21 <https://www.graalvm.org/downloads/>`__
 and download either of the following builds:
 
--  `Download for JDK 17 <https://download.oracle.com/graalvm/20/latest/graalvm-jdk-17_windows-x64_bin.zip>`__
--  `Download for JDK 20 <https://download.oracle.com/graalvm/20/latest/graalvm-jdk-20_windows-x64_bin.zip>`__
+-  `Download for JDK 17 <https://download.oracle.com/graalvm/17/latest/graalvm-jdk-17_windows-x64_bin.zip>`__
+-  `Download for JDK 21 <https://download.oracle.com/graalvm/21/latest/graalvm-jdk-21_windows-x64_bin.zip>`__
 
 Extract the downloaded file to any directory.
 
