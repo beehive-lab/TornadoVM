@@ -24,7 +24,7 @@
 #
 
 VERSION="23.1.0"
-COMPILER_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/compiler/compiler/23.1.0/compiler-23.1.0.jar
+COMPILER_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/compiler/compiler/${VERSION}/compiler-${VERSION}.jar
 COMPILER_MANAGEMENT_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/compiler/compiler-management/${VERSION}/compiler-management-${VERSION}.jar
 GRAAL_COLLECTIONS=https://repo1.maven.org/maven2/org/graalvm/sdk/collections/${VERSION}/collections-${VERSION}.jar
 GRAAL_SDK_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/sdk/graal-sdk/${VERSION}/graal-sdk-${VERSION}.jar
