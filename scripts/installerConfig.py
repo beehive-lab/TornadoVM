@@ -140,7 +140,7 @@ JDK = {
             __ARM__: None,
         }
     },
-    __MANDREL20__: {
+    __MANDREL21__: {
         __LINUX__: {
             __X86_64__: "https://github.com/graalvm/mandrel/releases/download/mandrel-23.0.0.0-Final/mandrel-java20-linux-amd64-23.0.0.0-Final.tar.gz",
             __ARM__: "https://github.com/graalvm/mandrel/releases/download/mandrel-23.0.0.0-Final/mandrel-java20-linux-aarch64-23.0.0.0-Final.tar.gz",
