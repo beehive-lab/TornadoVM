@@ -48,6 +48,8 @@ import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurat
  */
 public class TestParallelTaskGraph extends TornadoTestBase {
 
+    final int SIZE = 1024;
+
     public static void init(float[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = i;
@@ -63,7 +65,6 @@ public class TestParallelTaskGraph extends TornadoTestBase {
     @Test
     public void testTwoDevicesSerial() {
 
-        final int SIZE = 1024;
         float[] a = new float[SIZE];
         float[] b = new float[SIZE];
         float[] refB = new float[SIZE];
@@ -113,7 +114,6 @@ public class TestParallelTaskGraph extends TornadoTestBase {
     @Test
     public void testTwoDevicesSerial2() {
 
-        final int SIZE = 1024;
         float[] a = new float[SIZE];
         float[] b = new float[SIZE];
         float[] refB = new float[SIZE];
@@ -152,7 +152,6 @@ public class TestParallelTaskGraph extends TornadoTestBase {
     @Test
     public void testTwoDevicesSerial3() {
 
-        final int SIZE = 1024;
         float[] a = new float[SIZE];
         float[] b = new float[SIZE];
         float[] refB = new float[SIZE];
@@ -209,7 +208,6 @@ public class TestParallelTaskGraph extends TornadoTestBase {
     @Test
     public void testTwoDevicesSerial4() {
 
-        final int SIZE = 1024;
         float[] a = new float[SIZE];
         float[] b = new float[SIZE];
         float[] refB = new float[SIZE];
@@ -315,7 +313,6 @@ public class TestParallelTaskGraph extends TornadoTestBase {
     @Test
     public void testTwoDevicesConcurrentOnAndOff() {
 
-        final int SIZE = 1024;
         float[] a = new float[SIZE];
         float[] b = new float[SIZE];
         float[] refB = new float[SIZE];
