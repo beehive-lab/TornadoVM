@@ -1957,8 +1957,8 @@
         </dependency>
         <dependency>
             <groupId>org.graalvm.sdk</groupId>
-            <artifactId>graal-sdk</artifactId>
-            <version>23.1.0</version>
+            <artifactId>nativeimage</artifactId>
+            <version>${graalvm.version}</version>
         </dependency>
         <dependency>
             <groupId>org.graalvm.polyglot</groupId>
@@ -1966,17 +1966,14 @@
             <version>${graalvm.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.graalvm.polyglot</groupId>
-            <!-- Select the language -->
-            <artifactId>python</artifactId>
+            <groupId>org.graalvm.sdk</groupId>
+            <artifactId>word</artifactId>
             <version>${graalvm.version}</version>
-            <type>pom</type>
         </dependency>
         <dependency>
-            <groupId>org.graalvm.polyglot</groupId>
-            <artifactId>tools</artifactId>
+            <groupId>org.graalvm.sdk</groupId>
+            <artifactId>collections</artifactId>
             <version>${graalvm.version}</version>
-            <type>pom</type>
         </dependency>
     </dependencies>
     <modules>

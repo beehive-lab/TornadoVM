@@ -24,10 +24,15 @@
 #
 
 VERSION="23.1.0"
-COMPILER_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/compiler/compiler/${VERSION}/compiler-${VERSION}.jar
+COMPILER_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/compiler/compiler/23.1.0/compiler-23.1.0.jar
 COMPILER_MANAGEMENT_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/compiler/compiler-management/${VERSION}/compiler-management-${VERSION}.jar
+GRAAL_COLLECTIONS=https://repo1.maven.org/maven2/org/graalvm/sdk/collections/${VERSION}/collections-${VERSION}.jar
 GRAAL_SDK_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/sdk/graal-sdk/${VERSION}/graal-sdk-${VERSION}.jar
 TRUFFLE_API_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/truffle/truffle-api/${VERSION}/truffle-api-${VERSION}.jar
+TRUFFLE_COMPILER_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/truffle/truffle-compiler/${VERSION}/truffle-compiler-${VERSION}.jar
+GRAAL_WORD=https://repo1.maven.org/maven2/org/graalvm/sdk/word/${VERSION}/word-${VERSION}.jar
+GRAAL_POLYGLOT=https://repo1.maven.org/maven2/org/graalvm/polyglot/polyglot/${VERSION}/polyglot-${VERSION}.jar
+GRAAL_NATIVE_IMAGE=https://repo1.maven.org/maven2/org/graalvm/nativeimage/native-image-base/${VERSION}/native-image-base-${VERSION}.jar
 
 
 if [ ! -d $PWD/graalJars ]; then
@@ -53,4 +58,29 @@ fi
 if [ ! -f $PWD/graalJars/truffle-api-${VERSION}.jar ]; then
   echo "Downloading jar file for graal truffle to $PWD/graalJars/"
   wget -P $PWD/graalJars/ $TRUFFLE_API_JAR_URL
+fi
+
+if [ ! -f $PWD/graalJars/truffle-compiler-${VERSION}.jar ]; then
+  echo "Downloading jar file for truffle compiler to $PWD/graalJars/"
+  wget -P $PWD/graalJars/ $TRUFFLE_COMPILER_JAR_URL
+fi
+
+if [ ! -f $PWD/graalJars/collections-${VERSION}.jar ]; then
+  echo "Downloading jar file for the graal collections to $PWD/graalJars/"
+  wget -P $PWD/graalJars/ $GRAAL_COLLECTIONS
+fi
+
+if [ ! -f $PWD/graalJars/word-${VERSION}.jar ]; then
+  echo "Downloading jar file for the graal word to $PWD/graalJars/"
+  wget -P $PWD/graalJars/ $GRAAL_WORD
+fi
+
+if [ ! -f $PWD/graalJars/polyglot-${VERSION}.jar ]; then
+  echo "Downloading jar file for the graal polyglot to $PWD/graalJars/"
+  wget -P $PWD/graalJars/ $GRAAL_POLYGLOT
+fi
+
+if [ ! -f $PWD/graalJars/native-image-base-${VERSION}.jar ]; then
+  echo "Downloading jar file for the graal native-image-base to $PWD/graalJars/"
+  wget -P $PWD/graalJars/ $GRAAL_NATIVE_IMAGE
 fi

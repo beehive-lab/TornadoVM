@@ -9,8 +9,8 @@ JAVA_CMD=${JAVA_HOME}/bin/java
 JAVA_VERSION_OUTPUT=$("$JAVA_CMD" -version 2>&1)
 JAVA_VERSION=$(echo "$JAVA_VERSION_OUTPUT" | awk -F[\"\.] -v OFS=. 'NR==1{print $2,$3}')
 
-# If we have a JDK 11+ version that is not a GraalVM build, then we need to make sure we have the Graal jars available
-if [[ ! $JAVA_VERSION == "1.8" && ! $JAVA_VERSION_OUTPUT == *"GraalVM"* ]]; then
+# If we have a JDK 17+ version that is not a GraalVM build, then we need to make sure we have the Graal jars available
+if [[ ! $JAVA_VERSION_OUTPUT == *"GraalVM"* ]]; then
   bash ./bin/pullGraalJars.sh
 fi
 
@@ -82,7 +82,7 @@ then
   echo "tornado.backends="${selected_backends} > ${TORNADO_SDK}/etc/tornado.backend
 
   # Place the Graal jars in the TornadoVM distribution only if the JDK 17+ rule is used.
-  if [[ ! $JAVA_VERSION == "1.8" && ! $JAVA_VERSION_OUTPUT == *"GraalVM"* ]]; then
+  if [[ ! $JAVA_VERSION_OUTPUT == *"GraalVM"* ]]; then
     mkdir -p $TORNADO_SDK/share/java/graalJars
     cp $PWD/graalJars/* $TORNADO_SDK/share/java/graalJars/
   fi
