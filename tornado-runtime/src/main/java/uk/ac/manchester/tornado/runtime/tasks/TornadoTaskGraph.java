@@ -514,7 +514,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             if (task instanceof CompilableTask) {
                 ResolvedJavaMethod method = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(((CompilableTask) task).getMethod());
                 if (!meta().getLogicDevice().getDeviceContext().isCached(method.getName(), task)) {
-                    updateInner(i, executionContext.getTask(i));
+                    updateInner(i, task);
                 }
             }
         }
@@ -549,14 +549,14 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 task.meta().setDevice(device);
                 if (task instanceof CompilableTask) {
                     ResolvedJavaMethod method = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(((CompilableTask) task).getMethod());
-                    assert task.getDevice() == device;
-                    if (!task.getDevice().getDeviceContext().isCached(method.getName(), task)) {
-                        updateInner(i, executionContext.getTask(i));
+                    if (task.getDevice().equals(device)) {
+                        System.out.println("[debug] Devices are equal");
                     }
-                    // if (!meta().getLogicDevice().getDeviceContext().isCached(method.getName(),
-                    // task)) {
-                    // updateInner(i, executionContext.getTask(i));
-                    // }
+
+                    if (!task.getDevice().getDeviceContext().isCached(method.getName(), task)) {
+                        System.out.println("[debug] UPDATE INNER ");
+                        updateInner(i, task);
+                    }
                 }
             }
         }
