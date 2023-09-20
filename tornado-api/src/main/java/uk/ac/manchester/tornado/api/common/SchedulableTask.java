@@ -59,6 +59,8 @@ public interface SchedulableTask {
 
     String getFullName();
 
+    String getNormalizedName();
+
     String getTaskName();
 
     String getId();

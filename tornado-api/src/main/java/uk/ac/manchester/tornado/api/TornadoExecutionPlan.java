@@ -58,7 +58,6 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  * execution plan affect to all the immutable graphs associated with it.
  *
  * @since TornadoVM-0.15
- *
  */
 public class TornadoExecutionPlan {
 
@@ -156,6 +155,24 @@ public class TornadoExecutionPlan {
      */
     public TornadoExecutionPlan withDevice(TornadoDevice device) {
         tornadoExecutor.setDevice(device);
+        return this;
+    }
+
+    public TornadoExecutionPlan withDevice(String taskName, TornadoDevice device) {
+        tornadoExecutor.setDevice(taskName, device);
+        return this;
+    }
+
+    /**
+     * @return
+     */
+    public TornadoExecutionPlan withConcurrentDevices() {
+        tornadoExecutor.withConcurrentDevices();
+        return this;
+    }
+
+    public TornadoExecutionPlan withoutConcurrentDevices() {
+        tornadoExecutor.withoutConcurrentDevices();
         return this;
     }
 
@@ -330,6 +347,18 @@ public class TornadoExecutionPlan {
          */
         void setDevice(TornadoDevice device) {
             immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.setDevice(device));
+        }
+
+        void setDevice(String taskName, TornadoDevice device) {
+            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.setDevice(taskName, device));
+        }
+
+        void withConcurrentDevices() {
+            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withConcurrentDevices());
+        }
+
+        void withoutConcurrentDevices() {
+            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withoutConcurrentDevices());
         }
 
         void freeDeviceMemory() {

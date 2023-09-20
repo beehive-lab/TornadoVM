@@ -34,6 +34,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateMultipleBuffersNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateNode;
@@ -201,7 +202,7 @@ public class TornadoGraphBuilder {
                 taskIndex = buffer.getInt();
                 task = executionContext.getTask(taskIndex);
 
-                /**
+                /*
                  * Note, {@code executionContext.getDevices().indexOf} retrieves the device
                  * index in the {@code Device[]} array, which is different from the device index
                  * that appears in the output of the Tornado devices command. So, internally, we
@@ -216,7 +217,8 @@ public class TornadoGraphBuilder {
                  * array.
                  *
                  */
-                context = graph.addUnique(new ContextNode(executionContext.getDevices().indexOf(executionContext.getDeviceForTask(taskIndex)), executionContext.getDeviceForTask(taskIndex)));
+                TornadoAcceleratorDevice deviceForTask = executionContext.getDeviceForTask(taskIndex);
+                context = graph.addUnique(new ContextNode(executionContext.getDevices().indexOf(deviceForTask), deviceForTask));
 
                 persist = graph.addUnique(new AllocateMultipleBuffersNode(context));
                 context.addUse(persist);

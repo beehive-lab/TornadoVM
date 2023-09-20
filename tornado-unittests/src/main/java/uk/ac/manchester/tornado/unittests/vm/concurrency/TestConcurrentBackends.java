@@ -36,13 +36,17 @@ import uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices
 /**
  * Test running two and three tasks in serial and concurrent on two devices and
  * three devices on different backends if are available. You need to build with
- * multiple backends (e.g. make graal-jdk-11-plus BACKEND=opencl,ptx,spirv).
+ * multiple backends (e.g. make graal-jdk-17-plus BACKEND=opencl,ptx,spirv).
  *
- * How to test?
+ * <p>
+ * How to test?:
+ * </p>
  *
+ * <p>
  * <code>
  *     tornado-test -V --fullDebug --debug --printBytecodes --jvm="-Ds0.t0.device=0:0 -Ds0.t1.device=1:0 -Ds0.t2.device=2:0 " uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends
  * </code>
+ * </p>
  */
 public class TestConcurrentBackends extends TornadoTestBase {
     private static final String[] DEVICES_FOR_TASKS = { "s0.t0.device", "s0.t1.device", "s0.t2.device" };

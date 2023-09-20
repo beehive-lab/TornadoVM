@@ -93,6 +93,10 @@ public class ImmutableTaskGraph {
         taskGraph.setDevice(device);
     }
 
+    void setDevice(String taskName, TornadoDevice device) {
+        taskGraph.setDevice(taskName, device);
+    }
+
     void freeDeviceMemory() {
         taskGraph.freeDeviceMemory();
     }
@@ -183,5 +187,13 @@ public class ImmutableTaskGraph {
 
     void disableProfiler(ProfilerMode profilerMode) {
         taskGraph.disableProfiler(profilerMode);
+    }
+
+    public void withConcurrentDevices() {
+        taskGraph.withConcurrentDevices();
+    }
+
+    public void withoutConcurrentDevices() {
+        taskGraph.withoutConcurrentDevices();
     }
 }

@@ -90,6 +90,11 @@ public class CompilableTask implements SchedulableTask {
     }
 
     @Override
+    public String getNormalizedName() {
+        return meta.getId() + "." + method.getName();
+    }
+
+    @Override
     public String getTaskName() {
         return method.getName();
     }
