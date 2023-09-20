@@ -37,7 +37,7 @@ __JDK21__ = "jdk21"
 __GRAALVM17__ = "graalvm-jdk-17"
 __GRAALVM21__ = "graalvm-jdk-21"
 __MANDREL17__ = "mandrel-jdk-17"
-__MANDREL21__ = "mandrel-jdk-21"
+__MANDREL20__ = "mandrel-jdk-20"
 __CORRETTO17__ = "corretto-jdk-17"
 __CORRETTO21__ = "corretto-jdk-21"
 __MICROSOFT17__ = "microsoft-jdk-17"
@@ -140,7 +140,7 @@ JDK = {
             __ARM__: None,
         }
     },
-    __MANDREL21__: {
+    __MANDREL20__: {
         __LINUX__: {
             __X86_64__: "https://github.com/graalvm/mandrel/releases/download/mandrel-23.0.0.0-Final/mandrel-java20-linux-amd64-23.0.0.0-Final.tar.gz",
             __ARM__: "https://github.com/graalvm/mandrel/releases/download/mandrel-23.0.0.0-Final/mandrel-java20-linux-aarch64-23.0.0.0-Final.tar.gz",
