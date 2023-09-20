@@ -30,13 +30,12 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 
 public class TornadoVMConfig extends HotSpotVMConfigAccess {
 
-    private MetaAccessProvider metaAccessProvider;
-
+    public final int hubOffset = getFieldOffset("oopDesc::_metadata._klass", Integer.class, "Klass*");
+    public final int instanceKlassFieldsOffset = getFieldOffset("InstanceKlass::_fieldinfo_stream", Integer.class, "Array<u1>*");
     private final boolean useCompressedClassPointers = getFlag("UseCompressedClassPointers", Boolean.class);
     private final int arrayOopDescSize = getFieldValue("CompilerToVM::Data::sizeof_arrayOopDesc", Integer.class, "int");
-    public final int hubOffset = getFieldOffset("oopDesc::_metadata._klass", Integer.class, "Klass*");
     private final int narrowKlassSize = getFieldValue("CompilerToVM::Data::sizeof_narrowKlass", Integer.class, "int");
-    public final int instanceKlassFieldsOffset = getFieldOffset("InstanceKlass::_fields", Integer.class, "Array<u2>*");
+    private MetaAccessProvider metaAccessProvider;
 
     public TornadoVMConfig(HotSpotVMConfigStore store, MetaAccessProvider metaAccessProvider) {
         super(store);
