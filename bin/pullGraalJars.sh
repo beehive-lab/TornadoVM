@@ -32,7 +32,6 @@ TRUFFLE_API_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/truffle/truffle-a
 TRUFFLE_COMPILER_JAR_URL=https://repo1.maven.org/maven2/org/graalvm/truffle/truffle-compiler/${VERSION}/truffle-compiler-${VERSION}.jar
 GRAAL_WORD=https://repo1.maven.org/maven2/org/graalvm/sdk/word/${VERSION}/word-${VERSION}.jar
 GRAAL_POLYGLOT=https://repo1.maven.org/maven2/org/graalvm/polyglot/polyglot/${VERSION}/polyglot-${VERSION}.jar
-GRAAL_NATIVE_IMAGE=https://repo1.maven.org/maven2/org/graalvm/nativeimage/native-image-base/${VERSION}/native-image-base-${VERSION}.jar
 
 
 if [ ! -d $PWD/graalJars ]; then
@@ -78,9 +77,4 @@ fi
 if [ ! -f $PWD/graalJars/polyglot-${VERSION}.jar ]; then
   echo "Downloading jar file for the graal polyglot to $PWD/graalJars/"
   wget -P $PWD/graalJars/ $GRAAL_POLYGLOT
-fi
-
-if [ ! -f $PWD/graalJars/native-image-base-${VERSION}.jar ]; then
-  echo "Downloading jar file for the graal native-image-base to $PWD/graalJars/"
-  wget -P $PWD/graalJars/ $GRAAL_NATIVE_IMAGE
 fi
