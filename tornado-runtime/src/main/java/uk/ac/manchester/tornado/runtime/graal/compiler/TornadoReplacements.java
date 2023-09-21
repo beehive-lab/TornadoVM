@@ -27,16 +27,48 @@ package uk.ac.manchester.tornado.runtime.graal.compiler;
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
+import org.graalvm.compiler.java.GraphBuilderPhase;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
+import org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext;
+import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 import org.graalvm.compiler.replacements.ReplacementsImpl;
 
 import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 public class TornadoReplacements extends ReplacementsImpl {
 
-    public TornadoReplacements(GraalDebugHandlersFactory graalDebugHandlersFactory, Providers providers, SnippetReflectionProvider snippetReflection, BytecodeProvider bytecodeProvider, TargetDescription target) {
+    public TornadoReplacements(GraalDebugHandlersFactory graalDebugHandlersFactory, Providers providers, SnippetReflectionProvider snippetReflection, BytecodeProvider bytecodeProvider,
+            TargetDescription target) {
         super(graalDebugHandlersFactory, providers, snippetReflection, bytecodeProvider, target);
     }
 
+    @Override
+    protected GraphMaker createGraphMaker(ResolvedJavaMethod substitute, ResolvedJavaMethod original) {
+        return new GraphMaker(this, substitute, original) {
+
+            @Override
+            protected GraphBuilderPhase.Instance createGraphBuilder(Providers providers1, GraphBuilderConfiguration graphBuilderConfig, OptimisticOptimizations optimisticOpts,
+                    IntrinsicContext initialIntrinsicContext) {
+                return new GraphBuilderPhase.Instance(providers1, graphBuilderConfig, optimisticOpts, initialIntrinsicContext);
+            }
+        };
+    }
+
+    @Override
+    public void notifyBeforeInline(ResolvedJavaMethod methodToInline) {
+        super.notifyBeforeInline(methodToInline);
+    }
+
+    @Override
+    public void notifyAfterInline(ResolvedJavaMethod methodToInline) {
+        super.notifyAfterInline(methodToInline);
+    }
+
+    @Override
+    public void closeSnippetRegistration() {
+        super.closeSnippetRegistration();
+    }
 }
