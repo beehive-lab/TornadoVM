@@ -310,7 +310,7 @@ JDKs. Below are listed the Java 17 JDK distributions against which TornadoVM has
   ./scripts/tornadovm-installer --listJDKs
   jdk17            : Install TornadoVM with OpenJDK 17 (Oracle OpenJDK)
   jdk21            : Install TornadoVM with OpenJDK 21 (Oracle OpenJDK)
-  graalvm-jdk-17   : Install TornadoVM with GraalVM and JDK 17 (GraalVM 23.0.1)
+  graalvm-jdk-17   : Install TornadoVM with GraalVM and JDK 17 (GraalVM 23.1.0)
   graalvm-jdk-21   : Install TornadoVM with GraalVM and JDK 21 (GraalVM 23.0.1)
   corretto-jdk-17  : Install TornadoVM with Corretto JDK 17
   corretto-jdk-21  : Install TornadoVM with Corretto JDK 21
