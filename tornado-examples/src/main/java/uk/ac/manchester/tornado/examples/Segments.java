@@ -1,8 +1,10 @@
 package uk.ac.manchester.tornado.examples;
 
-import jdk.incubator.foreign.MemoryAccess;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
+
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentScope;
+
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -18,7 +20,7 @@ public class Segments {
 
     public static void addConstantMemSeg(MemorySegment segment) {
         for (@Parallel int i = 0; i < ARRAY_SIZE; i++) {
-            MemoryAccess.setLongAtIndex(segment, i, MemoryAccess.getLongAtIndex(segment, i) + 100);
+            segment.setAtIndex(JAVA_LONG, i, segment.getAtIndex(JAVA_LONG, i) + 100);
         }
     }
 
@@ -39,11 +41,11 @@ public class Segments {
         long[] array = new long[ARRAY_SIZE];
 
         //MemorySegment segment = TornadoRuntime.getTornadoRuntime().getPinnedBuffer(device, SIZE_BYTES);
-        MemorySegment segment = MemorySegment.allocateNative(SIZE_BYTES, ResourceScope.globalScope());//TornadoRuntime.getTornadoRuntime().getPinnedBuffer(device, SIZE_BYTES);
+        MemorySegment segment = MemorySegment.allocateNative(SIZE_BYTES, SegmentScope.global());//TornadoRuntime.getTornadoRuntime().getPinnedBuffer(device, SIZE_BYTES);
 
         for (int i = 0; i < ARRAY_SIZE; i++) {
             array[i] = i;
-            MemoryAccess.setLongAtIndex(segment, i, i);
+            segment.setAtIndex(JAVA_LONG, i, i);
         }
 
         TaskGraph tsMemSeg;
@@ -58,7 +60,7 @@ public class Segments {
         //tornadoExecutor.withWarmUp();
         tornadoExecutor.execute();
         for (int i = 0; i < ARRAY_SIZE; i++) {
-            System.out.println(MemoryAccess.getLongAtIndex(segment, i));
+            System.out.println(segment.getAtIndex(JAVA_LONG, i));
         }
 
 

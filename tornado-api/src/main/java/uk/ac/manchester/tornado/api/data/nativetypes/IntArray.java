@@ -41,9 +41,11 @@
  */
 package uk.ac.manchester.tornado.api.data.nativetypes;
 
-import jdk.incubator.foreign.MemoryAccess;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
+
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentScope;
+
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 public class IntArray {
     private MemorySegment segment;
@@ -52,22 +54,23 @@ public class IntArray {
 
     public IntArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segment = MemorySegment.allocateNative(numberOfElements * INT_BYTES, ResourceScope.globalScope()); //.share();
+        segment = MemorySegment.allocateNative(numberOfElements * INT_BYTES, SegmentScope.global()); //.share();
     }
 
 
     public void set(int index, int value) {
-        MemoryAccess.setIntAtIndex(segment, index, value);
+        segment.setAtIndex(JAVA_INT, index, value);
     }
 
     public int get(int index) {
-        return MemoryAccess.getIntAtIndex(segment, index);
+        //return 0;
+        return segment.getAtIndex(JAVA_INT, index);
     }
 
 
     public void init(int value) {
         for (int i = 0; i < segment.byteSize() / INT_BYTES; i++) {
-            MemoryAccess.setIntAtIndex(segment, i, value);
+            segment.setAtIndex(JAVA_INT, i, value);
         }
     }
 

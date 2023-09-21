@@ -65,6 +65,7 @@ public class NativeTypesTest {
         intOut.init(1);
 
         TaskGraph tsInt = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, intIn)
                 .task("t0", NativeTypesTest::addInt, intIn, intOut)
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, intOut);
 

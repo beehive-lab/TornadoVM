@@ -303,8 +303,8 @@
                         <version>3.11.0</version>
                         <configuration>
                             <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                            <source>11</source>
-                            <target>11</target>
+                            <source>20</source>
+                            <target>20</target>
                             <showDeprecation>true</showDeprecation>
                             <annotationProcessorPaths>
                                 <path>
@@ -314,6 +314,7 @@
                                 </path>
                             </annotationProcessorPaths>
                             <compilerArgs>
+                                <arg>--enable-preview</arg>
                                 <arg>--add-modules</arg>
                                 <arg>ALL-SYSTEM</arg>
                                 <arg>--upgrade-module-path</arg>
@@ -1082,6 +1083,7 @@
                                 </path>
                             </annotationProcessorPaths>
                             <compilerArgs>
+                                <arg>--enable-preview</arg>
                                 <arg>--add-modules</arg>
                                 <arg>ALL-SYSTEM</arg>
                                 <!-- Common exports-->

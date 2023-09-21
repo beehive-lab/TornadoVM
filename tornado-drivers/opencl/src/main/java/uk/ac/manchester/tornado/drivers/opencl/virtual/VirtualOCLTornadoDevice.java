@@ -23,7 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.virtual;
 
-import jdk.incubator.foreign.MemorySegment;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;

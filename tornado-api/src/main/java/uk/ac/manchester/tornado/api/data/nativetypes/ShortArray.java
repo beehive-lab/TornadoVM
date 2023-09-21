@@ -41,9 +41,10 @@
  */
 package uk.ac.manchester.tornado.api.data.nativetypes;
 
-import jdk.incubator.foreign.MemoryAccess;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
+import static java.lang.foreign.ValueLayout.JAVA_SHORT;
+
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentScope;
 
 public class ShortArray {
     private MemorySegment segment;
@@ -52,22 +53,22 @@ public class ShortArray {
 
     public ShortArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segment = MemorySegment.allocateNative(numberOfElements * SHORT_BYTES, ResourceScope.globalScope());
+        segment = MemorySegment.allocateNative(numberOfElements * SHORT_BYTES, SegmentScope.global());
     }
 
 
     public void set(int index, short value) {
-        MemoryAccess.setShortAtIndex(segment, index, value);
+        segment.setAtIndex(JAVA_SHORT, index, value);
     }
 
     public short get(int index) {
-        return MemoryAccess.getShortAtIndex(segment, index);
+        return segment.getAtIndex(JAVA_SHORT, index);
     }
 
 
     public void init(short value) {
         for (int i = 0; i < segment.byteSize() / SHORT_BYTES; i++) {
-            MemoryAccess.setShortAtIndex(segment, i, value);
+            segment.setAtIndex(JAVA_SHORT, i, value);
         }
     }
 

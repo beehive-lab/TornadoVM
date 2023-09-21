@@ -41,9 +41,10 @@
  */
 package uk.ac.manchester.tornado.api.data.nativetypes;
 
-import jdk.incubator.foreign.MemoryAccess;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentScope;
+
+import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
 
 public class DoubleArray {
     private MemorySegment segment;
@@ -53,22 +54,22 @@ public class DoubleArray {
 
     public DoubleArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segment = MemorySegment.allocateNative(numberOfElements * DOUBLE_BYTES, ResourceScope.globalScope()); //.share();
+        segment = MemorySegment.allocateNative(numberOfElements * DOUBLE_BYTES, SegmentScope.global()); //.share();
     }
 
 
     public void set(int index, double value) {
-        MemoryAccess.setDoubleAtIndex(segment, index, value);
+        segment.setAtIndex(JAVA_DOUBLE, index, value);
     }
 
     public double get(int index) {
-        return MemoryAccess.getDoubleAtIndex(segment, index);
+        return segment.getAtIndex(JAVA_DOUBLE, index);
     }
 
 
     public void init(double value) {
         for (int i = 0; i < segment.byteSize() / DOUBLE_BYTES; i++) {
-            MemoryAccess.setDoubleAtIndex(segment, i, value);
+            segment.setAtIndex(JAVA_DOUBLE, i, value);
         }
     }
 

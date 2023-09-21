@@ -41,9 +41,10 @@
  */
 package uk.ac.manchester.tornado.api.data.nativetypes;
 
-import jdk.incubator.foreign.MemoryAccess;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentScope;
+
+import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
 
 public class FloatArray {
     private MemorySegment segment;
@@ -53,22 +54,22 @@ public class FloatArray {
 
     public FloatArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segment = MemorySegment.allocateNative(numberOfElements * FLOAT_BYTES, ResourceScope.globalScope());// .share();
+        segment = MemorySegment.allocateNative(numberOfElements * FLOAT_BYTES, SegmentScope.global());// .share();
     }
 
 
     public void set(int index, float value) {
-        MemoryAccess.setFloatAtIndex(segment, index, value);
+        segment.setAtIndex(JAVA_FLOAT, index, value);
     }
 
     public float get(int index) {
-        return MemoryAccess.getFloatAtIndex(segment, index);
+        return segment.getAtIndex(JAVA_FLOAT, index);
     }
 
 
     public void init(float value) {
         for (int i = 0; i < segment.byteSize() / FLOAT_BYTES; i++) {
-            MemoryAccess.setFloatAtIndex(segment, i, value);
+            segment.setAtIndex(JAVA_FLOAT, i, value);
         }
     }
 

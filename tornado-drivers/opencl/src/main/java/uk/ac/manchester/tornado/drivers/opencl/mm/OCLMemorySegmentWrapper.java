@@ -1,18 +1,22 @@
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
-import jdk.incubator.foreign.MemorySegment;
-import uk.ac.manchester.tornado.api.data.nativetypes.*;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
+
+import java.lang.foreign.MemorySegment;
+import java.util.ArrayList;
+import java.util.List;
+
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
 public class OCLMemorySegmentWrapper implements ObjectBuffer {
 
@@ -83,7 +87,7 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         final long numBytes = getSizeSubRegion() > 0 ? getSizeSubRegion() : bufferSize;
    //     System.out.println("==== [READ] bufferOffset: " + bufferOffset + " bufferSize: " + numBytes + " hostOffset: " + hostOffset + " seg.get(0): " + ((IntArray) reference).get(0) + " seg.size: " + ((IntArray) reference).getSize() + " seg pointer: " + segment.address().toRawLongValue());
         returnEvent = deviceContext.readBuffer(toBuffer(), bufferOffset, numBytes,
-                segment.address().toRawLongValue(), hostOffset, (useDeps) ? events : null);
+                segment.address(), hostOffset, (useDeps) ? events : null);
         return useDeps ? returnEvent : -1;
     }
 
@@ -105,7 +109,7 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         }
         //OCLBufferInfo bufferInfo = deviceContext.getSegmentToBufferMap().get(segment);
         System.out.println("==== [WRITE] bufferOffset: " + bufferOffset + " bufferSize: " + bufferSize + " hostOffset: 0");
-        deviceContext.writeBuffer(toBuffer(), bufferOffset, bufferSize, seg.address().toRawLongValue(), 0, null);
+        deviceContext.writeBuffer(toBuffer(), bufferOffset, bufferSize, seg.address(), 0, null);
         onDevice = true;
     }
 
@@ -132,7 +136,7 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         // is the address correct for batches?
  //       System.out.println("==== [ENQUEUEREAD] bufferOffset: " + bufferOffset + " bufferSize: " + bufferSize + " hostOffset: " + hostOffset);
         returnEvent = deviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, bufferSize,
-                seg.address().toRawLongValue(), hostOffset, (useDeps) ? events : null);
+                seg.address(), hostOffset, (useDeps) ? events : null);
         return useDeps ? returnEvent : -1;
     }
 
@@ -156,7 +160,7 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
 
 //        System.out.println("==== [ENQUEUEWRITE] bufferOffset: " + bufferOffset + " bufferSize: " + bufferSize + " hostOffset: " + hostOffset  + " seg.get(0): " + ((IntArray) reference).get(0)  + " seg.size: " + ((IntArray) reference).getSize()  + " seg pointer: " + seg.address().toRawLongValue());
         int internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset,
-                bufferSize, seg.address().toRawLongValue(), hostOffset, (useDeps) ? events : null);
+                bufferSize, seg.address(), hostOffset, (useDeps) ? events : null);
         returnEvents.add(internalEvent);
 
         onDevice = true;

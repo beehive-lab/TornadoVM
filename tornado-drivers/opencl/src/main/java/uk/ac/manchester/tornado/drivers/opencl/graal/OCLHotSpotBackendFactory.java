@@ -117,7 +117,9 @@ public class OCLHotSpotBackendFactory {
             ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);
             GraalDebugHandlersFactory graalDebugHandlersFactory = new GraalDebugHandlersFactory(snippetReflection);
             TornadoReplacements replacements = new TornadoReplacements(graalDebugHandlersFactory, p, snippetReflection, bytecodeProvider, target);
+            System.out.println("REGISTER PLUGINS......");
             plugins = createGraphBuilderPlugins(metaAccess, replacements, snippetReflection, lowerer);
+            System.out.println("DONE......");
 
             replacements.setGraphBuilderPlugins(plugins);
 
