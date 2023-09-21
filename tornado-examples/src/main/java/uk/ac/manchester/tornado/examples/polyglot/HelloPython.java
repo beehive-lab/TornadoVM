@@ -19,22 +19,18 @@
  */
 package uk.ac.manchester.tornado.examples.polyglot;
 
-import java.util.Arrays;
-
 import org.graalvm.polyglot.Context;
 
+import java.util.Arrays;
+
 /**
- * Example of GraalVM Polyglot using Python and Tornado.
- * 
- * The Ruby program calls MyCompute.compute() to accelerate vector addition on a
- * GPU/FPGA.
- * 
+ * Example of GraalVM Polyglot using Python and Tornado. The Ruby program calls MyCompute.compute() to accelerate vector addition on a GPU/FPGA.
+ *
  * How to run:
- * 
+ *
  * <code>
- *     $ tornado --debug -m tornado.examples/uk.ac.manchester.tornado.examples.polyglot.HelloPython
+ * $ tornado --debug -m tornado.examples/uk.ac.manchester.tornado.examples.polyglot.HelloPython
  * </code>
- * 
  */
 public class HelloPython {
 
@@ -54,9 +50,7 @@ public class HelloPython {
 
     public static void main(String[] args) {
         System.out.println("Hello polyglot world Java!");
-        Context context = Context.newBuilder()
-                .allowAllAccess(true)
-                .build();
+        Context context = Context.newBuilder().allowAllAccess(true).build();
         context.eval("python", "print('Hello polyglot world from Python!')");
         context.close();
         runTornadoFromPython();

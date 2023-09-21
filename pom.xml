@@ -18,7 +18,7 @@
 
     <properties>
         <tornado.version>${project.version}</tornado.version>
-        <graal.version>23.0.1</graal.version>
+        <graalvm.version>23.1.0</graalvm.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <classifier>${platform}</classifier>
         <download.cmake>false</download.cmake>
@@ -303,8 +303,8 @@
                         <version>3.11.0</version>
                         <configuration>
                             <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                            <source>20</source>
-                            <target>20</target>
+                            <source>21</source>
+                            <target>21</target>
                             <showDeprecation>true</showDeprecation>
                             <annotationProcessorPaths>
                                 <path>
@@ -1072,8 +1072,8 @@
                         <version>3.11.0</version>
                         <configuration>
                             <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                            <source>11</source>
-                            <target>11</target>
+                            <source>21</source>
+                            <target>21</target>
                             <showDeprecation>true</showDeprecation>
                             <annotationProcessorPaths>
                                 <path>
@@ -1956,6 +1956,21 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
             <version>2.17.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.polyglot</groupId>
+            <artifactId>polyglot</artifactId>
+            <version>${graalvm.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.sdk</groupId>
+            <artifactId>word</artifactId>
+            <version>${graalvm.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.sdk</groupId>
+            <artifactId>collections</artifactId>
+            <version>${graalvm.version}</version>
         </dependency>
     </dependencies>
     <modules>
