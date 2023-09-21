@@ -2,8 +2,8 @@ package uk.ac.manchester.tornado.examples;
 
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -41,7 +41,7 @@ public class Segments {
         long[] array = new long[ARRAY_SIZE];
 
         //MemorySegment segment = TornadoRuntime.getTornadoRuntime().getPinnedBuffer(device, SIZE_BYTES);
-        MemorySegment segment = MemorySegment.allocateNative(SIZE_BYTES, SegmentScope.global());//TornadoRuntime.getTornadoRuntime().getPinnedBuffer(device, SIZE_BYTES);
+        MemorySegment segment = Arena.ofAuto().allocate(SIZE_BYTES, 1);//TornadoRuntime.getTornadoRuntime().getPinnedBuffer(device, SIZE_BYTES);
 
         for (int i = 0; i < ARRAY_SIZE; i++) {
             array[i] = i;

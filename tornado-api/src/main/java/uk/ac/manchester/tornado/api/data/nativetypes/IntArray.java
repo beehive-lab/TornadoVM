@@ -42,8 +42,8 @@
 package uk.ac.manchester.tornado.api.data.nativetypes;
 
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
 
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 
@@ -54,7 +54,7 @@ public class IntArray {
 
     public IntArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segment = MemorySegment.allocateNative(numberOfElements * INT_BYTES, SegmentScope.global()); //.share();
+        segment = Arena.ofAuto().allocate(numberOfElements * INT_BYTES, 1);
     }
 
 

@@ -41,8 +41,8 @@
  */
 package uk.ac.manchester.tornado.api.data.nativetypes;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
 
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
@@ -53,7 +53,7 @@ public class LongArray {
 
     public LongArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segment = MemorySegment.allocateNative(numberOfElements * LONG_BYTES, SegmentScope.global()); //.share();
+        segment = Arena.ofAuto().allocate(numberOfElements * LONG_BYTES, 1);
     }
 
 

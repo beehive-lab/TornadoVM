@@ -43,8 +43,8 @@ package uk.ac.manchester.tornado.api.data.nativetypes;
 
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
 
 public class ShortArray {
     private MemorySegment segment;
@@ -53,7 +53,7 @@ public class ShortArray {
 
     public ShortArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segment = MemorySegment.allocateNative(numberOfElements * SHORT_BYTES, SegmentScope.global());
+        segment = Arena.ofAuto().allocate(numberOfElements * SHORT_BYTES, 1);
     }
 
 

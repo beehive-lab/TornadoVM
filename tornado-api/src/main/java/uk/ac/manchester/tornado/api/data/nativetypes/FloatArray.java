@@ -41,8 +41,8 @@
  */
 package uk.ac.manchester.tornado.api.data.nativetypes;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
 
 import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
 
@@ -54,7 +54,7 @@ public class FloatArray {
 
     public FloatArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segment = MemorySegment.allocateNative(numberOfElements * FLOAT_BYTES, SegmentScope.global());// .share();
+        segment = Arena.ofAuto().allocate(numberOfElements * FLOAT_BYTES, 1);
     }
 
 

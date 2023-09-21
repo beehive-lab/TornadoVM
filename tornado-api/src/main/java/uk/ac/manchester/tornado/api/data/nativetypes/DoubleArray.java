@@ -41,8 +41,8 @@
  */
 package uk.ac.manchester.tornado.api.data.nativetypes;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
 
 import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
 
@@ -54,7 +54,7 @@ public class DoubleArray {
 
     public DoubleArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segment = MemorySegment.allocateNative(numberOfElements * DOUBLE_BYTES, SegmentScope.global()); //.share();
+        segment = Arena.ofAuto().allocate(numberOfElements * DOUBLE_BYTES, 1);
     }
 
 
