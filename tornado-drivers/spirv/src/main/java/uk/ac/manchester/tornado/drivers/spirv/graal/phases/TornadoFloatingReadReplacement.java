@@ -53,7 +53,7 @@ import org.graalvm.compiler.nodes.ProxyNode;
 import org.graalvm.compiler.nodes.StartNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.ValueNodeUtil;
+import org.graalvm.compiler.nodes.ValueNodeInterface;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.cfg.HIRBlock;
@@ -164,7 +164,7 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
                     if (isPhi) {
                         // Fortify: Suppress Null Deference false positive (`isPhi == true` implies
                         // `merged != null`)
-                        ((MemoryPhiNode) merged).addInput(ValueNodeUtil.asNode(last));
+                        ((MemoryPhiNode) merged).addInput(ValueNodeInterface.asNode(last));
                     } else {
                         if (merged == last) {
                             // nothing to do
@@ -173,9 +173,9 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
                         } else {
                             MemoryPhiNode phi = merge.graph().addWithoutUnique(new MemoryPhiNode(merge, key));
                             for (int j = 0; j < mergedStatesCount; j++) {
-                                phi.addInput(ValueNodeUtil.asNode(merged));
+                                phi.addInput(ValueNodeInterface.asNode(merged));
                             }
-                            phi.addInput(ValueNodeUtil.asNode(last));
+                            phi.addInput(ValueNodeInterface.asNode(last));
                             merged = phi;
                             isPhi = true;
                         }
@@ -409,7 +409,7 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
                 LocationIdentity location) {
             try (DebugCloseable position = loop.withNodeSourcePosition()) {
                 MemoryPhiNode phi = loop.graph().addWithoutUnique(new MemoryPhiNode(loop, location));
-                phi.addInput(ValueNodeUtil.asNode(initialState.getLastLocationAccess(location)));
+                phi.addInput(ValueNodeInterface.asNode(initialState.getLastLocationAccess(location)));
                 phis.put(location, phi);
             }
         }
@@ -539,7 +539,7 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
                 while (phiCursor.advance()) {
                     LocationIdentity key = phiCursor.getKey();
                     PhiNode phi = phiCursor.getValue();
-                    phi.initializeValueAt(endIndex, ValueNodeUtil.asNode(endStateCursor.getValue().getLastLocationAccess(key)));
+                    phi.initializeValueAt(endIndex, ValueNodeInterface.asNode(endStateCursor.getValue().getLastLocationAccess(key)));
                 }
             }
             return loopInfo.exitStates;

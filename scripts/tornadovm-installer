@@ -45,12 +45,12 @@ __DIRECTORY_DEPENDENCIES__ = "etc/dependencies"
 __VERSION__ = "v0.16-dev"
 
 __SUPPORTED_JDKS__ = [
-    config.__JDK17__, config.__JDK20__,
-    config.__GRAALVM17__, config.__GRAALVM20__,
-    config.__CORRETTO17__, config.__CORRETTO20__,
+    config.__JDK17__, config.__JDK21__,
+    config.__GRAALVM17__, config.__GRAALVM21__,
+    config.__CORRETTO17__, config.__CORRETTO21__,
     config.__MANDREL17__, config.__MANDREL20__,
     config.__MICROSOFT17__, config.__MICROSOFT20__,
-    config.__ZULU17__, config.__ZULU20__
+    config.__ZULU17__, config.__ZULU21__
 ]
 
 __SUPPORTED_BACKENDS__ = ["opencl", "spirv", "ptx"]
@@ -305,16 +305,16 @@ class TornadoInstaller():
 def listSupportedJDKs():
     print("""
     jdk17            : Install TornadoVM with OpenJDK 17 (Oracle OpenJDK)"
-    jdk20            : Install TornadoVM with OpenJDK 20 (Oracle OpenJDK)"
-    graalvm-jdk-17   : Install TornadoVM with GraalVM and JDK 17 (GraalVM 23.0.1)"
-    graalvm-jdk-20   : Install TornadoVM with GraalVM and JDK 20 (GraalVM 23.0.1)"
+    jdk21            : Install TornadoVM with OpenJDK 21 (Oracle OpenJDK)"
+    graalvm-jdk-17   : Install TornadoVM with GraalVM and JDK 17 (GraalVM 23.1.0)"
+    graalvm-jdk-21   : Install TornadoVM with GraalVM and JDK 21 (GraalVM 23.1.0)"
     corretto-jdk-17  : Install TornadoVM with Corretto JDK 11"
-    corretto-jdk-20  : Install TornadoVM with Corretto JDK 17"
-    mandrel-jdk-17   : Install TornadoVM with Mandrel 23.0.1 (JDK 17)"
-    mandrel-jdk-20   : Install TornadoVM with Mandrel 23.0.1 (JDK 20)"
+    corretto-jdk-21  : Install TornadoVM with Corretto JDK 21"
+    mandrel-jdk-17   : Install TornadoVM with Mandrel 23.1.0 (JDK 17)"
+    mandrel-jdk-20   : Install TornadoVM with Mandrel 23.1.0 (JDK 20)"
     microsoft-jdk-17 : Install TornadoVM with Microsoft JDK 17"
     zulu-jdk-17      : Install TornadoVM with Azul Zulu JDK 17"
-    zulu-jdk-20     : Install TornadoVM with Azul Zulu JDK 20"
+    zulu-jdk-21     : Install TornadoVM with Azul Zulu JDK 21"
 
     Usage: 
      $ ./scripts/tornadovm-installer  --jdk <JDK_VERSION> --backend <BACKEND>
