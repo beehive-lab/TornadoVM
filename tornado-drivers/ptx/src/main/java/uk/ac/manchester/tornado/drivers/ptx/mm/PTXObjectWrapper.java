@@ -71,7 +71,7 @@ public class PTXObjectWrapper implements ObjectBuffer {
         this.deviceContext = device;
 
         hubOffset = getVMConfig().hubOffset;
-        fieldsOffset = getVMConfig().instanceKlassFieldsOffset;
+        fieldsOffset = getVMConfig().instanceKlassFieldsOffset();
 
         resolvedType = (HotSpotResolvedJavaType) getVMRuntime().getHostJVMCIBackend().getMetaAccess().lookupJavaType(object.getClass());
 
