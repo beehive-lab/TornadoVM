@@ -23,10 +23,5 @@
             <artifactId>tornado-drivers-common</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.graalvm.sdk</groupId>
-            <artifactId>graal-sdk</artifactId>
-            <version>21.2.0</version>
-        </dependency>
     </dependencies>
 </project>
