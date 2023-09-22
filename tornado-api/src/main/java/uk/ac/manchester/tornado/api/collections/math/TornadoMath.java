@@ -338,8 +338,16 @@ public class TornadoMath {
         return (float) Math.cos(angle);
     }
 
+    public static double cos(double angle) {
+        return Math.cos(angle);
+    }
+
     public static float sin(float angle) {
         return (float) Math.sin(angle);
+    }
+
+    public static double sin(double angle) {
+        return Math.sin(angle);
     }
 
     public static float signum(float a) {
