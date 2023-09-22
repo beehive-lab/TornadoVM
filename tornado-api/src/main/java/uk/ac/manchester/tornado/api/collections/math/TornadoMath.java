@@ -179,6 +179,7 @@ public class TornadoMath {
     public static double fract(double f) {
         return f - floor(f);
     }
+
     public static boolean isEqual(float[] a, float[] b) {
         boolean result = true;
         for (int i = 0; i < a.length && result; i++) {
@@ -321,8 +322,16 @@ public class TornadoMath {
         return (float) Math.acos(a);
     }
 
+    public static double acos(double a) {
+        return Math.acos(a);
+    }
+
     public static float asin(float a) {
         return (float) Math.asin(a);
+    }
+
+    public static double asin(double a) {
+        return Math.asin(a);
     }
 
     public static float cos(float angle) {
