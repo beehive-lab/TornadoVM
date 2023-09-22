@@ -152,7 +152,6 @@ def post_installation_actions(
                 f"{os.environ['TORNADO_SDK']}/share/java/graalJars", exist_ok=True
             )
             copy_jars(graal_jars_dir)
-    #             subprocess.run(["cp", "-r", f"{graal_jars_dir}/*", f"{os.environ['TORNADO_SDK']}/share/java/graalJars/"], stdout=subprocess.PIPE)
     else:
         print("\nCompilation failed\n")
 
