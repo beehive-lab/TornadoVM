@@ -22,46 +22,73 @@
 # 2 along with this work; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-
 import os
-import subprocess
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+from tqdm import tqdm
 
-VERSION = "23.0.1"
+VERSION = "23.1.0"
 COMPILER_JAR_URL = f"https://repo1.maven.org/maven2/org/graalvm/compiler/compiler/{VERSION}/compiler-{VERSION}.jar"
 COMPILER_MANAGEMENT_JAR_URL = f"https://repo1.maven.org/maven2/org/graalvm/compiler/compiler-management/{VERSION}/compiler-management-{VERSION}.jar"
+GRAAL_COLLECTIONS = f"https://repo1.maven.org/maven2/org/graalvm/sdk/collections/{VERSION}/collections-{VERSION}.jar"
 GRAAL_SDK_JAR_URL = f"https://repo1.maven.org/maven2/org/graalvm/sdk/graal-sdk/{VERSION}/graal-sdk-{VERSION}.jar"
 TRUFFLE_API_JAR_URL = f"https://repo1.maven.org/maven2/org/graalvm/truffle/truffle-api/{VERSION}/truffle-api-{VERSION}.jar"
+TRUFFLE_COMPILER_JAR_URL = f"https://repo1.maven.org/maven2/org/graalvm/truffle/truffle-compiler/{VERSION}/truffle-compiler-{VERSION}.jar"
+GRAAL_WORD = f"https://repo1.maven.org/maven2/org/graalvm/sdk/word/{VERSION}/word-{VERSION}.jar"
+GRAAL_POLYGLOT = f"https://repo1.maven.org/maven2/org/graalvm/polyglot/polyglot/{VERSION}/polyglot-{VERSION}.jar"
 
-# Create a directory if it doesn't exist
-if not os.path.exists('graalJars'):
-    print("Creating directory graalJars under", os.getcwd())
-    os.mkdir('graalJars')
+# Define ANSI escape codes for colors
+GREEN = '\033[92m'
+CYAN = '\033[96m'
+RESET = '\033[0m'
 
+graal_jars_dir = os.path.join(os.getcwd(), 'graalJars')
 
-# Function to download a file using wget
-def download_with_wget(url, output_path):
-    wget_command = ['wget', '-P', output_path, url]
-    subprocess.run(wget_command, check=True)
+if not os.path.exists(graal_jars_dir):
+    print(f"Creating directory graalJars under {os.getcwd()}")
+    os.mkdir(graal_jars_dir)
 
+def create_session_with_retries(retries=5):
+    session = requests.Session()
+    retry_strategy = Retry(
+        total=retries,
+        backoff_factor=1,
+        status_forcelist=[500, 502, 503, 504],
+    )
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+    session.mount("https://", adapter)
+    return session
 
-# Download compiler.jar
-if not os.path.exists(f'graalJars/compiler-{VERSION}.jar'):
-    print(f"Downloading jar file for the graal compiler to graalJars/")
-    download_with_wget(COMPILER_JAR_URL, 'graalJars')
+def download_jar_if_not_exists(jar_url, target_dir):
+    jar_filename = os.path.basename(jar_url)
+    target_path = os.path.join(target_dir, jar_filename)
 
-# Download compiler-management.jar
-if not os.path.exists(f'graalJars/compiler-management-{VERSION}.jar'):
-    print(f"Downloading jar file for the graal compiler management bean to graalJars/")
-    download_with_wget(COMPILER_MANAGEMENT_JAR_URL, 'graalJars')
+    if not os.path.exists(target_path):
+        print(f"Downloading jar file for {GREEN}{jar_filename}{RESET} to {CYAN}{target_dir}/{RESET}")
+        session = create_session_with_retries()
+        response = session.get(jar_url, stream=True)
+        total_size = int(response.headers.get('content-length', 0))
+        block_size = 1024  # 1 KB
 
-# Download graal-sdk.jar
-if not os.path.exists(f'graalJars/graal-sdk-{VERSION}.jar'):
-    print(f"Downloading jar file for graal sdk to graalJars/")
-    download_with_wget(GRAAL_SDK_JAR_URL, 'graalJars')
+        with open(target_path, 'wb') as jar_file, tqdm(
+            desc=jar_filename,
+            total=total_size,
+            unit='B',
+            unit_scale=True,
+            unit_divisor=1024
+        ) as progress_bar:
+            for data in response.iter_content(block_size):
+                jar_file.write(data)
+                progress_bar.update(len(data))
 
-# Download truffle-api.jar
-if not os.path.exists(f'graalJars/truffle-api-{VERSION}.jar'):
-    print(f"Downloading jar file for graal truffle to graalJars/")
-    download_with_wget(TRUFFLE_API_JAR_URL, 'graalJars')
-
+print(f"Download Graal {VERSION} jars from {GREEN}https://repo1.maven.org/maven2/org/graalvm{RESET} ...")
+download_jar_if_not_exists(COMPILER_JAR_URL, graal_jars_dir)
+download_jar_if_not_exists(COMPILER_MANAGEMENT_JAR_URL, graal_jars_dir)
+download_jar_if_not_exists(GRAAL_SDK_JAR_URL, graal_jars_dir)
+download_jar_if_not_exists(TRUFFLE_API_JAR_URL, graal_jars_dir)
+download_jar_if_not_exists(TRUFFLE_COMPILER_JAR_URL, graal_jars_dir)
+download_jar_if_not_exists(GRAAL_COLLECTIONS, graal_jars_dir)
+download_jar_if_not_exists(GRAAL_WORD, graal_jars_dir)
+download_jar_if_not_exists(GRAAL_POLYGLOT, graal_jars_dir)
 print("Download complete.")
