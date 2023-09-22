@@ -25,8 +25,42 @@
 
 import os
 import subprocess
-import sys
 
 
 def update_paths():
-    subprocess.run(["python3", "./bin/updatePATHS.py"])
+    subprocess.run(["python3", "./bin/update_paths.py"])
+
+
+def update_backend_file(selected_backends_str):
+    tornado_sdk_path = os.environ.get("TORNADO_SDK")
+    backend_file_path = os.path.join(tornado_sdk_path, "etc", "tornado.backend")
+    with open(backend_file_path, "w") as backend_file:
+        backend_file.write(f"tornado.backends={selected_backends_str}")
+
+
+def copy_graal_jars():
+    tornado_sdk_path = os.environ.get("TORNADO_SDK")
+    java_version_output = subprocess.check_output(
+        ["java", "-version"], stderr=subprocess.STDOUT, universal_newlines=True
+    )
+
+    if "GraalVM" not in java_version_output:
+        graal_jars_dir = os.path.join(os.getcwd(), "graalJars")
+        destination_dir = os.path.join(tornado_sdk_path, "share", "java", "graalJars")
+        os.makedirs(destination_dir, exist_ok=True)
+        for filename in os.listdir(graal_jars_dir):
+            source_file = os.path.join(graal_jars_dir, filename)
+            destination_file = os.path.join(destination_dir, filename)
+            if os.path.isfile(source_file):
+                subprocess.run(["cp", source_file, destination_file])
+
+
+def main():
+    update_paths()
+    selected_backends_str = os.environ.get("selected_backends", "")
+    update_backend_file(selected_backends_str)
+    copy_graal_jars()
+
+
+if __name__ == "__main__":
+    main()
