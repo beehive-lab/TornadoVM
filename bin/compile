@@ -116,7 +116,23 @@ def build_tornadovm(jdk, selected_backends_str, offline):
         options = "-o " + options
 
     print(f"mvn {options} install")
-    return subprocess.run(["mvn"] + options.split() + ["install"])
+    try:
+        result = subprocess.run(
+            ["mvn"] + options.split() + ["install"],
+            check=True,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+        )
+
+        if result.returncode == 0:
+            print("Maven build succeeded")
+        else:
+            print("Maven clean failed. Error output:")
+            print(result.stderr)
+    except subprocess.CalledProcessError as e:
+        print(f"Error running 'mvn clean': {e}")
+
+    return result
 
 
 def copy_jars(graal_jars_dir):
