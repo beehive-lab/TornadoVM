@@ -27,7 +27,6 @@ import os
 import subprocess
 import sys
 
+
 def update_paths():
     subprocess.run(["python3", "./bin/updatePATHS.py"])
-
-

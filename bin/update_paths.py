@@ -29,7 +29,7 @@ import subprocess
 # Update PATHS in Tornado
 
 # Determine the 'file' (You can modify this part accordingly)
-tornado_sdk_dir = 'dist/tornado-sdk/'
+tornado_sdk_dir = "dist/tornado-sdk/"
 files_in_sdk_dir = os.listdir(tornado_sdk_dir)
 if files_in_sdk_dir:
     file = files_in_sdk_dir[0]
@@ -41,14 +41,18 @@ print("\x1b[32mTornado build success\x1b[39m")
 print(f"Updating PATH and TORNADO_SDK to {file}")
 
 # Change to the 'bin/' directory
-os.chdir('bin/')
+os.chdir("bin/")
 
 print(f"Binaries: {os.getcwd()}")
-commit = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('utf-8').strip()
+commit = (
+    subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
+    .decode("utf-8")
+    .strip()
+)
 print(f"Commit  : {commit}")
 
 # Unlink or remove 'bin' and 'sdk' if they exist
-for symlink in ['bin', 'sdk']:
+for symlink in ["bin", "sdk"]:
     if os.path.islink(symlink):
         os.unlink(symlink)
     else:
@@ -56,10 +60,10 @@ for symlink in ['bin', 'sdk']:
         os.rmdir(symlink)
 
 # Change back to the parent directory
-os.chdir('..')
+os.chdir("..")
 
 # Create symbolic links 'bin' and 'sdk'
-os.symlink(os.path.join(os.getcwd(), tornado_sdk_dir, file, 'bin/'), 'bin/bin')
-os.symlink(os.path.join(os.getcwd(), tornado_sdk_dir, file), 'bin/sdk')
+os.symlink(os.path.join(os.getcwd(), tornado_sdk_dir, file, "bin/"), "bin/bin")
+os.symlink(os.path.join(os.getcwd(), tornado_sdk_dir, file), "bin/sdk")
 
 print("########################################################## ")

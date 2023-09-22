@@ -35,19 +35,22 @@ GRAAL_COLLECTIONS = f"https://repo1.maven.org/maven2/org/graalvm/sdk/collections
 GRAAL_SDK_JAR_URL = f"https://repo1.maven.org/maven2/org/graalvm/sdk/graal-sdk/{VERSION}/graal-sdk-{VERSION}.jar"
 TRUFFLE_API_JAR_URL = f"https://repo1.maven.org/maven2/org/graalvm/truffle/truffle-api/{VERSION}/truffle-api-{VERSION}.jar"
 TRUFFLE_COMPILER_JAR_URL = f"https://repo1.maven.org/maven2/org/graalvm/truffle/truffle-compiler/{VERSION}/truffle-compiler-{VERSION}.jar"
-GRAAL_WORD = f"https://repo1.maven.org/maven2/org/graalvm/sdk/word/{VERSION}/word-{VERSION}.jar"
+GRAAL_WORD = (
+    f"https://repo1.maven.org/maven2/org/graalvm/sdk/word/{VERSION}/word-{VERSION}.jar"
+)
 GRAAL_POLYGLOT = f"https://repo1.maven.org/maven2/org/graalvm/polyglot/polyglot/{VERSION}/polyglot-{VERSION}.jar"
 
 # Define ANSI escape codes for colors
-GREEN = '\033[92m'
-CYAN = '\033[96m'
-RESET = '\033[0m'
+GREEN = "\033[92m"
+CYAN = "\033[96m"
+RESET = "\033[0m"
 
-graal_jars_dir = os.path.join(os.getcwd(), 'graalJars')
+graal_jars_dir = os.path.join(os.getcwd(), "graalJars")
 
 if not os.path.exists(graal_jars_dir):
     print(f"Creating directory graalJars under {os.getcwd()}")
     os.mkdir(graal_jars_dir)
+
 
 def create_session_with_retries(retries=5):
     session = requests.Session()
@@ -60,29 +63,35 @@ def create_session_with_retries(retries=5):
     session.mount("https://", adapter)
     return session
 
+
 def download_jar_if_not_exists(jar_url, target_dir):
     jar_filename = os.path.basename(jar_url)
     target_path = os.path.join(target_dir, jar_filename)
 
     if not os.path.exists(target_path):
-        print(f"Downloading jar file for {GREEN}{jar_filename}{RESET} to {CYAN}{target_dir}/{RESET}")
+        print(
+            f"Downloading jar file for {GREEN}{jar_filename}{RESET} to {CYAN}{target_dir}/{RESET}"
+        )
         session = create_session_with_retries()
         response = session.get(jar_url, stream=True)
-        total_size = int(response.headers.get('content-length', 0))
+        total_size = int(response.headers.get("content-length", 0))
         block_size = 1024  # 1 KB
 
-        with open(target_path, 'wb') as jar_file, tqdm(
+        with open(target_path, "wb") as jar_file, tqdm(
             desc=jar_filename,
             total=total_size,
-            unit='B',
+            unit="B",
             unit_scale=True,
-            unit_divisor=1024
+            unit_divisor=1024,
         ) as progress_bar:
             for data in response.iter_content(block_size):
                 jar_file.write(data)
                 progress_bar.update(len(data))
 
-print(f"Download Graal {VERSION} jars from {GREEN}https://repo1.maven.org/maven2/org/graalvm{RESET} ...")
+
+print(
+    f"Download Graal {VERSION} jars from {GREEN}https://repo1.maven.org/maven2/org/graalvm{RESET} ..."
+)
 download_jar_if_not_exists(COMPILER_JAR_URL, graal_jars_dir)
 download_jar_if_not_exists(COMPILER_MANAGEMENT_JAR_URL, graal_jars_dir)
 download_jar_if_not_exists(GRAAL_SDK_JAR_URL, graal_jars_dir)
