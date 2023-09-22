@@ -48,7 +48,7 @@ RESET = "\033[0m"
 graal_jars_dir = os.path.join(os.getcwd(), "graalJars")
 
 if not os.path.exists(graal_jars_dir):
-    print(f"Creating directory graalJars under {os.getcwd()}")
+    print(f"Creating directory graalJars in {os.getcwd()}")
     os.mkdir(graal_jars_dir)
 
 
@@ -90,7 +90,7 @@ def download_jar_if_not_exists(jar_url, target_dir):
 
 
 print(
-    f"Download Graal {VERSION} jars from {GREEN}https://repo1.maven.org/maven2/org/graalvm{RESET} ..."
+    f"Download {GREEN}Graal {VERSION}{RESET} jars from {GREEN}https://repo1.maven.org/maven2/org/graalvm{RESET} ..."
 )
 download_jar_if_not_exists(COMPILER_JAR_URL, graal_jars_dir)
 download_jar_if_not_exists(COMPILER_MANAGEMENT_JAR_URL, graal_jars_dir)
@@ -100,4 +100,4 @@ download_jar_if_not_exists(TRUFFLE_COMPILER_JAR_URL, graal_jars_dir)
 download_jar_if_not_exists(GRAAL_COLLECTIONS, graal_jars_dir)
 download_jar_if_not_exists(GRAAL_WORD, graal_jars_dir)
 download_jar_if_not_exists(GRAAL_POLYGLOT, graal_jars_dir)
-print("Download complete.")
+print("Download complete...")
