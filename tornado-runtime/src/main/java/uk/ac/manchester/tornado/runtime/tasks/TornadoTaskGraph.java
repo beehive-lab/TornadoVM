@@ -533,8 +533,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public void setDevice(String taskName, TornadoDevice device) {
 
-        System.out.println("Setting the device: " + device + " for task: " + taskName);
-
         TornadoDevice oldDevice = meta().getLogicDevice();
 
         // meta().setDevice(device);
@@ -543,18 +541,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         for (int i = 0; i < executionContext.getTaskCount(); i++) {
             SchedulableTask task = executionContext.getTask(i);
             String name = task.getId();
-            System.out.println("[debug] normalized task name: " + name);
             if (name.equals(taskName)) {
-                System.out.println("[debug] they are equal: ");
                 task.meta().setDevice(device);
                 if (task instanceof CompilableTask) {
                     ResolvedJavaMethod method = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(((CompilableTask) task).getMethod());
-                    if (task.getDevice().equals(device)) {
-                        System.out.println("[debug] Devices are equal");
-                    }
-
                     if (!task.getDevice().getDeviceContext().isCached(method.getName(), task)) {
-                        System.out.println("[debug] UPDATE INNER ");
                         updateInner(i, task);
                     }
                 }
@@ -854,6 +845,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void scheduleInner() {
+
         boolean compile = compileToTornadoVMBytecode();
         TornadoAcceleratorDevice deviceForTask = executionContext.getDeviceForTask(0);
         if (compile && deviceForTask.getDeviceContext().isPlatformFPGA()) {

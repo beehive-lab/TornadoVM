@@ -115,7 +115,6 @@ public class TornadoVM extends TornadoLogger {
     private Event executeSingleThreaded() {
         // TODO: This is a temporary workaround until refactoring the
         // DynamicReconfiguration
-        System.out.println("How many interpreters? " + tornadoVMInterpreters.length);
         Arrays.stream(tornadoVMInterpreters).forEach(TornadoVMInterpreter::execute);
         return new EmptyEvent();
     }

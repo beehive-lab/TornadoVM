@@ -131,7 +131,7 @@ public class TestMath extends TornadoTestBase {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = (Math.asin(a[i]));
         }
-    }
+    }z
 
     public static void testAbs(float[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
