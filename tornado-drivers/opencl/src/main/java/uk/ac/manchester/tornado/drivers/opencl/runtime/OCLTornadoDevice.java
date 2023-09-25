@@ -583,7 +583,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
                 buffer.setSizeSubRegion(batchSize);
             }
         } else {
-            System.out.println("-------------------- else");
             buffer = newDeviceBufferAllocation(object, batchSize, state);
         }
 
@@ -592,7 +591,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         }
 
         final Class<?> type = object.getClass();
-        System.out.println("batch size " + batchSize);
 
         //TODO: FIX
 //        if (!type.isArray()) {
