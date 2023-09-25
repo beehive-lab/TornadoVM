@@ -6,6 +6,8 @@ import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.CharArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
@@ -79,6 +81,10 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
             segment = ((LongArray) reference).getSegment();
         } else if (reference instanceof ShortArray) {
             segment = ((ShortArray) reference).getSegment();
+        } else if (reference instanceof ByteArray) {
+            segment = ((ByteArray) reference).getSegment();
+        } else if (reference instanceof CharArray) {
+            segment = ((CharArray) reference).getSegment();
         } else {
             segment = (MemorySegment) reference;
         }
@@ -104,6 +110,10 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
             seg = ((LongArray) reference).getSegment();
         } else if (reference instanceof ShortArray) {
             seg = ((ShortArray) reference).getSegment();
+        } else if (reference instanceof ByteArray) {
+            seg = ((ByteArray) reference).getSegment();
+        } else if (reference instanceof CharArray) {
+            seg = ((CharArray) reference).getSegment();
         } else {
             seg = (MemorySegment) reference;
         }
@@ -127,6 +137,10 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
             seg = ((LongArray) reference).getSegment();
         } else if (reference instanceof ShortArray) {
             seg = ((ShortArray) reference).getSegment();
+        } else if (reference instanceof ByteArray) {
+            seg = ((ByteArray) reference).getSegment();
+        } else if (reference instanceof CharArray) {
+            seg = ((CharArray) reference).getSegment();
         } else {
             seg = (MemorySegment) reference;
         }
@@ -154,6 +168,10 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
             seg = ((LongArray) reference).getSegment();
         } else if (reference instanceof ShortArray) {
             seg = ((ShortArray) reference).getSegment();
+        } else if (reference instanceof ByteArray) {
+            seg = ((ByteArray) reference).getSegment();
+        } else if (reference instanceof CharArray) {
+            seg = ((CharArray) reference).getSegment();
         } else {
             seg = (MemorySegment) reference;
         }
@@ -180,6 +198,10 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
             memref = ((LongArray) reference).getSegment();
         } else if (reference instanceof ShortArray) {
             memref = ((ShortArray) reference).getSegment();
+        } else if (reference instanceof ByteArray) {
+            memref = ((ByteArray) reference).getSegment();
+        } else if (reference instanceof CharArray) {
+            memref = ((CharArray) reference).getSegment();
         } else {
             memref = (MemorySegment) reference;
         }

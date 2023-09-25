@@ -42,6 +42,8 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.CharArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
@@ -537,6 +539,10 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
                 result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else if (object instanceof ShortArray) {
                 result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+            } else if (object instanceof ByteArray) {
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+            } else if (object instanceof CharArray) {
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else {
                 result = new OCLObjectWrapper(deviceContext, object);
             }
@@ -577,7 +583,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     public int allocate(Object object, long batchSize, TornadoDeviceObjectState state) {
         final ObjectBuffer buffer;
         if (state.hasObjectBuffer() && state.isLockedBuffer()) {
-            System.out.println("------------------------- has object and it's locked");
             buffer = state.getObjectBuffer();
             if (batchSize != 0) {
                 buffer.setSizeSubRegion(batchSize);
