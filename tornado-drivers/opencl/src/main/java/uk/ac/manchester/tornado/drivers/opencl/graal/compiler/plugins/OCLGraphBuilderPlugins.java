@@ -404,7 +404,6 @@ public class OCLGraphBuilderPlugins {
 
     private static void registerMemoryAccessPlugins(InvocationPlugins plugins) {
         Registration r = new Registration(plugins, MemorySegment.class);
-        System.out.println(">> Registration r " + r);
 
         for (JavaKind kind : JavaKind.values()) {
             if (kind == JavaKind.Object || kind == JavaKind.Void || kind == JavaKind.Illegal) {
