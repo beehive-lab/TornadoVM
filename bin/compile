@@ -112,7 +112,7 @@ def build_spirv_toolkit_and_level_zero():
 
 def build_tornadovm(jdk, selected_backends_str, offline):
     options = f"-T1.5C -Dcmake.root.dir=$CMAKE_ROOT -P{jdk},{selected_backends_str} "
-    if offline == "OFFLINE":
+    if offline:
         options = "-o " + options
 
     print(f"mvn {options} install")
@@ -179,7 +179,15 @@ def parse_args():
         "--jdk", help="JDK version (e.g., jdk-17-plus, graal-jdk-17-plus)"
     )
     parser.add_argument("--backends", help="e.g., opencl,ptx,spirv")
-    parser.add_argument("--offline", default="", help="Optional flag: OFFLINE")
+    parser.add_argument(
+        "--offline",
+        "-of",
+        action="store_true",
+        dest="offline",
+        default=False,
+        help="Optional flag: OFFLINE",
+    )
+
     args = parser.parse_args()
     return args
 

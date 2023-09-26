@@ -18,7 +18,7 @@ spirv:
 	bin/compile --jdk jdk-17-plus --backends spirv,ptx,opencl
 
 offline:
-	bin/compile --jdk jdk-17-plus $(BACKENDS) --offline OFFLINE
+	bin/compile --jdk jdk-17-plus $(BACKENDS) --offline
 
 # Variable passed for the preparation of the Xilinx FPGA emulated target device. The default device is `xilinx_u50_gen3x16_xdma_201920_3`.
 # make xilinx_emulation FPGA_PLATFORM=<platform_name> NUM_OF_FPGA_DEVICES=<number_of_devices>
