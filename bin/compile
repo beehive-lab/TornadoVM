@@ -47,12 +47,15 @@ def pull_graal_jars_if_needed(jdk, java_version_output):
 
 
 def pull_graal_jars():
-    subprocess.run(["python3", "./bin/pull_graal_jars.py"])
+    subprocess.run(["python3", "./bin/pull_graal_jars.py"], stdout=subprocess.PIPE)
 
 
 def maven_cleanup():
     print("mvn -Popencl-backend,ptx-backend,spirv-backend clean")
-    subprocess.run(["mvn", "-Popencl-backend,ptx-backend,spirv-backend", "clean"])
+    subprocess.run(
+        ["mvn", "-Popencl-backend,ptx-backend,spirv-backend", "clean"],
+        stdout=subprocess.PIPE,
+    )
 
 
 def process_backends(selected_backends):
@@ -73,9 +76,9 @@ def build_spirv_toolkit_and_level_zero():
         )
 
     os.chdir(spirv_tool_kit)
-    subprocess.run(["git", "pull", "origin", "master"])
-    subprocess.run(["mvn", "clean", "package"])
-    subprocess.run(["mvn", "install"])
+    subprocess.run(["git", "pull", "origin", "master"], stdout=subprocess.PIPE)
+    subprocess.run(["mvn", "clean", "package"], stdout=subprocess.PIPE)
+    subprocess.run(["mvn", "install"], stdout=subprocess.PIPE)
     os.chdir(current)
 
     level_zero_lib = "level-zero"
@@ -85,8 +88,10 @@ def build_spirv_toolkit_and_level_zero():
         os.chdir(level_zero_lib)
         os.mkdir("build")
         os.chdir("build")
-        subprocess.run(["cmake", ".."])
-        subprocess.run(["cmake", "--build", ".", "--config", "Release"])
+        subprocess.run(["cmake", ".."], stdout=subprocess.PIPE)
+        subprocess.run(
+            ["cmake", "--build", ".", "--config", "Release"], stdout=subprocess.PIPE
+        )
         os.chdir(current)
 
     os.environ["ZE_SHARED_LOADER"] = os.path.join(
@@ -181,7 +186,6 @@ def parse_args():
     parser.add_argument("--backends", help="e.g., opencl,ptx,spirv")
     parser.add_argument(
         "--offline",
-        "-of",
         action="store_true",
         dest="offline",
         default=False,

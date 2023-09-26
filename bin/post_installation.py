@@ -28,7 +28,7 @@ import subprocess
 
 
 def update_paths():
-    subprocess.run(["python3", "./bin/update_paths.py"])
+    subprocess.run(["python3", "./bin/update_paths.py"], stdout=subprocess.PIPE)
 
 
 def update_backend_file(selected_backends_str):
