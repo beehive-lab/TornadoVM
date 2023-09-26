@@ -47,7 +47,7 @@ def pull_graal_jars_if_needed(jdk, java_version_output):
 
 
 def pull_graal_jars():
-    subprocess.run(["python3", "./bin/pull_graal_jars.py"], stdout=subprocess.PIPE)
+    subprocess.run(["python3", "./bin/pull_graal_jars.py"])
 
 
 def maven_cleanup():
@@ -198,25 +198,22 @@ def parse_args():
 
 def main():
     args = parse_args()
-    jdk = args.jdk
-    selected_backends = args.backends
-    offline = args.offline
 
     java_version_output = check_java_version()
 
     maven_cleanup()
 
-    pull_graal_jars_if_needed(jdk, java_version_output)
+    pull_graal_jars_if_needed(args.jdk, java_version_output)
 
-    selected_backends_str = process_backends(selected_backends)
+    selected_backends_str = process_backends(args.backends)
 
-    if "spirv" in selected_backends:
+    if "spirv" in args.backends:
         build_spirv_toolkit_and_level_zero()
 
-    mvn_build_result = build_tornadovm(jdk, selected_backends_str, offline)
+    mvn_build_result = build_tornadovm(args.jdk, selected_backends_str, args.offline)
 
     post_installation_actions(
-        selected_backends_str, java_version_output, mvn_build_result, jdk
+        selected_backends_str, java_version_output, mvn_build_result, args.jdk
     )
 
 
