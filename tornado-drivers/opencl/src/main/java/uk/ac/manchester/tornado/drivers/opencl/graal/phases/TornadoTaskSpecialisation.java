@@ -308,6 +308,16 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         }
     }
 
+    private static boolean hasSizeLoadFieldNode(StructuredGraph graph) {
+        for (LoadFieldNode loadField : graph.getNodes().filter(LoadFieldNode.class)) {
+            final ResolvedJavaField field = loadField.field();
+            if (field.getType().getJavaKind().isPrimitive()) {
+                if (loadField.toString().contains("numberOfElements")) return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
         int iterations = 0;
@@ -348,7 +358,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "After TaskSpecialisation iteration = " + iterations);
 
-            hasWork = (lastNodeCount != graph.getNodeCount() || graph.getNewNodes(mark).isNotEmpty()) && (iterations < MAX_ITERATIONS);
+            hasWork = (lastNodeCount != graph.getNodeCount() || graph.getNewNodes(mark).isNotEmpty() || hasSizeLoadFieldNode(graph)) && (iterations < MAX_ITERATIONS);
             lastNodeCount = graph.getNodeCount();
             iterations++;
         }
