@@ -523,7 +523,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         sum.set(0, 0.0f);
         for (@Parallel int i = 0; i < input.getSize(); i++) {
             float value = f(a + (((i + 1) - (1 / 2)) * ((b - a) / size)));
-            sum.set(0, sum.get(0) + input.get(i) + value);
+            sum.set(0, sum.get(0) + (input.get(i) + value));
         }
     }
 
