@@ -209,7 +209,8 @@ def post_installation_actions(
     """
     if mvn_build_result.returncode == 0:
         # Update all PATHs
-        subprocess.run(["python3", "bin/update_paths.py"], stdout=subprocess.PIPE)
+        # subprocess.run(["python3", "bin/update_paths.py"], stdout=subprocess.PIPE)
+        subprocess.run(["python3", "bin/update_paths.py"])
 
         # Update the compiled backends file
         with open(

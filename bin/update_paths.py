@@ -26,44 +26,61 @@
 import os
 import subprocess
 
-# Update PATHS in Tornado
 
-# Determine the 'file' (You can modify this part accordingly)
-tornado_sdk_dir = "dist/tornado-sdk/"
-files_in_sdk_dir = os.listdir(tornado_sdk_dir)
-if files_in_sdk_dir:
-    file = files_in_sdk_dir[0]
-else:
-    raise FileNotFoundError("No files found in 'dist/tornado-sdk/' directory")
+def update_tornado_paths():
+    """
+    Update PATH and TORNADO_SDK symbolic links to the latest Tornado SDK.
 
-print("\n########################################################## ")
-print("\x1b[32mTornado build success\x1b[39m")
-print(f"Updating PATH and TORNADO_SDK to {file}")
+    This function determines the latest Tornado SDK in the 'dist/tornado-sdk/' directory
+    and updates the symbolic links 'bin' and 'sdk' to point to the latest SDK version.
 
-# Change to the 'bin/' directory
-os.chdir("bin/")
-
-print(f"Binaries: {os.getcwd()}")
-commit = (
-    subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
-    .decode("utf-8")
-    .strip()
-)
-print(f"Commit  : {commit}")
-
-# Unlink or remove 'bin' and 'sdk' if they exist
-for symlink in ["bin", "sdk"]:
-    if os.path.islink(symlink):
-        os.unlink(symlink)
+    :raises FileNotFoundError: If no files are found in 'dist/tornado-sdk/' directory.
+    """
+    tornado_sdk_dir = "dist/tornado-sdk/"
+    files_in_sdk_dir = os.listdir(tornado_sdk_dir)
+    if files_in_sdk_dir:
+        file = files_in_sdk_dir[0]
     else:
-        # Windows cleanup - Mingw copies files during `ln`
-        os.rmdir(symlink)
+        raise FileNotFoundError("No files found in 'dist/tornado-sdk/' directory")
 
-# Change back to the parent directory
-os.chdir("..")
+    log_messages = []  # Create an empty list to store log messages
 
-# Create symbolic links 'bin' and 'sdk'
-os.symlink(os.path.join(os.getcwd(), tornado_sdk_dir, file, "bin/"), "bin/bin")
-os.symlink(os.path.join(os.getcwd(), tornado_sdk_dir, file), "bin/sdk")
+    log_messages.append("\n########################################################## ")
+    log_messages.append("\x1b[32mTornado build success\x1b[39m")
+    log_messages.append(f"Updating PATH and TORNADO_SDK to {file}")
 
-print("########################################################## ")
+    # Change to the 'bin/' directory
+    os.chdir("bin/")
+
+    try:
+        # Get the commit hash
+        commit = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"], universal_newlines=True
+        ).strip()
+        log_messages.append(f"Commit  : {commit}")
+    except subprocess.CalledProcessError:
+        log_messages.append("Warning: Unable to retrieve commit hash.")
+
+    # Remove existing 'bin' and 'sdk' directories
+    for symlink in ["bin", "sdk"]:
+        if os.path.islink(symlink):
+            os.unlink(symlink)
+        elif os.path.isdir(symlink):
+            os.rmdir(symlink)
+
+    # Change back to the parent directory
+    os.chdir("..")
+
+    # Create symbolic links 'bin' and 'sdk'
+    os.symlink(os.path.join(os.getcwd(), tornado_sdk_dir, file, "bin/"), "bin/bin")
+    os.symlink(os.path.join(os.getcwd(), tornado_sdk_dir, file), "bin/sdk")
+
+    log_messages.append("########################################################## ")
+
+    # Print all log messages at the end
+    for message in log_messages:
+        print(message)
+
+
+if __name__ == "__main__":
+    update_tornado_paths()
