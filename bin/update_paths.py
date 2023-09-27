@@ -45,7 +45,9 @@ def update_tornado_paths():
 
     log_messages = []  # Create an empty list to store log messages
 
-    log_messages.append("\n########################################################## ")
+    log_messages.append(
+        "###########################################################################"
+    )
     log_messages.append("\x1b[32mTornado build success\x1b[39m")
     log_messages.append(f"Updating PATH and TORNADO_SDK to {file}")
 
@@ -75,7 +77,9 @@ def update_tornado_paths():
     os.symlink(os.path.join(os.getcwd(), tornado_sdk_dir, file, "bin/"), "bin/bin")
     os.symlink(os.path.join(os.getcwd(), tornado_sdk_dir, file), "bin/sdk")
 
-    log_messages.append("########################################################## ")
+    log_messages.append(
+        "###########################################################################"
+    )
 
     # Print all log messages at the end
     for message in log_messages:

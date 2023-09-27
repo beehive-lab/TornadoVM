@@ -34,6 +34,9 @@ import update_paths as updp
 import pull_graal_jars
 
 
+SHOULD_HANDLE_GRAAL_JARS = False
+
+
 def check_java_version():
     """
     Checks the Java version in the system.
@@ -50,16 +53,23 @@ def check_java_version():
     return java_version_output
 
 
-def pull_graal_jars_if_needed(jdk, java_version_output):
+def pull_graal_jars_if_needed():
     """
     Pulls GraalVM jars if the specified JDK version does not contain the binaries.
 
     Args:
         jdk (str): The JDK version.
-        java_version_output (str): The Java version information.
     """
-    if jdk == "jdk-17-plus" and "GraalVM" not in java_version_output:
+    if SHOULD_HANDLE_GRAAL_JARS:
         pull_graal_jars.main()
+
+
+def set_jar_status(jdk):
+    java_version_output = check_java_version()
+    global SHOULD_HANDLE_GRAAL_JARS
+    SHOULD_HANDLE_GRAAL_JARS = (
+        jdk == "jdk-17-plus" and "GraalVM" not in java_version_output
+    )
 
 
 def maven_cleanup():
@@ -70,7 +80,7 @@ def maven_cleanup():
     )
 
 
-def process_backends(selected_backends):
+def process_backends_as_mvn_profiles(selected_backends):
     """
     Processes the list of selected backend options and converts them to the required format required for the maven profile.
 
@@ -83,8 +93,8 @@ def process_backends(selected_backends):
     selected_backends_list = selected_backends.split(",")
     for i, backend in enumerate(selected_backends_list):
         selected_backends_list[i] = f"{backend}-backend"
-    selected_backends_str = ",".join(selected_backends_list)
-    return selected_backends_str
+    backend_profiles = ",".join(selected_backends_list)
+    return backend_profiles
 
 
 def build_spirv_toolkit_and_level_zero():
@@ -96,13 +106,17 @@ def build_spirv_toolkit_and_level_zero():
 
     if not os.path.exists(spirv_tool_kit):
         subprocess.run(
-            ["git", "clone", "https://github.com/beehive-lab/beehive-spirv-toolkit.git"]
+            [
+                "git",
+                "clone",
+                "https://github.com/beehive-lab/beehive-spirv-toolkit.git",
+            ],
         )
 
     os.chdir(spirv_tool_kit)
-    subprocess.run(["git", "pull", "origin", "master"], stdout=subprocess.PIPE)
-    subprocess.run(["mvn", "clean", "package"], stdout=subprocess.PIPE)
-    subprocess.run(["mvn", "install"], stdout=subprocess.PIPE)
+    subprocess.run(["git", "pull", "origin", "master"])
+    subprocess.run(["mvn", "clean", "package"])
+    subprocess.run(["mvn", "install"])
     os.chdir(current)
 
     level_zero_lib = "level-zero"
@@ -112,10 +126,8 @@ def build_spirv_toolkit_and_level_zero():
         os.chdir(level_zero_lib)
         os.mkdir("build")
         os.chdir("build")
-        subprocess.run(["cmake", ".."], stdout=subprocess.PIPE)
-        subprocess.run(
-            ["cmake", "--build", ".", "--config", "Release"], stdout=subprocess.PIPE
-        )
+        subprocess.run(["cmake", ".."])
+        subprocess.run(["cmake", "--build", ".", "--config", "Release"])
         os.chdir(current)
 
     os.environ["ZE_SHARED_LOADER"] = os.path.join(
@@ -139,19 +151,19 @@ def build_spirv_toolkit_and_level_zero():
     return current
 
 
-def build_tornadovm(jdk, selected_backends_str, offline):
+def build_tornadovm(jdk, backend_profiles, offline):
     """
     Builds TornadoVM with the specified JDK and backend options.
 
     Args:
         jdk (str): The JDK version.
-        selected_backends_str (str): The processed backend options.
+        backend_profiles (str): The processed backend options.
         offline (bool): Flag indicating offline mode.
 
     Returns:
         CompletedProcess: Result of the Maven build process.
     """
-    options = f"-T1.5C -Dcmake.root.dir=$CMAKE_ROOT -P{jdk},{selected_backends_str} "
+    options = f"-T1.5C -Dcmake.root.dir=$CMAKE_ROOT -P{jdk},{backend_profiles} "
     if offline:
         options = "-o " + options
 
@@ -194,15 +206,12 @@ def copy_jars(graal_jars_dir):
             shutil.copy(source_file, destination_file)
 
 
-def post_installation_actions(
-    selected_backends_str, java_version_output, mvn_build_result, jdk
-):
+def post_installation_actions(backend_profiles, mvn_build_result, jdk):
     """
     Performs post-installation actions.
 
     Args:
-        selected_backends_str (str): The processed backend options.
-        java_version_output (str): The Java version information.
+        backend_profiles (str): The processed backend options.
         mvn_build_result (CompletedProcess): Result of the Maven build process.
         jdk (str): The JDK version.
     """
@@ -214,10 +223,10 @@ def post_installation_actions(
         with open(
             f"{os.environ['TORNADO_SDK']}/etc/tornado.backend", "w"
         ) as backend_file:
-            backend_file.write(f"tornado.backends={selected_backends_str}")
+            backend_file.write(f"tornado.backends={backend_profiles}")
 
         # Place the Graal jars in the TornadoVM distribution only if the JDK 17+ rule is used
-        if jdk == "jdk-17-plus" and "GraalVM" not in java_version_output:
+        if SHOULD_HANDLE_GRAAL_JARS:
             graal_jars_dir = os.path.join(os.getcwd(), "graalJars")
             os.makedirs(
                 f"{os.environ['TORNADO_SDK']}/share/java/graalJars", exist_ok=True
@@ -249,22 +258,20 @@ def parse_args():
 def main():
     args = parse_args()
 
-    java_version_output = check_java_version()
+    set_jar_status(args.jdk)
 
     maven_cleanup()
 
-    pull_graal_jars_if_needed(args.jdk, java_version_output)
+    pull_graal_jars_if_needed()
 
-    selected_backends_str = process_backends(args.backends)
+    backend_profiles = process_backends_as_mvn_profiles(args.backends)
 
     if "spirv" in args.backends:
         build_spirv_toolkit_and_level_zero()
 
-    mvn_build_result = build_tornadovm(args.jdk, selected_backends_str, args.offline)
+    mvn_build_result = build_tornadovm(args.jdk, backend_profiles, args.offline)
 
-    post_installation_actions(
-        selected_backends_str, java_version_output, mvn_build_result, args.jdk
-    )
+    post_installation_actions(backend_profiles, mvn_build_result, args.jdk)
 
 
 if __name__ == "__main__":
