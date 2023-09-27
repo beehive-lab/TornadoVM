@@ -189,6 +189,11 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                     array = par;
                 }
             }
+        } else if (currentNode instanceof PiNode) {
+            if (currentNode.inputs().filter(LoadFieldNode.class).isNotEmpty()) {
+                LoadFieldNode ldf = currentNode.inputs().filter(LoadFieldNode.class).first();
+                return obtainInputArray(ldf, outputArray);
+            }
         }
         return array;
     }
@@ -343,28 +348,31 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                         LoadFieldNode lf = (LoadFieldNode) piUsage;
                         if (lf.uncheckedStamp().toString().contains("jdk.internal.foreign.NativeMemorySegmentImpl")) {
                         // We have the loading of the segment field
-                            if (lf.usages().filter(OffsetAddressNode.class).isNotEmpty()) {
-                                OffsetAddressNode offset = lf.usages().filter(OffsetAddressNode.class).first();
-                                if (offset.usages().filter(JavaWriteNode.class).isNotEmpty()) {
-                                    JavaWriteNode jwrite = offset.usages().filter(JavaWriteNode.class).first();
-                                    // follow these steps but adapted to jwrite
-                                    ParameterNode par = node.inputs().filter(ParameterNode.class).first();
-                                    boolean isReductionValue = recursiveCheck(par, offset, jwrite.value());
-                                    if (!isReductionValue) {
-                                        continue;
-                                    }
+                            if (lf.usages().filter(PiNode.class).isNotEmpty()) {
+                                PiNode pi = lf.usages().filter(PiNode.class).first();
+                                if (pi.usages().filter(OffsetAddressNode.class).isNotEmpty()) {
+                                    OffsetAddressNode offset = pi.usages().filter(OffsetAddressNode.class).first();
+                                    if (offset.usages().filter(JavaWriteNode.class).isNotEmpty()) {
+                                        JavaWriteNode jwrite = offset.usages().filter(JavaWriteNode.class).first();
+                                        // follow these steps but adapted to jwrite
+                                        ParameterNode par = node.inputs().filter(ParameterNode.class).first();
+                                        boolean isReductionValue = recursiveCheck(par, offset, jwrite.value());
+                                        if (!isReductionValue) {
+                                            continue;
+                                        }
 
-                                   boolean isInALoop = checkIfVarIsInLoop(jwrite);
-                                    if (!isInALoop) {
-                                        continue;
-                                    }
+                                        boolean isInALoop = checkIfVarIsInLoop(jwrite);
+                                        if (!isInALoop) {
+                                            continue;
+                                        }
 
-                                    ValueNode inputArray = obtainInputArray(jwrite.value(), par);
-                                    ValueNode startNode = obtainStartLoopNode(jwrite);
+                                        ValueNode inputArray = obtainInputArray(jwrite.value(), par);
+                                        ValueNode startNode = obtainStartLoopNode(jwrite);
 //
-                                    ReductionMetadataNode reductionNode = createReductionNode(graph, jwrite, inputArray, startNode);
-                                    Node predecessor = jwrite.predecessor();
-                                    performNodeReplacement(graph, jwrite, predecessor, reductionNode, par);
+                                        ReductionMetadataNode reductionNode = createReductionNode(graph, jwrite, inputArray, startNode);
+                                        Node predecessor = jwrite.predecessor();
+                                        performNodeReplacement(graph, jwrite, predecessor, reductionNode, par);
+                                    }
                                 }
                             }
                         }

@@ -74,7 +74,7 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoHighTierConte
                 if (pi.usages().filter(OffsetAddressNode.class).isNotEmpty()) {
                     OffsetAddressNode off = pi.usages().filter(OffsetAddressNode.class).first();
                     // if this address node is used by a javaread/javawrite node
-                    if (off.usages().filter(JavaReadNode.class).isNotEmpty() || off.usages().filter(JavaWriteNode.class).isNotEmpty()) {
+                    if (off.usages().filter(JavaReadNode.class).isNotEmpty() || off.usages().filter(JavaWriteNode.class).isNotEmpty() || off.usages().filter(WriteAtomicNode.class).isNotEmpty()) {
                         off.replaceFirstInput(pi, lf);
                         nodesToBeRemoved.add(pi);
                     }
