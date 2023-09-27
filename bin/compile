@@ -30,6 +30,9 @@ import sys
 import argparse
 import shutil
 
+import update_paths as updp
+import pull_graal_jars
+
 
 def check_java_version():
     """
@@ -56,11 +59,7 @@ def pull_graal_jars_if_needed(jdk, java_version_output):
         java_version_output (str): The Java version information.
     """
     if jdk == "jdk-17-plus" and "GraalVM" not in java_version_output:
-        pull_graal_jars()
-
-
-def pull_graal_jars():
-    subprocess.run(["python3", "./bin/pull_graal_jars.py"])
+        pull_graal_jars.main()
 
 
 def maven_cleanup():
@@ -209,8 +208,7 @@ def post_installation_actions(
     """
     if mvn_build_result.returncode == 0:
         # Update all PATHs
-        # subprocess.run(["python3", "bin/update_paths.py"], stdout=subprocess.PIPE)
-        subprocess.run(["python3", "bin/update_paths.py"])
+        updp.update_tornado_paths()
 
         # Update the compiled backends file
         with open(

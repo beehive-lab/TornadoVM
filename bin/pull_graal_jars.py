@@ -32,6 +32,7 @@ import argparse
 import logging
 
 # Constants
+TARGET_DIR = "graalJars"
 VERSION = "23.1.0"
 BASE_URL = "https://repo1.maven.org/maven2/org/graalvm"
 GRAAL_JARS = [
@@ -112,40 +113,17 @@ def download_jar_if_not_exists(jar_url, target_dir):
                 progress_bar.update(len(data))
 
 
-def parse_arguments():
-    """
-    Parse command-line arguments.
-
-    Returns:
-        argparse.Namespace: Parsed command-line arguments.
-    """
-    parser = argparse.ArgumentParser(description="Download GraalVM JAR files.")
-    parser.add_argument(
-        "--version",
-        default=VERSION,
-        help="GraalVM version to download (default: %(default)s)",
-    )
-    parser.add_argument(
-        "--target-dir",
-        default=os.path.join(os.getcwd(), "graalJars"),
-        help="Directory to save downloaded JAR files (default: %(default)s)",
-    )
-    return parser.parse_args()
-
-
 def main():
     """
     Main function to download GraalVM JAR files.
-    """
-    args = parse_arguments()
+    """  #
+    if not os.path.exists(TARGET_DIR):
+        os.mkdir(TARGET_DIR)
 
-    if not os.path.exists(args.target_dir):
-        os.mkdir(args.target_dir)
-
-    logger.info(f"Downloading GraalVM {GREEN} {args.version} {RESET} JAR files...")
+    logger.info(f"Downloading GraalVM {GREEN} {VERSION} {RESET} JAR files...")
 
     for jar_url in GRAAL_JARS:
-        download_jar_if_not_exists(f"{BASE_URL}/{jar_url}", args.target_dir)
+        download_jar_if_not_exists(f"{BASE_URL}/{jar_url}", TARGET_DIR)
 
     logger.info("Download complete.")
 
