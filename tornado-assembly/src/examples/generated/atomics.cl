@@ -19,8 +19,8 @@ __kernel void add(__global long *_kernel_context,
 
   l_5  =  (long) i_4;
   l_6  =  l_5 << 2;
-  l_7  =  l_6 + 24L;
-  ul_8  =  ul_0 + l_7;
+ // l_7  =  l_6 + 24L;
+  ul_8  =  ul_0 + l_6; //l_7;
   i_9  =  *((__global int *) ul_8);
   int base = 24L;
   ul_10  =  ul_1 + base;
@@ -31,7 +31,7 @@ __kernel void add(__global long *_kernel_context,
 
   int atomicValue = atomic_add(&atomics[0], 1);
 
-  ul_12  =  ul_2 + l_7;
+  ul_12  =  ul_2 + l_6; //l_7;
   i_13  =  i_9 + i_11;
   *((__global int *) ul_8)  =  atomicValue;
 }
