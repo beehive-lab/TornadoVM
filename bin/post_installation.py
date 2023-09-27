@@ -26,12 +26,24 @@
 import os
 import subprocess
 
-
 def update_paths():
+    """
+    Run the 'update_paths.py' script.
+
+    This function executes the 'update_paths.py' script to update environment paths.
+    """
     subprocess.run(["python3", "./bin/update_paths.py"], stdout=subprocess.PIPE)
 
 
 def update_backend_file(selected_backends_str):
+    """
+    Update the 'tornado.backend' file with selected backends.
+
+    This function updates the 'tornado.backend' file in the Tornado SDK with the selected backend configurations.
+
+    Args:
+    selected_backends_str (str): Comma-separated string of selected backends.
+    """
     tornado_sdk_path = os.environ.get("TORNADO_SDK")
     backend_file_path = os.path.join(tornado_sdk_path, "etc", "tornado.backend")
     with open(backend_file_path, "w") as backend_file:
@@ -39,6 +51,12 @@ def update_backend_file(selected_backends_str):
 
 
 def copy_graal_jars():
+    """
+    Copy GraalVM JAR files to the Tornado SDK.
+
+    This function checks the Java version and copies GraalVM JAR files to the Tornado SDK's 'share/java/graalJars'
+    directory if the Java environment is not GraalVM.
+    """
     tornado_sdk_path = os.environ.get("TORNADO_SDK")
     java_version_output = subprocess.check_output(
         ["java", "-version"], stderr=subprocess.STDOUT, universal_newlines=True
@@ -56,6 +74,11 @@ def copy_graal_jars():
 
 
 def main():
+    """
+    Main function to update paths, backend file, and copy GraalVM JAR files.
+
+    This function is the entry point of the script and calls other functions to perform necessary updates.
+    """
     update_paths()
     selected_backends_str = os.environ.get("selected_backends", "")
     update_backend_file(selected_backends_str)
@@ -64,3 +87,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
