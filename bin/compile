@@ -32,6 +32,12 @@ import shutil
 
 
 def check_java_version():
+    """
+    Checks the Java version in the system.
+
+    Returns:
+        str: The Java version information.
+    """
     java_home = os.environ.get("JAVA_HOME")
     java_cmd = os.path.join(java_home, "bin", "java")
     java_version_output = subprocess.check_output(
@@ -42,6 +48,13 @@ def check_java_version():
 
 
 def pull_graal_jars_if_needed(jdk, java_version_output):
+    """
+    Pulls GraalVM jars if the specified JDK version does not contain the binaries.
+
+    Args:
+        jdk (str): The JDK version.
+        java_version_output (str): The Java version information.
+    """
     if jdk == "jdk-17-plus" and "GraalVM" not in java_version_output:
         pull_graal_jars()
 
@@ -59,6 +72,15 @@ def maven_cleanup():
 
 
 def process_backends(selected_backends):
+    """
+    Processes the list of selected backend options and converts them to the required format required for the maven profile.
+
+    Args:
+        selected_backends (str): Comma-separated list of selected backend options.
+
+    Returns:
+        str: The processed backend options.
+    """
     selected_backends_list = selected_backends.split(",")
     for i, backend in enumerate(selected_backends_list):
         selected_backends_list[i] = f"{backend}-backend"
@@ -67,6 +89,9 @@ def process_backends(selected_backends):
 
 
 def build_spirv_toolkit_and_level_zero():
+    """
+    Builds the SPIR-V Toolkit and Level Zero libraries.
+    """
     current = os.getcwd()
     spirv_tool_kit = "beehive-spirv-toolkit"
 
@@ -116,6 +141,17 @@ def build_spirv_toolkit_and_level_zero():
 
 
 def build_tornadovm(jdk, selected_backends_str, offline):
+    """
+    Builds TornadoVM with the specified JDK and backend options.
+
+    Args:
+        jdk (str): The JDK version.
+        selected_backends_str (str): The processed backend options.
+        offline (bool): Flag indicating offline mode.
+
+    Returns:
+        CompletedProcess: Result of the Maven build process.
+    """
     options = f"-T1.5C -Dcmake.root.dir=$CMAKE_ROOT -P{jdk},{selected_backends_str} "
     if offline:
         options = "-o " + options
@@ -141,6 +177,12 @@ def build_tornadovm(jdk, selected_backends_str, offline):
 
 
 def copy_jars(graal_jars_dir):
+    """
+    Copies GraalVM jars to the TornadoVM distribution directory.
+
+    Args:
+        graal_jars_dir (str): Path to the directory containing GraalVM jars.
+    """
     source_directory = graal_jars_dir
     destination_directory = f"{os.environ['TORNADO_SDK']}/share/java/graalJars/"
 
@@ -156,6 +198,15 @@ def copy_jars(graal_jars_dir):
 def post_installation_actions(
     selected_backends_str, java_version_output, mvn_build_result, jdk
 ):
+    """
+    Performs post-installation actions.
+
+    Args:
+        selected_backends_str (str): The processed backend options.
+        java_version_output (str): The Java version information.
+        mvn_build_result (CompletedProcess): Result of the Maven build process.
+        jdk (str): The JDK version.
+    """
     if mvn_build_result.returncode == 0:
         # Update all PATHs
         subprocess.run(["python3", "bin/update_paths.py"], stdout=subprocess.PIPE)
