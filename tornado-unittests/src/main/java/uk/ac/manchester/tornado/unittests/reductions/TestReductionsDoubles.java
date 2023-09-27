@@ -412,28 +412,22 @@ public class TestReductionsDoubles extends TornadoTestBase {
 
     @Test
     public void testMultipleReductions() {
-//        double[] data = new double[SIZE];
-//        double[] sequentialReduce = new double[1];
-//        double[] sequentialResult = new double[data.length];
         DoubleArray data = new DoubleArray(SIZE);
         DoubleArray sequentialReduce = new DoubleArray(1);
         DoubleArray sequentialResult = new DoubleArray(data.getSize());
 
         IntStream.range(0, data.getSize()).forEach(idx -> {
-//            data[idx] = Math.random();
-//            sequentialResult[idx] = data[idx];
             data.set(idx, Math.random());
             sequentialResult.set(idx, data.get(idx));
         });
 
-//        double[] reduceResult = new double[1];
         DoubleArray reduceResult = new DoubleArray(1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, data) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestReductionsDoubles::prepareTornadoSumForMeanComputation, data, reduceResult) //
                 .task("t1", TestReductionsDoubles::computeMapWithReduceValue, data, reduceResult) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, reduceResult, data);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data, reduceResult);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
@@ -443,7 +437,6 @@ public class TestReductionsDoubles extends TornadoTestBase {
         computeMapWithReduceValue(sequentialResult, sequentialReduce);
 
         for (int i = 0; i < data.getSize(); i++) {
-           // assertEquals(sequentialResult[i], data[i], 0.01f);
             assertEquals(sequentialResult.get(i), data.get(i), 0.01f);
         }
     }
