@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * <p>
- * How to run?
+ * How to run.
  * </p>
  * <code>
  *     tornado-test -V uk.ac.manchester.tornado.unittests.TestHello
@@ -63,15 +63,15 @@ public class TestHello extends TornadoTestBase {
         }
     }
 
-    public void compute(int[] a, int[] b) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            b[i] = a[i] * 2;
-        }
-    }
-
     public static void compute(int[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = a[i] * 2;
+        }
+    }
+
+    public void compute(int[] a, int[] b) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            b[i] = a[i] * 2;
         }
     }
 
@@ -120,7 +120,7 @@ public class TestHello extends TornadoTestBase {
     }
 
     /**
-     * How to test:
+     * How to test.
      *
      * <code>
      *     $  tornado-test -V -J"-Dtornado.print.bytecodes=True" uk.ac.manchester.tornado.unittests.TestHello#testSimpleCompute

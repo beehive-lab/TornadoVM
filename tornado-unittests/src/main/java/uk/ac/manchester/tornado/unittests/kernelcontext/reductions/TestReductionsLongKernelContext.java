@@ -74,6 +74,113 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         }
     }
 
+    public static void longReductionAddLocalMemory(KernelContext context, long[] a, long[] b) {
+        int globalIdx = context.globalIdx;
+        int localIdx = context.localIdx;
+        int localGroupSize = context.localGroupSizeX;
+        int groupID = context.groupIdx; // Expose Group ID
+
+        long[] localA = context.allocateLongLocalArray(256);
+        localA[localIdx] = a[globalIdx];
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            context.localBarrier();
+            if (localIdx < stride) {
+                localA[localIdx] += localA[localIdx + stride];
+            }
+        }
+        if (localIdx == 0) {
+            b[groupID] = localA[0];
+        }
+    }
+
+    public static long computeMaxSequential(long[] input) {
+        long acc = 0;
+        for (long v : input) {
+            acc = TornadoMath.max(acc, v);
+        }
+        return acc;
+    }
+
+    private static void longReductionMaxGlobalMemory(KernelContext context, long[] a, long[] b) {
+        int localIdx = context.localIdx;
+        int localGroupSize = context.localGroupSizeX;
+        int groupID = context.groupIdx; // Expose Group ID
+        int id = localGroupSize * groupID + localIdx;
+
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            context.localBarrier();
+            if (localIdx < stride) {
+                a[id] = TornadoMath.max(a[id], a[id + stride]);
+            }
+        }
+        if (localIdx == 0) {
+            b[groupID] = a[id];
+        }
+    }
+
+    public static void longReductionMaxLocalMemory(KernelContext context, long[] a, long[] b) {
+        int globalIdx = context.globalIdx;
+        int localIdx = context.localIdx;
+        int localGroupSize = context.localGroupSizeX;
+        int groupID = context.groupIdx; // Expose Group ID
+
+        long[] localA = context.allocateLongLocalArray(256);
+        localA[localIdx] = a[globalIdx];
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            context.localBarrier();
+            if (localIdx < stride) {
+                localA[localIdx] = TornadoMath.max(localA[localIdx], localA[localIdx + stride]);
+            }
+        }
+        if (localIdx == 0) {
+            b[groupID] = localA[0];
+        }
+    }
+
+    public static long computeMinSequential(long[] input) {
+        long acc = 0;
+        for (long v : input) {
+            acc = TornadoMath.min(acc, v);
+        }
+        return acc;
+    }
+
+    private static void longReductionMinGlobalMemory(KernelContext context, long[] a, long[] b) {
+        int localIdx = context.localIdx;
+        int localGroupSize = context.localGroupSizeX;
+        int groupID = context.groupIdx; // Expose Group ID
+        int id = localGroupSize * groupID + localIdx;
+
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            context.localBarrier();
+            if (localIdx < stride) {
+                a[id] = TornadoMath.min(a[id], a[id + stride]);
+            }
+        }
+        if (localIdx == 0) {
+            b[groupID] = a[id];
+        }
+    }
+
+    public static void longReductionMinLocalMemory(KernelContext context, long[] a, long[] b) {
+        int globalIdx = context.globalIdx;
+        int localIdx = context.localIdx;
+        int localGroupSize = context.localGroupSizeX;
+        int groupID = context.groupIdx; // Expose Group ID
+
+        long[] localA = context.allocateLongLocalArray(256);
+        localA[localIdx] = a[globalIdx];
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            context.localBarrier();
+            if (localIdx < stride) {
+                localA[localIdx] = TornadoMath.min(localA[localIdx], localA[localIdx + stride]);
+            }
+        }
+        if (localIdx == 0) {
+            b[groupID] = localA[0];
+        }
+    }
+
     @Test
     public void testLongReductionsAddGlobalMemory() {
         final int size = 1024;
@@ -107,25 +214,6 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         }
 
         assertEquals(sequential, finalSum, 0);
-    }
-
-    public static void longReductionAddLocalMemory(KernelContext context, long[] a, long[] b) {
-        int globalIdx = context.globalIdx;
-        int localIdx = context.localIdx;
-        int localGroupSize = context.localGroupSizeX;
-        int groupID = context.groupIdx; // Expose Group ID
-
-        long[] localA = context.allocateLongLocalArray(256);
-        localA[localIdx] = a[globalIdx];
-        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
-            context.localBarrier();
-            if (localIdx < stride) {
-                localA[localIdx] += localA[localIdx + stride];
-            }
-        }
-        if (localIdx == 0) {
-            b[groupID] = localA[0];
-        }
     }
 
     @Test
@@ -164,31 +252,6 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         assertEquals(sequential, finalSum, 0);
     }
 
-    public static long computeMaxSequential(long[] input) {
-        long acc = 0;
-        for (long v : input) {
-            acc = TornadoMath.max(acc, v);
-        }
-        return acc;
-    }
-
-    private static void longReductionMaxGlobalMemory(KernelContext context, long[] a, long[] b) {
-        int localIdx = context.localIdx;
-        int localGroupSize = context.localGroupSizeX;
-        int groupID = context.groupIdx; // Expose Group ID
-        int id = localGroupSize * groupID + localIdx;
-
-        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
-            context.localBarrier();
-            if (localIdx < stride) {
-                a[id] = TornadoMath.max(a[id], a[id + stride]);
-            }
-        }
-        if (localIdx == 0) {
-            b[groupID] = a[id];
-        }
-    }
-
     @Test
     public void testLongReductionsMaxGlobalMemory() {
         final int size = 1024;
@@ -222,25 +285,6 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         }
 
         assertEquals(sequential, finalSum, 0);
-    }
-
-    public static void longReductionMaxLocalMemory(KernelContext context, long[] a, long[] b) {
-        int globalIdx = context.globalIdx;
-        int localIdx = context.localIdx;
-        int localGroupSize = context.localGroupSizeX;
-        int groupID = context.groupIdx; // Expose Group ID
-
-        long[] localA = context.allocateLongLocalArray(256);
-        localA[localIdx] = a[globalIdx];
-        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
-            context.localBarrier();
-            if (localIdx < stride) {
-                localA[localIdx] = TornadoMath.max(localA[localIdx], localA[localIdx + stride]);
-            }
-        }
-        if (localIdx == 0) {
-            b[groupID] = localA[0];
-        }
     }
 
     @Test
@@ -278,31 +322,6 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         assertEquals(sequential, finalSum, 0);
     }
 
-    public static long computeMinSequential(long[] input) {
-        long acc = 0;
-        for (long v : input) {
-            acc = TornadoMath.min(acc, v);
-        }
-        return acc;
-    }
-
-    private static void longReductionMinGlobalMemory(KernelContext context, long[] a, long[] b) {
-        int localIdx = context.localIdx;
-        int localGroupSize = context.localGroupSizeX;
-        int groupID = context.groupIdx; // Expose Group ID
-        int id = localGroupSize * groupID + localIdx;
-
-        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
-            context.localBarrier();
-            if (localIdx < stride) {
-                a[id] = TornadoMath.min(a[id], a[id + stride]);
-            }
-        }
-        if (localIdx == 0) {
-            b[groupID] = a[id];
-        }
-    }
-
     @Test
     public void testLongReductionsMinGlobalMemory() {
         final int size = 1024;
@@ -336,25 +355,6 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         }
 
         assertEquals(sequential, finalSum, 0);
-    }
-
-    public static void longReductionMinLocalMemory(KernelContext context, long[] a, long[] b) {
-        int globalIdx = context.globalIdx;
-        int localIdx = context.localIdx;
-        int localGroupSize = context.localGroupSizeX;
-        int groupID = context.groupIdx; // Expose Group ID
-
-        long[] localA = context.allocateLongLocalArray(256);
-        localA[localIdx] = a[globalIdx];
-        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
-            context.localBarrier();
-            if (localIdx < stride) {
-                localA[localIdx] = TornadoMath.min(localA[localIdx], localA[localIdx + stride]);
-            }
-        }
-        if (localIdx == 0) {
-            b[groupID] = localA[0];
-        }
     }
 
     @Test

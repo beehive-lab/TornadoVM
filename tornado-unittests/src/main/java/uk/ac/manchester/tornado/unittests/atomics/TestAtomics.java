@@ -58,9 +58,9 @@ public class TestAtomics extends TornadoTestBase {
      *            Input array. It stores the addition with an atomic variable.
      */
     public static void atomic03(int[] a) {
-        final int SIZE = 100;
+        final int size = 100;
         for (@Parallel int i = 0; i < a.length; i++) {
-            int j = i % SIZE;
+            int j = i % size;
             a[j] = TornadoVM_Intrinsics.atomic_add(a, j, 1);
         }
     }

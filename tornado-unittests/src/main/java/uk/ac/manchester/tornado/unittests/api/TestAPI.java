@@ -43,6 +43,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </p>
  */
 public class TestAPI extends TornadoTestBase {
+    // CHECKSTYLE:OFF
 
     @Test
     public void testLazyCopyOut() {
@@ -138,5 +139,5 @@ public class TestAPI extends TornadoTestBase {
             assertEquals(21, data[i]);
         }
     }
-
+    // CHECKSTYLE:ON
 }

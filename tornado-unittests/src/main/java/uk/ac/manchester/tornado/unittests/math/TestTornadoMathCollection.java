@@ -35,11 +35,12 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * <p>
- * How to run:
+ * How to run?
  * </p>
  * <code>
- *      tornado-test -V uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection
  * </code>
+ *
  */
 public class TestTornadoMathCollection extends TornadoTestBase {
     public static void testTornadoCos(float[] a) {
