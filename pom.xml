@@ -24,7 +24,7 @@
         <download.cmake>false</download.cmake>
         <jmh.version>1.29</jmh.version>
         <tornadojmhjar.name>jmhbenchmarks</tornadojmhjar.name>
-        <checkstyle.config.location>checkstyle.xml</checkstyle.config.location>
+        <checkstyle.config.location>tornado-assembly/src/etc/checkstyle.xml</checkstyle.config.location>
         <!--        <checkstyle.config.location>google_checks.xml</checkstyle.config.location>-->
     </properties>
 
@@ -304,10 +304,10 @@
                         <artifactId>maven-checkstyle-plugin</artifactId>
                         <version>3.3.0</version>
                         <configuration>
-                            <!--                            <excludes>**/module-info.java</excludes>-->
                             <consoleOutput>true</consoleOutput>
                             <failsOnError>true</failsOnError>
                             <linkXRef>false</linkXRef>
+                            <excludes>examples/*</excludes>
                         </configuration>
                         <dependencies>
                             <dependency>
