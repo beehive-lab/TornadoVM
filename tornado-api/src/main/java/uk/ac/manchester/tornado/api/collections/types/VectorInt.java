@@ -48,12 +48,12 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
 public class VectorInt implements PrimitiveStorage<IntBuffer> {
 
+    private static final int ELEMENT_SIZE = 1;
     private final int numElements;
     private final int[] storage;
-    private static final int ELEMENT_SIZE = 1;
 
     /**
-     * Creates a vector using the provided backing array
+     * Creates a vector using the provided backing array.
      * 
      * @param numElements
      *            number of elements
@@ -66,7 +66,7 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
     }
 
     /**
-     * Creates an empty vector with
+     * Creates an empty vector with.
      * 
      * @param numElements
      *            number of elements
@@ -76,103 +76,13 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
     }
 
     /**
-     * Creates an new vector from the provided storage
+     * Creates an new vector from the provided storage.
      * 
      * @param storage
      *            vector int array
      */
     public VectorInt(int[] storage) {
         this(storage.length / ELEMENT_SIZE, storage);
-    }
-
-    public int[] getArray() {
-        return storage;
-    }
-
-    /**
-     * Returns the int at the given index of this vector
-     * 
-     * @param index
-     *            index value
-     * @return int
-     */
-    public int get(int index) {
-        return storage[index];
-    }
-
-    /**
-     * Sets the int at the given index of this vector
-     * 
-     * @param index
-     *            index value
-     * @param value
-     *            value to be set in position index
-     */
-    public void set(int index, int value) {
-        storage[index] = value;
-    }
-
-    /**
-     * Sets the elements of this vector to that of the provided vector
-     * 
-     * @param values
-     *            assign an input vector int to the internal array
-     */
-    public void set(VectorInt values) {
-        for (int i = 0; i < values.storage.length; i++) {
-            storage[i] = values.storage[i];
-        }
-    }
-
-    /**
-     * Sets the elements of this vector to that of the provided array
-     * 
-     * @param values
-     *            assign an input vector int to the internal array
-     */
-    public void set(int[] values) {
-        for (int i = 0; i < values.length; i++) {
-            storage[i] = values[i];
-        }
-    }
-
-    /**
-     * Sets all elements to value
-     * 
-     * @param value
-     *            Fill input vector with value
-     */
-    public void fill(int value) {
-        for (int i = 0; i < storage.length; i++) {
-            storage[i] = value;
-        }
-    }
-
-    /**
-     * Returns slice of this vector
-     * 
-     * @param start
-     *            starting index
-     * @param length
-     *            number of elements
-     * @return {@link VectorInt}
-     */
-    public VectorInt subVector(int start, int length) {
-        final VectorInt v = new VectorInt(length);
-        for (int i = 0; i < length; i++) {
-            v.storage[i] = storage[i + start];
-        }
-
-        return v;
-    }
-
-    /**
-     * Duplicates this vector
-     * 
-     * @return {@link VectorInt}
-     */
-    public VectorInt duplicate() {
-        return new VectorInt(Arrays.copyOf(storage, storage.length));
     }
 
     public static int min(VectorInt v) {
@@ -192,19 +102,8 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
     }
 
     /**
-     * Vector equality test
-     * 
-     * @param vector
-     *            Input vector to compare
-     * @return true if vectors match
-     */
-    public boolean isEqual(VectorInt vector) {
-        return TornadoMath.isEqual(storage, vector.storage);
-    }
-
-    /**
-     * Perform dot-product
-     * 
+     * Perform dot-product.
+     *
      * @return int value
      */
     public static int dot(VectorInt a, VectorInt b) {
@@ -215,8 +114,107 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
         return sum;
     }
 
+    public int[] getArray() {
+        return storage;
+    }
+
     /**
-     * Prints the vector using the specified format string
+     * Returns the int at the given index of this vector.
+     *
+     * @param index
+     *            index value
+     * @return int
+     */
+    public int get(int index) {
+        return storage[index];
+    }
+
+    /**
+     * Sets the int at the given index of this vector.
+     *
+     * @param index
+     *            index value
+     * @param value
+     *            value to be set in position index
+     */
+    public void set(int index, int value) {
+        storage[index] = value;
+    }
+
+    /**
+     * Sets the elements of this vector to that of the provided vector.
+     *
+     * @param values
+     *            assign an input vector int to the internal array
+     */
+    public void set(VectorInt values) {
+        for (int i = 0; i < values.storage.length; i++) {
+            storage[i] = values.storage[i];
+        }
+    }
+
+    /**
+     * Sets the elements of this vector to that of the provided array.
+     *
+     * @param values
+     *            assign an input vector int to the internal array
+     */
+    public void set(int[] values) {
+        for (int i = 0; i < values.length; i++) {
+            storage[i] = values[i];
+        }
+    }
+
+    /**
+     * Sets all elements to value.
+     *
+     * @param value
+     *            Fill input vector with value
+     */
+    public void fill(int value) {
+        Arrays.fill(storage, value);
+    }
+
+    /**
+     * Returns slice of this vector.
+     *
+     * @param start
+     *            starting index
+     * @param length
+     *            number of elements
+     * @return {@link VectorInt}
+     */
+    public VectorInt subVector(int start, int length) {
+        final VectorInt v = new VectorInt(length);
+        for (int i = 0; i < length; i++) {
+            v.storage[i] = storage[i + start];
+        }
+
+        return v;
+    }
+
+    /**
+     * Duplicates this vector.
+     *
+     * @return {@link VectorInt}
+     */
+    public VectorInt duplicate() {
+        return new VectorInt(Arrays.copyOf(storage, storage.length));
+    }
+
+    /**
+     * Vector equality test.
+     *
+     * @param vector
+     *            Input vector to compare
+     * @return true if vectors match
+     */
+    public boolean isEqual(VectorInt vector) {
+        return TornadoMath.isEqual(storage, vector.storage);
+    }
+
+    /**
+     * Prints the vector using the specified format string.
      * 
      * @param fmt
      *            String Format

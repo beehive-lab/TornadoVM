@@ -77,7 +77,7 @@ public interface ExecutionContext {
     void globalBarrier();
 
     /**
-     * Array Allocation in Local Memory (OpenCL terminology)
+     * Array Allocation in Local Memory (OpenCL terminology).
      *
      * @param size
      *            size of the int-array.
@@ -86,7 +86,7 @@ public interface ExecutionContext {
     int[] allocateIntLocalArray(int size);
 
     /**
-     * Array Allocation in Local Memory (OpenCL terminology)
+     * Array Allocation in Local Memory (OpenCL terminology).
      *
      * @param size
      *            size of the long-array.

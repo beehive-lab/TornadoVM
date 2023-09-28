@@ -48,9 +48,9 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
 public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
 
+    private static final int ELEMENT_SIZE = 1;
     private final int numElements;
     private final double[] storage;
-    private static final int ELEMENT_SIZE = 1;
 
     protected VectorDouble(int numElements, double[] array) {
         this.numElements = numElements;
@@ -58,7 +58,7 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
     }
 
     /**
-     * Creates an empty vector with
+     * Creates an empty vector with.
      *
      * @param numElements
      *            Number of elements
@@ -68,103 +68,13 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
     }
 
     /**
-     * Creates an new vector from the provided storage
+     * Creates an new vector from the provided storage.
      *
      * @param storage
      *            vector to be stored
      */
     public VectorDouble(double[] storage) {
         this(storage.length / ELEMENT_SIZE, storage);
-    }
-
-    public double[] getArray() {
-        return storage;
-    }
-
-    /**
-     * Returns the double at the given index of this vector
-     *
-     * @param index
-     *            Position
-     * @return value
-     */
-    public double get(int index) {
-        return storage[index];
-    }
-
-    /**
-     * Sets the double at the given index of this vector
-     *
-     * @param index
-     *            Position
-     * @param value
-     *            value to be stored
-     */
-    public void set(int index, double value) {
-        storage[index] = value;
-    }
-
-    /**
-     * Sets the elements of this vector to that of the provided vector
-     *
-     * @param values
-     */
-    public void set(VectorDouble values) {
-        for (int i = 0; i < values.storage.length; i++) {
-            storage[i] = values.storage[i];
-        }
-    }
-
-    /**
-     * Sets the elements of this vector to that of the provided array
-     *
-     * @param values
-     *            input vector to be stored
-     */
-    public void set(double[] values) {
-        for (int i = 0; i < values.length; i++) {
-            storage[i] = values[i];
-        }
-    }
-
-    /**
-     * Sets all elements to value
-     *
-     * @param value
-     *            input vector to be stored
-     */
-    public void fill(double value) {
-        for (int i = 0; i < storage.length; i++) {
-            storage[i] = value;
-        }
-    }
-
-    /**
-     * Returns slice of this vector
-     *
-     * @param start
-     *            starting index
-     * @param length
-     *            number of elements
-     *
-     * @return vector with elements updated
-     */
-    public VectorDouble subVector(int start, int length) {
-        final VectorDouble v = new VectorDouble(length);
-        for (int i = 0; i < length; i++) {
-            v.storage[i] = storage[i + start];
-        }
-
-        return v;
-    }
-
-    /**
-     * Duplicates this vector
-     *
-     * @return a new Vector of Doubles
-     */
-    public VectorDouble duplicate() {
-        return new VectorDouble(Arrays.copyOf(storage, storage.length));
     }
 
     public static double min(VectorDouble v) {
@@ -186,19 +96,7 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
     }
 
     /**
-     * Vector equality test
-     *
-     * @param vector
-     *            input Vector
-     *
-     * @return true if vectors match
-     */
-    public boolean isEqual(VectorDouble vector) {
-        return TornadoMath.isEqual(storage, vector.storage);
-    }
-
-    /**
-     * Perform dot product
+     * Perform dot product.
      *
      * @return dot-product value
      */
@@ -210,8 +108,110 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
         return sum;
     }
 
+    public double[] getArray() {
+        return storage;
+    }
+
     /**
-     * Prints the vector using the specified format string
+     * Returns the double at the given index of this vector.
+     *
+     * @param index
+     *            Position
+     * @return value
+     */
+    public double get(int index) {
+        return storage[index];
+    }
+
+    /**
+     * Sets the double at the given index of this vector.
+     *
+     * @param index
+     *            Position
+     * @param value
+     *            value to be stored
+     */
+    public void set(int index, double value) {
+        storage[index] = value;
+    }
+
+    /**
+     * Sets the elements of this vector to that of the provided vector.
+     *
+     * @param values
+     */
+    public void set(VectorDouble values) {
+        for (int i = 0; i < values.storage.length; i++) {
+            storage[i] = values.storage[i];
+        }
+    }
+
+    /**
+     * Sets the elements of this vector to that of the provided array.
+     *
+     * @param values
+     *            input vector to be stored
+     */
+    public void set(double[] values) {
+        for (int i = 0; i < values.length; i++) {
+            storage[i] = values[i];
+        }
+    }
+
+    /**
+     * Sets all elements to value.
+     *
+     * @param value
+     *            input vector to be stored
+     */
+    public void fill(double value) {
+        for (int i = 0; i < storage.length; i++) {
+            storage[i] = value;
+        }
+    }
+
+    /**
+     * Returns slice of this vector.
+     *
+     * @param start
+     *            starting index
+     * @param length
+     *            number of elements
+     *
+     * @return vector with elements updated
+     */
+    public VectorDouble subVector(int start, int length) {
+        final VectorDouble v = new VectorDouble(length);
+        for (int i = 0; i < length; i++) {
+            v.storage[i] = storage[i + start];
+        }
+
+        return v;
+    }
+
+    /**
+     * Duplicates this vector.
+     *
+     * @return a new Vector of Doubles
+     */
+    public VectorDouble duplicate() {
+        return new VectorDouble(Arrays.copyOf(storage, storage.length));
+    }
+
+    /**
+     * Vector equality test.
+     *
+     * @param vector
+     *            input Vector
+     *
+     * @return true if vectors match
+     */
+    public boolean isEqual(VectorDouble vector) {
+        return TornadoMath.isEqual(storage, vector.storage);
+    }
+
+    /**
+     * Prints the vector using the specified format string.
      *
      * @param fmt
      *            String Format

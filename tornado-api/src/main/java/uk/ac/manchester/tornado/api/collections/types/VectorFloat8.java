@@ -41,7 +41,6 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.String.format;
 import static java.nio.FloatBuffer.wrap;
 import static uk.ac.manchester.tornado.api.collections.types.Float8.add;
 import static uk.ac.manchester.tornado.api.collections.types.Float8.loadFromArray;
@@ -50,19 +49,18 @@ import java.nio.FloatBuffer;
 
 public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
 
+    private static final int ELEMENT_SIZE = 8;
     /**
-     * backing array
+     * backing array.
      */
     protected final float[] storage;
-
     /**
-     * number of elements in the storage
+     * number of elements in the storage.
      */
     private final int numElements;
-    private static final int ELEMENT_SIZE = 8;
 
     /**
-     * Creates a vector using the provided backing array
+     * Creates a vector using the provided backing array.
      *
      * @param numElements
      * @param array
@@ -73,14 +71,14 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Creates a vector using the provided backing array
+     * Creates a vector using the provided backing array.
      */
     public VectorFloat8(float[] array) {
         this(array.length / ELEMENT_SIZE, array);
     }
 
     /**
-     * Creates an empty vector with
+     * Creates an empty vector with.
      *
      * @param numElements
      */
@@ -93,7 +91,7 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Returns the float at the given index of this vector
+     * Returns the float at the given index of this vector.
      *
      * @param index
      *
@@ -104,7 +102,7 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Sets the float at the given index of this vector
+     * Sets the float at the given index of this vector.
      *
      * @param index
      * @param value
@@ -114,7 +112,7 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Sets the elements of this vector to that of the provided vector
+     * Sets the elements of this vector to that of the provided vector.
      *
      * @param values
      */
@@ -125,7 +123,7 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Sets the elements of this vector to that of the provided array
+     * Sets the elements of this vector to that of the provided array.
      *
      * @param values
      */
@@ -143,7 +141,7 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Duplicates this vector
+     * Duplicates this vector.
      *
      * @return
      */

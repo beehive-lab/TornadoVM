@@ -32,6 +32,9 @@ xilinx_emulation:
 clean: 
 	mvn -Popencl-backend,ptx-backend clean
 
+checkstyle:
+	mvn checkstyle:check
+
 example:
 	tornado --printKernel --debug -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt --params="8192"
 

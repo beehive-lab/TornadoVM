@@ -51,17 +51,15 @@ import uk.ac.manchester.tornado.api.type.annotations.Vector;
 public final class Float3 implements PrimitiveStorage<FloatBuffer> {
 
     public static final Class<Float3> TYPE = Float3.class;
-
     /**
-     * backing array
+     * number of elements in the storage.
+     */
+    private static final int NUM_ELEMENTS = 3;
+    /**
+     * backing array.
      */
     @Payload
     final float[] storage;
-
-    /**
-     * number of elements in the storage
-     */
-    private static final int NUM_ELEMENTS = 3;
 
     public Float3(float[] storage) {
         this.storage = storage;
@@ -78,101 +76,6 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
         setZ(z);
     }
 
-    public float[] getArray() {
-        return storage;
-    }
-
-    public float get(int index) {
-        return storage[index];
-    }
-
-    public void set(int index, float value) {
-        storage[index] = value;
-    }
-
-    public void set(Float3 value) {
-        setX(value.getX());
-        setY(value.getY());
-        setZ(value.getZ());
-    }
-
-    public float getX() {
-        return get(0);
-    }
-
-    public float getY() {
-        return get(1);
-    }
-
-    public float getZ() {
-        return get(2);
-    }
-
-    public float getS0() {
-        return get(0);
-    }
-
-    public float getS1() {
-        return get(1);
-    }
-
-    public float getS2() {
-        return get(2);
-    }
-
-    public void setX(float value) {
-        set(0, value);
-    }
-
-    public void setY(float value) {
-        set(1, value);
-    }
-
-    public void setZ(float value) {
-        set(2, value);
-    }
-
-    public void setS0(float value) {
-        set(0, value);
-    }
-
-    public void setS1(float value) {
-        set(1, value);
-    }
-
-    public void setS2(float value) {
-        set(2, value);
-    }
-
-    /**
-     * Duplicates this vector
-     *
-     * @return {@link Float3}
-     */
-    public Float3 duplicate() {
-        final Float3 vector = new Float3();
-        vector.set(this);
-        return vector;
-    }
-
-    public String toString(String fmt) {
-        return String.format(fmt, getX(), getY(), getZ());
-    }
-
-    @Override
-    public String toString() {
-        return toString(FloatOps.FMT_3);
-    }
-
-    /**
-     * Cast vector From Float3 into a Float2
-     *
-     * @return {@link Float2}
-     */
-    public Float2 asFloat2() {
-        return new Float2(getX(), getY());
-    }
-
     static Float3 loadFromArray(final float[] array, int index) {
         final Float3 result = new Float3();
         result.setX(array[index]);
@@ -181,29 +84,8 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
         return result;
     }
 
-    void storeToArray(final float[] array, int index) {
-        array[index] = getX();
-        array[index + 1] = getY();
-        array[index + 2] = getZ();
-    }
-
-    @Override
-    public void loadFromBuffer(FloatBuffer buffer) {
-        asBuffer().put(buffer);
-    }
-
-    @Override
-    public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
-    }
-
-    @Override
-    public int size() {
-        return NUM_ELEMENTS;
-    }
-
     /**
-     * * Operations on Float3 vectors
+     * * Operations on Float3 vectors.
      */
     /*
      * vector = op( vector, vector )
@@ -315,7 +197,7 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Returns the vector length e.g. the sqrt of all elements squared
+     * Returns the vector length e.g. the sqrt of all elements squared.
      *
      * @return float
      */
@@ -333,5 +215,121 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
 
     public static float findULPDistance(Float3 a, Float3 b) {
         return TornadoMath.findULPDistance(a.asBuffer().array(), b.asBuffer().array());
+    }
+
+    public float[] getArray() {
+        return storage;
+    }
+
+    public float get(int index) {
+        return storage[index];
+    }
+
+    public void set(int index, float value) {
+        storage[index] = value;
+    }
+
+    public void set(Float3 value) {
+        setX(value.getX());
+        setY(value.getY());
+        setZ(value.getZ());
+    }
+
+    public float getX() {
+        return get(0);
+    }
+
+    public void setX(float value) {
+        set(0, value);
+    }
+
+    public float getY() {
+        return get(1);
+    }
+
+    public void setY(float value) {
+        set(1, value);
+    }
+
+    public float getZ() {
+        return get(2);
+    }
+
+    public void setZ(float value) {
+        set(2, value);
+    }
+
+    public float getS0() {
+        return get(0);
+    }
+
+    public void setS0(float value) {
+        set(0, value);
+    }
+
+    public float getS1() {
+        return get(1);
+    }
+
+    public void setS1(float value) {
+        set(1, value);
+    }
+
+    public float getS2() {
+        return get(2);
+    }
+
+    public void setS2(float value) {
+        set(2, value);
+    }
+
+    /**
+     * Duplicates this vector.
+     *
+     * @return {@link Float3}
+     */
+    public Float3 duplicate() {
+        final Float3 vector = new Float3();
+        vector.set(this);
+        return vector;
+    }
+
+    public String toString(String fmt) {
+        return String.format(fmt, getX(), getY(), getZ());
+    }
+
+    @Override
+    public String toString() {
+        return toString(FloatOps.FMT_3);
+    }
+
+    /**
+     * Cast vector From Float3 into a Float2.
+     *
+     * @return {@link Float2}
+     */
+    public Float2 asFloat2() {
+        return new Float2(getX(), getY());
+    }
+
+    void storeToArray(final float[] array, int index) {
+        array[index] = getX();
+        array[index + 1] = getY();
+        array[index + 2] = getZ();
+    }
+
+    @Override
+    public void loadFromBuffer(FloatBuffer buffer) {
+        asBuffer().put(buffer);
+    }
+
+    @Override
+    public FloatBuffer asBuffer() {
+        return FloatBuffer.wrap(storage);
+    }
+
+    @Override
+    public int size() {
+        return NUM_ELEMENTS;
     }
 }

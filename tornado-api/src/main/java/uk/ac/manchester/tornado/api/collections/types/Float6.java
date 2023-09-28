@@ -49,17 +49,15 @@ import uk.ac.manchester.tornado.api.type.annotations.Payload;
 public final class Float6 implements PrimitiveStorage<FloatBuffer> {
 
     public static final Class<Float6> TYPE = Float6.class;
-
     /**
-     * backing array
+     * number of elements in the storage.
+     */
+    private static final int NUM_ELEMENTS = 6;
+    /**
+     * backing array.
      */
     @Payload
     final float[] storage;
-
-    /**
-     * number of elements in the storage
-     */
-    private static final int NUM_ELEMENTS = 6;
 
     public Float6(float[] storage) {
         this.storage = storage;
@@ -79,103 +77,6 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
         setS5(s5);
     }
 
-    public float[] getArray() {
-        return storage;
-    }
-
-    public void set(Float6 value) {
-        setS0(value.getS0());
-        setS1(value.getS1());
-        setS2(value.getS2());
-        setS3(value.getS3());
-        setS4(value.getS4());
-        setS5(value.getS5());
-    }
-
-    public float get(int index) {
-        return storage[index];
-    }
-
-    public void set(int index, float value) {
-        storage[index] = value;
-    }
-
-    public float getS0() {
-        return get(0);
-    }
-
-    public float getS1() {
-        return get(1);
-    }
-
-    public float getS2() {
-        return get(2);
-    }
-
-    public float getS3() {
-        return get(3);
-    }
-
-    public float getS4() {
-        return get(4);
-    }
-
-    public float getS5() {
-        return get(5);
-    }
-
-    public void setS0(float value) {
-        set(0, value);
-    }
-
-    public void setS1(float value) {
-        set(1, value);
-    }
-
-    public void setS2(float value) {
-        set(2, value);
-    }
-
-    public void setS3(float value) {
-        set(3, value);
-    }
-
-    public void setS4(float value) {
-        set(4, value);
-    }
-
-    public void setS5(float value) {
-        set(5, value);
-    }
-
-    public Float3 getHigh() {
-        return Float3.loadFromArray(storage, 0);
-    }
-
-    public Float3 getLow() {
-        return Float3.loadFromArray(storage, 3);
-    }
-
-    /**
-     * Duplicates this vector
-     *
-     * @return {@link Float6}
-     */
-    public Float6 duplicate() {
-        final Float6 vector = new Float6();
-        vector.set(this);
-        return vector;
-    }
-
-    public String toString(String fmt) {
-        return String.format(fmt, getS0(), getS1(), getS2(), getS3(), getS4(), getS5());
-    }
-
-    @Override
-    public String toString() {
-        return toString(FloatOps.FMT_6);
-    }
-
     public static Float6 loadFromArray(final float[] array, int index) {
         final Float6 result = new Float6();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
@@ -184,29 +85,8 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
         return result;
     }
 
-    public final void storeToArray(final float[] array, int index) {
-        for (int i = 0; i < NUM_ELEMENTS; i++) {
-            array[index + i] = get(i);
-        }
-    }
-
-    @Override
-    public void loadFromBuffer(FloatBuffer buffer) {
-        asBuffer().put(buffer);
-    }
-
-    @Override
-    public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
-    }
-
-    @Override
-    public int size() {
-        return NUM_ELEMENTS;
-    }
-
     /**
-     * * Operations on Float6 vectors
+     * Operations on Float6 vectors.
      */
     /*
      * vector = op( vector, vector )
@@ -366,7 +246,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Returns the vector length e.g. the sqrt of all elements squared
+     * Returns the vector length e.g. the sqrt of all elements squared.
      *
      * @return float
      */
@@ -376,6 +256,124 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
 
     public static boolean isEqual(Float6 a, Float6 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+    }
+
+    public float[] getArray() {
+        return storage;
+    }
+
+    public void set(Float6 value) {
+        setS0(value.getS0());
+        setS1(value.getS1());
+        setS2(value.getS2());
+        setS3(value.getS3());
+        setS4(value.getS4());
+        setS5(value.getS5());
+    }
+
+    public float get(int index) {
+        return storage[index];
+    }
+
+    public void set(int index, float value) {
+        storage[index] = value;
+    }
+
+    public float getS0() {
+        return get(0);
+    }
+
+    public void setS0(float value) {
+        set(0, value);
+    }
+
+    public float getS1() {
+        return get(1);
+    }
+
+    public void setS1(float value) {
+        set(1, value);
+    }
+
+    public float getS2() {
+        return get(2);
+    }
+
+    public void setS2(float value) {
+        set(2, value);
+    }
+
+    public float getS3() {
+        return get(3);
+    }
+
+    public void setS3(float value) {
+        set(3, value);
+    }
+
+    public float getS4() {
+        return get(4);
+    }
+
+    public void setS4(float value) {
+        set(4, value);
+    }
+
+    public float getS5() {
+        return get(5);
+    }
+
+    public void setS5(float value) {
+        set(5, value);
+    }
+
+    public Float3 getHigh() {
+        return Float3.loadFromArray(storage, 0);
+    }
+
+    public Float3 getLow() {
+        return Float3.loadFromArray(storage, 3);
+    }
+
+    /**
+     * Duplicates this vector.
+     *
+     * @return {@link Float6}
+     */
+    public Float6 duplicate() {
+        final Float6 vector = new Float6();
+        vector.set(this);
+        return vector;
+    }
+
+    public String toString(String fmt) {
+        return String.format(fmt, getS0(), getS1(), getS2(), getS3(), getS4(), getS5());
+    }
+
+    @Override
+    public String toString() {
+        return toString(FloatOps.FMT_6);
+    }
+
+    public void storeToArray(final float[] array, int index) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            array[index + i] = get(i);
+        }
+    }
+
+    @Override
+    public void loadFromBuffer(FloatBuffer buffer) {
+        asBuffer().put(buffer);
+    }
+
+    @Override
+    public FloatBuffer asBuffer() {
+        return FloatBuffer.wrap(storage);
+    }
+
+    @Override
+    public int size() {
+        return NUM_ELEMENTS;
     }
 
 }

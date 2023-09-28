@@ -24,6 +24,8 @@
         <download.cmake>false</download.cmake>
         <jmh.version>1.29</jmh.version>
         <tornadojmhjar.name>jmhbenchmarks</tornadojmhjar.name>
+        <checkstyle.config.location>checkstyle.xml</checkstyle.config.location>
+        <!--        <checkstyle.config.location>google_checks.xml</checkstyle.config.location>-->
     </properties>
 
     <profiles>
@@ -297,6 +299,24 @@
             </activation>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-checkstyle-plugin</artifactId>
+                        <version>3.3.0</version>
+                        <configuration>
+                            <!--                            <excludes>**/module-info.java</excludes>-->
+                            <consoleOutput>true</consoleOutput>
+                            <failsOnError>true</failsOnError>
+                            <linkXRef>false</linkXRef>
+                        </configuration>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.puppycrawl.tools</groupId>
+                                <artifactId>checkstyle</artifactId>
+                                <version>10.12.1</version> <!-- Checkstyle version -->
+                            </dependency>
+                        </dependencies>
+                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>

@@ -42,34 +42,31 @@
 package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.ShortBuffer;
+import java.util.Arrays;
 
 public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
 
+    private static final int ELEMENT_SIZE = 2;
     /**
-     * backing array
+     * backing array.
      */
     protected final short[] storage;
-
     /**
-     * number of elements in the storage
-     */
-    private final int numElements;
-    private static final int ELEMENT_SIZE = 2;
-
-    /**
-     * Size in Y dimension
+     * Size in Y dimension.
      */
     protected final int Y;
-
     /**
-     * Size in X dimension
+     * Size in X dimension.
      */
     protected final int X;
-
     /**
-     * Size in Y dimension
+     * Size in Y dimension.
      */
     protected final int Z;
+    /**
+     * number of elements in the storage.
+     */
+    private final int numElements;
 
     public VolumeShort2(int width, int height, int depth, short[] array) {
         storage = array;
@@ -80,7 +77,7 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
     }
 
     /**
-     * Storage format for matrix
+     * Storage format for matrix.
      * 
      * @param width
      *            number of columns
@@ -122,9 +119,7 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
     }
 
     public void fill(short value) {
-        for (int i = 0; i < storage.length; i++) {
-            storage[i] = value;
-        }
+        Arrays.fill(storage, value);
     }
 
     public VolumeShort2 duplicate() {
