@@ -39,15 +39,6 @@ public class SparseMatrixUtils {
 
     private static final boolean VERBOSE = false;
 
-    public static class CSRMatrix<T> {
-
-        public int n;
-        public int size;
-        public T vals;
-        public int[] rows;
-        public int[] cols;
-    }
-
     public static CSRMatrix<double[]> loadMatrixD(final String path) {
         boolean pattern = false;
         boolean symmetric = false;
@@ -103,13 +94,13 @@ public class SparseMatrixUtils {
                 int y;
                 float val;
 
-                public Coordinate(final int a, final int b, final float c) {
+                Coordinate(final int a, final int b, final float c) {
                     x = a;
                     y = b;
                     val = c;
                 }
 
-                public Coordinate(final String[] opts) {
+                Coordinate(final String[] opts) {
                     x = parseInt(opts[0]) - 1;
                     y = parseInt(opts[1]) - 1;
                     val = parseFloat(opts[2]);
@@ -197,7 +188,7 @@ public class SparseMatrixUtils {
     }
 
     public static CSRMatrix<float[]> loadMatrixF(InputStream inStream) {
-        try (final BufferedReader br = new BufferedReader(new InputStreamReader(inStream))) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(inStream))) {
             return loadMatrixF(br);
         } catch (IOException e) {
             err.printf("unable to read matrix from input steam: %s\n", e.getMessage());
@@ -207,7 +198,7 @@ public class SparseMatrixUtils {
     }
 
     public static CSRMatrix<float[]> loadMatrixF(final String path) {
-        try (final BufferedReader br = new BufferedReader(new FileReader(path))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(path))) {
             return loadMatrixF(br);
         } catch (IOException e) {
             err.printf("unable to read matrix from file: %s (%s)\n", path, e.getMessage());
@@ -269,13 +260,13 @@ public class SparseMatrixUtils {
             int y;
             float val;
 
-            public Coordinate(final int a, final int b, final float c) {
+            Coordinate(final int a, final int b, final float c) {
                 x = a;
                 y = b;
                 val = c;
             }
 
-            public Coordinate(final String[] opts) {
+            Coordinate(final String[] opts) {
                 x = parseInt(opts[0]) - 1;
                 y = parseInt(opts[1]) - 1;
                 val = parseFloat(opts[2]);
@@ -361,5 +352,14 @@ public class SparseMatrixUtils {
 
         coords.clear();
         return mat;
+    }
+
+    public static class CSRMatrix<T> {
+
+        public int n;
+        public int size;
+        public T vals;
+        public int[] rows;
+        public int[] cols;
     }
 }
