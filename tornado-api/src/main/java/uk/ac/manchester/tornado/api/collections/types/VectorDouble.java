@@ -192,7 +192,6 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
     /**
      * Duplicates this vector.
      *
-     * @return a new Vector of Doubles
      */
     public VectorDouble duplicate() {
         return new VectorDouble(Arrays.copyOf(storage, storage.length));

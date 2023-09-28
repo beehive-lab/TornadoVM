@@ -152,9 +152,7 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
      *            Set input array as internal stored
      */
     public void set(float[] values) {
-        for (int i = 0; i < values.length; i++) {
-            storage[i] = values[i];
-        }
+        System.arraycopy(values, 0, storage, 0, values.length);
     }
 
     /**
@@ -164,9 +162,7 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
      *            Fill input array with value
      */
     public void fill(float value) {
-        for (int i = 0; i < storage.length; i++) {
-            storage[i] = value;
-        }
+        Arrays.fill(storage, value);
     }
 
     /**
@@ -176,7 +172,6 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
      *            starting index
      * @param length
      *            number of elements
-     * @return a new Vector Float
      */
     public VectorFloat subVector(int start, int length) {
         final VectorFloat v = new VectorFloat(length);
@@ -189,7 +184,6 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
     /**
      * Duplicates this vector.
      *
-     * @return a new Vector Float
      */
     public VectorFloat duplicate() {
         return new VectorFloat(Arrays.copyOf(storage, storage.length));

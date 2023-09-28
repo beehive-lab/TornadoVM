@@ -187,14 +187,14 @@ public final class StorageFormats {
      * @return float[]
      */
     public static float[] toRowMajor(float[][] matrix) {
-        final int dim_x = matrix.length;
-        final int dim_y = matrix[0].length;
+        final int dimX = matrix.length;
+        final int dimY = matrix[0].length;
 
-        float[] flattenMatrix = new float[dim_x * dim_y];
+        float[] flattenMatrix = new float[dimX * dimY];
 
-        for (int i = 0; i < dim_x; i++) {
-            for (int j = 0; j < dim_y; j++) {
-                flattenMatrix[toRowMajor(i, j, dim_y)] = matrix[i][j];
+        for (int i = 0; i < dimX; i++) {
+            for (int j = 0; j < dimY; j++) {
+                flattenMatrix[toRowMajor(i, j, dimY)] = matrix[i][j];
             }
         }
 
@@ -202,15 +202,15 @@ public final class StorageFormats {
     }
 
     public static float[] toRowMajor3D(float[][][] matrix) {
-        final int dim_x = matrix.length;
-        final int dim_y = matrix[0].length;
-        final int dim_z = matrix[0][0].length;
-        float[] flattenMatrix = new float[dim_x * dim_y * dim_z];
+        final int dimX = matrix.length;
+        final int dimY = matrix[0].length;
+        final int dimZ = matrix[0][0].length;
+        float[] flattenMatrix = new float[dimX * dimY * dimZ];
 
-        for (int i = 0; i < dim_x; i++) {
-            for (int j = 0; j < dim_y; j++) {
-                for (int k = 0; k < dim_z; k++) {
-                    int index = toRowMajor3D(i, j, k, dim_z, dim_y);
+        for (int i = 0; i < dimX; i++) {
+            for (int j = 0; j < dimY; j++) {
+                for (int k = 0; k < dimZ; k++) {
+                    int index = toRowMajor3D(i, j, k, dimZ, dimY);
                     flattenMatrix[index] = matrix[i][j][k];
                 }
             }
@@ -226,13 +226,13 @@ public final class StorageFormats {
      * @return int[]
      */
     public static int[] toRowMajor(int[][] matrix) {
-        final int dim_x = matrix.length;
-        final int dim_y = matrix[0].length;
+        final int dimX = matrix.length;
+        final int dimY = matrix[0].length;
 
-        int[] matrixRM = new int[dim_x * dim_y];
-        for (int i = 0; i < dim_x; i++) {
-            for (int j = 0; j < dim_y; j++) {
-                matrixRM[toRowMajor(i, j, dim_y)] = matrix[i][j];
+        int[] matrixRM = new int[dimX * dimY];
+        for (int i = 0; i < dimX; i++) {
+            for (int j = 0; j < dimY; j++) {
+                matrixRM[toRowMajor(i, j, dimY)] = matrix[i][j];
             }
         }
         return matrixRM;
