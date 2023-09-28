@@ -36,7 +36,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
  * </code>
  */
 public class MatrixMultiplication2D {
-
+    // CHECKSTYLE:OFF
     private static final int WARMING_UP_ITERATIONS = 15;
 
     private static void matrixMultiplication(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
@@ -138,3 +138,4 @@ public class MatrixMultiplication2D {
         return check;
     }
 }
+// CHECKSTYLE:OFF

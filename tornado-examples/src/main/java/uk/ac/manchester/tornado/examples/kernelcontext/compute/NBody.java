@@ -42,6 +42,7 @@ import uk.ac.manchester.tornado.api.profiler.ChromeEventTracer;
  *
  */
 public class NBody {
+    // CHECKSTYLE:OFF
 
     private static boolean VALIDATION = true;
     private static float DELT = 0.005f;
@@ -224,3 +225,4 @@ public class NBody {
     }
 
 }
+// CHECKSTYLE:ON

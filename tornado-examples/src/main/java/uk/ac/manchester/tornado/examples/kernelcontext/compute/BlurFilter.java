@@ -57,27 +57,32 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  *
  */
 public class BlurFilter {
+    // CHECKSTYLE:OFF
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Blur Image Filter Example with TornadoVM");
+
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent event) {
+                System.exit(0);
+            }
+        });
+
+        frame.add(new BlurFilterImage());
+        frame.pack();
+        frame.setVisible(true);
+    }
 
     @SuppressWarnings("serial")
     public static class BlurFilterImage extends Component {
 
-        private BufferedImage image;
-
         public static final boolean PARALLEL_COMPUTATION = Boolean.parseBoolean(System.getProperty("run:parallel", "True"));
         public static final int FILTER_WIDTH = 31;
-
         private static final String IMAGE_FILE = "/tmp/image.jpg";
+        private BufferedImage image;
 
         public BlurFilterImage() {
             loadImage();
-        }
-
-        public void loadImage() {
-            try {
-                image = ImageIO.read(new File(IMAGE_FILE));
-            } catch (IOException e) {
-                throw new RuntimeException("Input file not found: " + IMAGE_FILE);
-            }
         }
 
         private static void channelConvolutionSequential(int[] channel, int[] channelBlurred, final int numRows, final int numCols, float[] filter, final int filterWidth) {
@@ -124,6 +129,14 @@ public class BlurFilter {
                 }
             }
             channelBlurred[r * numCols + c] = result > 255 ? 255 : (int) result;
+        }
+
+        public void loadImage() {
+            try {
+                image = ImageIO.read(new File(IMAGE_FILE));
+            } catch (IOException e) {
+                throw new RuntimeException("Input file not found: " + IMAGE_FILE);
+            }
         }
 
         private void parallelCompute() {
@@ -265,19 +278,5 @@ public class BlurFilter {
 
     }
 
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("Blur Image Filter Example with TornadoVM");
-
-        frame.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent event) {
-                System.exit(0);
-            }
-        });
-
-        frame.add(new BlurFilterImage());
-        frame.pack();
-        frame.setVisible(true);
-    }
-
 }
+// CHECKSTYLE:ON
