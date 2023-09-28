@@ -34,9 +34,6 @@ import update_paths as updp
 import pull_graal_jars
 
 
-SHOULD_HANDLE_GRAAL_JARS = False
-
-
 def check_java_version():
     """
     Checks the Java version in the system.
@@ -53,23 +50,20 @@ def check_java_version():
     return java_version_output
 
 
-def pull_graal_jars_if_needed():
+def pull_graal_jars_if_needed(graal_jars_status):
     """
     Pulls GraalVM jars if the specified JDK version does not contain the binaries.
 
     Args:
         jdk (str): The JDK version.
     """
-    if SHOULD_HANDLE_GRAAL_JARS:
+    if graal_jars_status:
         pull_graal_jars.main()
 
 
-def set_jar_status(jdk):
+def should_handle_graal_jars(jdk):
     java_version_output = check_java_version()
-    global SHOULD_HANDLE_GRAAL_JARS
-    SHOULD_HANDLE_GRAAL_JARS = (
-        jdk == "jdk-17-plus" and "GraalVM" not in java_version_output
-    )
+    return jdk == "jdk-17-plus" and "GraalVM" not in java_version_output
 
 
 def maven_cleanup():
@@ -206,7 +200,9 @@ def copy_jars(graal_jars_dir):
             shutil.copy(source_file, destination_file)
 
 
-def post_installation_actions(backend_profiles, mvn_build_result, jdk):
+def post_installation_actions(
+    backend_profiles, mvn_build_result, jdk, graal_jars_status
+):
     """
     Performs post-installation actions.
 
@@ -226,7 +222,7 @@ def post_installation_actions(backend_profiles, mvn_build_result, jdk):
             backend_file.write(f"tornado.backends={backend_profiles}")
 
         # Place the Graal jars in the TornadoVM distribution only if the JDK 17+ rule is used
-        if SHOULD_HANDLE_GRAAL_JARS:
+        if graal_jars_status:
             graal_jars_dir = os.path.join(os.getcwd(), "graalJars")
             os.makedirs(
                 f"{os.environ['TORNADO_SDK']}/share/java/graalJars", exist_ok=True
@@ -258,11 +254,11 @@ def parse_args():
 def main():
     args = parse_args()
 
-    set_jar_status(args.jdk)
+    graal_jars_status = should_handle_graal_jars(args.jdk)
 
     maven_cleanup()
 
-    pull_graal_jars_if_needed()
+    pull_graal_jars_if_needed(graal_jars_status)
 
     backend_profiles = process_backends_as_mvn_profiles(args.backends)
 
@@ -271,7 +267,9 @@ def main():
 
     mvn_build_result = build_tornadovm(args.jdk, backend_profiles, args.offline)
 
-    post_installation_actions(backend_profiles, mvn_build_result, args.jdk)
+    post_installation_actions(
+        backend_profiles, mvn_build_result, args.jdk, graal_jars_status
+    )
 
 
 if __name__ == "__main__":
