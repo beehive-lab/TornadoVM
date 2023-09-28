@@ -81,12 +81,12 @@ public class DoubleArray {
         return segment;
     }
 
-    @Override
-    public String toString() {
-        String arrayContents = String.valueOf(this.get(0));
-        for (int i = 1; i < numberOfElements; i++) {
-            arrayContents += ", " + this.get(i);
-        }
-        return arrayContents;
-    }
+//    @Override
+//    public String toString() {
+//        String arrayContents = String.valueOf(this.get(0));
+//        for (int i = 1; i < numberOfElements; i++) {
+//            arrayContents += ", " + this.get(i);
+//        }
+//        return arrayContents;
+//    }
 }
