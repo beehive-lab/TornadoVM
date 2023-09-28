@@ -37,7 +37,8 @@ public class AtomicAccessNode extends FloatingNode {
 
     public static final NodeClass<AtomicAccessNode> TYPE = NodeClass.create(AtomicAccessNode.class);
 
-    @Input(InputType.Association) protected ValueNode value;
+    @Input(InputType.Association)
+    protected ValueNode value;
 
     public AtomicAccessNode(ValueNode value) {
         super(TYPE, value.stamp(NodeView.DEFAULT));

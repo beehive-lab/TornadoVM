@@ -58,7 +58,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 
-public class RuntimeUtilities {
+public final class RuntimeUtilities {
 
     public static final int ONE_GIGABYTE = 1 * 1024 * 1024 * 1024;
     public static final int ONE_MEGABYTE = 1 * 1024 * 1024;
@@ -66,6 +66,9 @@ public class RuntimeUtilities {
 
     public static final String FPGA_OUTPUT_FILENAME = "outputFPGA.log";
     public static final String FPGA_ERROR_FILENAME = "errorFPGA.log";
+
+    private RuntimeUtilities() {
+    }
 
     public static long parseSize(String size) {
         if (size.endsWith("B")) {
@@ -86,7 +89,7 @@ public class RuntimeUtilities {
     }
 
     /**
-     * Convert byte sizes into human readable format Based on code from
+     * Convert byte sizes into human-readable format Based on code from.
      *
      * @param bytes
      * @param si
@@ -146,7 +149,7 @@ public class RuntimeUtilities {
     }
 
     /**
-     * Returns true if object is a boxed type
+     * Returns true if object is a boxed type.
      *
      * @param obj
      * @return
@@ -176,7 +179,7 @@ public class RuntimeUtilities {
     }
 
     /**
-     * Returns true if object is a boxed type
+     * Returns true if object is a boxed type.
      *
      * @param klass
      *            Class to check is boxed type.
@@ -207,7 +210,7 @@ public class RuntimeUtilities {
     }
 
     /**
-     * Returns true if object is a boxed type
+     * Returns true if object is a boxed type.
      *
      * @param clazz
      * @return
@@ -237,7 +240,7 @@ public class RuntimeUtilities {
     }
 
     /**
-     * determines whether a given array is composed of primitives or objects
+     * determines whether a given array is composed of primitives or objects.
      *
      * @param type
      *            type to check
@@ -404,8 +407,8 @@ public class RuntimeUtilities {
 
     public static void systemCall(String[] command, boolean printStandardOutput, String loggingDirectory) throws IOException {
         String stdOutput;
-        StringBuffer standardOutput = new StringBuffer();
-        StringBuffer errorOutput = new StringBuffer();
+        StringBuilder standardOutput = new StringBuilder();
+        StringBuilder errorOutput = new StringBuilder();
         final String lineSeparator = System.lineSeparator();
 
         try {
@@ -414,17 +417,17 @@ public class RuntimeUtilities {
 
             BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
             BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-            standardOutput.append("Standard output:" + lineSeparator);
+            standardOutput.append("Standard output:").append(lineSeparator);
             String fullCommand = Arrays.toString(command);
-            standardOutput.append("Command: " + fullCommand + lineSeparator + lineSeparator);
+            standardOutput.append("Command: ").append(fullCommand).append(lineSeparator).append(lineSeparator);
             while ((stdOutput = stdInput.readLine()) != null) {
-                standardOutput.append(stdOutput + lineSeparator);
+                standardOutput.append(stdOutput).append(lineSeparator);
             }
             standardOutput.append("--------------------------------------------------------------------\n");
 
-            errorOutput.append("Standard error (if any) of the command (" + Arrays.toString(command) + "):\n");
+            errorOutput.append("Standard error (if any) of the command (").append(Arrays.toString(command)).append("):\n");
             while ((stdOutput = stdError.readLine()) != null) {
-                errorOutput.append(stdOutput + lineSeparator);
+                errorOutput.append(stdOutput).append(lineSeparator);
             }
             errorOutput.append("--------------------------------------------------------------------\n");
 
@@ -478,8 +481,8 @@ public class RuntimeUtilities {
     public static String getTornadoInstanceIP() {
         String localIP = null;
         try {
-            InetAddress IP = InetAddress.getLocalHost();
-            localIP = IP.getHostAddress();
+            InetAddress ip = InetAddress.getLocalHost();
+            localIP = ip.getHostAddress();
         } catch (UnknownHostException e) {
             System.out.println("Exception occurred" + e.getMessage());
         }
@@ -493,8 +496,5 @@ public class RuntimeUtilities {
         } catch (IOException e) {
             throw new TornadoRuntimeException("JSon profiler file cannot be append");
         }
-    }
-
-    private RuntimeUtilities() {
     }
 }

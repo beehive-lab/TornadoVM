@@ -26,7 +26,7 @@ package uk.ac.manchester.tornado.runtime.graal.phases;
 
 /**
  * This interface is used for accessing the Vector Value node type outside the
- * scope of opencl-driver package
+ * scope of opencl-driver package.
  */
 public interface MarkVectorValueNode {
 }

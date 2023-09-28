@@ -120,7 +120,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     /**
-     * Options for Dynamic Reconfiguration
+     * Options for Dynamic Reconfiguration.
      */
     private static final boolean EXPERIMENTAL_MULTI_HOST_HEAP = false;
     private static final int DEFAULT_DRIVER_INDEX = 0;
@@ -170,7 +170,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private StringBuilder bufferLogProfiler = new StringBuilder();
     private Graph compilationGraph;
     /**
-     * Options for new reductions - experimental
+     * Options for new reductions - experimental.
      */
     private boolean reduceExpressionRewritten = false;
     private ReduceTaskGraph reduceTaskGraph;
@@ -613,7 +613,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     /**
-     * Compile a {@link TaskGraph} into TornadoVM byte-code
+     * Compile a {@link TaskGraph} into TornadoVM byte-code.
      *
      * @param setNewDevice:
      *            boolean that specifies if set a new device or not.
@@ -760,22 +760,22 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
 
         if (!TornadoOptions.PROFILER_LOGS_ACCUMULATE()) {
-            timeProfiler.dumpJson(new StringBuffer(), this.getId());
+            timeProfiler.dumpJson(new StringBuilder(), this.getId());
         } else {
-            bufferLogProfiler.append(timeProfiler.createJson(new StringBuffer(), this.getId()));
+            bufferLogProfiler.append(timeProfiler.createJson(new StringBuilder(), this.getId()));
         }
 
         if (!TornadoOptions.SOCKET_PORT.isEmpty()) {
             TornadoVMClient tornadoVMClient = new TornadoVMClient();
             try {
-                tornadoVMClient.sentLogOverSocket(timeProfiler.createJson(new StringBuffer(), this.getId()));
+                tornadoVMClient.sentLogOverSocket(timeProfiler.createJson(new StringBuilder(), this.getId()));
             } catch (IOException e) {
                 System.out.println(e);
             }
         }
 
         if (!TornadoOptions.PROFILER_DIRECTORY.isEmpty()) {
-            String jsonFile = timeProfiler.createJson(new StringBuffer(), this.getId());
+            String jsonFile = timeProfiler.createJson(new StringBuilder(), this.getId());
             RuntimeUtilities.profilerFileWriter(jsonFile);
         }
     }
@@ -962,7 +962,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         vm.warmup();
 
         if (TornadoOptions.isProfilerEnabled() && !TornadoOptions.PROFILER_LOGS_ACCUMULATE()) {
-            timeProfiler.dumpJson(new StringBuffer(), this.getId());
+            timeProfiler.dumpJson(new StringBuilder(), this.getId());
         }
     }
 
@@ -1752,7 +1752,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 default:
                     type = "JAVA";
             }
-            str.append(type).append(" ,");
+            str.append(type).append(" ").append(",");
         }
         str.append("JVM]");
         return str.toString();
@@ -2211,7 +2211,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
-    private static class CompileInfo {
+    private static final class CompileInfo {
 
         private boolean compile;
         private boolean updateDevice;
@@ -2230,7 +2230,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
      */
     private static class HistoryTable {
         /**
-         * TreeMap between input size -> device index
+         * TreeMap between input size -> device index.
          */
         private TreeMap<Integer, Integer> table = new TreeMap<>();
 

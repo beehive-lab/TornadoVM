@@ -26,5 +26,5 @@
 package uk.ac.manchester.tornado.runtime.common.enums;
 
 public enum ThreadSchedule {
-	CYCLIC, BLOCK, BLOCK_CYCLIC;
+    CYCLIC, BLOCK, BLOCK_CYCLIC;
 }

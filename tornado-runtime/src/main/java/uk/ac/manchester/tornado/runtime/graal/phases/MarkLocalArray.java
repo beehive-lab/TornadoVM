@@ -20,7 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: Michalis Papadimitriou
  *
  */
 
@@ -28,7 +27,7 @@ package uk.ac.manchester.tornado.runtime.graal.phases;
 
 /**
  * This interface is used for accessing the local array node type outside the
- * scope of opencl-driver package
+ * scope of opencl-driver package.
  */
 public interface MarkLocalArray {
 }

@@ -60,7 +60,7 @@ public abstract class BinaryLogicalNode extends LogicNode implements IterableNod
         builder.setResult(this, result);
     }
 
-    abstract public Value generate(LIRGeneratorTool gen, Value x, Value y);
+    public abstract Value generate(LIRGeneratorTool gen, Value x, Value y);
 
     @Override
     public LogicNode canonical(CanonicalizerTool tool) {
