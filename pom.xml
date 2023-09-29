@@ -25,7 +25,6 @@
         <jmh.version>1.29</jmh.version>
         <tornadojmhjar.name>jmhbenchmarks</tornadojmhjar.name>
         <checkstyle.config.location>tornado-assembly/src/etc/checkstyle.xml</checkstyle.config.location>
-        <!--        <checkstyle.config.location>google_checks.xml</checkstyle.config.location>-->
     </properties>
 
     <profiles>
@@ -307,13 +306,12 @@
                             <consoleOutput>true</consoleOutput>
                             <failsOnError>true</failsOnError>
                             <linkXRef>false</linkXRef>
-                            <excludes>examples/*</excludes>
                         </configuration>
                         <dependencies>
                             <dependency>
                                 <groupId>com.puppycrawl.tools</groupId>
                                 <artifactId>checkstyle</artifactId>
-                                <version>10.12.1</version> <!-- Checkstyle version -->
+                                <version>10.12.3</version> <!-- Checkstyle version -->
                             </dependency>
                         </dependencies>
                     </plugin>
