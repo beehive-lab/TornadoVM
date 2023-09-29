@@ -79,7 +79,8 @@ import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
  */
 public class TaskGraph implements TaskGraphInterface {
 
-    private static final String ERROR_TASK_NAME_DUPLICATION = "[TornadoVM ERROR]. There are more than 1 tasks with the same task-name. Use different a different task name for each task within a TaskGraph.";
+    private static final String ERROR_TASK_NAME_DUPLICATION = //
+            "[TornadoVM ERROR]. There are more than 1 tasks with the same task-name. Use different a different task name for each task within " + "a TaskGraph.";
 
     private final String taskGraphName;
     protected TornadoTaskGraphInterface taskGraphImpl;

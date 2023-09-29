@@ -14,7 +14,7 @@
         <property name="fileNamePattern" value="\bmodule-info\.java\b"/>
     </module>
     <property name="severity" value="error"/>
-     <module name="SuppressWithPlainTextCommentFilter">
+    <module name="SuppressWithPlainTextCommentFilter">
         <property name="offCommentFormat" value="CHECKSTYLE.OFF"/>
         <property name="onCommentFormat" value="CHECKSTYLE.ON"/>
     </module>
@@ -233,7 +233,8 @@
         </module>
     </module>
     <module name="LineLength">
-        <property name="max" value="250"/>
+        <property name="max" value="200"/>
+        <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
     </module>
     <module name="FileTabCharacter">
         <property name="severity" value="error"/>

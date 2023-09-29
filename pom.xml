@@ -307,13 +307,9 @@
                             <failsOnError>true</failsOnError>
                             <linkXRef>false</linkXRef>
                         </configuration>
-                        <dependencies>
-                            <dependency>
-                                <groupId>com.puppycrawl.tools</groupId>
-                                <artifactId>checkstyle</artifactId>
-                                <version>10.12.3</version> <!-- Checkstyle version -->
-                            </dependency>
-                        </dependencies>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -1938,6 +1934,11 @@
     </build>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.puppycrawl.tools</groupId>
+                <artifactId>checkstyle</artifactId>
+                <version>10.12.3</version>
+            </dependency>
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>

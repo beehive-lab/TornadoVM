@@ -32,7 +32,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
-import uk.ac.manchester.tornado.api.TornadoVM_Intrinsics;
+import uk.ac.manchester.tornado.api.TornadoVMIntrinsics;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -61,7 +61,7 @@ public class TestAtomics extends TornadoTestBase {
         final int size = 100;
         for (@Parallel int i = 0; i < a.length; i++) {
             int j = i % size;
-            a[j] = TornadoVM_Intrinsics.atomic_add(a, j, 1);
+            a[j] = TornadoVMIntrinsics.atomic_add(a, j, 1);
         }
     }
 
