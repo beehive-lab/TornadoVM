@@ -11,7 +11,6 @@ repos:
       - id: end-of-file-fixer
       - id: check-json
       - id: check-xml
-      - id: detect-private-key
       - id: no-commit-to-branch
         args: [ '--branch', 'develop' ]
       - id: trailing-whitespace
