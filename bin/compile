@@ -42,6 +42,9 @@ def check_java_version():
         str: The Java version information.
     """
     java_home = os.environ.get("JAVA_HOME")
+    if (java_home == None):
+        print("JAVA_HOME not found.")
+        sys.exit(-1)
     java_cmd = os.path.join(java_home, "bin", "java")
     java_version_output = subprocess.check_output(
         [java_cmd, "-version"], stderr=subprocess.STDOUT, universal_newlines=True
