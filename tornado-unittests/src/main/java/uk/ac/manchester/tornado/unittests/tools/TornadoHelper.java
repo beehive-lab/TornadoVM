@@ -38,6 +38,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.unittests.common.SPIRVOptNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMOpenCLNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMPTXNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMSPIRVNotSupported;
@@ -55,7 +56,7 @@ public class TornadoHelper {
         System.out.printf("Test ran: %s, Failed: %s, Unsupported: %s%n", (success + failed + notSupported), failed, notSupported);
     }
 
-    private static void printResult(int success, int failed, int notSupported, StringBuffer buffer) {
+    private static void printResult(int success, int failed, int notSupported, StringBuilder buffer) {
         buffer.append(String.format("Test ran: %s, Failed: %s, Unsupported: %s%n", (success + failed + notSupported), failed, notSupported));
     }
 
@@ -78,7 +79,6 @@ public class TornadoHelper {
 
     /**
      * It returns the list of methods with the {@link @Test} annotation.
-     *
      */
     private static TestSuiteCollection getTestMethods(Class<?> klass) {
         Method[] methods = klass.getMethods();
@@ -119,8 +119,8 @@ public class TornadoHelper {
             methodsToTest.add(method);
         }
 
-        StringBuffer bufferConsole = new StringBuffer();
-        StringBuffer bufferFile = new StringBuffer();
+        StringBuilder bufferConsole = new StringBuilder();
+        StringBuilder bufferFile = new StringBuilder();
 
         int successCounter = 0;
         int failedCounter = 0;
@@ -177,6 +177,14 @@ public class TornadoHelper {
 
                 if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoNoOpenCLPlatformException))) {
                     message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [OPENCL CONFIGURATION UNSUPPORTED] " + ColorsTerminal.RESET + "\n");
+                    bufferConsole.append(message);
+                    bufferFile.append(message);
+                    notSupported++;
+                    continue;
+                }
+
+                if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoVMMultiDeviceNotSupported))) {
+                    message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [[UNSUPPORTED] MULTI-DEVICE CONFIGURATION REQUIRED] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
                     bufferFile.append(message);
                     notSupported++;

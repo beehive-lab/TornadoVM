@@ -55,6 +55,8 @@ public class OCLPlatform extends TornadoLogger implements TornadoPlatform {
 
         if (isVendor("Xilinx") || isVendor("Codeplay")) {
             deviceCount = clGetDeviceCount(id, OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR.getValue());
+        } else if (isVendor("Mesa/X.org")) {
+            deviceCount = clGetDeviceCount(id, OCLDeviceType.CL_DEVICE_TYPE_GPU.getValue());
         } else {
             deviceCount = clGetDeviceCount(id, OCLDeviceType.CL_DEVICE_TYPE_ALL.getValue());
         }
@@ -62,6 +64,8 @@ public class OCLPlatform extends TornadoLogger implements TornadoPlatform {
         final long[] ids = new long[deviceCount];
         if (isVendor("Xilinx") || isVendor("Codeplay")) {
             clGetDeviceIDs(id, OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR.getValue(), ids);
+        } else if (isVendor("Mesa/X.org")) {
+            clGetDeviceIDs(id, OCLDeviceType.CL_DEVICE_TYPE_GPU.getValue(), ids);
         } else {
             clGetDeviceIDs(id, OCLDeviceType.CL_DEVICE_TYPE_ALL.getValue(), ids);
         }

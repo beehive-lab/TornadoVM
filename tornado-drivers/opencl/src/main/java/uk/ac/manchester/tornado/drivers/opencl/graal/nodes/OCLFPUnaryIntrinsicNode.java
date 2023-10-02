@@ -202,6 +202,12 @@ public class OCLFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
             case RADIANS:
                 result = gen.genFloatRadians(input);
                 break;
+            case COSPI:
+                result = gen.genFloatCosPI(input);
+                break;
+            case SINPI:
+                result = gen.genFloatSinPI(input);
+                break;
             default:
                 throw shouldNotReachHere();
         }

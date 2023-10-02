@@ -33,6 +33,15 @@ import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
 
 public final class GraphicsKernels {
+    // CHECKSTYLE:OFF
+
+    // Parameters for the algorithm used
+    private static final int MAX_ITERATIONS = 1000;
+    private static final float ZOOM = 1;
+    private static final float CX = -0.7f;
+    private static final float CY = 0.27015f;
+    private static final float MOVE_X = 0;
+    private static final float MOVE_Y = 0;
 
     public static void rotateVector(VectorFloat3 output, Matrix4x4Float m, VectorFloat3 input) {
         for (@Parallel int i = 0; i < output.getLength(); i++) {
@@ -159,14 +168,6 @@ public final class GraphicsKernels {
         });
     }
 
-    // Parameters for the algorithm used
-    private static final int MAX_ITERATIONS = 1000;
-    private static final float ZOOM = 1;
-    private static final float CX = -0.7f;
-    private static final float CY = 0.27015f;
-    private static final float MOVE_X = 0;
-    private static final float MOVE_Y = 0;
-
     public static void juliaSetTornado(int size, float[] hue, float[] brightness) {
         for (@Parallel int ix = 0; ix < size; ix++) {
             for (@Parallel int jx = 0; jx < size; jx++) {
@@ -184,5 +185,5 @@ public final class GraphicsKernels {
             }
         }
     }
-
+    // CHECKSTYLE:ON
 }

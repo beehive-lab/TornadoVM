@@ -40,7 +40,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  * </code>
  */
 public class BlackScholesMT {
-
+    // CHECKSTYLE:OFF
     private static void blackScholesKernel(float[] input, float[] callResult, float[] putResult) {
         for (@Parallel int idx = 0; idx < callResult.length; idx++) {
             float rand = input[idx];
@@ -225,3 +225,4 @@ public class BlackScholesMT {
         blackScholes(size, iterations, executionType);
     }
 }
+// CHECKSTYLE:ON

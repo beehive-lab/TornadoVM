@@ -45,6 +45,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 @Ignore
 public class TestMatrices extends TornadoTestBase {
+    // CHECKSTYLE:OFF
 
     public static void fillMatrix(int[][] values) {
         for (@Parallel int i = 0; i < values.length; i++) {
@@ -143,6 +144,30 @@ public class TestMatrices extends TornadoTestBase {
                     sum += A[(i * size) + k] * B[(k * size) + j];
                 }
                 C[(i * size) + j] = sum;
+            }
+        }
+    }
+
+    public static void copyMatrix2D(final float[][] matrixA, final float[][] matrixB) {
+        for (@Parallel int i = 0; i < matrixA.length; i++) {
+            for (int j = 0; j < matrixA[i].length; j++) {
+                matrixB[i][j] = matrixA[i][j];
+            }
+        }
+    }
+
+    public static void testAdd(long[][] matrix) {
+        for (@Parallel int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[i].length; j++) {
+                matrix[i][j] = matrix[i][j] + i;
+            }
+        }
+    }
+
+    public static void testAddMultiple(float[][] first, float[][] second) {
+        for (@Parallel int i = 0; i < first.length; i++) {
+            for (@Parallel int j = 0; j < first.length; j++) {
+                first[i][j] = first[i][j] + second[i][j];
             }
         }
     }
@@ -486,14 +511,6 @@ public class TestMatrices extends TornadoTestBase {
         }
     }
 
-    public static void copyMatrix2D(final float[][] matrixA, final float[][] matrixB) {
-        for (@Parallel int i = 0; i < matrixA.length; i++) {
-            for (int j = 0; j < matrixA[i].length; j++) {
-                matrixB[i][j] = matrixA[i][j];
-            }
-        }
-    }
-
     @Test
     public void testCopyMatrix2D() {
 
@@ -668,14 +685,6 @@ public class TestMatrices extends TornadoTestBase {
         }
     }
 
-    public static void testAdd(long[][] matrix) {
-        for (@Parallel int i = 0; i < matrix.length; i++) {
-            for (int j = 0; j < matrix[i].length; j++) {
-                matrix[i][j] = matrix[i][j] + i;
-            }
-        }
-    }
-
     @Test
     public void testAddMatrix() {
 
@@ -710,14 +719,6 @@ public class TestMatrices extends TornadoTestBase {
 
         for (int i = 0; i < matrix.length; i++) {
             Assert.assertArrayEquals(matrixSeq[i], matrix[i]);
-        }
-    }
-
-    public static void testAddMultiple(float[][] first, float[][] second) {
-        for (@Parallel int i = 0; i < first.length; i++) {
-            for (@Parallel int j = 0; j < first.length; j++) {
-                first[i][j] = first[i][j] + second[i][j];
-            }
         }
     }
 
@@ -762,5 +763,5 @@ public class TestMatrices extends TornadoTestBase {
             Assert.assertArrayEquals(firstMatrixSeq[i], firstMatrix[i], 0.01f);
         }
     }
-
+    // CHECKSTYLE:ON
 }

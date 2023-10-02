@@ -40,6 +40,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  *
  */
 public class MatrixMul2D {
+    // CHECKSTYLE:OFF
 
     private static final int WARMING_UP_ITERATIONS = 20;
     private static final int TIMING_ITERATIONS = 50;
@@ -227,3 +228,4 @@ public class MatrixMul2D {
         System.out.println();
     }
 }
+// CHECKSTYLE:ON

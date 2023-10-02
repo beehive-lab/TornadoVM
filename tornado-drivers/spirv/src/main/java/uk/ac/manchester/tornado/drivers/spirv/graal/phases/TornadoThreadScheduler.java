@@ -24,8 +24,11 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.phases;
 
+import java.util.Optional;
+
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.EndNode;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.BasePhase;
 
@@ -42,6 +45,10 @@ public class TornadoThreadScheduler extends BasePhase<TornadoHighTierContext> {
     private int oneD = 64;
     private int twoD = 1;
     private int threeD = 1;
+
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
 
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {

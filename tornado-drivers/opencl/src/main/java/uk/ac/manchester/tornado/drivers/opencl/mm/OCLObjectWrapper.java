@@ -79,7 +79,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
         this.deviceContext = device;
 
         hubOffset = getVMConfig().hubOffset;
-        fieldsOffset = getVMConfig().instanceKlassFieldsOffset;
+        fieldsOffset = getVMConfig().instanceKlassFieldsOffset();
         resolvedType = (HotSpotResolvedJavaType) getVMRuntime().getHostJVMCIBackend().getMetaAccess().lookupJavaType(objectType);
 
         fields = (HotSpotResolvedJavaField[]) resolvedType.getInstanceFields(false);

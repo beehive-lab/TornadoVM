@@ -31,10 +31,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
@@ -56,11 +58,6 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 
 public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
 
-    @Override
-    protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
-        replaceLocalAnnotations(graph, context);
-    }
-
     /*
      * A singleton is used because we don't need to support all the logic of loading
      * the desired class bytecode and instantiating the helper classes for the ASM
@@ -71,6 +68,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
      * not allow it.
      */
     private static ASMClassVisitorProvider asmClassVisitorProvider;
+
     static {
         try {
             String tornadoAnnotationImplementation = System.getProperty("tornado.load.annotation.implementation");
@@ -81,6 +79,16 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
             e.printStackTrace();
             throw new RuntimeException("[ERROR] Tornado Annotation Implementation class not found");
         }
+    }
+
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
+
+    @Override
+    protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
+        replaceLocalAnnotations(graph, context);
     }
 
     private void replaceLocalAnnotations(StructuredGraph graph, TornadoSketchTierContext context) throws TornadoCompilationException {

@@ -24,7 +24,7 @@
 package uk.ac.manchester.tornado.api.profiler;
 
 /**
- * Profile-type that helps to classify all timers
+ * Profile-type that helps to classify all timers.
  */
 public enum ProfilerType {
 
@@ -63,7 +63,7 @@ public enum ProfilerType {
         this.description = description;
     }
 
-    public String getDescription() {
+    public synchronized String getDescription() {
         return this.description;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2020-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,16 +35,47 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * <p>
- * How to run:
+ * How to run?
  * </p>
  * <code>
- *      tornado-test.py -V --fast uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection
+ *     tornado-test -V uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection
  * </code>
+ *
  */
 public class TestTornadoMathCollection extends TornadoTestBase {
     public static void testTornadoCos(float[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = TornadoMath.cos(a[i]);
+        }
+    }
+
+    public static void testTornadoCos(double[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = TornadoMath.cos(a[i]);
+        }
+    }
+
+    public static void testTornadoCosPI(float[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = TornadoMath.cospi(a[i]);
+        }
+    }
+
+    public static void testTornadoCosPIDouble(double[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = TornadoMath.cospi(a[i]);
+        }
+    }
+
+    public static void testTornadoSinPI(float[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = TornadoMath.sinpi(a[i]);
+        }
+    }
+
+    public static void testTornadoSinPIDouble(double[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = TornadoMath.sinpi(a[i]);
         }
     }
 
@@ -66,7 +97,19 @@ public class TestTornadoMathCollection extends TornadoTestBase {
         }
     }
 
+    public static void testTornadoSin(double[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = TornadoMath.sin(a[i]);
+        }
+    }
+
     public static void testTornadoAcos(float[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = (TornadoMath.acos(a[i]));
+        }
+    }
+
+    public static void testTornadoAcosDouble(double[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = (TornadoMath.acos(a[i]));
         }
@@ -81,6 +124,12 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     public static void testTornadoMin(float[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = TornadoMath.min(a[i], 1);
+        }
+    }
+
+    public static void testTornadoAsinDouble(double[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = (TornadoMath.asin(a[i]));
         }
     }
 
@@ -214,6 +263,129 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
+    public void testTornadoMathCosDouble() {
+        final int size = 128;
+        double[] data = new double[size];
+        double[] seq = new double[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            data[i] = (float) Math.random();
+            seq[i] = data[i];
+        });
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestTornadoMathCollection::testTornadoCos, data) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
+
+        testTornadoCos(seq);
+
+        assertArrayEquals(data, seq, 0.01);
+
+    }
+
+    @Test
+    public void testTornadoMathCosPI() {
+        final int size = 128;
+        float[] data = new float[size];
+        float[] seq = new float[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            data[i] = (float) Math.random();
+            seq[i] = data[i];
+        });
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestTornadoMathCollection::testTornadoCosPI, data) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
+
+        testTornadoCosPI(seq);
+
+        assertArrayEquals(data, seq, 0.01f);
+
+    }
+
+    @Test
+    public void testTornadoMathCosPIDouble() {
+        final int size = 128;
+        double[] data = new double[size];
+        double[] seq = new double[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            data[i] = Math.random();
+            seq[i] = data[i];
+        });
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestTornadoMathCollection::testTornadoCosPIDouble, data) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
+
+        testTornadoCosPIDouble(seq);
+
+        assertArrayEquals(data, seq, 0.01f);
+
+    }
+
+    @Test
+    public void testTornadoMathSinPI() {
+        final int size = 128;
+        float[] data = new float[size];
+        float[] seq = new float[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            data[i] = (float) Math.random();
+            seq[i] = data[i];
+        });
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestTornadoMathCollection::testTornadoSinPI, data) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
+
+        testTornadoSinPI(seq);
+
+        assertArrayEquals(data, seq, 0.01f);
+    }
+
+    @Test
+    public void testTornadoMathSinPIDouble() {
+        final int size = 128;
+        double[] data = new double[size];
+        double[] seq = new double[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            data[i] = (float) Math.random();
+            seq[i] = data[i];
+        });
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestTornadoMathCollection::testTornadoSinPIDouble, data) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
+
+        testTornadoSinPIDouble(seq);
+
+        assertArrayEquals(data, seq, 0.01f);
+    }
+
+    @Test
     public void testTornadoMathSignumFloat() {
         final int size = 128;
         float[] data = new float[size];
@@ -320,10 +492,35 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testTornadoMathSin() {
+    public void testTornadoMathSinFloat() {
         final int size = 128;
         float[] data = new float[size];
         float[] seq = new float[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            data[i] = (float) Math.random();
+            seq[i] = data[i];
+        });
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
+                .task("t0", TestTornadoMathCollection::testTornadoSin, data) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
+
+        testTornadoSin(seq);
+
+        assertArrayEquals(data, seq, 0.01f);
+
+    }
+
+    @Test
+    public void testTornadoMathSinDouble() {
+        final int size = 128;
+        double[] data = new double[size];
+        double[] seq = new double[size];
 
         IntStream.range(0, size).parallel().forEach(i -> {
             data[i] = (float) Math.random();
@@ -794,7 +991,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testMathAcos() {
+    public void testMathAcosFloat() {
         assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 128;
@@ -819,7 +1016,7 @@ public class TestTornadoMathCollection extends TornadoTestBase {
     }
 
     @Test
-    public void testMathASin() {
+    public void testMathASinFloat() {
         assertNotBackend(TornadoVMBackendType.PTX);
 
         final int size = 128;
@@ -839,6 +1036,56 @@ public class TestTornadoMathCollection extends TornadoTestBase {
         new TornadoExecutionPlan(immutableTaskGraph).execute();
 
         testTornadoAsin(seqA);
+
+        assertArrayEquals(a, seqA, 0.01f);
+    }
+
+    @Test
+    public void testMathAcosDouble() {
+        assertNotBackend(TornadoVMBackendType.PTX);
+
+        final int size = 128;
+        double[] a = new double[size];
+        double[] seqA = new double[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            a[i] = Math.random();
+            seqA[i] = a[i];
+        });
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestTornadoMathCollection::testTornadoAcosDouble, a) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
+
+        testTornadoAcosDouble(seqA);
+
+        assertArrayEquals(a, seqA, 0.01f);
+    }
+
+    @Test
+    public void testMathASinDobule() {
+        assertNotBackend(TornadoVMBackendType.PTX);
+
+        final int size = 128;
+        double[] a = new double[size];
+        double[] seqA = new double[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            a[i] = Math.random();
+            seqA[i] = a[i];
+        });
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t0", TestTornadoMathCollection::testTornadoAsinDouble, a) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        new TornadoExecutionPlan(immutableTaskGraph).execute();
+
+        testTornadoAsinDouble(seqA);
 
         assertArrayEquals(a, seqA, 0.01f);
     }

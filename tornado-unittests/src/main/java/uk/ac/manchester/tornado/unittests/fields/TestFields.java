@@ -43,52 +43,19 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </code>
  */
 public class TestFields extends TornadoTestBase {
+    // CHECKSTYLE:OFF
 
-    private static class Foo {
-        final int[] output;
-        final int[] a;
-        final int[] b;
-
-        public Foo(int elements) {
-            output = new int[elements];
-            a = new int[elements];
-            b = new int[elements];
-        }
-
-        public void initRandom() {
-            Random r = new Random();
-            IntStream.range(0, a.length).forEach(idx -> {
-                a[idx] = r.nextInt(100);
-                b[idx] = r.nextInt(100);
-            });
-        }
-
-        public void computeInit() {
-            for (@Parallel int i = 0; i < output.length; i++) {
-                output[i] = 100;
-            }
-        }
-
-        public void computeAdd() {
-            for (@Parallel int i = 0; i < output.length; i++) {
-                output[i] = a[i] + b[i];
-            }
-        }
+    public static void setField(A a, float value) {
+        a.someOtherField = value;
     }
 
-    private static class Bar {
-        final int[] output;
-        final int initValue;
+    public static void setNestedField(A a, float value) {
+        a.b.someField = value;
+    }
 
-        public Bar(int elements, int initValue) {
-            output = new int[elements];
-            this.initValue = initValue;
-        }
-
-        public void computeInit() {
-            for (@Parallel int i = 0; i < output.length; i++) {
-                output[i] = initValue;
-            }
+    public static void setNestedArray(A a, int[] indexes) {
+        for (@Parallel int i = 0; i < indexes.length; i++) {
+            a.b.someArray[i] = a.b.someArray[i] + indexes[i] + 3;
         }
     }
 
@@ -153,41 +120,6 @@ public class TestFields extends TornadoTestBase {
 
         for (int i = 0; i < N; i++) {
             assertEquals(15, bar.output[i]);
-        }
-    }
-
-    private static class B {
-        final int[] someArray;
-        double someField;
-
-        public B() {
-            this.someField = -1;
-            this.someArray = new int[100];
-            Arrays.fill(someArray, -1);
-        }
-    }
-
-    private static class A {
-        private final B b;
-        float someOtherField;
-
-        public A(B b) {
-            this.b = b;
-            someOtherField = -1;
-        }
-    }
-
-    public static void setField(A a, float value) {
-        a.someOtherField = value;
-    }
-
-    public static void setNestedField(A a, float value) {
-        a.b.someField = value;
-    }
-
-    public static void setNestedArray(A a, int[] indexes) {
-        for (@Parallel int i = 0; i < indexes.length; i++) {
-            a.b.someArray[i] = a.b.someArray[i] + indexes[i] + 3;
         }
     }
 
@@ -269,4 +201,73 @@ public class TestFields extends TornadoTestBase {
         assertEquals(-1, a.b.someField, 0.01f);
     }
 
+    private static class Foo {
+        final int[] output;
+        final int[] a;
+        final int[] b;
+
+        Foo(int elements) {
+            output = new int[elements];
+            a = new int[elements];
+            b = new int[elements];
+        }
+
+        public void initRandom() {
+            Random r = new Random();
+            IntStream.range(0, a.length).forEach(idx -> {
+                a[idx] = r.nextInt(100);
+                b[idx] = r.nextInt(100);
+            });
+        }
+
+        public void computeInit() {
+            for (@Parallel int i = 0; i < output.length; i++) {
+                output[i] = 100;
+            }
+        }
+
+        public void computeAdd() {
+            for (@Parallel int i = 0; i < output.length; i++) {
+                output[i] = a[i] + b[i];
+            }
+        }
+    }
+
+    private static class Bar {
+        final int[] output;
+        final int initValue;
+
+        Bar(int elements, int initValue) {
+            output = new int[elements];
+            this.initValue = initValue;
+        }
+
+        void computeInit() {
+            for (@Parallel int i = 0; i < output.length; i++) {
+                output[i] = initValue;
+            }
+        }
+    }
+
+    private static class B {
+        final int[] someArray;
+        double someField;
+
+        B() {
+            this.someField = -1;
+            this.someArray = new int[100];
+            Arrays.fill(someArray, -1);
+        }
+    }
+
+    private static class A {
+        private final B b;
+        float someOtherField;
+
+        A(B b) {
+            this.b = b;
+            someOtherField = -1;
+        }
+    }
+    // CHECKSTYLE:ON
 }

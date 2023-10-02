@@ -20,7 +20,7 @@ package uk.ac.manchester.tornado.unittests.tools;
 
 /**
  * Link:
- * https://stackoverflow.com/questions/5762491/how-to-print-color-in-console-using-system-out-println
+ * https://stackoverflow.com/questions/5762491/how-to-print-color-in-console-using-system-out-println.
  * 
  */
 public class ColorsTerminal {

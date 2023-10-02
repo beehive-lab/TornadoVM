@@ -43,7 +43,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoVMClient;
 import uk.ac.manchester.tornado.runtime.utils.JsonHandler;
 
-public class FeatureExtractionUtilities {
+public final class FeatureExtractionUtilities {
 
     private static final String FEATURES_DIRECTORY = Tornado.getProperty("tornado.features.dump.dir", "");
     private static final String LOOKUP_BUFFER_ADDRESS_NAME = "kernellookupBufferAddress";

@@ -322,16 +322,32 @@ public class TornadoMath {
         return (float) Math.acos(a);
     }
 
+    public static double acos(double a) {
+        return Math.acos(a);
+    }
+
     public static float asin(float a) {
         return (float) Math.asin(a);
+    }
+
+    public static double asin(double a) {
+        return Math.asin(a);
     }
 
     public static float cos(float angle) {
         return (float) Math.cos(angle);
     }
 
+    public static double cos(double angle) {
+        return Math.cos(angle);
+    }
+
     public static float sin(float angle) {
         return (float) Math.sin(angle);
+    }
+
+    public static double sin(double angle) {
+        return Math.sin(angle);
     }
 
     public static float signum(float a) {
@@ -344,5 +360,21 @@ public class TornadoMath {
 
     public static float toRadians(float angdeg) {
         return (float) Math.toRadians(angdeg);
+    }
+
+    public static float sinpi(float angle) {
+        return (float) Math.sin(angle * Math.PI);
+    }
+
+    public static double sinpi(double angle) {
+        return Math.sin(angle * Math.PI);
+    }
+
+    public static float cospi(float angle) {
+        return (float) Math.cos(angle * Math.PI);
+    }
+
+    public static double cospi(double angle) {
+        return Math.cos(angle * Math.PI);
     }
 }

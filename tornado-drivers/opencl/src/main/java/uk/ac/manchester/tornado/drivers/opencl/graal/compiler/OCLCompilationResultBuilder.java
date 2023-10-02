@@ -35,7 +35,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.Stack;
+import java.util.stream.IntStream;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.Equivalence;
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.spi.CodeGenProviders;
@@ -61,8 +64,8 @@ import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.MergeNode;
-import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
+import org.graalvm.compiler.nodes.cfg.HIRBlock;
 import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.Register;
@@ -81,114 +84,29 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
-    protected LIR lir;
-    private int currentBlockIndex;
     private final Set<ResolvedJavaMethod> nonInlinedMethods;
+    protected LIR lir;
+    HashSet<HIRBlock> rescheduledBasicBlocks;
+    private int currentBlockIndex;
     private boolean isKernel;
     private int loops = 0;
     private boolean isParallel;
     private TaskMetaData metaData;
     private long[] localGrid;
     private OCLDeviceContextInterface deviceContext;
-    HashSet<Block> rescheduledBasicBlocks;
 
     public OCLCompilationResultBuilder(CodeGenProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
-            CompilationResult compilationResult) {
-        super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None);
-        nonInlinedMethods = new HashSet<>();
+            CompilationResult compilationResult, LIR lir) {
+        super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None, EconomicMap.create(Equivalence.DEFAULT), NO_VERIFIERS, lir);
+        nonInlinedMethods = new HashSet<ResolvedJavaMethod>();
     }
 
-    public boolean isParallel() {
-        return isParallel;
-    }
-
-    public OCLCompilationResult getResult() {
-        return (OCLCompilationResult) compilationResult;
-    }
-
-    public void setKernel(boolean value) {
-        isKernel = value;
-    }
-
-    public boolean shouldRemoveLoop() {
-        return (isParallel() && deviceContext.isPlatformFPGA());
-    }
-
-    public boolean isKernel() {
-        return isKernel;
-    }
-
-    public OCLAssembler getAssembler() {
-        return (OCLAssembler) asm;
-    }
-
-    public void addNonInlinedMethod(ResolvedJavaMethod method) {
-        nonInlinedMethods.add(method);
-    }
-
-    Set<ResolvedJavaMethod> getNonInlinedMethods() {
-        return nonInlinedMethods;
-    }
-
-    /**
-     * Emits code for {@code lir} in its {@linkplain LIR#codeEmittingOrder() code
-     * emitting order}.
-     */
-    @Override
-    public void emit(LIR lir) {
-        assert this.lir == null;
-        assert currentBlockIndex == 0;
-        this.lir = lir;
-        this.currentBlockIndex = 0;
-        frameContext.enter(this);
-
-        final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
-        trace("Traversing CFG: ", cfg.graph.name);
-        cfg.computePostdominators();
-        traverseControlFlowGraph(cfg, new OCLBlockVisitor(this));
-
-        trace("Finished traversing CFG");
-        this.lir = null;
-        this.currentBlockIndex = 0;
-
-    }
-
-    @Override
-    public void finish() {
-        int position = asm.position();
-        compilationResult.setTargetCode(asm.close(true), position);
-    }
-
-    private static boolean isMergeBlock(Block block) {
+    private static boolean isMergeHIRBlock(HIRBlock block) {
         return block.getBeginNode() instanceof AbstractMergeNode;
     }
 
-    @Deprecated
-    private static class DepFinder implements InstructionValueProcedure {
-
-        private final Set<Value> dependencies;
-
-        DepFinder(final Set<Value> dependencies) {
-            this.dependencies = dependencies;
-        }
-
-        @Override
-        public Value doValue(LIRInstruction instruction, Value value, OperandMode mode, EnumSet<OperandFlag> flags) {
-            if (value instanceof Variable) {
-                dependencies.add(value);
-            }
-
-            return value;
-        }
-
-        public Set<Value> getDependencies() {
-            return dependencies;
-        }
-
-    }
-
     /**
-     * Checks if the {@link OCLNodeLIRBuilder#emitLoopBegin} has been called right
+     * Checks if the {@link OCLNodeLIRBuilder(LoopBeginNode)} has been called right
      * before {@link OCLNodeLIRBuilder#emitIf}. In other words, that there is no
      * data flow/control flow between the {@link LoopBeginNode} and the
      * corresponding {@link IfNode} loop condition.
@@ -270,7 +188,112 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         instructions.addAll(index - 1, moved);
     }
 
-    void emitLoopBlock(Block block) {
+    private static boolean isLoopDependencyNode(LIRInstruction op) {
+        return ((op instanceof OCLControlFlow.LoopInitOp || op instanceof OCLControlFlow.LoopConditionOp || op instanceof OCLControlFlow.LoopPostOp));
+    }
+
+    private static void emitOp(CompilationResultBuilder crb, LIRInstruction op) {
+        try {
+            trace("op: " + op);
+            op.emitCode(crb);
+        } catch (AssertionError | RuntimeException t) {
+            throw new TornadoInternalError(t);
+        }
+    }
+
+    private static boolean isLoopBlock(HIRBlock block, HIRBlock loopHeader) {
+
+        Set<HIRBlock> visited = new HashSet<>();
+        Stack<HIRBlock> stack = new Stack<>();
+        stack.push(block);
+
+        while (!stack.isEmpty()) {
+
+            HIRBlock b = stack.pop();
+            visited.add(b);
+
+            if (b.getId() < loopHeader.getId()) {
+                return false;
+            } else if (b == loopHeader) {
+                return true;
+            } else {
+                HIRBlock[] successors = IntStream.range(0, b.getSuccessorCount()).mapToObj(b::getSuccessorAt).toArray(HIRBlock[]::new);
+                for (HIRBlock successor : successors) {
+                    if (!visited.contains(successor)) {
+                        stack.push(successor);
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public boolean isParallel() {
+        return isParallel;
+    }
+
+    public void setParallel(boolean parallel) {
+        this.isParallel = parallel;
+    }
+
+    public OCLCompilationResult getResult() {
+        return (OCLCompilationResult) compilationResult;
+    }
+
+    public boolean shouldRemoveLoop() {
+        return (isParallel() && deviceContext.isPlatformFPGA());
+    }
+
+    public boolean isKernel() {
+        return isKernel;
+    }
+
+    public void setKernel(boolean value) {
+        isKernel = value;
+    }
+
+    public OCLAssembler getAssembler() {
+        return (OCLAssembler) asm;
+    }
+
+    public void addNonInlinedMethod(ResolvedJavaMethod method) {
+        nonInlinedMethods.add(method);
+    }
+
+    Set<ResolvedJavaMethod> getNonInlinedMethods() {
+        return nonInlinedMethods;
+    }
+
+    /**
+     * Emits code for {@code lir} in its {@linkplain LIR#codeEmittingOrder() code
+     * emitting order}.
+     */
+    public void emit(LIR lir) {
+        assert this.lir == null;
+        assert currentBlockIndex == 0;
+        this.lir = lir;
+        this.currentBlockIndex = 0;
+        frameContext.enter(this);
+
+        final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
+        trace("Traversing CFG: ", cfg.graph.name);
+        cfg.computePostdominators();
+        traverseControlFlowGraph(cfg, new OCLBlockVisitor(this));
+
+        trace("Finished traversing CFG");
+        this.lir = null;
+        this.currentBlockIndex = 0;
+
+    }
+
+    @Override
+    public void finish() {
+        int position = asm.position();
+        compilationResult.setTargetCode(asm.close(true), position);
+    }
+
+    void emitLoopBlock(HIRBlock block) {
         final List<LIRInstruction> headerInstructions = lir.getLIRforBlock(block);
         if (shouldFormatLoopHeader(headerInstructions)) {
             formatLoopHeader(headerInstructions);
@@ -278,7 +301,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         emitBlock(block);
     }
 
-    void emitRelocatedInstructions(Block block) {
+    void emitRelocatedInstructions(HIRBlock block) {
         if (block == null) {
             return;
         }
@@ -301,13 +324,13 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         }
     }
 
-    void emitBlock(Block block) {
+    void emitBlock(HIRBlock block) {
         if (block == null) {
             return;
         }
 
         trace("block: %d", block.getId());
-        printBasicBlockTrace(block);
+        printBasicHIRBlockTrace(block);
 
         LIRInstruction breakInst = null;
 
@@ -354,12 +377,12 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
     }
 
-    void printBasicBlockTrace(Block block) {
-        if (isMergeBlock(block)) {
+    void printBasicHIRBlockTrace(HIRBlock block) {
+        if (isMergeHIRBlock(block)) {
             StringBuilder sb = new StringBuilder();
             sb.append("[");
-            for (Block pred : block.getPredecessors()) {
-                sb.append(pred.getId()).append(" ");
+            for (int i = 0; i < block.getPredecessorCount(); i++) {
+                sb.append(block.getPredecessorAt(i).getId()).append(" ");
             }
             sb.append("]");
             ((OCLAssembler) asm).emitLine("// BLOCK %d MERGES %s", block.getId(), sb.toString());
@@ -372,19 +395,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         }
     }
 
-    private static boolean isLoopDependencyNode(LIRInstruction op) {
-        return ((op instanceof OCLControlFlow.LoopInitOp || op instanceof OCLControlFlow.LoopConditionOp || op instanceof OCLControlFlow.LoopPostOp));
-    }
-
-    private static void emitOp(CompilationResultBuilder crb, LIRInstruction op) {
-        try {
-            trace("op: " + op);
-            op.emitCode(crb);
-        } catch (AssertionError | RuntimeException t) {
-            throw new TornadoInternalError(t);
-        }
-    }
-
     private void traverseControlFlowGraph(ControlFlowGraph cfg, OCLBlockVisitor visitor) {
         traverseControlFlowGraph(cfg.getStartBlock(), visitor, new HashSet<>(), new HashMap<>());
         if (rescheduledBasicBlocks != null) {
@@ -392,8 +402,8 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         }
     }
 
-    private void rescheduleBasicBlock(Block basicBlock, OCLBlockVisitor visitor, HashSet<Block> visited, HashMap<Block, Block> pending) {
-        Block block = pending.get(basicBlock);
+    private void rescheduleBasicBlock(HIRBlock basicHIRBlock, OCLBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
+        HIRBlock block = pending.get(basicHIRBlock);
         visitor.enter(block);
         visitor.exit(block, null);
         visited.add(block);
@@ -404,19 +414,19 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         rescheduledBasicBlocks.add(block);
     }
 
-    private boolean isFalseSuccessorWithLoopEnd(IfNode ifNode, Block basicBlock) {
-        return isCurrentBlockAFalseBranch(ifNode, basicBlock) && basicBlock.getEndNode() instanceof LoopEndNode;
+    private boolean isFalseSuccessorWithLoopEnd(IfNode ifNode, HIRBlock basicHIRBlock) {
+        return isCurrentHIRBlockAFalseBranch(ifNode, basicHIRBlock) && basicHIRBlock.getEndNode() instanceof LoopEndNode;
     }
 
-    private boolean isCurrentBlockAFalseBranch(IfNode ifNode, Block basicBlock) {
-        return ifNode.falseSuccessor() == basicBlock.getBeginNode();
+    private boolean isCurrentHIRBlockAFalseBranch(IfNode ifNode, HIRBlock basicHIRBlock) {
+        return ifNode.falseSuccessor() == basicHIRBlock.getBeginNode();
     }
 
     private boolean isTrueBranchALoopExitNode(IfNode ifNode) {
         return ifNode.trueSuccessor() instanceof AbstractBeginNode;
     }
 
-    private boolean isTrueBranchWithEndNodeOrNotControlSplit(Block blockTrueBranch) {
+    private boolean isTrueBranchWithEndNodeOrNotControlSplit(HIRBlock blockTrueBranch) {
         return ((blockTrueBranch.getEndNode() instanceof AbstractEndNode) || !(blockTrueBranch.getEndNode() instanceof ControlSplitNode));
     }
 
@@ -428,7 +438,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
      * not a control Split (due to nested control-flow).
      *
      * @param basicBlock
-     *            {@link Block}
+     *            {@link HIRBlock}
      * @param visitor
      *            {@link OCLBlockVisitor}
      * @param visited
@@ -436,18 +446,18 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
      * @param pending
      *            {@link HashMap}
      */
-    private void rescheduleTrueBranchConditionsIfNeeded(Block basicBlock, OCLBlockVisitor visitor, HashSet<Block> visited, HashMap<Block, Block> pending) {
+    private void rescheduleTrueBranchConditionsIfNeeded(HIRBlock basicBlock, OCLBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
         if (!basicBlock.isLoopHeader() && basicBlock.getDominator() != null && basicBlock.getDominator().getEndNode() instanceof IfNode) {
             IfNode ifNode = (IfNode) basicBlock.getDominator().getEndNode();
-            Block blockTrueBranch = getBlockTrueBranch(basicBlock);
+            HIRBlock blockTrueBranch = getBlockTrueBranch(basicBlock);
             if (isFalseSuccessorWithLoopEnd(ifNode, basicBlock) //
-                    || (isCurrentBlockAFalseBranch(ifNode, basicBlock) //
+                    || (isCurrentHIRBlockAFalseBranch(ifNode, basicBlock) //
                             && isTrueBranchALoopExitNode(ifNode) //
                             && isTrueBranchWithEndNodeOrNotControlSplit(blockTrueBranch))) {
-                Block[] successors = basicBlock.getDominator().getSuccessors();
-                for (Block b : successors) {
-                    if (b.getBeginNode() == ifNode.trueSuccessor() && !visited.contains(b)) {
-                        pending.put(basicBlock, b);
+                for (int i = 0; i < basicBlock.getDominator().getSuccessorCount(); i++) {
+                    HIRBlock successor = basicBlock.getDominator().getSuccessorAt(i);
+                    if (successor.getBeginNode() == ifNode.trueSuccessor() && !visited.contains(successor)) {
+                        pending.put(basicBlock, successor);
                         rescheduleBasicBlock(basicBlock, visitor, visited, pending);
                     }
                 }
@@ -455,7 +465,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         }
     }
 
-    private void traverseControlFlowGraph(Block basicBlock, OCLBlockVisitor visitor, HashSet<Block> visited, HashMap<Block, Block> pending) {
+    private void traverseControlFlowGraph(HIRBlock basicBlock, OCLBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
 
         if (pending.containsKey(basicBlock) && !visited.contains(pending.get(basicBlock))) {
             rescheduleBasicBlock(basicBlock, visitor, visited, pending);
@@ -467,21 +477,21 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         visitor.enter(basicBlock);
         visited.add(basicBlock);
 
-        Block firstDominated = basicBlock.getFirstDominated();
-        LinkedList<Block> queue = new LinkedList<>();
+        HIRBlock firstDominated = basicBlock.getFirstDominated();
+        LinkedList<HIRBlock> queue = new LinkedList<>();
         queue.add(firstDominated);
 
         if (basicBlock.isLoopHeader()) {
-            Block[] successors = basicBlock.getSuccessors();
-            LinkedList<Block> last = new LinkedList<>();
-            LinkedList<Block> pendingList = new LinkedList<>();
+            HIRBlock[] successors = IntStream.range(0, basicBlock.getSuccessorCount()).mapToObj(basicBlock::getSuccessorAt).toArray(HIRBlock[]::new);
+            LinkedList<HIRBlock> last = new LinkedList<>();
+            LinkedList<HIRBlock> pendingList = new LinkedList<>();
 
             FixedNode endNode = basicBlock.getEndNode();
             IfNode ifNode = null;
             if (endNode instanceof IfNode) {
                 ifNode = (IfNode) endNode;
             }
-            for (Block block : successors) {
+            for (HIRBlock block : successors) {
                 boolean isInnerLoop = isLoopBlock(block, basicBlock);
                 if (!isInnerLoop) {
                     assert ifNode != null;
@@ -500,17 +510,17 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
                 }
             }
 
-            for (Block l : pendingList) {
+            for (HIRBlock l : pendingList) {
                 last.addLast(l);
             }
 
-            for (Block l : last) {
+            for (HIRBlock l : last) {
                 queue.addLast(l);
             }
             queue.removeFirst();
         }
 
-        for (Block block : queue) {
+        for (HIRBlock block : queue) {
             firstDominated = block;
             while (firstDominated != null) {
                 if (!visited.contains(firstDominated)) {
@@ -525,57 +535,49 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         }
     }
 
-    private Block getBlockTrueBranch(Block basicBlock) {
-        IfNode ifNode = (IfNode) basicBlock.getDominator().getEndNode();
-        for (Block b : basicBlock.getDominator().getSuccessors()) {
-            if (ifNode.trueSuccessor() == b.getBeginNode()) {
-                return b;
+    private HIRBlock getBlockTrueBranch(HIRBlock basicHIRBlock) {
+        IfNode ifNode = (IfNode) basicHIRBlock.getDominator().getEndNode();
+        for (int i = 0; i < basicHIRBlock.getDominator().getSuccessorCount(); i++) {
+            if (ifNode.trueSuccessor() == basicHIRBlock.getDominator().getSuccessorAt(i).getBeginNode()) {
+                return basicHIRBlock.getDominator().getSuccessorAt(i);
             }
         }
         return null;
-    }
-
-    private static boolean isLoopBlock(Block block, Block loopHeader) {
-
-        Set<Block> visited = new HashSet<>();
-        Stack<Block> stack = new Stack<>();
-        stack.push(block);
-
-        while (!stack.isEmpty()) {
-
-            Block b = stack.pop();
-            visited.add(b);
-
-            if (b.getId() < loopHeader.getId()) {
-                return false;
-            } else if (b == loopHeader) {
-                return true;
-            } else {
-                Block[] successors = b.getSuccessors();
-                for (Block bl : successors) {
-                    if (!visited.contains(bl)) {
-                        stack.push(bl);
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
-    public void setParallel(boolean parallel) {
-        this.isParallel = parallel;
     }
 
     public TaskMetaData getTaskMetaData() {
         return ((OCLCompilationResult) compilationResult).getMeta();
     }
 
+    public OCLDeviceContextInterface getDeviceContext() {
+        return this.deviceContext;
+    }
+
     public void setDeviceContext(OCLDeviceContextInterface deviceContext) {
         this.deviceContext = deviceContext;
     }
 
-    public OCLDeviceContextInterface getDeviceContext() {
-        return this.deviceContext;
+    @Deprecated
+    private static class DepFinder implements InstructionValueProcedure {
+
+        private final Set<Value> dependencies;
+
+        DepFinder(final Set<Value> dependencies) {
+            this.dependencies = dependencies;
+        }
+
+        @Override
+        public Value doValue(LIRInstruction instruction, Value value, OperandMode mode, EnumSet<OperandFlag> flags) {
+            if (value instanceof Variable) {
+                dependencies.add(value);
+            }
+
+            return value;
+        }
+
+        public Set<Value> getDependencies() {
+            return dependencies;
+        }
+
     }
 }

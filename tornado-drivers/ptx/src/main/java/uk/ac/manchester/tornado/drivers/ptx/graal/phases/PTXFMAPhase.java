@@ -21,7 +21,10 @@
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal.phases;
 
+import java.util.Optional;
+
 import org.graalvm.compiler.graph.iterators.NodeIterable;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
@@ -32,6 +35,10 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXFMANode;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.vector.VectorElementOpNode;
 
 public class PTXFMAPhase extends Phase {
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
 
     @Override
     protected void run(StructuredGraph graph) {

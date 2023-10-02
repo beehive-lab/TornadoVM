@@ -29,7 +29,7 @@ import org.graalvm.compiler.lir.phases.LIRPhaseSuite;
 import org.graalvm.compiler.lir.phases.PostAllocationOptimizationPhase.PostAllocationOptimizationContext;
 import org.graalvm.compiler.lir.phases.PreAllocationOptimizationPhase.PreAllocationOptimizationContext;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
+import org.graalvm.compiler.phases.common.AddressLoweringByNodePhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -53,7 +53,7 @@ public class TornadoSuites {
     private final LIRPhaseSuite<PostAllocationOptimizationContext> postAllocStage;
 
     public TornadoSuites(OptionValues options, TornadoDeviceContext deviceContext, TornadoCompilerConfiguration config, MetaAccessProvider metaAccessProvider,
-            CanonicalizerPhase.CustomSimplification canonicalizer, AddressLowering addressLowering) {
+            CanonicalizerPhase.CustomSimplification canonicalizer, AddressLoweringByNodePhase.AddressLowering addressLowering) {
         sketchTier = config.createSketchTier(options, canonicalizer);
         highTier = config.createHighTier(options, deviceContext, canonicalizer, metaAccessProvider);
         midTier = config.createMidTier(options);

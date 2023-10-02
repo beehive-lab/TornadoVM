@@ -27,7 +27,7 @@ import org.graalvm.compiler.java.GraphBuilderPhase;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.PhaseSuite;
-import org.graalvm.compiler.phases.common.AddressLoweringPhase;
+import org.graalvm.compiler.phases.common.AddressLoweringByNodePhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -44,7 +44,7 @@ public class PTXSuitesProvider implements TornadoSuitesProvider {
     private final TornadoLIRSuites lirSuites;
 
     public PTXSuitesProvider(OptionValues options, PTXDeviceContext deviceContext, GraphBuilderConfiguration.Plugins plugins, MetaAccessProvider metaAccessProvider,
-            PTXCompilerConfiguration compilerConfig, AddressLoweringPhase.AddressLowering addressLowering) {
+            PTXCompilerConfiguration compilerConfig, AddressLoweringByNodePhase.AddressLowering addressLowering) {
         graphBuilderSuite = createGraphBuilderSuite(plugins);
         suites = new TornadoSuites(options, deviceContext, compilerConfig, metaAccessProvider, null, addressLowering);
         lirSuites = new TornadoLIRSuites(suites.getPreAllocationOptimizationStage(), suites.getAllocationStage(), suites.getPostAllocationOptimizationStage());

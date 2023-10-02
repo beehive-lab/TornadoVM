@@ -796,58 +796,85 @@ public class PTXGPUReduceSnippets implements Snippets {
         }
     }
 
+    protected static class Tuple2<T0, T1> {
+        T0 t0;
+        T1 t1;
+
+        public Tuple2(T0 first, T1 second) {
+            this.t0 = first;
+            this.t1 = second;
+        }
+
+        public T0 f0() {
+            return t0;
+        }
+
+        public T1 f1() {
+            return t1;
+        }
+    }
+
     public static class Templates extends AbstractTemplates implements TornadoSnippetTypeInference {
 
-        // Add
-        private final SnippetInfo partialReduceIntSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceIntAdd");
-        private final SnippetInfo partialReduceIntSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceIntAddCarrierValue");
-        private final SnippetInfo partialReduceLongSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceLongAdd");
-        private final SnippetInfo partialReduceLongSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceLongAddCarrierValue");
-        private final SnippetInfo partialReduceAddFloatSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceFloatAdd");
-        private final SnippetInfo partialReduceAddFloatSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceFloatAddCarrierValue");
-        private final SnippetInfo partialReduceAddDoubleSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceDoubleAdd");
-        private final SnippetInfo partialReduceAddDoubleSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceDoubleAddCarrierValue");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceIntSnippet = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceIntAdd");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceIntSnippetCarrierValue = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceIntAddCarrierValue");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceLongSnippet = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceLongAdd");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceLongSnippetCarrierValue = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceLongAddCarrierValue");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceAddFloatSnippet = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceFloatAdd");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceAddFloatSnippetCarrierValue = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceFloatAddCarrierValue");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceAddDoubleSnippet = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceDoubleAdd");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceAddDoubleSnippetCarrierValue = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceDoubleAddCarrierValue");
 
         // Mul
-        private final SnippetInfo partialReduceIntMultSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceIntMult");
-        private final SnippetInfo partialReduceIntMultSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceIntMultCarrierValue");
-        private final SnippetInfo partialReduceLongMultSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceLongMult");
-        private final SnippetInfo partialReduceLongMultSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceLongMultCarrierValue");
-        private final SnippetInfo partialReduceFloatMultSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceFloatMult");
-        private final SnippetInfo partialReduceFloatMultSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceFloatMultCarrierValue");
-        private final SnippetInfo partialReduceDoubleMultSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceDoubleMult");
-        private final SnippetInfo partialReduceDoubleMultSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceDoubleMultCarrierValue");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceIntMultSnippet = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceIntMult");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceIntMultSnippetCarrierValue = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceIntMultCarrierValue");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceLongMultSnippet = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceLongMult");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceLongMultSnippetCarrierValue = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceLongMultCarrierValue");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceFloatMultSnippet = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceFloatMult");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceFloatMultSnippetCarrierValue = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceFloatMultCarrierValue");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceDoubleMultSnippet = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceDoubleMult");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceDoubleMultSnippetCarrierValue = new Tuple2<>(PTXGPUReduceSnippets.class,
+                "partialReduceDoubleMultCarrierValue");
 
         // Max
-        private final SnippetInfo partialReduceIntMaxSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceIntMax");
-        private final SnippetInfo partialReduceIntMaxSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceIntMaxCarrierValue");
-        private final SnippetInfo partialReduceLongMaxSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceLongMax");
-        private final SnippetInfo partialReduceLongMaxSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceLongMaxCarrierValue");
-        private final SnippetInfo partialReduceMaxFloatSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceFloatMax");
-        private final SnippetInfo partialReduceMaxFloatSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceFloatMaxCarrierValue");
-        private final SnippetInfo partialReduceMaxDoubleSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceDoubleMax");
-        private final SnippetInfo partialReduceMaxDoubleSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceDoubleMaxCarrierValue");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceIntMaxSnippet = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceIntMax");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceIntMaxSnippetCarrierValue = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceIntMaxCarrierValue");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceLongMaxSnippet = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceLongMax");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceLongMaxSnippetCarrierValue = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceLongMaxCarrierValue");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceMaxFloatSnippet = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceFloatMax");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceMaxFloatSnippetCarrierValue = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceFloatMaxCarrierValue");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceMaxDoubleSnippet = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceDoubleMax");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceMaxDoubleSnippetCarrierValue = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceDoubleMaxCarrierValue");
 
         // Min
-        private final SnippetInfo partialReduceIntMinSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceIntMin");
-        private final SnippetInfo partialReduceIntMinSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceIntMinCarrierValue");
-        private final SnippetInfo partialReduceLongMinSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceLongMin");
-        private final SnippetInfo partialReduceLongMinSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceLongMinCarrierValue");
-        private final SnippetInfo partialReduceMinFloatSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceFloatMin");
-        private final SnippetInfo partialReduceMinFloatSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceFloatMinCarrierValue");
-        private final SnippetInfo partialReduceMinDoubleSnippet = snippet(PTXGPUReduceSnippets.class, "partialReduceDoubleMin");
-        private final SnippetInfo partialReduceMinDoubleSnippetCarrierValue = snippet(PTXGPUReduceSnippets.class, "partialReduceDoubleMinCarrierValue");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceIntMinSnippet = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceIntMin");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceIntMinSnippetCarrierValue = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceIntMinCarrierValue");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceLongMinSnippet = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceLongMin");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceLongMinSnippetCarrierValue = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceLongMinCarrierValue");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceMinFloatSnippet = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceFloatMin");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceMinFloatSnippetCarrierValue = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceFloatMinCarrierValue");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceMinDoubleSnippet = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceDoubleMin");
+        private final Tuple2<Class<? extends PTXGPUReduceSnippets>, String> partialReduceMinDoubleSnippetCarrierValue = new Tuple2<>(PTXGPUReduceSnippets.class, "partialReduceDoubleMinCarrierValue");
+
+        Providers providers;
 
         public Templates(OptionValues options, Providers providers) {
             super(options, providers);
+            this.providers = providers;
+
+        }
+
+        private SnippetInfo snippet(PTXGPUReduceSnippets.Tuple2<Class<? extends PTXGPUReduceSnippets>, String> tuple2) {
+            return snippet(providers, tuple2.t0, tuple2.t1);
+
         }
 
         private SnippetInfo getSnippetFromOCLBinaryNodeInteger(PTXIntBinaryIntrinsicNode value, ValueNode extra) {
             switch (value.operation()) {
                 case MAX:
-                    return (extra == null) ? partialReduceIntMaxSnippet : partialReduceIntMaxSnippetCarrierValue;
+                    return (extra == null) ? snippet(partialReduceIntMaxSnippet) : snippet(partialReduceIntMaxSnippetCarrierValue);
                 case MIN:
-                    return (extra == null) ? partialReduceIntMinSnippet : partialReduceIntMinSnippetCarrierValue;
+                    return (extra == null) ? snippet(partialReduceIntMinSnippet) : snippet(partialReduceIntMinSnippetCarrierValue);
                 default:
                     throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
             }
@@ -856,9 +883,9 @@ public class PTXGPUReduceSnippets implements Snippets {
         private SnippetInfo getSnippetFromOCLBinaryNodeLong(PTXIntBinaryIntrinsicNode value, ValueNode extra) {
             switch (value.operation()) {
                 case MAX:
-                    return (extra == null) ? partialReduceLongMaxSnippet : partialReduceLongMaxSnippetCarrierValue;
+                    return (extra == null) ? snippet(partialReduceLongMaxSnippet) : snippet(partialReduceLongMaxSnippetCarrierValue);
                 case MIN:
-                    return (extra == null) ? partialReduceLongMinSnippet : partialReduceLongMinSnippetCarrierValue;
+                    return (extra == null) ? snippet(partialReduceLongMinSnippet) : snippet(partialReduceLongMinSnippetCarrierValue);
                 default:
                     throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
             }
@@ -868,10 +895,10 @@ public class PTXGPUReduceSnippets implements Snippets {
         public SnippetInfo inferIntSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet;
             if (value instanceof TornadoReduceAddNode) {
-                snippet = (extra == null) ? partialReduceIntSnippet : partialReduceIntSnippetCarrierValue;
+                snippet = (extra == null) ? snippet(partialReduceIntSnippet) : snippet(partialReduceIntSnippetCarrierValue);
             } else if (value instanceof TornadoReduceMulNode) {
                 // operation = ATOMIC_OPERATION.MUL;
-                snippet = (extra == null) ? partialReduceIntMultSnippet : partialReduceIntMultSnippetCarrierValue;
+                snippet = (extra == null) ? snippet(partialReduceIntMultSnippet) : snippet(partialReduceIntMultSnippetCarrierValue);
             } else if (value instanceof PTXIntBinaryIntrinsicNode) {
                 PTXIntBinaryIntrinsicNode op = (PTXIntBinaryIntrinsicNode) value;
                 snippet = getSnippetFromOCLBinaryNodeInteger(op, extra);
@@ -885,9 +912,9 @@ public class PTXGPUReduceSnippets implements Snippets {
         public SnippetInfo inferLongSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet;
             if (value instanceof TornadoReduceAddNode) {
-                snippet = (extra == null) ? partialReduceLongSnippet : partialReduceLongSnippetCarrierValue;
+                snippet = (extra == null) ? snippet(partialReduceLongSnippet) : snippet(partialReduceLongSnippetCarrierValue);
             } else if (value instanceof TornadoReduceMulNode) {
-                snippet = (extra == null) ? partialReduceLongMultSnippet : partialReduceLongMultSnippetCarrierValue;
+                snippet = (extra == null) ? snippet(partialReduceLongMultSnippet) : snippet(partialReduceLongMultSnippetCarrierValue);
             } else if (value instanceof PTXIntBinaryIntrinsicNode) {
                 PTXIntBinaryIntrinsicNode op = (PTXIntBinaryIntrinsicNode) value;
                 snippet = getSnippetFromOCLBinaryNodeLong(op, extra);
@@ -900,9 +927,9 @@ public class PTXGPUReduceSnippets implements Snippets {
         private SnippetInfo getSnippetFromOCLBinaryNodeInteger(PTXFPBinaryIntrinsicNode value, ValueNode extra) {
             switch (value.operation()) {
                 case FMAX:
-                    return extra == null ? partialReduceMaxFloatSnippet : partialReduceMaxFloatSnippetCarrierValue;
+                    return extra == null ? snippet(partialReduceMaxFloatSnippet) : snippet(partialReduceMaxFloatSnippetCarrierValue);
                 case FMIN:
-                    return extra == null ? partialReduceMinFloatSnippet : partialReduceMinFloatSnippetCarrierValue;
+                    return extra == null ? snippet(partialReduceMinFloatSnippet) : snippet(partialReduceMinFloatSnippetCarrierValue);
                 default:
                     throw new RuntimeException("OCLFPBinaryIntrinsicNode operation not supported yet");
             }
@@ -912,9 +939,9 @@ public class PTXGPUReduceSnippets implements Snippets {
         public SnippetInfo inferFloatSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet;
             if (value instanceof TornadoReduceAddNode) {
-                snippet = (extra == null) ? partialReduceAddFloatSnippet : partialReduceAddFloatSnippetCarrierValue;
+                snippet = (extra == null) ? snippet(partialReduceAddFloatSnippet) : snippet(partialReduceAddFloatSnippetCarrierValue);
             } else if (value instanceof TornadoReduceMulNode) {
-                snippet = (extra == null) ? partialReduceFloatMultSnippet : partialReduceFloatMultSnippetCarrierValue;
+                snippet = (extra == null) ? snippet(partialReduceFloatMultSnippet) : snippet(partialReduceFloatMultSnippetCarrierValue);
             } else if (value instanceof PTXFPBinaryIntrinsicNode) {
                 snippet = getSnippetFromOCLBinaryNodeInteger((PTXFPBinaryIntrinsicNode) value, extra);
             } else {
@@ -926,9 +953,9 @@ public class PTXGPUReduceSnippets implements Snippets {
         private SnippetInfo getSnippetFromOCLBinaryNodeDouble(PTXFPBinaryIntrinsicNode value, ValueNode extra) {
             switch (value.operation()) {
                 case FMAX:
-                    return extra == null ? partialReduceMaxDoubleSnippet : partialReduceMaxDoubleSnippetCarrierValue;
+                    return extra == null ? snippet(partialReduceMaxDoubleSnippet) : snippet(partialReduceMaxDoubleSnippetCarrierValue);
                 case FMIN:
-                    return extra == null ? partialReduceMinDoubleSnippet : partialReduceMinDoubleSnippetCarrierValue;
+                    return extra == null ? snippet(partialReduceMinDoubleSnippet) : snippet(partialReduceMinDoubleSnippetCarrierValue);
                 default:
                     throw new RuntimeException("OCLFPBinaryIntrinsicNode operation not supported yet");
             }
@@ -938,9 +965,9 @@ public class PTXGPUReduceSnippets implements Snippets {
         public SnippetInfo inferDoubleSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
             if (value instanceof TornadoReduceAddNode) {
-                snippet = (extra == null) ? partialReduceAddDoubleSnippet : partialReduceAddDoubleSnippetCarrierValue;
+                snippet = (extra == null) ? snippet(partialReduceAddDoubleSnippet) : snippet(partialReduceAddDoubleSnippetCarrierValue);
             } else if (value instanceof TornadoReduceMulNode) {
-                snippet = (extra == null) ? partialReduceDoubleMultSnippet : partialReduceDoubleMultSnippetCarrierValue;
+                snippet = (extra == null) ? snippet(partialReduceDoubleMultSnippet) : snippet(partialReduceDoubleMultSnippetCarrierValue);
             } else if (value instanceof PTXFPBinaryIntrinsicNode) {
                 snippet = getSnippetFromOCLBinaryNodeDouble((PTXFPBinaryIntrinsicNode) value, extra);
             } else {
@@ -985,7 +1012,7 @@ public class PTXGPUReduceSnippets implements Snippets {
                 args.add("value", extra);
             }
 
-            template(storeAtomicIndexed, args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
+            template(tool, storeAtomicIndexed, args).instantiate(tool.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
         }
     }
 }

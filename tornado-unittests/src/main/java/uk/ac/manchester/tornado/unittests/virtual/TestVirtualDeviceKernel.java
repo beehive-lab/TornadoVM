@@ -41,12 +41,20 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V --jvm="-Dtornado.device.desc=virtual-device-GPU.json -Dtornado.print.kernel=True -Dtornado.virtual.device=True -Dtornado.print.kernel.dir=virtualKernelOut.out" uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel
+ *     tornado-test -V --jvm="-Dtornado.device.desc=virtual-device-GPU.json -Dtornado.print.kernel=True -Dtornado.virtual.device=True
+ *     -Dtornado.print.kernel.dir=virtualKernelOut.out" uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel
  * </code>
  */
 public class TestVirtualDeviceKernel extends TornadoTestBase {
 
     private static final String SOURCE_DIR = System.getProperty("tornado.print.kernel.dir");
+    private static final int SIZE = 8192;
+
+    private static void maxReduction(float[] input, @Reduce float[] result) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] = Math.max(result[0], input[i]);
+        }
+    }
 
     @After
     public void after() {
@@ -54,14 +62,6 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
         File fileLog = new File(SOURCE_DIR);
         if (fileLog.exists()) {
             fileLog.delete();
-        }
-    }
-
-    private static final int SIZE = 8192;
-
-    private static void maxReduction(float[] input, @Reduce float[] result) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] = Math.max(result[0], input[i]);
         }
     }
 
@@ -97,7 +97,7 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
         }
 
         boolean fileEquivalent = TestVirtualDeviceFeatureExtraction.performComparison(generatedKernel, expectedKernel);
-        Assert.assertTrue(fileEquivalent);
+        Assert.assertTrue("There is a mismatch between pre-compiled and JIT compiled kernels.", fileEquivalent);
     }
 
     @Test

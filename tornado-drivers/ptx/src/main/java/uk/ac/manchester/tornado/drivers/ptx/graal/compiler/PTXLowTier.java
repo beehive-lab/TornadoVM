@@ -28,14 +28,12 @@ import static org.graalvm.compiler.core.common.GraalOptions.ConditionalEliminati
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Required;
 
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.common.AddressLoweringPhase;
-import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
+import org.graalvm.compiler.phases.common.AddressLoweringByNodePhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.FixReadsPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.LowTierLoweringPhase;
-import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
@@ -51,13 +49,11 @@ public class PTXLowTier extends TornadoLowTier {
 
     TornadoDeviceContext tornadoDeviceContext;
 
-    public PTXLowTier(OptionValues options, TornadoDeviceContext tornadoDeviceContext, AddressLowering addressLowering) {
+    public PTXLowTier(OptionValues options, TornadoDeviceContext tornadoDeviceContext, AddressLoweringByNodePhase.AddressLowering addressLowering) {
         this.tornadoDeviceContext = tornadoDeviceContext;
         CanonicalizerPhase canonicalizer = CanonicalizerPhase.create();
 
         appendPhase(new LowTierLoweringPhase(canonicalizer));
-
-        appendPhase(new RemoveValueProxyPhase(canonicalizer));
 
         /*
          * Cleanup IsNull checks resulting from MID_TIER/LOW_TIER lowering and
@@ -69,7 +65,7 @@ public class PTXLowTier extends TornadoLowTier {
 
         appendPhase(new FixReadsPhase(true, new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS)));
 
-        appendPhase(new AddressLoweringPhase(addressLowering));
+        appendPhase(new AddressLoweringByNodePhase(addressLowering));
 
         appendPhase(new DeadCodeEliminationPhase(Required));
 
@@ -92,6 +88,5 @@ public class PTXLowTier extends TornadoLowTier {
         if (TornadoOptions.DUMP_LOW_TIER_WITH_IGV) {
             appendPhase(new DumpLowTierGraph());
         }
-
     }
 }

@@ -76,7 +76,7 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
         this.deviceContext = deviceContext;
 
         hubOffset = getVMConfig().hubOffset;
-        fieldsOffset = getVMConfig().instanceKlassFieldsOffset;
+        fieldsOffset = getVMConfig().instanceKlassFieldsOffset();
         resolvedType = (HotSpotResolvedJavaType) getVMRuntime().getHostJVMCIBackend().getMetaAccess().lookupJavaType(objectType);
 
         fields = (HotSpotResolvedJavaField[]) resolvedType.getInstanceFields(false);

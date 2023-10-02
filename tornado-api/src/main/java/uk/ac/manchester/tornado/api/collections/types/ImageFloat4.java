@@ -46,33 +46,33 @@ import java.util.Arrays;
 
 public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
 
+    private static final int ELEMENT_SIZE = 4;
     /**
-     * backing array
+     * backing array.
      */
     protected final float[] storage;
-
     /**
-     * number of elements in the storage
-     */
-    private final int numElements;
-    private static final int ELEMENT_SIZE = 4;
-
-    /**
-     * Number of rows
+     * Number of rows.
      */
     protected final int Y;
-
     /**
-     * Number of columns
+     * Number of columns.
      */
     protected final int X;
+    /**
+     * number of elements in the storage.
+     */
+    private final int numElements;
 
     /**
-     * Storage format for matrix
+     * Storage format for matrix.
      *
-     * @param width  number of rows
-     * @param height number of columns
-     * @param array  array reference which contains data
+     * @param width
+     *            number of rows
+     * @param height
+     *            number of columns
+     * @param array
+     *            array reference which contains data
      */
     public ImageFloat4(int width, int height, float[] array) {
         storage = array;
@@ -82,10 +82,12 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Storage format for matrix
+     * Storage format for matrix.
      *
-     * @param width  number of rows
-     * @param height number of column
+     * @param width
+     *            number of rows
+     * @param height
+     *            number of column
      */
     public ImageFloat4(int width, int height) {
         this(width, height, new float[width * height * ELEMENT_SIZE]);
@@ -130,7 +132,7 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void fill(float value) {
-        Arrays.fill(storage,value);
+        Arrays.fill(storage, value);
     }
 
     public ImageFloat4 duplicate() {

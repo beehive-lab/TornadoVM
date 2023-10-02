@@ -6,7 +6,7 @@
     <parent>
         <groupId>tornado</groupId>
         <artifactId>tornado-drivers</artifactId>
-        <version>0.15.2-dev</version>
+        <version>0.16-dev</version>
     </parent>
     <artifactId>tornado-drivers-spirv-levelzero-jni</artifactId>
     <name>tornado-drivers-spirv-levelzero-jni</name>

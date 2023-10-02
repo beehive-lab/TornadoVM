@@ -77,6 +77,9 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </code>
  */
 public class GraphicsTests extends TornadoTestBase {
+    // CHECKSTYLE:OFF
+
+    private static final float INVALID = -2;
 
     private static void testPhiNode(ImageFloat3 vertices, ImageFloat depths, Matrix4x4Float invK) {
         final float depth = depths.get(0, 0);
@@ -90,6 +93,332 @@ public class GraphicsTests extends TornadoTestBase {
         final Float3 pix = new Float3(0, 0, 1f);
         final Float3 vertex = (depth > 0) ? Float3.mult(rotate(invK, pix), depth) : new Float3();
         vertices.set(0, 0, vertex);
+    }
+
+    private static Float3 rotate(Matrix4x4Float m, Float3 v) {
+        return new Float3(Float3.dot(m.row(0).asFloat3(), v), Float3.dot(m.row(1).asFloat3(), v), Float3.dot(m.row(2).asFloat3(), v));
+    }
+
+    private static void testRotate(Matrix4x4Float m, VectorFloat3 v, VectorFloat3 result) {
+        for (@Parallel int i = 0; i < v.getLength(); i++) {
+            Float3 r = rotate(m, v.get(i));
+            result.set(i, r);
+        }
+    }
+
+    public static void trackPose(final ImageFloat8 results, final ImageFloat3 verticies, final ImageFloat3 normals, final ImageFloat3 referenceVerticies, final ImageFloat3 referenceNormals,
+            final Matrix4x4Float currentPose, final Matrix4x4Float view, final float distanceThreshold, final float normalThreshold) {
+
+        final Float8 NO_INPUT = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.BLACK);
+        final Float8 NOT_IN_IMAGE = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.RED);
+        final Float8 NO_CORRESPONDENCE = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.GREEN);
+        final Float8 TOO_FAR = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.BLUE);
+        final Float8 WRONG_NORMAL = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.YELLOW);
+
+        for (@Parallel int y = 0; y < results.Y(); y++) {
+            for (@Parallel int x = 0; x < results.X(); x++) {
+
+                if (normals.get(x, y).getX() == Constants.INVALID) {
+                    results.set(x, y, NO_INPUT);
+                } else {
+
+                    // rotate + translate projected vertex
+                    final Float3 projectedVertex = GraphicsMath.rigidTransform(currentPose, verticies.get(x, y));
+
+                    // rotate + translate projected position
+                    final Float3 projectedPos = GraphicsMath.rigidTransform(view, projectedVertex);
+
+                    final Float2 projectedPixel = Float2.add(Float2.mult(projectedPos.asFloat2(), 1f / projectedPos.getZ()), 0.5f);
+
+                    boolean isNotInImage = (projectedPixel.getX() < 0) || (projectedPixel.getX() > (referenceVerticies.X() - 1)) || (projectedPixel.getY() < 0)
+                            || (projectedPixel.getY() > (referenceVerticies.Y() - 1));
+
+                    if (isNotInImage) {
+                        results.set(x, y, NOT_IN_IMAGE);
+                    } else {
+
+                        final Int2 refPixel = new Int2((int) projectedPixel.getX(), (int) projectedPixel.getY());
+
+                        final Float3 referenceNormal = referenceNormals.get(refPixel.getX(), refPixel.getY());
+
+                        if (referenceNormal.getX() == Constants.INVALID) {
+                            results.set(x, y, NO_CORRESPONDENCE);
+                        } else {
+
+                            final Float3 diff = Float3.sub(referenceVerticies.get(refPixel.getX(), refPixel.getY()), projectedVertex);
+
+                            if (Float3.length(diff) > distanceThreshold) {
+                                results.set(x, y, TOO_FAR);
+                            } else {
+
+                                final Float3 projectedNormal = GraphicsMath.rotate(currentPose, normals.get(x, y));
+
+                                if (Float3.dot(projectedNormal, referenceNormal) < normalThreshold) {
+                                    results.set(x, y, WRONG_NORMAL);
+                                } else {
+
+                                    final Float3 b = Float3.cross(projectedVertex, referenceNormal);
+
+                                    final Float8 tracking = new Float8(referenceNormal.getX(), referenceNormal.getY(), referenceNormal.getZ(), b.getX(), b.getY(), b.getZ(),
+                                            Float3.dot(referenceNormal, diff), (float) Constants.GREY);
+
+                                    results.set(x, y, tracking);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public static void computeRigidTransform(Matrix4x4Float matrix, VectorFloat3 points, VectorFloat3 output) {
+        for (@Parallel int i = 0; i < points.getLength(); i++) {
+            Float3 p = GraphicsMath.rigidTransform(matrix, points.get(i));
+            output.set(i, p);
+        }
+    }
+
+    public static void testNormaliseFunction(VectorFloat3 input, VectorFloat3 output) {
+        for (@Parallel int i = 0; i < input.getLength(); i++) {
+            final Float3 norm = Float3.normalise(input.get(i));
+            final Float3 res = new Float3(norm.getX(), norm.getY(), norm.getZ());
+            output.set(i, res);
+        }
+    }
+
+    public static void raycast(ImageFloat3 verticies, ImageFloat3 normals, VolumeShort2 volume, Float3 volumeDims, Matrix4x4Float view, float nearPlane, float farPlane, float largeStep,
+            float smallStep) {
+
+        // use volume model to generate a reference view by raycasting ...
+        for (@Parallel int y = 0; y < verticies.Y(); y++) {
+            for (@Parallel int x = 0; x < verticies.X(); x++) {
+                final Float4 hit = GraphicsMath.raycastPoint(volume, volumeDims, x, y, view, nearPlane, farPlane, smallStep, largeStep);
+
+                final Float3 normal;
+                final Float3 position;
+                if (hit.getW() > 0f) {
+                    position = hit.asFloat3();
+
+                    final Float3 surfNorm = VolumeOps.grad(volume, volumeDims, position);
+
+                    // final Float3 surfNorm = new Float3(0f, 0f, 0f);
+
+                    if (length(surfNorm) != 0) {
+                        normal = normalise(surfNorm);
+                    } else {
+                        normal = new Float3(INVALID, 0f, 0f);
+                    }
+                } else {
+                    normal = new Float3(INVALID, 0f, 0f);
+                    position = new Float3();
+                }
+
+                verticies.set(x, y, position);
+                normals.set(x, y, normal);
+
+            }
+        }
+    }
+
+    public static void testRayCastPointIsolation(ImageFloat4 output, ImageFloat3 verticies, VolumeShort2 volume, Float3 volumeDims, Matrix4x4Float view, float nearPlane, float farPlane,
+            float largeStep, float smallStep) {
+
+        // use volume model to generate a reference view by raycasting ...
+        for (@Parallel int i = 0; i < verticies.X(); i++) {
+            for (@Parallel int j = 0; j < verticies.Y(); j++) {
+                final Float4 hit = GraphicsMath.raycastPoint(volume, volumeDims, i, j, view, nearPlane, farPlane, smallStep, largeStep);
+                output.set(i, j, hit);
+            }
+        }
+    }
+
+    public static void integrate(ImageFloat filteredDepthImage, Matrix4x4Float invTrack, Matrix4x4Float K, Float3 volumeDims, VolumeShort2 volume, float mu, float maxWeight) {
+        final Float3 tmp = new Float3(0f, 0f, volumeDims.getZ() / volume.Z());
+
+        final Float3 integrateDelta = rotate(invTrack, tmp);
+        final Float3 cameraDelta = rotate(K, integrateDelta);
+
+        for (@Parallel int y = 0; y < volume.Y(); y++) {
+            for (@Parallel int x = 0; x < volume.X(); x++) {
+
+                final Int3 pix = new Int3(x, y, 0);
+                Float3 pos = rigidTransform(invTrack, pos(volume, volumeDims, pix));
+                Float3 cameraX = rigidTransform(K, pos);
+
+                for (int z = 0; z < volume.Z(); z++, pos = add(pos, integrateDelta), cameraX = add(cameraX, cameraDelta)) {
+
+                    if (pos.getZ() < 0.0001f) // arbitrary near plane constant
+                    {
+                        continue;
+                    }
+
+                    final Float2 pixel = new Float2((cameraX.getX() / cameraX.getZ()) + 0.5f, (cameraX.getY() / cameraX.getZ()) + 0.5f);
+
+                    if ((pixel.getX() < 0) || (pixel.getX() > (filteredDepthImage.X() - 1)) || (pixel.getY() < 0) || (pixel.getY() > (filteredDepthImage.Y() - 1))) {
+                        continue;
+                    }
+
+                    final Int2 px = new Int2((int) pixel.getX(), (int) pixel.getY());
+
+                    final float depth = filteredDepthImage.get(px.getX(), px.getY());
+
+                    if (depth == 0) {
+                        continue;
+                    }
+
+                    final float diff = (depth - cameraX.getZ()) * sqrt(1f + FloatOps.sq(pos.getX() / pos.getZ()) + FloatOps.sq(pos.getY() / pos.getZ()));
+
+                    if (diff > -mu) {
+
+                        final float sdf = min(1f, diff / mu);
+
+                        final Short2 inputValue = volume.get(x, y, z);
+                        final Float2 constantValue1 = new Float2(0.00003051944088f, 1f);
+                        final Float2 constantValue2 = new Float2(32766.0f, 1f);
+
+                        final Float2 data = mult(new Float2(inputValue.getX(), inputValue.getY()), constantValue1);
+
+                        final float dx = TornadoMath.clamp(((data.getY() * data.getX()) + sdf) / (data.getY() + 1f), -1f, 1f);
+                        final float dy = min(data.getY() + 1f, maxWeight);
+
+                        final Float2 floatValue = mult(new Float2(dx, dy), constantValue2);
+                        final Short2 outputValue = new Short2((short) floatValue.getX(), (short) floatValue.getY());
+
+                        volume.set(x, y, z, outputValue);
+                    }
+                }
+            }
+        }
+    }
+
+    private static Float3 pos(final VolumeShort2 volume, final Float3 volumeDims, final Int3 p) {
+        return new Float3(((p.getX() + 0.5f) * volumeDims.getX()) / volume.X(), ((p.getY() + 0.5f) * volumeDims.getY()) / volume.Y(), ((p.getZ() + 0.5f) * volumeDims.getZ()) / volume.Z());
+    }
+
+    public static void volumeOps(VectorFloat3 output, VolumeShort2 volume, final Float3 dim, final Float3 point) {
+        for (@Parallel int i = 0; i < output.getLength(); i++) {
+            Float3 f = VolumeOps.grad(volume, dim, point);
+            output.set(i, f);
+        }
+    }
+
+    /**
+     * * Creates a 4x4 matrix representing the intrinsic camera matrix
+     *
+     * @param k
+     *            - camera parameters {f_x,f_y,x_0,y_0} where {f_x,f_y} specifies
+     *            the focal length of the camera and {x_0,y_0} the principle point
+     * @param m
+     *            - returned matrix
+     */
+    public static void getCameraMatrix(Float4 k, Matrix4x4Float m) {
+        m.fill(0f);
+
+        // focal length - f_x
+        m.set(0, 0, k.getX());
+        // focal length - f_y
+        m.set(1, 1, k.getY());
+
+        // principle point - x_0
+        m.set(0, 2, k.getZ());
+
+        // principle point - y_0
+        m.set(1, 2, k.getW());
+
+        m.set(2, 2, 1);
+        m.set(3, 3, 1);
+    }
+
+    public static void reduceValues(final float[] sums, final int startIndex, final ImageFloat8 trackingResults, int resultIndex) {
+
+        final int jtj = startIndex + 7;
+        final int info = startIndex + 28;
+
+        Float8 value = trackingResults.get(resultIndex);
+        final int result = (int) value.getS7();
+        final float error = value.getS6();
+
+        if (result < 1) {
+            sums[info + 1] += (result == -4) ? 1 : 0;
+            sums[info + 2] += (result == -5) ? 1 : 0;
+            sums[info + 3] += (result > -4) ? 1 : 0;
+            return;
+        }
+
+        sums[startIndex] += (error * error);
+
+        sums[startIndex + 0 + 1] += (error * value.getS0());
+        sums[startIndex + 1 + 1] += (error * value.getS1());
+        sums[startIndex + 2 + 1] += (error * value.getS2());
+        sums[startIndex + 3 + 1] += (error * value.getS3());
+        sums[startIndex + 4 + 1] += (error * value.getS4());
+        sums[startIndex + 5 + 1] += (error * value.getS5());
+
+        // is this jacobian transpose jacobian?
+        sums[jtj + 0] += (value.getS0() * value.getS0());
+        sums[jtj + 1] += (value.getS0() * value.getS1());
+        sums[jtj + 2] += (value.getS0() * value.getS2());
+        sums[jtj + 3] += (value.getS0() * value.getS3());
+        sums[jtj + 4] += (value.getS0() * value.getS4());
+        sums[jtj + 5] += (value.getS0() * value.getS5());
+
+        sums[jtj + 6] += (value.getS1() * value.getS1());
+        sums[jtj + 7] += (value.getS1() * value.getS2());
+        sums[jtj + 8] += (value.getS1() * value.getS3());
+        sums[jtj + 9] += (value.getS1() * value.getS4());
+        sums[jtj + 10] += (value.getS1() * value.getS5());
+
+        sums[jtj + 11] += (value.getS2() * value.getS2());
+        sums[jtj + 12] += (value.getS2() * value.getS3());
+        sums[jtj + 13] += (value.getS2() * value.getS4());
+        sums[jtj + 14] += (value.getS2() * value.getS5());
+
+        sums[jtj + 15] += (value.getS3() * value.getS3());
+        sums[jtj + 16] += (value.getS3() * value.getS4());
+        sums[jtj + 17] += (value.getS3() * value.getS5());
+
+        sums[jtj + 18] += (value.getS4() * value.getS4());
+        sums[jtj + 19] += (value.getS4() * value.getS5());
+
+        sums[jtj + 20] += (value.getS5() * value.getS5());
+
+        sums[info]++;
+    }
+
+    public static void mapReduce(final float[] output, final ImageFloat8 input) {
+        final int numThreads = output.length / 32;
+        final int numElements = input.X() * input.Y();
+
+        for (@Parallel int i = 0; i < numThreads; i++) {
+            final int startIndex = i * 32;
+            for (int j = 0; j < 32; j++) {
+                output[startIndex + j] = 0f;
+            }
+
+            for (int j = i; j < numElements; j += numThreads) {
+                reduceValues(output, startIndex, input, j);
+            }
+        }
+    }
+
+    public static void mapReduce2(float[] output, ImageFloat8 input) {
+        int startIndex = 0 * 32;
+        reduceValues(output, startIndex, input, 0);
+    }
+
+    public static void mapReduce3(VectorFloat4 output, final VectorFloat4 input) {
+        for (@Parallel int i = 0; i < input.getLength(); i++) {
+            Float4 f = input.get(i);
+            Float4 ff = new Float4(f.get(3), f.get(2), f.get(1), f.get(0));
+            output.set(i, ff);
+        }
+    }
+
+    public static void testVSKernel(int[] x, int[] y, int[] z, VolumeShort2 v, float[] output) {
+        for (@Parallel int i = 0; i < x.length; i++) {
+            output[i] = VolumeOps.vs1(x[i], y[i], z[i], v);
+        }
     }
 
     @Test
@@ -170,6 +499,8 @@ public class GraphicsTests extends TornadoTestBase {
         }
     }
 
+    // Ray Cast testing
+
     @Test
     public void testResizeImage6() {
         int scaleFactor = 2;
@@ -205,17 +536,6 @@ public class GraphicsTests extends TornadoTestBase {
 
         for (int i = 0; i < scaledSize * scaledSize; i++) {
             assertEquals("index = " + i, destSeq.get(i), dest.get(i), 0.001);
-        }
-    }
-
-    private static Float3 rotate(Matrix4x4Float m, Float3 v) {
-        return new Float3(Float3.dot(m.row(0).asFloat3(), v), Float3.dot(m.row(1).asFloat3(), v), Float3.dot(m.row(2).asFloat3(), v));
-    }
-
-    private static void testRotate(Matrix4x4Float m, VectorFloat3 v, VectorFloat3 result) {
-        for (@Parallel int i = 0; i < v.getLength(); i++) {
-            Float3 r = rotate(m, v.get(i));
-            result.set(i, r);
         }
     }
 
@@ -363,91 +683,6 @@ public class GraphicsTests extends TornadoTestBase {
             for (int j = 0; j < matrix.getNumColumns(); j++) {
                 float x = min + r.nextFloat() * (max - min);
                 matrix.set(i, j, x);
-            }
-        }
-    }
-
-    public final class Constants {
-        private Constants() {
-        }
-
-        public static final int X = 0;
-        public static final int Y = 1;
-        public static final int Z = 2;
-        public static final int W = 3;
-
-        public static final float INVALID = -2f;
-
-        public static final int BLACK = -1;
-        public static final int RED = -2;
-        public static final int GREEN = -3;
-        public static final int BLUE = -4;
-        public static final int YELLOW = -5;
-        public static final int GREY = 1;
-    }
-
-    public static void trackPose(final ImageFloat8 results, final ImageFloat3 verticies, final ImageFloat3 normals, final ImageFloat3 referenceVerticies, final ImageFloat3 referenceNormals,
-            final Matrix4x4Float currentPose, final Matrix4x4Float view, final float distanceThreshold, final float normalThreshold) {
-
-        final Float8 NO_INPUT = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.BLACK);
-        final Float8 NOT_IN_IMAGE = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.RED);
-        final Float8 NO_CORRESPONDENCE = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.GREEN);
-        final Float8 TOO_FAR = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.BLUE);
-        final Float8 WRONG_NORMAL = new Float8(0f, 0f, 0f, 0f, 0f, 0f, 0f, Constants.YELLOW);
-
-        for (@Parallel int y = 0; y < results.Y(); y++) {
-            for (@Parallel int x = 0; x < results.X(); x++) {
-
-                if (normals.get(x, y).getX() == Constants.INVALID) {
-                    results.set(x, y, NO_INPUT);
-                } else {
-
-                    // rotate + translate projected vertex
-                    final Float3 projectedVertex = GraphicsMath.rigidTransform(currentPose, verticies.get(x, y));
-
-                    // rotate + translate projected position
-                    final Float3 projectedPos = GraphicsMath.rigidTransform(view, projectedVertex);
-
-                    final Float2 projectedPixel = Float2.add(Float2.mult(projectedPos.asFloat2(), 1f / projectedPos.getZ()), 0.5f);
-
-                    boolean isNotInImage = (projectedPixel.getX() < 0) || (projectedPixel.getX() > (referenceVerticies.X() - 1)) || (projectedPixel.getY() < 0)
-                            || (projectedPixel.getY() > (referenceVerticies.Y() - 1));
-
-                    if (isNotInImage) {
-                        results.set(x, y, NOT_IN_IMAGE);
-                    } else {
-
-                        final Int2 refPixel = new Int2((int) projectedPixel.getX(), (int) projectedPixel.getY());
-
-                        final Float3 referenceNormal = referenceNormals.get(refPixel.getX(), refPixel.getY());
-
-                        if (referenceNormal.getX() == Constants.INVALID) {
-                            results.set(x, y, NO_CORRESPONDENCE);
-                        } else {
-
-                            final Float3 diff = Float3.sub(referenceVerticies.get(refPixel.getX(), refPixel.getY()), projectedVertex);
-
-                            if (Float3.length(diff) > distanceThreshold) {
-                                results.set(x, y, TOO_FAR);
-                            } else {
-
-                                final Float3 projectedNormal = GraphicsMath.rotate(currentPose, normals.get(x, y));
-
-                                if (Float3.dot(projectedNormal, referenceNormal) < normalThreshold) {
-                                    results.set(x, y, WRONG_NORMAL);
-                                } else {
-
-                                    final Float3 b = Float3.cross(projectedVertex, referenceNormal);
-
-                                    final Float8 tracking = new Float8(referenceNormal.getX(), referenceNormal.getY(), referenceNormal.getZ(), b.getX(), b.getY(), b.getZ(),
-                                            Float3.dot(referenceNormal, diff), (float) Constants.GREY);
-
-                                    results.set(x, y, tracking);
-                                }
-                            }
-                        }
-                    }
-                }
             }
         }
     }
@@ -607,13 +842,6 @@ public class GraphicsTests extends TornadoTestBase {
 
     }
 
-    public static void computeRigidTransform(Matrix4x4Float matrix, VectorFloat3 points, VectorFloat3 output) {
-        for (@Parallel int i = 0; i < points.getLength(); i++) {
-            Float3 p = GraphicsMath.rigidTransform(matrix, points.get(i));
-            output.set(i, p);
-        }
-    }
-
     @Test
     public void testRigidTrasform() {
 
@@ -656,14 +884,6 @@ public class GraphicsTests extends TornadoTestBase {
         }
     }
 
-    public static void testNormaliseFunction(VectorFloat3 input, VectorFloat3 output) {
-        for (@Parallel int i = 0; i < input.getLength(); i++) {
-            final Float3 norm = Float3.normalise(input.get(i));
-            final Float3 res = new Float3(norm.getX(), norm.getY(), norm.getZ());
-            output.set(i, res);
-        }
-    }
-
     @Test
     public void testNormalise() {
         int size = 128;
@@ -699,44 +919,6 @@ public class GraphicsTests extends TornadoTestBase {
             assertEquals(s.getS0(), o.getS0(), 0.001);
             assertEquals(s.getS1(), o.getS1(), 0.001);
             assertEquals(s.getS2(), o.getS2(), 0.001);
-        }
-    }
-
-    // Ray Cast testing
-
-    private static final float INVALID = -2;
-
-    public static void raycast(ImageFloat3 verticies, ImageFloat3 normals, VolumeShort2 volume, Float3 volumeDims, Matrix4x4Float view, float nearPlane, float farPlane, float largeStep,
-            float smallStep) {
-
-        // use volume model to generate a reference view by raycasting ...
-        for (@Parallel int y = 0; y < verticies.Y(); y++) {
-            for (@Parallel int x = 0; x < verticies.X(); x++) {
-                final Float4 hit = GraphicsMath.raycastPoint(volume, volumeDims, x, y, view, nearPlane, farPlane, smallStep, largeStep);
-
-                final Float3 normal;
-                final Float3 position;
-                if (hit.getW() > 0f) {
-                    position = hit.asFloat3();
-
-                    final Float3 surfNorm = VolumeOps.grad(volume, volumeDims, position);
-
-                    // final Float3 surfNorm = new Float3(0f, 0f, 0f);
-
-                    if (length(surfNorm) != 0) {
-                        normal = normalise(surfNorm);
-                    } else {
-                        normal = new Float3(INVALID, 0f, 0f);
-                    }
-                } else {
-                    normal = new Float3(INVALID, 0f, 0f);
-                    position = new Float3();
-                }
-
-                verticies.set(x, y, position);
-                normals.set(x, y, normal);
-
-            }
         }
     }
 
@@ -805,18 +987,6 @@ public class GraphicsTests extends TornadoTestBase {
         }
     }
 
-    public static void testRayCastPointIsolation(ImageFloat4 output, ImageFloat3 verticies, VolumeShort2 volume, Float3 volumeDims, Matrix4x4Float view, float nearPlane, float farPlane,
-            float largeStep, float smallStep) {
-
-        // use volume model to generate a reference view by raycasting ...
-        for (@Parallel int i = 0; i < verticies.X(); i++) {
-            for (@Parallel int j = 0; j < verticies.Y(); j++) {
-                final Float4 hit = GraphicsMath.raycastPoint(volume, volumeDims, i, j, view, nearPlane, farPlane, smallStep, largeStep);
-                output.set(i, j, hit);
-            }
-        }
-    }
-
     @Test
     public void testRaycastPoint() {
 
@@ -870,69 +1040,6 @@ public class GraphicsTests extends TornadoTestBase {
                 assertEquals(s.getW(), o.getW(), 0.001);
             }
         }
-    }
-
-    public static void integrate(ImageFloat filteredDepthImage, Matrix4x4Float invTrack, Matrix4x4Float K, Float3 volumeDims, VolumeShort2 volume, float mu, float maxWeight) {
-        final Float3 tmp = new Float3(0f, 0f, volumeDims.getZ() / volume.Z());
-
-        final Float3 integrateDelta = rotate(invTrack, tmp);
-        final Float3 cameraDelta = rotate(K, integrateDelta);
-
-        for (@Parallel int y = 0; y < volume.Y(); y++) {
-            for (@Parallel int x = 0; x < volume.X(); x++) {
-
-                final Int3 pix = new Int3(x, y, 0);
-                Float3 pos = rigidTransform(invTrack, pos(volume, volumeDims, pix));
-                Float3 cameraX = rigidTransform(K, pos);
-
-                for (int z = 0; z < volume.Z(); z++, pos = add(pos, integrateDelta), cameraX = add(cameraX, cameraDelta)) {
-
-                    if (pos.getZ() < 0.0001f) // arbitrary near plane constant
-                    {
-                        continue;
-                    }
-
-                    final Float2 pixel = new Float2((cameraX.getX() / cameraX.getZ()) + 0.5f, (cameraX.getY() / cameraX.getZ()) + 0.5f);
-
-                    if ((pixel.getX() < 0) || (pixel.getX() > (filteredDepthImage.X() - 1)) || (pixel.getY() < 0) || (pixel.getY() > (filteredDepthImage.Y() - 1))) {
-                        continue;
-                    }
-
-                    final Int2 px = new Int2((int) pixel.getX(), (int) pixel.getY());
-
-                    final float depth = filteredDepthImage.get(px.getX(), px.getY());
-
-                    if (depth == 0) {
-                        continue;
-                    }
-
-                    final float diff = (depth - cameraX.getZ()) * sqrt(1f + FloatOps.sq(pos.getX() / pos.getZ()) + FloatOps.sq(pos.getY() / pos.getZ()));
-
-                    if (diff > -mu) {
-
-                        final float sdf = min(1f, diff / mu);
-
-                        final Short2 inputValue = volume.get(x, y, z);
-                        final Float2 constantValue1 = new Float2(0.00003051944088f, 1f);
-                        final Float2 constantValue2 = new Float2(32766.0f, 1f);
-
-                        final Float2 data = mult(new Float2(inputValue.getX(), inputValue.getY()), constantValue1);
-
-                        final float dx = TornadoMath.clamp(((data.getY() * data.getX()) + sdf) / (data.getY() + 1f), -1f, 1f);
-                        final float dy = min(data.getY() + 1f, maxWeight);
-
-                        final Float2 floatValue = mult(new Float2(dx, dy), constantValue2);
-                        final Short2 outputValue = new Short2((short) floatValue.getX(), (short) floatValue.getY());
-
-                        volume.set(x, y, z, outputValue);
-                    }
-                }
-            }
-        }
-    }
-
-    private static Float3 pos(final VolumeShort2 volume, final Float3 volumeDims, final Int3 p) {
-        return new Float3(((p.getX() + 0.5f) * volumeDims.getX()) / volume.X(), ((p.getY() + 0.5f) * volumeDims.getY()) / volume.Y(), ((p.getZ() + 0.5f) * volumeDims.getZ()) / volume.Z());
     }
 
     private float random(Random r) {
@@ -1046,13 +1153,6 @@ public class GraphicsTests extends TornadoTestBase {
         }
     }
 
-    public static void volumeOps(VectorFloat3 output, VolumeShort2 volume, final Float3 dim, final Float3 point) {
-        for (@Parallel int i = 0; i < output.getLength(); i++) {
-            Float3 f = VolumeOps.grad(volume, dim, point);
-            output.set(i, f);
-        }
-    }
-
     @Test
     public void testVolumeGrad() {
         final int size = 128;
@@ -1095,33 +1195,6 @@ public class GraphicsTests extends TornadoTestBase {
             Assert.assertEquals("difference on index " + i + " s2", s.getS2(), o.getS2(), 0.01f);
         }
 
-    }
-
-    /**
-     * * Creates a 4x4 matrix representing the intrinsic camera matrix
-     *
-     * @param k
-     *            - camera parameters {f_x,f_y,x_0,y_0} where {f_x,f_y} specifies
-     *            the focal length of the camera and {x_0,y_0} the principle point
-     * @param m
-     *            - returned matrix
-     */
-    public static void getCameraMatrix(Float4 k, Matrix4x4Float m) {
-        m.fill(0f);
-
-        // focal length - f_x
-        m.set(0, 0, k.getX());
-        // focal length - f_y
-        m.set(1, 1, k.getY());
-
-        // principle point - x_0
-        m.set(0, 2, k.getZ());
-
-        // principle point - y_0
-        m.set(1, 2, k.getW());
-
-        m.set(2, 2, 1);
-        m.set(3, 3, 1);
     }
 
     @Test
@@ -1212,91 +1285,6 @@ public class GraphicsTests extends TornadoTestBase {
                 Assert.assertEquals("index = " + i + ", " + j, s.getZ(), o.getZ());
                 Assert.assertEquals("index = " + i + ", " + j, s.getW(), o.getW());
             }
-        }
-    }
-
-    public static void reduceValues(final float[] sums, final int startIndex, final ImageFloat8 trackingResults, int resultIndex) {
-
-        final int jtj = startIndex + 7;
-        final int info = startIndex + 28;
-
-        Float8 value = trackingResults.get(resultIndex);
-        final int result = (int) value.getS7();
-        final float error = value.getS6();
-
-        if (result < 1) {
-            sums[info + 1] += (result == -4) ? 1 : 0;
-            sums[info + 2] += (result == -5) ? 1 : 0;
-            sums[info + 3] += (result > -4) ? 1 : 0;
-            return;
-        }
-
-        sums[startIndex] += (error * error);
-
-        sums[startIndex + 0 + 1] += (error * value.getS0());
-        sums[startIndex + 1 + 1] += (error * value.getS1());
-        sums[startIndex + 2 + 1] += (error * value.getS2());
-        sums[startIndex + 3 + 1] += (error * value.getS3());
-        sums[startIndex + 4 + 1] += (error * value.getS4());
-        sums[startIndex + 5 + 1] += (error * value.getS5());
-
-        // is this jacobian transpose jacobian?
-        sums[jtj + 0] += (value.getS0() * value.getS0());
-        sums[jtj + 1] += (value.getS0() * value.getS1());
-        sums[jtj + 2] += (value.getS0() * value.getS2());
-        sums[jtj + 3] += (value.getS0() * value.getS3());
-        sums[jtj + 4] += (value.getS0() * value.getS4());
-        sums[jtj + 5] += (value.getS0() * value.getS5());
-
-        sums[jtj + 6] += (value.getS1() * value.getS1());
-        sums[jtj + 7] += (value.getS1() * value.getS2());
-        sums[jtj + 8] += (value.getS1() * value.getS3());
-        sums[jtj + 9] += (value.getS1() * value.getS4());
-        sums[jtj + 10] += (value.getS1() * value.getS5());
-
-        sums[jtj + 11] += (value.getS2() * value.getS2());
-        sums[jtj + 12] += (value.getS2() * value.getS3());
-        sums[jtj + 13] += (value.getS2() * value.getS4());
-        sums[jtj + 14] += (value.getS2() * value.getS5());
-
-        sums[jtj + 15] += (value.getS3() * value.getS3());
-        sums[jtj + 16] += (value.getS3() * value.getS4());
-        sums[jtj + 17] += (value.getS3() * value.getS5());
-
-        sums[jtj + 18] += (value.getS4() * value.getS4());
-        sums[jtj + 19] += (value.getS4() * value.getS5());
-
-        sums[jtj + 20] += (value.getS5() * value.getS5());
-
-        sums[info]++;
-    }
-
-    public static void mapReduce(final float[] output, final ImageFloat8 input) {
-        final int numThreads = output.length / 32;
-        final int numElements = input.X() * input.Y();
-
-        for (@Parallel int i = 0; i < numThreads; i++) {
-            final int startIndex = i * 32;
-            for (int j = 0; j < 32; j++) {
-                output[startIndex + j] = 0f;
-            }
-
-            for (int j = i; j < numElements; j += numThreads) {
-                reduceValues(output, startIndex, input, j);
-            }
-        }
-    }
-
-    public static void mapReduce2(float[] output, ImageFloat8 input) {
-        int startIndex = 0 * 32;
-        reduceValues(output, startIndex, input, 0);
-    }
-
-    public static void mapReduce3(VectorFloat4 output, final VectorFloat4 input) {
-        for (@Parallel int i = 0; i < input.getLength(); i++) {
-            Float4 f = input.get(i);
-            Float4 ff = new Float4(f.get(3), f.get(2), f.get(1), f.get(0));
-            output.set(i, ff);
         }
     }
 
@@ -1392,12 +1380,6 @@ public class GraphicsTests extends TornadoTestBase {
 
     }
 
-    public static void testVSKernel(int[] x, int[] y, int[] z, VolumeShort2 v, float[] output) {
-        for (@Parallel int i = 0; i < x.length; i++) {
-            output[i] = VolumeOps.vs1(x[i], y[i], z[i], v);
-        }
-    }
-
     @Test
     public void testVS() {
 
@@ -1440,5 +1422,23 @@ public class GraphicsTests extends TornadoTestBase {
             assertEquals(seq[i], output[i], 0.001f);
         }
     }
+
+    public final class Constants {
+        public static final int X = 0;
+        public static final int Y = 1;
+        public static final int Z = 2;
+        public static final int W = 3;
+        public static final float INVALID = -2f;
+        public static final int BLACK = -1;
+        public static final int RED = -2;
+        public static final int GREEN = -3;
+        public static final int BLUE = -4;
+        public static final int YELLOW = -5;
+        public static final int GREY = 1;
+
+        private Constants() {
+        }
+    }
+    // CHECKSTYLE:ON
 
 }

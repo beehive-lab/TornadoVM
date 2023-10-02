@@ -25,7 +25,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
 import java.util.List;
 
-import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
+import org.graalvm.compiler.core.common.cfg.BasicBlock;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
@@ -35,12 +35,41 @@ import org.graalvm.compiler.lir.phases.LIRPhase;
 import org.graalvm.compiler.lir.ssa.SSAUtil;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
-import org.graalvm.compiler.nodes.cfg.Block;
+import org.graalvm.compiler.nodes.cfg.HIRBlock;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.code.TargetDescription;
 
 public class OCLLIRGenerationPhase extends LIRPhase<OCLLIRGenerationPhase.LIRGenerationContext> {
+
+    private static void emitBlock(final OCLNodeLIRBuilder nodeLirGen, final LIRGenerationResult lirGenRes, final HIRBlock b, final StructuredGraph graph, final BlockMap<List<Node>> blockMap,
+            boolean isKernel) {
+        if (lirGenRes.getLIR().getLIRforBlock(b) == null) {
+            for (int i = 0; i < b.getPredecessorCount(); i++) {
+                if (!b.isLoopHeader() || !b.getPredecessorAt(i).isLoopEnd()) {
+                    emitBlock(nodeLirGen, lirGenRes, b.getPredecessorAt(i), graph, blockMap, isKernel);
+                }
+            }
+            nodeLirGen.doBlock(b, graph, blockMap, isKernel);
+        }
+    }
+
+    @Override
+    protected final void run(final TargetDescription target, final LIRGenerationResult lirGenRes, final OCLLIRGenerationPhase.LIRGenerationContext context) {
+
+        final NodeLIRBuilderTool nodeLirBuilder = context.nodeLirBuilder;
+        final StructuredGraph graph = context.graph;
+        final ScheduleResult schedule = context.schedule;
+        final BlockMap<List<Node>> blockMap = schedule.getBlockToNodesMap();
+        BasicBlock<?>[] blocks = lirGenRes.getLIR().getControlFlowGraph().getBlocks();
+
+        for (BasicBlock<?> b : blocks) {
+            emitBlock((OCLNodeLIRBuilder) nodeLirBuilder, lirGenRes, (HIRBlock) b, graph, blockMap, context.isKernel);
+        }
+        ((LIRGenerator) context.lirGen).beforeRegisterAllocation();
+
+        assert SSAUtil.verifySSAForm(lirGenRes.getLIR());
+    }
 
     public static final class LIRGenerationContext {
 
@@ -57,34 +86,6 @@ public class OCLLIRGenerationPhase extends LIRPhase<OCLLIRGenerationPhase.LIRGen
             this.schedule = schedule;
             this.isKernel = isKernel;
         }
-    }
-
-    private static void emitBlock(final OCLNodeLIRBuilder nodeLirGen, final LIRGenerationResult lirGenRes, final Block b, final StructuredGraph graph, final BlockMap<List<Node>> blockMap,
-            boolean isKernel) {
-        if (lirGenRes.getLIR().getLIRforBlock(b) == null) {
-            for (final Block pred : b.getPredecessors()) {
-                if (!b.isLoopHeader() || !pred.isLoopEnd()) {
-                    emitBlock(nodeLirGen, lirGenRes, pred, graph, blockMap, isKernel);
-                }
-            }
-            nodeLirGen.doBlock(b, graph, blockMap, isKernel);
-        }
-    }
-
-    @Override
-    protected final void run(final TargetDescription target, final LIRGenerationResult lirGenRes, final OCLLIRGenerationPhase.LIRGenerationContext context) {
-
-        final NodeLIRBuilderTool nodeLirBuilder = context.nodeLirBuilder;
-        final StructuredGraph graph = context.graph;
-        final ScheduleResult schedule = context.schedule;
-        final BlockMap<List<Node>> blockMap = schedule.getBlockToNodesMap();
-
-        for (AbstractBlockBase<?> b : lirGenRes.getLIR().linearScanOrder()) {
-            emitBlock((OCLNodeLIRBuilder) nodeLirBuilder, lirGenRes, (Block) b, graph, blockMap, context.isKernel);
-        }
-        ((LIRGenerator) context.lirGen).beforeRegisterAllocation();
-
-        assert SSAUtil.verifySSAForm(lirGenRes.getLIR());
     }
 
 }

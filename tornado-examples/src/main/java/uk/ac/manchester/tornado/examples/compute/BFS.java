@@ -42,19 +42,18 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  *
  */
 public class BFS {
+    // CHECKSTYLE:OFF
 
+    public static final boolean SAMPLE = false;
     private static final boolean BIDIRECTIONAL = false;
     private static final boolean PRINT_SOLUTION = false;
     private static final boolean VALIDATION = true;
-
     int[] vertices;
     int[] verticesJava;
     int[] adjacencyMatrix;
     int[] modify;
     int[] modifyJava;
     int[] currentDepth;
-
-    public static final boolean SAMPLE = false;
 
     /**
      * Set to one the connection between node from and node to into the adjacency
@@ -140,6 +139,14 @@ public class BFS {
         }
     }
 
+    public static void main(String[] args) {
+        int size = 10000;
+        if (SAMPLE) {
+            size = 5;
+        }
+        new BFS().tornadoBFS(0, size);
+    }
+
     public boolean validateBFS(int[] vertices, int[] verticesJava) {
         boolean check = true;
         for (int i = 0; i < vertices.length; i++) {
@@ -201,7 +208,7 @@ public class BFS {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, vertices, modify);
 
         ImmutableTaskGraph immutableTaskGraph1 = taskGraph1.snapshot();
-        TornadoExecutionPlan executor1 = new TornadoExecutionPlan(immutableTaskGraph) //
+        TornadoExecutionPlan executor1 = new TornadoExecutionPlan(immutableTaskGraph1) //
                 .withDevice(device);
 
         boolean done = false;
@@ -232,9 +239,7 @@ public class BFS {
             Arrays.fill(modifyJava, 1);
         }
 
-        if (PRINT_SOLUTION)
-
-        {
+        if (PRINT_SOLUTION) {
             System.out.println("Solution: " + Arrays.toString(vertices));
         }
 
@@ -246,12 +251,5 @@ public class BFS {
             }
         }
     }
-
-    public static void main(String[] args) {
-        int size = 10000;
-        if (SAMPLE) {
-            size = 5;
-        }
-        new BFS().tornadoBFS(0, size);
-    }
 }
+// CHECKSTYLE:ON

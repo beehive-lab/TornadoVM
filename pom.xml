@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>tornado</groupId>
     <artifactId>tornado</artifactId>
-    <version>0.15.2-dev</version>
+    <version>0.16-dev</version>
     <packaging>pom</packaging>
     <name>tornado</name>
     <url>https://github.com/beehive-lab/tornadovm</url>
@@ -18,12 +18,13 @@
 
     <properties>
         <tornado.version>${project.version}</tornado.version>
-        <graal.version>22.3.2</graal.version>
+        <graalvm.version>23.1.0</graalvm.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <classifier>${platform}</classifier>
         <download.cmake>false</download.cmake>
         <jmh.version>1.29</jmh.version>
         <tornadojmhjar.name>jmhbenchmarks</tornadojmhjar.name>
+        <checkstyle.config.location>tornado-assembly/src/etc/checkstyle.xml</checkstyle.config.location>
     </properties>
 
     <profiles>
@@ -291,7 +292,7 @@
         </profile>
 
         <profile>
-            <id>jdk-11-plus</id>
+            <id>jdk-17-plus</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
@@ -299,12 +300,25 @@
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-checkstyle-plugin</artifactId>
+                        <version>3.3.0</version>
+                        <configuration>
+                            <consoleOutput>true</consoleOutput>
+                            <failsOnError>true</failsOnError>
+                            <linkXRef>false</linkXRef>
+                        </configuration>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
                         <version>3.11.0</version>
                         <configuration>
                             <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                            <source>11</source>
-                            <target>11</target>
+                            <source>17</source>
+                            <target>17</target>
                             <showDeprecation>true</showDeprecation>
                             <annotationProcessorPaths>
                                 <path>
@@ -1059,7 +1073,7 @@
         </profile>
 
         <profile>
-            <id>graal-jdk-11-plus</id>
+            <id>graal-jdk-17-plus</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
@@ -1071,8 +1085,8 @@
                         <version>3.11.0</version>
                         <configuration>
                             <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                            <source>11</source>
-                            <target>11</target>
+                            <source>17</source>
+                            <target>17</target>
                             <showDeprecation>true</showDeprecation>
                             <annotationProcessorPaths>
                                 <path>
@@ -1823,62 +1837,6 @@
                 </plugins>
             </build>
         </profile>
-
-        <!-- When using JDK 8, please fill the JVMCI properties in the xml file from .m2/settings.xml -->
-        <!-- For more information:
-         https://github.com/beehive-lab/TornadoVM/blob/master/assembly/src/docs/11_INSTALL_WITH_JDK8.md#1-download-or-build-jdk-8-with-jvmci-support
-        -->
-        <profile>
-            <id>jdk-8</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.8.1</version>
-                        <configuration>
-                            <source>8</source>
-                            <target>8</target>
-                            <showDeprecation>true</showDeprecation>
-                            <excludes>
-                                <exclude>*module-info.java</exclude>
-                            </excludes>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-            <dependencyManagement>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.graalvm.compiler</groupId>
-                        <artifactId>compiler</artifactId>
-                        <version>${graal.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.graalvm.truffle</groupId>
-                        <artifactId>truffle-api</artifactId>
-                        <version>${graal.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>jvmci</groupId>
-                        <artifactId>api</artifactId>
-                        <scope>system</scope>
-                        <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-api.jar</systemPath>
-                        <version>${jvmci.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>jvmci</groupId>
-                        <artifactId>hotspot</artifactId>
-                        <scope>system</scope>
-                        <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-hotspot.jar</systemPath>
-                        <version>${jvmci.version}</version>
-                    </dependency>
-                </dependencies>
-            </dependencyManagement>
-        </profile>
     </profiles>
     <build>
         <finalName>${project.artifactId}-${project.version}-${buildNumber}</finalName>
@@ -1977,6 +1935,11 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>com.puppycrawl.tools</groupId>
+                <artifactId>checkstyle</artifactId>
+                <version>10.12.3</version>
+            </dependency>
+            <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.13.2</version>
@@ -2010,6 +1973,21 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
             <version>2.17.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.polyglot</groupId>
+            <artifactId>polyglot</artifactId>
+            <version>${graalvm.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.sdk</groupId>
+            <artifactId>word</artifactId>
+            <version>${graalvm.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.sdk</groupId>
+            <artifactId>collections</artifactId>
+            <version>${graalvm.version}</version>
         </dependency>
     </dependencies>
     <modules>

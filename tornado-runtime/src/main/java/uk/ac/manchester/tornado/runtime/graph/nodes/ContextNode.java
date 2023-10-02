@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2023 APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -20,17 +20,34 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.runtime.graph.nodes;
 
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+
+/**
+ * It represents a context node used in a
+ * {@link uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompiler}.
+ */
 public class ContextNode extends AbstractNode {
 
     private int deviceIndex;
+    private TornadoAcceleratorDevice device;
 
-    public ContextNode(int index) {
-        deviceIndex = index;
+    /**
+     * It constructs a ContextNode with the given device index and
+     * {@link TornadoAcceleratorDevice}.
+     *
+     * @param index
+     *            The index of the device.
+     * @param device
+     *            The {@link TornadoAcceleratorDevice} associated with this context
+     *            node.
+     */
+    public ContextNode(int index, TornadoAcceleratorDevice device) {
+        this.deviceIndex = index;
+        this.device = device;
     }
 
     @Override
@@ -42,12 +59,44 @@ public class ContextNode extends AbstractNode {
         return Integer.compare(deviceIndex, ((ContextNode) o).deviceIndex);
     }
 
+    /**
+     * It gets the device index associated with this context node.
+     *
+     * @return The device index.
+     */
     public int getDeviceIndex() {
         return deviceIndex;
     }
 
+    /**
+     * It sets the device index associated with this context node.
+     *
+     * @param deviceIndex
+     *            The device index to set.
+     */
     public void setDeviceIndex(int deviceIndex) {
         this.deviceIndex = deviceIndex;
+    }
+
+    /**
+     * It gets the {@link TornadoAcceleratorDevice} associated with this context
+     * node.
+     *
+     * @return The TornadoAcceleratorDevice.
+     */
+    public TornadoAcceleratorDevice getDevice() {
+        return this.device;
+    }
+
+    /**
+     * It sets the {@link TornadoAcceleratorDevice} associated with this context
+     * node.
+     *
+     * @param device
+     *            The {@link TornadoAcceleratorDevice} to set.
+     */
+    public void setDevice(TornadoAcceleratorDevice device) {
+        this.device = device;
     }
 
     @Override
@@ -61,5 +110,4 @@ public class ContextNode extends AbstractNode {
         sb.append("]");
         return sb.toString();
     }
-
 }

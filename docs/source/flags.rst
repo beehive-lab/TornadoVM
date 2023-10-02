@@ -3,7 +3,7 @@
 TornadoVM Flags
 ===============
 
-There is a number of runtime flags and compiler flags to enable experimental features, as well as fine and coarse grain profilling in the context of TornadoVM.
+There is a number of runtime flags and compiler flags to enable experimental features, as well as fine and coarse grain profiling in the context of TornadoVM.
 
 **Note:** for the following examples ``s0`` represents an arbitrary task-graph, as well as ``t0`` represents a given task's name.
 
@@ -44,7 +44,7 @@ List of TornadoVM Flags:
    | Allows to define global worksizes (problem sizes).
 
 -  | ``-Ds0.t0.local.dims=XXX,XXX``:
-   | Allows to define custom local workgroum configuration and overwrite
+   | Allows to define custom local workgroup configuration and overwrite
      the default values provided by the TornadoScheduler.
 
 -  | ``-Dtornado.profiling.enable=true``:
@@ -92,6 +92,12 @@ List of TornadoVM Flags:
      ``CLBuildProgram``
      `specification <https://www.khronos.org/registry/OpenCL/sdk/1.0/docs/man/xhtml/clBuildProgram.html>`__
      to TornadoVM at runtime. By default it doesn’t enable any.
+ -  | ``-Dtornado.concurrent.devices=true``:
+    | Allows to run a TaskGraph in multiple devices concurrently. The user
+      needs explicitly to define the device for each task, otherwise all
+      tasks will run on the default device. For instance,
+        ``-Ds0.t0.device=0:0 -Ds0.t1.device=0:1``
+
 
 Optimizations
 '''''''''''''
@@ -116,7 +122,7 @@ Optimizations
 
 -  ``-Dtornado.enable.nativeFunctions=False``: It enables the
    utilization of native mathematical functions, in case that the
-   selected backend (OpenCL, PTX, SPIR-V) suports native functions. This
+   selected backend (OpenCL, PTX, SPIR-V) supports native functions. This
    option is disabled by default.
 
 Level Zero

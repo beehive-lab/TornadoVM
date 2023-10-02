@@ -34,7 +34,6 @@ import java.util.Collection;
 import java.util.List;
 
 import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -82,7 +81,7 @@ import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.calc.IntegerTestNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
-import org.graalvm.compiler.nodes.cfg.Block;
+import org.graalvm.compiler.nodes.cfg.HIRBlock;
 import org.graalvm.compiler.nodes.extended.SwitchNode;
 import org.graalvm.compiler.options.OptionValues;
 
@@ -103,7 +102,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryO
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLNullaryOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBinary;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLDirectCall;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
@@ -124,6 +122,21 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalOrNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
 
 public class OCLNodeLIRBuilder extends NodeLIRBuilder {
+
+    private boolean elseClause;
+
+    public OCLNodeLIRBuilder(final StructuredGraph graph, final LIRGeneratorTool gen, NodeMatchRules nodeMatchRules) {
+        super(graph, gen, nodeMatchRules);
+    }
+
+    public static boolean isIllegal(Value value) {
+        assert value != null;
+        return Value.ILLEGAL.equals(value);
+    }
+
+    public static boolean isLegal(Value value) {
+        return !isIllegal(value);
+    }
 
     private LIRKind resolveStamp(Stamp stamp) {
         LIRKind lirKind = LIRKind.Illegal;
@@ -191,22 +204,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         return values;
     }
 
-    public static boolean isIllegal(Value value) {
-        assert value != null;
-        return Value.ILLEGAL.equals(value);
-    }
-
-    public static boolean isLegal(Value value) {
-        return !isIllegal(value);
-    }
-
-    private boolean elseClause;
-
-    public OCLNodeLIRBuilder(final StructuredGraph graph, final LIRGeneratorTool gen, NodeMatchRules nodeMatchRules) {
-        super(graph, gen, nodeMatchRules);
-    }
-
-    public void doBlock(final Block block, final StructuredGraph graph, final BlockMap<List<Node>> blockMap, boolean isKernel) {
+    public void doBlock(final HIRBlock block, final StructuredGraph graph, final BlockMap<List<Node>> blockMap, boolean isKernel) {
         OptionValues options = graph.getOptions();
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "%s - block %s", graph.method().getName(), block);
         try (BlockScope blockScope = gen.getBlockScope(block)) {
@@ -486,8 +484,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "visiting emitLoopBegin %s", loopBeginNode);
 
-        final Block block = (Block) gen.getCurrentBlock();
-        final Block currentBlockDominator = block.getDominator();
+        final HIRBlock block = (HIRBlock) gen.getCurrentBlock();
+        final HIRBlock currentBlockDominator = block.getDominator();
         final LIR lir = getGen().getResult().getLIR();
         final LabelOp label = (LabelOp) lir.getLIRforBlock(block).get(0);
 
@@ -626,8 +624,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         }
     }
 
-    private void emitOCLFPGAPragmas(Block blk) {
-        for (ValueNode tempDomBlockNode : blk.getNodes()) {
+    private void emitOCLFPGAPragmas(HIRBlock block) {
+        for (ValueNode tempDomBlockNode : block.getNodes()) {
             if (tempDomBlockNode instanceof IntelUnrollPragmaNode || tempDomBlockNode instanceof XilinxPipeliningPragmaNode) {
                 super.emitNode(tempDomBlockNode);
             }
@@ -638,41 +636,9 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         return (OCLLIRGenerator) gen;
     }
 
-    private OCLBuiltinTool getBuiltinTool() {
-        return getGen().getOCLBuiltinTool();
-    }
-
     @Override
     protected boolean peephole(final ValueNode value) {
         return false;
-    }
-
-    // FIXME: Remove this code
-    public String toOpenCLSymbol(final Condition condition) {
-        switch (condition) {
-            case AE:
-                return ">=";
-            case AT:
-                return ">";
-            case BE:
-                return "=<";
-            case BT:
-                return "<";
-            case EQ:
-                return "==";
-            case GE:
-                return ">=";
-            case GT:
-                return ">";
-            case LE:
-                return "=<";
-            case LT:
-                return "<";
-            case NE:
-                return "!=";
-            default:
-                return String.format("<invalid op (%s)>", condition.operator);
-        }
     }
 
     @Override
@@ -690,14 +656,14 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
         // Move the phi assignment outside the loop.
         // Only do that for the phi nodes that are not inside "else { break; }" blocks.
-        Block curBlock = (Block) gen.getCurrentBlock();
+        HIRBlock curBlock = (HIRBlock) gen.getCurrentBlock();
         boolean shouldRelocateInstructions = false;
         if (curBlock.getBeginNode() instanceof LoopExitNode) {
             LoopExitNode loopExitNode = (LoopExitNode) curBlock.getBeginNode();
             LoopBeginNode loopBeginNode = loopExitNode.loopBegin();
-            Block loopBeginBlock = loopBeginNode.graph().getLastSchedule().getNodeToBlockMap().get(loopBeginNode);
-            for (Block pred : curBlock.getPredecessors()) {
-                if (pred == loopBeginBlock) {
+            HIRBlock loopBeginBlock = loopBeginNode.graph().getLastSchedule().getNodeToBlockMap().get(loopBeginNode);
+            for (int i = 0; i < curBlock.getPredecessorCount(); i++) {
+                if (curBlock.getPredecessorAt(i) == loopBeginBlock) {
                     shouldRelocateInstructions = true;
                     break;
                 }

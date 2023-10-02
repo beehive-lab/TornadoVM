@@ -24,6 +24,7 @@ import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 
 public class ComputeKernels {
+    // CHECKSTYLE:OFF
 
     public static final float S_LOWER_LIMIT = 10.0f;
 
@@ -314,4 +315,5 @@ public class ComputeKernels {
             }
         }
     }
+    // CHECKSTYLE:ON
 }

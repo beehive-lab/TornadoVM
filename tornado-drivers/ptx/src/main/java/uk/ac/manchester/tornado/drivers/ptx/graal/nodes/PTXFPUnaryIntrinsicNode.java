@@ -23,7 +23,6 @@ package uk.ac.manchester.tornado.drivers.ptx.graal.nodes;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
-import jdk.vm.ci.meta.PrimitiveConstant;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.FloatStamp;
 import org.graalvm.compiler.core.common.type.PrimitiveStamp;
@@ -44,6 +43,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
@@ -90,7 +90,9 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
         SIN,
         SQRT,
         TAN,
-        TANH
+        TANH,
+        COSPI,
+        SINPI,
     }
     // @formatter:on
 
@@ -184,6 +186,12 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
             case RADIANS:
                 Value constantForRadians = getConstantValueForRadians(initialInput);
                 result = gen.genFloatRadians(constantForRadians, auxValue);
+                break;
+            case COSPI:
+                result = gen.genFloatCosPI(auxValue, createConstantForPI(), builder.getLIRGeneratorTool().newVariable(LIRKind.value(PTXKind.F32)), builder.getLIRGeneratorTool());
+                break;
+            case SINPI:
+                result = gen.genFloatSinPI(auxValue, createConstantForPI(), builder.getLIRGeneratorTool().newVariable(LIRKind.value(PTXKind.F32)), builder.getLIRGeneratorTool());
                 break;
             default:
                 throw shouldNotReachHere();
@@ -349,6 +357,10 @@ public class PTXFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
         }
 
         return constantValue;
+    }
+
+    public Value createConstantForPI() {
+        return new ConstantValue(LIRKind.value(PTXKind.F32), JavaConstant.forFloat(PTXAssemblerConstants.PI));
     }
 
     private static double doCompute(double value, Operation op) {

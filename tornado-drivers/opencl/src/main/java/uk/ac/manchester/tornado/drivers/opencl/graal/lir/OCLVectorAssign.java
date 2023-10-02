@@ -44,10 +44,13 @@ public class OCLVectorAssign {
      */
     public static class Assign2Expr extends OCLLIROp {
 
-        @Opcode protected final OCLOp opcode;
+        @Opcode
+        protected final OCLOp opcode;
 
-        @Use protected Value s0;
-        @Use protected Value s1;
+        @Use
+        protected Value s0;
+        @Use
+        protected Value s1;
 
         public Assign2Expr(OCLOp opcode, OCLKind oclKind, Value s0, Value s1) {
             super(LIRKind.value(oclKind));
@@ -72,7 +75,8 @@ public class OCLVectorAssign {
      */
     public static class Assign3Expr extends Assign2Expr {
 
-        @Use protected Value s2;
+        @Use
+        protected Value s2;
 
         public Assign3Expr(OCLOp3 opcode, OCLKind kind, Value s0, Value s1, Value s2) {
             super(opcode, kind, s0, s1);
@@ -98,7 +102,8 @@ public class OCLVectorAssign {
      */
     public static class Assign4Expr extends Assign3Expr {
 
-        @Use protected Value s3;
+        @Use
+        protected Value s3;
 
         public Assign4Expr(OCLOp4 opcode, OCLKind kind, Value s0, Value s1, Value s2, Value s3) {
             super(opcode, kind, s0, s1, s2);
@@ -126,10 +131,14 @@ public class OCLVectorAssign {
      */
     public static class Assign8Expr extends Assign4Expr {
 
-        @Use protected Value s4;
-        @Use protected Value s5;
-        @Use protected Value s6;
-        @Use protected Value s7;
+        @Use
+        protected Value s4;
+        @Use
+        protected Value s5;
+        @Use
+        protected Value s6;
+        @Use
+        protected Value s7;
 
         public Assign8Expr(OCLOp8 opcode, OCLKind kind, Value s0, Value s1, Value s2, Value s3, Value s4, Value s5, Value s6, Value s7) {
             super(opcode, kind, s0, s1, s2, s3);

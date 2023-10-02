@@ -85,9 +85,9 @@ public interface TornadoTaskGraphInterface extends ProfileInterface {
 
     void waitOn();
 
-    void transferToDevice(final int mode, Object... objects);
+    void transferToDevice(int mode, Object... objects);
 
-    void transferToHost(final int mode, Object... objects);
+    void transferToHost(int mode, Object... objects);
 
     void dump();
 

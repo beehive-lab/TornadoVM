@@ -29,6 +29,7 @@ import static org.graalvm.word.LocationIdentity.init;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
 import org.graalvm.collections.EconomicMap;
 import org.graalvm.collections.EconomicSet;
@@ -52,10 +53,10 @@ import org.graalvm.compiler.nodes.ProxyNode;
 import org.graalvm.compiler.nodes.StartNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.ValueNodeUtil;
+import org.graalvm.compiler.nodes.ValueNodeInterface;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
-import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
+import org.graalvm.compiler.nodes.cfg.HIRBlock;
 import org.graalvm.compiler.nodes.cfg.HIRLoop;
 import org.graalvm.compiler.nodes.memory.AddressableMemoryAccess;
 import org.graalvm.compiler.nodes.memory.FloatableAccessNode;
@@ -101,48 +102,6 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
 
     private final boolean createMemoryMapNodes;
 
-    public static class MemoryMapImpl implements MemoryMap {
-
-        private final EconomicMap<LocationIdentity, MemoryKill> lastMemorySnapshot;
-
-        public MemoryMapImpl(TornadoFloatingReadReplacement.MemoryMapImpl memoryMap) {
-            lastMemorySnapshot = EconomicMap.create(Equivalence.DEFAULT, memoryMap.lastMemorySnapshot);
-        }
-
-        public MemoryMapImpl(StartNode start) {
-            this();
-            lastMemorySnapshot.put(any(), start);
-        }
-
-        public MemoryMapImpl() {
-            lastMemorySnapshot = EconomicMap.create(Equivalence.DEFAULT);
-        }
-
-        @Override
-        public MemoryKill getLastLocationAccess(LocationIdentity locationIdentity) {
-            MemoryKill lastLocationAccess;
-            if (locationIdentity.isImmutable()) {
-                return null;
-            } else {
-                lastLocationAccess = lastMemorySnapshot.get(locationIdentity);
-                if (lastLocationAccess == null) {
-                    lastLocationAccess = lastMemorySnapshot.get(any());
-                    assert lastLocationAccess != null;
-                }
-                return lastLocationAccess;
-            }
-        }
-
-        @Override
-        public Iterable<LocationIdentity> getLocations() {
-            return lastMemorySnapshot.getKeys();
-        }
-
-        public EconomicMap<LocationIdentity, MemoryKill> getMap() {
-            return lastMemorySnapshot;
-        }
-    }
-
     public TornadoFloatingReadReplacement(CanonicalizerPhase canonicalizer) {
         this(false, canonicalizer);
     }
@@ -155,11 +114,6 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
     public TornadoFloatingReadReplacement(boolean createMemoryMapNodes, CanonicalizerPhase canonicalizer) {
         super(canonicalizer);
         this.createMemoryMapNodes = createMemoryMapNodes;
-    }
-
-    @Override
-    public float codeSizeIncrease() {
-        return 1.50f;
     }
 
     /**
@@ -184,6 +138,73 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
         return set;
     }
 
+    private static void processIdentity(EconomicSet<LocationIdentity> currentState, LocationIdentity identity) {
+        if (identity.isMutable()) {
+            currentState.add(identity);
+        }
+    }
+
+    @SuppressWarnings("try")
+    public static TornadoFloatingReadReplacement.MemoryMapImpl mergeMemoryMaps(AbstractMergeNode merge, List<? extends MemoryMap> states) {
+        TornadoFloatingReadReplacement.MemoryMapImpl newState = new TornadoFloatingReadReplacement.MemoryMapImpl();
+
+        EconomicSet<LocationIdentity> keys = EconomicSet.create(Equivalence.DEFAULT);
+        for (MemoryMap other : states) {
+            keys.addAll(other.getLocations());
+        }
+        assert checkNoImmutableLocations(keys);
+
+        try (DebugCloseable position = merge.withNodeSourcePosition()) {
+            for (LocationIdentity key : keys) {
+                int mergedStatesCount = 0;
+                boolean isPhi = false;
+                MemoryKill merged = null;
+                for (MemoryMap state : states) {
+                    MemoryKill last = state.getLastLocationAccess(key);
+                    if (isPhi) {
+                        // Fortify: Suppress Null Deference false positive (`isPhi == true` implies
+                        // `merged != null`)
+                        ((MemoryPhiNode) merged).addInput(ValueNodeInterface.asNode(last));
+                    } else {
+                        if (merged == last) {
+                            // nothing to do
+                        } else if (merged == null) {
+                            merged = last;
+                        } else {
+                            MemoryPhiNode phi = merge.graph().addWithoutUnique(new MemoryPhiNode(merge, key));
+                            for (int j = 0; j < mergedStatesCount; j++) {
+                                phi.addInput(ValueNodeInterface.asNode(merged));
+                            }
+                            phi.addInput(ValueNodeInterface.asNode(last));
+                            merged = phi;
+                            isPhi = true;
+                        }
+                    }
+                    mergedStatesCount++;
+                }
+                newState.getMap().put(key, merged);
+            }
+        }
+        return newState;
+
+    }
+
+    private static boolean checkNoImmutableLocations(EconomicSet<LocationIdentity> keys) {
+        keys.forEach(t -> {
+            assert t.isMutable();
+        });
+        return true;
+    }
+
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
+    }
+
+    @Override
+    public float codeSizeIncrease() {
+        return 1.50f;
+    }
+
     protected void processNode(FixedNode node, EconomicSet<LocationIdentity> currentState) {
         if (MemoryKill.isSingleMemoryKill(node)) {
             processIdentity(currentState, ((SingleMemoryKill) node).getKilledLocationIdentity());
@@ -195,13 +216,7 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
 
     }
 
-    private static void processIdentity(EconomicSet<LocationIdentity> currentState, LocationIdentity identity) {
-        if (identity.isMutable()) {
-            currentState.add(identity);
-        }
-    }
-
-    protected void processBlock(Block b, EconomicSet<LocationIdentity> currentState) {
+    protected void processBlock(HIRBlock b, EconomicSet<LocationIdentity> currentState) {
         for (FixedNode n : b.getNodes()) {
             processNode(n, currentState);
         }
@@ -215,11 +230,11 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
         }
 
         result = EconomicSet.create(Equivalence.DEFAULT);
-        for (Loop<Block> inner : loop.getChildren()) {
+        for (Loop<HIRBlock> inner : loop.getChildren()) {
             result.addAll(processLoop((HIRLoop) inner, modifiedInLoops));
         }
 
-        for (Block b : loop.getBlocks()) {
+        for (HIRBlock b : loop.getBlocks()) {
             if (b.getLoop() == loop) {
                 processBlock(b, result);
             }
@@ -264,64 +279,54 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
         graphState.setAfterStage(GraphState.StageFlag.FLOATING_READS);
     }
 
-    @SuppressWarnings("try")
-    public static TornadoFloatingReadReplacement.MemoryMapImpl mergeMemoryMaps(AbstractMergeNode merge, List<? extends MemoryMap> states) {
-        TornadoFloatingReadReplacement.MemoryMapImpl newState = new TornadoFloatingReadReplacement.MemoryMapImpl();
+    public static class MemoryMapImpl implements MemoryMap {
 
-        EconomicSet<LocationIdentity> keys = EconomicSet.create(Equivalence.DEFAULT);
-        for (MemoryMap other : states) {
-            keys.addAll(other.getLocations());
+        private final EconomicMap<LocationIdentity, MemoryKill> lastMemorySnapshot;
+
+        public MemoryMapImpl(TornadoFloatingReadReplacement.MemoryMapImpl memoryMap) {
+            lastMemorySnapshot = EconomicMap.create(Equivalence.DEFAULT, memoryMap.lastMemorySnapshot);
         }
-        assert checkNoImmutableLocations(keys);
 
-        try (DebugCloseable position = merge.withNodeSourcePosition()) {
-            for (LocationIdentity key : keys) {
-                int mergedStatesCount = 0;
-                boolean isPhi = false;
-                MemoryKill merged = null;
-                for (MemoryMap state : states) {
-                    MemoryKill last = state.getLastLocationAccess(key);
-                    if (isPhi) {
-                        // Fortify: Suppress Null Deference false positive (`isPhi == true` implies
-                        // `merged != null`)
-                        ((MemoryPhiNode) merged).addInput(ValueNodeUtil.asNode(last));
-                    } else {
-                        if (merged == last) {
-                            // nothing to do
-                        } else if (merged == null) {
-                            merged = last;
-                        } else {
-                            MemoryPhiNode phi = merge.graph().addWithoutUnique(new MemoryPhiNode(merge, key));
-                            for (int j = 0; j < mergedStatesCount; j++) {
-                                phi.addInput(ValueNodeUtil.asNode(merged));
-                            }
-                            phi.addInput(ValueNodeUtil.asNode(last));
-                            merged = phi;
-                            isPhi = true;
-                        }
-                    }
-                    mergedStatesCount++;
+        public MemoryMapImpl(StartNode start) {
+            this();
+            lastMemorySnapshot.put(any(), start);
+        }
+
+        public MemoryMapImpl() {
+            lastMemorySnapshot = EconomicMap.create(Equivalence.DEFAULT);
+        }
+
+        @Override
+        public MemoryKill getLastLocationAccess(LocationIdentity locationIdentity) {
+            MemoryKill lastLocationAccess;
+            if (locationIdentity.isImmutable()) {
+                return null;
+            } else {
+                lastLocationAccess = lastMemorySnapshot.get(locationIdentity);
+                if (lastLocationAccess == null) {
+                    lastLocationAccess = lastMemorySnapshot.get(any());
+                    assert lastLocationAccess != null;
                 }
-                newState.getMap().put(key, merged);
+                return lastLocationAccess;
             }
         }
-        return newState;
 
-    }
+        @Override
+        public Iterable<LocationIdentity> getLocations() {
+            return lastMemorySnapshot.getKeys();
+        }
 
-    private static boolean checkNoImmutableLocations(EconomicSet<LocationIdentity> keys) {
-        keys.forEach(t -> {
-            assert t.isMutable();
-        });
-        return true;
+        public EconomicMap<LocationIdentity, MemoryKill> getMap() {
+            return lastMemorySnapshot;
+        }
     }
 
     public static class FloatingReadClosure extends ReentrantNodeIterator.NodeIteratorClosure<TornadoFloatingReadReplacement.MemoryMapImpl> {
 
         private final EconomicMap<LoopBeginNode, EconomicSet<LocationIdentity>> modifiedInLoops;
+        private final EconomicSet<ValueNode> initMemory;
         private boolean createFloatingReads;
         private boolean createMemoryMapNodes;
-        private final EconomicSet<ValueNode> initMemory;
 
         public FloatingReadClosure(EconomicMap<LoopBeginNode, EconomicSet<LocationIdentity>> modifiedInLoops, boolean createFloatingReads, boolean createMemoryMapNodes,
                 EconomicSet<ValueNode> initMemory) {
@@ -329,6 +334,84 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
             this.createFloatingReads = createFloatingReads;
             this.createMemoryMapNodes = createMemoryMapNodes;
             this.initMemory = initMemory;
+        }
+
+        /**
+         * Improve the memory graph by re-wiring all usages of a
+         * {@link MemoryAnchorNode} to the real last access location.
+         */
+        private static void processAnchor(MemoryAnchorNode anchor, TornadoFloatingReadReplacement.MemoryMapImpl state) {
+            for (Node node : anchor.usages().snapshot()) {
+                if (node instanceof MemoryAccess) {
+                    MemoryAccess access = (MemoryAccess) node;
+                    if (access.getLastLocationAccess() == anchor) {
+                        MemoryKill lastLocationAccess = state.getLastLocationAccess(access.getLocationIdentity());
+                        assert lastLocationAccess != null;
+                        access.setLastLocationAccess(lastLocationAccess);
+                    }
+                }
+            }
+
+            if (anchor.hasNoUsages()) {
+                anchor.graph().removeFixed(anchor);
+            }
+        }
+
+        private static void processAccess(MemoryAccess access, TornadoFloatingReadReplacement.MemoryMapImpl state) {
+            LocationIdentity locationIdentity = access.getLocationIdentity();
+            if (!locationIdentity.equals(LocationIdentity.any()) && locationIdentity.isMutable()) {
+                MemoryKill lastLocationAccess = state.getLastLocationAccess(locationIdentity);
+                access.setLastLocationAccess(lastLocationAccess);
+            }
+        }
+
+        /**
+         * @param accessNode
+         *            is a {@link FixedNode} that will be replaced by a
+         *            {@link FloatingNode}. This method checks if the node that is going
+         *            to be replaced has an {@link SPIRVBarrierNode} as next.
+         */
+        private static boolean isNextNodeBarrierNode(FloatableAccessNode accessNode) {
+            return (accessNode.next() instanceof SPIRVBarrierNode);
+        }
+
+        /**
+         * @param nextNode
+         *            is a {@link FixedNode} that will be replaced by a
+         *            {@link FloatingNode}. This method removes the redundant
+         *            {@link SPIRVBarrierNode}.
+         */
+        private static void replaceRedundantBarrierNode(Node nextNode) {
+            nextNode.replaceAtUsages(nextNode.successors().first());
+            Node predecessor = nextNode.predecessor();
+            Node fixedWithNextNode = nextNode.successors().first();
+            fixedWithNextNode.replaceAtPredecessor(null);
+            predecessor.replaceFirstSuccessor(nextNode, fixedWithNextNode);
+        }
+
+        private static boolean shouldBeFloatingRead(FloatableAccessNode accessNode) {
+            boolean shouldReadFloat = true;
+            boolean isVectorLoad = accessNode.usages().filter(VectorLoadElementNode.class).isNotEmpty();
+            boolean hasPrivateArrays = accessNode.graph().getNodes().filter(FixedArrayNode.class).isNotEmpty();
+
+            for (Node node : accessNode.inputs().snapshot()) {
+                if (node instanceof OffsetAddressNode) {
+                    if (node.inputs().filter(FixedArrayNode.class).isNotEmpty() || hasPrivateArrays && !isVectorLoad) {
+                        shouldReadFloat = false;
+                    }
+                }
+            }
+            return shouldReadFloat;
+        }
+
+        @SuppressWarnings("try")
+        private static void createMemoryPhi(LoopBeginNode loop, TornadoFloatingReadReplacement.MemoryMapImpl initialState, EconomicMap<LocationIdentity, MemoryPhiNode> phis,
+                LocationIdentity location) {
+            try (DebugCloseable position = loop.withNodeSourcePosition()) {
+                MemoryPhiNode phi = loop.graph().addWithoutUnique(new MemoryPhiNode(loop, location));
+                phi.addInput(ValueNodeInterface.asNode(initialState.getLastLocationAccess(location)));
+                phis.put(location, phi);
+            }
         }
 
         @Override
@@ -371,35 +454,6 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
             return state;
         }
 
-        /**
-         * Improve the memory graph by re-wiring all usages of a
-         * {@link MemoryAnchorNode} to the real last access location.
-         */
-        private static void processAnchor(MemoryAnchorNode anchor, TornadoFloatingReadReplacement.MemoryMapImpl state) {
-            for (Node node : anchor.usages().snapshot()) {
-                if (node instanceof MemoryAccess) {
-                    MemoryAccess access = (MemoryAccess) node;
-                    if (access.getLastLocationAccess() == anchor) {
-                        MemoryKill lastLocationAccess = state.getLastLocationAccess(access.getLocationIdentity());
-                        assert lastLocationAccess != null;
-                        access.setLastLocationAccess(lastLocationAccess);
-                    }
-                }
-            }
-
-            if (anchor.hasNoUsages()) {
-                anchor.graph().removeFixed(anchor);
-            }
-        }
-
-        private static void processAccess(MemoryAccess access, TornadoFloatingReadReplacement.MemoryMapImpl state) {
-            LocationIdentity locationIdentity = access.getLocationIdentity();
-            if (!locationIdentity.equals(LocationIdentity.any()) && locationIdentity.isMutable()) {
-                MemoryKill lastLocationAccess = state.getLastLocationAccess(locationIdentity);
-                access.setLastLocationAccess(lastLocationAccess);
-            }
-        }
-
         private void processCheckpoint(SingleMemoryKill checkpoint, TornadoFloatingReadReplacement.MemoryMapImpl state) {
             processIdentity(checkpoint.getKilledLocationIdentity(), checkpoint, state);
         }
@@ -427,30 +481,6 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
             }
         }
 
-        /**
-         * @param accessNode
-         *            is a {@link FixedNode} that will be replaced by a
-         *            {@link FloatingNode}. This method checks if the node that is going
-         *            to be replaced has an {@link SPIRVBarrierNode} as next.
-         */
-        private static boolean isNextNodeBarrierNode(FloatableAccessNode accessNode) {
-            return (accessNode.next() instanceof SPIRVBarrierNode);
-        }
-
-        /**
-         * @param nextNode
-         *            is a {@link FixedNode} that will be replaced by a
-         *            {@link FloatingNode}. This method removes the redundant
-         *            {@link SPIRVBarrierNode}.
-         */
-        private static void replaceRedundantBarrierNode(Node nextNode) {
-            nextNode.replaceAtUsages(nextNode.successors().first());
-            Node predecessor = nextNode.predecessor();
-            Node fixedWithNextNode = nextNode.successors().first();
-            fixedWithNextNode.replaceAtPredecessor(null);
-            predecessor.replaceFirstSuccessor(nextNode, fixedWithNextNode);
-        }
-
         @SuppressWarnings("try")
         private void processFloatable(FloatableAccessNode accessNode, TornadoFloatingReadReplacement.MemoryMapImpl state) {
             StructuredGraph graph = accessNode.graph();
@@ -473,21 +503,6 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
                     graph.replaceFixedWithFloating(accessNode, floatingNode);
                 }
             }
-        }
-
-        private static boolean shouldBeFloatingRead(FloatableAccessNode accessNode) {
-            boolean shouldReadFloat = true;
-            boolean isVectorLoad = accessNode.usages().filter(VectorLoadElementNode.class).isNotEmpty();
-            boolean hasPrivateArrays = accessNode.graph().getNodes().filter(FixedArrayNode.class).isNotEmpty();
-
-            for (Node node : accessNode.inputs().snapshot()) {
-                if (node instanceof OffsetAddressNode) {
-                    if (node.inputs().filter(FixedArrayNode.class).isNotEmpty() || hasPrivateArrays && !isVectorLoad) {
-                        shouldReadFloat = false;
-                    }
-                }
-            }
-            return shouldReadFloat;
         }
 
         @Override
@@ -524,20 +539,10 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
                 while (phiCursor.advance()) {
                     LocationIdentity key = phiCursor.getKey();
                     PhiNode phi = phiCursor.getValue();
-                    phi.initializeValueAt(endIndex, ValueNodeUtil.asNode(endStateCursor.getValue().getLastLocationAccess(key)));
+                    phi.initializeValueAt(endIndex, ValueNodeInterface.asNode(endStateCursor.getValue().getLastLocationAccess(key)));
                 }
             }
             return loopInfo.exitStates;
-        }
-
-        @SuppressWarnings("try")
-        private static void createMemoryPhi(LoopBeginNode loop, TornadoFloatingReadReplacement.MemoryMapImpl initialState, EconomicMap<LocationIdentity, MemoryPhiNode> phis,
-                LocationIdentity location) {
-            try (DebugCloseable position = loop.withNodeSourcePosition()) {
-                MemoryPhiNode phi = loop.graph().addWithoutUnique(new MemoryPhiNode(loop, location));
-                phi.addInput(ValueNodeUtil.asNode(initialState.getLastLocationAccess(location)));
-                phis.put(location, phi);
-            }
         }
     }
 }

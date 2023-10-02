@@ -2,9 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
- * School of Engineering, The University of Manchester. All rights reserved.
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2023 APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -21,8 +19,6 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.runtime.common;
@@ -47,13 +43,22 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.List;
+
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.loop.BasicInductionVariable;
+import org.graalvm.compiler.nodes.loop.LoopEx;
+import org.graalvm.compiler.nodes.loop.LoopsData;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Signature;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 
-public class RuntimeUtilities {
+public final class RuntimeUtilities {
 
     public static final int ONE_GIGABYTE = 1 * 1024 * 1024 * 1024;
     public static final int ONE_MEGABYTE = 1 * 1024 * 1024;
@@ -61,6 +66,9 @@ public class RuntimeUtilities {
 
     public static final String FPGA_OUTPUT_FILENAME = "outputFPGA.log";
     public static final String FPGA_ERROR_FILENAME = "errorFPGA.log";
+
+    private RuntimeUtilities() {
+    }
 
     public static long parseSize(String size) {
         if (size.endsWith("B")) {
@@ -81,17 +89,14 @@ public class RuntimeUtilities {
     }
 
     /**
-     * Convert byte sizes into human readable format Based on code from
-     *
-     * @see <a href=http://stackoverflow.com/questions/3758606/how-to-convert
-     *      -byte-size-into-human-readable-format-in-java >Reference to
-     *      StackOverflow</a>
-     *
+     * Convert byte sizes into human-readable format Based on code from.
      *
      * @param bytes
      * @param si
-     *
      * @return humanReadableByteCount
+     * @see <a href=http://stackoverflow.com/questions/3758606/how-to-convert
+     *      -byte-size-into-human-readable-format-in-java >Reference to
+     *      StackOverflow</a>
      */
     public static String humanReadableByteCount(long bytes, boolean si) {
         final int unit = si ? 1000 : 1024;
@@ -144,10 +149,9 @@ public class RuntimeUtilities {
     }
 
     /**
-     * Returns true if object is a boxed type
+     * Returns true if object is a boxed type.
      *
      * @param obj
-     *
      * @return
      */
     public static boolean isBoxedPrimitive(final Object obj) {
@@ -175,11 +179,10 @@ public class RuntimeUtilities {
     }
 
     /**
-     * Returns true if object is a boxed type
+     * Returns true if object is a boxed type.
      *
      * @param klass
      *            Class to check is boxed type.
-     *
      * @return boolean
      */
     public static boolean isBoxedPrimitiveClass(final Class<?> klass) {
@@ -207,10 +210,9 @@ public class RuntimeUtilities {
     }
 
     /**
-     * Returns true if object is a boxed type
+     * Returns true if object is a boxed type.
      *
      * @param clazz
-     *
      * @return
      */
     public static Class<?> toUnboxedPrimitiveClass(final Class<?> clazz) {
@@ -238,11 +240,10 @@ public class RuntimeUtilities {
     }
 
     /**
-     * determines whether a given array is composed of primitives or objects
+     * determines whether a given array is composed of primitives or objects.
      *
      * @param type
      *            type to check
-     *
      * @return true if the array is composed of a primitive type
      */
     public static boolean isPrimitiveArray(final Class<?> type) {
@@ -353,6 +354,35 @@ public class RuntimeUtilities {
         return sb.toString();
     }
 
+    /**
+     * It prints the induction variables for counted loops in the given
+     * StructuredGraph. This method can be used for post-processing parallel loops
+     * with identify information for the induction variables.
+     *
+     * @param graph
+     *            The StructuredGraph to analyze and print induction variables in
+     *            the graph.
+     */
+    private static void printInductionVariables(StructuredGraph graph) {
+        final LoopsData data = new TornadoLoopsData(graph);
+        data.detectCountedLoops();
+
+        final List<LoopEx> loops = data.outerFirst();
+
+        List<ParallelRangeNode> parRanges = graph.getNodes().filter(ParallelRangeNode.class).snapshot();
+        for (LoopEx loop : loops) {
+            for (ParallelRangeNode parRange : parRanges) {
+                for (Node n : parRange.offset().usages()) {
+                    if (loop.getInductionVariables().containsKey(n)) {
+                        BasicInductionVariable iv = (BasicInductionVariable) loop.getInductionVariables().get(n);
+                        System.out.printf("[%d] parallel loop: %s -> init=%s, cond=%s, stride=%s, op=%s\n", parRange.index(), loop.loopBegin(), parRange.offset().value(), parRange.value(),
+                                parRange.stride(), iv.getOp());
+                    }
+                }
+            }
+        }
+    }
+
     public static boolean ifFileExists(File fileName) {
         return fileName.exists();
     }
@@ -377,8 +407,8 @@ public class RuntimeUtilities {
 
     public static void systemCall(String[] command, boolean printStandardOutput, String loggingDirectory) throws IOException {
         String stdOutput;
-        StringBuffer standardOutput = new StringBuffer();
-        StringBuffer errorOutput = new StringBuffer();
+        StringBuilder standardOutput = new StringBuilder();
+        StringBuilder errorOutput = new StringBuilder();
         final String lineSeparator = System.lineSeparator();
 
         try {
@@ -387,17 +417,17 @@ public class RuntimeUtilities {
 
             BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
             BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-            standardOutput.append("Standard output:" + lineSeparator);
+            standardOutput.append("Standard output:").append(lineSeparator);
             String fullCommand = Arrays.toString(command);
-            standardOutput.append("Command: " + fullCommand + lineSeparator + lineSeparator);
+            standardOutput.append("Command: ").append(fullCommand).append(lineSeparator).append(lineSeparator);
             while ((stdOutput = stdInput.readLine()) != null) {
-                standardOutput.append(stdOutput + lineSeparator);
+                standardOutput.append(stdOutput).append(lineSeparator);
             }
             standardOutput.append("--------------------------------------------------------------------\n");
 
-            errorOutput.append("Standard error (if any) of the command (" + Arrays.toString(command) + "):\n");
+            errorOutput.append("Standard error (if any) of the command (").append(Arrays.toString(command)).append("):\n");
             while ((stdOutput = stdError.readLine()) != null) {
-                errorOutput.append(stdOutput + lineSeparator);
+                errorOutput.append(stdOutput).append(lineSeparator);
             }
             errorOutput.append("--------------------------------------------------------------------\n");
 
@@ -451,8 +481,8 @@ public class RuntimeUtilities {
     public static String getTornadoInstanceIP() {
         String localIP = null;
         try {
-            InetAddress IP = InetAddress.getLocalHost();
-            localIP = IP.getHostAddress();
+            InetAddress ip = InetAddress.getLocalHost();
+            localIP = ip.getHostAddress();
         } catch (UnknownHostException e) {
             System.out.println("Exception occurred" + e.getMessage());
         }
@@ -466,8 +496,5 @@ public class RuntimeUtilities {
         } catch (IOException e) {
             throw new TornadoRuntimeException("JSon profiler file cannot be append");
         }
-    }
-
-    private RuntimeUtilities() {
     }
 }

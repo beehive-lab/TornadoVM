@@ -42,31 +42,6 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
  */
 public abstract class TornadoBufferProvider {
 
-    public static class BufferInfo {
-        public final long buffer;
-        public final long size;
-
-        public BufferInfo(long buffer, long size) {
-            this.buffer = buffer;
-            this.size = size;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o)
-                return true;
-            if (!(o instanceof BufferInfo))
-                return false;
-            BufferInfo that = (BufferInfo) o;
-            return buffer == that.buffer && size == that.size;
-        }
-
-        @Override
-        public int hashCode() {
-            return (int) buffer;
-        }
-    }
-
     protected final TornadoDeviceContext deviceContext;
     protected final ArrayList<BufferInfo> freeBuffers;
     protected final ArrayList<BufferInfo> usedBuffers;
@@ -205,5 +180,32 @@ public abstract class TornadoBufferProvider {
 
     public void resetBuffers() {
         freeBuffers(DEVICE_AVAILABLE_MEMORY);
+    }
+
+    public static class BufferInfo {
+        public final long buffer;
+        public final long size;
+
+        public BufferInfo(long buffer, long size) {
+            this.buffer = buffer;
+            this.size = size;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof BufferInfo)) {
+                return false;
+            }
+            BufferInfo that = (BufferInfo) o;
+            return buffer == that.buffer && size == that.size;
+        }
+
+        @Override
+        public int hashCode() {
+            return (int) buffer;
+        }
     }
 }

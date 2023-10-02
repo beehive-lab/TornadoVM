@@ -46,11 +46,14 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AbstractInstruction;
 
+/**
+ * OpenCL Code Generation for all control-flow constructs.
+ */
 public class OCLControlFlow {
 
-    protected static abstract class AbstractBlockEndOp extends AbstractInstruction implements BlockEndOp {
+    protected abstract static class AbstractBlockEndOp extends AbstractInstruction implements BlockEndOp {
 
-        public AbstractBlockEndOp(LIRInstructionClass<? extends AbstractInstruction> type) {
+        protected AbstractBlockEndOp(LIRInstructionClass<? extends AbstractInstruction> type) {
             super(type);
         }
     }

@@ -48,9 +48,24 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  * </code>
  */
 public class Mandelbrot {
-
+    // CHECKSTYLE:OFF
     public static final int SIZE = 256;
     public static final boolean USE_TORNADO = true;
+
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Mandelbrot Example within Tornado");
+
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent event) {
+                System.exit(0);
+            }
+        });
+
+        frame.add(new MandelbrotImage());
+        frame.pack();
+        frame.setVisible(true);
+    }
 
     @SuppressWarnings("serial")
     public static class MandelbrotImage extends Component {
@@ -183,19 +198,5 @@ public class Mandelbrot {
             }
         }
     }
-
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("Mandelbrot Example within Tornado");
-
-        frame.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent event) {
-                System.exit(0);
-            }
-        });
-
-        frame.add(new MandelbrotImage());
-        frame.pack();
-        frame.setVisible(true);
-    }
 }
+// CHECKSTYLE:ON

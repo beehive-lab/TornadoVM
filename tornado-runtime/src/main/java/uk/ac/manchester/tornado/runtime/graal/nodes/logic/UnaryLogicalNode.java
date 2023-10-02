@@ -56,7 +56,7 @@ public abstract class UnaryLogicalNode extends LogicNode implements IterableNode
         builder.setResult(this, result);
     }
 
-    abstract public Value generate(LIRGeneratorTool gen, Value x);
+    public abstract Value generate(LIRGeneratorTool gen, Value x);
 
     @Override
     public Node canonical(CanonicalizerTool tool, LogicNode forValue) {

@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.lir;
 
-import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
+import org.graalvm.compiler.core.common.cfg.BasicBlock;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.LabelRef;
@@ -72,7 +72,7 @@ public class SPIRVControlFlow {
 
         // We only declare the IDs
         protected SPIRVId getIdForBranch(LabelRef ref, SPIRVAssembler asm) {
-            AbstractBlockBase<?> targetBlock = ref.getTargetBlock();
+            BasicBlock<?> targetBlock = ref.getTargetBlock();
             String blockName = targetBlock.toString();
             SPIRVId branch = asm.getLabel(blockName);
             if (branch == null) {
@@ -143,16 +143,6 @@ public class SPIRVControlFlow {
             SPIRVId falseBranch = getIdForBranch(lirFalseBlock, asm);
 
             Logger.traceCodeGen(Logger.BACKEND.SPIRV, "emit SPIRVOpBranchConditional: " + condition + "? " + lirTrueBlock + ":" + lirFalseBlock);
-
-            SPIRVId bool = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_BOOL);
-            // SPIRVId resultLoad = asm.module.getNextId();
-            //
-            // asm.currentBlockScope().add(new SPIRVOpLoad( //
-            // bool, //
-            // resultLoad, //
-            // conditionId, //
-            // new SPIRVOptionalOperand<>(SPIRVMemoryAccess.Aligned(new
-            // SPIRVLiteralInteger(condition.getPlatformKind().getSizeInBytes())))));
 
             asm.currentBlockScope().add(new SPIRVOpBranchConditional( //
                     conditionId, //

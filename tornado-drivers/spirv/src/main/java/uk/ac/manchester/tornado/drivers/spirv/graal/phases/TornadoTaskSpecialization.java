@@ -30,6 +30,7 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContex
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
@@ -38,6 +39,7 @@ import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.LogicConstantNode;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
@@ -68,7 +70,7 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeReplacement
 public class TornadoTaskSpecialization extends BasePhase<TornadoHighTierContext> {
 
     private static final int MAX_ITERATIONS = 15;
-
+    private static final String WARNING_GRID_SCHEDULER_DYNAMIC_LOOP_BOUNDS = "[TornadoVM] Warning: The loop bounds will be configured by the GridScheduler. Check the grid by using the flag --threadInfo.";
     private final CanonicalizerPhase canonicalizer;
     private final TornadoValueTypeReplacement valueTypeReplacement;
     private final DeadCodeEliminationPhase deadCodeElimination;
@@ -76,10 +78,7 @@ public class TornadoTaskSpecialization extends BasePhase<TornadoHighTierContext>
     private long batchThreads;
     private boolean gridScheduling;
     private int index;
-
     private boolean printOnce = true;
-
-    private static final String WARNING_GRID_SCHEDULER_DYNAMIC_LOOP_BOUNDS = "[TornadoVM] Warning: The loop bounds will be configured by the GridScheduler. Check the grid by using the flag --threadInfo.";
 
     public TornadoTaskSpecialization(CanonicalizerPhase canonicalizer) {
         this.canonicalizer = canonicalizer;
@@ -103,11 +102,6 @@ public class TornadoTaskSpecialization extends BasePhase<TornadoHighTierContext>
             }
         }
         return f;
-    }
-
-    @FunctionalInterface
-    private interface FunctionThatThrows<T, R> {
-        R apply(T t) throws IllegalArgumentException, IllegalAccessException;
     }
 
     private <T> T lookup(Object object, TornadoTaskSpecialization.FunctionThatThrows<Object, T> function) throws IllegalArgumentException, IllegalAccessException {
@@ -253,6 +247,8 @@ public class TornadoTaskSpecialization extends BasePhase<TornadoHighTierContext>
             result = ConstantNode.forInt((int) obj);
         } else if (obj instanceof Double) {
             result = ConstantNode.forDouble((double) obj);
+        } else if (obj instanceof Long) {
+            result = ConstantNode.forLong((long) obj);
         } else {
             unimplemented("createConstantFromObject: %s", obj);
         }
@@ -295,6 +291,10 @@ public class TornadoTaskSpecialization extends BasePhase<TornadoHighTierContext>
                 evaluate(graph, n, args[parameterNode.index()]);
             });
         }
+    }
+
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
     }
 
     @Override
@@ -380,5 +380,10 @@ public class TornadoTaskSpecialization extends BasePhase<TornadoHighTierContext>
         Tornado.debug("TaskSpecialisation ran %d iterations", iterations);
         Tornado.debug("valid graph? %s", graph.verify());
         index = 0;
+    }
+
+    @FunctionalInterface
+    private interface FunctionThatThrows<T, R> {
+        R apply(T t) throws IllegalArgumentException, IllegalAccessException;
     }
 }

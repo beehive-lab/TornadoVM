@@ -119,7 +119,8 @@ public class DFTMT {
         String executionType = args[1];
         int iterations = Integer.parseInt(args[2]);
 
-        long end,start;
+        long end;
+        long start;
 
         TaskGraph graph;
         float[] inReal;

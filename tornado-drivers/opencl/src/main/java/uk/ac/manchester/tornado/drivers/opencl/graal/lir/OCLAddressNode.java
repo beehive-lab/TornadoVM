@@ -112,6 +112,7 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
 
     private void setMemoryAccess(NodeLIRBuilderTool gen, Value baseValue, Value indexValue, OCLLIRGenerator tool) {
         Variable addressValue;
+
         if (isLocalMemoryAccess() || isPrivateMemoryAccess()) {
             gen.setResult(this, new MemoryAccess(memoryRegister, baseValue, indexValue));
         } else {

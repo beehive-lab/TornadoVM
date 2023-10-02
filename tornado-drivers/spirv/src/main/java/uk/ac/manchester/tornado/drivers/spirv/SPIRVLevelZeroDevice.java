@@ -42,14 +42,12 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 public class SPIRVLevelZeroDevice extends SPIRVDevice {
 
     private final LevelZeroDevice device;
+    private final long totalMemorySize;
+    ZeAPIVersion apiVersion;
     private String deviceName;
     private ZeMemoryProperties[] memoryProperties;
     private ZeDeviceProperties deviceProperties;
     private ZeDeviceComputeProperties computeProperties;
-    ZeAPIVersion apiVersion;
-
-    private final long totalMemorySize;
-
     private boolean queriedSupportFP64;
     private ZeDeviceModuleProperties moduleProperties;
 
@@ -60,6 +58,12 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
         initDeviceProperties();
         initDeviceComputeProperties();
         initDriverVersion();
+    }
+
+    private static void errorLog(String method, int result) {
+        if (result != ZeResult.ZE_RESULT_SUCCESS) {
+            System.out.println("Error " + method);
+        }
     }
 
     private void initDeviceProperties() {
@@ -99,12 +103,6 @@ public class SPIRVLevelZeroDevice extends SPIRVDevice {
         ZeDriverHandle driverHandler = device.getDriverHandler();
         int result = driver.zeDriverGetApiVersion(driverHandler, 0, apiVersion);
         errorLog("zeDriverGetApiVersion", result);
-    }
-
-    private static void errorLog(String method, int result) {
-        if (result != ZeResult.ZE_RESULT_SUCCESS) {
-            System.out.println("Error " + method);
-        }
     }
 
     @Override

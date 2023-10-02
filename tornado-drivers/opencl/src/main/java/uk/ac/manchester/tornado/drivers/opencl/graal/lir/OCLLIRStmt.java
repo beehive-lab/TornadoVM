@@ -40,7 +40,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.meta.OCLMemorySpace;
 
 public class OCLLIRStmt {
 
-    protected static abstract class AbstractInstruction extends LIRInstruction {
+    protected abstract static class AbstractInstruction extends LIRInstruction {
 
         protected AbstractInstruction(LIRInstructionClass<? extends AbstractInstruction> c) {
             super(c);
@@ -840,13 +840,13 @@ public class OCLLIRStmt {
             asm.indent();
             asm.emit(op.toString());
             asm.emit("(");
-            asm.emitValue(crb, rhs);
+            asm.emitValueWithFormat(crb, rhs);
             asm.emit(", ");
-            asm.emitValue(crb, index);
+            asm.emit(OCLAssembler.getAbsoluteIndexFromValue(index));
             asm.emit(", ");
             cast.emit(crb, asm);
             asm.space();
-            address.emit(crb, asm);
+            address.emit(crb);
             asm.emit(")");
             asm.delimiter();
             asm.eol();

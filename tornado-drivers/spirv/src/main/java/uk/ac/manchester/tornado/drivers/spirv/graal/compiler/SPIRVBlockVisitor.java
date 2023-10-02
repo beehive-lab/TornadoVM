@@ -24,13 +24,13 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.graal.compiler;
 
-import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
+import org.graalvm.compiler.nodes.cfg.HIRBlock;
 
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.graal.asm.SPIRVAssembler;
 
-public class SPIRVBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block> {
+public class SPIRVBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlock> {
 
     private final SPIRVCompilationResultBuilder crb;
     private SPIRVAssembler assembler;
@@ -41,7 +41,7 @@ public class SPIRVBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Bloc
     }
 
     @Override
-    public Block enter(Block b) {
+    public HIRBlock enter(HIRBlock b) {
         Logger.traceCodeGen(Logger.BACKEND.SPIRV, "Entering block: " + b);
         if (!b.isLoopHeader() && b.getPredecessorCount() != 0) {
             // Do not generate a label for the first block. This was already generated in
@@ -57,7 +57,11 @@ public class SPIRVBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Bloc
     }
 
     @Override
-    public void exit(Block b, Block value) {
+    public void exit(HIRBlock b, HIRBlock value) {
+
+    }
+
+    public void exit(HIRBlock b) {
         Logger.traceCodeGen(Logger.BACKEND.SPIRV, "EXIT BLOCK: " + b);
         assembler.popScope();
     }

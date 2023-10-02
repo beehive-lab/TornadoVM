@@ -29,18 +29,18 @@ import java.util.List;
 
 public class CopyOutNode extends ContextOpNode {
 
+    private DependentReadNode value;
+
     public CopyOutNode(ContextNode context) {
         super(context);
     }
 
-    private DependentReadNode value;
+    public DependentReadNode getValue() {
+        return value;
+    }
 
     public void setValue(DependentReadNode object) {
         value = object;
-    }
-
-    public DependentReadNode getValue() {
-        return value;
     }
 
     @Override

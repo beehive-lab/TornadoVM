@@ -9,7 +9,7 @@ At first, **please check our code style and guidelines** for contributing to the
 All PRs must be open to merge into the `develop` branch of TornadoVM. Please, do not push the PR into `master`.
 
 All unittests must pass. Note that some unittests may fail depending on the driver and runtime used. 
-They are listed in a white-list in the `tornado-test.py` script. 
+They are listed in a white-list in the `tornado-test` script. 
 
 ```bash
 $ make tests

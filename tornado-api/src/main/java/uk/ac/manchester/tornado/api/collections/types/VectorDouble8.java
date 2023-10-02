@@ -38,27 +38,26 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.String.format;
 import static uk.ac.manchester.tornado.api.collections.types.Double8.add;
 import static uk.ac.manchester.tornado.api.collections.types.Double8.loadFromArray;
 
 import java.nio.DoubleBuffer;
+import java.util.Arrays;
 
 public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
 
+    private static final int ELEMENT_SIZE = 8;
     /**
-     * backing array
+     * backing array.
      */
     protected final double[] storage;
-
     /**
-     * number of elements in the storage
+     * number of elements in the storage.
      */
     private final int numElements;
-    private static final int ELEMENT_SIZE = 8;
 
     /**
-     * Creates a vector using the provided backing array
+     * Creates a vector using the provided backing array.
      *
      * @param numElements
      * @param array
@@ -69,14 +68,14 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     /**
-     * Creates a vector using the provided backing array
+     * Creates a vector using the provided backing array.
      */
     public VectorDouble8(double[] array) {
         this(array.length / ELEMENT_SIZE, array);
     }
 
     /**
-     * Creates an empty vector with
+     * Creates an empty vector with.
      *
      * @param numElements
      */
@@ -89,7 +88,7 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     /**
-     * Returns the float at the given index of this vector
+     * Returns the float at the given index of this vector.
      *
      * @param index
      * @return value
@@ -99,7 +98,7 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     /**
-     * Sets the float at the given index of this vector
+     * Sets the float at the given index of this vector.
      *
      * @param index
      * @param value
@@ -109,7 +108,7 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     /**
-     * Sets the elements of this vector to that of the provided vector
+     * Sets the elements of this vector to that of the provided vector.
      *
      * @param values
      */
@@ -120,7 +119,7 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     /**
-     * Sets the elements of this vector to that of the provided array
+     * Sets the elements of this vector to that of the provided array.
      *
      * @param values
      */
@@ -132,13 +131,11 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public void fill(float value) {
-        for (int i = 0; i < storage.length; i++) {
-            storage[i] = value;
-        }
+        Arrays.fill(storage, value);
     }
 
     /**
-     * Duplicates this vector
+     * Duplicates this vector.
      *
      * @return
      */

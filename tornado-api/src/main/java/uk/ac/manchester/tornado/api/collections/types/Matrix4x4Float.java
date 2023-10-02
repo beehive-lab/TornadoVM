@@ -42,28 +42,26 @@
 package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.FloatBuffer;
+import java.util.Arrays;
 
 public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
 
     /**
-     * backing array
-     */
-    protected final float[] storage;
-
-    /**
-     * number of elements in the storage
-     */
-    private static final int NUM_ELEMENTS = 16;
-
-    /**
-     * Number of rows
+     * Number of rows.
      */
     protected static final int ROWS = 4;
-
     /**
-     * Number of columns
+     * Number of columns.
      */
     protected static final int COLUMNS = 4;
+    /**
+     * number of elements in the storage.
+     */
+    private static final int NUM_ELEMENTS = 16;
+    /**
+     * backing array.
+     */
+    protected final float[] storage;
 
     public Matrix4x4Float() {
         this(new float[NUM_ELEMENTS]);
@@ -86,7 +84,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Returns the value
+     * Returns the value.
      *
      * @param i
      *            row index
@@ -99,7 +97,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Sets the value
+     * Sets the value.
      *
      * @param i
      *            row index
@@ -112,7 +110,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Returns the number of rows in this matrix
+     * Returns the number of rows in this matrix.
      *
      * @return int
      */
@@ -121,7 +119,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Returns the number of columns in the matrix
+     * Returns the number of columns in the matrix.
      *
      * @return int
      */
@@ -143,9 +141,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void fill(float value) {
-        for (int i = 0; i < storage.length; i++) {
-            storage[i] = value;
-        }
+        Arrays.fill(storage, value);
     }
 
     public Matrix4x4Float duplicate() {
@@ -177,7 +173,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Turns this matrix into an identity matrix
+     * Turns this matrix into an identity matrix.
      */
     public void identity() {
         fill(0f);

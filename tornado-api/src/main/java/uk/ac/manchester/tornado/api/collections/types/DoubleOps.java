@@ -95,14 +95,14 @@ public class DoubleOps {
     }
 
     public static double findMaxULP(double value, double expected) {
-        final double ULP = Math.ulp(expected);
+        final double ulp = Math.ulp(expected);
 
         if (value == expected) {
             return 0f;
         }
 
         final double absValue = Math.abs(value - expected);
-        return absValue / ULP;
+        return absValue / ulp;
     }
 
     public static boolean compare(double a, double b) {

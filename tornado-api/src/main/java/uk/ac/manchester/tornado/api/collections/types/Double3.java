@@ -51,17 +51,15 @@ import uk.ac.manchester.tornado.api.type.annotations.Vector;
 public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
 
     public static final Class<Double3> TYPE = Double3.class;
-
     /**
-     * backing array
+     * number of elements in the storage.
+     */
+    private static final int NUM_ELEMENTS = 3;
+    /**
+     * backing array.
      */
     @Payload
     final double[] storage;
-
-    /**
-     * number of elements in the storage
-     */
-    private static final int NUM_ELEMENTS = 3;
 
     public Double3(double[] storage) {
         this.storage = storage;
@@ -78,89 +76,6 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
         setZ(z);
     }
 
-    public double[] getArray() {
-        return storage;
-    }
-
-    public double get(int index) {
-        return storage[index];
-    }
-
-    public void set(int index, double value) {
-        storage[index] = value;
-    }
-
-    public void set(Double3 value) {
-        setX(value.getX());
-        setY(value.getY());
-        setZ(value.getZ());
-    }
-
-    public double getX() {
-        return get(0);
-    }
-
-    public double getY() {
-        return get(1);
-    }
-
-    public double getZ() {
-        return get(2);
-    }
-
-    public void setX(double value) {
-        set(0, value);
-    }
-
-    public void setY(double value) {
-        set(1, value);
-    }
-
-    public void setZ(double value) {
-        set(2, value);
-    }
-
-    public void setS0(double value) {
-        set(0, value);
-    }
-
-    public void setS1(double value) {
-        set(1, value);
-    }
-
-    public void setS2(double value) {
-        set(2, value);
-    }
-
-    /**
-     * Duplicates this vector
-     *
-     * @return {@link Double3}
-     */
-    public Double3 duplicate() {
-        final Double3 vector = new Double3();
-        vector.set(this);
-        return vector;
-    }
-
-    public String toString(String fmt) {
-        return String.format(fmt, getX(), getY(), getZ());
-    }
-
-    @Override
-    public String toString() {
-        return toString(DoubleOps.FMT_3);
-    }
-
-    /**
-     * Cast vector into a Double2
-     *
-     * @return {@link Double2}
-     */
-    public Double2 asDouble2() {
-        return new Double2(getX(), getY());
-    }
-
     static Double3 loadFromArray(final double[] array, int index) {
         final Double3 result = new Double3();
         result.setX(array[index]);
@@ -169,29 +84,8 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
         return result;
     }
 
-    void storeToArray(final double[] array, int index) {
-        array[index] = getX();
-        array[index + 1] = getY();
-        array[index + 2] = getZ();
-    }
-
-    @Override
-    public void loadFromBuffer(DoubleBuffer buffer) {
-        asBuffer().put(buffer);
-    }
-
-    @Override
-    public DoubleBuffer asBuffer() {
-        return DoubleBuffer.wrap(storage);
-    }
-
-    @Override
-    public int size() {
-        return NUM_ELEMENTS;
-    }
-
     /**
-     * * Operations on Double3 vectors
+     * * Operations on Double3 vectors.
      */
     public static Double3 add(Double3 a, Double3 b) {
         return new Double3(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ());
@@ -300,7 +194,7 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     /**
-     * Returns the vector length e.g. the sqrt of all elements squared
+     * Returns the vector length e.g. the sqrt of all elements squared.
      *
      * @return {@link double}
      */
@@ -318,5 +212,109 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
 
     public static double findULPDistance(Double3 a, Double3 b) {
         return TornadoMath.findULPDistance(a.asBuffer().array(), b.asBuffer().array());
+    }
+
+    public double[] getArray() {
+        return storage;
+    }
+
+    public double get(int index) {
+        return storage[index];
+    }
+
+    public void set(int index, double value) {
+        storage[index] = value;
+    }
+
+    public void set(Double3 value) {
+        setX(value.getX());
+        setY(value.getY());
+        setZ(value.getZ());
+    }
+
+    public double getX() {
+        return get(0);
+    }
+
+    public void setX(double value) {
+        set(0, value);
+    }
+
+    public double getY() {
+        return get(1);
+    }
+
+    public void setY(double value) {
+        set(1, value);
+    }
+
+    public double getZ() {
+        return get(2);
+    }
+
+    public void setZ(double value) {
+        set(2, value);
+    }
+
+    public void setS0(double value) {
+        set(0, value);
+    }
+
+    public void setS1(double value) {
+        set(1, value);
+    }
+
+    public void setS2(double value) {
+        set(2, value);
+    }
+
+    /**
+     * Duplicates this vector.
+     *
+     * @return {@link Double3}
+     */
+    public Double3 duplicate() {
+        final Double3 vector = new Double3();
+        vector.set(this);
+        return vector;
+    }
+
+    public String toString(String fmt) {
+        return String.format(fmt, getX(), getY(), getZ());
+    }
+
+    @Override
+    public String toString() {
+        return toString(DoubleOps.FMT_3);
+    }
+
+    /**
+     * Cast vector into a Double2.
+     *
+     * @return {@link Double2}
+     */
+    public Double2 asDouble2() {
+        return new Double2(getX(), getY());
+    }
+
+    void storeToArray(final double[] array, int index) {
+        array[index] = getX();
+        array[index + 1] = getY();
+        array[index + 2] = getZ();
+    }
+
+    @Override
+    public void loadFromBuffer(DoubleBuffer buffer) {
+        asBuffer().put(buffer);
+    }
+
+    @Override
+    public DoubleBuffer asBuffer() {
+        return DoubleBuffer.wrap(storage);
+    }
+
+    @Override
+    public int size() {
+        return NUM_ELEMENTS;
     }
 }

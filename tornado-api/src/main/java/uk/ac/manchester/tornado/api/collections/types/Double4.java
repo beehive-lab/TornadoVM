@@ -42,6 +42,7 @@
 package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.DoubleBuffer;
+import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
@@ -51,17 +52,15 @@ import uk.ac.manchester.tornado.api.type.annotations.Vector;
 public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
 
     public static final Class<Double4> TYPE = Double4.class;
-
     /**
-     * backing array
+     * number of elements in the storage.
+     */
+    private static final int NUM_ELEMENTS = 4;
+    /**
+     * backing array.
      */
     @Payload
     final double[] storage;
-
-    /**
-     * number of elements in the storage
-     */
-    private static final int NUM_ELEMENTS = 4;
 
     public Double4(double[] storage) {
         this.storage = storage;
@@ -71,104 +70,12 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
         this(new double[NUM_ELEMENTS]);
     }
 
-    public double get(int index) {
-        return storage[index];
-    }
-
-    public void set(int index, double value) {
-        storage[index] = value;
-    }
-
     public Double4(double x, double y, double z, double w) {
         this();
         setX(x);
         setY(y);
         setZ(z);
         setW(w);
-    }
-
-    public double[] getArray() {
-        return storage;
-    }
-
-    public void set(Double4 value) {
-        setX(value.getX());
-        setY(value.getY());
-        setZ(value.getZ());
-        setW(value.getW());
-    }
-
-    public double getX() {
-        return get(0);
-    }
-
-    public double getY() {
-        return get(1);
-    }
-
-    public double getZ() {
-        return get(2);
-    }
-
-    public double getW() {
-        return get(3);
-    }
-
-    public void setX(double value) {
-        set(0, value);
-    }
-
-    public void setY(double value) {
-        set(1, value);
-    }
-
-    public void setZ(double value) {
-        set(2, value);
-    }
-
-    public void setW(double value) {
-        set(3, value);
-    }
-
-    /**
-     * Duplicates this vector
-     *
-     * @return {@link Double4}
-     */
-    public Double4 duplicate() {
-        final Double4 vector = new Double4();
-        vector.set(this);
-        return vector;
-    }
-
-    public String toString(String fmt) {
-        return String.format(fmt, getX(), getY(), getZ(), getW());
-    }
-
-    @Override
-    public String toString() {
-        return toString(DoubleOps.FMT_4);
-    }
-
-    /**
-     * Cast vector into a Double2
-     *
-     * @return {@link Double2}
-     */
-    public Double2 asDouble2() {
-        return new Double2(getX(), getY());
-    }
-
-    public Double3 asDouble3() {
-        return new Double3(getX(), getY(), getZ());
-    }
-
-    public Double2 getLow() {
-        return asDouble2();
-    }
-
-    public Double2 getHigh() {
-        return new Double2(getZ(), getW());
     }
 
     static Double4 loadFromArray(final double[] array, int index) {
@@ -180,37 +87,8 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
         return result;
     }
 
-    void storeToArray(final double[] array, int index) {
-        array[index] = getX();
-        array[index + 1] = getY();
-        array[index + 2] = getZ();
-        array[index + 3] = getW();
-    }
-
-    @Override
-    public void loadFromBuffer(DoubleBuffer buffer) {
-        asBuffer().put(buffer);
-    }
-
-    @Override
-    public DoubleBuffer asBuffer() {
-        return DoubleBuffer.wrap(storage);
-    }
-
-    @Override
-    public int size() {
-        return NUM_ELEMENTS;
-    }
-
-    public void fill(double value) {
-        for (int i = 0; i < storage.length; i++) {
-            storage[i] = value;
-        }
-
-    }
-
     /**
-     * * Operations on Double4 vectors
+     * * Operations on Double4 vectors.
      */
 
     /*
@@ -319,7 +197,7 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     /**
-     * Returns the vector length e.g. the sqrt of all elements squared
+     * Returns the vector length e.g. the sqrt of all elements squared.
      *
      * @return {@link double}
      */
@@ -329,6 +207,124 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
 
     public static boolean isEqual(Double4 a, Double4 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+    }
+
+    public double get(int index) {
+        return storage[index];
+    }
+
+    public void set(int index, double value) {
+        storage[index] = value;
+    }
+
+    public double[] getArray() {
+        return storage;
+    }
+
+    public void set(Double4 value) {
+        setX(value.getX());
+        setY(value.getY());
+        setZ(value.getZ());
+        setW(value.getW());
+    }
+
+    public double getX() {
+        return get(0);
+    }
+
+    public void setX(double value) {
+        set(0, value);
+    }
+
+    public double getY() {
+        return get(1);
+    }
+
+    public void setY(double value) {
+        set(1, value);
+    }
+
+    public double getZ() {
+        return get(2);
+    }
+
+    public void setZ(double value) {
+        set(2, value);
+    }
+
+    public double getW() {
+        return get(3);
+    }
+
+    public void setW(double value) {
+        set(3, value);
+    }
+
+    /**
+     * Duplicates this vector.
+     *
+     * @return {@link Double4}
+     */
+    public Double4 duplicate() {
+        final Double4 vector = new Double4();
+        vector.set(this);
+        return vector;
+    }
+
+    public String toString(String fmt) {
+        return String.format(fmt, getX(), getY(), getZ(), getW());
+    }
+
+    @Override
+    public String toString() {
+        return toString(DoubleOps.FMT_4);
+    }
+
+    /**
+     * Cast vector into a Double2.
+     *
+     * @return {@link Double2}
+     */
+    public Double2 asDouble2() {
+        return new Double2(getX(), getY());
+    }
+
+    public Double3 asDouble3() {
+        return new Double3(getX(), getY(), getZ());
+    }
+
+    public Double2 getLow() {
+        return asDouble2();
+    }
+
+    public Double2 getHigh() {
+        return new Double2(getZ(), getW());
+    }
+
+    void storeToArray(final double[] array, int index) {
+        array[index] = getX();
+        array[index + 1] = getY();
+        array[index + 2] = getZ();
+        array[index + 3] = getW();
+    }
+
+    @Override
+    public void loadFromBuffer(DoubleBuffer buffer) {
+        asBuffer().put(buffer);
+    }
+
+    @Override
+    public DoubleBuffer asBuffer() {
+        return DoubleBuffer.wrap(storage);
+    }
+
+    @Override
+    public int size() {
+        return NUM_ELEMENTS;
+    }
+
+    public void fill(double value) {
+        Arrays.fill(storage, value);
     }
 
 }

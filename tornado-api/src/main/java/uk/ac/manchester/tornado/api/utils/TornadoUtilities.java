@@ -46,11 +46,15 @@ package uk.ac.manchester.tornado.api.utils;
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 
-public class TornadoUtilities {
+public final class TornadoUtilities {
 
     public static final int ONE_GIGABYTE = 1 * 1024 * 1024 * 1024;
     public static final int ONE_MEGABYTE = 1 * 1024 * 1024;
     public static final int ONE_KILOBYTE = 1 * 1024;
+
+    private TornadoUtilities() {
+
+    }
 
     public static long parseSize(String size) {
         if (size.endsWith("B")) {
@@ -73,7 +77,7 @@ public class TornadoUtilities {
     /**
      * Conversion from byte sizes into human readable format<br>
      * Based on code from http://stackoverflow.com/questions/3758606/how-to-convert
-     * -byte-size-into-human-readable-format-in-java
+     * -byte-size-into-human-readable-format-in-java.
      * <p>
      *
      * @param bytes
@@ -104,7 +108,7 @@ public class TornadoUtilities {
         return String.format("%.1f %sHz", freq / Math.pow(unit, exp), pre);
     }
 
-    public static final String formatBytes(final long bytes) {
+    public static String formatBytes(final long bytes) {
         String out = "";
 
         if (bytes >= ONE_GIGABYTE) {
@@ -119,7 +123,7 @@ public class TornadoUtilities {
         return out;
     }
 
-    public static final String formatBytesPerSecond(final double bytes) {
+    public static String formatBytesPerSecond(final double bytes) {
         String out = "";
 
         if (bytes >= ONE_GIGABYTE) {
@@ -135,14 +139,14 @@ public class TornadoUtilities {
     }
 
     /**
-     * Returns true if object is a boxed type
+     * Returns true if object is a boxed type.
      *
      * @param obj
      *            Object
      *
      * @return boolean
      */
-    public static final boolean isBoxedPrimitive(final Object obj) {
+    public static boolean isBoxedPrimitive(final Object obj) {
         boolean isBox = false;
 
         if (obj instanceof Boolean) {
@@ -167,14 +171,14 @@ public class TornadoUtilities {
     }
 
     /**
-     * Returns true if object is a boxed type
+     * Returns true if object is a boxed type.
      *
      * @param clazz
      *            Class
      *
      * @return boolean
      */
-    public static final boolean isBoxedPrimitiveClass(final Class<?> clazz) {
+    public static boolean isBoxedPrimitiveClass(final Class<?> clazz) {
         boolean isBox = false;
 
         if (clazz == Boolean.class) {
@@ -199,14 +203,14 @@ public class TornadoUtilities {
     }
 
     /**
-     * Returns true if object is a boxed type
+     * Returns true if object is a boxed type.
      *
      * @param clazz
      *            Class
      *
      * @return {@link Class<?>}
      */
-    public static final Class<?> toUnboxedPrimitiveClass(final Class<?> clazz) {
+    public static Class<?> toUnboxedPrimitiveClass(final Class<?> clazz) {
         Class<?> result = null;
 
         if (clazz == Boolean.class) {
@@ -231,14 +235,14 @@ public class TornadoUtilities {
     }
 
     /**
-     * determines whether a given array is composed of primitives or objects
+     * determines whether a given array is composed of primitives or objects.
      *
      * @param type
      *            type to check
      *
      * @return true if the array is composed of a primitive type
      */
-    public static final boolean isPrimitiveArray(final Class<?> type) {
+    public static boolean isPrimitiveArray(Class<?> type) {
         Class<?> componentType = type.getComponentType();
         while (componentType.isArray()) {
             componentType = componentType.getComponentType();
@@ -246,7 +250,7 @@ public class TornadoUtilities {
         return componentType.isPrimitive() || isBoxedPrimitive(componentType);
     }
 
-    public static void printBuffer(final ByteBuffer buffer) {
+    public static void printBuffer(ByteBuffer buffer) {
 
         System.out.printf("buffer : position=%d, remaining=%d, capacity=%d, limit=%d\n", buffer.position(), buffer.remaining(), buffer.capacity(), buffer.limit());
         System.out.printf("array  : length=%d, offset=%d\n", buffer.array().length, buffer.arrayOffset());
@@ -313,9 +317,5 @@ public class TornadoUtilities {
         } else {
             return isBoxedPrimitive(type);
         }
-    }
-
-    private TornadoUtilities() {
-
     }
 }

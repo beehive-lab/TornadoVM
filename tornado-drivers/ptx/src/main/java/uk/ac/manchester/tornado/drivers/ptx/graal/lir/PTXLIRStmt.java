@@ -24,26 +24,43 @@
 
 package uk.ac.manchester.tornado.drivers.ptx.graal.lir;
 
-import jdk.vm.ci.meta.Value;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.getFPURoundingMode;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.ASSIGN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.COMMA;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.CONVERT;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.CURLY_BRACKETS_CLOSE;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.CURLY_BRACKETS_OPEN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.DOT;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.GLOBAL_MEM_MODIFIER;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.MOVE;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.NEGATION;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.OP_GUARD;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.SPACE;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.SQUARE_BRACKETS_CLOSE;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.SQUARE_BRACKETS_OPEN;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.STMT_DELIMITER;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.TAB;
+import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.VECTOR;
+
+import java.nio.charset.StandardCharsets;
+
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
+
+import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.drivers.ptx.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler.PTXNullaryOp;
 import uk.ac.manchester.tornado.drivers.ptx.graal.compiler.PTXCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.ptx.graal.meta.PTXMemorySpace;
 
-import java.nio.charset.StandardCharsets;
-
-import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.getFPURoundingMode;
-import static uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants.*;
-
 public class PTXLIRStmt {
 
-    protected static abstract class AbstractInstruction extends LIRInstruction {
+    protected abstract static class AbstractInstruction extends LIRInstruction {
         protected AbstractInstruction(LIRInstructionClass<? extends AbstractInstruction> c) {
             super(c);
         }
@@ -60,14 +77,12 @@ public class PTXLIRStmt {
     public static class AssignStmt extends AbstractInstruction {
 
         public static final LIRInstructionClass<AssignStmt> TYPE = LIRInstructionClass.create(AssignStmt.class);
-
+        private final PTXKind lhsKind;
+        private final PTXKind rhsKind;
         @Def
         protected Value lhs;
         @Use
         protected Value rhs;
-
-        private final PTXKind lhsKind;
-        private final PTXKind rhsKind;
 
         public AssignStmt(Value lhs, Value rhs) {
             this(lhs, (PTXKind) lhs.getPlatformKind(), rhs, (PTXKind) rhs.getPlatformKind());
@@ -81,6 +96,10 @@ public class PTXLIRStmt {
             this.rhsKind = rhsKind;
         }
 
+        public static boolean shouldEmitMove(PTXKind lhsKind, PTXKind rhsKind) {
+            return lhsKind == rhsKind && !lhsKind.is8Bit();
+        }
+
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             if (rhs instanceof PTXLIROp) {
@@ -91,6 +110,25 @@ public class PTXLIRStmt {
                 PTXVectorSplit rhsVectorSplit = new PTXVectorSplit(rhsVar);
                 PTXVectorSplit lhsVectorSplit = new PTXVectorSplit(lhsVar);
                 PTXVectorAssign.doVectorToVectorAssign(asm, lhsVectorSplit, rhsVectorSplit);
+            } else if (rhs instanceof PTXArchitecture.PTXBuiltInRegister) {
+                asm.emitSymbol(TAB);
+                if (shouldEmitMove(lhsKind, rhsKind)) {
+                    asm.emit(MOVE + DOT + lhsKind.toString());
+                } else {
+                    asm.emit(CONVERT + DOT);
+                    if ((lhsKind.isFloating() || rhsKind.isFloating()) && getFPURoundingMode(lhsKind, rhsKind) != null) {
+                        asm.emit(getFPURoundingMode(lhsKind, rhsKind));
+                        asm.emitSymbol(DOT);
+                    }
+                    asm.emit(lhsKind.toString());
+                    asm.emitSymbol(DOT);
+                    asm.emit(rhsKind.toString());
+                }
+                asm.emitSymbol(TAB);
+                asm.emitValue(lhs);
+                asm.emitSymbol(COMMA + SPACE);
+                asm.emitBuiltIn((PTXArchitecture.PTXBuiltInRegister) rhs);
+
             } else {
                 asm.emitSymbol(TAB);
                 if (shouldEmitMove(lhsKind, rhsKind)) {
@@ -120,10 +158,6 @@ public class PTXLIRStmt {
 
         public Value getExpr() {
             return rhs;
-        }
-
-        public static boolean shouldEmitMove(PTXKind lhsKind, PTXKind rhsKind) {
-            return lhsKind == rhsKind && !lhsKind.is8Bit();
         }
     }
 
