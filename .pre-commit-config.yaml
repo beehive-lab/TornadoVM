@@ -23,6 +23,12 @@ repos:
         stages: [ commit ]
         language: python
         always_run: true
+      - id: maven-checkstyle
+        name: Run checkstyle on Java files ...
+        entry: make checkstyle
+        stages: [ commit ]
+        language: system
+        always_run: true
   - repo: https://github.com/ambv/black
     rev: stable
     hooks:
