@@ -1,0 +1,7 @@
+Requests>=2.31.0
+tqdm>=4.66.1
+urllib3>=1.26.5
+wget>=3.2
+black>=22.1.0
+rstcheck>=6.2.0
+pre-commit>=3.4.0
