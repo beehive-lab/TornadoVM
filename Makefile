@@ -13,7 +13,7 @@ graal-jdk-17-plus:
 	./bin/compile.sh graal-jdk-17-plus $(BACKENDS)
 
 ptx:
-	./bin/compile.sh jdk-11-plus BACKENDS=ptx,opencl
+	./bin/compile.sh jdk-17-plus BACKENDS=ptx,opencl
 
 spirv:
 	./bin/compile.sh jdk-17-plus BACKENDS=spirv,ptx,opencl

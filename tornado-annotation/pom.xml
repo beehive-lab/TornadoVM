@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
@@ -12,26 +12,6 @@
     <artifactId>tornado-annotation</artifactId>
     <name>tornado-annotation</name>
 
-    <profiles>
-        <!--        We are forced to duplicate this for the two different profiles -->
-        <profile>
-            <id>jdk-8</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>jvmci</groupId>
-                    <artifactId>api</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>jvmci</groupId>
-                    <artifactId>hotspot</artifactId>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
-
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -41,7 +21,7 @@
         <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm</artifactId>
-            <version>9.4</version>
+            <version>9.5</version>
         </dependency>
     </dependencies>
 

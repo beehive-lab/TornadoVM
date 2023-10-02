@@ -30,13 +30,14 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 
 public class TornadoVMConfig extends HotSpotVMConfigAccess {
 
-    private MetaAccessProvider metaAccessProvider;
-
+    public final int hubOffset = getFieldOffset("oopDesc::_metadata._klass", Integer.class, "Klass*");
     private final boolean useCompressedClassPointers = getFlag("UseCompressedClassPointers", Boolean.class);
     private final int arrayOopDescSize = getFieldValue("CompilerToVM::Data::sizeof_arrayOopDesc", Integer.class, "int");
-    public final int hubOffset = getFieldOffset("oopDesc::_metadata._klass", Integer.class, "Klass*");
     private final int narrowKlassSize = getFieldValue("CompilerToVM::Data::sizeof_narrowKlass", Integer.class, "int");
-    public final int instanceKlassFieldsOffset = getFieldOffset("InstanceKlass::_fields", Integer.class, "Array<u2>*");
+
+    private MetaAccessProvider metaAccessProvider;
+
+    private int fieldOffset = -1;
 
     public TornadoVMConfig(HotSpotVMConfigStore store, MetaAccessProvider metaAccessProvider) {
         super(store);
@@ -53,6 +54,19 @@ public class TornadoVMConfig extends HotSpotVMConfigAccess {
 
     public int getArrayIndexScale(JavaKind kind) {
         return metaAccessProvider.getArrayIndexScale(kind);
+    }
+
+    public int instanceKlassFieldsOffset() {
+        if (fieldOffset == -1) {
+            String javaVersionString = System.getProperty("java.version");
+            int javaVersion = Integer.parseInt(javaVersionString.split("\\.")[0]);
+            if (javaVersion <= 20) {
+                fieldOffset = getFieldOffset("InstanceKlass::_fields", Integer.class, "Array<u2>*");
+            } else {
+                fieldOffset = getFieldOffset("InstanceKlass::_fieldinfo_stream", Integer.class, "Array<u1>*");
+            }
+        }
+        return fieldOffset;
     }
 
 }
