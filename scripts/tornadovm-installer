@@ -39,7 +39,7 @@ except:
 
     Install the `pip3` tool on your system if necessary. 
     Also, you can install all packages required by scripts in this repo with the following command:
-        $ pip3 -r install bin/requirements.txt
+        $ pip3 install -r bin/requirements.txt
     """)
     exit()
 
