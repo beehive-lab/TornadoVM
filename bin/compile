@@ -5,7 +5,7 @@
 # This file is part of Tornado: A heterogeneous programming framework:
 # https://github.com/beehive-lab/tornadovm
 #
-# Copyright (c) 2022-2023, APT Group, Department of Computer Science,
+# Copyright (c) 2023, APT Group, Department of Computer Science,
 # School of Engineering, The University of Manchester. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -24,14 +24,14 @@
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
+import argparse
 import os
+import shutil
 import subprocess
 import sys
-import argparse
-import shutil
 
-import update_paths as updp
 import pull_graal_jars
+import update_paths as updp
 
 
 def check_java_version():
@@ -42,14 +42,13 @@ def check_java_version():
         str: The Java version information.
     """
     java_home = os.environ.get("JAVA_HOME")
-    if (java_home == None):
+    if java_home == None:
         print("JAVA_HOME not found.")
         sys.exit(-1)
     java_cmd = os.path.join(java_home, "bin", "java")
     java_version_output = subprocess.check_output(
         [java_cmd, "-version"], stderr=subprocess.STDOUT, universal_newlines=True
     )
-    java_version = java_version_output.splitlines()[0].split()[2].strip('"')
     return java_version_output
 
 
