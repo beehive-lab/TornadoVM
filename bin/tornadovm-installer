@@ -33,7 +33,7 @@ import install_python_modules as tornadoReq
 tornadoReq.check_python_dependencies()
 
 import wget
-import installerConfig as config
+import installer_config as config
 
 __DIRECTORY_DEPENDENCIES__ = "etc/dependencies"
 __VERSION__ = "v0.16-dev"

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3 
+#!/usr/bin/env python3
 
 #
 # This file is part of Tornado: A heterogeneous programming framework:
@@ -25,13 +25,15 @@
 
 import subprocess
 
+
 def check_python_dependencies():
     try:
-        import requests 
-        import tqdm 
+        import requests
+        import tqdm
         import urllib3
-        import wget 
+        import wget
     except:
         print("Installing dependencies")
-        subprocess.call(["pip3", "install", "-r", "bin/requirements.txt"], stderr=subprocess.DEVNULL) 
-
+        subprocess.call(
+            ["pip3", "install", "-r", "bin/requirements.txt"], stderr=subprocess.DEVNULL
+        )
