@@ -24,7 +24,7 @@
 package uk.ac.manchester.tornado.api.profiler;
 
 /**
- * Profile-type that helps to classify all timers
+ * Profile-type that helps to classify all timers.
  */
 public enum ProfilerType {
 

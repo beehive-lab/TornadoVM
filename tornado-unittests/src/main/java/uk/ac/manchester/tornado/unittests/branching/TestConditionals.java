@@ -505,25 +505,25 @@ public class TestConditionals extends TornadoTestBase {
 
     @Test
     public void testIntegerTestMove() {
-        final int N = 1024;
-        int[] output = new int[N * N];
-        int[] sequential = new int[N * N];
+        final int size = 1024;
+        int[] output = new int[size * size];
+        int[] sequential = new int[size * size];
 
         IntStream.range(0, sequential.length).sequential().forEach(i -> sequential[i] = i);
         IntStream.range(0, output.length).sequential().forEach(i -> output[i] = i);
 
         TaskGraph taskGraph = new TaskGraph("s0");
 
-        taskGraph.task("t0", TestConditionals::integerTestMove, output, N) //
+        taskGraph.task("t0", TestConditionals::integerTestMove, output, size) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        integerTestMove(sequential, N);
+        integerTestMove(sequential, size);
 
-        for (int i = 0; i < N * N; i++) {
+        for (int i = 0; i < size * size; i++) {
             assertEquals(sequential[i], output[i]);
         }
     }

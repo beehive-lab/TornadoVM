@@ -38,7 +38,6 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
-import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
 
 /**
  * <p>
@@ -49,7 +48,7 @@ import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurat
  * </code>
  */
 public class TestsVirtualLayer extends TornadoTestBase {
-
+    // CHECKSTYLE:OFF
     public static void accumulator(int[] a, int value) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] += value;
@@ -87,7 +86,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
     }
 
     /**
-     * Test there are at least two OpenCL devices available
+     * Test there are at least two OpenCL devices available.
      */
     @Test
     public void testDevices() {
@@ -397,5 +396,5 @@ public class TestsVirtualLayer extends TornadoTestBase {
             assertEquals(dataA[i], dataB[i]);
         }
     }
-
+    // CHECKSTYLE:ON
 }

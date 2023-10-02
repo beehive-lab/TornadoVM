@@ -45,7 +45,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 public class CodeGen extends TornadoTestBase {
 
-    public static void cascadeKernel(int grayIntegralImage[], int imageWidth, int imageHeight, int resultsXY[]) {
+    public static void cascadeKernel(int[] grayIntegralImage, int imageWidth, int imageHeight, int[] resultsXY) {
         for (@Parallel int y = 0; y < imageHeight; y++) {
             for (@Parallel int x = 0; x < imageWidth; x++) {
                 int gradient = grayIntegralImage[(y * imageWidth) + x];

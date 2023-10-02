@@ -44,7 +44,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </p>
  */
 public class TestExecutor extends TornadoTestBase {
-
+    // CHECKSTYLE:OFF
     @Test
     public void test01() {
         int numElements = 16;
@@ -178,8 +178,8 @@ public class TestExecutor extends TornadoTestBase {
         executorPlan.execute();
 
         // 8. We check for the result. It should be the same as in step 6.
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(INIT_A + INIT_B, c[i]);
+        for (int j : c) {
+            assertEquals(INIT_A + INIT_B, j);
         }
     }
 
@@ -228,9 +228,10 @@ public class TestExecutor extends TornadoTestBase {
         }
 
         // 8. We check for the result. It should be the same as in step 6.
-        for (int i = 0; i < a.length; i++) {
-            assertEquals(INIT_A + 2 * ITERATIONS, a[i]);
+        for (int j : a) {
+            assertEquals(INIT_A + 2 * ITERATIONS, j);
         }
 
     }
+    // CHECKSTYLE:ON
 }

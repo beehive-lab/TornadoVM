@@ -24,6 +24,7 @@
         <download.cmake>false</download.cmake>
         <jmh.version>1.29</jmh.version>
         <tornadojmhjar.name>jmhbenchmarks</tornadojmhjar.name>
+        <checkstyle.config.location>tornado-assembly/src/etc/checkstyle.xml</checkstyle.config.location>
     </properties>
 
     <profiles>
@@ -297,6 +298,19 @@
             </activation>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-checkstyle-plugin</artifactId>
+                        <version>3.3.0</version>
+                        <configuration>
+                            <consoleOutput>true</consoleOutput>
+                            <failsOnError>true</failsOnError>
+                            <linkXRef>false</linkXRef>
+                        </configuration>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
@@ -1920,6 +1934,11 @@
     </build>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.puppycrawl.tools</groupId>
+                <artifactId>checkstyle</artifactId>
+                <version>10.12.3</version>
+            </dependency>
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>

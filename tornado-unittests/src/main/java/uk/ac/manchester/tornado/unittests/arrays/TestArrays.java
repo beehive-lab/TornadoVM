@@ -43,6 +43,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </p>
  */
 public class TestArrays extends TornadoTestBase {
+    // CHECKSTYLE:OFF
 
     public static void addAccumulator(int[] a, int value) {
         for (@Parallel int i = 0; i < a.length; i++) {
@@ -463,4 +464,6 @@ public class TestArrays extends TornadoTestBase {
         assertEquals('d', a[4]);
         assertEquals('!', a[5]);
     }
+    // CHECKSTYLE:ON
+
 }

@@ -48,22 +48,20 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
 public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<FloatBuffer> {
     /**
-     * backing array
+     * Vector-width each position in the matrix.
+     */
+    private static final int VECTOR_ELEMENTS = 4;
+    /**
+     * backing array.
      */
     protected final float[] storage;
-
     /**
-     * number of elements in the storage
+     * number of elements in the storage.
      */
     private final int numElements;
 
     /**
-     * Vector-width each position in the matrix
-     */
-    private static final int VECTOR_ELEMENTS = 4;
-
-    /**
-     * Storage format for matrix
+     * Storage format for matrix.
      *
      * @param rows
      *            number of rows
@@ -79,7 +77,7 @@ public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<Flo
     }
 
     /**
-     * Storage format for matrix
+     * Storage format for matrix.
      *
      * @param rows
      *            number of rows
@@ -88,6 +86,32 @@ public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<Flo
      */
     public Matrix2DFloat4(int rows, int columns) {
         this(rows, columns, new float[rows * columns * VECTOR_ELEMENTS]);
+    }
+
+    /**
+     * Transposes the matrix in-place.
+     *
+     * @param matrix
+     *            matrix to transpose
+     */
+    public static void transpose(Matrix2DFloat4 matrix) {
+        if (matrix.COLUMNS == matrix.ROWS) {
+            for (int i = 0; i < matrix.ROWS; i++) {
+                for (int j = 0; j < i; j++) {
+                    final Float4 tmp = matrix.get(i, j);
+                    matrix.set(i, j, matrix.get(j, i));
+                    matrix.set(j, i, tmp);
+                }
+            }
+        } else {
+            throw new TornadoRuntimeException("Square matrix expected");
+        }
+    }
+
+    public static void scale(Matrix2DFloat4 matrix, float value) {
+        for (int i = 0; i < matrix.storage.length; i++) {
+            matrix.storage[i] *= value;
+        }
     }
 
     public Float4 get(int i, int j) {
@@ -143,26 +167,6 @@ public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<Flo
         }
     }
 
-    /**
-     * Transposes the matrix in-place
-     *
-     * @param matrix
-     *            matrix to transpose
-     */
-    public static void transpose(Matrix2DFloat4 matrix) {
-        if (matrix.COLUMNS == matrix.ROWS) {
-            for (int i = 0; i < matrix.ROWS; i++) {
-                for (int j = 0; j < i; j++) {
-                    final Float4 tmp = matrix.get(i, j);
-                    matrix.set(i, j, matrix.get(j, i));
-                    matrix.set(j, i, tmp);
-                }
-            }
-        } else {
-            throw new TornadoRuntimeException("Square matrix expected");
-        }
-    }
-
     public Matrix2DFloat4 duplicate() {
         Matrix2DFloat4 matrix = new Matrix2DFloat4(ROWS, COLUMNS);
         matrix.set(this);
@@ -185,12 +189,6 @@ public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<Flo
             str.append("\n");
         }
         return str.toString().trim();
-    }
-
-    public static void scale(Matrix2DFloat4 matrix, float value) {
-        for (int i = 0; i < matrix.storage.length; i++) {
-            matrix.storage[i] *= value;
-        }
     }
 
     @Override

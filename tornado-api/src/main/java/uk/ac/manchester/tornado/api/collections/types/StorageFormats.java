@@ -47,7 +47,7 @@ public final class StorageFormats {
     }
 
     /**
-     * Converts a given i,j index to a column-major index
+     * Converts a given i,j index to a column-major index.
      *
      * @param i
      *            row index
@@ -62,7 +62,7 @@ public final class StorageFormats {
     }
 
     /**
-     * Converts a given i,j index to a row-major index
+     * Converts a given i,j index to a row-major index.
      *
      * @param i
      *            row index
@@ -89,7 +89,7 @@ public final class StorageFormats {
     }
 
     /**
-     * Converts a given i,j index to row-major index
+     * Converts a given i,j index to row-major index.
      *
      * @param i
      *            row index
@@ -106,7 +106,7 @@ public final class StorageFormats {
     }
 
     /**
-     * Converts a given i,j,k index to row-major index
+     * Converts a given i,j,k index to row-major index.
      *
      * @param i
      *            index in 1st dimension
@@ -127,7 +127,7 @@ public final class StorageFormats {
     }
 
     /**
-     * Converts a given i,j index to a row-major index
+     * Converts a given i,j index to a row-major index.
      *
      * @param i
      *            row index
@@ -146,7 +146,7 @@ public final class StorageFormats {
     }
 
     /**
-     * Converts a given i,j index to Fortran index
+     * Converts a given i,j index to Fortran index.
      *
      * @param i
      *            row index
@@ -161,7 +161,7 @@ public final class StorageFormats {
     }
 
     /**
-     * Converts a matrix stored in multi-dimensional arrays into Row-Major format
+     * Converts a matrix stored in multidimensional arrays into Row-Major format.
      *
      * @param matrix
      *            input matrix
@@ -180,21 +180,21 @@ public final class StorageFormats {
     }
 
     /**
-     * Converts a matrix stored in multi-dimensional arrays into Row-Major format
+     * Converts a matrix stored in multidimensional arrays into Row-Major format.
      *
      * @param matrix
      *            input matrix
      * @return float[]
      */
     public static float[] toRowMajor(float[][] matrix) {
-        final int M = matrix.length;
-        final int N = matrix[0].length;
+        final int dimX = matrix.length;
+        final int dimY = matrix[0].length;
 
-        float[] flattenMatrix = new float[M * N];
+        float[] flattenMatrix = new float[dimX * dimY];
 
-        for (int i = 0; i < M; i++) {
-            for (int j = 0; j < N; j++) {
-                flattenMatrix[toRowMajor(i, j, N)] = matrix[i][j];
+        for (int i = 0; i < dimX; i++) {
+            for (int j = 0; j < dimY; j++) {
+                flattenMatrix[toRowMajor(i, j, dimY)] = matrix[i][j];
             }
         }
 
@@ -202,15 +202,15 @@ public final class StorageFormats {
     }
 
     public static float[] toRowMajor3D(float[][][] matrix) {
-        final int X = matrix.length;
-        final int Y = matrix[0].length;
-        final int Z = matrix[0][0].length;
-        float[] flattenMatrix = new float[X * Y * Z];
+        final int dimX = matrix.length;
+        final int dimY = matrix[0].length;
+        final int dimZ = matrix[0][0].length;
+        float[] flattenMatrix = new float[dimX * dimY * dimZ];
 
-        for (int i = 0; i < X; i++) {
-            for (int j = 0; j < Y; j++) {
-                for (int k = 0; k < Z; k++) {
-                    int index = toRowMajor3D(i, j, k, Z, Y);
+        for (int i = 0; i < dimX; i++) {
+            for (int j = 0; j < dimY; j++) {
+                for (int k = 0; k < dimZ; k++) {
+                    int index = toRowMajor3D(i, j, k, dimZ, dimY);
                     flattenMatrix[index] = matrix[i][j][k];
                 }
             }
@@ -219,27 +219,27 @@ public final class StorageFormats {
     }
 
     /**
-     * Converts a matrix stored in multi-dimensional arrays into Row-Major format
+     * Converts a matrix stored in multidimensional arrays into Row-Major format.
      *
      * @param matrix
      *            input matrix
      * @return int[]
      */
     public static int[] toRowMajor(int[][] matrix) {
-        final int M = matrix.length;
-        final int N = matrix[0].length;
+        final int dimX = matrix.length;
+        final int dimY = matrix[0].length;
 
-        int[] matrixRM = new int[M * N];
-        for (int i = 0; i < M; i++) {
-            for (int j = 0; j < N; j++) {
-                matrixRM[toRowMajor(i, j, N)] = matrix[i][j];
+        int[] matrixRM = new int[dimX * dimY];
+        for (int i = 0; i < dimX; i++) {
+            for (int j = 0; j < dimY; j++) {
+                matrixRM[toRowMajor(i, j, dimY)] = matrix[i][j];
             }
         }
         return matrixRM;
     }
 
     /**
-     * Converts a matrix stored in multi-dimensional arrays into Row-Major format
+     * Converts a matrix stored in multidimensional arrays into Row-Major format.
      *
      * @param matrix
      *            input matrix

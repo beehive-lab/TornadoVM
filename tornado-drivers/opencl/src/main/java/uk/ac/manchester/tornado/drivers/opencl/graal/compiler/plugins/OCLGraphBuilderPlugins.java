@@ -66,7 +66,7 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.KernelContext;
-import uk.ac.manchester.tornado.api.TornadoVM_Intrinsics;
+import uk.ac.manchester.tornado.api.TornadoVMIntrinsics;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
@@ -119,7 +119,7 @@ public class OCLGraphBuilderPlugins {
     }
 
     private static void registerTornadoVMAtomicsPlugins(InvocationPlugins plugins) {
-        Registration r = new Registration(plugins, TornadoVM_Intrinsics.class);
+        Registration r = new Registration(plugins, TornadoVMIntrinsics.class);
         registerTornadoVMAtomicsPlugins(r);
     }
 

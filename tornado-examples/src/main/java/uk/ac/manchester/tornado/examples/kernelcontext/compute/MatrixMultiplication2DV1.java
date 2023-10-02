@@ -46,7 +46,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  * </code>
  */
 public class MatrixMultiplication2DV1 {
-
+    // CHECKSTYLE:OFF
     private static final int WARMING_UP_ITERATIONS = 15;
 
     public static void matrixMultiplication(KernelContext context, final float[] A, final float[] B, final float[] C, final int size) {
@@ -158,3 +158,4 @@ public class MatrixMultiplication2DV1 {
         return check;
     }
 }
+// CHECKSTYLE:ON

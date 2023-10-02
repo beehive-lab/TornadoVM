@@ -53,17 +53,15 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
     public static final Class<Int2> TYPE = Int2.class;
 
     private static final String NUMBER_FORMAT = "{ x=%-7d, y=%-7d }";
-
     /**
-     * backing array
+     * number of elements in the storage.
+     */
+    private static final int NUM_ELEMENTS = 2;
+    /**
+     * backing array.
      */
     @Payload
     private final int[] storage;
-
-    /**
-     * number of elements in the storage
-     */
-    private static final int NUM_ELEMENTS = 2;
 
     public Int2(int[] storage) {
         this.storage = storage;
@@ -79,67 +77,6 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
         setY(y);
     }
 
-    public int[] getArray() {
-        return storage;
-    }
-
-    public int get(int index) {
-        return storage[index];
-    }
-
-    public void set(int index, int value) {
-        storage[index] = value;
-    }
-
-    public void set(Int2 value) {
-        setX(value.getX());
-        setY(value.getY());
-    }
-
-    public int getX() {
-        return get(0);
-    }
-
-    public int getY() {
-        return get(1);
-    }
-
-    public int getS0() {
-        return get(0);
-    }
-
-    public int getS1() {
-        return get(1);
-    }
-
-    public void setX(int value) {
-        set(0, value);
-    }
-
-    public void setY(int value) {
-        set(1, value);
-    }
-
-    /**
-     * Duplicates this vector
-     *
-     * @return {@link Int2}
-     */
-    public Int2 duplicate() {
-        Int2 vector = new Int2();
-        vector.set(this);
-        return vector;
-    }
-
-    public String toString(String fmt) {
-        return String.format(fmt, getX(), getY());
-    }
-
-    @Override
-    public String toString() {
-        return toString(NUMBER_FORMAT);
-    }
-
     static Int2 loadFromArray(final int[] array, int index) {
         final Int2 result = new Int2();
         result.setX(array[index]);
@@ -147,28 +84,8 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
         return result;
     }
 
-    void storeToArray(final int[] array, int index) {
-        array[index] = getX();
-        array[index + 1] = getY();
-    }
-
-    @Override
-    public void loadFromBuffer(IntBuffer buffer) {
-        asBuffer().put(buffer);
-    }
-
-    @Override
-    public IntBuffer asBuffer() {
-        return IntBuffer.wrap(storage);
-    }
-
-    @Override
-    public int size() {
-        return NUM_ELEMENTS;
-    }
-
     /**
-     * * Operations on Int2 vectors
+     * * Operations on Int2 vectors.
      */
     /*
      * vector = op( vector, vector )
@@ -254,5 +171,86 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
 
     public static boolean isEqual(Int2 a, Int2 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+    }
+
+    public int[] getArray() {
+        return storage;
+    }
+
+    public int get(int index) {
+        return storage[index];
+    }
+
+    public void set(int index, int value) {
+        storage[index] = value;
+    }
+
+    public void set(Int2 value) {
+        setX(value.getX());
+        setY(value.getY());
+    }
+
+    public int getX() {
+        return get(0);
+    }
+
+    public void setX(int value) {
+        set(0, value);
+    }
+
+    public int getY() {
+        return get(1);
+    }
+
+    public void setY(int value) {
+        set(1, value);
+    }
+
+    public int getS0() {
+        return get(0);
+    }
+
+    public int getS1() {
+        return get(1);
+    }
+
+    /**
+     * Duplicates this vector.
+     *
+     * @return {@link Int2}
+     */
+    public Int2 duplicate() {
+        Int2 vector = new Int2();
+        vector.set(this);
+        return vector;
+    }
+
+    public String toString(String fmt) {
+        return String.format(fmt, getX(), getY());
+    }
+
+    @Override
+    public String toString() {
+        return toString(NUMBER_FORMAT);
+    }
+
+    void storeToArray(final int[] array, int index) {
+        array[index] = getX();
+        array[index + 1] = getY();
+    }
+
+    @Override
+    public void loadFromBuffer(IntBuffer buffer) {
+        asBuffer().put(buffer);
+    }
+
+    @Override
+    public IntBuffer asBuffer() {
+        return IntBuffer.wrap(storage);
+    }
+
+    @Override
+    public int size() {
+        return NUM_ELEMENTS;
     }
 }

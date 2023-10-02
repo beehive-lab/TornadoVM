@@ -51,17 +51,15 @@ import uk.ac.manchester.tornado.api.type.annotations.Vector;
 public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
 
     public static final Class<Double8> TYPE = Double8.class;
-
     /**
-     * backing array
+     * number of elements in the storage.
+     */
+    private static final int NUM_ELEMENTS = 8;
+    /**
+     * backing array.
      */
     @Payload
     final double[] storage;
-
-    /**
-     * number of elements in the storage
-     */
-    private static final int NUM_ELEMENTS = 8;
 
     private Double8(double[] storage) {
         this.storage = storage;
@@ -83,116 +81,6 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
         setS7(s7);
     }
 
-    public double[] getArray() {
-        return storage;
-    }
-
-    public double get(int index) {
-        return storage[index];
-    }
-
-    public void set(int index, double value) {
-        storage[index] = value;
-    }
-
-    public void set(Double8 value) {
-        for (int i = 0; i < 8; i++) {
-            set(i, value.get(i));
-        }
-    }
-
-    public double getS0() {
-        return get(0);
-    }
-
-    public double getS1() {
-        return get(1);
-    }
-
-    public double getS2() {
-        return get(2);
-    }
-
-    public double getS3() {
-        return get(3);
-    }
-
-    public double getS4() {
-        return get(4);
-    }
-
-    public double getS5() {
-        return get(5);
-    }
-
-    public double getS6() {
-        return get(6);
-    }
-
-    public double getS7() {
-        return get(7);
-    }
-
-    public void setS0(double value) {
-        set(0, value);
-    }
-
-    public void setS1(double value) {
-        set(1, value);
-    }
-
-    public void setS2(double value) {
-        set(2, value);
-    }
-
-    public void setS3(double value) {
-        set(3, value);
-    }
-
-    public void setS4(double value) {
-        set(4, value);
-    }
-
-    public void setS5(double value) {
-        set(5, value);
-    }
-
-    public void setS6(double value) {
-        set(6, value);
-    }
-
-    public void setS7(double value) {
-        set(7, value);
-    }
-
-    public Double4 getHigh() {
-        return new Double4(getS4(), getS5(), getS6(), getS7());
-    }
-
-    public Double4 getLow() {
-        return new Double4(getS0(), getS1(), getS2(), getS3());
-    }
-
-    /**
-     * Duplicates this vector
-     *
-     * @return {@link Double8}
-     */
-    public Double8 duplicate() {
-        Double8 vector = new Double8();
-        vector.set(this);
-        return vector;
-    }
-
-    public String toString(String fmt) {
-        return String.format(fmt, getS0(), getS1(), getS2(), getS3(), getS4(), getS5(), getS6(), getS7());
-    }
-
-    @Override
-    public String toString() {
-        return toString(DoubleOps.FMT_8);
-    }
-
     static Double8 loadFromArray(final double[] array, int index) {
         final Double8 result = new Double8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
@@ -201,29 +89,8 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
         return result;
     }
 
-    void storeToArray(final double[] array, int index) {
-        for (int i = 0; i < NUM_ELEMENTS; i++) {
-            array[index + i] = get(i);
-        }
-    }
-
-    @Override
-    public void loadFromBuffer(DoubleBuffer buffer) {
-        asBuffer().put(buffer);
-    }
-
-    @Override
-    public DoubleBuffer asBuffer() {
-        return DoubleBuffer.wrap(storage);
-    }
-
-    @Override
-    public int size() {
-        return NUM_ELEMENTS;
-    }
-
     /**
-     * * Operations on Double8 vectors
+     * * Operations on Double8 vectors.
      */
     public static Double8 add(Double8 a, Double8 b) {
         final Double8 result = new Double8();
@@ -335,5 +202,136 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
 
     public static double findULPDistance(Double8 value, Double8 expected) {
         return TornadoMath.findULPDistance(value.asBuffer().array(), expected.asBuffer().array());
+    }
+
+    public double[] getArray() {
+        return storage;
+    }
+
+    public double get(int index) {
+        return storage[index];
+    }
+
+    public void set(int index, double value) {
+        storage[index] = value;
+    }
+
+    public void set(Double8 value) {
+        for (int i = 0; i < 8; i++) {
+            set(i, value.get(i));
+        }
+    }
+
+    public double getS0() {
+        return get(0);
+    }
+
+    public void setS0(double value) {
+        set(0, value);
+    }
+
+    public double getS1() {
+        return get(1);
+    }
+
+    public void setS1(double value) {
+        set(1, value);
+    }
+
+    public double getS2() {
+        return get(2);
+    }
+
+    public void setS2(double value) {
+        set(2, value);
+    }
+
+    public double getS3() {
+        return get(3);
+    }
+
+    public void setS3(double value) {
+        set(3, value);
+    }
+
+    public double getS4() {
+        return get(4);
+    }
+
+    public void setS4(double value) {
+        set(4, value);
+    }
+
+    public double getS5() {
+        return get(5);
+    }
+
+    public void setS5(double value) {
+        set(5, value);
+    }
+
+    public double getS6() {
+        return get(6);
+    }
+
+    public void setS6(double value) {
+        set(6, value);
+    }
+
+    public double getS7() {
+        return get(7);
+    }
+
+    public void setS7(double value) {
+        set(7, value);
+    }
+
+    public Double4 getHigh() {
+        return new Double4(getS4(), getS5(), getS6(), getS7());
+    }
+
+    public Double4 getLow() {
+        return new Double4(getS0(), getS1(), getS2(), getS3());
+    }
+
+    /**
+     * Duplicates this vector.
+     *
+     * @return {@link Double8}
+     */
+    public Double8 duplicate() {
+        Double8 vector = new Double8();
+        vector.set(this);
+        return vector;
+    }
+
+    public String toString(String fmt) {
+        return String.format(fmt, getS0(), getS1(), getS2(), getS3(), getS4(), getS5(), getS6(), getS7());
+    }
+
+    @Override
+    public String toString() {
+        return toString(DoubleOps.FMT_8);
+    }
+
+    void storeToArray(final double[] array, int index) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            array[index + i] = get(i);
+        }
+    }
+
+    @Override
+    public void loadFromBuffer(DoubleBuffer buffer) {
+        asBuffer().put(buffer);
+    }
+
+    @Override
+    public DoubleBuffer asBuffer() {
+        return DoubleBuffer.wrap(storage);
+    }
+
+    @Override
+    public int size() {
+        return NUM_ELEMENTS;
     }
 }

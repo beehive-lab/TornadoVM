@@ -854,7 +854,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
         KernelArgs callWrapper;
         int[] waitList;
 
-        public ExecutionInfo(KernelArgs callWrapper, int[] waitList) {
+        ExecutionInfo(KernelArgs callWrapper, int[] waitList) {
             this.callWrapper = callWrapper;
             this.waitList = waitList;
         }

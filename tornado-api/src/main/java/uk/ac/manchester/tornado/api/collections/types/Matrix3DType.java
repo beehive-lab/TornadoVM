@@ -44,17 +44,17 @@ package uk.ac.manchester.tornado.api.collections.types;
 public abstract class Matrix3DType {
 
     /**
-     * Number of rows
+     * Number of rows.
      */
     protected final int ROWS;
 
     /**
-     * Number of columns
+     * Number of columns.
      */
     protected final int COLUMNS;
 
     /**
-     * Depth
+     * Depth.
      */
     protected final int DEPTH;
 

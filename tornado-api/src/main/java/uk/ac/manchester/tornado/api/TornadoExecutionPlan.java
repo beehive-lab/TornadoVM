@@ -67,28 +67,9 @@ public class TornadoExecutionPlan {
      * to the device assigned to the driver (backend) with index 0 and device 0.
      */
     public static TornadoDevice DEFAULT_DEVICE = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
-
-    /**
-     * Method to obtain a specific device using the driver index (backend index) and
-     * device index.
-     *
-     * @param driverIndex
-     *            Integer value that identifies the backend to be used.
-     * @param deviceIndex
-     *            Integer value that identifies the device within the backend to be
-     *            used.
-     * @return {@link TornadoDevice}
-     */
-    public static TornadoDevice getDevice(int driverIndex, int deviceIndex) {
-        return TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
-    }
-
     private final TornadoExecutor tornadoExecutor;
-
     private GridScheduler gridScheduler;
-
     private Policy policy = null;
-
     private DRMode dynamicReconfigurationMode;
     private ProfilerMode profilerMode;
     private boolean disableProfiler;
@@ -105,6 +86,21 @@ public class TornadoExecutionPlan {
      */
     public TornadoExecutionPlan(ImmutableTaskGraph... immutableTaskGraphs) {
         this.tornadoExecutor = new TornadoExecutor(immutableTaskGraphs);
+    }
+
+    /**
+     * Method to obtain a specific device using the driver index (backend index) and
+     * device index.
+     *
+     * @param driverIndex
+     *            Integer value that identifies the backend to be used.
+     * @param deviceIndex
+     *            Integer value that identifies the device within the backend to be
+     *            used.
+     * @return {@link TornadoDevice}
+     */
+    public static TornadoDevice getDevice(int driverIndex, int deviceIndex) {
+        return TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
     }
 
     /**
@@ -323,7 +319,7 @@ public class TornadoExecutionPlan {
         }
 
         /**
-         * For all task-graphs contained in an Executor, update the device
+         * For all task-graphs contained in an Executor, update the device.
          *
          * @param device
          *            {@link TornadoDevice} object

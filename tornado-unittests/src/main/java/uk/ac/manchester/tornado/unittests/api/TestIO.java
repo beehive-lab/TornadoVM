@@ -39,6 +39,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </code>
  */
 public class TestIO extends TornadoTestBase {
+    // CHECKSTYLE:OFF
 
     private float[] createAndInitializeArray(int size) {
         float[] array = new float[size];
@@ -154,4 +155,5 @@ public class TestIO extends TornadoTestBase {
             assertEquals(2 * i, arrayC[i], 0.0f);
         }
     }
+    // CHECKSTYLE:ON
 }

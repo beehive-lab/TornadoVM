@@ -121,7 +121,7 @@ public class GraphicsMath {
     }
 
     /**
-     * * Creates a 4x4 matrix representing the intrinsic camera matrix
+     * * Creates a 4x4 matrix representing the intrinsic camera matrix.
      *
      * @param k
      *            - camera parameters {f_x,f_y,x_0,y_0} where {f_x,f_y} specifies

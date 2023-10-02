@@ -151,7 +151,6 @@ public class KernelContext implements ExecutionContext {
      */
     @Override
     public void globalBarrier() {
-
     }
 
     /**

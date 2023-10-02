@@ -77,7 +77,8 @@ public class SaxpyMT {
         String executionType = args[1];
         int iterations = Integer.parseInt(args[2]);
         TaskGraph graph;
-        long start,end;
+        long start;
+        long end;
         float alpha = 2f;
 
         float[] x = new float[numElements];

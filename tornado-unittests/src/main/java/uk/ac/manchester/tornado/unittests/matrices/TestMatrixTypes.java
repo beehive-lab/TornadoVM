@@ -51,6 +51,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </code>
  */
 public class TestMatrixTypes extends TornadoTestBase {
+    // CHECKSTYLE:OFF
 
     public static void computeMatrixSum(Matrix2DFloat a, Matrix2DFloat b, final int N) {
         for (@Parallel int i = 0; i < N; i++) {
@@ -136,6 +137,157 @@ public class TestMatrixTypes extends TornadoTestBase {
                 for (@Parallel int k = 0; k < Z; k++) {
                     b.set(i, j, k, Float4.add(a.get(i, j, k), a.get(i, j, k)));
                 }
+            }
+        }
+    }
+
+    public static void testMatrix2DVectorType(final int X, final int Y) {
+        Matrix2DFloat4 matrixA = new Matrix2DFloat4(X, Y);
+        Matrix2DFloat4 matrixB = new Matrix2DFloat4(X, Y);
+        Random r = new Random();
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                Float4 vector = new Float4();
+                for (int k = 0; k < vector.size(); k++) {
+                    vector.set(k, r.nextFloat());
+                }
+                matrixA.set(i, j, vector);
+            }
+        }
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
+                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                Float4 expected = Float4.add(matrixA.get(i, j), matrixA.get(i, j));
+                assertTrue(Float4.isEqual(expected, matrixB.get(i, j)));
+            }
+        }
+    }
+
+    public static void testMatrix3DVectorType(final int X, final int Y, final int Z) {
+        Matrix3DFloat4 matrixA = new Matrix3DFloat4(X, Y, Z);
+        Matrix3DFloat4 matrixB = new Matrix3DFloat4(X, Y, Z);
+        Random r = new Random();
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                for (int k = 0; k < Z; k++) {
+                    Float4 vector = new Float4();
+                    for (int v = 0; v < vector.size(); v++) {
+                        vector.set(v, r.nextFloat());
+                    }
+                    matrixA.set(i, j, k, vector);
+                }
+            }
+        }
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
+                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y, Z) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                for (int k = 0; k < Z; k++) {
+                    Float4 expected = Float4.add(matrixA.get(i, j, k), matrixA.get(i, j, k));
+                    if (!Float4.isEqual(expected, matrixB.get(i, j, k))) {
+                        assertTrue(false);
+                    } else {
+                        assertTrue(true);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void testMatricesFloats(final int X, final int Y) {
+        float[][] a = new float[X][Y];
+        Random r = new Random();
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                a[i][j] = r.nextFloat();
+            }
+        }
+        Matrix2DFloat matrixA = new Matrix2DFloat(a);
+        Matrix2DFloat matrixB = new Matrix2DFloat(X, Y);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
+                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                assertEquals(matrixA.get(i, j) + matrixA.get(i, j), matrixB.get(i, j), 0.01f);
+            }
+        }
+    }
+
+    private static void testMatrixIntegers(final int X, final int Y) {
+        int[][] a = new int[X][Y];
+        Random r = new Random();
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                a[i][j] = r.nextInt();
+            }
+        }
+        Matrix2DInt matrixA = new Matrix2DInt(a);
+        Matrix2DInt matrixB = new Matrix2DInt(X, Y);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
+                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                assertEquals(matrixA.get(i, j) + matrixA.get(i, j), matrixB.get(i, j));
+            }
+        }
+    }
+
+    private static void testMatrixDoubles(final int X, final int Y) {
+        double[][] a = new double[X][Y];
+        Random r = new Random();
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                a[i][j] = r.nextInt();
+            }
+        }
+        Matrix2DDouble matrixA = new Matrix2DDouble(a);
+        Matrix2DDouble matrixB = new Matrix2DDouble(X, Y);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
+                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                assertEquals(matrixA.get(i, j) + matrixA.get(i, j), matrixB.get(i, j), 0.01);
             }
         }
     }
@@ -445,37 +597,6 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
     }
 
-    public static void testMatrix2DVectorType(final int X, final int Y) {
-        Matrix2DFloat4 matrixA = new Matrix2DFloat4(X, Y);
-        Matrix2DFloat4 matrixB = new Matrix2DFloat4(X, Y);
-        Random r = new Random();
-        for (int i = 0; i < X; i++) {
-            for (int j = 0; j < Y; j++) {
-                Float4 vector = new Float4();
-                for (int k = 0; k < vector.size(); k++) {
-                    vector.set(k, r.nextFloat());
-                }
-                matrixA.set(i, j, vector);
-            }
-        }
-
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
-                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
-
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
-
-        for (int i = 0; i < X; i++) {
-            for (int j = 0; j < Y; j++) {
-                Float4 expected = Float4.add(matrixA.get(i, j), matrixA.get(i, j));
-                assertTrue(Float4.isEqual(expected, matrixB.get(i, j)));
-            }
-        }
-    }
-
     /**
      * This test checks the {@linkplain Matrix2DFloat4} type. Each position in a 2D
      * matrix is an explicit Vector4 in OpenCL.
@@ -498,45 +619,6 @@ public class TestMatrixTypes extends TornadoTestBase {
         final int X = 512;
         final int Y = 128;
         testMatrix2DVectorType(Y, X);
-    }
-
-    public static void testMatrix3DVectorType(final int X, final int Y, final int Z) {
-        Matrix3DFloat4 matrixA = new Matrix3DFloat4(X, Y, Z);
-        Matrix3DFloat4 matrixB = new Matrix3DFloat4(X, Y, Z);
-        Random r = new Random();
-        for (int i = 0; i < X; i++) {
-            for (int j = 0; j < Y; j++) {
-                for (int k = 0; k < Z; k++) {
-                    Float4 vector = new Float4();
-                    for (int v = 0; v < vector.size(); v++) {
-                        vector.set(v, r.nextFloat());
-                    }
-                    matrixA.set(i, j, k, vector);
-                }
-            }
-        }
-
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
-                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y, Z) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
-
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
-
-        for (int i = 0; i < X; i++) {
-            for (int j = 0; j < Y; j++) {
-                for (int k = 0; k < Z; k++) {
-                    Float4 expected = Float4.add(matrixA.get(i, j, k), matrixA.get(i, j, k));
-                    if (!Float4.isEqual(expected, matrixB.get(i, j, k))) {
-                        assertTrue(false);
-                    } else {
-                        assertTrue(true);
-                    }
-                }
-            }
-        }
     }
 
     @Test
@@ -638,33 +720,6 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
     }
 
-    private static void testMatricesFloats(final int X, final int Y) {
-        float[][] a = new float[X][Y];
-        Random r = new Random();
-        for (int i = 0; i < X; i++) {
-            for (int j = 0; j < Y; j++) {
-                a[i][j] = r.nextFloat();
-            }
-        }
-        Matrix2DFloat matrixA = new Matrix2DFloat(a);
-        Matrix2DFloat matrixB = new Matrix2DFloat(X, Y);
-
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
-                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
-
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
-
-        for (int i = 0; i < X; i++) {
-            for (int j = 0; j < Y; j++) {
-                assertEquals(matrixA.get(i, j) + matrixA.get(i, j), matrixB.get(i, j), 0.01f);
-            }
-        }
-    }
-
     @Test
     public void testMatrix13() {
         final int X = 854;
@@ -685,33 +740,6 @@ public class TestMatrixTypes extends TornadoTestBase {
         testMatricesFloats(X, X);
     }
 
-    private static void testMatrixIntegers(final int X, final int Y) {
-        int[][] a = new int[X][Y];
-        Random r = new Random();
-        for (int i = 0; i < X; i++) {
-            for (int j = 0; j < Y; j++) {
-                a[i][j] = r.nextInt();
-            }
-        }
-        Matrix2DInt matrixA = new Matrix2DInt(a);
-        Matrix2DInt matrixB = new Matrix2DInt(X, Y);
-
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
-                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
-
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
-
-        for (int i = 0; i < X; i++) {
-            for (int j = 0; j < Y; j++) {
-                assertEquals(matrixA.get(i, j) + matrixA.get(i, j), matrixB.get(i, j));
-            }
-        }
-    }
-
     @Test
     public void testMatrix16() {
         testMatrixIntegers(640, 480);
@@ -725,33 +753,6 @@ public class TestMatrixTypes extends TornadoTestBase {
     @Test
     public void testMatrix18() {
         testMatrixIntegers(640, 640);
-    }
-
-    private static void testMatrixDoubles(final int X, final int Y) {
-        double[][] a = new double[X][Y];
-        Random r = new Random();
-        for (int i = 0; i < X; i++) {
-            for (int j = 0; j < Y; j++) {
-                a[i][j] = r.nextInt();
-            }
-        }
-        Matrix2DDouble matrixA = new Matrix2DDouble(a);
-        Matrix2DDouble matrixB = new Matrix2DDouble(X, Y);
-
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
-                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
-
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
-
-        for (int i = 0; i < X; i++) {
-            for (int j = 0; j < Y; j++) {
-                assertEquals(matrixA.get(i, j) + matrixA.get(i, j), matrixB.get(i, j), 0.01);
-            }
-        }
     }
 
     @Test
@@ -829,5 +830,5 @@ public class TestMatrixTypes extends TornadoTestBase {
             }
         }
     }
-
+    // CHECKSTYLE:ON
 }

@@ -164,7 +164,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     /**
-     * We reuse one of the input values
+     * We reuse one of the input values.
      *
      * @param a
      * @param b

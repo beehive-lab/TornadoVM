@@ -125,7 +125,7 @@ public class ImagingOps {
     }
 
     public static void bilateralFilter(ImageFloat dest, ImageFloat src, float[] gaussian, float eDelta, int radius) {
-        final float e_d_squared_2 = eDelta * eDelta * 2f;
+        final float eDSquared2 = eDelta * eDelta * 2f;
         // for every point
         for (@Parallel int y = 0; y < src.Y(); y++) {
             for (@Parallel int x = 0; x < src.X(); x++) {
@@ -141,7 +141,7 @@ public class ImagingOps {
                             if (currentPixel > 0f) {
                                 final float mod = sq(currentPixel - center);
                                 // TODO find out gaussian size
-                                final float factor = (gaussian[xx + radius] * gaussian[yy + radius] * exp(-mod / e_d_squared_2));
+                                final float factor = (gaussian[xx + radius] * gaussian[yy + radius] * exp(-mod / eDSquared2));
                                 t += factor * currentPixel;
                                 sum += factor;
                             }

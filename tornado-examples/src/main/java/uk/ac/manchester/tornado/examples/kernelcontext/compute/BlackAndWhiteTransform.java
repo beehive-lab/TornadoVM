@@ -59,22 +59,34 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  *
  */
 public class BlackAndWhiteTransform {
+    // CHECKSTYLE:OFF
+
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Image Grey-scale conversion example with TornadoVM");
+
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent event) {
+                System.exit(0);
+            }
+        });
+
+        frame.add(new LoadImage());
+        frame.pack();
+        frame.setVisible(true);
+    }
 
     public static class LoadImage extends Component {
 
         private static final int WARMING_UP_ITERATIONS = 15;
 
         private static final long serialVersionUID = 1L;
-        private BufferedImage image;
-
         private static final boolean PARALLEL_COMPUTATION = Boolean.parseBoolean(System.getProperty("run::parallel", "False"));
-
         private static final String IMAGE_FILE = "/tmp/image.jpg";
-
         private static TornadoExecutionPlan executor;
-
         private static WorkerGrid workerGrid;
         private static GridScheduler gridScheduler;
+        private BufferedImage image;
 
         LoadImage() {
             try {
@@ -236,19 +248,5 @@ public class BlackAndWhiteTransform {
             }
         }
     }
-
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("Image Grey-scale conversion example with TornadoVM");
-
-        frame.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent event) {
-                System.exit(0);
-            }
-        });
-
-        frame.add(new LoadImage());
-        frame.pack();
-        frame.setVisible(true);
-    }
 }
+// CHECKSTYLE:ON

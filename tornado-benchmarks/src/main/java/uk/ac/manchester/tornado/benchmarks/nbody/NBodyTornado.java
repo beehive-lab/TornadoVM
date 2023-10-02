@@ -97,7 +97,8 @@ public class NBodyTornado extends BenchmarkDriver {
     @Override
     public boolean validate(TornadoDevice device) {
         boolean val = true;
-        float[] posSeqSeq,velSeqSeq;
+        float[] posSeqSeq;
+        float[] velSeqSeq;
         delT = 0.005f;
         espSqr = 500.0f;
 

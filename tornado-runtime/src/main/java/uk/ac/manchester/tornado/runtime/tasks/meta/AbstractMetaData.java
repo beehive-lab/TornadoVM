@@ -51,7 +51,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private static final String TRUE = "True";
     private static final String FALSE = "False";
     private final boolean isDeviceDefined;
-    private final HashSet<String> openCLBuiltOptions = new HashSet<>(Arrays.asList( //
+    private final HashSet<String> openCLBuiltOptions = new HashSet<>(Arrays.asList(//
             "-cl-single-precision-constant", //
             "-cl-denorms-are-zero", //
             "-cl-opt-disable", //

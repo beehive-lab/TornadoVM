@@ -56,7 +56,7 @@ public class TornadoHelper {
         System.out.printf("Test ran: %s, Failed: %s, Unsupported: %s%n", (success + failed + notSupported), failed, notSupported);
     }
 
-    private static void printResult(int success, int failed, int notSupported, StringBuffer buffer) {
+    private static void printResult(int success, int failed, int notSupported, StringBuilder buffer) {
         buffer.append(String.format("Test ran: %s, Failed: %s, Unsupported: %s%n", (success + failed + notSupported), failed, notSupported));
     }
 
@@ -119,8 +119,8 @@ public class TornadoHelper {
             methodsToTest.add(method);
         }
 
-        StringBuffer bufferConsole = new StringBuffer();
-        StringBuffer bufferFile = new StringBuffer();
+        StringBuilder bufferConsole = new StringBuilder();
+        StringBuilder bufferFile = new StringBuilder();
 
         int successCounter = 0;
         int failedCounter = 0;

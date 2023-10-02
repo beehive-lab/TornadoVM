@@ -51,17 +51,15 @@ import uk.ac.manchester.tornado.api.type.annotations.Vector;
 public final class Int8 implements PrimitiveStorage<IntBuffer> {
 
     public static final Class<Int8> TYPE = Int8.class;
-
     /**
-     * backing array
+     * number of elements in the storage.
+     */
+    private static final int NUM_ELEMENTS = 8;
+    /**
+     * backing array.
      */
     @Payload
     private final int[] storage;
-
-    /**
-     * number of elements in the storage
-     */
-    private static final int NUM_ELEMENTS = 8;
 
     public Int8(int[] storage) {
         this.storage = storage;
@@ -83,116 +81,6 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
         setS7(s7);
     }
 
-    public int[] getArray() {
-        return storage;
-    }
-
-    public int get(int index) {
-        return storage[index];
-    }
-
-    public void set(int index, int value) {
-        storage[index] = value;
-    }
-
-    public void set(Int8 value) {
-        for (int i = 0; i < 8; i++) {
-            set(i, value.get(i));
-        }
-    }
-
-    public int getS0() {
-        return get(0);
-    }
-
-    public int getS1() {
-        return get(1);
-    }
-
-    public int getS2() {
-        return get(2);
-    }
-
-    public int getS3() {
-        return get(3);
-    }
-
-    public int getS4() {
-        return get(4);
-    }
-
-    public int getS5() {
-        return get(5);
-    }
-
-    public int getS6() {
-        return get(6);
-    }
-
-    public int getS7() {
-        return get(7);
-    }
-
-    public void setS0(int value) {
-        set(0, value);
-    }
-
-    public void setS1(int value) {
-        set(1, value);
-    }
-
-    public void setS2(int value) {
-        set(2, value);
-    }
-
-    public void setS3(int value) {
-        set(3, value);
-    }
-
-    public void setS4(int value) {
-        set(4, value);
-    }
-
-    public void setS5(int value) {
-        set(5, value);
-    }
-
-    public void setS6(int value) {
-        set(6, value);
-    }
-
-    public void setS7(int value) {
-        set(7, value);
-    }
-
-    public Int4 getHigh() {
-        return new Int4(getS4(), getS5(), getS6(), getS7());
-    }
-
-    public Int4 getLow() {
-        return new Int4(getS0(), getS1(), getS2(), getS3());
-    }
-
-    /**
-     * Duplicates this vector
-     *
-     * @return {@link Int8}
-     */
-    public Int8 duplicate() {
-        Int8 vector = new Int8();
-        vector.set(this);
-        return vector;
-    }
-
-    public String toString(String fmt) {
-        return String.format(fmt, getS0(), getS1(), getS2(), getS3(), getS4(), getS5(), getS6(), getS7());
-    }
-
-    @Override
-    public String toString() {
-        return toString(IntOps.FMT_8);
-    }
-
     static Int8 loadFromArray(final int[] array, int index) {
         final Int8 result = new Int8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
@@ -201,29 +89,8 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
         return result;
     }
 
-    void storeToArray(final int[] array, int index) {
-        for (int i = 0; i < NUM_ELEMENTS; i++) {
-            array[index + i] = get(i);
-        }
-    }
-
-    @Override
-    public void loadFromBuffer(IntBuffer buffer) {
-
-    }
-
-    @Override
-    public IntBuffer asBuffer() {
-        return null;
-    }
-
-    @Override
-    public int size() {
-        return NUM_ELEMENTS;
-    }
-
     /**
-     * * Operations on int8 vectors
+     * * Operations on int8 vectors.
      */
     public static Int8 add(Int8 a, Int8 b) {
         final Int8 result = new Int8();
@@ -336,6 +203,137 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
 
     public static boolean isEqual(Int8 a, Int8 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+    }
+
+    public int[] getArray() {
+        return storage;
+    }
+
+    public int get(int index) {
+        return storage[index];
+    }
+
+    public void set(int index, int value) {
+        storage[index] = value;
+    }
+
+    public void set(Int8 value) {
+        for (int i = 0; i < 8; i++) {
+            set(i, value.get(i));
+        }
+    }
+
+    public int getS0() {
+        return get(0);
+    }
+
+    public void setS0(int value) {
+        set(0, value);
+    }
+
+    public int getS1() {
+        return get(1);
+    }
+
+    public void setS1(int value) {
+        set(1, value);
+    }
+
+    public int getS2() {
+        return get(2);
+    }
+
+    public void setS2(int value) {
+        set(2, value);
+    }
+
+    public int getS3() {
+        return get(3);
+    }
+
+    public void setS3(int value) {
+        set(3, value);
+    }
+
+    public int getS4() {
+        return get(4);
+    }
+
+    public void setS4(int value) {
+        set(4, value);
+    }
+
+    public int getS5() {
+        return get(5);
+    }
+
+    public void setS5(int value) {
+        set(5, value);
+    }
+
+    public int getS6() {
+        return get(6);
+    }
+
+    public void setS6(int value) {
+        set(6, value);
+    }
+
+    public int getS7() {
+        return get(7);
+    }
+
+    public void setS7(int value) {
+        set(7, value);
+    }
+
+    public Int4 getHigh() {
+        return new Int4(getS4(), getS5(), getS6(), getS7());
+    }
+
+    public Int4 getLow() {
+        return new Int4(getS0(), getS1(), getS2(), getS3());
+    }
+
+    /**
+     * Duplicates this vector.
+     *
+     * @return {@link Int8}
+     */
+    public Int8 duplicate() {
+        Int8 vector = new Int8();
+        vector.set(this);
+        return vector;
+    }
+
+    public String toString(String fmt) {
+        return String.format(fmt, getS0(), getS1(), getS2(), getS3(), getS4(), getS5(), getS6(), getS7());
+    }
+
+    @Override
+    public String toString() {
+        return toString(IntOps.FMT_8);
+    }
+
+    void storeToArray(final int[] array, int index) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            array[index + i] = get(i);
+        }
+    }
+
+    @Override
+    public void loadFromBuffer(IntBuffer buffer) {
+        // TODO document why this method is empty
+    }
+
+    @Override
+    public IntBuffer asBuffer() {
+        return null;
+    }
+
+    @Override
+    public int size() {
+        return NUM_ELEMENTS;
     }
 
 }

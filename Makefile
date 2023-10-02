@@ -28,6 +28,9 @@ NUM_OF_FPGA_DEVICES?=1
 xilinx_emulation:
 	emconfigutil --platform $(FPGA_PLATFORM) --nd $(NUM_OF_FPGA_DEVICES) --od $(JAVA_HOME)/bin
 
+checkstyle:
+	mvn checkstyle:check
+
 clean: 
 	mvn -Popencl-backend,ptx-backend clean
 

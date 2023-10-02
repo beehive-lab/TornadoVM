@@ -46,7 +46,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 public class Debug {
 
     /**
-     * prints a message from all threads
+     * prints a message from all threads.
      *
      * @param msg
      *            format string as per OpenCL spec

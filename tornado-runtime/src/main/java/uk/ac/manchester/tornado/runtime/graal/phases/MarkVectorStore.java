@@ -27,7 +27,7 @@ package uk.ac.manchester.tornado.runtime.graal.phases;
 
 /**
  * This interface is used for accessing the Vector Store node type outside the
- * scope of drivers package
+ * scope of drivers package.
  */
 public interface MarkVectorStore {
 }

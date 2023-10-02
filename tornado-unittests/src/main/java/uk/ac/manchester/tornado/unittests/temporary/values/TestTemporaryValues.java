@@ -34,7 +34,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * <p>
- * How to run
+ * How to run?
  * </p>
  * <code>
  *     tornado-test -V uk.ac.manchester.tornado.unittests.temporary.values.TestTemporaryValues

@@ -27,13 +27,14 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
-public class MyCompute {
+public final class MyCompute {
+    // CHECKSTYLE:OFF
+
+    private static TornadoExecutionPlan executor;
 
     private MyCompute() {
 
     }
-
-    private static TornadoExecutionPlan executor;
 
     private static void mxm(float[] a, float[] b, float[] c, int N) {
         for (@Parallel int i = 0; i < N; i++) {
@@ -74,3 +75,4 @@ public class MyCompute {
     }
 
 }
+// CHECKSTYLE:ON

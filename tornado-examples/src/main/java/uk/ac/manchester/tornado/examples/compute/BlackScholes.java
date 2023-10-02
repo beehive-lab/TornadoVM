@@ -39,7 +39,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  *
  */
 public class BlackScholes {
-
+    // CHECKSTYLE:OFF
     private static final int WARM_UP_ITERATIONS = 1000;
 
     private static void blackScholesKernel(float[] input, float[] callResult, float[] putResult) {
@@ -155,3 +155,4 @@ public class BlackScholes {
         blackScholes(size);
     }
 }
+// CHECKSTYLE:ON

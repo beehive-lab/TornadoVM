@@ -50,7 +50,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </code>
  */
 public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
-
+    // CHECKSTYLE:OFF
     private static final int TS = 4;
 
     public static void matrixMultiplicationJava(float[] a, float[] b, float[] c, int size) {
@@ -77,41 +77,6 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         }
     }
 
-    @Test
-    public void mxm1DKernelContext() {
-        final int size = 16;
-        float[] a = new float[size * size];
-        float[] b = new float[size * size];
-        float[] cJava = new float[size * size];
-        float[] cTornado = new float[size * size];
-
-        Random r = new Random();
-        IntStream.range(0, size * size).forEach(i -> {
-            a[i] = r.nextFloat();
-            b[i] = r.nextFloat();
-        });
-
-        WorkerGrid worker = new WorkerGrid1D(size);
-        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
-        KernelContext context = new KernelContext();
-
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
-                .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication1D, context, a, b, cTornado, size) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, cTornado);
-
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
-
-        matrixMultiplicationJava(a, b, cJava, size);
-
-        for (int i = 0; i < size * size; i++) {
-            assertEquals(cJava[i], cTornado[i], 0.01f);
-        }
-    }
-
     public static void matrixMultiplication2D01(KernelContext context, float[] a, float[] b, float[] c, int size) {
         int idx = context.globalIdx;
         int jdx = context.globalIdy;
@@ -121,42 +86,6 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
             sum += a[(k * size) + idx] * b[(jdx * size) + k];
         }
         c[(idx * size) + jdx] = sum;
-    }
-
-    @Test
-    public void mxm2DKernelContext01() {
-        final int size = 16;
-        float[] a = new float[size * size];
-        float[] b = new float[size * size];
-        float[] cJava = new float[size * size];
-        float[] cTornado = new float[size * size];
-
-        Random r = new Random();
-        IntStream.range(0, size * size).forEach(i -> {
-            a[i] = r.nextFloat();
-            b[i] = r.nextFloat();
-        });
-
-        WorkerGrid worker = new WorkerGrid2D(size, size);
-        GridScheduler gridScheduler = new GridScheduler();
-        gridScheduler.setWorkerGrid("s0.t0", worker);
-        KernelContext context = new KernelContext();
-
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
-                .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication2D01, context, a, b, cTornado, size) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, cTornado);
-
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withGridScheduler(gridScheduler) //
-                .execute();
-
-        matrixMultiplicationJava(a, b, cJava, size);
-
-        for (int i = 0; i < size * size; i++) {
-            assertEquals(cJava[i], cTornado[i], 0.01f);
-        }
     }
 
     public static void matrixMultiplication2D02(KernelContext context, final float[] A, final float[] B, final float[] C, final int size) {
@@ -196,6 +125,77 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
     }
 
     @Test
+    public void mxm1DKernelContext() {
+        final int size = 16;
+        float[] a = new float[size * size];
+        float[] b = new float[size * size];
+        float[] cJava = new float[size * size];
+        float[] cTornado = new float[size * size];
+
+        Random r = new Random();
+        IntStream.range(0, size * size).forEach(i -> {
+            a[i] = r.nextFloat();
+            b[i] = r.nextFloat();
+        });
+
+        WorkerGrid worker = new WorkerGrid1D(size);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
+        KernelContext context = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication1D, context, a, b, cTornado, size) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, cTornado);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(gridScheduler) //
+                .execute();
+
+        matrixMultiplicationJava(a, b, cJava, size);
+
+        for (int i = 0; i < size * size; i++) {
+            assertEquals(cJava[i], cTornado[i], 0.01f);
+        }
+    }
+
+    @Test
+    public void mxm2DKernelContext01() {
+        final int size = 16;
+        float[] a = new float[size * size];
+        float[] b = new float[size * size];
+        float[] cJava = new float[size * size];
+        float[] cTornado = new float[size * size];
+
+        Random r = new Random();
+        IntStream.range(0, size * size).forEach(i -> {
+            a[i] = r.nextFloat();
+            b[i] = r.nextFloat();
+        });
+
+        WorkerGrid worker = new WorkerGrid2D(size, size);
+        GridScheduler gridScheduler = new GridScheduler();
+        gridScheduler.setWorkerGrid("s0.t0", worker);
+        KernelContext context = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("t0", TestMatrixMultiplicationKernelContext::matrixMultiplication2D01, context, a, b, cTornado, size) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, cTornado);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(gridScheduler) //
+                .execute();
+
+        matrixMultiplicationJava(a, b, cJava, size);
+
+        for (int i = 0; i < size * size; i++) {
+            assertEquals(cJava[i], cTornado[i], 0.01f);
+        }
+    }
+
+    @Test
     public void mxm2DKernelContext02() {
         final int size = 16;
         float[] a = new float[size * size];
@@ -231,4 +231,5 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
             assertEquals(cJava[i], cTornado[i], 0.1f);
         }
     }
+    // CHECKSTYLE:ON
 }

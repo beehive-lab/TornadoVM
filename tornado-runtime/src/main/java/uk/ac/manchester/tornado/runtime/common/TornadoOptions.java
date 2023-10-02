@@ -172,7 +172,7 @@ public class TornadoOptions {
      */
     public static final boolean INLINE_DURING_BYTECODE_PARSING = getBooleanValue("tornado.compiler.bytecodeInlining", FALSE);
     /**
-     * Use Level Zero as a dispatcher for SPIRV
+     * Use Level Zero as a dispatcher for SPIRV.
      */
     public static final boolean USE_LEVELZERO_FOR_SPIRV = getBooleanValue("tornado.spirv.levelzero", TRUE);
     /**
@@ -194,11 +194,11 @@ public class TornadoOptions {
      */
     public static final boolean SPIRV_DIRECT_CALL_WITH_LOAD_HEAP = getBooleanValue("tornado.spirv.directcall.heap", FALSE);
     /**
-     * Trace code generation
+     * Trace code generation.
      */
     public static final boolean TRACE_CODE_GEN = getBooleanValue("tornado.logger.codegen", FALSE);
     /**
-     * Trace code generation
+     * Trace code generation.
      */
     public static final boolean TRACE_BUILD_LIR = getBooleanValue("tornado.logger.buildlir", FALSE);
     /**
@@ -206,11 +206,11 @@ public class TornadoOptions {
      */
     public static final boolean ENABLE_NATIVE_FUNCTION = getBooleanValue("tornado.enable.nativeFunctions", TRUE);
     /**
-     * - It enables more aggressive math optimizations
+     * - It enables more aggressive math optimizations.
      */
     public static final boolean MATH_OPTIMIZATIONS = getBooleanValue("tornado.enable.mathOptimizations", TRUE);
     /**
-     * It enables more fast math optimizations
+     * It enables more fast math optimizations.
      */
     public static final boolean FAST_MATH_OPTIMIZATIONS = getBooleanValue("tornado.enable.fastMathOptimizations", TRUE);
     /**
@@ -224,7 +224,7 @@ public class TornadoOptions {
     public static final boolean USE_LEVELZERO_THREAD_DISPATCHER_SUGGESTIONS = getBooleanValue("tornado.spirv.levelzero.thread.dispatcher", TRUE);
     /**
      * Memory Alignment for the Level Zero buffers (shared memory and or device
-     * memory)
+     * memory).
      */
     public static final int LEVEL_ZERO_BUFFER_ALIGNMENT = getIntValue("tornado.spirv.levelzero.alignment", "64");
     /**

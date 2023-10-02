@@ -91,12 +91,12 @@ public class EmptyProfiler implements TornadoProfiler {
     }
 
     @Override
-    public synchronized String createJson(StringBuffer json, String sectionName) {
+    public synchronized String createJson(StringBuilder json, String sectionName) {
         return null;
     }
 
     @Override
-    public synchronized void dumpJson(StringBuffer stringBuffer, String id) {
+    public synchronized void dumpJson(StringBuilder stringBuffer, String id) {
     }
 
     @Override

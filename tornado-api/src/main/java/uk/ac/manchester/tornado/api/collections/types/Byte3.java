@@ -50,20 +50,13 @@ import uk.ac.manchester.tornado.api.type.annotations.Vector;
 @Vector
 public final class Byte3 implements PrimitiveStorage<ByteBuffer> {
 
+    public static final Class<Byte3> TYPE = Byte3.class;
     private static final String NUMBER_FORMAT = "{ x=%-7d, y=%-7d, z=%-7d }";
 
-    public static final Class<Byte3> TYPE = Byte3.class;
+    private static final int NUM_ELEMENTS = 3;
 
-    /**
-     * backing array
-     */
     @Payload
     private final byte[] storage;
-
-    /**
-     * number of elements in the storage
-     */
-    private static final int NUM_ELEMENTS = 3;
 
     public Byte3(byte[] storage) {
         this.storage = storage;
@@ -80,94 +73,12 @@ public final class Byte3 implements PrimitiveStorage<ByteBuffer> {
         setZ(z);
     }
 
-    public byte[] getArray() {
-        return storage;
-    }
-
-    public void set(Byte3 value) {
-        setX(value.getX());
-        setY(value.getY());
-        setZ(value.getZ());
-    }
-
-    public byte get(int index) {
-        return storage[index];
-    }
-
-    public void set(int index, byte value) {
-        storage[index] = value;
-    }
-
-    public byte getX() {
-        return get(0);
-    }
-
-    public byte getY() {
-        return get(1);
-    }
-
-    public byte getZ() {
-        return get(2);
-    }
-
-    public void setX(byte value) {
-        set(0, value);
-    }
-
-    public void setY(byte value) {
-        set(1, value);
-    }
-
-    public void setZ(byte value) {
-        set(2, value);
-    }
-
-    /**
-     * Duplicates this vector
-     *
-     * @return {@Byte3}
-     */
-    public Byte3 duplicate() {
-        final Byte3 vector = new Byte3();
-        vector.set(this);
-        return vector;
-    }
-
-    public String toString(String fmt) {
-        return String.format(fmt, getX(), getY(), getZ());
-    }
-
-    public String toString() {
-        return toString(NUMBER_FORMAT);
-    }
-
     static Byte3 loadFromArray(final byte[] array, int index) {
         final Byte3 result = new Byte3();
         result.setX(array[index]);
         result.setY(array[index + 1]);
         result.setZ(array[index + 2]);
         return result;
-    }
-
-    void storeToArray(final byte[] array, int index) {
-        array[index] = getX();
-        array[index + 1] = getY();
-        array[index + 2] = getZ();
-    }
-
-    @Override
-    public void loadFromBuffer(ByteBuffer buffer) {
-        asBuffer().put(buffer);
-    }
-
-    @Override
-    public ByteBuffer asBuffer() {
-        return ByteBuffer.wrap(storage);
-    }
-
-    @Override
-    public int size() {
-        return NUM_ELEMENTS;
     }
 
     /*
@@ -228,16 +139,10 @@ public final class Byte3 implements PrimitiveStorage<ByteBuffer> {
         return mult(a, value);
     }
 
-    /*
-     * misc inplace vector ops
-     */
     public static Byte3 clamp(Byte3 x, byte min, byte max) {
         return new Byte3(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max));
     }
 
-    /*
-     * vector wide operations
-     */
     public static byte min(Byte3 value) {
         return TornadoMath.min(value.getX(), TornadoMath.min(value.getY(), value.getZ()));
     }
@@ -248,6 +153,88 @@ public final class Byte3 implements PrimitiveStorage<ByteBuffer> {
 
     public static boolean isEqual(Byte3 a, Byte3 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+    }
+
+    public byte[] getArray() {
+        return storage;
+    }
+
+    public void set(Byte3 value) {
+        setX(value.getX());
+        setY(value.getY());
+        setZ(value.getZ());
+    }
+
+    public byte get(int index) {
+        return storage[index];
+    }
+
+    public void set(int index, byte value) {
+        storage[index] = value;
+    }
+
+    public byte getX() {
+        return get(0);
+    }
+
+    public void setX(byte value) {
+        set(0, value);
+    }
+
+    public byte getY() {
+        return get(1);
+    }
+
+    public void setY(byte value) {
+        set(1, value);
+    }
+
+    public byte getZ() {
+        return get(2);
+    }
+
+    public void setZ(byte value) {
+        set(2, value);
+    }
+
+    /**
+     * Duplicates this vector.
+     *
+     * @return {@Byte3}
+     */
+    public Byte3 duplicate() {
+        final Byte3 vector = new Byte3();
+        vector.set(this);
+        return vector;
+    }
+
+    public String toString(String fmt) {
+        return String.format(fmt, getX(), getY(), getZ());
+    }
+
+    public String toString() {
+        return toString(NUMBER_FORMAT);
+    }
+
+    void storeToArray(final byte[] array, int index) {
+        array[index] = getX();
+        array[index + 1] = getY();
+        array[index + 2] = getZ();
+    }
+
+    @Override
+    public void loadFromBuffer(ByteBuffer buffer) {
+        asBuffer().put(buffer);
+    }
+
+    @Override
+    public ByteBuffer asBuffer() {
+        return ByteBuffer.wrap(storage);
+    }
+
+    @Override
+    public int size() {
+        return NUM_ELEMENTS;
     }
 
 }
