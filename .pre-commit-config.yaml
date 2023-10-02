@@ -1,5 +1,5 @@
 default_language_version:
-  python: python3.10
+  python: python3.9.13
 fail_fast: True
 default_stages: [ push ]
 repos:
@@ -33,4 +33,4 @@ repos:
     rev: stable
     hooks:
       - id: black
-        language_version: python3.10
+        language_version: python3.9.13
