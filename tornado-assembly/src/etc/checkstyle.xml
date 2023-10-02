@@ -139,24 +139,6 @@
             <property name="format" value="new (Hashtable|Vector|Stack|StringBuffer)[^\w]"/>
             <property name="message" value="Don't use old synchronized collection classes"/>
         </module>
-        <module name="RegexpSinglelineJava">
-            <property name="format" value="instanceof MoveOp"/>
-            <property name="message" value="Do not use `op instanceof MoveOp`. Use `MoveOp.isMoveOp(op)` instead!"/>
-        </module>
-        <module name="RegexpSinglelineJava">
-            <property name="format" value="instanceof ValueMoveOp"/>
-            <property name="message"
-                      value="Do not use `op instanceof ValueMoveOp`. Use `ValueMoveOp.isValueMoveOp(op)` instead!"/>
-        </module>
-        <module name="RegexpSinglelineJava">
-            <property name="format" value="\(MoveOp\)"/>
-            <property name="message" value="Do not cast directly to `MoveOp`. Use `MoveOp.asMoveOp(op)` instead!"/>
-        </module>
-        <module name="RegexpSinglelineJava">
-            <property name="format" value="\(ValueMoveOp\)"/>
-            <property name="message"
-                      value="Do not cast directly to `ValueMoveOp`. Use `ValueMoveOp.asValueMoveOp(op)` instead!"/>
-        </module>
         <module name="SuppressionCommentFilter">
             <property name="offCommentFormat" value="Checkstyle: stop constant name check"/>
             <property name="onCommentFormat" value="Checkstyle: resume constant name check"/>
