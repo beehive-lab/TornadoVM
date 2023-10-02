@@ -149,11 +149,6 @@
                       value="Do not use `op instanceof ValueMoveOp`. Use `ValueMoveOp.isValueMoveOp(op)` instead!"/>
         </module>
         <module name="RegexpSinglelineJava">
-            <property name="format" value="instanceof LoadConstantOp"/>
-            <property name="message"
-                      value="Do not use `op instanceof LoadConstantOp`. Use `LoadConstantOp.isLoadConstantOp(op)` instead!"/>
-        </module>
-        <module name="RegexpSinglelineJava">
             <property name="format" value="\(MoveOp\)"/>
             <property name="message" value="Do not cast directly to `MoveOp`. Use `MoveOp.asMoveOp(op)` instead!"/>
         </module>
