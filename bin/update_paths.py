@@ -26,7 +26,6 @@
 import os
 import subprocess
 
-
 def update_tornado_paths():
     """
     Update PATH and TORNADO_SDK symbolic links to the latest Tornado SDK.
@@ -68,7 +67,11 @@ def update_tornado_paths():
         if os.path.islink(symlink):
             os.unlink(symlink)
         elif os.path.isdir(symlink):
-            os.rmdir(symlink)
+            try:
+                os.rmdir(symlink)
+            except:
+                import shutil
+                shutil.rmtree(symlink)
 
     # Change back to the parent directory
     os.chdir("..")
