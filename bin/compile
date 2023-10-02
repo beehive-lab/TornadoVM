@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
-
 #
 # This file is part of Tornado: A heterogeneous programming framework:
 # https://github.com/beehive-lab/tornadovm
 #
-# Copyright (c) 2022-2023, APT Group, Department of Computer Science,
+# Copyright (c) 2023, APT Group, Department of Computer Science,
 # School of Engineering, The University of Manchester. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -29,6 +28,9 @@ import subprocess
 import sys
 import argparse
 import shutil
+
+import install_python_modules as tornadoReq
+tornadoReq.check_python_dependencies()
 
 import update_paths as updp
 import pull_graal_jars
@@ -203,9 +205,7 @@ def copy_jars(graal_jars_dir):
             shutil.copy(source_file, destination_file)
 
 
-def post_installation_actions(
-    backend_profiles, mvn_build_result, jdk, graal_jars_status
-):
+def post_installation_actions(backend_profiles, mvn_build_result, jdk, graal_jars_status):
     """
     Performs post-installation actions.
 
@@ -270,9 +270,7 @@ def main():
 
     mvn_build_result = build_tornadovm(args.jdk, backend_profiles, args.offline)
 
-    post_installation_actions(
-        backend_profiles, mvn_build_result, args.jdk, graal_jars_status
-    )
+    post_installation_actions(backend_profiles, mvn_build_result, args.jdk, graal_jars_status)
 
 
 if __name__ == "__main__":

@@ -28,20 +28,11 @@ import platform
 import sys
 import tarfile
 
+import install_python_modules as tornadoReq
+tornadoReq.check_python_dependencies()
+
+import wget
 import installerConfig as config
-
-try:
-    import wget
-except:
-    print("""
-    Install the wget Python module using the following command:
-        $ python3 -m pip install wget
-
-    Install the `pip3` tool on your system if necessary. 
-    Also, you can install all packages required by scripts in this repo with the following command:
-        $ pip3 install -r bin/requirements.txt
-    """)
-    exit()
 
 __DIRECTORY_DEPENDENCIES__ = "etc/dependencies"
 __VERSION__ = "v0.16-dev"
