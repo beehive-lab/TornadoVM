@@ -19,7 +19,7 @@ repos:
     hooks:
       - id: run-rst-lint
         name: lint rst files ...
-        entry: scripts/validate_rst.py
+        entry: bin/validate_rst.py
         stages: [ commit ]
         language: python
         always_run: true
