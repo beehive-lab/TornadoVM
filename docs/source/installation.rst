@@ -112,6 +112,8 @@ B) Manual Installation
 
 TornadoVM can be executed with the following configurations:
 
+**Note**: For simplicity you can use `SDKMAN <https://sdkman.io/>`_ for managing multiple JDK versions.
+
 Linux
 ~~~~~~~~
 
@@ -155,6 +157,7 @@ GraalVM **Community Edition** builds are available to download at:
 
 The examples below show how to download and extract GraalVM for JDK 21.0.0
 
+
 -  Example for GraalVM for JDK 21 Community 21.0.0:
 
 .. code:: bash
@@ -162,7 +165,17 @@ The examples below show how to download and extract GraalVM for JDK 21.0.0
    $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.0/graalvm-community-jdk-21.0.0_linux-x64_bin.tar.gz
    $ tar -xf graalvm-community-jdk-21.0.0_linux-x64_bin.tar.gz
 
+with SDKMAN:
+
+.. code:: bash
+
+  $ sdk install java 21-graalce
+  $ sdk use java 21-graalce
+
+
 The Java binary will be found in the `graalvm-jdk-{JDK_VERSION}-23.0.1`` directory. This directory is used as the JAVA_HOME (See step 2).
+
+**Note** if installed with SDKMAN there is no need to manually set your JAVA_HOME.
 
 For OSX:
 
@@ -279,7 +292,7 @@ To build with GraalVM and JDK 21:
 and done!!
 
 
-.. _installation_jdk11plus:
+.. _installation_jdk17plus:
 
 TornadoVM for JDK 17+ on Linux and OSx
 --------------------------------------
@@ -313,15 +326,34 @@ JDKs. Below are listed the Java 17 JDK distributions against which TornadoVM has
 - Microsoft OpenJDK releases are available at https://docs.microsoft.com/en-us/java/openjdk/download. Azul Zulu
 - OpenJDK releases are available at `https://www.azul.com/downloads <https://www.azul.com/downloads/?package=jdk#download-openjdk>`__.
 
+1.1 Manage JDKs manually
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 After downloading and extracting the JDK distribution, point your ``JAVA_HOME`` variable to the JDK root.
 
-Example:
+Example using Amazon Corretto:
 
 .. code:: bash
 
     $ wget https://corretto.aws/downloads/latest/amazon-corretto-21-x64-linux-jdk.tar.gz
     $ tar xf amazon-corretto-21-x64-linux-jdk.tar.gz
     $ export JAVA_HOME=$PWD/amazon-corretto-21-x64-linux
+
+1.2 Manage JDKs with SDKMAN
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+There is no need to change your ``JAVA_HOME`` as SDKMAN exports it every time you switch between distributions.
+
+Example using Amazon Corretto:
+
+.. code:: bash
+
+    $ sdk install java 21-amzn
+    $ sdk use java 21-amzn
+
+A complete list of all available Java Versions for Linux 64bit can be obtained with:
+
+.. code:: bash
+
+    $ sdk list java
 
 2. Download TornadoVM
 ~~~~~~~~~~~~~~~~~~~~~
