@@ -64,7 +64,7 @@ Additionally, this installation type will automatically trigger all dependencies
 
 .. code-block:: bash
    
-    $ ./scripts/tornadovm-installer 
+    $ ./bin/tornadovm-installer 
       usage: tornadovm-installer [-h] [--version] [--jdk JDK] [--backend BACKEND] [--listJDKs] [--javaHome JAVAHOME]
 
       TornadoVM Installer Tool. It will install all software dependencies except the GPU/FPGA drivers
@@ -84,19 +84,19 @@ Additionally, this installation type will automatically trigger all dependencies
   * ``spirv``: Enables the SPIRV backend (it requires Intel Level Zero drivers)
 
 
-For example, to build TornadoVM with GraalVM and JDK 17:
+For example, to build TornadoVM with GraalVM and JDK 21:
 
 .. code-block:: bash 
 
-  ## Install with Graal for JDK 17 using PTX, OpenCL and SPIRV backends
-  ./scripts/tornadovm-installer --jdk graalvm-jdk-17  --backend opencl,ptx,spirv
+  ## Install with Graal for JDK 21 using PTX, OpenCL and SPIRV backends
+  ./bin/tornadovm-installer --jdk graalvm-jdk-21  --backend opencl,ptx,spirv
 
 
-To build TornadoVM with Red Hat Mandrel JDK 17 with OpenCL and PTX backends:
+Another example: to build TornadoVM with OpenJDK 17 for the OpenCL and PTX backends:
 
 .. code-block:: bash 
 
-  ./scripts/tornadovmInstaller.sh --jdk mandrel-jdk-17 --backend opencl,ptx
+  ./bin/tornadovm-installer --jdk jdk17 --backend opencl,ptx
 
 
 After the installation, the scripts create a directory with the TornadoVM SDK. The directory also includes a source file with all variables needed to start using TornadoVM. 
@@ -117,7 +117,7 @@ TornadoVM can be executed with the following configurations:
 Linux
 ~~~~~~~~
 
-- TornadoVM with GraalVM for Linux and OSx (JDK 17 and JDK 21): see the installation guide here: :ref:`installation_graalvm`.
+- TornadoVM with GraalVM for Linux and OSx (JDK 21): see the installation guide here: :ref:`installation_graalvm`.
 - TornadoVM with JDK17+ (e.g. OpenJDK [17-21], Red Hat Mandrel, Amazon Corretto): see the installation guide: :ref:`installation_jdk17plus`.
 
 Windows
@@ -129,7 +129,7 @@ To run TornadoVM on **Windows 10/11 OS**, install TornadoVM with GraalVM. More i
 ARM Mali GPUs and Linux
 ~~~~~~~~~~~~~~~~~~~
 
-To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 11. More information here: :ref:`installation_mali`.
+To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 17+. More information here: :ref:`installation_mali`.
 
 
 Compilation with Maven 
@@ -145,25 +145,17 @@ At least one backend must be specified at build time to the ``make`` command:
 
 .. _installation_graalvm:
 
-Installation for GraalVM for JDK 21.0.0 and GraalVM for JDK 17.0.8 on Linux and OSx
+Installation for GraalVM for JDK 21.0.0 on Linux and OSx
 -----------------------------------------------------------------------------------
 
-1. Download GraalVM for JDK 17.0.8 or JDK 21.0.0
+1. Download GraalVM JDK 21.0.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 GraalVM **Community Edition** builds are available to download at:
 
 `https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-21.0.0 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-21.0.0>`_.
-`https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-17.0.8 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-17.0.8>`_.
 
-The examples below show how to download and extract GraalVM for JDK 21.0.0 and GraalVM for JDK 17.0.8 for Linux.
-
--  Example for GraalVM for JDK 17 Community 17.0.8:
-
-.. code:: bash
-
-   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.8/graalvm-community-jdk-17.0.8_linux-x64_bin.tar.gz
-   $ tar -xf graalvm-community-jdk-17.0.8_linux-x64_bin.tar.gz
+The examples below show how to download and extract GraalVM for JDK 21.0.0
 
 with SDKMAN:
 
@@ -193,12 +185,6 @@ The Java binary will be found in the `graalvm-jdk-{JDK_VERSION}-23.0.1`` directo
 
 For OSX:
 
--  Example for GraalVM for JDK 17 Community 17.0.8:
-
-.. code:: bash
-
-   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.8/graalvm-community-jdk-17.0.8_linux-x64_bin.tar.gz
-
 -  Example for GraalVM for JDK 21 Community 21.0.0:
 
 .. code:: bash
@@ -207,7 +193,7 @@ For OSX:
 then ``untar`` it to the OSX standard JDK location
 ``/Library/Java/JavaVirtualMachines/`` or to a folder of your choice.
 
-2. Download TornadoVM
+1. Download TornadoVM
 ~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
@@ -303,7 +289,7 @@ which can be added to ``~/.profile``
    $ cd ~/tornadovm
    $ . etc/sources.env
 
-To build with GraalVM and JDK 17 and JDK 21:
+To build with GraalVM and JDK 21:
 
 .. code:: bash
 
@@ -326,15 +312,12 @@ JDKs. Below are listed the Java 17 JDK distributions against which TornadoVM has
 
 .. code:: bash
 
-  ./scripts/tornadovm-installer --listJDKs
-  jdk17            : Install TornadoVM with OpenJDK 17 (Oracle OpenJDK)
+  ./bin/tornadovm-installer --listJDKs
+  jdk17            : Install TornadoVM with OpenJDK 17 (Oracle OpenJDK)  
   jdk21            : Install TornadoVM with OpenJDK 21 (Oracle OpenJDK)
-  graalvm-jdk-17   : Install TornadoVM with GraalVM and JDK 17 (GraalVM 23.1.0)
   graalvm-jdk-21   : Install TornadoVM with GraalVM and JDK 21 (GraalVM 23.1.0)
   corretto-jdk-17  : Install TornadoVM with Corretto JDK 17
   corretto-jdk-21  : Install TornadoVM with Corretto JDK 21
-  mandrel-jdk-17   : Install TornadoVM with Mandrel 23.0.1 (JDK 17)
-  mandrel-jdk-21   : Install TornadoVM with Mandrel 23.0.1 (JDK 21)
   microsoft-jdk-17 : Install TornadoVM with Microsoft JDK 17
   zulu-jdk-jdk-17  : Install TornadoVM with Azul Zulu JDK 17
   zulu-jdk-jdk-21  : Install TornadoVM with Azul Zulu JDK 21
@@ -562,7 +545,8 @@ found.
    mingw-w64-x86_64-gcc            \
    mingw-w64-x86_64-opencl-headers \
    mingw-w64-x86_64-opencl-icd \
-   python make git
+   python python3-pip make git 
+
 
 5. Create default Maven repository for MSys2 user:
 
@@ -676,13 +660,12 @@ the following content:
    #!/bin/bash
 
    # UPDATE PATH TO ACTUAL LOCATION OF THE JDK OR GRAAL 
-   export JAVA_HOME="C:\Users\jjfum\bin\jvms\graalvm-ce-java17-windows-amd64-22.3.2\graalvm-ce-java17-22.3.2"
-
+   export JAVA_HOME="C:\Users\jjfum\Documents\bin\jvms\graalvm-jdk-21_windows-x64_bin\graalvm-jdk-21+35.1"
 
    ## NEXT TWO LINES NECESSARY TO BUILD PTX (NVIDIA CUDA) BACKEND
    ## COMMENT THEM OUT OR JUST IGNORE IF YOU ARE NOT INTERESTED IN PTX BUILD
    ## OTHERWISE UPDATE 'CUDA_PATH' WITH ACTUAL VALUE (REMEMBER OF UNIX_STYLE SLASHES AND SPACES!!!)
-   export CUDA_PATH="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.6"
+   export CUDA_PATH="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.1"
    export PTX_LDFLAGS=-L\"$CUDA_PATH/lib/x64\"
 
    # LEAVE THE REST OF FILE 'AS IS'
@@ -698,7 +681,7 @@ There are only 2 places you should adjust:
 2. ``CUDA_PATH`` pointing to your NVIDIA GPU Computing Toolkit (CUDA) -
    this one is necessary only for builds with PTX backend.
 
-6. Compile TornadoVM
+3. Compile TornadoVM
 ~~~~~~~~~~~~
 
 Start ``<MSYS2>/mingw64.exe`` terminal, navigate to the ``<TornadoVM>``
@@ -708,7 +691,7 @@ directory, and build TornadoVM as follows:
 
    cd D:/MyProjects/TornadoVM
    source etc/sources.env
-   make graal-jdk-11-plus BACKEND=ptx,opencl
+   make graal-jdk-17-plus BACKEND=ptx,opencl
 
 The ``BACKEND`` parameter has to be a comma-separated list of ``ptx`` and ``opencl`` options. You may build ``ptx`` only when NVIDIA GPU
 Computing Toolkit (CUDA) is installed.
@@ -724,7 +707,7 @@ Don't close ``<MSYS2>/mingw64.exe`` after the build. Run the following command t
 
 You should see a list of OpenCL and/or CUDA devices available on your system.
 
-Now try to run a simple test. To run examples with Graal JDK 11, TornadoVM uses modules:
+Now try to run a simple test. To run examples with Graal JDK 21, TornadoVM uses modules:
 
 .. code:: bash
 
@@ -751,7 +734,7 @@ TornadoVM on ARM Mali GPUs
 Installation
 ^^^^^^^^^^^^
 
-The installation of TornadoVM to run on ARM Mali GPUs requires JDK11 with GraalVM. 
+The installation of TornadoVM to run on ARM Mali GPUs requires JDK17+ with GraalVM. 
 See the :ref:`installation_graalvm` for details about the installation.
 
 The OpenCL driver for Mali GPUs on Linux that has been tested is:
