@@ -157,12 +157,6 @@ GraalVM **Community Edition** builds are available to download at:
 
 The examples below show how to download and extract GraalVM for JDK 21.0.0
 
-with SDKMAN:
-
-.. code:: bash
-
-   $ sdk install java 17.0.7-graalce
-   $ sdk use java 17.0.7-graalce
 
 -  Example for GraalVM for JDK 21 Community 21.0.0:
 
