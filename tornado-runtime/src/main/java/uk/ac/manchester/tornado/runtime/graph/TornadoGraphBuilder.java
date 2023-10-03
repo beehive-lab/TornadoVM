@@ -173,6 +173,8 @@ public class TornadoGraphBuilder {
                         value = ((CopyInNode) objectNodes[variableIndex]).getValue();
                     } else if (objectNodes[variableIndex] instanceof AllocateNode) {
                         value = ((AllocateNode) objectNodes[variableIndex]).getValue();
+                    } else if (objectNodes[variableIndex] instanceof StreamInNode) {
+                        value = ((StreamInNode) objectNodes[variableIndex]).getValue();
                     } else {
                         value = null;
                     }

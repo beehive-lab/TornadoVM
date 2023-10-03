@@ -95,6 +95,8 @@ public class TornadoVMBytecodeBuilder {
             ObjectNode value = ((CopyOutNode) node).getValue().getValue();
             if (value != null) {
                 bitcodeASM.transferToHost(value.getIndex(), dependencyBC, offset, batchSize);
+            } else {
+                TornadoLogger.info("[%s]: Skipping null CopyOut node %s", getClass().getSimpleName(), CopyOutNode.class.getSimpleName());
             }
         } else if (node instanceof StreamInNode) {
             bitcodeASM.transferToDeviceAlways(((StreamInNode) node).getValue().getIndex(), dependencyBC, offset, batchSize);
