@@ -33,6 +33,7 @@ import java.util.Objects;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateMultipleBuffersNode;
@@ -173,8 +174,10 @@ public class TornadoGraphBuilder {
                         value = ((CopyInNode) objectNodes[variableIndex]).getValue();
                     } else if (objectNodes[variableIndex] instanceof AllocateNode) {
                         value = ((AllocateNode) objectNodes[variableIndex]).getValue();
+                    } else if (objectNodes[variableIndex] instanceof StreamInNode) {
+                        value = ((StreamInNode) objectNodes[variableIndex]).getValue();
                     } else {
-                        value = null;
+                        throw new TornadoRuntimeException("Invalid graph node in TornadoGraph builder for node: " + objectNodes[variableIndex].getClass().getName());
                     }
                     depRead.setValue(value);
                     depRead.setDependent(taskNode);
