@@ -91,7 +91,7 @@ public class MatrixMultiplication2D {
         }
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrixA, matrixB) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
                 .task("t0", MatrixMultiplication2D::matrixMultiplication, matrixA, matrixB, matrixC, size) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
 
