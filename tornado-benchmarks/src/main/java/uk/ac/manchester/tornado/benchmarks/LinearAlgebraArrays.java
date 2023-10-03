@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.benchmarks;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class LinearAlgebraArrays {
+    // CHECKSTYLE:OFF
 
     public static void saxpy(float alpha, float[] x, float[] y) {
         for (@Parallel int i = 0; i < y.length; i++) {
@@ -73,5 +74,5 @@ public class LinearAlgebraArrays {
             out[i] = t;
         }
     }
-
+    // CHECKSTYLE:ON
 }

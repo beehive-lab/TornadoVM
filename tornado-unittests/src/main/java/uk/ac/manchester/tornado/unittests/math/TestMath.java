@@ -39,13 +39,14 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * <p>
- * How to run:
+ * How to run?
  * </p>
  * <code>
  *      tornado-test -V --fast uk.ac.manchester.tornado.unittests.math.TestMath
  * </code>
  */
 public class TestMath extends TornadoTestBase {
+    // CHECKSTYLE:OFF
 
     public static void testCos(DoubleArray a) {
         for (@Parallel int i = 0; i < a.getSize(); i++) {
@@ -893,3 +894,4 @@ public class TestMath extends TornadoTestBase {
     }
 
 }
+// CHECKSTYLE:ON

@@ -18,7 +18,11 @@
 
 package uk.ac.manchester.tornado.examples.dynamic;
 
-import uk.ac.manchester.tornado.api.*;
+import uk.ac.manchester.tornado.api.DRMode;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.Policy;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -29,9 +33,8 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  * How to run?
  * </p>
  * <code>
- *      tornado -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DynamicReconfiguration
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DynamicReconfiguration
  * </code>
- *
  */
 public class DynamicReconfiguration {
 
@@ -39,6 +42,10 @@ public class DynamicReconfiguration {
         for (@Parallel int i = 0; i < y.getSize(); i++) {
             y.set(i, alpha * x.get(i));
         }
+    }
+
+    public static void main(String[] args) {
+        new DynamicReconfiguration().runWithDynamicProfiler();
     }
 
     public void runWithDynamicProfiler() {
@@ -57,9 +64,5 @@ public class DynamicReconfiguration {
                 .withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.PARALLEL) //
                 .execute();
 
-    }
-
-    public static void main(String[] args) {
-        new DynamicReconfiguration().runWithDynamicProfiler();
     }
 }

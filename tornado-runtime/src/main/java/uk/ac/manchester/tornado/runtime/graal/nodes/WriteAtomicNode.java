@@ -12,7 +12,7 @@ import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 
 @NodeInfo(nameTemplate = "AtomicWrite")
-public class WriteAtomicNode extends FixedWithNextNode  implements StateSplit, Lowerable {
+public class WriteAtomicNode extends FixedWithNextNode implements StateSplit, Lowerable {
 
     public static final NodeClass<WriteAtomicNode> TYPE = NodeClass.create(WriteAtomicNode.class);
 
@@ -37,7 +37,6 @@ public class WriteAtomicNode extends FixedWithNextNode  implements StateSplit, L
         this.outArray = outArray;
     }
 
-
     public ValueNode getIndex() {
         return null;
     }
@@ -45,6 +44,7 @@ public class WriteAtomicNode extends FixedWithNextNode  implements StateSplit, L
     public JavaKind getElementKind() {
         return kind;
     }
+
     public ValueNode value() {
         return value;
     }
@@ -69,7 +69,7 @@ public class WriteAtomicNode extends FixedWithNextNode  implements StateSplit, L
         return writeAtomicExtraNode.getExtraOperation();
     }
 
-    public ValueNode getOutArray () {
+    public ValueNode getOutArray() {
         return outArray;
     }
 
@@ -90,13 +90,12 @@ public class WriteAtomicNode extends FixedWithNextNode  implements StateSplit, L
         return true;
     }
 
-
-//    @Override
-//    public MemoryOrderMode getMemoryOrder() {
-//        return null;
-//    }
-//    @Override
-//    public LocationIdentity getKilledLocationIdentity() {
-//        return null;
-//    }
+    //    @Override
+    //    public MemoryOrderMode getMemoryOrder() {
+    //        return null;
+    //    }
+    //    @Override
+    //    public LocationIdentity getKilledLocationIdentity() {
+    //        return null;
+    //    }
 }

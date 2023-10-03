@@ -27,6 +27,9 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
+ * <p>
+ * How to run?
+ * </p>
  * <code>
  *     tornado --enableProfiler console -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt 256
  * </code>

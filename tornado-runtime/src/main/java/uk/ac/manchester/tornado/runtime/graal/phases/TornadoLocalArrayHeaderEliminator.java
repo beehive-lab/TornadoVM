@@ -1,7 +1,5 @@
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
-import java.util.Optional;
-
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -12,10 +10,22 @@ import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.phases.BasePhase;
 
+import java.util.Optional;
+
 public class TornadoLocalArrayHeaderEliminator extends BasePhase<TornadoHighTierContext> {
 
     public static boolean isReduction = false;
     public static boolean nativeTypes = false;
+
+    public static boolean anyIdentityNodeOrReduction(Node n) {
+        boolean anyIdentity = false;
+        if (n instanceof ReadNode) {
+            anyIdentity = ((ReadNode) n).getLocationIdentity().isAny();
+        } else if (n instanceof WriteNode) {
+            anyIdentity = ((WriteNode) n).getLocationIdentity().isAny();
+        }
+        return anyIdentity || (isReduction && nativeTypes);
+    }
 
     @Override
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
@@ -41,17 +51,7 @@ public class TornadoLocalArrayHeaderEliminator extends BasePhase<TornadoHighTier
         nativeTypes = false;
     }
 
-    public static boolean anyIdentityNodeOrReduction(Node n) {
-        boolean anyIdentity = false;
-        if (n instanceof ReadNode) {
-            anyIdentity = ((ReadNode) n).getLocationIdentity().isAny();
-        } else if (n instanceof WriteNode) {
-            anyIdentity = ((WriteNode) n).getLocationIdentity().isAny();
-        }
-        return anyIdentity || (isReduction && nativeTypes);
-    }
-
-    public void removeHeaderBytesOffset (OffsetAddressNode offsetAddressNode) {
+    public void removeHeaderBytesOffset(OffsetAddressNode offsetAddressNode) {
         if (offsetAddressNode.inputs().filter(AddNode.class).isNotEmpty()) {
             AddNode addNode = offsetAddressNode.inputs().filter(AddNode.class).first();
             for (Node in : addNode.inputs()) {

@@ -52,12 +52,22 @@ public class ChromeEventTracer {
      */
     public static final String CHROME_EVENT_TRACER_FILENAME_KEY = "tornado.chrome.event.tracer.filename";
     public static final String CHROME_EVENT_TRACER_FILENAME = System.getProperties().getProperty(CHROME_EVENT_TRACER_FILENAME_KEY, "chrome.json");
+    public static final String CHROME_EVENT_TRACER_ENABLED_KEY = "tornado.chrome.event.tracer.enabled";
+    public static final ChromeEventJSonWriter json = new ChromeEventJSonWriter();
+
+    static {
+        if (isEnabled()) {
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> json.write(new File(getChromeEventTracerFileName()))));
+        }
+    }
+
+    public ChromeEventTracer() {
+
+    }
 
     public static String getChromeEventTracerFileName() {
         return System.getProperties().getProperty(CHROME_EVENT_TRACER_FILENAME_KEY, "chrome.json");
     }
-
-    public static final String CHROME_EVENT_TRACER_ENABLED_KEY = "tornado.chrome.event.tracer.enabled";
 
     /**
      * Option to enable chrome event format for profiler. It can be disabled at any
@@ -73,29 +83,19 @@ public class ChromeEventTracer {
         return new ChromeEventTracer();
     }
 
-    public static final ChromeEventJSonWriter json = new ChromeEventJSonWriter();
-    static {
-        if (isEnabled()) {
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> json.write(new File(getChromeEventTracerFileName()))));
-        }
-    }
-
     public static boolean isEnabled() {
         return isChromeEventTracerEnabled();
     }
 
     public static void enqueueWriteIfEnabled(String tag, long bytes, long startNs, long endNs) {
         if (isEnabled()) {
-            json.x(tag, "write", startNs, endNs, () ->
-                json.kv("bytes", bytes)
-            );
+            json.x(tag, "write", startNs, endNs, () -> json.kv("bytes", bytes));
         }
     }
 
     public static void enqueueReadIfEnabled(String tag, long bytes, long startNs, long endNs) {
         if (isEnabled()) {
-            json.x(tag, "read", startNs, endNs, () ->
-                json.kv("bytes", bytes));
+            json.x(tag, "read", startNs, endNs, () -> json.kv("bytes", bytes));
         }
     }
 
@@ -119,10 +119,6 @@ public class ChromeEventTracer {
         }
     }
 
-    public interface Builder<T> {
-        T build();
-    }
-
     public static <T> T trace(String tag, Builder<T> b) {
         long startNs = System.nanoTime();
         T value = b.build();
@@ -130,10 +126,6 @@ public class ChromeEventTracer {
             json.x(tag, "trace", startNs, System.nanoTime(), null);
         }
         return value;
-    }
-
-    public ChromeEventTracer() {
-
     }
 
     public static void opencltimes(int localId, long queuedNs, long submitNs, long startNs, long endNs, Map<String, ?> meta) {
@@ -145,5 +137,9 @@ public class ChromeEventTracer {
         json.x("submit", null, submitNs, endNs, null);
         json.x("start", null, startNs, endNs, null);
         // order queue submit start end
+    }
+
+    public interface Builder<T> {
+        T build();
     }
 }

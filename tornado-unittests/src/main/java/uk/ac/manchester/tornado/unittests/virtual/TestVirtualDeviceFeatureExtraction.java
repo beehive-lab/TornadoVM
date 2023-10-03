@@ -41,7 +41,8 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V --jvm="-Dtornado.device.desc=virtual-device-CPU.json -Dtornado.print.kernel=True -Dtornado.virtual.device=True -Dtornado.print.kernel.dir=virtualKernelOut.out" uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction
+ *     tornado-test -V --jvm="-Dtornado.device.desc=virtual-device-CPU.json -Dtornado.print.kernel=True -Dtornado.virtual.device=True
+ *     -Dtornado.print.kernel.dir=virtualKernelOut.out" uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction
  * </code>
  */
 public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
@@ -51,6 +52,30 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
     private static final byte WHITESPACE = 0x20;
 
     private static final String FEATURE_DUMP_DIR = System.getProperty("tornado.features.dump.dir");
+    private static final int SIZE = 8192;
+
+    private static void maxReduction(float[] input, @Reduce float[] result) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] = Math.max(result[0], input[i]);
+        }
+    }
+
+    public static long getByteSum(byte[] bytes) {
+        long sum = 0;
+        for (byte entry : bytes) {
+            if (entry == TAB || entry == NEWLINE || entry == WHITESPACE) {
+                continue;
+            }
+            sum += entry;
+        }
+        return sum;
+    }
+
+    public static boolean performComparison(byte[] source, byte[] expected) {
+        long sourceSum = getByteSum(source);
+        long expectedSum = getByteSum(expected);
+        return sourceSum == expectedSum;
+    }
 
     @After
     public void after() {
@@ -58,14 +83,6 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
         File fileLog = new File(FEATURE_DUMP_DIR);
         if (fileLog.exists()) {
             fileLog.delete();
-        }
-    }
-
-    private static final int SIZE = 8192;
-
-    private static void maxReduction(float[] input, @Reduce float[] result) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] = Math.max(result[0], input[i]);
         }
     }
 
@@ -120,23 +137,6 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         testVirtuaLDeviceFeatureExtraction("virtualDeviceFeaturesCPU.json");
-    }
-
-    public static long getByteSum(byte[] bytes) {
-        long sum = 0;
-        for (byte entry : bytes) {
-            if (entry == TAB || entry == NEWLINE || entry == WHITESPACE) {
-                continue;
-            }
-            sum += entry;
-        }
-        return sum;
-    }
-
-    public static boolean performComparison(byte[] source, byte[] expected) {
-        long sourceSum = getByteSum(source);
-        long expectedSum = getByteSum(expected);
-        return sourceSum == expectedSum;
     }
 
 }

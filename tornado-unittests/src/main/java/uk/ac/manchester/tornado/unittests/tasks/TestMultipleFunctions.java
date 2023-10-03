@@ -17,14 +17,8 @@
  */
 package uk.ac.manchester.tornado.unittests.tasks;
 
-import static junit.framework.TestCase.assertEquals;
-
-import java.util.Random;
-import java.util.stream.IntStream;
-
 import org.junit.Assert;
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -35,83 +29,21 @@ import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+import java.util.Random;
+import java.util.stream.IntStream;
+
+import static junit.framework.TestCase.assertEquals;
+
 /**
- * Tests TornadoVM compilation under different scenarios, when not performing
- * inlining in the method passed to the task.
+ * Tests TornadoVM compilation under different scenarios, when not performing inlining in the method passed to the task.
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions
+ * tornado-test -V uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions
  * </code>
  */
 public class TestMultipleFunctions extends TornadoTestBase {
-
-    private static class TestArrays {
-        final int N1 = 1024;
-
-        IntArray calleeReadTor;
-        IntArray callerReadCalleeWriteTor;
-        IntArray callerReadTor;
-        IntArray callerWriteTor;
-        IntArray callerReadWriteTor;
-        IntArray callee1WriteTor;
-        IntArray callee2ReadTor;
-
-        IntArray calleeReadSeq;
-        IntArray callerReadCalleeWriteSeq;
-        IntArray callerReadSeq;
-        IntArray callerWriteSeq;
-        IntArray callerReadWriteSeq;
-        IntArray callee1WriteSeq;
-        IntArray callee2ReadSeq;
-
-        int ignoreParam1 = 10;
-        int ignoreParam2 = -500;
-
-        public TestArrays() {
-            calleeReadTor = new IntArray(N1);
-            callerReadCalleeWriteTor = new IntArray(N1);
-            callerReadTor = new IntArray(N1);
-            callerWriteTor = new IntArray(N1);
-            callerReadWriteTor = new IntArray(N1);
-            callee1WriteTor = new IntArray(N1);
-            callee2ReadTor = new IntArray(N1);
-            calleeReadSeq = new IntArray(N1);
-            callerReadCalleeWriteSeq = new IntArray(N1);
-            callerReadSeq = new IntArray(N1);
-            callerWriteSeq = new IntArray(N1);
-            callerReadWriteSeq = new IntArray(N1);
-            callee1WriteSeq = new IntArray(N1);
-            callee2ReadSeq = new IntArray(N1);
-
-            Random random = new Random();
-            for (int i = 0; i < N1; i++) {
-                calleeReadTor.set(i, random.nextInt());
-                calleeReadSeq.set(i, calleeReadTor.get(i));
-                callerReadCalleeWriteTor.set(i, random.nextInt());
-                callerReadCalleeWriteSeq.set(i, callerReadCalleeWriteTor.get(i));
-                callerReadTor.set(i, random.nextInt());
-                callerReadSeq.set(i, callerReadTor.get(i));
-                callerWriteTor.set(i, random.nextInt());
-                callerWriteSeq.set(i, callerWriteTor.get(i));
-                callerReadWriteTor.set(i, random.nextInt());
-                callerReadWriteSeq.set(i, callerReadWriteTor.get(i));
-                callee1WriteTor.set(i, random.nextInt());
-                callee1WriteSeq.set(i, callee1WriteTor.get(i));
-                callee2ReadTor.set(i, random.nextInt());
-                callee2ReadSeq.set(i, callee2ReadTor.get(i));
-            }
-
-//            calleeReadSeq = calleeReadTor.clone();
-//            callerReadCalleeWriteSeq = callerReadCalleeWriteTor.clone();
-//            callerReadSeq = callerReadTor.clone();
-//            callerWriteSeq = callerWriteTor.clone();
-//            callerReadWriteSeq = callerReadWriteTor.clone();
-//            callee1WriteSeq = callee1WriteTor.clone();
-//            callee2ReadSeq = callee2ReadTor.clone();
-        }
-    }
 
     private static int operation(int a, int b) {
         return a + b;
@@ -180,11 +112,33 @@ public class TestMultipleFunctions extends TornadoTestBase {
     }
 
     /**
-     * Test to check we can generate vector types for the method signature and
-     * non-main kernel functions.
+     * Test to check we can generate vector types for the method signature and non-main kernel functions.
      */
     public static void vectorTypes(Float4 a, Float4 b, Float4 c) {
         c.set(Float4.add(foo(a), bar(b)));
+    }
+
+    public static void callee2(IntArray calleeReadWrite, IntArray calleeRead) {
+        for (int i = 0; i < calleeReadWrite.getSize(); i++) {
+            calleeReadWrite.set(i, calleeReadWrite.get(i) - calleeRead.get(i));
+        }
+    }
+
+    private static void functionA(IntArray arr) {
+        functionB(arr);
+        functionC(arr);
+    }
+
+    private static void functionB(IntArray arr) {
+        functionD(arr);
+    }
+
+    private static void functionC(IntArray arr) {
+        functionD(arr);
+    }
+
+    private static void functionD(IntArray arr) {
+        arr.set(0, -1);
     }
 
     @Test
@@ -327,8 +281,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
     }
 
     /**
-     * Test to check we can generate vector types for the method signature and
-     * non-main kernel functions.
+     * Test to check we can generate vector types for the method signature and non-main kernel functions.
      */
     @Test
     public void testVector01() {
@@ -355,8 +308,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
     }
 
     /**
-     * Tests {@link uk.ac.manchester.tornado.api.common.Access} pattern when calling
-     * a method and writing to one of the parameters in the callee.
+     * Tests {@link uk.ac.manchester.tornado.api.common.Access} pattern when calling a method and writing to one of the parameters in the callee.
      */
     public void caller1(IntArray calleeRead, int ignoreParam1, IntArray callerReadCalleeWrite, int ignoreParam2, IntArray callerRead, IntArray callerWrite) {
         for (int i = 0; i < callerRead.getSize(); i++) {
@@ -376,12 +328,6 @@ public class TestMultipleFunctions extends TornadoTestBase {
         callee2(calleeReadWrite, calleeRead);
     }
 
-    public static void callee2(IntArray calleeReadWrite, IntArray calleeRead) {
-        for (int i = 0; i < calleeReadWrite.getSize(); i++) {
-            calleeReadWrite.set(i, calleeReadWrite.get(i) - calleeRead.get(i));
-        }
-    }
-
     public void caller3(IntArray callerReadWrite, IntArray callee1Read, IntArray callee1Write, IntArray callee2ReadWrite, IntArray callee2Read) {
         for (int i = 0; i < callerReadWrite.getSize(); i++) {
             callerReadWrite.set(i, callerReadWrite.get(i) + 20);
@@ -391,8 +337,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
     }
 
     /**
-     * Tests {@link uk.ac.manchester.tornado.api.common.Access} pattern when calling
-     * a method and writing to one of the parameters in the callee.
+     * Tests {@link uk.ac.manchester.tornado.api.common.Access} pattern when calling a method and writing to one of the parameters in the callee.
      */
     @Test
     public void testSingleTask() {
@@ -435,9 +380,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
     }
 
     /**
-     * Tests {@link uk.ac.manchester.tornado.api.common.Access} pattern when calling
-     * two methods from different tasks, passing the same parameter to both tasks,
-     * and writing in only one callee.
+     * Tests {@link uk.ac.manchester.tornado.api.common.Access} pattern when calling two methods from different tasks, passing the same parameter to both tasks, and writing in only one callee.
      */
     @Test
     public void testMultipleTasks() {
@@ -480,9 +423,8 @@ public class TestMultipleFunctions extends TornadoTestBase {
     }
 
     /**
-     * Tests {@link uk.ac.manchester.tornado.api.common.Access} pattern when calling
-     * three methods from different tasks. Performs a combination of
-     * {@link #testMultipleTasks} and {@link #testSingleTask}.
+     * Tests {@link uk.ac.manchester.tornado.api.common.Access} pattern when calling three methods from different tasks. Performs a combination of {@link #testMultipleTasks} and
+     * {@link #testSingleTask}.
      */
     @Test
     public void testMultipleTasksMultipleCallees() {
@@ -495,7 +437,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
         TestMultipleFunctions testTaskAccesses = new TestMultipleFunctions();
 
         TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, arrays.calleeReadTor, //
-                arrays.callee2ReadTor)//
+                        arrays.callee2ReadTor)//
                 .task("t0", testTaskAccesses::caller1, //
                         arrays.calleeReadTor, //
                         arrays.ignoreParam1, //
@@ -516,7 +458,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
                         arrays.callerReadTor, //
                         arrays.callerReadWriteTor, //
                         arrays.callee1WriteTor, //
-                        arrays.callerReadCalleeWriteTor);//
+                        arrays.callerReadCalleeWriteTor); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
@@ -545,29 +487,14 @@ public class TestMultipleFunctions extends TornadoTestBase {
         }
     }
 
-    private static void functionA(IntArray arr) {
-        functionB(arr);
-        functionC(arr);
-    }
-
-    private static void functionB(IntArray arr) {
-        functionD(arr);
-    }
-
-    private static void functionC(IntArray arr) {
-        functionD(arr);
-    }
-
-    private static void functionD(IntArray arr) {
-        arr.set(0, -1);
-    }
-
     //@formatter:off
+    // CHECKSTYLE:OFF
     /** Tests if methods/functions invoked from different places in the call graph do not get compiled twice.
      *    A → B → D
      *      ↘ C ↗
      * If compiled twice, it will generate a runtime exception when launching the kernel.
      */
+    // CHECKSTYLE:ON
     //@formatter:on
     @Test
     public void testNoDoubleCompilation() {
@@ -583,6 +510,74 @@ public class TestMultipleFunctions extends TornadoTestBase {
         executionPlan.execute();
 
         Assert.assertEquals(-1, arr.get(0));
+    }
+
+    //@formatter:off
+
+    private static class TestArrays {
+        final int N1 = 1024;
+
+        IntArray calleeReadTor;
+        IntArray callerReadCalleeWriteTor;
+        IntArray callerReadTor;
+        IntArray callerWriteTor;
+        IntArray callerReadWriteTor;
+        IntArray callee1WriteTor;
+        IntArray callee2ReadTor;
+
+        IntArray calleeReadSeq;
+        IntArray callerReadCalleeWriteSeq;
+        IntArray callerReadSeq;
+        IntArray callerWriteSeq;
+        IntArray callerReadWriteSeq;
+        IntArray callee1WriteSeq;
+        IntArray callee2ReadSeq;
+
+        int ignoreParam1 = 10;
+        int ignoreParam2 = -500;
+
+        public TestArrays() {
+            calleeReadTor = new IntArray(N1);
+            callerReadCalleeWriteTor = new IntArray(N1);
+            callerReadTor = new IntArray(N1);
+            callerWriteTor = new IntArray(N1);
+            callerReadWriteTor = new IntArray(N1);
+            callee1WriteTor = new IntArray(N1);
+            callee2ReadTor = new IntArray(N1);
+            calleeReadSeq = new IntArray(N1);
+            callerReadCalleeWriteSeq = new IntArray(N1);
+            callerReadSeq = new IntArray(N1);
+            callerWriteSeq = new IntArray(N1);
+            callerReadWriteSeq = new IntArray(N1);
+            callee1WriteSeq = new IntArray(N1);
+            callee2ReadSeq = new IntArray(N1);
+
+            Random random = new Random();
+            for (int i = 0; i < N1; i++) {
+                calleeReadTor.set(i, random.nextInt());
+                calleeReadSeq.set(i, calleeReadTor.get(i));
+                callerReadCalleeWriteTor.set(i, random.nextInt());
+                callerReadCalleeWriteSeq.set(i, callerReadCalleeWriteTor.get(i));
+                callerReadTor.set(i, random.nextInt());
+                callerReadSeq.set(i, callerReadTor.get(i));
+                callerWriteTor.set(i, random.nextInt());
+                callerWriteSeq.set(i, callerWriteTor.get(i));
+                callerReadWriteTor.set(i, random.nextInt());
+                callerReadWriteSeq.set(i, callerReadWriteTor.get(i));
+                callee1WriteTor.set(i, random.nextInt());
+                callee1WriteSeq.set(i, callee1WriteTor.get(i));
+                callee2ReadTor.set(i, random.nextInt());
+                callee2ReadSeq.set(i, callee2ReadTor.get(i));
+            }
+
+            //            calleeReadSeq = calleeReadTor.clone();
+            //            callerReadCalleeWriteSeq = callerReadCalleeWriteTor.clone();
+            //            callerReadSeq = callerReadTor.clone();
+            //            callerWriteSeq = callerWriteTor.clone();
+            //            callerReadWriteSeq = callerReadWriteTor.clone();
+            //            callee1WriteSeq = callee1WriteTor.clone();
+            //            callee2ReadSeq = callee2ReadTor.clone();
+        }
     }
 
 }

@@ -36,7 +36,7 @@ public final class MatrixMath {
     }
 
     /**
-     * SGEMM - performs matrix-matrix multiplication C = alpha*op(A)*op(B) + beta*C
+     * SGEMM - performs matrix-matrix multiplication C = alpha*op(A)*op(B) + beta*C.
      *
      * @param transA
      * @param transB
@@ -46,7 +46,7 @@ public final class MatrixMath {
      * @param beta
      * @param c
      */
-    public static final void sgemm(boolean transA, boolean transB, float alpha, Matrix2DFloat a, Matrix2DFloat b, float beta, Matrix2DFloat c) {
+    public static void sgemm(boolean transA, boolean transB, float alpha, Matrix2DFloat a, Matrix2DFloat b, float beta, Matrix2DFloat c) {
         if (transA) {
             transpose(a);
         }
@@ -69,17 +69,17 @@ public final class MatrixMath {
     }
 
     /**
-     * SGEMM - performs matrix-matrix multiplication C = A * B
+     * SGEMM - performs matrix-matrix multiplication C = A * B.
      *
      * @param a
      * @param b
      * @param c
      */
-    public static final void sgemm(Matrix2DFloat a, Matrix2DFloat b, Matrix2DFloat c) {
+    public static void sgemm(Matrix2DFloat a, Matrix2DFloat b, Matrix2DFloat c) {
         sgemm(false, false, 1f, a, b, 0f, c);
     }
 
-    public static final void sgemm(Matrix4x4Float a, Matrix4x4Float b, Matrix4x4Float c) {
+    public static void sgemm(Matrix4x4Float a, Matrix4x4Float b, Matrix4x4Float c) {
         for (@Parallel int row = 0; row < c.getNumRows(); row++) {
             for (@Parallel int col = 0; col < c.getNumColumns(); col++) {
                 float sum = 0f;
@@ -91,7 +91,7 @@ public final class MatrixMath {
         }
     }
 
-    public static final void dgemm(Matrix2DDouble a, Matrix2DDouble b, Matrix2DDouble c) {
+    public static void dgemm(Matrix2DDouble a, Matrix2DDouble b, Matrix2DDouble c) {
         for (@Parallel int row = 0; row < c.getNumRows(); row++) {
             for (@Parallel int col = 0; col < c.getNumColumns(); col++) {
                 double sum = 0;
@@ -104,14 +104,14 @@ public final class MatrixMath {
     }
 
     // SSYTRD in LAPACK, tred2 in EISPACK
-    public static void tred2(double[][] V, double[] d, double[] e, int n) {
+    public static void tred2(double[][] v, double[] d, double[] e, int n) {
 
         // This is derived from the Algol procedures tred2 by
         // Bowdler, Martin, Reinsch, and Wilkinson, Handbook for
         // Auto. Comp., Vol.ii-Linear Algebra, and the corresponding
         // Fortran subroutine in EISPACK.
         for (int j = 0; j < n; j++) {
-            d[j] = V[n - 1][j];
+            d[j] = v[n - 1][j];
         }
 
         // Householder reduction to tridiagonal form.
@@ -126,9 +126,9 @@ public final class MatrixMath {
             if (scale == 0.0) {
                 e[i] = d[i - 1];
                 for (int j = 0; j < i; j++) {
-                    d[j] = V[i - 1][j];
-                    V[i][j] = 0.0;
-                    V[j][i] = 0.0;
+                    d[j] = v[i - 1][j];
+                    v[i][j] = 0.0;
+                    v[j][i] = 0.0;
                 }
             } else {
 
@@ -152,11 +152,11 @@ public final class MatrixMath {
                 // Apply similarity transformation to remaining columns.
                 for (int j = 0; j < i; j++) {
                     f = d[j];
-                    V[j][i] = f;
-                    g = e[j] + V[j][j] * f;
+                    v[j][i] = f;
+                    g = e[j] + v[j][j] * f;
                     for (int k = j + 1; k <= i - 1; k++) {
-                        g += V[k][j] * d[k];
-                        e[k] += V[k][j] * f;
+                        g += v[k][j] * d[k];
+                        e[k] += v[k][j] * f;
                     }
                     e[j] = g;
                 }
@@ -173,10 +173,10 @@ public final class MatrixMath {
                     f = d[j];
                     g = e[j];
                     for (int k = j; k <= i - 1; k++) {
-                        V[k][j] -= (f * e[k] + g * d[k]);
+                        v[k][j] -= (f * e[k] + g * d[k]);
                     }
-                    d[j] = V[i - 1][j];
-                    V[i][j] = 0.0;
+                    d[j] = v[i - 1][j];
+                    v[i][j] = 0.0;
                 }
             }
             d[i] = h;
@@ -184,37 +184,37 @@ public final class MatrixMath {
 
         // Accumulate transformations.
         for (int i = 0; i < n - 1; i++) {
-            V[n - 1][i] = V[i][i];
-            V[i][i] = 1.0;
+            v[n - 1][i] = v[i][i];
+            v[i][i] = 1.0;
             double h = d[i + 1];
             if (h != 0.0) {
                 for (int k = 0; k <= i; k++) {
-                    d[k] = V[k][i + 1] / h;
+                    d[k] = v[k][i + 1] / h;
                 }
                 for (int j = 0; j <= i; j++) {
                     double g = 0.0;
                     for (int k = 0; k <= i; k++) {
-                        g += V[k][i + 1] * V[k][j];
+                        g += v[k][i + 1] * v[k][j];
                     }
                     for (int k = 0; k <= i; k++) {
-                        V[k][j] -= g * d[k];
+                        v[k][j] -= g * d[k];
                     }
                 }
             }
             for (int k = 0; k <= i; k++) {
-                V[k][i + 1] = 0.0;
+                v[k][i + 1] = 0.0;
             }
         }
         for (int j = 0; j < n; j++) {
-            d[j] = V[n - 1][j];
-            V[n - 1][j] = 0.0;
+            d[j] = v[n - 1][j];
+            v[n - 1][j] = 0.0;
         }
-        V[n - 1][n - 1] = 1.0;
+        v[n - 1][n - 1] = 1.0;
         e[0] = 0.0;
     }
 
     /**
-     * Matrix-vector multiplication
+     * Matrix-vector multiplication.
      *
      * @param y
      *            result

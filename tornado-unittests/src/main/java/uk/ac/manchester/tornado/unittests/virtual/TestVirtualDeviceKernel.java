@@ -41,7 +41,8 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V --jvm="-Dtornado.device.desc=virtual-device-GPU.json -Dtornado.print.kernel=True -Dtornado.virtual.device=True -Dtornado.print.kernel.dir=virtualKernelOut.out" uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel
+ *     tornado-test -V --jvm="-Dtornado.device.desc=virtual-device-GPU.json -Dtornado.print.kernel=True -Dtornado.virtual.device=True
+ *     -Dtornado.print.kernel.dir=virtualKernelOut.out" uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel
  * </code>
  */
 public class TestVirtualDeviceKernel extends TornadoTestBase {

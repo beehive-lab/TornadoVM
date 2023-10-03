@@ -79,7 +79,8 @@ import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
  */
 public class TaskGraph implements TaskGraphInterface {
 
-    private static final String ERROR_TASK_NAME_DUPLICATION = "[TornadoVM ERROR]. There are more than 1 tasks with the same task-name. Use different a different task name for each task within a TaskGraph.";
+    private static final String ERROR_TASK_NAME_DUPLICATION = //
+            "[TornadoVM ERROR]. There are more than 1 tasks with the same task-name. Use different a different task name for each task within " + "a TaskGraph.";
 
     private final String taskGraphName;
     protected TornadoTaskGraphInterface taskGraphImpl;
@@ -631,7 +632,7 @@ public class TaskGraph implements TaskGraphInterface {
     }
 
     /**
-     * Add a pre-built OpenCL task into a task-schedule
+     * Add a pre-built OpenCL task into a task-schedule.
      *
      * @param id
      *            Task-Id
@@ -658,7 +659,7 @@ public class TaskGraph implements TaskGraphInterface {
     }
 
     /**
-     * Add a pre-built OpenCL task into a task-schedule with atomics region
+     * Add a pre-built OpenCL task into a task-schedule with atomics region.
      *
      * @param id
      *            Task-id
@@ -768,11 +769,6 @@ public class TaskGraph implements TaskGraphInterface {
         return new ImmutableTaskGraph(cloneTaskGraph);
     }
 
-    TaskGraph setDevice(TornadoDevice device) {
-        taskGraphImpl.setDevice(device);
-        return this;
-    }
-
     TaskGraph batch(String batchSize) {
         taskGraphImpl.batch(batchSize);
         return this;
@@ -825,6 +821,11 @@ public class TaskGraph implements TaskGraphInterface {
 
     TornadoDevice getDevice() {
         return taskGraphImpl.getDevice();
+    }
+
+    TaskGraph setDevice(TornadoDevice device) {
+        taskGraphImpl.setDevice(device);
+        return this;
     }
 
     TaskGraph useDefaultThreadScheduler(boolean use) {

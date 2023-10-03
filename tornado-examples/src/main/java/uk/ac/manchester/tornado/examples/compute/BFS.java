@@ -18,9 +18,6 @@
 
 package uk.ac.manchester.tornado.examples.compute;
 
-import java.util.Random;
-import java.util.stream.IntStream;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -30,19 +27,22 @@ import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
+import java.util.Random;
+import java.util.stream.IntStream;
+
 /**
- * Parallel Implementation of the BFS: this is based on the Marawacc compiler
- * framework.
+ * Parallel Implementation of the BFS: this is based on the Marawacc compiler framework.
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.BFS
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.BFS
  * </code>
- *
  */
 public class BFS {
+    // CHECKSTYLE:OFF
 
+    public static final boolean SAMPLE = false;
     private static final boolean BIDIRECTIONAL = false;
     private static final boolean PRINT_SOLUTION = false;
     private static final boolean VALIDATION = true;
@@ -54,11 +54,8 @@ public class BFS {
     IntArray modifyJava;
     IntArray currentDepth;
 
-    public static final boolean SAMPLE = false;
-
     /**
-     * Set to one the connection between node from and node to into the adjacency
-     * matrix.
+     * Set to one the connection between node from and node to into the adjacency matrix.
      */
     public static void connect(int from, int to, IntArray graph, int N) {
         if (from != to && (graph.get(from * N + to) == 0)) {
@@ -125,7 +122,7 @@ public class BFS {
                     int dfirst = vertices.get(from);
                     int dsecond = vertices.get(to);
                     if ((currentDepth.get(0) == dfirst) && (dsecond == -1)) {
-                        vertices.set(to,  dfirst + 1);
+                        vertices.set(to, dfirst + 1);
                         h_true.set(0, 0);
                     }
 
@@ -138,6 +135,14 @@ public class BFS {
                 }
             }
         }
+    }
+
+    public static void main(String[] args) {
+        int size = 10000;
+        if (SAMPLE) {
+            size = 5;
+        }
+        new BFS().tornadoBFS(0, size);
     }
 
     public boolean validateBFS(IntArray vertices, IntArray verticesJava) {
@@ -234,10 +239,8 @@ public class BFS {
             modifyJava.init(1);
         }
 
-        if (PRINT_SOLUTION)
-
-        {
-            System.out.println("Solution: " + vertices);
+        if (PRINT_SOLUTION) {
+            System.out.println("Solution: " + vertices.toString());
         }
 
         if (VALIDATION) {
@@ -248,12 +251,5 @@ public class BFS {
             }
         }
     }
-
-    public static void main(String[] args) {
-        int size = 10000;
-        if (SAMPLE) {
-            size = 5;
-        }
-        new BFS().tornadoBFS(0, size);
-    }
 }
+// CHECKSTYLE:ON

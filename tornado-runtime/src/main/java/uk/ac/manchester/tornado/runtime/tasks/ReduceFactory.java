@@ -71,7 +71,7 @@ class ReduceFactory {
         for (int i = 1; i < size; i++) {
             acc += array.get(i);
         }
-        array.set(0,acc);
+        array.set(0, acc);
     }
 
     private static void rAdd(IntArray array, final int size) {
@@ -79,7 +79,7 @@ class ReduceFactory {
         for (int i = 1; i < size; i++) {
             acc += array.get(i);
         }
-        array.set(0,acc);
+        array.set(0, acc);
     }
 
     private static void rAdd(DoubleArray array, final int size) {
@@ -87,7 +87,7 @@ class ReduceFactory {
         for (int i = 1; i < size; i++) {
             acc += array.get(i);
         }
-        array.set(0,acc);
+        array.set(0, acc);
     }
 
     private static void rAdd(LongArray array, final int size) {
@@ -95,7 +95,7 @@ class ReduceFactory {
         for (int i = 1; i < size; i++) {
             acc += array.get(i);
         }
-        array.set(0,acc);
+        array.set(0, acc);
     }
 
     private static void rMul(int[] array, final int size) {

@@ -51,17 +51,15 @@ import uk.ac.manchester.tornado.api.type.annotations.Vector;
 public final class Short2 implements PrimitiveStorage<ShortBuffer> {
 
     public static final Class<Short2> TYPE = Short2.class;
-
     /**
-     * backing array
+     * number of elements in the storage.
+     */
+    private static final int NUM_ELEMENTS = 2;
+    /**
+     * backing array.
      */
     @Payload
     private final short[] storage;
-
-    /**
-     * number of elements in the storage
-     */
-    private static final int NUM_ELEMENTS = 2;
 
     public Short2(short[] storage) {
         this.storage = storage;
@@ -77,84 +75,11 @@ public final class Short2 implements PrimitiveStorage<ShortBuffer> {
         setY(y);
     }
 
-    public short[] getArray() {
-        return storage;
-    }
-
-    public short get(int index) {
-        return storage[index];
-    }
-
-    public void set(int index, short value) {
-        storage[index] = value;
-    }
-
-    public void set(Short2 value) {
-        setX(value.getX());
-        setY(value.getY());
-    }
-
-    public short getX() {
-        return get(0);
-    }
-
-    public short getY() {
-        return get(1);
-    }
-
-    public void setX(short value) {
-        set(0, value);
-    }
-
-    public void setY(short value) {
-        set(1, value);
-    }
-
-    /**
-     * Duplicates this vector
-     *
-     * @return {@link Short2}
-     */
-    public Short2 duplicate() {
-        Short2 vector = new Short2();
-        vector.set(this);
-        return vector;
-    }
-
-    public String toString(String fmt) {
-        return String.format(fmt, getX(), getY());
-    }
-
-    @Override
-    public String toString() {
-        return toString(ShortOps.FMT_2);
-    }
-
     static Short2 loadFromArray(final short[] array, int index) {
         final Short2 result = new Short2();
         result.setX(array[index]);
         result.setY(array[index + 1]);
         return result;
-    }
-
-    void storeToArray(final short[] array, int index) {
-        array[index] = getX();
-        array[index + 1] = getY();
-    }
-
-    @Override
-    public void loadFromBuffer(ShortBuffer buffer) {
-        asBuffer().put(buffer);
-    }
-
-    @Override
-    public ShortBuffer asBuffer() {
-        return ShortBuffer.wrap(storage);
-    }
-
-    @Override
-    public int size() {
-        return NUM_ELEMENTS;
     }
 
     /*
@@ -232,5 +157,78 @@ public final class Short2 implements PrimitiveStorage<ShortBuffer> {
 
     public static boolean isEqual(Short2 a, Short2 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+    }
+
+    public short[] getArray() {
+        return storage;
+    }
+
+    public short get(int index) {
+        return storage[index];
+    }
+
+    public void set(int index, short value) {
+        storage[index] = value;
+    }
+
+    public void set(Short2 value) {
+        setX(value.getX());
+        setY(value.getY());
+    }
+
+    public short getX() {
+        return get(0);
+    }
+
+    public void setX(short value) {
+        set(0, value);
+    }
+
+    public short getY() {
+        return get(1);
+    }
+
+    public void setY(short value) {
+        set(1, value);
+    }
+
+    /**
+     * Duplicates this vector.
+     *
+     * @return {@link Short2}
+     */
+    public Short2 duplicate() {
+        Short2 vector = new Short2();
+        vector.set(this);
+        return vector;
+    }
+
+    public String toString(String fmt) {
+        return String.format(fmt, getX(), getY());
+    }
+
+    @Override
+    public String toString() {
+        return toString(ShortOps.FMT_2);
+    }
+
+    void storeToArray(final short[] array, int index) {
+        array[index] = getX();
+        array[index + 1] = getY();
+    }
+
+    @Override
+    public void loadFromBuffer(ShortBuffer buffer) {
+        asBuffer().put(buffer);
+    }
+
+    @Override
+    public ShortBuffer asBuffer() {
+        return ShortBuffer.wrap(storage);
+    }
+
+    @Override
+    public int size() {
+        return NUM_ELEMENTS;
     }
 }

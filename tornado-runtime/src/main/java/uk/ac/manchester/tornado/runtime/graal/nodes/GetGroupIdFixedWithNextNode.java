@@ -45,19 +45,19 @@ import uk.ac.manchester.tornado.api.KernelContext;
 @NodeInfo(shortName = "GetGroupId")
 public class GetGroupIdFixedWithNextNode extends FixedWithNextNode implements Lowerable {
 
+    public static final NodeClass<GetGroupIdFixedWithNextNode> TYPE = NodeClass.create(GetGroupIdFixedWithNextNode.class);
+    private final int dimension;
     @Input
     ValueNode object;
-    private final int dimension;
-    public static final NodeClass<GetGroupIdFixedWithNextNode> TYPE = NodeClass.create(GetGroupIdFixedWithNextNode.class);
-
-    public ValueNode object() {
-        return this.object;
-    }
 
     public GetGroupIdFixedWithNextNode(ValueNode index, int dimension) {
         super(TYPE, StampFactory.forUnsignedInteger(32));
         this.object = index;
         this.dimension = dimension;
+    }
+
+    public ValueNode object() {
+        return this.object;
     }
 
     public int getDimension() {

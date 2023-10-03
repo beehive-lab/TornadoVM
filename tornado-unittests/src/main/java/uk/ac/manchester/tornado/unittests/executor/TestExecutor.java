@@ -17,13 +17,7 @@
  */
 package uk.ac.manchester.tornado.unittests.executor;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
-import java.util.Arrays;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -36,6 +30,11 @@ import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.unittests.TestHello;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+import java.util.Arrays;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 /**
  * How to run?
  * <p>
@@ -45,7 +44,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </p>
  */
 public class TestExecutor extends TornadoTestBase {
-
+    // CHECKSTYLE:OFF
     @Test
     public void test01() {
         int numElements = 16;
@@ -185,8 +184,7 @@ public class TestExecutor extends TornadoTestBase {
     }
 
     /**
-     * Test to show how to program states of data movement across different
-     * executors. A -> B -> A
+     * Test to show how to program states of data movement across different executors. A -> B -> A
      */
     @Test
     public void test04() {
@@ -234,4 +232,5 @@ public class TestExecutor extends TornadoTestBase {
         }
 
     }
+    // CHECKSTYLE:ON
 }

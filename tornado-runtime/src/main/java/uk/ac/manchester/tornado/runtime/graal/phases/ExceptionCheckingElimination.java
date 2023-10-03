@@ -18,7 +18,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
@@ -45,7 +44,7 @@ public class ExceptionCheckingElimination extends BasePhase<TornadoMidTierContex
     }
 
     /**
-     * Removes all exception checking - loop bounds and null checks
+     * Removes all exception checking - loop bounds and null checks.
      */
     @Override
     protected void run(StructuredGraph graph, TornadoMidTierContext context) {

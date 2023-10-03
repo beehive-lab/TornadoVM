@@ -38,6 +38,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </code>
  */
 public class TestCase extends TornadoTestBase {
+    // CHECKSTYLE:OFF
 
     private static final int N = 512;
 
@@ -92,5 +93,5 @@ public class TestCase extends TornadoTestBase {
         executionPlan.withWarmUp().execute();
 
     }
-
+    // CHECKSTYLE:ON
 }

@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
-import java.util.*;
+import java.util.Arrays;
 
 public class Statistics {
     double[] data;

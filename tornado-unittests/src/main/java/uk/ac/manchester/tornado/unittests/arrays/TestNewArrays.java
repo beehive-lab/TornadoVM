@@ -44,6 +44,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </code>
  */
 public class TestNewArrays extends TornadoTestBase {
+    // CHECKSTYLE:OFF
 
     private static void vectorAdd(IntArray a, IntArray b, IntArray c) {
         // Array intentionally created inside the expression for allocation either in
@@ -332,4 +333,5 @@ public class TestNewArrays extends TornadoTestBase {
         // Check result
         assertEquals(sequential.get(0), result.get(0), 0.1f);
     }
+    // CHECKSTYLE:ON
 }

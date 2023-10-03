@@ -19,7 +19,7 @@ package uk.ac.manchester.tornado.unittests.compute;
 
 import static org.junit.Assert.assertEquals;
 
-import java.awt.*;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 import java.io.File;
@@ -65,6 +65,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  *
  */
 public class ComputeTests extends TornadoTestBase {
+    // CHECKSTYLE:OFF
 
     private static final float DELTA = 0.005f;
     private static final float ESP_SQR = 500.0f;
@@ -365,6 +366,16 @@ public class ComputeTests extends TornadoTestBase {
             e.printStackTrace();
         }
         return img;
+    }
+
+    private static void computeMatrixVector(Matrix2DFloat matrix, VectorFloat vector, VectorFloat output) {
+        for (@Parallel int i = 0; i < vector.size(); i++) {
+            float sum = 0.0f;
+            for (int j = 0; j < matrix.getNumColumns(); j++) {
+                sum += vector.get(i) * matrix.get(i, i);
+            }
+            output.set(i, sum);
+        }
     }
 
     @Test
@@ -769,16 +780,6 @@ public class ComputeTests extends TornadoTestBase {
         }
     }
 
-    private static void computeMatrixVector(Matrix2DFloat matrix, VectorFloat vector, VectorFloat output) {
-        for (@Parallel int i = 0; i < vector.size(); i++) {
-            float sum = 0.0f;
-            for (int j = 0; j < matrix.getNumColumns(); j++) {
-                sum += vector.get(i) * matrix.get(i, i);
-            }
-            output.set(i, sum);
-        }
-    }
-
     @Test
     public void matrixVector() {
         int size = 4096;
@@ -818,4 +819,5 @@ public class ComputeTests extends TornadoTestBase {
             assertEquals(resultSeq.get(i), resultSeq.get(i), 0.1);
         }
     }
+    // CHECKSTYLE:ON
 }

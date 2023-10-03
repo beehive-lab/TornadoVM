@@ -17,14 +17,7 @@
  */
 package uk.ac.manchester.tornado.unittests.math;
 
-import static org.junit.Assert.assertEquals;
-
-import java.nio.FloatBuffer;
-import java.util.Random;
-import java.util.stream.IntStream;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -37,12 +30,17 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+import java.util.Random;
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
+
 /**
  * <p>
- * How to run:
+ * How to run?
  * </p>
  * <code>
- *      tornado-test -V --fast uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection
+ * tornado-test -V --fast uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection
  * </code>
  */
 public class TestTornadoMathCollection extends TornadoTestBase {

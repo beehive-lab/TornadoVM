@@ -79,11 +79,11 @@ public class TornadoFeatureExtraction extends Phase {
     }
 
     protected void run(StructuredGraph graph) {
-        LinkedHashMap<ProfilerCodeFeatures, Integer> IRFeatures;
+        LinkedHashMap<ProfilerCodeFeatures, Integer> irfeatures;
 
-        IRFeatures = extractFeatures(graph, FeatureExtractionUtilities.initializeFeatureMap());
+        irfeatures = extractFeatures(graph, FeatureExtractionUtilities.initializeFeatureMap());
 
-        FeatureExtractionUtilities.emitFeatureProfileJsonFile(IRFeatures, graph, tornadoDeviceContext);
+        FeatureExtractionUtilities.emitFeatureProfileJsonFile(irfeatures, graph, tornadoDeviceContext);
     }
 
     private LinkedHashMap<ProfilerCodeFeatures, Integer> extractFeatures(StructuredGraph graph, LinkedHashMap<ProfilerCodeFeatures, Integer> initMap) {
