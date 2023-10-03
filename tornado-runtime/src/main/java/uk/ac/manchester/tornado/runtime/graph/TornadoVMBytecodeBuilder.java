@@ -93,9 +93,7 @@ public class TornadoVMBytecodeBuilder {
             TornadoLogger.info("[%s]: Skipping deprecated node %s", getClass().getSimpleName(), AllocateNode.class.getSimpleName());
         } else if (node instanceof CopyOutNode) {
             ObjectNode value = ((CopyOutNode) node).getValue().getValue();
-            if (value != null) {
-                bitcodeASM.transferToHost(value.getIndex(), dependencyBC, offset, batchSize);
-            }
+            bitcodeASM.transferToHost(value.getIndex(), dependencyBC, offset, batchSize);
         } else if (node instanceof StreamInNode) {
             bitcodeASM.transferToDeviceAlways(((StreamInNode) node).getValue().getIndex(), dependencyBC, offset, batchSize);
         } else if (node instanceof DeallocateNode) {
