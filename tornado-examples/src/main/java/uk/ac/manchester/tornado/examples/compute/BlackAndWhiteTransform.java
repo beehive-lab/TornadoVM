@@ -26,8 +26,10 @@ import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 import javax.imageio.ImageIO;
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.JFrame;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -35,35 +37,44 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Program taken from the Marawacc parallel programming framework with the
- * permission from the author.
+ * Program taken from the Marawacc parallel programming framework with the permission from the author.
  * <p>
- * It takes an input coloured input image and transforms it into a grey-scale
- * image.
+ * It takes an input coloured input image and transforms it into a grey-scale image.
  * </p>
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.BlackAndWhiteTransform
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.BlackAndWhiteTransform
  * </code>
  */
 public class BlackAndWhiteTransform {
+    // CHECKSTYLE:OFF
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Image Grey-scale conversion example with TornadoVM");
+
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent event) {
+                System.exit(0);
+            }
+        });
+
+        frame.add(new LoadImage());
+        frame.pack();
+        frame.setVisible(true);
+    }
 
     public static class LoadImage extends Component {
 
         private static final int WARMING_UP_ITERATIONS = 15;
 
         private static final long serialVersionUID = 1L;
-        private BufferedImage image;
-
         private static final boolean PARALLEL_COMPUTATION = Boolean.parseBoolean(System.getProperty("run::parallel", "False"));
-
         private static final String IMAGE_FILE = "/tmp/image.jpg";
-
         private static TaskGraph taskGraph;
-
         private static TornadoExecutionPlan executor;
+        private BufferedImage image;
 
         LoadImage() {
             try {
@@ -104,8 +115,8 @@ public class BlackAndWhiteTransform {
 
             IntArray imageRGB = new IntArray(w * s);
 
-            long start = 0,end = 0;
-            long taskStart = 0,taskEnd = 0;
+            long start = 0, end = 0;
+            long taskStart = 0, taskEnd = 0;
             for (int z = 0; z < WARMING_UP_ITERATIONS; z++) {
                 start = System.nanoTime();
                 for (int i = 0; i < w; i++) {
@@ -155,7 +166,7 @@ public class BlackAndWhiteTransform {
             int w = image.getWidth();
             int s = image.getHeight();
 
-            long start = 0,end = 0;
+            long start = 0, end = 0;
             for (int z = 0; z < WARMING_UP_ITERATIONS; z++) {
                 start = System.nanoTime();
                 for (int i = 0; i < w; i++) {
@@ -202,19 +213,5 @@ public class BlackAndWhiteTransform {
             }
         }
     }
-
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("Image Grey-scale conversion example with TornadoVM");
-
-        frame.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent event) {
-                System.exit(0);
-            }
-        });
-
-        frame.add(new LoadImage());
-        frame.pack();
-        frame.setVisible(true);
-    }
 }
+// CHECKSTYLE:ON

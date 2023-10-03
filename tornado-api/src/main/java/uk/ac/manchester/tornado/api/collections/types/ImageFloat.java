@@ -49,27 +49,24 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
 
     /**
-     * backing array
+     * backing array.
      */
     protected final float[] storage;
-
     /**
-     * number of elements in the storage
+     * Number of rows.
+     */
+    protected final int Y;
+    /**
+     * Number of columns.
+     */
+    protected final int X;
+    /**
+     * number of elements in the storage.
      */
     private final int numElements;
 
     /**
-     * Number of rows
-     */
-    protected final int Y;
-
-    /**
-     * Number of columns
-     */
-    protected final int X;
-
-    /**
-     * Storage format for matrix
+     * Storage format for matrix.
      * 
      * @param width
      *            number of rows
@@ -86,7 +83,7 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Storage format for matrix
+     * Storage format for matrix.
      * 
      * @param width
      *            number of rows
@@ -99,6 +96,12 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
 
     public ImageFloat(float[][] matrix) {
         this(matrix.length, matrix[0].length, StorageFormats.toRowMajor(matrix));
+    }
+
+    public static void scale(ImageFloat image, float alpha) {
+        for (int i = 0; i < image.storage.length; i++) {
+            image.storage[i] *= alpha;
+        }
     }
 
     public float[] getArray() {
@@ -114,8 +117,8 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
     }
 
     /***
-     * returns the ith column of the jth row
-     * 
+     * returns the ith column of the jth row.
+     *
      * @param i
      *            row index
      * @param j
@@ -127,8 +130,8 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
     }
 
     /***
-     * sets the ith column of the jth row to value
-     * 
+     * sets the ith column of the jth row to value.
+     *
      * @param i
      *            row index
      * @param j
@@ -187,12 +190,6 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
             result += "\n" + toString(FloatOps.FMT);
         }
         return result;
-    }
-
-    public static void scale(ImageFloat image, float alpha) {
-        for (int i = 0; i < image.storage.length; i++) {
-            image.storage[i] *= alpha;
-        }
     }
 
     public float mean() {

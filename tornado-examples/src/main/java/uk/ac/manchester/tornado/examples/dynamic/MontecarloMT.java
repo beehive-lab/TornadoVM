@@ -29,15 +29,13 @@ import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
- * Montecarlo algorithm to approximate the PI value. This version has been
- * adapted from Marawacc test-suite.
+ * Montecarlo algorithm to approximate the PI value. This version has been adapted from Marawacc test-suite.
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.MontecarloMT
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.MontecarloMT
  * </code>
- *
  */
 public class MontecarloMT {
 
@@ -111,7 +109,8 @@ public class MontecarloMT {
 
         FloatArray output = new FloatArray(size);
         FloatArray seq = new FloatArray(size);
-        long start,end;
+        long start;
+        long end;
 
         long startInit = System.nanoTime();
 

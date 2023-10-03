@@ -52,6 +52,61 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  *
  */
 public class TestImages extends TornadoTestBase {
+    // CHECKSTYLE:OFF
+
+    public static void taskWithImages(final ImageFloat a, final ImageFloat b) {
+        for (@Parallel int i = 0; i < a.X(); i++) {
+            for (@Parallel int j = 0; j < a.Y(); j++) {
+                float value = a.get(i, j);
+                b.set(i, j, value);
+            }
+        }
+    }
+
+    public static void taskWithImagesFloat3(final ImageFloat3 a, final ImageFloat3 b) {
+        for (@Parallel int i = 0; i < a.X(); i++) {
+            for (@Parallel int j = 0; j < a.Y(); j++) {
+                Float3 value = a.get(i, j);
+                b.set(i, j, value);
+            }
+        }
+    }
+
+    public static void taskWithImagesFloat4(final ImageFloat4 a, final ImageFloat4 b) {
+        for (@Parallel int i = 0; i < a.X(); i++) {
+            for (@Parallel int j = 0; j < a.Y(); j++) {
+                Float4 value = a.get(i, j);
+                b.set(i, j, value);
+            }
+        }
+    }
+
+    public static void taskWithImagesFloat8(final ImageFloat8 a, final ImageFloat8 b) {
+        for (@Parallel int i = 0; i < a.X(); i++) {
+            for (@Parallel int j = 0; j < a.Y(); j++) {
+                Float8 value = a.get(i, j);
+                b.set(i, j, value);
+            }
+        }
+    }
+
+    public static void taskWithImagesByte3(final ImageByte3 a, final ImageByte3 b) {
+        for (@Parallel int i = 0; i < a.X(); i++) {
+            for (@Parallel int j = 0; j < a.Y(); j++) {
+                Byte3 value = a.get(i, j);
+                b.set(i, j, value);
+            }
+        }
+    }
+
+    public static void taskWithImagesByte4(final ImageByte4 a, final ImageByte4 b) {
+        for (@Parallel int i = 0; i < a.X(); i++) {
+            for (@Parallel int j = 0; j < a.Y(); j++) {
+                Byte4 value = a.get(i, j);
+                b.set(i, j, value);
+            }
+        }
+    }
 
     /**
      * Test for image::fill kernel with square image.
@@ -131,15 +186,6 @@ public class TestImages extends TornadoTestBase {
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
                 assertEquals(1f, image.get(i, j), 0.001);
-            }
-        }
-    }
-
-    public static void taskWithImages(final ImageFloat a, final ImageFloat b) {
-        for (@Parallel int i = 0; i < a.X(); i++) {
-            for (@Parallel int j = 0; j < a.Y(); j++) {
-                float value = a.get(i, j);
-                b.set(i, j, value);
             }
         }
     }
@@ -232,33 +278,6 @@ public class TestImages extends TornadoTestBase {
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
                 assertEquals(100f, imageB.get(i, j), 0.001);
-            }
-        }
-    }
-
-    public static void taskWithImagesFloat3(final ImageFloat3 a, final ImageFloat3 b) {
-        for (@Parallel int i = 0; i < a.X(); i++) {
-            for (@Parallel int j = 0; j < a.Y(); j++) {
-                Float3 value = a.get(i, j);
-                b.set(i, j, value);
-            }
-        }
-    }
-
-    public static void taskWithImagesFloat4(final ImageFloat4 a, final ImageFloat4 b) {
-        for (@Parallel int i = 0; i < a.X(); i++) {
-            for (@Parallel int j = 0; j < a.Y(); j++) {
-                Float4 value = a.get(i, j);
-                b.set(i, j, value);
-            }
-        }
-    }
-
-    public static void taskWithImagesFloat8(final ImageFloat8 a, final ImageFloat8 b) {
-        for (@Parallel int i = 0; i < a.X(); i++) {
-            for (@Parallel int j = 0; j < a.Y(); j++) {
-                Float8 value = a.get(i, j);
-                b.set(i, j, value);
             }
         }
     }
@@ -450,24 +469,6 @@ public class TestImages extends TornadoTestBase {
         }
     }
 
-    public static void taskWithImagesByte3(final ImageByte3 a, final ImageByte3 b) {
-        for (@Parallel int i = 0; i < a.X(); i++) {
-            for (@Parallel int j = 0; j < a.Y(); j++) {
-                Byte3 value = a.get(i, j);
-                b.set(i, j, value);
-            }
-        }
-    }
-
-    public static void taskWithImagesByte4(final ImageByte4 a, final ImageByte4 b) {
-        for (@Parallel int i = 0; i < a.X(); i++) {
-            for (@Parallel int j = 0; j < a.Y(); j++) {
-                Byte4 value = a.get(i, j);
-                b.set(i, j, value);
-            }
-        }
-    }
-
     @Test
     public void testImageFloat12() {
 
@@ -613,5 +614,6 @@ public class TestImages extends TornadoTestBase {
             }
         }
     }
+    // CHECKSTYLE:ON
 
 }

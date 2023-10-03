@@ -46,17 +46,17 @@ import java.util.Arrays;
 
 public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<DoubleBuffer> {
     /**
-     * backing array
+     * backing array.
      */
     protected final double[] storage;
 
     /**
-     * number of elements in the storage
+     * number of elements in the storage.
      */
     private final int numElements;
 
     /**
-     * Storage format for matrix
+     * Storage format for matrix.
      *
      * @param rows
      *            number of rows
@@ -72,7 +72,7 @@ public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<Dou
     }
 
     /**
-     * Storage format for matrix
+     * Storage format for matrix.
      *
      * @param rows
      *            number of rows
@@ -86,6 +86,31 @@ public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<Dou
 
     public Matrix2DDouble(double[][] matrix) {
         this(matrix.length, matrix[0].length, StorageFormats.toRowMajor(matrix));
+    }
+
+    /**
+     * Transposes the matrix in-place.
+     *
+     * @param matrix
+     *            matrix to transpose
+     */
+    public static void transpose(Matrix2DDouble matrix) {
+        if (matrix.COLUMNS == matrix.ROWS) {
+            // transpose square matrix
+            for (int i = 0; i < matrix.ROWS; i++) {
+                for (int j = 0; j < i; j++) {
+                    final double tmp = matrix.get(i, j);
+                    matrix.set(i, j, matrix.get(j, i));
+                    matrix.set(j, i, tmp);
+                }
+            }
+        }
+    }
+
+    public static void scale(Matrix2DDouble matrix, double value) {
+        for (int i = 0; i < matrix.storage.length; i++) {
+            matrix.storage[i] *= value;
+        }
     }
 
     public double get(int i, int j) {
@@ -119,9 +144,7 @@ public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<Dou
     }
 
     public void fill(double value) {
-        for (int i = 0; i < storage.length; i++) {
-            storage[i] = value;
-        }
+        Arrays.fill(storage, value);
     }
 
     public void multiply(Matrix2DDouble a, Matrix2DDouble b) {
@@ -132,25 +155,6 @@ public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<Dou
                     sum += a.get(row, k) * b.get(k, col);
                 }
                 set(row, col, sum);
-            }
-        }
-    }
-
-    /**
-     * Transposes the matrix in-place
-     *
-     * @param matrix
-     *            matrix to transpose
-     */
-    public static void transpose(Matrix2DDouble matrix) {
-        if (matrix.COLUMNS == matrix.ROWS) {
-            // transpose square matrix
-            for (int i = 0; i < matrix.ROWS; i++) {
-                for (int j = 0; j < i; j++) {
-                    final double tmp = matrix.get(i, j);
-                    matrix.set(i, j, matrix.get(j, i));
-                    matrix.set(j, i, tmp);
-                }
             }
         }
     }
@@ -185,12 +189,6 @@ public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<Dou
             result += "\n" + toString(DoubleOps.FMT);
         }
         return result;
-    }
-
-    public static void scale(Matrix2DDouble matrix, double value) {
-        for (int i = 0; i < matrix.storage.length; i++) {
-            matrix.storage[i] *= value;
-        }
     }
 
     @Override

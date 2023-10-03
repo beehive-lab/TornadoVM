@@ -37,7 +37,7 @@ import static uk.ac.manchester.tornado.api.profiler.ChromeEventTracer.enqueueTas
  * </code>
  */
 public class NBody {
-
+    // CHECKSTYLE:OFF
     private static boolean VALIDATION = true;
 
     private static void nBody(int numBodies, FloatArray refPos, FloatArray refVel, float delT, float espSqr) {
@@ -194,3 +194,4 @@ public class NBody {
         System.out.println("Speedup in peak performance: " + (timeSequential / timeParallel) + "x");
     }
 }
+// CHECKSTYLE:ON

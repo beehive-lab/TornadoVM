@@ -95,14 +95,14 @@ public class FloatOps {
     }
 
     public static float findMaxULP(float value, float expected) {
-        final float ULP = Math.ulp(expected);
+        final float ulp = Math.ulp(expected);
 
         if (value == expected) {
             return 0f;
         }
 
         final float absValue = Math.abs(value - expected);
-        return absValue / ULP;
+        return absValue / ulp;
     }
 
     public static boolean compare(float a, float b) {

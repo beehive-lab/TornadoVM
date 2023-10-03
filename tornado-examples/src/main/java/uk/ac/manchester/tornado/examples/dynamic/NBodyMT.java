@@ -31,7 +31,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
  * <p>
- * How to run?
+ * How to run.
  * </p>
  * <code>
  *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.NBodyMT
@@ -158,7 +158,8 @@ public class NBodyMT {
 
         float delT;
         float espSqr;
-        float[] positions,velocity;
+        float[] positions;
+        float[] velocity;
         int[] inputSize;
         int numBodies;
 

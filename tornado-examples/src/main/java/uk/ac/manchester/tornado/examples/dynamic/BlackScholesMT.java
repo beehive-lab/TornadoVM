@@ -18,7 +18,11 @@
 
 package uk.ac.manchester.tornado.examples.dynamic;
 
-import uk.ac.manchester.tornado.api.*;
+import uk.ac.manchester.tornado.api.DRMode;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.Policy;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
@@ -27,16 +31,16 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import java.util.Random;
 
 /**
- * BlackScholes implementation adapted from AMD-OpenCL examples and Marawacc
- * compiler framework.
+ * BlackScholes implementation adapted from AMD-OpenCL examples and Marawacc compiler framework.
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.BlackScholesMT
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.BlackScholesMT
  * </code>
  */
 public class BlackScholesMT {
+    // CHECKSTYLE:OFF
 
     private static void blackScholesKernel(FloatArray input, FloatArray callResult, FloatArray putResult) {
         for (@Parallel int idx = 0; idx < callResult.getSize(); idx++) {
@@ -150,7 +154,7 @@ public class BlackScholesMT {
         FloatArray seqCall = new FloatArray(size);
         FloatArray seqPut = new FloatArray(size);
         TaskGraph graph = new TaskGraph("s0");
-        long start,end;
+        long start, end;
 
         for (int i = 0; i < size; i++) {
             input.set(i, random.nextFloat());
@@ -221,4 +225,5 @@ public class BlackScholesMT {
         System.out.println("Version running: " + executionType + " ! ");
         blackScholes(size, iterations, executionType);
     }
+    // CHECKSTYLE:ON
 }

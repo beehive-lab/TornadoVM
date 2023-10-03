@@ -18,13 +18,7 @@
 
 package uk.ac.manchester.tornado.unittests.loops;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.Random;
-import java.util.stream.IntStream;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
@@ -35,15 +29,21 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+import java.util.Random;
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
+
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations
+ * tornado-test -V uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations
  * </code>
  */
 public class TestLoopTransformations extends TornadoTestBase {
+    // CHECKSTYLE:OFF
 
     private static void matrixVectorMultiplication(final FloatArray A, final FloatArray B, final FloatArray C, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
@@ -52,6 +52,22 @@ public class TestLoopTransformations extends TornadoTestBase {
                 sum += A.get((i * size) + j) * B.get(j);
             }
             C.set(i, sum);
+        }
+    }
+
+    private static void matrixTranspose(final float[] A, float[] B, final int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (@Parallel int j = 0; j < size; j++) {
+                B[(i * size) + j] = A[(j * size) + i];
+            }
+        }
+    }
+
+    private static void matrixTranspose(final FloatArray A, FloatArray B, final int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (@Parallel int j = 0; j < size; j++) {
+                B.set((i * size) + j, A.get((j * size) + i));
+            }
         }
     }
 
@@ -140,14 +156,6 @@ public class TestLoopTransformations extends TornadoTestBase {
         }
     }
 
-    private static void matrixTranspose(final FloatArray A, FloatArray B, final int size) {
-        for (@Parallel int i = 0; i < size; i++) {
-            for (@Parallel int j = 0; j < size; j++) {
-                B.set((i * size) + j, A.get((j * size) + i));
-            }
-        }
-    }
-
     @Test
     public void testPartialUnrollParallelLoops() {
         final int N = 256;
@@ -184,4 +192,5 @@ public class TestLoopTransformations extends TornadoTestBase {
             }
         }
     }
+    // CHECKSTYLE:ON
 }

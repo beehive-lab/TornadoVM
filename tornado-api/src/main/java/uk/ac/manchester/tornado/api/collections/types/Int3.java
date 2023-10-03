@@ -53,17 +53,15 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
     public static final Class<Int3> TYPE = Int3.class;
 
     private static final String NUMBER_FORMAT = "{ x=%-7d, y=%-7d, z=%-7d }";
-
     /**
-     * backing array
+     * number of elements in the storage.
+     */
+    private static final int NUM_ELEMENTS = 3;
+    /**
+     * backing array.
      */
     @Payload
     private final int[] storage;
-
-    /**
-     * number of elements in the storage
-     */
-    private static final int NUM_ELEMENTS = 3;
 
     public Int3(int[] storage) {
         this.storage = storage;
@@ -80,99 +78,12 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
         setZ(z);
     }
 
-    public int[] getArray() {
-        return storage;
-    }
-
-    public int get(int index) {
-        return storage[index];
-    }
-
-    public void set(int index, int value) {
-        storage[index] = value;
-    }
-
-    public void set(Int3 value) {
-        setX(value.getX());
-        setY(value.getY());
-        setZ(value.getZ());
-    }
-
-    public int getX() {
-        return get(0);
-    }
-
-    public int getY() {
-        return get(1);
-    }
-
-    public int getZ() {
-        return get(2);
-    }
-
-    public void setX(int value) {
-        set(0, value);
-    }
-
-    public void setY(int value) {
-        set(1, value);
-    }
-
-    public void setZ(int value) {
-        set(2, value);
-    }
-
-    /**
-     * Duplicates this vector
-     *
-     * @return {@link Int3}
-     */
-    public Int3 duplicate() {
-        Int3 vector = new Int3();
-        vector.set(this);
-        return vector;
-    }
-
-    public Int2 asInt2() {
-        return new Int2(getX(), getY());
-    }
-
-    public String toString(String fmt) {
-        return String.format(fmt, getX(), getY(), getZ());
-    }
-
-    @Override
-    public String toString() {
-        return toString(NUMBER_FORMAT);
-    }
-
     static Int3 loadFromArray(final int[] array, int index) {
         final Int3 result = new Int3();
         result.setX(array[index]);
         result.setY(array[index + 1]);
         result.setZ(array[index + 2]);
         return result;
-    }
-
-    void storeToArray(final int[] array, int index) {
-        array[index] = getX();
-        array[index + 1] = getY();
-        array[index + 2] = getZ();
-    }
-
-    @Override
-    public void loadFromBuffer(IntBuffer buffer) {
-        asBuffer().put(buffer);
-    }
-
-    @Override
-    public IntBuffer asBuffer() {
-        return IntBuffer.wrap(storage);
-    }
-
-    @Override
-    public int size() {
-        return NUM_ELEMENTS;
     }
 
     /*
@@ -250,5 +161,92 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
 
     public static boolean isEqual(Int3 a, Int3 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+    }
+
+    public int[] getArray() {
+        return storage;
+    }
+
+    public int get(int index) {
+        return storage[index];
+    }
+
+    public void set(int index, int value) {
+        storage[index] = value;
+    }
+
+    public void set(Int3 value) {
+        setX(value.getX());
+        setY(value.getY());
+        setZ(value.getZ());
+    }
+
+    public int getX() {
+        return get(0);
+    }
+
+    public void setX(int value) {
+        set(0, value);
+    }
+
+    public int getY() {
+        return get(1);
+    }
+
+    public void setY(int value) {
+        set(1, value);
+    }
+
+    public int getZ() {
+        return get(2);
+    }
+
+    public void setZ(int value) {
+        set(2, value);
+    }
+
+    /**
+     * Duplicates this vector.
+     *
+     * @return {@link Int3}
+     */
+    public Int3 duplicate() {
+        Int3 vector = new Int3();
+        vector.set(this);
+        return vector;
+    }
+
+    public Int2 asInt2() {
+        return new Int2(getX(), getY());
+    }
+
+    public String toString(String fmt) {
+        return String.format(fmt, getX(), getY(), getZ());
+    }
+
+    @Override
+    public String toString() {
+        return toString(NUMBER_FORMAT);
+    }
+
+    void storeToArray(final int[] array, int index) {
+        array[index] = getX();
+        array[index + 1] = getY();
+        array[index + 2] = getZ();
+    }
+
+    @Override
+    public void loadFromBuffer(IntBuffer buffer) {
+        asBuffer().put(buffer);
+    }
+
+    @Override
+    public IntBuffer asBuffer() {
+        return IntBuffer.wrap(storage);
+    }
+
+    @Override
+    public int size() {
+        return NUM_ELEMENTS;
     }
 }

@@ -45,19 +45,19 @@ import uk.ac.manchester.tornado.api.KernelContext;
 @NodeInfo(shortName = "GlobalGroupSize")
 public class GlobalGroupSizeFixedWithNextNode extends FixedWithNextNode implements Lowerable {
 
+    public static final NodeClass<GlobalGroupSizeFixedWithNextNode> TYPE = NodeClass.create(GlobalGroupSizeFixedWithNextNode.class);
+    private final int dimension;
     @Input
     ValueNode object;
-    private final int dimension;
-    public static final NodeClass<GlobalGroupSizeFixedWithNextNode> TYPE = NodeClass.create(GlobalGroupSizeFixedWithNextNode.class);
-
-    public ValueNode object() {
-        return this.object;
-    }
 
     public GlobalGroupSizeFixedWithNextNode(ValueNode index, int dimension) {
         super(TYPE, StampFactory.forUnsignedInteger(32));
         this.object = index;
         this.dimension = dimension;
+    }
+
+    public ValueNode object() {
+        return this.object;
     }
 
     public int getDimension() {

@@ -17,13 +17,8 @@
  */
 package uk.ac.manchester.tornado.unittests.codegen;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.stream.IntStream;
-
 import org.junit.Ignore;
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -36,11 +31,15 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
+
 /**
  * How to test?
  *
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.codegen.CodeGen
+ * tornado-test -V uk.ac.manchester.tornado.unittests.codegen.CodeGen
  * </code>
  */
 public class CodeGen extends TornadoTestBase {

@@ -64,12 +64,13 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  *
  */
 public class MatrixMul2DLocalMemory {
+    // CHECKSTYLE:OFF
 
     public static final int WARMUP_ITERATIONS = 15;
     public static final int EXECUTE_ITERATIONS = 15;
+    public static final int TS = 32;
     private static final boolean CHECK_RESULT = true;
     private static final float DELTA = 0.01f;
-    public static final int TS = 32;
 
     private static void matrixMultiplication(final FloatArray A, final FloatArray B, final FloatArray C, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
@@ -416,3 +417,4 @@ public class MatrixMul2DLocalMemory {
 
     }
 }
+// CHECKSTYLE:ON

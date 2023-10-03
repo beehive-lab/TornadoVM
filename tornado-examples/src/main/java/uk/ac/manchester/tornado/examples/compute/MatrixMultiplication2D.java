@@ -18,6 +18,7 @@
 package uk.ac.manchester.tornado.examples.compute;
 
 import java.util.Random;
+import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -36,7 +37,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
  * </code>
  */
 public class MatrixMultiplication2D {
-
+    // CHECKSTYLE:OFF
     private static final int WARMING_UP_ITERATIONS = 15;
 
     private static void matrixMultiplication(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
@@ -49,6 +50,18 @@ public class MatrixMultiplication2D {
                 C.set(i, j, sum);
             }
         }
+    }
+
+    private static void parallelStreamsMxM(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
+        IntStream.range(0, size).parallel().forEach(i -> {
+            IntStream.range(0, size).parallel().forEach(j -> {
+                float sum = 0.0f;
+                for (int k = 0; k < size; k++) {
+                    sum += A.get(i, k) * B.get(k, j);
+                }
+                C.set(i, j, sum);
+            });
+        });
     }
 
     public static void main(String[] args) {
@@ -107,19 +120,34 @@ public class MatrixMultiplication2D {
         matrixMultiplication(matrixA, matrixB, resultSeq, size);
         long endSequential = System.currentTimeMillis();
 
+        // Run multithread
+        for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
+            parallelStreamsMxM(matrixA, matrixB, resultSeq, size);
+        }
+
+        // 2. Run the sequential code
+        long startStream = System.currentTimeMillis();
+        parallelStreamsMxM(matrixA, matrixB, resultSeq, size);
+        long endStream = System.currentTimeMillis();
+
         // Compute Gigaflops and performance
         long msecGPUElapsedTime = (end - start);
         long msecCPUElaptedTime = (endSequential - startSequential);
+        long msecStreamElaptedTime = (endStream - startStream);
+
         double flops = 2 * Math.pow(size, 3);
         double gpuGigaFlops = (1.0E-9 * flops) / (msecGPUElapsedTime / 1000.0f);
         double cpuGigaFlops = (1.0E-9 * flops) / (msecCPUElaptedTime / 1000.0f);
+        double streamGigaFlops = (1.0E-9 * flops) / (msecStreamElaptedTime / 1000.0f);
         double speedup = (double) (endSequential - startSequential) / (double) (end - start);
 
         String formatGPUFGlops = String.format("%.2f", gpuGigaFlops);
         String formatCPUFGlops = String.format("%.2f", cpuGigaFlops);
+        String formatStreamFGlops = String.format("%.2f", streamGigaFlops);
 
         TornadoDeviceType deviceType = executor.getDevice(0).getDeviceType();
         System.out.println("\tSingle Threaded CPU Execution: " + formatCPUFGlops + " GFlops, Total time = " + (endSequential - startSequential) + " ms");
+        System.out.println("\tStreams Execution: " + formatStreamFGlops + " GFlops, Total time = " + (msecStreamElaptedTime) + " ms");
         System.out.println("\tTornadoVM Execution on " + deviceType + " (Accelerated): " + formatGPUFGlops + " GFlops, Total Time = " + (end - start) + " ms");
         System.out.println("\tSpeedup: " + speedup + "x");
         System.out.println("\tVerification " + verify(matrixC, resultSeq, size));
@@ -138,3 +166,4 @@ public class MatrixMultiplication2D {
         return check;
     }
 }
+// CHECKSTYLE:OFF

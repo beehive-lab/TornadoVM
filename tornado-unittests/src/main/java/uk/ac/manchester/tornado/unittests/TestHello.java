@@ -18,12 +18,7 @@
 
 package uk.ac.manchester.tornado.unittests;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -34,12 +29,16 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 /**
  * <p>
- * How to run?
+ * How to run.
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.TestHello
+ * tornado-test -V uk.ac.manchester.tornado.unittests.TestHello
  * </code>
  */
 public class TestHello extends TornadoTestBase {
@@ -62,15 +61,21 @@ public class TestHello extends TornadoTestBase {
         }
     }
 
+    public static void compute(IntArray a) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            a.set(i, a.get(i) * 2);
+        }
+    }
+
     public void compute(IntArray a, IntArray b) {
         for (@Parallel int i = 0; i < a.getSize(); i++) {
             b.set(i, a.get(i) * 2);
         }
     }
 
-    public static void compute(IntArray a) {
-        for (@Parallel int i = 0; i < a.getSize(); i++) {
-            a.set(i, a.get(i) * 2);
+    public void compute(int[] a, int[] b) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            b[i] = a[i] * 2;
         }
     }
 
@@ -119,10 +124,10 @@ public class TestHello extends TornadoTestBase {
     }
 
     /**
-     * How to test:
+     * How to test.
      *
      * <code>
-     *     $  tornado-test -V -J"-Dtornado.print.bytecodes=True" uk.ac.manchester.tornado.unittests.TestHello#testSimpleCompute
+     * $  tornado-test -V -J"-Dtornado.print.bytecodes=True" uk.ac.manchester.tornado.unittests.TestHello#testSimpleCompute
      * </code>
      */
     @Test

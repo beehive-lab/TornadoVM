@@ -40,7 +40,7 @@ import java.util.Random;
  *
  */
 public class BlackScholes {
-
+    // CHECKSTYLE:OFF
     private static final int WARM_UP_ITERATIONS = 1000;
 
     private static void blackScholesKernel(FloatArray input, FloatArray callResult, FloatArray putResult) {
@@ -156,3 +156,4 @@ public class BlackScholes {
         blackScholes(size);
     }
 }
+// CHECKSTYLE:ON

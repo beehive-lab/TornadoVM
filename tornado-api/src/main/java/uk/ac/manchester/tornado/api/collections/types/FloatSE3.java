@@ -60,6 +60,16 @@ public class FloatSE3 {
 
     }
 
+    public FloatSE3(Float6 v) {
+        matrix.identity();
+        exp(v);
+
+        Float3 value = v.getHigh();
+        matrix.set(0, 3, value.getX());
+        matrix.set(1, 3, value.getY());
+        matrix.set(2, 3, value.getZ());
+    }
+
     public static Matrix4x4Float toMatrix4(float[] v) {
         Matrix4x4Float result = new Matrix4x4Float();
 
@@ -100,24 +110,14 @@ public class FloatSE3 {
         return result;
     }
 
-    public FloatSE3(Float6 v) {
-        matrix.identity();
-        exp(v);
-
-        Float3 value = v.getHigh();
-        matrix.set(0, 3, value.getX());
-        matrix.set(1, 3, value.getY());
-        matrix.set(2, 3, value.getZ());
-    }
-
     public void exp(Float6 mu) {
-        final float one_6th = 1f / 6f;
-        final float one_20th = 1f / 20f;
+        final float one6Th = 1f / 6f;
+        final float one20Th = 1f / 20f;
 
         Float3 muLo = mu.getHigh();
         Float3 w = mu.getLow();
-        final float theta_sq = dot(w, w);
-        final float theta = sqrt(theta_sq);
+        final float thetaSq = dot(w, w);
+        final float theta = sqrt(thetaSq);
 
         float a;
         float b;
@@ -125,20 +125,20 @@ public class FloatSE3 {
 
         Float3 crossProduct = cross(w, muLo);
 
-        if (theta_sq < 1e-8f) {
-            a = 1f - one_6th * theta_sq;
+        if (thetaSq < 1e-8f) {
+            a = 1f - one6Th * thetaSq;
             b = 0.5f;
             translation = add(muLo, mult(crossProduct, 0.5f));
         } else {
-            if (theta_sq < 1e-6f) {
-                c = one_6th * (1 - one_20th * theta_sq);
-                a = 1 - theta_sq * c;
-                b = (float) (0.5 - 0.25 * one_6th * theta_sq);
+            if (thetaSq < 1e-6f) {
+                c = one6Th * (1 - one20Th * thetaSq);
+                a = 1 - thetaSq * c;
+                b = (float) (0.5 - 0.25 * one6Th * thetaSq);
             } else {
-                final float inv_theta = 1f / theta;
-                a = (float) (sin(theta) * inv_theta);
-                b = (float) ((1 - cos(theta)) * (sq(inv_theta)));
-                c = (1 - a) * (sq(inv_theta));
+                final float invTheta = 1f / theta;
+                a = (float) (sin(theta) * invTheta);
+                b = (float) ((1 - cos(theta)) * (sq(invTheta)));
+                c = (1 - a) * (sq(invTheta));
             }
 
             Float3 wcp = cross(w, crossProduct);
@@ -151,36 +151,22 @@ public class FloatSE3 {
     }
 
     private void rodriguesSo3Exp(Float3 w, float a, float b) {
-        {
-            final float wx2 = sq(w.getX());
-            final float wy2 = sq(w.getY());
-            final float wz2 = sq(w.getZ());
+        setMatrixValue(0, 0, 1f - b * (sq(w.getX()) + sq(w.getY())), matrix);
+        setMatrixValue(1, 1, 1f - b * (sq(w.getX()) + sq(w.getZ())), matrix);
+        setMatrixValue(2, 2, 1f - b * (sq(w.getY()) + sq(w.getZ())), matrix);
 
-            matrix.set(0, 0, 1f - b * (wy2 + wz2));
-            matrix.set(1, 1, 1f - b * (wx2 + wz2));
-            matrix.set(2, 2, 1f - b * (wx2 + wy2));
-        }
+        setMatrixValue(0, 1, b * (w.getX() * w.getY()) - a * w.getZ(), matrix);
+        setMatrixValue(1, 0, b * (w.getX() * w.getY()) + a * w.getZ(), matrix);
 
-        {
-            final float aTemporal = a * w.getZ();
-            final float bTemporal = b * (w.getX() * w.getY());
-            matrix.set(0, 1, bTemporal - aTemporal);
-            matrix.set(1, 0, bTemporal + aTemporal);
-        }
+        setMatrixValue(0, 2, b * (w.getX() * w.getZ()) + a * w.getY(), matrix);
+        setMatrixValue(2, 0, b * (w.getX() * w.getZ()) - a * w.getY(), matrix);
 
-        {
-            final float aTemporal = a * w.getY();
-            final float bTemporal = b * (w.getX() * w.getZ());
-            matrix.set(0, 2, bTemporal + aTemporal);
-            matrix.set(2, 0, bTemporal - aTemporal);
-        }
+        setMatrixValue(1, 2, b * (w.getY() * w.getZ()) - a * w.getX(), matrix);
+        setMatrixValue(2, 1, b * (w.getY() * w.getZ()) + a * w.getX(), matrix);
+    }
 
-        {
-            final float aTemporal = a * w.getX();
-            final float bTemporal = b * (w.getY() * w.getZ());
-            matrix.set(1, 2, bTemporal - aTemporal);
-            matrix.set(2, 1, bTemporal + aTemporal);
-        }
+    private void setMatrixValue(int row, int col, float value, Matrix4x4Float matrix) {
+        matrix.set(row, col, value);
     }
 
     public Float3 getTranslation() {

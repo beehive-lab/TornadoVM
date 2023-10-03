@@ -23,9 +23,6 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
-import java.lang.annotation.Annotation;
-import java.util.Optional;
-
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.EndNode;
@@ -65,6 +62,9 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceSubNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNodeExtension;
 
+import java.lang.annotation.Annotation;
+import java.util.Optional;
+
 public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext> {
     @Override
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
@@ -79,21 +79,19 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
     }
 
     /**
-     * It checks if there is a reduction in the IR. For now it checks simple
-     * reductions. It assumes that the value to store is a binary arithmetic and
-     * then load index. As soon as we discover more cases, new nodes should be
-     * inspected here.
+     * It checks if there is a reduction in the IR. For now it checks simple reductions. It assumes that the value to store is a binary arithmetic and then load index. As soon as we discover more
+     * cases, new nodes should be inspected here.
      *
      * <p>
      * Cover all the cases here as soon as we discover more reductions use-cases.
      * </p>
      *
      * @param arrayToStore
-     *            Array to store
+     *         Array to store
      * @param indexToStore
-     *            Index used in the store array
+     *         Index used in the store array
      * @param currentNode
-     *            Current node to be inspected
+     *         Current node to be inspected
      * @return boolean
      */
     private boolean recursiveCheck(ValueNode arrayToStore, ValueNode indexToStore, ValueNode currentNode) {
@@ -115,14 +113,14 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             JavaReadNode readNode = (JavaReadNode) currentNode;
             //((OffsetAddressNode)readNode.getAddress()).getOffset();
             if (readNode.getAddress() instanceof OffsetAddressNode) {
-                OffsetAddressNode readAddress = (OffsetAddressNode)readNode.getAddress();
+                OffsetAddressNode readAddress = (OffsetAddressNode) readNode.getAddress();
                 if (indexToStore instanceof OffsetAddressNode) {
-                    OffsetAddressNode writeAddress =  (OffsetAddressNode) indexToStore;
+                    OffsetAddressNode writeAddress = (OffsetAddressNode) indexToStore;
                     isReduction = writeAddress.valueEquals(readAddress);
                 }
             }
 
-           // isReduction = ((OffsetAddressNode) indexToStore).getOffset().valueEquals(((OffsetAddressNode)readNode.getAddress()).getOffset());
+            // isReduction = ((OffsetAddressNode) indexToStore).getOffset().valueEquals(((OffsetAddressNode)readNode.getAddress()).getOffset());
         }
         return isReduction;
     }
@@ -182,7 +180,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             return obtainInputArray(((OffsetAddressNode) currentNode).getBase(), outputArray);
         } else if (currentNode instanceof LoadFieldNode) {
             LoadFieldNode ldf = (LoadFieldNode) currentNode;
-            if ( ldf.getValue() instanceof PiNode) {
+            if (ldf.getValue() instanceof PiNode) {
                 PiNode pi = (PiNode) ldf.getValue();
                 ParameterNode par = pi.inputs().filter(ParameterNode.class).first();
                 if (par != outputArray) {
@@ -251,7 +249,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
     }
 
     /**
-     * Final Node Replacement
+     * Final Node Replacement.
      */
     private void performNodeReplacement(StructuredGraph graph, FixedWithNextNode node, Node predecessor, ReductionMetadataNode reductionNode, ValueNode outArray) {
 
@@ -347,7 +345,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                     if (piUsage instanceof LoadFieldNode) {
                         LoadFieldNode lf = (LoadFieldNode) piUsage;
                         if (lf.uncheckedStamp().toString().contains("jdk.internal.foreign.NativeMemorySegmentImpl")) {
-                        // We have the loading of the segment field
+                            // We have the loading of the segment field
                             if (lf.usages().filter(PiNode.class).isNotEmpty()) {
                                 PiNode pi = lf.usages().filter(PiNode.class).first();
                                 if (pi.usages().filter(OffsetAddressNode.class).isNotEmpty()) {
@@ -368,7 +366,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
 
                                         ValueNode inputArray = obtainInputArray(jwrite.value(), par);
                                         ValueNode startNode = obtainStartLoopNode(jwrite);
-//
+                                        //
                                         ReductionMetadataNode reductionNode = createReductionNode(graph, jwrite, inputArray, startNode);
                                         Node predecessor = jwrite.predecessor();
                                         performNodeReplacement(graph, jwrite, predecessor, reductionNode, par);
@@ -383,8 +381,6 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             }
         }
     }
-
-
 
     private ValueNode obtainStartLoopNode(Node store) {
         boolean startFound = false;

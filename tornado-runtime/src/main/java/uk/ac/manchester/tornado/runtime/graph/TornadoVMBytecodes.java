@@ -183,7 +183,7 @@ public enum TornadoVMBytecodes {
     PUSH_REFERENCE_ARGUMENT((byte) 23),
 
     /**
-     * De-allocation of a buffer from a device
+     * De-allocation of a buffer from a device.
      * <p>
      * Format:
      *

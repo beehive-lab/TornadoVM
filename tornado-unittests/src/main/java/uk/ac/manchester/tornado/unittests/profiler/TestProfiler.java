@@ -48,6 +48,12 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 public class TestProfiler extends TornadoTestBase {
 
+    private static void reduction(float[] input, @Reduce float[] output) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            output[0] += input[i];
+        }
+    }
+
     private boolean isBackendPTXOrSPIRV(int driverIndex) {
         TornadoVMBackendType type = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getBackendType();
         switch (type) {
@@ -253,21 +259,15 @@ public class TestProfiler extends TornadoTestBase {
 
     }
 
-    private static void reduction(float[] input, @Reduce float[] output) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            output[0] += input[i];
-        }
-    }
-
     @Test
     public void testProfilerReduction() {
 
-        final int SIZE = 1024;
-        float[] inputArray = new float[SIZE];
+        final int size = 1024;
+        float[] inputArray = new float[size];
         float[] outputArray = new float[1];
 
         Random r = new Random();
-        IntStream.range(0, SIZE).forEach(i -> inputArray[i] = r.nextFloat());
+        IntStream.range(0, size).forEach(i -> inputArray[i] = r.nextFloat());
 
         TaskGraph taskGraph = new TaskGraph("compute");
         taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, inputArray) //
@@ -286,12 +286,12 @@ public class TestProfiler extends TornadoTestBase {
     @Test
     public void testProfilerReductionOnAndOff() {
 
-        final int SIZE = 1024;
-        float[] inputArray = new float[SIZE];
+        final int size = 1024;
+        float[] inputArray = new float[size];
         float[] outputArray = new float[1];
 
         Random r = new Random();
-        IntStream.range(0, SIZE).forEach(i -> inputArray[i] = r.nextFloat());
+        IntStream.range(0, size).forEach(i -> inputArray[i] = r.nextFloat());
 
         TaskGraph taskGraph = new TaskGraph("compute");
         taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, inputArray) //

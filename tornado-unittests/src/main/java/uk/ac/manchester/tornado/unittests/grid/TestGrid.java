@@ -48,6 +48,7 @@ import uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes;
  *
  */
 public class TestGrid extends TornadoTestBase {
+    // CHECKSTYLE:OFF
 
     final int NUM_ELEMENTS = 4096;
 
@@ -59,6 +60,36 @@ public class TestGrid extends TornadoTestBase {
                     sum += A.get((i * size) + k) * B.get((k * size) + j);
                 }
                 C.set((i * size) + j, sum);
+            }
+        }
+    }
+
+    private static void testMatrixIntegers(final int X, final int Y) {
+        int[][] a = new int[X][Y];
+        Random r = new Random();
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                a[i][j] = r.nextInt();
+            }
+        }
+        Matrix2DInt matrixA = new Matrix2DInt(a);
+        Matrix2DInt matrixB = new Matrix2DInt(X, Y);
+        TaskGraph taskGraph = new TaskGraph("foo") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
+                .task("bar", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
+
+        WorkerGrid2D worker = new WorkerGrid2D(X, Y);
+        GridScheduler gridScheduler = new GridScheduler("foo.bar", worker);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
+        executor.withGridScheduler(gridScheduler) //
+                .execute();
+
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                assertEquals(matrixA.get(i, j) + matrixA.get(i, j), matrixB.get(i, j));
             }
         }
     }
@@ -135,36 +166,6 @@ public class TestGrid extends TornadoTestBase {
         }
     }
 
-    private static void testMatrixIntegers(final int X, final int Y) {
-        int[][] a = new int[X][Y];
-        Random r = new Random();
-        for (int i = 0; i < X; i++) {
-            for (int j = 0; j < Y; j++) {
-                a[i][j] = r.nextInt();
-            }
-        }
-        Matrix2DInt matrixA = new Matrix2DInt(a);
-        Matrix2DInt matrixB = new Matrix2DInt(X, Y);
-        TaskGraph taskGraph = new TaskGraph("foo") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
-                .task("bar", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
-
-        WorkerGrid2D worker = new WorkerGrid2D(X, Y);
-        GridScheduler gridScheduler = new GridScheduler("foo.bar", worker);
-
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
-        executor.withGridScheduler(gridScheduler) //
-                .execute();
-
-        for (int i = 0; i < X; i++) {
-            for (int j = 0; j < Y; j++) {
-                assertEquals(matrixA.get(i, j) + matrixA.get(i, j), matrixB.get(i, j));
-            }
-        }
-    }
-
     @Test
     public void testDynamicGrid03() {
         testMatrixIntegers(256, 128);
@@ -237,4 +238,5 @@ public class TestGrid extends TornadoTestBase {
         executor.withGridScheduler(gridScheduler) //
                 .execute();
     }
+    // CHECKSTYLE:ON
 }
