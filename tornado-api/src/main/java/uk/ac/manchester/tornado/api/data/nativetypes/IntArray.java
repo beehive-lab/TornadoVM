@@ -41,11 +41,10 @@
  */
 package uk.ac.manchester.tornado.api.data.nativetypes;
 
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-
-import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 public class IntArray {
     private MemorySegment segment;
@@ -57,16 +56,13 @@ public class IntArray {
         segment = Arena.ofAuto().allocate(numberOfElements * INT_BYTES, 1);
     }
 
-
     public void set(int index, int value) {
         segment.setAtIndex(JAVA_INT, index, value);
     }
 
     public int get(int index) {
-        //return 0;
         return segment.getAtIndex(JAVA_INT, index);
     }
-
 
     public void init(int value) {
         for (int i = 0; i < segment.byteSize() / INT_BYTES; i++) {
