@@ -41,10 +41,10 @@
  */
 package uk.ac.manchester.tornado.api.data.nativetypes;
 
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
+
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 public class LongArray {
     private MemorySegment segment;
@@ -56,7 +56,6 @@ public class LongArray {
         segment = Arena.ofAuto().allocate(numberOfElements * LONG_BYTES, 1);
     }
 
-
     public void set(int index, long value) {
         segment.setAtIndex(JAVA_LONG, index, value);
     }
@@ -64,7 +63,6 @@ public class LongArray {
     public long get(int index) {
         return segment.getAtIndex(JAVA_LONG, index);
     }
-
 
     public void init(long value) {
         for (int i = 0; i < segment.byteSize() / LONG_BYTES; i++) {
@@ -87,5 +85,9 @@ public class LongArray {
             arrayContents += ", " + this.get(i);
         }
         return arrayContents;
+    }
+
+    public int getNumBytesOfSegment() {
+        return numberOfElements * LONG_BYTES;
     }
 }

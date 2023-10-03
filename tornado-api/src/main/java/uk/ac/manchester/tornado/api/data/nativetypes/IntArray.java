@@ -74,6 +74,10 @@ public class IntArray {
         return numberOfElements;
     }
 
+    public int getNumBytesOfSegment() {
+        return numberOfElements * INT_BYTES;
+    }
+
     public MemorySegment getSegment() {
         return segment;
     }

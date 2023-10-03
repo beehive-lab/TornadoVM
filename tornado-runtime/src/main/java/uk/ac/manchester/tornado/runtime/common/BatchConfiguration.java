@@ -28,7 +28,13 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.CharArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 
@@ -86,10 +92,35 @@ public class BatchConfiguration {
                     throw new TornadoRuntimeException("[UNSUPPORTED] Input objects with different sizes not currently supported");
                 }
             } else if (o instanceof IntArray) {
-                totalSize = ((IntArray) o).getSize() * 4;
+                totalSize = ((IntArray) o).getNumBytesOfSegment();
                 inputSizes.add(totalSize);
                 dataTypeSize = findDataTypeSize(int.class);
-                //typeSize = 4;
+            } else if (o instanceof FloatArray) {
+                totalSize = ((FloatArray) o).getNumBytesOfSegment();
+                inputSizes.add(totalSize);
+                dataTypeSize = findDataTypeSize(float.class);
+            } else if (o instanceof DoubleArray) {
+                totalSize = ((DoubleArray) o).getNumBytesOfSegment();
+                inputSizes.add(totalSize);
+                dataTypeSize = findDataTypeSize(double.class);
+            } else if (o instanceof LongArray) {
+                totalSize = ((LongArray) o).getNumBytesOfSegment();
+                inputSizes.add(totalSize);
+                dataTypeSize = findDataTypeSize(long.class);
+            } else if (o instanceof ShortArray) {
+                totalSize = ((ShortArray) o).getNumBytesOfSegment();
+                inputSizes.add(totalSize);
+                dataTypeSize = findDataTypeSize(short.class);
+            } else if (o instanceof ByteArray) {
+                totalSize = ((ByteArray) o).getNumBytesOfSegment();
+                inputSizes.add(totalSize);
+                dataTypeSize = findDataTypeSize(byte.class);
+            } else if (o instanceof CharArray) {
+                totalSize = ((CharArray) o).getNumBytesOfSegment();
+                inputSizes.add(totalSize);
+                dataTypeSize = findDataTypeSize(char.class);
+            } else {
+                throw new TornadoRuntimeException("Unsupported type: ");
             }
         }
 

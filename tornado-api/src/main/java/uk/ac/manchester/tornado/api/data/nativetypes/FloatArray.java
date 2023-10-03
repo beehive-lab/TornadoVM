@@ -41,10 +41,10 @@
  */
 package uk.ac.manchester.tornado.api.data.nativetypes;
 
+import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
+
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-
-import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
 
 public class FloatArray {
     private MemorySegment segment;
@@ -57,7 +57,6 @@ public class FloatArray {
         segment = Arena.ofAuto().allocate(numberOfElements * FLOAT_BYTES, 1);
     }
 
-
     public void set(int index, float value) {
         segment.setAtIndex(JAVA_FLOAT, index, value);
     }
@@ -65,7 +64,6 @@ public class FloatArray {
     public float get(int index) {
         return segment.getAtIndex(JAVA_FLOAT, index);
     }
-
 
     public void init(float value) {
         for (int i = 0; i < segment.byteSize() / FLOAT_BYTES; i++) {
@@ -88,5 +86,9 @@ public class FloatArray {
             arrayContents += ", " + this.get(i);
         }
         return arrayContents;
+    }
+
+    public int getNumBytesOfSegment() {
+        return numberOfElements * FLOAT_BYTES;
     }
 }

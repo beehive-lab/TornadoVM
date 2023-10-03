@@ -1,9 +1,9 @@
 package uk.ac.manchester.tornado.api.data.nativetypes;
 
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 public class ByteArray {
     private MemorySegment segment;
@@ -16,7 +16,6 @@ public class ByteArray {
         segment = Arena.ofAuto().allocate(numberOfElements * BYTE_BYTES, 1);
     }
 
-
     public void set(int index, byte value) {
         segment.setAtIndex(JAVA_BYTE, index, value);
     }
@@ -24,7 +23,6 @@ public class ByteArray {
     public byte get(int index) {
         return segment.getAtIndex(JAVA_BYTE, index);
     }
-
 
     public void init(byte value) {
         for (int i = 0; i < segment.byteSize() / BYTE_BYTES; i++) {
@@ -47,5 +45,9 @@ public class ByteArray {
             arrayContents += ", " + this.get(i);
         }
         return arrayContents;
+    }
+
+    public int getNumBytesOfSegment() {
+        return numberOfElements;
     }
 }
