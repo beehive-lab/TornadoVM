@@ -317,7 +317,6 @@ public class TestMultipleFunctions extends TornadoTestBase {
         for (int i = 0; i < callerRead.length; i++) {
             callerWrite[i] = callerRead[i] + callerReadCalleeWrite[i] + 10;
         }
-
         callee1(calleeRead, callerReadCalleeWrite);
     }
 

@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2022-2023 APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,7 +32,7 @@ import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 
 public class OCLKernelArgs extends OCLByteBuffer implements KernelArgs {
 
-    public final static int RETURN_VALUE_INDEX = 0;
+    public static final int RETURN_VALUE_INDEX = 0;
     public static final int RESERVED_SLOTS = 3;
 
     private final ArrayList<CallArgument> callArguments;
@@ -40,7 +40,6 @@ public class OCLKernelArgs extends OCLByteBuffer implements KernelArgs {
     OCLKernelArgs(long bufferId, int numArgs, OCLDeviceContext device) {
         super(device, bufferId, 0, RESERVED_SLOTS << 3);
         this.callArguments = new ArrayList<>(numArgs);
-
         buffer.clear();
     }
 
@@ -57,21 +56,6 @@ public class OCLKernelArgs extends OCLByteBuffer implements KernelArgs {
     @Override
     public List<CallArgument> getCallArguments() {
         return callArguments;
-    }
-
-    @Override
-    public void write() {
-        super.write();
-    }
-
-    @Override
-    public int enqueueWrite() {
-        return enqueueWrite(null);
-    }
-
-    @Override
-    public int enqueueWrite(int[] events) {
-        return super.enqueueWrite(events);
     }
 
     @Override
