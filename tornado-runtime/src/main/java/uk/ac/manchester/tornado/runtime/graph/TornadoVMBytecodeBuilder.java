@@ -141,8 +141,13 @@ public class TornadoVMBytecodeBuilder {
         return bitcodeASM.position();
     }
 
+    public int getLastCopyOutPosition() {
+        return bitcodeASM.getLastCopyOutPosition();
+    }
+
     private static class TornadoVMBytecodeAssembler {
         private final ByteBuffer buffer;
+        private int lastCopyOutPosition;
 
         /**
          * It constructs a new {@link TornadoVMBytecodeAssembler} instance.
@@ -215,6 +220,7 @@ public class TornadoVMBytecodeBuilder {
         }
 
         void transferToHost(int obj, int dep, long offset, long size) {
+            lastCopyOutPosition = buffer.position();
             buffer.put(TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS.value);
             buffer.putInt(obj);
             buffer.putInt(dep);
@@ -245,6 +251,10 @@ public class TornadoVMBytecodeBuilder {
         void referenceArg(int index) {
             buffer.put(TornadoVMBytecodes.PUSH_REFERENCE_ARGUMENT.value);
             buffer.putInt(index);
+        }
+
+        int getLastCopyOutPosition() {
+            return lastCopyOutPosition;
         }
 
         /**
