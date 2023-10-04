@@ -59,11 +59,11 @@ public class PTXMemorySegmentWrapper implements ObjectBuffer {
         MemorySegment segment;
         if (reference instanceof IntArray) {
             segment = ((IntArray) reference).getSegment();
-        } else if(reference instanceof FloatArray) {
+        } else if (reference instanceof FloatArray) {
             segment = ((FloatArray) reference).getSegment();
-        } else if(reference instanceof DoubleArray) {
+        } else if (reference instanceof DoubleArray) {
             segment = ((DoubleArray) reference).getSegment();
-        } else if(reference instanceof LongArray) {
+        } else if (reference instanceof LongArray) {
             segment = ((LongArray) reference).getSegment();
         } else if (reference instanceof ShortArray) {
             segment = ((ShortArray) reference).getSegment();
@@ -72,8 +72,7 @@ public class PTXMemorySegmentWrapper implements ObjectBuffer {
         }
 
         final int returnEvent;
-        returnEvent = deviceContext.readBuffer(toBuffer(), segment.byteSize(),
-                segment.address().toRawLongValue(), hostOffset, (useDeps) ? events : null);
+        returnEvent = deviceContext.readBuffer(toBuffer(), segment.byteSize(), segment.address().toRawLongValue(), hostOffset, (useDeps) ? events : null);
         return returnEvent;
     }
 
@@ -88,8 +87,7 @@ public class PTXMemorySegmentWrapper implements ObjectBuffer {
         MemorySegment segment = (MemorySegment) reference;
 
         final int returnEvent;
-        returnEvent = deviceContext.enqueueReadBuffer(toBuffer(),segment.byteSize(),
-                segment.address().toRawLongValue(), hostOffset, (useDeps) ? events : null);
+        returnEvent = deviceContext.enqueueReadBuffer(toBuffer(), segment.byteSize(), segment.address().toRawLongValue(), hostOffset, (useDeps) ? events : null);
         return useDeps ? returnEvent : -1;
     }
 
@@ -98,11 +96,11 @@ public class PTXMemorySegmentWrapper implements ObjectBuffer {
         MemorySegment segment;
         if (reference instanceof IntArray) {
             segment = ((IntArray) reference).getSegment();
-        } else if(reference instanceof FloatArray) {
+        } else if (reference instanceof FloatArray) {
             segment = ((FloatArray) reference).getSegment();
-        } else if(reference instanceof DoubleArray) {
+        } else if (reference instanceof DoubleArray) {
             segment = ((DoubleArray) reference).getSegment();
-        } else if(reference instanceof LongArray) {
+        } else if (reference instanceof LongArray) {
             segment = ((LongArray) reference).getSegment();
         } else if (reference instanceof ShortArray) {
             segment = ((ShortArray) reference).getSegment();
@@ -111,8 +109,7 @@ public class PTXMemorySegmentWrapper implements ObjectBuffer {
         }
         List<Integer> returnEvents = new ArrayList<>();
 
-        int internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(),
-                segment.byteSize(), segment.address().toRawLongValue(), hostOffset, (useDeps) ? events : null);
+        int internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), segment.byteSize(), segment.address().toRawLongValue(), hostOffset, (useDeps) ? events : null);
         returnEvents.add(internalEvent);
 
         onDevice = true;
@@ -124,11 +121,11 @@ public class PTXMemorySegmentWrapper implements ObjectBuffer {
         MemorySegment memref;
         if (reference instanceof IntArray) {
             memref = ((IntArray) reference).getSegment();
-        } else if(reference instanceof FloatArray) {
+        } else if (reference instanceof FloatArray) {
             memref = ((FloatArray) reference).getSegment();
-        } else if(reference instanceof DoubleArray) {
+        } else if (reference instanceof DoubleArray) {
             memref = ((DoubleArray) reference).getSegment();
-        } else if(reference instanceof LongArray) {
+        } else if (reference instanceof LongArray) {
             memref = ((LongArray) reference).getSegment();
         } else if (reference instanceof ShortArray) {
             memref = ((ShortArray) reference).getSegment();
@@ -158,11 +155,12 @@ public class PTXMemorySegmentWrapper implements ObjectBuffer {
         bufferSize = INIT_VALUE;
 
         if (Tornado.FULL_DEBUG) {
-            //  info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
+            // info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d",
+            // kind.getJavaName(), humanReadableByteCount(bufferSize, true),
+            // arrayLengthOffset, arrayHeaderSize);
             info("deallocated: %s", toString());
         }
     }
-
 
     @Override
     public long size() {
@@ -175,7 +173,7 @@ public class PTXMemorySegmentWrapper implements ObjectBuffer {
     }
 
     @Override
-    public long getSizeSubRegion() {
+    public long getSizeSubRegionSize() {
         return 0;
     }
 }
