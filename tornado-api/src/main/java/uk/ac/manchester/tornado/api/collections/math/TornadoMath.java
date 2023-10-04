@@ -49,6 +49,7 @@ import static uk.ac.manchester.tornado.api.collections.types.FloatOps.compare;
 
 import uk.ac.manchester.tornado.api.collections.types.DoubleOps;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 
 public class TornadoMath {
 
@@ -209,6 +210,14 @@ public class TornadoMath {
             result = compareULP(value[i], expected[i], numULP);
         }
         return result;
+    }
+
+    public static float findULPDistance(FloatArray value, FloatArray expected) {
+        float maxULP = Float.MIN_VALUE;
+        for (int i = 0; i < value.getSize(); i++) {
+            maxULP = Math.max(maxULP, FloatOps.findMaxULP(value.get(i), expected.get(i)));
+        }
+        return maxULP;
     }
 
     public static float findULPDistance(float[] value, float[] expected) {

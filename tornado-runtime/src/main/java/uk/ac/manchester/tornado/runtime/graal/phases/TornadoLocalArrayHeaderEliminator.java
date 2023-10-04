@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
+import java.util.ArrayList;
 import java.util.Optional;
 
 import org.graalvm.compiler.graph.Node;
@@ -56,7 +57,17 @@ public class TornadoLocalArrayHeaderEliminator extends BasePhase<TornadoHighTier
             AddNode addNode = offsetAddressNode.inputs().filter(AddNode.class).first();
             for (Node in : addNode.inputs()) {
                 if (in instanceof LeftShiftNode) {
-                    offsetAddressNode.replaceFirstInput(addNode, in);
+                    ArrayList<Node> usages = new ArrayList<>();
+                    for (Node us : addNode.usages()) {
+                        if (us instanceof OffsetAddressNode) {
+                            usages.add(us);
+                        }
+                    }
+                    for (Node us : usages) {
+                        if (us instanceof OffsetAddressNode) {
+                            us.replaceFirstInput(addNode, in);
+                        }
+                    }
                     addNode.clearInputs();
                     addNode.safeDelete();
                     return;

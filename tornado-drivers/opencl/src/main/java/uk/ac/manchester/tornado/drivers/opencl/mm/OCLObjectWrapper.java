@@ -44,6 +44,7 @@ import java.util.List;
 
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
@@ -116,6 +117,9 @@ public class OCLObjectWrapper implements ObjectBuffer {
                 } else {
                     warn("cannot wrap field: array type=%s", type.getName());
                 }
+            } else if (type == FloatArray.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                wrappedField = new OCLMemorySegmentWrapper((FloatArray) objectFromField, device, 0);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 wrappedField = new OCLVectorWrapper(device, object, 0);
             } else if (field.getJavaKind().isObject()) {

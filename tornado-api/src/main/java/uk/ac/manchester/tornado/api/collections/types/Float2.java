@@ -44,6 +44,7 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
@@ -59,14 +60,14 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
      * backing array
      */
     @Payload
-    final float[] storage;
+    final FloatArray storage;
 
-    private Float2(float[] storage) {
+    private Float2(FloatArray storage) {
         this.storage = storage;
     }
 
     public Float2() {
-        this(new float[NUM_ELEMENTS]);
+        this(new FloatArray(NUM_ELEMENTS));
     }
 
     public Float2(float x, float y) {
@@ -75,10 +76,10 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
         setY(y);
     }
 
-    static Float2 loadFromArray(final float[] array, int index) {
+    static Float2 loadFromArray(final FloatArray array, int index) {
         final Float2 result = new Float2();
-        result.setX(array[index]);
-        result.setY(array[index + 1]);
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
         return result;
     }
 
@@ -233,16 +234,16 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
-    public float[] getArray() {
+    public FloatArray getArray() {
         return storage;
     }
 
     public float get(int index) {
-        return storage[index];
+        return storage.get(index);
     }
 
     public void set(int index, float value) {
-        storage[index] = value;
+        storage.set(index, value);
     }
 
     public void set(Float2 value) {
@@ -286,9 +287,9 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
         return toString(FloatOps.FMT_2);
     }
 
-    void storeToArray(final float[] array, int index) {
-        array[index] = getX();
-        array[index + 1] = getY();
+    void storeToArray(final FloatArray array, int index) {
+        array.set(index, getX());
+        array.set(index + 1, getY());
     }
 
     @Override
@@ -298,7 +299,9 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
+        // TODO: Check if this is correct
+        return storage.getSegment().asByteBuffer().asFloatBuffer();
+        // return FloatBuffer.wrap(storage);
     }
 
     @Override

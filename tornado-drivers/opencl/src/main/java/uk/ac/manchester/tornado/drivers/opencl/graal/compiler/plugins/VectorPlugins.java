@@ -49,6 +49,7 @@ import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStampFactory;
@@ -98,7 +99,7 @@ public final class VectorPlugins {
             });
 
             // Adding floats
-            registerVectorPlugins(plugins, OCLKind.FLOAT2, float[].class, float.class);
+            registerVectorPlugins(plugins, OCLKind.FLOAT2, FloatArray.class, float.class);
             registerVectorPlugins(plugins, OCLKind.FLOAT3, float[].class, float.class);
             registerVectorPlugins(plugins, OCLKind.FLOAT4, float[].class, float.class);
             registerVectorPlugins(plugins, OCLKind.FLOAT8, float[].class, float.class);
