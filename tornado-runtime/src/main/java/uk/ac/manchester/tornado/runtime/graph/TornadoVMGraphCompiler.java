@@ -138,11 +138,9 @@ public class TornadoVMGraphCompiler {
 
     private static void synchronizeOperationLastByteCode(TornadoVMBytecodeBuilder result, int numDepLists) {
         final byte[] code = result.getCode();
-        final int codeSize = result.getCodeSize();
-        if (code[codeSize - 13] == TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()) {
-            code[codeSize - 13] = TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING.value();
-        } else if (code[codeSize - 29] == TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()) {
-            code[codeSize - 29] = TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING.value();
+        int position = result.getLastCopyOutPosition();
+        if (code[position] == TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()) {
+            code[position] = TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING.value();
         } else {
             result.barrier(numDepLists);
         }

@@ -234,10 +234,10 @@ public class TornadoOptions {
     public static final boolean LEVEL_ZERO_EXTENDED_MEMORY_MODE = getBooleanValue("tornado.spirv.levelzero.extended.memory", TRUE);
     /**
      * If enabled, the TornadoVM will substitute the last READ (data transfer from
-     * the TRANSFER_DEVICE_TO_HOST) using a STREAM_OUT_BLOCKING. This is FALSE by
+     * the device to the host) using a STREAM_OUT_BLOCKING. This is FALSE by
      * default.
      */
-    public static final boolean ENABLE_STREAM_OUT_BLOCKING = getBooleanValue("tornado.enable.streamOut.blocking", FALSE);
+    public static final boolean ENABLE_STREAM_OUT_BLOCKING = getBooleanValue("tornado.enable.streamOut.blocking", TRUE);
     /**
      * Option to run concurrently on multiple device in single or multi-backend
      * configuration. False by default.
