@@ -18,6 +18,16 @@ public class TornadoLocalArrayHeaderEliminator extends BasePhase<TornadoHighTier
     public static boolean isReduction = false;
     public static boolean nativeTypes = false;
 
+    public static boolean anyIdentityNodeOrReduction(Node n) {
+        boolean anyIdentity = false;
+        if (n instanceof ReadNode) {
+            anyIdentity = ((ReadNode) n).getLocationIdentity().isAny();
+        } else if (n instanceof WriteNode) {
+            anyIdentity = ((WriteNode) n).getLocationIdentity().isAny();
+        }
+        return anyIdentity || (isReduction && nativeTypes);
+    }
+
     @Override
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
         return ALWAYS_APPLICABLE;
@@ -42,17 +52,7 @@ public class TornadoLocalArrayHeaderEliminator extends BasePhase<TornadoHighTier
         nativeTypes = false;
     }
 
-    public static boolean anyIdentityNodeOrReduction(Node n) {
-        boolean anyIdentity = false;
-        if (n instanceof ReadNode) {
-            anyIdentity = ((ReadNode) n).getLocationIdentity().isAny();
-        } else if (n instanceof WriteNode) {
-            anyIdentity = ((WriteNode) n).getLocationIdentity().isAny();
-        }
-        return anyIdentity || (isReduction && nativeTypes);
-    }
-
-    public void removeHeaderBytesOffset (OffsetAddressNode offsetAddressNode) {
+    public void removeHeaderBytesOffset(OffsetAddressNode offsetAddressNode) {
         if (offsetAddressNode.inputs().filter(AddNode.class).isNotEmpty()) {
             AddNode addNode = offsetAddressNode.inputs().filter(AddNode.class).first();
             for (Node in : addNode.inputs()) {

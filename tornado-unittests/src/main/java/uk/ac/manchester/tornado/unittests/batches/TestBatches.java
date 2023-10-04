@@ -100,6 +100,39 @@ public class TestBatches extends TornadoTestBase {
     }
 
     @Test
+    public void test100MBSmall() {
+
+        long maxAllocMemory = checkMaxHeapAllocation(100, MemSize.MB);
+
+        // Fill 120MB of float array
+        int size = 30000000;
+        // or as much as we can
+        if (size * 4 > maxAllocMemory) {
+            size = (int) ((maxAllocMemory / 4 / 2) * 0.9);
+        }
+        FloatArray arrayA = new FloatArray(size);
+        FloatArray arrayB = new FloatArray(size);
+
+        IntStream.range(0, arrayA.getSize()).sequential().forEach(idx -> arrayA.set(idx, idx));
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA) //
+                .task("t0", TestBatches::compute, arrayA, arrayB) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, arrayB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withBatch("60MB") // Slots of 100 MB
+                .execute();
+
+        for (int i = 0; i < arrayB.getSize(); i++) {
+            assertEquals(arrayA.get(i) + 100, arrayB.get(i), 0.1f);
+        }
+
+        executionPlan.freeDeviceMemory();
+    }
+
+    @Test
     public void test100MB() {
 
         long maxAllocMemory = checkMaxHeapAllocation(100, MemSize.MB);
@@ -179,7 +212,8 @@ public class TestBatches extends TornadoTestBase {
         }
         FloatArray arrayA = new FloatArray(size);
 
-        IntStream.range(0, arrayA.getSize()).sequential().forEach(idx -> arrayA.set(idx, idx));
+        Random r = new Random();
+        IntStream.range(0, arrayA.getSize()).sequential().forEach(idx -> arrayA.set(idx, r.nextFloat()));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA) //

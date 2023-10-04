@@ -311,7 +311,6 @@ public class TornadoVMInterpreter extends TornadoLogger {
                 final int eventList = bytecodeResult.getInt();
                 final long offset = bytecodeResult.getLong();
                 final long sizeBatch = bytecodeResult.getLong();
-
                 final int[] waitList = (useDependencies) ? events[eventList] : null;
                 if (isWarmup) {
                     continue;
@@ -548,8 +547,8 @@ public class TornadoVMInterpreter extends TornadoLogger {
         }
 
         if (TornadoOptions.PRINT_BYTECODES) {
-            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("STREAM_OUT_BLOCKING") + " [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object,
-                    InterpreterUtilities.debugDeviceBC(deviceForInterpreter), sizeBatch, offset, eventList);
+            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING") + " [0x%x] %s on %s, size=%d, offset=%d [event list=%d]",
+                    object.hashCode(), object, InterpreterUtilities.debugDeviceBC(deviceForInterpreter), sizeBatch, offset, eventList);
             tornadoVMBytecodeList.append(verbose).append("\n");
 
         }
@@ -854,7 +853,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
         KernelArgs callWrapper;
         int[] waitList;
 
-        public ExecutionInfo(KernelArgs callWrapper, int[] waitList) {
+        ExecutionInfo(KernelArgs callWrapper, int[] waitList) {
             this.callWrapper = callWrapper;
             this.waitList = waitList;
         }

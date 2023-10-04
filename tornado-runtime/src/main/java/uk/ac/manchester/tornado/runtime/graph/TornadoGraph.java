@@ -116,10 +116,10 @@ public class TornadoGraph {
     }
 
     public void dumpTornadoGraph() {
-        final String ANSI_CYAN = "\u001B[36m";
-        final String ANSI_RESET = "\u001B[0m";
+        final String ansiCyan = "\u001B[36m";
+        final String ansiReset = "\u001B[0m";
         System.out.println("-----------------------------------");
-        System.out.println(ANSI_CYAN + "TaskGraph:" + ANSI_RESET);
+        System.out.println(ansiCyan + "TaskGraph:" + ansiReset);
         apply(System.out::println);
         System.out.println("-----------------------------------");
     }

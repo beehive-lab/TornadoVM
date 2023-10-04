@@ -17,15 +17,21 @@
  */
 package uk.ac.manchester.tornado.annotation;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import org.objectweb.asm.*;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.runtime.ASMClassVisitorProvider;
-import uk.ac.manchester.tornado.runtime.common.ParallelAnnotationProvider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.runtime.ASMClassVisitorProvider;
+import uk.ac.manchester.tornado.runtime.common.ParallelAnnotationProvider;
 
 public class ASMClassVisitor extends ClassVisitor implements ASMClassVisitorProvider {
     private List<ParallelAnnotationProvider> parallelAnnotations;

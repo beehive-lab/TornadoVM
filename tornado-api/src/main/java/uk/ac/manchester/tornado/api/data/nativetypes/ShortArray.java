@@ -56,7 +56,6 @@ public class ShortArray {
         segment = Arena.ofAuto().allocate(numberOfElements * SHORT_BYTES, 1);
     }
 
-
     public void set(int index, short value) {
         segment.setAtIndex(JAVA_SHORT, index, value);
     }
@@ -64,7 +63,6 @@ public class ShortArray {
     public short get(int index) {
         return segment.getAtIndex(JAVA_SHORT, index);
     }
-
 
     public void init(short value) {
         for (int i = 0; i < segment.byteSize() / SHORT_BYTES; i++) {
@@ -80,12 +78,7 @@ public class ShortArray {
         return segment;
     }
 
-    @Override
-    public String toString() {
-        String arrayContents = String.valueOf(this.get(0));
-        for (int i = 1; i < numberOfElements; i++) {
-            arrayContents += ", " + this.get(i);
-        }
-        return arrayContents;
+    public int getNumBytesOfSegment() {
+        return numberOfElements * SHORT_BYTES;
     }
 }

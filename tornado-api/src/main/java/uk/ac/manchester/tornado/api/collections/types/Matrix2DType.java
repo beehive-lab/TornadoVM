@@ -44,12 +44,12 @@ package uk.ac.manchester.tornado.api.collections.types;
 public class Matrix2DType {
 
     /**
-     * Number of rows
+     * Number of rows.
      */
     protected final int ROWS;
 
     /**
-     * Number of columns
+     * Number of columns.
      */
     protected final int COLUMNS;
 

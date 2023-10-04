@@ -46,17 +46,17 @@ import java.util.Arrays;
 
 public class Matrix2DInt extends Matrix2DType implements PrimitiveStorage<IntBuffer> {
     /**
-     * backing array
+     * backing array.
      */
     protected final int[] storage;
 
     /**
-     * number of elements in the storage
+     * number of elements in the storage.
      */
     private final int numElements;
 
     /**
-     * Storage format for matrix
+     * Storage format for matrix.
      *
      * @param rows
      *            number of rows
@@ -72,7 +72,7 @@ public class Matrix2DInt extends Matrix2DType implements PrimitiveStorage<IntBuf
     }
 
     /**
-     * Storage format for matrix
+     * Storage format for matrix.
      *
      * @param rows
      *            number of rows
@@ -85,6 +85,32 @@ public class Matrix2DInt extends Matrix2DType implements PrimitiveStorage<IntBuf
 
     public Matrix2DInt(int[][] matrix) {
         this(matrix.length, matrix[0].length, StorageFormats.toRowMajor(matrix));
+    }
+
+    /**
+     * Transposes the matrix in-place.
+     *
+     * @param matrix
+     *            matrix to transpose
+     */
+    public static void transpose(Matrix2DInt matrix) {
+
+        if (matrix.COLUMNS == matrix.ROWS) {
+            // transpose square matrix
+            for (int i = 0; i < matrix.ROWS; i++) {
+                for (int j = 0; j < i; j++) {
+                    final int tmp = matrix.get(i, j);
+                    matrix.set(i, j, matrix.get(j, i));
+                    matrix.set(j, i, tmp);
+                }
+            }
+        }
+    }
+
+    public static void scale(Matrix2DInt matrix, int value) {
+        for (int i = 0; i < matrix.storage.length; i++) {
+            matrix.storage[i] *= value;
+        }
     }
 
     public int get(int i, int j) {
@@ -149,26 +175,6 @@ public class Matrix2DInt extends Matrix2DType implements PrimitiveStorage<IntBuf
         }
     }
 
-    /**
-     * Transposes the matrix in-place
-     *
-     * @param matrix
-     *            matrix to transpose
-     */
-    public static void transpose(Matrix2DInt matrix) {
-
-        if (matrix.COLUMNS == matrix.ROWS) {
-            // transpose square matrix
-            for (int i = 0; i < matrix.ROWS; i++) {
-                for (int j = 0; j < i; j++) {
-                    final int tmp = matrix.get(i, j);
-                    matrix.set(i, j, matrix.get(j, i));
-                    matrix.set(j, i, tmp);
-                }
-            }
-        }
-    }
-
     public Matrix2DInt duplicate() {
         Matrix2DInt matrix = new Matrix2DInt(ROWS, COLUMNS);
         matrix.set(this);
@@ -200,12 +206,6 @@ public class Matrix2DInt extends Matrix2DType implements PrimitiveStorage<IntBuf
             result += "\n" + toString(IntOps.FMT);
         }
         return result;
-    }
-
-    public static void scale(Matrix2DInt matrix, int value) {
-        for (int i = 0; i < matrix.storage.length; i++) {
-            matrix.storage[i] *= value;
-        }
     }
 
     @Override

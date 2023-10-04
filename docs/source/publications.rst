@@ -47,6 +47,9 @@ If you are using Tornado 0.1 (Initial release), please use the following citatio
 
 Full list of publications
 ---------------------------------------------
+- Juan Fumero, György Rethy, Athanasios Stratikopoulos, Nikos Foutris, Christos Kotselidis.
+  **Beehive SPIR-V Toolkit: A Composable and Functional API for Runtime SPIR-V Code Generation**
+  VMIL'23, Collocated with SPLASH'#23. October 23, Cascais, Portugal.
 - Athanasios Stratikopoulos, Florin Blanaru, Juan Fumero, Maria Xekalaki, Orion Papadakis, Christos Kotselidis. 
   **Cross-Language Interoperability of Heterogeneous Code**
   MoreVMs'23. Collocated with Programming 2023. 

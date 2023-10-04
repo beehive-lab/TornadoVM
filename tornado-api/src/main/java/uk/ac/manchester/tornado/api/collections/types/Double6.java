@@ -49,17 +49,15 @@ import uk.ac.manchester.tornado.api.type.annotations.Payload;
 public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
 
     public static final Class<Double6> TYPE = Double6.class;
-
     /**
-     * backing array
+     * number of elements in the storage.
+     */
+    private static final int NUM_ELEMENTS = 6;
+    /**
+     * backing array.
      */
     @Payload
     final double[] storage;
-
-    /**
-     * number of elements in the storage
-     */
-    private static final int NUM_ELEMENTS = 6;
 
     public Double6(double[] storage) {
         this.storage = storage;
@@ -79,103 +77,6 @@ public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
         setS5(s5);
     }
 
-    public double[] getArray() {
-        return storage;
-    }
-
-    public void set(Double6 value) {
-        setS0(value.getS0());
-        setS1(value.getS1());
-        setS2(value.getS2());
-        setS3(value.getS3());
-        setS4(value.getS4());
-        setS5(value.getS5());
-    }
-
-    public double get(int index) {
-        return storage[index];
-    }
-
-    public void set(int index, double value) {
-        storage[index] = value;
-    }
-
-    public double getS0() {
-        return get(0);
-    }
-
-    public double getS1() {
-        return get(1);
-    }
-
-    public double getS2() {
-        return get(2);
-    }
-
-    public double getS3() {
-        return get(3);
-    }
-
-    public double getS4() {
-        return get(4);
-    }
-
-    public double getS5() {
-        return get(5);
-    }
-
-    public void setS0(double value) {
-        set(0, value);
-    }
-
-    public void setS1(double value) {
-        set(1, value);
-    }
-
-    public void setS2(double value) {
-        set(2, value);
-    }
-
-    public void setS3(double value) {
-        set(3, value);
-    }
-
-    public void setS4(double value) {
-        set(4, value);
-    }
-
-    public void setS5(double value) {
-        set(5, value);
-    }
-
-    public Double3 getHigh() {
-        return Double3.loadFromArray(storage, 0);
-    }
-
-    public Double3 getLow() {
-        return Double3.loadFromArray(storage, 3);
-    }
-
-    /**
-     * Duplicates this vector
-     *
-     * @return {@link Double6}
-     */
-    public Double6 duplicate() {
-        final Double6 vector = new Double6();
-        vector.set(this);
-        return vector;
-    }
-
-    public String toString(String fmt) {
-        return String.format(fmt, getS0(), getS1(), getS2(), getS3(), getS4(), getS5());
-    }
-
-    @Override
-    public String toString() {
-        return toString(DoubleOps.FMT_6);
-    }
-
     public static Double6 loadFromArray(final double[] array, int index) {
         final Double6 result = new Double6();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
@@ -184,29 +85,8 @@ public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
         return result;
     }
 
-    public final void storeToArray(final double[] array, int index) {
-        for (int i = 0; i < NUM_ELEMENTS; i++) {
-            array[index + i] = get(i);
-        }
-    }
-
-    @Override
-    public void loadFromBuffer(DoubleBuffer buffer) {
-        asBuffer().put(buffer);
-    }
-
-    @Override
-    public DoubleBuffer asBuffer() {
-        return DoubleBuffer.wrap(storage);
-    }
-
-    @Override
-    public int size() {
-        return NUM_ELEMENTS;
-    }
-
     /**
-     * * Operations on Double6 vectors
+     * * Operations on Double6 vectors.
      */
     /*
      * vector = op( vector, vector )
@@ -366,7 +246,7 @@ public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     /**
-     * Returns the vector length e.g. the sqrt of all elements squared
+     * Returns the vector length e.g. the sqrt of all elements squared.
      *
      * @return double
      */
@@ -376,6 +256,124 @@ public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
 
     public static boolean isEqual(Double6 a, Double6 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+    }
+
+    public double[] getArray() {
+        return storage;
+    }
+
+    public void set(Double6 value) {
+        setS0(value.getS0());
+        setS1(value.getS1());
+        setS2(value.getS2());
+        setS3(value.getS3());
+        setS4(value.getS4());
+        setS5(value.getS5());
+    }
+
+    public double get(int index) {
+        return storage[index];
+    }
+
+    public void set(int index, double value) {
+        storage[index] = value;
+    }
+
+    public double getS0() {
+        return get(0);
+    }
+
+    public void setS0(double value) {
+        set(0, value);
+    }
+
+    public double getS1() {
+        return get(1);
+    }
+
+    public void setS1(double value) {
+        set(1, value);
+    }
+
+    public double getS2() {
+        return get(2);
+    }
+
+    public void setS2(double value) {
+        set(2, value);
+    }
+
+    public double getS3() {
+        return get(3);
+    }
+
+    public void setS3(double value) {
+        set(3, value);
+    }
+
+    public double getS4() {
+        return get(4);
+    }
+
+    public void setS4(double value) {
+        set(4, value);
+    }
+
+    public double getS5() {
+        return get(5);
+    }
+
+    public void setS5(double value) {
+        set(5, value);
+    }
+
+    public Double3 getHigh() {
+        return Double3.loadFromArray(storage, 0);
+    }
+
+    public Double3 getLow() {
+        return Double3.loadFromArray(storage, 3);
+    }
+
+    /**
+     * Duplicates this vector.
+     *
+     * @return {@link Double6}
+     */
+    public Double6 duplicate() {
+        final Double6 vector = new Double6();
+        vector.set(this);
+        return vector;
+    }
+
+    public String toString(String fmt) {
+        return String.format(fmt, getS0(), getS1(), getS2(), getS3(), getS4(), getS5());
+    }
+
+    @Override
+    public String toString() {
+        return toString(DoubleOps.FMT_6);
+    }
+
+    public void storeToArray(final double[] array, int index) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            array[index + i] = get(i);
+        }
+    }
+
+    @Override
+    public void loadFromBuffer(DoubleBuffer buffer) {
+        asBuffer().put(buffer);
+    }
+
+    @Override
+    public DoubleBuffer asBuffer() {
+        return DoubleBuffer.wrap(storage);
+    }
+
+    @Override
+    public int size() {
+        return NUM_ELEMENTS;
     }
 
 }

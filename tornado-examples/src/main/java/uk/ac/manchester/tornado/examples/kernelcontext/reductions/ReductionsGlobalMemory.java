@@ -17,8 +17,6 @@
  */
 package uk.ac.manchester.tornado.examples.kernelcontext.reductions;
 
-import java.util.stream.IntStream;
-
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -29,12 +27,14 @@ import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
+import java.util.stream.IntStream;
+
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- *      $ tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.reductions.ReductionsGlobalMemory
+ * $ tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.reductions.ReductionsGlobalMemory
  * </code>
  */
 public class ReductionsGlobalMemory {
@@ -78,7 +78,7 @@ public class ReductionsGlobalMemory {
         FloatArray input = new FloatArray(size);
         FloatArray reduce = new FloatArray(size);
 
-        IntStream.range(0, input.getSize()).sequential().forEach(i -> input.set(i,i));
+        IntStream.range(0, input.getSize()).sequential().forEach(i -> input.set(i, i));
         float sequential = computeSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);

@@ -229,7 +229,7 @@ public class TornadoSketcher {
         }
     }
 
-    private static class TornadoSketcherCacheEntry {
+    private static final class TornadoSketcherCacheEntry {
 
         private final int driverIndex;
         private final int deviceIndex;
@@ -253,7 +253,7 @@ public class TornadoSketcher {
     private static class TornadoSketcherCallable implements Callable<Sketch> {
         private final SketchRequest request;
 
-        public TornadoSketcherCallable(SketchRequest request) {
+        TornadoSketcherCallable(SketchRequest request) {
             this.request = request;
         }
 

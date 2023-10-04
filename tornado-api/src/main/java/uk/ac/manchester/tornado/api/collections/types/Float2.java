@@ -53,11 +53,11 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
 
     public static final Class<Float2> TYPE = Float2.class;
     /**
-     * number of elements in the storage
+     * number of elements in the storage.
      */
     private static final int NUM_ELEMENTS = 2;
     /**
-     * backing array
+     * backing array.
      */
     @Payload
     final FloatArray storage;
@@ -83,9 +83,6 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
         return result;
     }
 
-    /**
-     * * Operations on Float2 vectors
-     */
     public static Float2 add(Float2 a, Float2 b) {
         return new Float2(a.getX() + b.getX(), a.getY() + b.getY());
     }
@@ -222,7 +219,7 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Returns the vector length e.g. the sqrt of all elements squared
+     * Returns the vector length e.g. the sqrt of all elements squared.
      *
      * @return float
      */
@@ -268,7 +265,7 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Duplicates this vector
+     * Duplicates this vector.
      *
      * @return {@link Float2}
      */

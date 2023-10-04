@@ -352,9 +352,9 @@ class ReduceTaskGraph {
         }
     }
 
-    private CompilationThread createCompilationThread(final TaskPackage taskPackage, final long sizeTargetDevice) {
+    private ReduceCompilationThread createCompilationThread(final TaskPackage taskPackage, final int sizeTargetDevice) {
         Object codeTask = taskPackage.getTaskParameters()[0];
-        return new CompilationThread(codeTask, sizeTargetDevice);
+        return new ReduceCompilationThread(codeTask, sizeTargetDevice);
     }
 
     private void updateStreamInOutVariables(Map<Integer, MetaReduceTasks> tableReduce) {
@@ -534,7 +534,7 @@ class ReduceTaskGraph {
                 streamReduceTable.put(taskNumber, streamReduceList);
 
                 if (hybridMode) {
-                    CompilationThread compilationThread = createCompilationThread(taskPackage, inputSize);
+                    ReduceCompilationThread compilationThread = createCompilationThread(taskPackage, inputSize);
                     compilationThread.start();
                     if (threadSequentialExecution == null) {
                         threadSequentialExecution = new ArrayList<>();
@@ -883,13 +883,13 @@ class ReduceTaskGraph {
         }
     }
 
-    private static class CompilationThread extends Thread {
-        private final long sizeTargetDevice;
+    private static class ReduceCompilationThread extends Thread {
+        private final int sizeTargetDevice;
         private Object codeTask;
         private InstalledCode code;
         private boolean finished;
 
-        CompilationThread(Object codeTask, final long sizeTargetDevice) {
+        ReduceCompilationThread(Object codeTask, final int sizeTargetDevice) {
             this.codeTask = codeTask;
             this.sizeTargetDevice = sizeTargetDevice;
         }
@@ -915,9 +915,9 @@ class ReduceTaskGraph {
 
     private static class HybridThreadMeta {
         private TaskPackage taskPackage;
-        private CompilationThread compilationThread;
+        private ReduceCompilationThread compilationThread;
 
-        public HybridThreadMeta(TaskPackage taskPackage, CompilationThread compilationThread) {
+        HybridThreadMeta(TaskPackage taskPackage, ReduceCompilationThread compilationThread) {
             this.taskPackage = taskPackage;
             this.compilationThread = compilationThread;
         }
@@ -925,11 +925,11 @@ class ReduceTaskGraph {
 
     private class SequentialExecutionThread extends Thread {
 
-        final CompilationThread compilationThread;
+        final ReduceCompilationThread compilationThread;
         private TaskPackage taskPackage;
         private Map<Object, Object> hostHybridVariables;
 
-        SequentialExecutionThread(CompilationThread compilationThread, TaskPackage taskPackage, Map<Object, Object> hostHybridVariables) {
+        SequentialExecutionThread(ReduceCompilationThread compilationThread, TaskPackage taskPackage, Map<Object, Object> hostHybridVariables) {
             this.compilationThread = compilationThread;
             this.taskPackage = taskPackage;
             this.hostHybridVariables = hostHybridVariables;

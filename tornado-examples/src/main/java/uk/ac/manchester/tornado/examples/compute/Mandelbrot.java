@@ -26,8 +26,10 @@ import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 import javax.imageio.ImageIO;
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.JFrame;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -39,13 +41,29 @@ import java.io.File;
  * How to run?
  * </p>
  * <code>
- *     tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.compute.Mandelbrot
+ * tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.compute.Mandelbrot
  * </code>
  */
 public class Mandelbrot {
+    // CHECKSTYLE:OFF
 
     public static final int SIZE = 1024;
     public static final boolean USE_TORNADO = true;
+
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Mandelbrot Example within Tornado");
+
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent event) {
+                System.exit(0);
+            }
+        });
+
+        frame.add(new MandelbrotImage());
+        frame.pack();
+        frame.setVisible(true);
+    }
 
     @SuppressWarnings("serial")
     public static class MandelbrotImage extends Component {
@@ -169,19 +187,5 @@ public class Mandelbrot {
             }
         }
     }
-
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("Mandelbrot Example within Tornado");
-
-        frame.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent event) {
-                System.exit(0);
-            }
-        });
-
-        frame.add(new MandelbrotImage());
-        frame.pack();
-        frame.setVisible(true);
-    }
 }
+// CHECKSTYLE:ON

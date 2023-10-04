@@ -41,10 +41,10 @@
  */
 package uk.ac.manchester.tornado.api.data.nativetypes;
 
+import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
+
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-
-import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
 
 public class DoubleArray {
     private MemorySegment segment;
@@ -57,7 +57,6 @@ public class DoubleArray {
         segment = Arena.ofAuto().allocate(numberOfElements * DOUBLE_BYTES, 1);
     }
 
-
     public void set(int index, double value) {
         segment.setAtIndex(JAVA_DOUBLE, index, value);
     }
@@ -65,7 +64,6 @@ public class DoubleArray {
     public double get(int index) {
         return segment.getAtIndex(JAVA_DOUBLE, index);
     }
-
 
     public void init(double value) {
         for (int i = 0; i < segment.byteSize() / DOUBLE_BYTES; i++) {
@@ -81,12 +79,8 @@ public class DoubleArray {
         return segment;
     }
 
-//    @Override
-//    public String toString() {
-//        String arrayContents = String.valueOf(this.get(0));
-//        for (int i = 1; i < numberOfElements; i++) {
-//            arrayContents += ", " + this.get(i);
-//        }
-//        return arrayContents;
-//    }
+    public int getNumBytesOfSegment() {
+        return numberOfElements * DOUBLE_BYTES;
+    }
+
 }

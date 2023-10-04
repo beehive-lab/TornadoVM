@@ -32,25 +32,8 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
  */
 public class Logger {
 
-    public enum BACKEND {
-
-        OpenCL("OpenCL"), //
-        PTX("PTX"), //
-        SPIRV("SPIRV");//
-
-        String backendName;
-
-        BACKEND(String name) {
-            this.backendName = name;
-        }
-
-        public String backendName() {
-            return this.backendName;
-        }
-    }
-
     /**
-     * Method to track the code generation
+     * Method to track the code generation.
      *
      * @param backend
      *            Backend selection
@@ -67,7 +50,7 @@ public class Logger {
 
     /**
      * Method to track SPIR-V IR Builder (from last IR phase to IR Builder for
-     * codegen)
+     * codegen).
      *
      * @param backend
      *            Backend selection
@@ -85,7 +68,7 @@ public class Logger {
     /**
      * Method to track internal calls in the TornadoVM Runtime for running the
      * SPIR-V code.
-     * 
+     *
      * @param backend
      *            Backend selection
      * @param message
@@ -95,5 +78,22 @@ public class Logger {
      */
     public static void traceRuntime(final BACKEND backend, String message, final Object... args) {
         System.out.printf(Colour.YELLOW + "[" + backend.backendName() + "-Runtime] " + message + Colour.RESET + "\n", args);
+    }
+
+    public enum BACKEND {
+
+        OpenCL("OpenCL"), //
+        PTX("PTX"), //
+        SPIRV("SPIRV"); //
+
+        String backendName;
+
+        BACKEND(String name) {
+            this.backendName = name;
+        }
+
+        public String backendName() {
+            return this.backendName;
+        }
     }
 }

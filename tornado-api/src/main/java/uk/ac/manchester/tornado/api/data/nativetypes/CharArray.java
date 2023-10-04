@@ -1,9 +1,9 @@
 package uk.ac.manchester.tornado.api.data.nativetypes;
 
+import static java.lang.foreign.ValueLayout.JAVA_CHAR;
+
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-
-import static java.lang.foreign.ValueLayout.JAVA_CHAR;
 
 public class CharArray {
     private MemorySegment segment;
@@ -16,7 +16,6 @@ public class CharArray {
         segment = Arena.ofAuto().allocate(numberOfElements * CHAR_BYTES, 1);
     }
 
-
     public void set(int index, char value) {
         segment.setAtIndex(JAVA_CHAR, index, value);
     }
@@ -24,7 +23,6 @@ public class CharArray {
     public char get(int index) {
         return segment.getAtIndex(JAVA_CHAR, index);
     }
-
 
     public void init(char value) {
         for (int i = 0; i < segment.byteSize() / CHAR_BYTES; i++) {
@@ -40,12 +38,7 @@ public class CharArray {
         return segment;
     }
 
-    @Override
-    public String toString() {
-        String arrayContents = String.valueOf(this.get(0));
-        for (int i = 1; i < numberOfElements; i++) {
-            arrayContents += ", " + this.get(i);
-        }
-        return arrayContents;
+    public long getNumBytesOfSegment() {
+        return numberOfElements * CHAR_BYTES;
     }
 }

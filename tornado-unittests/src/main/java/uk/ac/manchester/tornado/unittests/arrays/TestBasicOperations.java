@@ -17,13 +17,7 @@
  */
 package uk.ac.manchester.tornado.unittests.arrays;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.Random;
-import java.util.stream.IntStream;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -36,11 +30,16 @@ import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+import java.util.Random;
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
+
 /**
  * How to test?
  *
  * <code>
- *     tornado-test -V --fast uk.ac.manchester.tornado.unittests.arrays.TestBasicOperations
+ * tornado-test -V --fast uk.ac.manchester.tornado.unittests.arrays.TestBasicOperations
  * </code>
  */
 public class TestBasicOperations extends TornadoTestBase {
@@ -53,7 +52,7 @@ public class TestBasicOperations extends TornadoTestBase {
 
     public static void vectorSubDouble(DoubleArray a, DoubleArray b, DoubleArray c) {
         for (@Parallel int i = 0; i < c.getSize(); i++) {
-            c.set(i , a.get(i) - b.get(i));
+            c.set(i, a.get(i) - b.get(i));
         }
     }
 

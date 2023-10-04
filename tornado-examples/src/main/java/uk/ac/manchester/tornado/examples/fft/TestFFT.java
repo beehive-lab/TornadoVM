@@ -33,6 +33,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  * </code>
  */
 public class TestFFT {
+    // CHECKSTYLE:OFF
 
     public static void nesting(IntArray input, int dim, final IntArray factors, int size, int dummyFac, IntArray dimArr) {
 
@@ -134,3 +135,4 @@ public class TestFFT {
     }
 
 }
+// CHECKSTYLE:ON

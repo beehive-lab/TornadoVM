@@ -18,20 +18,12 @@
 
 package uk.ac.manchester.tornado.unittests.atomics;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.util.HashSet;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.IntStream;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
-import uk.ac.manchester.tornado.api.TornadoVM_Intrinsics;
+import uk.ac.manchester.tornado.api.TornadoVMIntrinsics;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -42,11 +34,18 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 /**
  * How to test?
  *
  * <code>
- *     tornado-test -V --fast uk.ac.manchester.tornado.unittests.atomics.TestAtomics
+ * tornado-test -V --fast uk.ac.manchester.tornado.unittests.atomics.TestAtomics
  * </code>
  */
 public class TestAtomics extends TornadoTestBase {
@@ -55,23 +54,22 @@ public class TestAtomics extends TornadoTestBase {
      * Approach using a compiler-intrinsic in TornadoVM.
      *
      * @param a
-     *            Input array. It stores the addition with an atomic variable.
+     *         Input array. It stores the addition with an atomic variable.
      */
     public static void atomic03(IntArray a) {
-        final int SIZE = 100;
+        final int size = 100;
         for (@Parallel int i = 0; i < a.getSize(); i++) {
-            int j = i % SIZE;
-            a.set(j, TornadoVM_Intrinsics.atomic_add(a, j, 1));
+            int j = i % size;
+            a.set(j, TornadoVMIntrinsics.atomic_add(a, j, 1));
         }
     }
 
     /**
-     * Approach using an API for Atomics. This provides atomics using the Java
-     * semantics (block a single elements). Note that, in OpenCL, this single
-     * elements has to be present in the device's global memory.
+     * Approach using an API for Atomics. This provides atomics using the Java semantics (block a single elements). Note that, in OpenCL, this single elements has to be present in the device's global
+     * memory.
      *
      * @param input
-     *            input array
+     *         input array
      */
     public static void atomic04(IntArray input) {
         AtomicInteger tai = new AtomicInteger(200);
@@ -144,19 +142,18 @@ public class TestAtomics extends TornadoTestBase {
     }
 
     /**
-     * This example combines an atomic created inside the compute kernel with an
-     * atomic passed as an argument.
+     * This example combines an atomic created inside the compute kernel with an atomic passed as an argument.
      *
      * @param input
-     *            Input array
+     *         Input array
      * @param ai
-     *            Atomic Integer stored in Global Memory (atomic-region)
+     *         Atomic Integer stored in Global Memory (atomic-region)
      */
     public static void atomic15(IntArray input, AtomicInteger ai) {
         AtomicInteger bi = new AtomicInteger(500);
         for (@Parallel int i = 0; i < input.getSize(); i++) {
             input.set(i, input.get(i) + ai.incrementAndGet());
-            input.set(i, input.get(i)+ bi.incrementAndGet());
+            input.set(i, input.get(i) + bi.incrementAndGet());
         }
     }
 
@@ -274,11 +271,11 @@ public class TestAtomics extends TornadoTestBase {
                 .prebuiltTask("t0", //
                         "add", //
                         tornadoSDK + "/examples/generated/atomics.cl", //
-                        new Object[] { a, b }, //
-                        new Access[] { Access.WRITE_ONLY, Access.WRITE_ONLY }, //
+                        new Object[] {a, b}, //
+                        new Access[] {Access.WRITE_ONLY, Access.WRITE_ONLY}, //
                         defaultDevice, //
-                        new int[] { 32 }, //
-                        new int[] { 155 } // Atomics - Initial Value
+                        new int[] {32}, //
+                        new int[] {155} // Atomics - Initial Value
                 )//
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();

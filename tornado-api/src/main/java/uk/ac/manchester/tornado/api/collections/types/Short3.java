@@ -53,17 +53,15 @@ public final class Short3 implements PrimitiveStorage<ShortBuffer> {
     public static final Class<Short3> TYPE = Short3.class;
 
     private static final String NUMBER_FORMAT = "{ x=%-7d, y=%-7d, z=%-7d }";
-
     /**
-     * backing array
+     * number of elements in the storage.
+     */
+    private static final int NUM_ELEMENTS = 3;
+    /**
+     * backing array.
      */
     @Payload
     private final short[] storage;
-
-    /**
-     * number of elements in the storage
-     */
-    private static final int NUM_ELEMENTS = 3;
 
     public Short3(short[] storage) {
         this.storage = storage;
@@ -80,90 +78,12 @@ public final class Short3 implements PrimitiveStorage<ShortBuffer> {
         setZ(z);
     }
 
-    public void set(Short3 value) {
-        setX(value.getX());
-        setY(value.getY());
-        setZ(value.getZ());
-    }
-
-    public short[] getArray() {
-        return storage;
-    }
-
-    public short get(int index) {
-        return storage[index];
-    }
-
-    public void set(int index, short value) {
-        storage[index] = value;
-    }
-
-    public short getX() {
-        return get(0);
-    }
-
-    public short getY() {
-        return get(1);
-    }
-
-    public short getZ() {
-        return get(2);
-    }
-
-    public void setX(short value) {
-        set(0, value);
-    }
-
-    public void setY(short value) {
-        set(1, value);
-    }
-
-    public void setZ(short value) {
-        set(2, value);
-    }
-
-    public Short3 duplicate() {
-        Short3 vector = new Short3();
-        vector.set(this);
-        return vector;
-    }
-
-    public String toString(String fmt) {
-        return String.format(fmt, getX(), getY(), getZ());
-    }
-
-    @Override
-    public String toString() {
-        return toString(NUMBER_FORMAT);
-    }
-
     private static Short3 loadFromArray(final short[] array, int index) {
         final Short3 result = new Short3();
         result.setX(array[index]);
         result.setY(array[index + 1]);
         result.setZ(array[index + 2]);
         return result;
-    }
-
-    private void storeToArray(final short[] array, int index) {
-        array[index] = getX();
-        array[index + 1] = getY();
-        array[index + 2] = getZ();
-    }
-
-    @Override
-    public void loadFromBuffer(ShortBuffer buffer) {
-        asBuffer().put(buffer);
-    }
-
-    @Override
-    public ShortBuffer asBuffer() {
-        return ShortBuffer.wrap(storage);
-    }
-
-    @Override
-    public int size() {
-        return NUM_ELEMENTS;
     }
 
     /*
@@ -244,6 +164,84 @@ public final class Short3 implements PrimitiveStorage<ShortBuffer> {
 
     public static boolean isEqual(Short3 a, Short3 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+    }
+
+    public void set(Short3 value) {
+        setX(value.getX());
+        setY(value.getY());
+        setZ(value.getZ());
+    }
+
+    public short[] getArray() {
+        return storage;
+    }
+
+    public short get(int index) {
+        return storage[index];
+    }
+
+    public void set(int index, short value) {
+        storage[index] = value;
+    }
+
+    public short getX() {
+        return get(0);
+    }
+
+    public void setX(short value) {
+        set(0, value);
+    }
+
+    public short getY() {
+        return get(1);
+    }
+
+    public void setY(short value) {
+        set(1, value);
+    }
+
+    public short getZ() {
+        return get(2);
+    }
+
+    public void setZ(short value) {
+        set(2, value);
+    }
+
+    public Short3 duplicate() {
+        Short3 vector = new Short3();
+        vector.set(this);
+        return vector;
+    }
+
+    public String toString(String fmt) {
+        return String.format(fmt, getX(), getY(), getZ());
+    }
+
+    @Override
+    public String toString() {
+        return toString(NUMBER_FORMAT);
+    }
+
+    private void storeToArray(final short[] array, int index) {
+        array[index] = getX();
+        array[index + 1] = getY();
+        array[index + 2] = getZ();
+    }
+
+    @Override
+    public void loadFromBuffer(ShortBuffer buffer) {
+        asBuffer().put(buffer);
+    }
+
+    @Override
+    public ShortBuffer asBuffer() {
+        return ShortBuffer.wrap(storage);
+    }
+
+    @Override
+    public int size() {
+        return NUM_ELEMENTS;
     }
 
 }

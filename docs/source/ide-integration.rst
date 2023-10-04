@@ -40,6 +40,9 @@ Install the following plugins:
 3. `Python Plugin (Optional): <https://plugins.jetbrains.com/plugin/631-python>`__
    Allows Python scripting.
 
+4. `CheckStyle-IDEA Plugin (Optional): <https://plugins.jetbrains.com/plugin/1065-checkstyle-idea>`__
+    Checks project for compliance with custom checkstyle rules.
+
 Run and Debug TornadoVM with Intellij
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -135,3 +138,10 @@ Then, add your own parameters similar to the following:
 Finally, you can select the new custom configuration by selecting the
 configuration from the right top drop-down menu. Now, you can run it by
 pressing the **play button** on the top right corner or **Shift+F10**.
+
+CheckStyle-IDEA Configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+First, add the custom checkstyle file to enable its rules go to  **IntelliJ > Settings > Tools > CheckStyle** then,
+under configuration file click plus then add the configuration file which is under `tornado-assembly/src/etc/checkstyle.xml`.
+
+Then, on the side on enabled plugins click on checkstyle and then in `rules` topdown menu click the custom rules file.

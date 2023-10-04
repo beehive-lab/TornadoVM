@@ -98,7 +98,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b)//
                 .task("t0", TestMultipleTasksMultipleDevices::task0Initialization, b)//
                 .task("t1", TestMultipleTasksMultipleDevices::task1Multiplication, a, 12)//
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b);//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
@@ -120,7 +120,7 @@ public class TestConcurrentBackends extends TornadoTestBase {
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b)//
                 .task("t0", TestMultipleTasksMultipleDevices::task0Initialization, b)//
                 .task("t1", TestMultipleTasksMultipleDevices::task1Multiplication, a, 12)//
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b);//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);

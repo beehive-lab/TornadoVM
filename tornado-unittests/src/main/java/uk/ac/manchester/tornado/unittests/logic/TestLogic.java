@@ -41,6 +41,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </code>
  */
 public class TestLogic extends TornadoTestBase {
+    // CHECKSTYLE:OFF
 
     public static void logic01(IntArray data, IntArray output) {
         for (@Parallel int i = 0; i < data.getSize(); i++) {
@@ -175,5 +176,5 @@ public class TestLogic extends TornadoTestBase {
             assertEquals(sequential.get(i), output.get(i));
         }
     }
-
+    // CHECKSTYLE:ON
 }

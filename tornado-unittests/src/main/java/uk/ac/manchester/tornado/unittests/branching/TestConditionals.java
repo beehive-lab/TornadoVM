@@ -18,12 +18,7 @@
 
 package uk.ac.manchester.tornado.unittests.branching;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.stream.IntStream;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -32,11 +27,15 @@ import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
+
 /**
  * How to test?
  *
  * <code>
- *     tornado-test -V --fast uk.ac.manchester.tornado.unittests.branching.TestConditionals
+ * tornado-test -V --fast uk.ac.manchester.tornado.unittests.branching.TestConditionals
  * </code>
  */
 public class TestConditionals extends TornadoTestBase {
@@ -431,7 +430,6 @@ public class TestConditionals extends TornadoTestBase {
         a.init(20);
         b.init(30);
 
-
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
                 .task("t0", TestConditionals::ternaryComplexCondition2, a, b) //
@@ -508,25 +506,26 @@ public class TestConditionals extends TornadoTestBase {
 
     @Test
     public void testIntegerTestMove() {
-        final int N = 1024;
-        IntArray output = new IntArray(N * N);
-        IntArray sequential = new IntArray(N * N);
+        final int size = 1024;
+
+        IntArray output = new IntArray(size * size);
+        IntArray sequential = new IntArray(size * size);
 
         IntStream.range(0, sequential.getSize()).sequential().forEach(i -> sequential.set(i, i));
         IntStream.range(0, output.getSize()).sequential().forEach(i -> output.set(i, i));
 
         TaskGraph taskGraph = new TaskGraph("s0");
 
-        taskGraph.task("t0", TestConditionals::integerTestMove, output, N) //
+        taskGraph.task("t0", TestConditionals::integerTestMove, output, size) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        integerTestMove(sequential, N);
+        integerTestMove(sequential, size);
 
-        for (int i = 0; i < N * N; i++) {
+        for (int i = 0; i < size * size; i++) {
             assertEquals(sequential.get(i), output.get(i));
         }
     }

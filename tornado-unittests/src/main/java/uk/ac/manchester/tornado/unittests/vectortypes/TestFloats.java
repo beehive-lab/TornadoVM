@@ -44,7 +44,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * <p>
- * How to run?
+ * How to run.
  * </p>
  * <code>
  *     tornado-test -V uk.ac.manchester.tornado.unittests.vectortypes.TestFloats
@@ -84,7 +84,7 @@ public class TestFloats extends TornadoTestBase {
     }
 
     /**
-     * Test using the {@link Float} Java Wrapper class
+     * Test using the {@link Float} Java Wrapper class.
      *
      * @param a
      * @param b
@@ -97,7 +97,7 @@ public class TestFloats extends TornadoTestBase {
     }
 
     /**
-     * Test using the {@link Float2} Tornado wrapper class
+     * Test using the {@link Float2} Tornado wrapper class.
      *
      * @param a
      * @param b
@@ -110,7 +110,7 @@ public class TestFloats extends TornadoTestBase {
     }
 
     /**
-     * Test using Tornado {@link VectorFloat3} data type
+     * Test using Tornado {@link VectorFloat3} data type.
      *
      * @param a
      * @param b
@@ -123,7 +123,7 @@ public class TestFloats extends TornadoTestBase {
     }
 
     /**
-     * Test using Tornado {@link VectorFloat3} data type
+     * Test using Tornado {@link VectorFloat3} data type.
      *
      * @param a
      * @param b
@@ -136,7 +136,7 @@ public class TestFloats extends TornadoTestBase {
     }
 
     /**
-     * Test using Tornado {@link VectorFloat4} data type
+     * Test using Tornado {@link VectorFloat4} data type.
      *
      * @param a
      * @param b

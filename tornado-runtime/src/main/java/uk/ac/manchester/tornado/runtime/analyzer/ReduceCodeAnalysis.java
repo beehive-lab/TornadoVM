@@ -56,6 +56,7 @@ import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.nodes.java.ArrayLengthNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
+
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
@@ -427,7 +428,7 @@ public class ReduceCodeAnalysis {
      * @param lowValue
      *            Low value to include in the compile-graph
      */
-    public static void performLoopBoundNodeSubstitution(StructuredGraph graph, long lowValue) {
+    public static void performLoopBoundNodeSubstitution(StructuredGraph graph, int lowValue) {
         for (Node n : graph.getNodes()) {
             if (n instanceof LoopBeginNode) {
                 LoopBeginNode beginNode = (LoopBeginNode) n;
@@ -441,12 +442,12 @@ public class ReduceCodeAnalysis {
                 if (condition instanceof IntegerLessThanNode) {
                     IntegerLessThanNode integer = (IntegerLessThanNode) condition;
                     ValueNode x = integer.getX();
-                    final ConstantNode low = graph.addOrUnique(ConstantNode.forLong(lowValue));
+                    final ConstantNode lowBound = graph.addOrUnique(ConstantNode.forInt(lowValue));
                     if (x instanceof PhiNode) {
                         // Node substitution
                         PhiNode phi = (PhiNode) x;
                         if (phi.valueAt(0) instanceof ConstantNode) {
-                            phi.setValueAt(0, low);
+                            phi.setValueAt(0, lowBound);
                         }
                     }
                 }

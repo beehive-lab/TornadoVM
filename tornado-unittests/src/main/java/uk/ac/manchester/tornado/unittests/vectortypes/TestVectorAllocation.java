@@ -36,7 +36,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * <p>
- * How to run?
+ * How to run.
  * </p>
  * <code>
  *     tornado-test -V uk.ac.manchester.tornado.unittests.vectortypes.TestVectorAllocation
@@ -45,7 +45,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 public class TestVectorAllocation extends TornadoTestBase {
 
     /**
-     * Test to check the kernel can create a float2 type
+     * Test to check the kernel can create a float2 type.
      *
      * @param a
      * @param result
@@ -54,6 +54,32 @@ public class TestVectorAllocation extends TornadoTestBase {
         for (@Parallel int i = 0; i < a.length; i++) {
             Float2 x = new Float2(1, 10);
             result[i] = a[i] + (x.getX() * x.getY());
+        }
+    }
+
+    /**
+     * Test to check the kernel can create a float2 type.
+     *
+     * @param a
+     * @param result
+     */
+    private static void testVectorAlloc2(float[] a, VectorFloat4 result) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            Float4 x = new Float4(a.length, 10, a[i], a[i] * 10);
+            result.set(i, x);
+        }
+    }
+
+    /**
+     * Test to check the kernel can create a float2 type.
+     *
+     * @param a
+     * @param result
+     */
+    private static void testVectorAlloc3(float[] a, VectorFloat3 result) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            Float3 x = new Float3(a.length, 10, a[i]);
+            result.set(i, x);
         }
     }
 
@@ -80,19 +106,6 @@ public class TestVectorAllocation extends TornadoTestBase {
 
         for (int i = 0; i < size; i++) {
             assertEquals(a[i] + (10), output[i], 0.001);
-        }
-    }
-
-    /**
-     * Test to check the kernel can create a float2 type
-     *
-     * @param a
-     * @param result
-     */
-    private static void testVectorAlloc2(float[] a, VectorFloat4 result) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            Float4 x = new Float4(a.length, 10, a[i], a[i] * 10);
-            result.set(i, x);
         }
     }
 
@@ -123,19 +136,6 @@ public class TestVectorAllocation extends TornadoTestBase {
             assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
             assertEquals(sequential.getZ(), output.get(i).getZ(), 0.001);
             assertEquals(sequential.getW(), output.get(i).getW(), 0.001);
-        }
-    }
-
-    /**
-     * Test to check the kernel can create a float2 type
-     *
-     * @param a
-     * @param result
-     */
-    private static void testVectorAlloc3(float[] a, VectorFloat3 result) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            Float3 x = new Float3(a.length, 10, a[i]);
-            result.set(i, x);
         }
     }
 

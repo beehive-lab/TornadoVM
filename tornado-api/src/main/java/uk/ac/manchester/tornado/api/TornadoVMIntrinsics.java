@@ -43,12 +43,11 @@ package uk.ac.manchester.tornado.api;
 
 import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 
-public class TornadoVM_Intrinsics {
+public class TornadoVMIntrinsics {
 
     /**
-     * Compute (old + value) and store result at location pointed by p. The function
-     * returns old.
-     * 
+     * Compute (old + value) and store result at location pointed by p. The function returns old.
+     *
      * @param array
      * @param index
      * @param value

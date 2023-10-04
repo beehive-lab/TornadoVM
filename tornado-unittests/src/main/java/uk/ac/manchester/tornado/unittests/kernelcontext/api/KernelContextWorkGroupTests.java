@@ -17,10 +17,7 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.api;
 
-import static org.junit.Assert.assertEquals;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -34,18 +31,60 @@ import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * <p>
- * How to run:
+ * How to run.
  * </p>
  * <code>
- *     tornado-test --threadInfo --printKernel --fast -V uk.ac.manchester.tornado.unittests.kernelcontext.api.KernelContextWorkGroupTests
+ * tornado-test --threadInfo --printKernel --fast -V uk.ac.manchester.tornado.unittests.kernelcontext.api.KernelContextWorkGroupTests
  * </code>
  */
 public class KernelContextWorkGroupTests extends TornadoTestBase {
 
     private static void apiTestGlobalGroupSizeX(KernelContext context, IntArray data) {
         data.set(0, context.globalGroupSizeX);
+    }
+
+    private static void apiTestGlobalGroupSizeY(KernelContext context, int[] data) {
+        data[0] = context.globalGroupSizeY;
+    }
+
+    private static void apiTestGlobalGroupSizeZ(KernelContext context, int[] data) {
+        data[0] = context.globalGroupSizeZ;
+    }
+
+    private static void apiTestLocalGroupSizeX(KernelContext context, int[] data) {
+        data[0] = context.localGroupSizeX;
+    }
+
+    private static void apiTestLocalGroupSizeY(KernelContext context, int[] data) {
+        data[0] = context.localGroupSizeY;
+    }
+
+    private static void apiTestLocalGroupSizeZ(KernelContext context, int[] data) {
+        data[0] = context.localGroupSizeZ;
+    }
+
+    private static void apiTestGlobalGroupSizeY(KernelContext context, IntArray data) {
+        data.set(0, context.globalGroupSizeY);
+    }
+
+    private static void apiTestGlobalGroupSizeZ(KernelContext context, IntArray data) {
+        data.set(0, context.globalGroupSizeZ);
+    }
+
+    private static void apiTestLocalGroupSizeX(KernelContext context, IntArray data) {
+        data.set(0, context.localGroupSizeX);
+    }
+
+    private static void apiTestLocalGroupSizeY(KernelContext context, IntArray data) {
+        data.set(0, context.localGroupSizeY);
+    }
+
+    private static void apiTestLocalGroupSizeZ(KernelContext context, IntArray data) {
+        data.set(0, context.localGroupSizeZ);
     }
 
     @Test
@@ -69,10 +108,6 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         assertEquals(16, data.get(0));
     }
 
-    private static void apiTestGlobalGroupSizeY(KernelContext context, IntArray data) {
-        data.set(0, context.globalGroupSizeY);
-    }
-
     @Test
     public void test02() {
         KernelContext context = new KernelContext();
@@ -93,10 +128,6 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         assertEquals(8, data.get(0));
     }
 
-    private static void apiTestGlobalGroupSizeZ(KernelContext context, IntArray data) {
-        data.set(0, context.globalGroupSizeZ);
-    }
-
     @Test
     public void test03() {
         KernelContext context = new KernelContext();
@@ -113,10 +144,6 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         executionPlan.withGridScheduler(grid) //
                 .execute();
         assertEquals(4, data.get(0));
-    }
-
-    private static void apiTestLocalGroupSizeX(KernelContext context, IntArray data) {
-        data.set(0, context.localGroupSizeX);
     }
 
     @Test
@@ -139,10 +166,6 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         assertEquals(worker.getLocalWork()[0], data.get(0));
     }
 
-    private static void apiTestLocalGroupSizeY(KernelContext context, IntArray data) {
-        data.set(0, context.localGroupSizeY);
-    }
-
     @Test
     public void test05() {
         KernelContext context = new KernelContext();
@@ -161,10 +184,6 @@ public class KernelContextWorkGroupTests extends TornadoTestBase {
         executionPlan.withGridScheduler(grid) //
                 .execute();
         assertEquals(worker.getLocalWork()[1], data.get(0));
-    }
-
-    private static void apiTestLocalGroupSizeZ(KernelContext context, IntArray data) {
-        data.set(0, context.localGroupSizeZ);
     }
 
     @Test

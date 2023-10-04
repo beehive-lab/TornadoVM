@@ -42,7 +42,8 @@ import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupporte
  * How to test?
  *
  * <code>
- *    tornado-test -V --fullDebug --debug --printBytecodes --jvm="-Dtornado.concurrent.devices=true -Ds0.t0.device=0:0 -Ds0.t1.device=0:0 -Ds0.t2.device=1:0 " uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices
+ *    tornado-test -V --fullDebug --debug --printBytecodes
+ *    --jvm="-Dtornado.concurrent.devices=true -Ds0.t0.device=0:0 -Ds0.t1.device=0:0 -Ds0.t2.device=1:0 " uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices
  * </code>
  */
 public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
