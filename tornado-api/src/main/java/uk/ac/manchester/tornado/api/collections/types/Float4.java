@@ -42,9 +42,9 @@
 package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.FloatBuffer;
-import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
@@ -60,14 +60,14 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
      * backing array.
      */
     @Payload
-    final float[] storage;
+    final FloatArray storage;
 
-    public Float4(float[] storage) {
+    public Float4(FloatArray storage) {
         this.storage = storage;
     }
 
     public Float4() {
-        this(new float[NUM_ELEMENTS]);
+        this(new FloatArray(NUM_ELEMENTS));
     }
 
     public Float4(float x, float y, float z, float w) {
@@ -78,12 +78,12 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
         setW(w);
     }
 
-    static Float4 loadFromArray(final float[] array, int index) {
+    static Float4 loadFromArray(final FloatArray array, int index) {
         final Float4 result = new Float4();
-        result.setX(array[index]);
-        result.setY(array[index + 1]);
-        result.setZ(array[index + 2]);
-        result.setW(array[index + 3]);
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        result.setZ(array.get(index + 2));
+        result.setW(array.get(index + 3));
         return result;
     }
 
@@ -207,7 +207,7 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
     // ===================================
 
     public static boolean isEqual(Float4 a, Float4 b) {
-        return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+        return TornadoMath.isEqual(a.getArray(), b.getArray());
     }
 
     public static float findULPDistance(Float4 a, Float4 b) {
@@ -215,14 +215,14 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public float get(int index) {
-        return storage[index];
+        return storage.get(index);
     }
 
     public void set(int index, float value) {
-        storage[index] = value;
+        storage.set(index, value);
     }
 
-    public float[] getArray() {
+    public FloatArray getArray() {
         return storage;
     }
 
@@ -306,11 +306,11 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
         return new Float2(getZ(), getW());
     }
 
-    void storeToArray(final float[] array, int index) {
-        array[index] = getX();
-        array[index + 1] = getY();
-        array[index + 2] = getZ();
-        array[index + 3] = getW();
+    void storeToArray(final FloatArray array, int index) {
+        array.set(index, getX());
+        array.set(index + 1, getY());
+        array.set(index + 2, getZ());
+        array.set(index + 3, getW());
     }
 
     @Override
@@ -320,17 +320,16 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
+        //TODO: This needs to be removed
+        return storage.getSegment().asByteBuffer().asFloatBuffer();
     }
-
     @Override
     public int size() {
         return NUM_ELEMENTS;
     }
 
     public void fill(float value) {
-        Arrays.fill(storage, value);
-
+        storage.init(value);
     }
 
 }

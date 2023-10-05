@@ -189,6 +189,14 @@ public class TornadoMath {
         return result;
     }
 
+    public static boolean isEqual(FloatArray a, FloatArray b) {
+        boolean result = true;
+        for (int i = 0; i < a.getSize() && result; i++) {
+            result = compareBits(a.get(i), b.get(i));
+        }
+        return result;
+    }
+
     public static boolean isEqual(double[] a, double[] b) {
         boolean result = true;
         for (int i = 0; i < a.length && result; i++) {

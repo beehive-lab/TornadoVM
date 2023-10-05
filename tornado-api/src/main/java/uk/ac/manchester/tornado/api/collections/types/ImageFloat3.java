@@ -115,12 +115,14 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
 
     public Float3 get(int x, int y) {
         final int offset = toIndex(x, y);
-        return Float3.loadFromArray(storage, offset);
+        //TODO
+        return null; //Float3.loadFromArray(storage, offset);
     }
 
     public void set(int x, int y, Float3 value) {
         final int offset = toIndex(x, y);
-        value.storeToArray(storage, offset);
+        //TODO
+        //value.storeToArray(storage, offset);
     }
 
     public int X() {

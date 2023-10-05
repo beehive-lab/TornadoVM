@@ -328,11 +328,13 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public Float3 getHigh() {
-        return Float3.loadFromArray(storage, 0);
+        //TODO
+        return null; //Float3.loadFromArray(storage, 0);
     }
 
     public Float3 getLow() {
-        return Float3.loadFromArray(storage, 3);
+        //TODO
+        return null; //Float3.loadFromArray(storage, 3);
     }
 
     /**

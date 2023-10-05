@@ -42,17 +42,17 @@
 package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.FloatBuffer;
-import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 
 public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
 
     private static final int ELEMENT_SIZE = 1;
     private final int numElements;
-    private final float[] storage;
+    private final FloatArray storage;
 
-    protected VectorFloat(int numElements, float[] array) {
+    protected VectorFloat(int numElements, FloatArray array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -64,7 +64,7 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
      *            Number of elements
      */
     public VectorFloat(int numElements) {
-        this(numElements, new float[numElements]);
+        this(numElements, new FloatArray(numElements));
     }
 
     /**
@@ -73,22 +73,22 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
      * @param storage
      *            Array to be stored
      */
-    public VectorFloat(float[] storage) {
-        this(storage.length / ELEMENT_SIZE, storage);
+    public VectorFloat(FloatArray storage) {
+        this(storage.getSize() / ELEMENT_SIZE, storage);
     }
 
     public static float min(VectorFloat v) {
         float result = Float.MAX_VALUE;
-        for (int i = 0; i < v.storage.length; i++) {
-            result = Math.min(v.storage[i], result);
+        for (int i = 0; i < v.storage.getSize(); i++) {
+            result = Math.min(v.storage.get(i), result);
         }
         return result;
     }
 
     public static float max(VectorFloat v) {
         float result = Float.MIN_VALUE;
-        for (int i = 0; i < v.storage.length; i++) {
-            result = Math.max(v.storage[i], result);
+        for (int i = 0; i < v.storage.getSize(); i++) {
+            result = Math.max(v.storage.get(i), result);
         }
         return result;
     }
@@ -106,7 +106,7 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
         return sum;
     }
 
-    public float[] getArray() {
+    public FloatArray getArray() {
         return storage;
     }
 
@@ -118,7 +118,7 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
      * @return value
      */
     public float get(int index) {
-        return storage[index];
+        return storage.get(index);
     }
 
     /**
@@ -130,7 +130,7 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
      *            Float value to be stored
      */
     public void set(int index, float value) {
-        storage[index] = value;
+        storage.set(index, value);
     }
 
     /**
@@ -140,8 +140,8 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
      *            VectorFloat4
      */
     public void set(VectorFloat values) {
-        for (int i = 0; i < values.storage.length; i++) {
-            storage[i] = values.storage[i];
+        for (int i = 0; i < values.storage.getSize(); i++) {
+            storage.set(i, values.storage.get(i));
         }
     }
 
@@ -162,7 +162,7 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
      *            Fill input array with value
      */
     public void fill(float value) {
-        Arrays.fill(storage, value);
+        storage.init(value);
     }
 
     /**
@@ -176,7 +176,7 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
     public VectorFloat subVector(int start, int length) {
         final VectorFloat v = new VectorFloat(length);
         for (int i = 0; i < length; i++) {
-            v.storage[i] = storage[i + start];
+            v.storage.set(i, storage.get(i + start));
         }
         return v;
     }
@@ -186,7 +186,11 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
      *
      */
     public VectorFloat duplicate() {
-        return new VectorFloat(Arrays.copyOf(storage, storage.length));
+        FloatArray cp = new FloatArray(storage.getSize());
+        for (int i = 0; i < cp.getSize(); i++) {
+            cp.set(i, storage.get(i));
+        }
+        return new VectorFloat(cp);
     }
 
     /**
@@ -232,7 +236,8 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
+        //TODO: Check if this is correct
+        return storage.getSegment().asByteBuffer().asFloatBuffer();
     }
 
     @Override

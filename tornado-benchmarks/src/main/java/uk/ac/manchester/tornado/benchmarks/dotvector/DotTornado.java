@@ -27,6 +27,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -46,7 +47,8 @@ public class DotTornado extends BenchmarkDriver {
 
     private VectorFloat3 a;
     private VectorFloat3 b;
-    private float[] c;
+   // private float[] c;
+    private FloatArray c;
 
     public DotTornado(int iterations, int numElements) {
         super(iterations);
@@ -57,14 +59,14 @@ public class DotTornado extends BenchmarkDriver {
     public void setUp() {
         a = new VectorFloat3(numElements);
         b = new VectorFloat3(numElements);
-        c = new float[numElements];
+        c = new FloatArray(numElements);
 
         Random r = new Random();
         for (int i = 0; i < numElements; i++) {
-            float[] ra = new float[3];
-            IntStream.range(0, ra.length).forEach(x -> ra[x] = r.nextFloat());
-            float[] rb = new float[3];
-            IntStream.range(0, rb.length).forEach(x -> rb[x] = r.nextFloat());
+            FloatArray ra = new FloatArray(3);
+            IntStream.range(0, ra.getSize()).forEach(x -> ra.set(x, r.nextFloat()));
+            FloatArray rb = new FloatArray(3);
+            IntStream.range(0, rb.getSize()).forEach(x -> rb.set(x, r.nextFloat()));
             a.set(i, new Float3(ra));
             b.set(i, new Float3(rb));
         }
@@ -100,7 +102,7 @@ public class DotTornado extends BenchmarkDriver {
     @Override
     public boolean validate(TornadoDevice device) {
 
-        final float[] result = new float[numElements];
+        final FloatArray result = new FloatArray(numElements);
 
         benchmarkMethod(device);
         executionPlan.clearProfiles();
