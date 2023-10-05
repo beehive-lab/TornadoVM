@@ -42,9 +42,9 @@
 package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.DoubleBuffer;
-import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
@@ -60,14 +60,14 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
      * backing array.
      */
     @Payload
-    final double[] storage;
+    final DoubleArray storage;
 
-    public Double4(double[] storage) {
+    public Double4(DoubleArray storage) {
         this.storage = storage;
     }
 
     public Double4() {
-        this(new double[NUM_ELEMENTS]);
+        this(new DoubleArray(NUM_ELEMENTS));
     }
 
     public Double4(double x, double y, double z, double w) {
@@ -78,12 +78,12 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
         setW(w);
     }
 
-    static Double4 loadFromArray(final double[] array, int index) {
+    static Double4 loadFromArray(final DoubleArray array, int index) {
         final Double4 result = new Double4();
-        result.setX(array[index]);
-        result.setY(array[index + 1]);
-        result.setZ(array[index + 2]);
-        result.setW(array[index + 3]);
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        result.setZ(array.get(index + 2));
+        result.setW(array.get(index + 3));
         return result;
     }
 
@@ -210,14 +210,14 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public double get(int index) {
-        return storage[index];
+        return storage.get(index);
     }
 
     public void set(int index, double value) {
-        storage[index] = value;
+        storage.set(index, value);
     }
 
-    public double[] getArray() {
+    public DoubleArray getArray() {
         return storage;
     }
 
@@ -315,7 +315,7 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public DoubleBuffer asBuffer() {
-        return DoubleBuffer.wrap(storage);
+        return storage.getSegment().asByteBuffer().asDoubleBuffer();
     }
 
     @Override
@@ -323,8 +323,8 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
         return NUM_ELEMENTS;
     }
 
-    public void fill(double value) {
-        Arrays.fill(storage, value);
-    }
+    // public void fill(double value) {
+    // Arrays.fill(storage, value);
+    // }
 
 }

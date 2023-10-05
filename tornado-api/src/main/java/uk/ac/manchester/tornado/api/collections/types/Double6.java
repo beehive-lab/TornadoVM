@@ -44,6 +44,7 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.DoubleBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 
 public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
@@ -57,14 +58,14 @@ public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
      * backing array.
      */
     @Payload
-    final double[] storage;
+    final DoubleArray storage;
 
-    public Double6(double[] storage) {
+    public Double6(DoubleArray storage) {
         this.storage = storage;
     }
 
     public Double6() {
-        this(new double[NUM_ELEMENTS]);
+        this(new DoubleArray(NUM_ELEMENTS));
     }
 
     public Double6(double s0, double s1, double s2, double s3, double s4, double s5) {
@@ -77,10 +78,10 @@ public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
         setS5(s5);
     }
 
-    public static Double6 loadFromArray(final double[] array, int index) {
+    public static Double6 loadFromArray(final DoubleArray array, int index) {
         final Double6 result = new Double6();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
-            result.set(i, array[index + i]);
+            result.set(i, array.get(index + i));
         }
         return result;
     }
@@ -258,7 +259,7 @@ public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
-    public double[] getArray() {
+    public DoubleArray getArray() {
         return storage;
     }
 
@@ -272,11 +273,11 @@ public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public double get(int index) {
-        return storage[index];
+        return storage.get(index);
     }
 
     public void set(int index, double value) {
-        storage[index] = value;
+        storage.set(index, value);
     }
 
     public double getS0() {
@@ -368,7 +369,7 @@ public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public DoubleBuffer asBuffer() {
-        return DoubleBuffer.wrap(storage);
+        return storage.getSegment().asByteBuffer().asDoubleBuffer();
     }
 
     @Override
