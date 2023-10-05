@@ -57,6 +57,15 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         onDevice = false;
     }
 
+    public OCLMemorySegmentWrapper(DoubleArray doubleSegment, OCLDeviceContext deviceContext, long batchSize) {
+        this.deviceContext = deviceContext;
+        this.batchSize = batchSize;
+        this.bufferSize = doubleSegment.getSegment().byteSize(); // this is in bytes, should it be in elements?
+        this.bufferId = INIT_VALUE;
+        this.bufferOffset = 0;
+        onDevice = false;
+    }
+
     @Override
     public long toBuffer() {
         // guarantee(deviceContext.getSegmentToBufferMap().containsKey(segment), "Should

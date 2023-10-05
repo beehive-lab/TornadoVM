@@ -44,6 +44,7 @@ import java.util.List;
 
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
@@ -57,22 +58,17 @@ import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 public class OCLObjectWrapper implements ObjectBuffer {
 
     private static final int OPENCL_OBJECT_ALIGNMENT = 64;
-
-    private long bufferId;
-    private long bufferOffset;
-    private ByteBuffer buffer;
+    private static final int BYTES_OBJECT_REFERENCE = 8;
     private final HotSpotResolvedJavaType resolvedType;
     private final HotSpotResolvedJavaField[] fields;
     private final FieldBuffer[] wrappedFields;
-
     private final Class<?> objectType;
-
     private final int hubOffset;
     private final int fieldsOffset;
-
     private final OCLDeviceContext deviceContext;
-
-    private static final int BYTES_OBJECT_REFERENCE = 8;
+    private long bufferId;
+    private long bufferOffset;
+    private ByteBuffer buffer;
     private long setSubRegionSize;
 
     public OCLObjectWrapper(final OCLDeviceContext device, Object object) {
@@ -120,6 +116,9 @@ public class OCLObjectWrapper implements ObjectBuffer {
             } else if (type == FloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 wrappedField = new OCLMemorySegmentWrapper((FloatArray) objectFromField, device, 0);
+            } else if (type == DoubleArray.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                wrappedField = new OCLMemorySegmentWrapper((DoubleArray) objectFromField, device, 0);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 wrappedField = new OCLVectorWrapper(device, object, 0);
             } else if (field.getJavaKind().isObject()) {
