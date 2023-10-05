@@ -220,10 +220,10 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
- * Method:    readArrayFromDevice
+ * Method:    readArrayFromDeviceOffHeap
  * Signature: (JJJZJJJ[J)J
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_readArrayFromDevice__JJJZJJJ_3J
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_readArrayFromDeviceOffHeap__JJJZJJJ_3J
         (JNIEnv *, jclass, jlong, jlong, jlong, jboolean, jlong, jlong, jlong, jlongArray);
 
 /*

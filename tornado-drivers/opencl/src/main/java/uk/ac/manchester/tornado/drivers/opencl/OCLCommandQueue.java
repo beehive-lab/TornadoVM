@@ -25,18 +25,18 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueInfo.CL_QUEUE_CONTEXT;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueInfo.CL_QUEUE_DEVICE;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.MARKER_USE_BARRIER;
+
+import java.nio.ByteBuffer;
+
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-
-import java.nio.ByteBuffer;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueInfo.CL_QUEUE_CONTEXT;
-import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueInfo.CL_QUEUE_DEVICE;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.MARKER_USE_BARRIER;
 
 public class OCLCommandQueue extends TornadoLogger {
 
@@ -112,7 +112,7 @@ public class OCLCommandQueue extends TornadoLogger {
 
     static native long readArrayFromDevice(long queueId, double[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
 
-    native static long readArrayFromDevice(long queueId, long hostPointer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    static native long readArrayFromDeviceOffHeap(long queueId, long hostPointer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
 
     static native void clEnqueueWaitForEvents(long queueId, long[] events) throws OCLException;
 
@@ -356,7 +356,7 @@ public class OCLCommandQueue extends TornadoLogger {
     public long enqueueRead(long devicePtr, boolean blocking, long offset, long bytes, long hostPointer, long hostOffset, long[] waitEvents) {
         guarantee(hostPointer != 0, "segment is null");
         try {
-            return readArrayFromDevice(commandQueue, hostPointer, hostOffset, blocking, offset, bytes, devicePtr, waitEvents);
+            return readArrayFromDeviceOffHeap(commandQueue, hostPointer, hostOffset, blocking, offset, bytes, devicePtr, waitEvents);
         } catch (OCLException e) {
             error(e.getMessage());
         }

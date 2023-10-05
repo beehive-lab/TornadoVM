@@ -113,7 +113,7 @@ public class TestBatches extends TornadoTestBase {
         FloatArray arrayA = new FloatArray(size);
         FloatArray arrayB = new FloatArray(size);
 
-        IntStream.range(0, arrayA.getSize()).sequential().forEach(idx -> arrayA.set(idx, idx));
+        IntStream.range(0, arrayA.getSize()).sequential().forEach(idx -> arrayA.set(idx, 0));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA) //
@@ -146,7 +146,7 @@ public class TestBatches extends TornadoTestBase {
         FloatArray arrayA = new FloatArray(size);
         FloatArray arrayB = new FloatArray(size);
 
-        IntStream.range(0, arrayA.getSize()).sequential().forEach(idx -> arrayA.set(idx, idx));
+        IntStream.range(0, arrayA.getSize()).sequential().forEach(idx -> arrayA.set(idx, 0));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA) //
@@ -212,8 +212,7 @@ public class TestBatches extends TornadoTestBase {
         }
         FloatArray arrayA = new FloatArray(size);
 
-        Random r = new Random();
-        IntStream.range(0, arrayA.getSize()).sequential().forEach(idx -> arrayA.set(idx, r.nextFloat()));
+        IntStream.range(0, arrayA.getSize()).sequential().forEach(idx -> arrayA.set(idx, idx));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA) //
@@ -300,7 +299,7 @@ public class TestBatches extends TornadoTestBase {
                 .execute();
 
         for (int i = 0; i < arrayA.getSize(); i++) {
-            assertEquals(arrayA.get(i) + arrayB.get(i), arrayC.get(i));
+            assertEquals((arrayA.get(i) + arrayB.get(i)), arrayC.get(i));
         }
         executionPlan.freeDeviceMemory();
     }

@@ -58,11 +58,11 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
         MemorySegment segment;
         if (reference instanceof IntArray) {
             segment = ((IntArray) reference).getSegment();
-        } else if(reference instanceof FloatArray) {
+        } else if (reference instanceof FloatArray) {
             segment = ((FloatArray) reference).getSegment();
-        } else if(reference instanceof DoubleArray) {
+        } else if (reference instanceof DoubleArray) {
             segment = ((DoubleArray) reference).getSegment();
-        } else if(reference instanceof LongArray) {
+        } else if (reference instanceof LongArray) {
             segment = ((LongArray) reference).getSegment();
         } else if (reference instanceof ShortArray) {
             segment = ((ShortArray) reference).getSegment();
@@ -71,8 +71,7 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
         }
 
         final int returnEvent;
-        returnEvent = deviceContext.readBuffer(toBuffer(), 0, segment.byteSize(),
-                segment.address().toRawLongValue(), hostOffset, (useDeps) ? events : null);
+        returnEvent = deviceContext.readBuffer(toBuffer(), 0, segment.byteSize(), segment.address().toRawLongValue(), hostOffset, (useDeps) ? events : null);
         return returnEvent;
     }
 
@@ -87,8 +86,7 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
         MemorySegment segment = (MemorySegment) reference;
 
         final int returnEvent;
-        returnEvent = deviceContext.enqueueReadBuffer(toBuffer(), 0, segment.byteSize(),
-                segment.address().toRawLongValue(), hostOffset, (useDeps) ? events : null);
+        returnEvent = deviceContext.enqueueReadBuffer(toBuffer(), 0, segment.byteSize(), segment.address().toRawLongValue(), hostOffset, (useDeps) ? events : null);
         return useDeps ? returnEvent : -1;
     }
 
@@ -98,11 +96,11 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
         MemorySegment seg;
         if (reference instanceof IntArray) {
             seg = ((IntArray) reference).getSegment();
-        } else if(reference instanceof FloatArray) {
+        } else if (reference instanceof FloatArray) {
             seg = ((FloatArray) reference).getSegment();
-        } else if(reference instanceof DoubleArray) {
+        } else if (reference instanceof DoubleArray) {
             seg = ((DoubleArray) reference).getSegment();
-        } else if(reference instanceof LongArray) {
+        } else if (reference instanceof LongArray) {
             seg = ((LongArray) reference).getSegment();
         } else if (reference instanceof ShortArray) {
             seg = ((ShortArray) reference).getSegment();
@@ -110,8 +108,7 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
             seg = (MemorySegment) reference;
         }
 
-        int internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), 0,
-                seg.byteSize(), seg.address().toRawLongValue(), hostOffset, (useDeps) ? events : null);
+        int internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), 0, seg.byteSize(), seg.address().toRawLongValue(), hostOffset, (useDeps) ? events : null);
         returnEvents.add(internalEvent);
 
         onDevice = true;
@@ -123,11 +120,11 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
         MemorySegment memref;
         if (reference instanceof IntArray) {
             memref = ((IntArray) reference).getSegment();
-        } else if(reference instanceof FloatArray) {
+        } else if (reference instanceof FloatArray) {
             memref = ((FloatArray) reference).getSegment();
-        } else if(reference instanceof DoubleArray) {
+        } else if (reference instanceof DoubleArray) {
             memref = ((DoubleArray) reference).getSegment();
-        } else if(reference instanceof LongArray) {
+        } else if (reference instanceof LongArray) {
             memref = ((LongArray) reference).getSegment();
         } else if (reference instanceof ShortArray) {
             memref = ((ShortArray) reference).getSegment();
@@ -143,7 +140,9 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
         bufferId = deviceContext.getBufferProvider().getBufferWithSize(bufferSize);
 
         if (Tornado.FULL_DEBUG) {
-            //info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
+            // info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d",
+            // kind.getJavaName(), humanReadableByteCount(bufferSize, true),
+            // arrayLengthOffset, arrayHeaderSize);
             info("allocated: %s", toString());
         }
     }
@@ -159,7 +158,9 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
         bufferSize = INIT_VALUE;
 
         if (Tornado.FULL_DEBUG) {
-            //  info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
+            // info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d",
+            // kind.getJavaName(), humanReadableByteCount(bufferSize, true),
+            // arrayLengthOffset, arrayHeaderSize);
             info("deallocated: %s", toString());
         }
     }
@@ -175,7 +176,7 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
     }
 
     @Override
-    public long getSizeSubRegion() {
+    public long getSizeSubRegionSize() {
         return 0;
     }
 

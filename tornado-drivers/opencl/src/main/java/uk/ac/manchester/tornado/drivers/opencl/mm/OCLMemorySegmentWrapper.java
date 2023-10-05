@@ -33,7 +33,7 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
 
     private long bufferSize;
 
-    private long setSubRegionSize;
+    private long subregionSize;
 
     public OCLMemorySegmentWrapper(OCLDeviceContext deviceContext, long batchSize) {
         this.deviceContext = deviceContext;
@@ -46,8 +46,9 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
 
     @Override
     public long toBuffer() {
-        //guarantee(deviceContext.getSegmentToBufferMap().containsKey(segment), "Should contain the segment by this point");
-        return this.bufferId; //deviceContext.getSegmentToBufferMap().get(segment).getBufferId();
+        // guarantee(deviceContext.getSegmentToBufferMap().containsKey(segment), "Should
+        // contain the segment by this point");
+        return this.bufferId; // deviceContext.getSegmentToBufferMap().get(segment).getBufferId();
     }
 
     @Override
@@ -73,11 +74,11 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         MemorySegment segment;
         if (reference instanceof IntArray) {
             segment = ((IntArray) reference).getSegment();
-        } else if(reference instanceof FloatArray) {
+        } else if (reference instanceof FloatArray) {
             segment = ((FloatArray) reference).getSegment();
-        } else if(reference instanceof DoubleArray) {
+        } else if (reference instanceof DoubleArray) {
             segment = ((DoubleArray) reference).getSegment();
-        } else if(reference instanceof LongArray) {
+        } else if (reference instanceof LongArray) {
             segment = ((LongArray) reference).getSegment();
         } else if (reference instanceof ShortArray) {
             segment = ((ShortArray) reference).getSegment();
@@ -89,11 +90,8 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
             segment = (MemorySegment) reference;
         }
 
-        final int returnEvent;
-        final long numBytes = getSizeSubRegion() > 0 ? getSizeSubRegion() : bufferSize;
-   //     System.out.println("==== [READ] bufferOffset: " + bufferOffset + " bufferSize: " + numBytes + " hostOffset: " + hostOffset + " seg.get(0): " + ((IntArray) reference).get(0) + " seg.size: " + ((IntArray) reference).getSize() + " seg pointer: " + segment.address().toRawLongValue());
-        returnEvent = deviceContext.readBuffer(toBuffer(), bufferOffset, numBytes,
-                segment.address(), hostOffset, (useDeps) ? events : null);
+        final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : bufferSize;
+        final int returnEvent = deviceContext.readBuffer(toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
         return useDeps ? returnEvent : -1;
     }
 
@@ -102,11 +100,11 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         MemorySegment seg;
         if (reference instanceof IntArray) {
             seg = ((IntArray) reference).getSegment();
-        } else if(reference instanceof FloatArray) {
+        } else if (reference instanceof FloatArray) {
             seg = ((FloatArray) reference).getSegment();
-        } else if(reference instanceof DoubleArray) {
+        } else if (reference instanceof DoubleArray) {
             seg = ((DoubleArray) reference).getSegment();
-        } else if(reference instanceof LongArray) {
+        } else if (reference instanceof LongArray) {
             seg = ((LongArray) reference).getSegment();
         } else if (reference instanceof ShortArray) {
             seg = ((ShortArray) reference).getSegment();
@@ -117,8 +115,6 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         } else {
             seg = (MemorySegment) reference;
         }
-        //OCLBufferInfo bufferInfo = deviceContext.getSegmentToBufferMap().get(segment);
-        System.out.println("==== [WRITE] bufferOffset: " + bufferOffset + " bufferSize: " + bufferSize + " hostOffset: 0");
         deviceContext.writeBuffer(toBuffer(), bufferOffset, bufferSize, seg.address(), 0, null);
         onDevice = true;
     }
@@ -129,11 +125,11 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         MemorySegment seg;
         if (reference instanceof IntArray) {
             seg = ((IntArray) reference).getSegment();
-        } else if(reference instanceof FloatArray) {
+        } else if (reference instanceof FloatArray) {
             seg = ((FloatArray) reference).getSegment();
-        } else if(reference instanceof DoubleArray) {
+        } else if (reference instanceof DoubleArray) {
             seg = ((DoubleArray) reference).getSegment();
-        } else if(reference instanceof LongArray) {
+        } else if (reference instanceof LongArray) {
             seg = ((LongArray) reference).getSegment();
         } else if (reference instanceof ShortArray) {
             seg = ((ShortArray) reference).getSegment();
@@ -144,13 +140,8 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         } else {
             seg = (MemorySegment) reference;
         }
-        //OCLBufferInfo bufferInfo = deviceContext.getSegmentToBufferMap().get(segment);
 
-        final int returnEvent;
-        // is the address correct for batches?
- //       System.out.println("==== [ENQUEUEREAD] bufferOffset: " + bufferOffset + " bufferSize: " + bufferSize + " hostOffset: " + hostOffset);
-        returnEvent = deviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, bufferSize,
-                seg.address(), hostOffset, (useDeps) ? events : null);
+        final int returnEvent = deviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, bufferSize, seg.address(), hostOffset, (useDeps) ? events : null);
         return useDeps ? returnEvent : -1;
     }
 
@@ -160,11 +151,11 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         MemorySegment seg;
         if (reference instanceof IntArray) {
             seg = ((IntArray) reference).getSegment();
-        } else if(reference instanceof FloatArray) {
+        } else if (reference instanceof FloatArray) {
             seg = ((FloatArray) reference).getSegment();
-        } else if(reference instanceof DoubleArray) {
+        } else if (reference instanceof DoubleArray) {
             seg = ((DoubleArray) reference).getSegment();
-        } else if(reference instanceof LongArray) {
+        } else if (reference instanceof LongArray) {
             seg = ((LongArray) reference).getSegment();
         } else if (reference instanceof ShortArray) {
             seg = ((ShortArray) reference).getSegment();
@@ -175,12 +166,8 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         } else {
             seg = (MemorySegment) reference;
         }
-
-//        System.out.println("==== [ENQUEUEWRITE] bufferOffset: " + bufferOffset + " bufferSize: " + bufferSize + " hostOffset: " + hostOffset  + " seg.get(0): " + ((IntArray) reference).get(0)  + " seg.size: " + ((IntArray) reference).getSize()  + " seg pointer: " + seg.address().toRawLongValue());
-        int internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset,
-                bufferSize, seg.address(), hostOffset, (useDeps) ? events : null);
+        int internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset, bufferSize, seg.address(), hostOffset, (useDeps) ? events : null);
         returnEvents.add(internalEvent);
-
         onDevice = true;
         return useDeps ? returnEvents : null;
     }
@@ -190,11 +177,11 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         MemorySegment memref;
         if (reference instanceof IntArray) {
             memref = ((IntArray) reference).getSegment();
-        } else if(reference instanceof FloatArray) {
+        } else if (reference instanceof FloatArray) {
             memref = ((FloatArray) reference).getSegment();
-        } else if(reference instanceof DoubleArray) {
+        } else if (reference instanceof DoubleArray) {
             memref = ((DoubleArray) reference).getSegment();
-        } else if(reference instanceof LongArray) {
+        } else if (reference instanceof LongArray) {
             memref = ((LongArray) reference).getSegment();
         } else if (reference instanceof ShortArray) {
             memref = ((ShortArray) reference).getSegment();
@@ -220,7 +207,6 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         bufferId = deviceContext.getBufferProvider().getBufferWithSize(bufferSize);
 
         if (Tornado.FULL_DEBUG) {
-            //info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
             info("allocated: %s", toString());
         }
     }
@@ -229,13 +215,12 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
     @Override
     public void deallocate() throws TornadoMemoryException {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
-        //long bufferSize = memref.byteSize();
+        // long bufferSize = memref.byteSize();
         deviceContext.getBufferProvider().markBufferReleased(bufferId, bufferSize);
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
 
         if (Tornado.FULL_DEBUG) {
-          //  info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
             info("deallocated: %s", toString());
         }
     }
@@ -247,12 +232,12 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
 
     @Override
     public void setSizeSubRegion(long batchSize) {
-        this.setSubRegionSize = batchSize;
+        this.subregionSize = batchSize;
     }
 
     @Override
-    public long getSizeSubRegion() {
-        return setSubRegionSize;
+    public long getSizeSubRegionSize() {
+        return subregionSize;
     }
 
     public long getBatchSize() {

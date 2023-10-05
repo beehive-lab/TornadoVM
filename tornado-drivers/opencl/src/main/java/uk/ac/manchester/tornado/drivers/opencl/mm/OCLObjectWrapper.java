@@ -426,7 +426,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
     }
 
     @Override
-    public long getSizeSubRegion() {
+    public long getSizeSubRegionSize() {
         return setSubRegionSize;
     }
 

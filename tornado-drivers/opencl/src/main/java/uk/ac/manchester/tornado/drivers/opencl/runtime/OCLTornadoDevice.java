@@ -527,7 +527,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
                 result = new AtomicsBuffer(new int[] {}, deviceContext);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 result = new OCLVectorWrapper(deviceContext, object, batchSize);
-            }  else if (object instanceof MemorySegment) {
+            } else if (object instanceof MemorySegment) {
                 result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else if (object instanceof IntArray) {
                 result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
@@ -597,10 +597,10 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
         final Class<?> type = object.getClass();
 
-        //TODO: FIX
-//        if (!type.isArray()) {
-//            checkBatchSize(batchSize);
-//        }
+        // TODO: FIX
+        // if (!type.isArray()) {
+        // checkBatchSize(batchSize);
+        // }
         return -1;
     }
 
@@ -826,32 +826,39 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return false;
     }
 
-//    @Override
-//    public MemorySegment allocateNonPinnedBuffer(long hostBufferSize, long deviceBufferSize) {
-//        OCLBufferInfo bufferInfo = new OCLBufferInfo();
-//
-//        // Allocate the device buffer.
-//        long bufferId = ((OCLMemoryManager) getMemoryProvider()).allocateRegion(OCLMemFlags.CL_MEM_READ_WRITE, deviceBufferSize, false);
-//        bufferInfo.setBufferId(bufferId);
-//        bufferInfo.setBufferSize(deviceBufferSize);
-//
-////        // Make sure the lookup buffer kernel is compiled and obtain the required meta data.
-////        TaskMetaData meta = getBackend().compileLookupBufferKernel();
-////
-////        // Run the lookup buffer kernel and obtain the device address of the buffer.
-////        long deviceBufferAddress = getBackend().readMemorySegmentBaseAddress(bufferInfo, meta);
-////        bufferInfo.setDevicePointer(deviceBufferAddress);
-//
-//        // Allocate the memory segment on the host.
-//        MemorySegment segment = MemorySegment.allocateNative(hostBufferSize, 8).share();
-//        long hostBufferAddress = segment.address().toRawLongValue();
-//        bufferInfo.setHostBufferPointer(hostBufferAddress);
-//        bufferInfo.setBufferSize(hostBufferSize);
-//
-//        // Register the buffer, to be able to release it on device.reset().
-//       // getDeviceContext().registerPinnedBuffer(segment, bufferInfo);
-//
-//        return segment;
-//    }
+    // @Override
+    // public MemorySegment allocateNonPinnedBuffer(long hostBufferSize, long
+    // deviceBufferSize) {
+    // OCLBufferInfo bufferInfo = new OCLBufferInfo();
+    //
+    // // Allocate the device buffer.
+    // long bufferId = ((OCLMemoryManager)
+    // getMemoryProvider()).allocateRegion(OCLMemFlags.CL_MEM_READ_WRITE,
+    // deviceBufferSize, false);
+    // bufferInfo.setBufferId(bufferId);
+    // bufferInfo.setBufferSize(deviceBufferSize);
+    //
+    //// // Make sure the lookup buffer kernel is compiled and obtain the required
+    // meta data.
+    //// TaskMetaData meta = getBackend().compileLookupBufferKernel();
+    ////
+    //// // Run the lookup buffer kernel and obtain the device address of the
+    // buffer.
+    //// long deviceBufferAddress =
+    // getBackend().readMemorySegmentBaseAddress(bufferInfo, meta);
+    //// bufferInfo.setDevicePointer(deviceBufferAddress);
+    //
+    // // Allocate the memory segment on the host.
+    // MemorySegment segment = MemorySegment.allocateNative(hostBufferSize,
+    // 8).share();
+    // long hostBufferAddress = segment.address().toRawLongValue();
+    // bufferInfo.setHostBufferPointer(hostBufferAddress);
+    // bufferInfo.setBufferSize(hostBufferSize);
+    //
+    // // Register the buffer, to be able to release it on device.reset().
+    // // getDeviceContext().registerPinnedBuffer(segment, bufferInfo);
+    //
+    // return segment;
+    // }
 
 }

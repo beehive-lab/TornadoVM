@@ -408,7 +408,7 @@ public class PTXObjectWrapper implements ObjectBuffer {
     }
 
     @Override
-    public long getSizeSubRegion() {
+    public long getSizeSubRegionSize() {
         return this.subRegionSize;
     }
 

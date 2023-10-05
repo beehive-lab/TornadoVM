@@ -312,7 +312,7 @@ public class PTXVectorWrapper implements ObjectBuffer {
     }
 
     @Override
-    public long getSizeSubRegion() {
+    public long getSizeSubRegionSize() {
         return setSubRegionSize;
     }
 
