@@ -372,6 +372,12 @@ public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
         return storage.getSegment().asByteBuffer().asDoubleBuffer();
     }
 
+    public void fill(double value) {
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, value);
+        }
+    }
+
     @Override
     public int size() {
         return NUM_ELEMENTS;

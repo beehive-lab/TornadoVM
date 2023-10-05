@@ -212,7 +212,7 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public static double findULPDistance(Double3 a, Double3 b) {
-        return TornadoMath.findULPDistance(a.asBuffer().array(), b.asBuffer().array());
+        return TornadoMath.findULPDistance(a.getArray(), b.getArray());
     }
 
     public DoubleArray getArray() {
@@ -317,5 +317,11 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
     @Override
     public int size() {
         return NUM_ELEMENTS;
+    }
+
+    public void fill(double value) {
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, value);
+        }
     }
 }

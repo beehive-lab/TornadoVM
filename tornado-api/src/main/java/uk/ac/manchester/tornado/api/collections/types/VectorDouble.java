@@ -42,17 +42,16 @@
 package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.DoubleBuffer;
-import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 
 public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
 
     private static final int ELEMENT_SIZE = 1;
     private final int numElements;
-    private final double[] storage;
+    private final DoubleArray storage;
 
-    protected VectorDouble(int numElements, double[] array) {
+    protected VectorDouble(int numElements, DoubleArray array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -64,7 +63,7 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
      *            Number of elements
      */
     public VectorDouble(int numElements) {
-        this(numElements, new double[numElements]);
+        this(numElements, new DoubleArray(numElements));
     }
 
     /**
@@ -73,14 +72,14 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
      * @param storage
      *            vector to be stored
      */
-    public VectorDouble(double[] storage) {
-        this(storage.length / ELEMENT_SIZE, storage);
+    public VectorDouble(DoubleArray storage) {
+        this(storage.getSize() / ELEMENT_SIZE, storage);
     }
 
     public static double min(VectorDouble v) {
         double result = Double.MAX_VALUE;
-        for (int i = 0; i < v.storage.length; i++) {
-            result = Math.min(v.storage[i], result);
+        for (int i = 0; i < v.storage.getSize(); i++) {
+            result = Math.min(v.storage.get(i), result);
         }
 
         return result;
@@ -88,8 +87,8 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
 
     public static double max(VectorDouble v) {
         double result = Double.MIN_VALUE;
-        for (int i = 0; i < v.storage.length; i++) {
-            result = Math.max(v.storage[i], result);
+        for (int i = 0; i < v.storage.getSize(); i++) {
+            result = Math.max(v.storage.get(i), result);
         }
 
         return result;
@@ -108,7 +107,7 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
         return sum;
     }
 
-    public double[] getArray() {
+    public DoubleArray getArray() {
         return storage;
     }
 
@@ -120,7 +119,7 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
      * @return value
      */
     public double get(int index) {
-        return storage[index];
+        return storage.get(index);
     }
 
     /**
@@ -132,7 +131,7 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
      *            value to be stored
      */
     public void set(int index, double value) {
-        storage[index] = value;
+        storage.set(index, value);
     }
 
     /**
@@ -141,8 +140,8 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
      * @param values
      */
     public void set(VectorDouble values) {
-        for (int i = 0; i < values.storage.length; i++) {
-            storage[i] = values.storage[i];
+        for (int i = 0; i < values.storage.getSize(); i++) {
+            storage.set(i, values.storage.get(i));
         }
     }
 
@@ -154,7 +153,7 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
      */
     public void set(double[] values) {
         for (int i = 0; i < values.length; i++) {
-            storage[i] = values[i];
+            storage.set(i, values[i]);
         }
     }
 
@@ -165,8 +164,8 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
      *            input vector to be stored
      */
     public void fill(double value) {
-        for (int i = 0; i < storage.length; i++) {
-            storage[i] = value;
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, value);
         }
     }
 
@@ -183,7 +182,7 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
     public VectorDouble subVector(int start, int length) {
         final VectorDouble v = new VectorDouble(length);
         for (int i = 0; i < length; i++) {
-            v.storage[i] = storage[i + start];
+            v.storage.set(i, storage.get(i + start));
         }
 
         return v;
@@ -194,7 +193,11 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
      *
      */
     public VectorDouble duplicate() {
-        return new VectorDouble(Arrays.copyOf(storage, storage.length));
+        DoubleArray cp = new DoubleArray(storage.getSize());
+        for (int i = 0; i < cp.getSize(); i++) {
+            cp.set(i, storage.get(i));
+        }
+        return new VectorDouble(cp);
     }
 
     /**
@@ -205,9 +208,10 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
      *
      * @return true if vectors match
      */
-    public boolean isEqual(VectorDouble vector) {
-        return TornadoMath.isEqual(storage, vector.storage);
-    }
+    // public boolean isEqual(VectorDouble vector) {
+    // return TornadoMath.isEqual(storage.getSegment(),
+    // vector.storage.getSegment());
+    // }
 
     /**
      * Prints the vector using the specified format string.
@@ -242,7 +246,7 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public DoubleBuffer asBuffer() {
-        return DoubleBuffer.wrap(storage);
+        return storage.getSegment().asByteBuffer().asDoubleBuffer();
     }
 
     @Override

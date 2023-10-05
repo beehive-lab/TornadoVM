@@ -322,8 +322,10 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
         return NUM_ELEMENTS;
     }
 
-    // public void fill(double value) {
-    // Arrays.fill(storage, value);
-    // }
+    public void fill(double value) {
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, value);
+        }
+    }
 
 }
