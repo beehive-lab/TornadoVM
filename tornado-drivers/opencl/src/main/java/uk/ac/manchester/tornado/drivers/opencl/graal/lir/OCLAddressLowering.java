@@ -31,12 +31,8 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.FloatingReadNode;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
-//<<<<<<< HEAD
-//import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
-//=======
 import org.graalvm.compiler.phases.common.AddressLoweringByNodePhase;
 
-//>>>>>>> develop
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
