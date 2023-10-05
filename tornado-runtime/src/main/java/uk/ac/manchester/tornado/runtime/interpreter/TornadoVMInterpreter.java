@@ -674,9 +674,12 @@ public class TornadoVMInterpreter extends TornadoLogger {
             final int argIndex = bytecodeResult.getInt();
 
             if (argType == TornadoVMBytecodes.PUSH_CONSTANT_ARGUMENT.value()) {
+                // Add a constant argument
                 callWrapper.addCallArgument(constants.get(argIndex), false);
             } else if (argType == TornadoVMBytecodes.PUSH_REFERENCE_ARGUMENT.value()) {
+
                 if (isObjectKernelContext(objects.get(argIndex))) {
+                    // Mark a kernel context
                     callWrapper.addCallArgument(new KernelArgs.KernelContextArgument(), false);
                     continue;
                 }
@@ -685,6 +688,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
                 final DeviceObjectState objectState = globalState.getDeviceState(deviceForInterpreter);
 
                 if (!isObjectInAtomicRegion(objectState, deviceForInterpreter, task)) {
+                    // Add a reference (arrays, vector types, panama regions)
                     callWrapper.addCallArgument(objectState.getObjectBuffer().toBuffer(), true);
                 } else {
                     atomicsArray = deviceForInterpreter.updateAtomicRegionAndObjectState(task, atomicsArray, i, objects.get(argIndex), objectState);
