@@ -286,9 +286,10 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
         return toString(DoubleOps.FMT_2);
     }
 
-    void storeToArray(final double[] array, int index) {
-        array[index] = getX();
-        array[index + 1] = getY();
+    void storeToArray(final DoubleArray array, int index) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            array.set(index + i, get(i));
+        }
     }
 
     @Override

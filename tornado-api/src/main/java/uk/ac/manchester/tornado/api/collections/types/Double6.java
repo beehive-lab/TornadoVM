@@ -356,9 +356,9 @@ public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
         return toString(DoubleOps.FMT_6);
     }
 
-    public void storeToArray(final double[] array, int index) {
+    public void storeToArray(final DoubleArray array, int index) {
         for (int i = 0; i < NUM_ELEMENTS; i++) {
-            array[index + i] = get(i);
+            array.set(index + i, get(i));
         }
     }
 

@@ -301,11 +301,10 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
         return new Double2(getZ(), getW());
     }
 
-    void storeToArray(final double[] array, int index) {
-        array[index] = getX();
-        array[index + 1] = getY();
-        array[index + 2] = getZ();
-        array[index + 3] = getW();
+    void storeToArray(final DoubleArray array, int index) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            array.set(index + i, get(i));
+        }
     }
 
     @Override

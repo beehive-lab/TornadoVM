@@ -298,10 +298,10 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
         return new Double2(getX(), getY());
     }
 
-    void storeToArray(final double[] array, int index) {
-        array[index] = getX();
-        array[index + 1] = getY();
-        array[index + 2] = getZ();
+    void storeToArray(final DoubleArray array, int index) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            array.set(index + i, get(i));
+        }
     }
 
     @Override

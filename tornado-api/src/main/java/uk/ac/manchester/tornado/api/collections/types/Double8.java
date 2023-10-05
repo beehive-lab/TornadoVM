@@ -315,9 +315,9 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
         return toString(DoubleOps.FMT_8);
     }
 
-    void storeToArray(final double[] array, int index) {
+    void storeToArray(final DoubleArray array, int index) {
         for (int i = 0; i < NUM_ELEMENTS; i++) {
-            array[index + i] = get(i);
+            array.set(index + i, get(i));
         }
     }
 
