@@ -29,10 +29,12 @@ import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.extended.JavaWriteNode;
 import org.graalvm.compiler.nodes.java.AccessFieldNode;
 import org.graalvm.compiler.nodes.java.AccessIndexedNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
+import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
@@ -88,6 +90,18 @@ public class TornadoFieldAccessFixup extends BasePhase<TornadoHighTierContext> {
                         graph.replaceFixedWithFixed(oldStoreNode, storeFieldNode);
                     } else {
                         TornadoInternalError.shouldNotReachHere("Unexpected node type = %s", accessFieldNode.getClass().getName());
+                    }
+                } else if (usage instanceof OffsetAddressNode) {
+                    if (usage.usages().filter(JavaWriteNode.class).isNotEmpty()) {
+                        ValueNode base = loadField.object();
+                        if (base instanceof PiNode) {
+                            base = ((PiNode) base).object();
+                        } else if (base instanceof TornadoAddressArithmeticNode) {
+                            base = ((TornadoAddressArithmeticNode) base).getBase();
+                        }
+                        TornadoAddressArithmeticNode addNode = new TornadoAddressArithmeticNode(base, loadField);
+                        graph.addWithoutUnique(addNode);
+                        usage.replaceFirstInput(loadField, addNode);
                     }
                 }
             });
