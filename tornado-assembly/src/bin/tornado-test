@@ -216,6 +216,8 @@ __GC__ = "-Xmx6g "
 __BASE_OPTIONS__ = "-Dtornado.recover.bailout=False "
 __VERBOSE_OPTION__ = "-Dtornado.unittests.verbose="
 __TORNADOVM_PRINT_BC__ = "-Dtornado.print.bytecodes=True "
+__TORNADOVM_ENABLE_PROFILER_SILENT__    = " -Dtornado.profiler=True -Dtornado.log.profiler=True "
+__TORNADOVM_ENABLE_PROFILER_CONSOLE__   = " -Dtornado.profiler=True "
 # ################################################################################################################
 
 TORNADO_CMD = "tornado "
@@ -283,6 +285,15 @@ def composeAllOptions(args):
 
     if (args.jvmFlags != None):
         options = options + args.jvmFlags
+
+    if (args.enable_profiler != None):
+        if (args.enable_profiler == "silent"):
+            options = options + __TORNADOVM_ENABLE_PROFILER_SILENT__
+        elif (args.enable_profiler == "console"):
+            options = options + __TORNADOVM_ENABLE_PROFILER_CONSOLE__
+        else:
+            print("[ERROR] Please select --enableProfiler <silent|console>")
+            sys.exit(0)
 
     return options
 
@@ -519,6 +530,7 @@ def parseArguments():
                         help="Print OpenCL Kernel Execution Time")
     parser.add_argument('--jvm', "-J", dest="jvmFlags", required=False, default=None,
                         help="Pass options to the JVM e.g. -J=\"-Ds0.t0.device=0:1\"")
+    parser.add_argument('--enableProfiler', action="store", dest="enable_profiler", default=None, help="Enable the profiler {silent|console}")
     args = parser.parse_args()
     return args
 
