@@ -314,7 +314,6 @@ public class TestMultipleFunctions extends TornadoTestBase {
         for (int i = 0; i < callerRead.getSize(); i++) {
             callerWrite.set(i, callerRead.get(i) + callerReadCalleeWrite.get(i) + 10);
         }
-
         callee1(calleeRead, callerReadCalleeWrite);
     }
 

@@ -191,7 +191,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
         index++;
 
-        // local memory
+        // local memory buffers
         if (meta != null && meta.getLocalSize() > 0) {
             info("\tallocating %s of local memory", RuntimeUtilities.humanReadableByteCount(meta.getLocalSize(), true));
             kernel.setLocalRegion(index, meta.getLocalSize());
@@ -210,6 +210,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         for (int i = 0, argIndex = 0; i < kernelArgs.getCallArguments().size(); i++) {
             KernelArgs.CallArgument arg = kernelArgs.getCallArguments().get(i);
             if (arg.getValue() instanceof KernelArgs.KernelContextArgument) {
+                // We do not set any kernel context argument. This is only for the Java side.
                 continue;
             }
             if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
