@@ -27,6 +27,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat4;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
@@ -118,11 +119,19 @@ public class MatrixAddition2D {
         Matrix2DFloat4 matrixAV = new Matrix2DFloat4(size, size);
         Matrix2DFloat4 matrixBV = new Matrix2DFloat4(size, size);
         Matrix2DFloat4 matrixCV = new Matrix2DFloat4(size, size);
+        FloatArray matrixArrayA = new FloatArray(4);
+        FloatArray matrixArrayB = new FloatArray(4);
+        for (int i = 0; i < matrixArrayA.getSize(); i++) {
+            matrixArrayA.set(i, r.nextFloat());
+        }
+        for (int i = 0; i < matrixArrayB.getSize(); i++) {
+            matrixArrayB.set(i, r.nextFloat());
+        }
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
-                matrixAV.set(i, j, new Float4(new float[] { r.nextFloat(), r.nextFloat(), r.nextFloat(), r.nextFloat() }));
-                matrixBV.set(i, j, new Float4(new float[] { r.nextFloat(), r.nextFloat(), r.nextFloat(), r.nextFloat() }));
+                matrixAV.set(i, j, new Float4(matrixArrayA));
+                matrixBV.set(i, j, new Float4(matrixArrayB));
             }
         }
 

@@ -81,6 +81,7 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.replacements.DefaultJavaLoweringProvider;
 import org.graalvm.compiler.replacements.SnippetCounter;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
@@ -107,6 +108,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.calc.DivNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceCPUSnippets;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
@@ -405,7 +407,12 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             loadStamp = loadStamp(loadIndexed.stamp(NodeView.DEFAULT), elementKind, false);
         }
         address = createArrayAccess(graph, loadIndexed, elementKind);
-        ReadNode memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+        ReadNode memoryRead;
+        if (loadIndexed instanceof LoadIndexedVectorNode) {
+            memoryRead = graph.add(new ReadNode(address, LocationIdentity.any(), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+        } else {
+            memoryRead = graph.add(new ReadNode(address, LocationIdentity.any(), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+        }
         loadIndexed.replaceAtUsages(memoryRead);
         graph.replaceFixed(loadIndexed, memoryRead);
     }

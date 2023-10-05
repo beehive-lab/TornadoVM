@@ -19,14 +19,15 @@ package uk.ac.manchester.tornado.benchmarks.dotimage;
 
 import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.dotImage;
 
+import java.util.Random;
+import java.util.stream.IntStream;
+
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
-
-import java.util.Random;
-import java.util.stream.IntStream;
 
 public class DotJava extends BenchmarkDriver {
 
@@ -52,10 +53,10 @@ public class DotJava extends BenchmarkDriver {
         Random r = new Random();
         for (int i = 0; i < numElementsX; i++) {
             for (int j = 0; j < numElementsY; j++) {
-                float[] ra = new float[3];
-                IntStream.range(0, ra.length).forEach(x -> ra[x] = r.nextFloat());
-                float[] rb = new float[3];
-                IntStream.range(0, rb.length).forEach(x -> rb[x] = r.nextFloat());
+                FloatArray ra = new FloatArray(3);
+                IntStream.range(0, ra.getSize()).forEach(x -> ra.set(x, r.nextFloat()));
+                FloatArray rb = new FloatArray(3);
+                IntStream.range(0, rb.getSize()).forEach(x -> rb.set(x, r.nextFloat()));
                 a.set(i, j, new Float3(ra));
                 b.set(i, j, new Float3(rb));
             }

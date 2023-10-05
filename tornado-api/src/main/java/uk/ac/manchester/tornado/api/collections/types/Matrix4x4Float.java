@@ -42,7 +42,8 @@
 package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.FloatBuffer;
-import java.util.Arrays;
+
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 
 public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
 
@@ -61,13 +62,13 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array.
      */
-    protected final float[] storage;
+    protected final FloatArray storage;
 
     public Matrix4x4Float() {
-        this(new float[NUM_ELEMENTS]);
+        this(new FloatArray(NUM_ELEMENTS));
     }
 
-    public Matrix4x4Float(float[] array) {
+    public Matrix4x4Float(FloatArray array) {
         storage = array;
     }
 
@@ -76,11 +77,11 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     }
 
     private float get(int index) {
-        return storage[index];
+        return storage.get(index);
     }
 
     private void set(int index, float value) {
-        storage[index] = value;
+        storage.set(index, value);
     }
 
     /**
@@ -93,7 +94,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
      * @return float
      */
     public float get(int i, int j) {
-        return storage[toIndex(i, j)];
+        return storage.get(toIndex(i, j));
     }
 
     /**
@@ -106,7 +107,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
      * @return float
      */
     public void set(int i, int j, float value) {
-        storage[toIndex(i, j)] = value;
+        storage.set(toIndex(i, j), value);
     }
 
     /**
@@ -141,7 +142,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void fill(float value) {
-        Arrays.fill(storage, value);
+        storage.init(value);
     }
 
     public Matrix4x4Float duplicate() {
@@ -190,7 +191,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
+        return storage.getSegment().asByteBuffer().asFloatBuffer();
     }
 
     @Override

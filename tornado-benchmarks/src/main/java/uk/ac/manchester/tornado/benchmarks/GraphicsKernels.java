@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 
 public final class GraphicsKernels {
     // CHECKSTYLE:OFF
@@ -51,11 +52,11 @@ public final class GraphicsKernels {
         }
     }
 
-    public static void dotVector(VectorFloat3 A, VectorFloat3 B, float[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
+    public static void dotVector(VectorFloat3 A, VectorFloat3 B, FloatArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
             final Float3 a = A.get(i);
             final Float3 b = B.get(i);
-            c[i] = Float3.dot(a, b);
+            c.set(i, Float3.dot(a, b));
         }
     }
 

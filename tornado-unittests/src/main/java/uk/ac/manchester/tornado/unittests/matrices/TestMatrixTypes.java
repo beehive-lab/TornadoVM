@@ -39,6 +39,7 @@ import uk.ac.manchester.tornado.api.collections.types.Matrix3DFloat4;
 import uk.ac.manchester.tornado.api.collections.types.VectorDouble;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
 import uk.ac.manchester.tornado.api.collections.types.VectorInt;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -355,12 +356,12 @@ public class TestMatrixTypes extends TornadoTestBase {
         VectorFloat row1 = matrix.row(1);
         VectorFloat row2 = matrix.row(2);
 
-        assertEquals(1, row0.getArray()[0], 0.01f);
-        assertEquals(2, row0.getArray()[1], 0.01f);
-        assertEquals(3, row1.getArray()[0], 0.01f);
-        assertEquals(4, row1.getArray()[1], 0.01f);
-        assertEquals(5, row2.getArray()[0], 0.01f);
-        assertEquals(6, row2.getArray()[1], 0.01f);
+        assertEquals(1, row0.getArray().get(0), 0.01f);
+        assertEquals(2, row0.getArray().get(1), 0.01f);
+        assertEquals(3, row1.getArray().get(0), 0.01f);
+        assertEquals(4, row1.getArray().get(1), 0.01f);
+        assertEquals(5, row2.getArray().get(0), 0.01f);
+        assertEquals(6, row2.getArray().get(1), 0.01f);
     }
 
     @Test
@@ -378,35 +379,35 @@ public class TestMatrixTypes extends TornadoTestBase {
         VectorFloat row0 = matrix.row(0);
         VectorFloat row1 = matrix.row(1);
 
-        assertEquals(1, row0.getArray()[0], 0.01f);
-        assertEquals(2, row0.getArray()[1], 0.01f);
-        assertEquals(3, row0.getArray()[2], 0.01f);
-        assertEquals(4, row1.getArray()[0], 0.01f);
-        assertEquals(5, row1.getArray()[1], 0.01f);
-        assertEquals(6, row1.getArray()[2], 0.01f);
+        assertEquals(1, row0.getArray().get(0), 0.01f);
+        assertEquals(2, row0.getArray().get(1), 0.01f);
+        assertEquals(3, row0.getArray().get(2), 0.01f);
+        assertEquals(4, row1.getArray().get(0), 0.01f);
+        assertEquals(5, row1.getArray().get(1), 0.01f);
+        assertEquals(6, row1.getArray().get(2), 0.01f);
     }
 
     @Test
     public void testMatrixRowFloat4() {
-        float[] array = new float[6];
-        array[0] = 1.0f;
-        array[1] = 2.0f;
-        array[2] = 3.0f;
-        array[3] = 4.0f;
-        array[4] = 5.0f;
-        array[5] = 6.0f;
+        FloatArray array = new FloatArray(6);
+        array.set(0, 1.0f);
+        array.set(1, 2.0f);
+        array.set(2, 3.0f);
+        array.set(3, 4.0f);
+        array.set(4, 5.0f);
+        array.set(5, 6.0f);
 
         Matrix2DFloat4 matrix = new Matrix2DFloat4(2, 3, array);
 
         VectorFloat row0 = matrix.row(0);
         VectorFloat row1 = matrix.row(1);
 
-        assertEquals(1, row0.getArray()[0], 0.01f);
-        assertEquals(2, row0.getArray()[1], 0.01f);
-        assertEquals(3, row0.getArray()[2], 0.01f);
-        assertEquals(4, row1.getArray()[0], 0.01f);
-        assertEquals(5, row1.getArray()[1], 0.01f);
-        assertEquals(6, row1.getArray()[2], 0.01f);
+        assertEquals(1, row0.getArray().get(0), 0.01f);
+        assertEquals(2, row0.getArray().get(1), 0.01f);
+        assertEquals(3, row0.getArray().get(2), 0.01f);
+        assertEquals(4, row1.getArray().get(0), 0.01f);
+        assertEquals(5, row1.getArray().get(1), 0.01f);
+        assertEquals(6, row1.getArray().get(2), 0.01f);
     }
 
     @Test

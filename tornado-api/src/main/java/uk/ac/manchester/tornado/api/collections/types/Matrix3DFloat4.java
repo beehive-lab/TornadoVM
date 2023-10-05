@@ -42,7 +42,8 @@
 package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.FloatBuffer;
-import java.util.Arrays;
+
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 
 public class Matrix3DFloat4 extends Matrix3DType implements PrimitiveStorage<FloatBuffer> {
     /**
@@ -52,7 +53,7 @@ public class Matrix3DFloat4 extends Matrix3DType implements PrimitiveStorage<Flo
     /**
      * backing array.
      */
-    protected final float[] storage;
+    protected final FloatArray storage;
     /**
      * number of elements in the storage.
      */
@@ -70,7 +71,7 @@ public class Matrix3DFloat4 extends Matrix3DType implements PrimitiveStorage<Flo
      * @param array
      *            array reference which contains data
      */
-    public Matrix3DFloat4(int rows, int columns, int depth, float[] array) {
+    public Matrix3DFloat4(int rows, int columns, int depth, FloatArray array) {
         super(rows, columns, depth);
         storage = array;
         numElements = rows * columns * depth * VECTOR_ELEMENTS;
@@ -87,12 +88,12 @@ public class Matrix3DFloat4 extends Matrix3DType implements PrimitiveStorage<Flo
      *            depth-rows
      */
     public Matrix3DFloat4(int rows, int columns, int depth) {
-        this(rows, columns, depth, new float[rows * columns * depth * VECTOR_ELEMENTS]);
+        this(rows, columns, depth, new FloatArray(rows * columns * depth * VECTOR_ELEMENTS));
     }
 
     public static void scale(Matrix3DFloat4 matrix, float value) {
-        for (int i = 0; i < matrix.storage.length; i++) {
-            matrix.storage[i] *= value;
+        for (int i = 0; i < matrix.storage.getSize(); i++) {
+            matrix.storage.set(i, matrix.storage.get(i) * value);
         }
     }
 
@@ -107,7 +108,8 @@ public class Matrix3DFloat4 extends Matrix3DType implements PrimitiveStorage<Flo
     }
 
     public void fill(float value) {
-        Arrays.fill(storage, value);
+        storage.init(value);
+       // Arrays.fill(storage, value);
     }
 
     public Matrix3DFloat4 duplicate() {
@@ -117,8 +119,8 @@ public class Matrix3DFloat4 extends Matrix3DType implements PrimitiveStorage<Flo
     }
 
     public void set(Matrix3DFloat4 m) {
-        for (int i = 0; i < m.storage.length; i++) {
-            storage[i] = m.storage[i];
+        for (int i = 0; i < m.storage.getSize(); i++) {
+            storage.set(i, m.storage.get(i));
         }
     }
 
@@ -151,7 +153,7 @@ public class Matrix3DFloat4 extends Matrix3DType implements PrimitiveStorage<Flo
 
     @Override
     public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
+        return storage.getSegment().asByteBuffer().asFloatBuffer();
     }
 
     @Override

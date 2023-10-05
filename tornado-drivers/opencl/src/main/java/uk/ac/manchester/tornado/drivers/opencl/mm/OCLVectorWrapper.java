@@ -26,7 +26,7 @@ package uk.ac.manchester.tornado.drivers.opencl.mm;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
+import static uk.ac.manchester.tornado.runtime.graal.TornadoLIRGenerator.warn;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -34,6 +34,13 @@ import java.util.List;
 
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.collections.types.PrimitiveStorage;
+import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.CharArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -70,8 +77,10 @@ public class OCLVectorWrapper implements ObjectBuffer {
         Object payload = TornadoUtils.getAnnotatedObjectFromField(object, Payload.class);
         this.kind = getJavaKind(payload.getClass());
         this.bufferSize = sizeOf(payload);
-        this.arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
-        this.arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
+        if (this.kind == JavaKind.Object) this.arrayLengthOffset = 0;
+        else this.arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
+        if (this.kind == JavaKind.Object) this.arrayHeaderSize = 0;
+        else this.arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
     }
 
     public long getBatchSize() {
@@ -164,6 +173,22 @@ public class OCLVectorWrapper implements ObjectBuffer {
             return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, (short[]) value, hostOffset, waitEvents);
         } else if (kind == JavaKind.Byte) {
             return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, (byte[]) value, hostOffset, waitEvents);
+        } else if (kind == JavaKind.Object) {
+            if (value instanceof IntArray) {
+                return  deviceContext.enqueueReadBuffer(bufferId, offset, bytes, ((IntArray) value).getSegment().address(), hostOffset, waitEvents);
+            } else if (value instanceof FloatArray) {
+                return  deviceContext.enqueueReadBuffer(bufferId, offset, bytes, ((FloatArray) value).getSegment().address(), hostOffset, waitEvents);
+            } else if (value instanceof DoubleArray) {
+                return  deviceContext.enqueueReadBuffer(bufferId, offset, bytes, ((DoubleArray) value).getSegment().address(), hostOffset, waitEvents);
+            } else if (value instanceof LongArray) {
+                return  deviceContext.enqueueReadBuffer(bufferId, offset, bytes, ((LongArray) value).getSegment().address(), hostOffset, waitEvents);
+            } else if (value instanceof ShortArray) {
+                return  deviceContext.enqueueReadBuffer(bufferId, offset, bytes, ((ShortArray) value).getSegment().address(), hostOffset, waitEvents);
+            } else if (value instanceof CharArray) {
+                return  deviceContext.enqueueReadBuffer(bufferId, offset, bytes, ((CharArray) value).getSegment().address(), hostOffset, waitEvents);
+            } else if (value instanceof ByteArray) {
+                return  deviceContext.enqueueReadBuffer(bufferId, offset, bytes, ((ByteArray) value).getSegment().address(), hostOffset, waitEvents);
+            }
         } else {
             TornadoInternalError.shouldNotReachHere("Expecting an array type");
         }
@@ -197,6 +222,22 @@ public class OCLVectorWrapper implements ObjectBuffer {
             return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, (short[]) value, hostOffset, waitEvents);
         } else if (kind == JavaKind.Byte) {
             return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, (byte[]) value, hostOffset, waitEvents);
+        } else if (kind == JavaKind.Object) {
+            if (value instanceof IntArray) {
+                return  deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, ((IntArray) value).getSegment().address(), hostOffset,waitEvents);
+            } else if (value instanceof FloatArray) {
+                return  deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, ((FloatArray) value).getSegment().address(), hostOffset,waitEvents);
+            } else if (value instanceof DoubleArray) {
+                return  deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, ((DoubleArray) value).getSegment().address(), hostOffset,waitEvents);
+            } else if (value instanceof LongArray) {
+                return  deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, ((LongArray) value).getSegment().address(), hostOffset,waitEvents);
+            } else if (value instanceof ShortArray) {
+                return  deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, ((ShortArray) value).getSegment().address(), hostOffset,waitEvents);
+            } else if (value instanceof CharArray) {
+                return  deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, ((CharArray) value).getSegment().address(), hostOffset,waitEvents);
+            } else if (value instanceof ByteArray) {
+                return  deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, ((ByteArray) value).getSegment().address(), hostOffset,waitEvents);
+            }
         } else {
             TornadoInternalError.shouldNotReachHere("Expecting an array type");
         }
@@ -233,6 +274,22 @@ public class OCLVectorWrapper implements ObjectBuffer {
             return deviceContext.readBuffer(bufferId, offset, bytes, (short[]) value, hostOffset, waitEvents);
         } else if (kind == JavaKind.Byte) {
             return deviceContext.readBuffer(bufferId, offset, bytes, (byte[]) value, hostOffset, waitEvents);
+        } else if (kind == JavaKind.Object) {
+            if (value instanceof IntArray) {
+                return  deviceContext.readBuffer(bufferId, offset, bytes, ((IntArray) value).getSegment().address(), hostOffset, waitEvents);
+            } else if (value instanceof FloatArray) {
+                return  deviceContext.readBuffer(bufferId, offset, bytes, ((FloatArray) value).getSegment().address(), hostOffset, waitEvents);
+            } else if (value instanceof DoubleArray) {
+                return  deviceContext.readBuffer(bufferId, offset, bytes, ((DoubleArray) value).getSegment().address(), hostOffset, waitEvents);
+            } else if (value instanceof LongArray) {
+                return  deviceContext.readBuffer(bufferId, offset, bytes, ((LongArray) value).getSegment().address(), hostOffset, waitEvents);
+            } else if (value instanceof ShortArray) {
+                return  deviceContext.readBuffer(bufferId, offset, bytes, ((ShortArray) value).getSegment().address(), hostOffset, waitEvents);
+            } else if (value instanceof CharArray) {
+                return  deviceContext.readBuffer(bufferId, offset, bytes, ((CharArray) value).getSegment().address(), hostOffset, waitEvents);
+            } else if (value instanceof ByteArray) {
+                return  deviceContext.readBuffer(bufferId, offset, bytes, ((ByteArray) value).getSegment().address(), hostOffset, waitEvents);
+            }
         } else {
             TornadoInternalError.shouldNotReachHere("Expecting an array type");
         }
@@ -240,7 +297,25 @@ public class OCLVectorWrapper implements ObjectBuffer {
     }
 
     private long sizeOf(final Object array) {
-        return ((long) Array.getLength(array) * (long) kind.getByteCount());
+        long size;
+        if (array.getClass() == IntArray.class) {
+            size = ((IntArray) array).getSize() * 4;
+        } else if (array.getClass() == FloatArray.class) {
+            size = ((FloatArray) array).getSize() * 4;
+        } else if(array.getClass() == DoubleArray.class) {
+            size = ((DoubleArray) array).getSize() * 8;
+        } else if (array.getClass() == LongArray.class) {
+            size = ((LongArray) array).getSize() * 8;
+        } else if(array.getClass() == ShortArray.class) {
+            size = ((ShortArray) array).getSize() * 2;
+        } else if (array.getClass() == CharArray.class) {
+            size = ((CharArray) array).getSize() * 2;
+        } else if (array.getClass() == ByteArray.class) {
+            size = ((CharArray) array).getSize();
+        } else {
+            size = ((long) Array.getLength(array) * (long) kind.getByteCount());
+        }
+        return size;
     }
 
     @Override
@@ -290,6 +365,22 @@ public class OCLVectorWrapper implements ObjectBuffer {
             deviceContext.writeBuffer(bufferId, offset, bytes, (short[]) value, hostOffset, waitEvents);
         } else if (kind == JavaKind.Byte) {
             deviceContext.writeBuffer(bufferId, offset, bytes, (byte[]) value, hostOffset, waitEvents);
+        } else if (kind == JavaKind.Object) {
+            if (value instanceof IntArray) {
+               deviceContext.writeBuffer(bufferId, offset, bytes, ((IntArray) value).getSegment().address(), hostOffset,waitEvents);
+            } else if (value instanceof FloatArray) {
+                deviceContext.writeBuffer(bufferId, offset, bytes, ((FloatArray) value).getSegment().address(), hostOffset,waitEvents);
+            } else if (value instanceof DoubleArray) {
+                deviceContext.writeBuffer(bufferId, offset, bytes, ((DoubleArray) value).getSegment().address(), hostOffset,waitEvents);
+            } else if (value instanceof LongArray) {
+                deviceContext.writeBuffer(bufferId, offset, bytes, ((LongArray) value).getSegment().address(), hostOffset,waitEvents);
+            } else if (value instanceof ShortArray) {
+                deviceContext.writeBuffer(bufferId, offset, bytes, ((ShortArray) value).getSegment().address(), hostOffset,waitEvents);
+            } else if (value instanceof CharArray) {
+                deviceContext.writeBuffer(bufferId, offset, bytes, ((CharArray) value).getSegment().address(), hostOffset,waitEvents);
+            } else if (value instanceof ByteArray) {
+                deviceContext.writeBuffer(bufferId, offset, bytes, ((ByteArray) value).getSegment().address(), hostOffset,waitEvents);
+            }
         } else {
             TornadoInternalError.shouldNotReachHere("Expecting an array type");
         }
@@ -312,6 +403,8 @@ public class OCLVectorWrapper implements ObjectBuffer {
             } else {
                 warn("cannot wrap field: array type=%s", type.getName());
             }
+        } else if (type == FloatArray.class || type == IntArray.class || type == DoubleArray.class || type == LongArray.class || type == ShortArray.class || type == CharArray.class || type == ByteArray.class) {
+            return JavaKind.Object;
         } else {
             TornadoInternalError.shouldNotReachHere("The type should be an array");
         }

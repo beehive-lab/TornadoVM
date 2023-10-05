@@ -49,6 +49,11 @@ import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStampFactory;
@@ -98,29 +103,29 @@ public final class VectorPlugins {
             });
 
             // Adding floats
-            registerVectorPlugins(plugins, OCLKind.FLOAT2, float[].class, float.class);
-            registerVectorPlugins(plugins, OCLKind.FLOAT3, float[].class, float.class);
-            registerVectorPlugins(plugins, OCLKind.FLOAT4, float[].class, float.class);
-            registerVectorPlugins(plugins, OCLKind.FLOAT8, float[].class, float.class);
+            registerVectorPlugins(plugins, OCLKind.FLOAT2, FloatArray.class, float.class);
+            registerVectorPlugins(plugins, OCLKind.FLOAT3, FloatArray.class, float.class);
+            registerVectorPlugins(plugins, OCLKind.FLOAT4, FloatArray.class, float.class);
+            registerVectorPlugins(plugins, OCLKind.FLOAT8, FloatArray.class, float.class);
 
             // Adding ints
-            registerVectorPlugins(plugins, OCLKind.INT2, int[].class, int.class);
-            registerVectorPlugins(plugins, OCLKind.INT3, int[].class, int.class);
-            registerVectorPlugins(plugins, OCLKind.INT4, int[].class, int.class);
-            registerVectorPlugins(plugins, OCLKind.INT8, int[].class, int.class);
+            registerVectorPlugins(plugins, OCLKind.INT2, IntArray.class, int.class);
+            registerVectorPlugins(plugins, OCLKind.INT3, IntArray.class, int.class);
+            registerVectorPlugins(plugins, OCLKind.INT4, IntArray.class, int.class);
+            registerVectorPlugins(plugins, OCLKind.INT8, IntArray.class, int.class);
 
             // Adding shorts
-            registerVectorPlugins(plugins, OCLKind.SHORT2, short[].class, short.class);
+            registerVectorPlugins(plugins, OCLKind.SHORT2, ShortArray.class, short.class);
 
             // Adding char
-            registerVectorPlugins(plugins, OCLKind.CHAR3, byte[].class, byte.class);
-            registerVectorPlugins(plugins, OCLKind.CHAR4, byte[].class, byte.class);
+            registerVectorPlugins(plugins, OCLKind.CHAR3, ByteArray.class, byte.class);
+            registerVectorPlugins(plugins, OCLKind.CHAR4, ByteArray.class, byte.class);
 
             // Adding double
-            registerVectorPlugins(plugins, OCLKind.DOUBLE2, double[].class, double.class);
-            registerVectorPlugins(plugins, OCLKind.DOUBLE3, double[].class, double.class);
-            registerVectorPlugins(plugins, OCLKind.DOUBLE4, double[].class, double.class);
-            registerVectorPlugins(plugins, OCLKind.DOUBLE8, double[].class, double.class);
+            registerVectorPlugins(plugins, OCLKind.DOUBLE2, DoubleArray.class, double.class);
+            registerVectorPlugins(plugins, OCLKind.DOUBLE3, DoubleArray.class, double.class);
+            registerVectorPlugins(plugins, OCLKind.DOUBLE4, DoubleArray.class, double.class);
+            registerVectorPlugins(plugins, OCLKind.DOUBLE8, DoubleArray.class, double.class);
 
             /*
              * Geometric BIFS for floating point vectors

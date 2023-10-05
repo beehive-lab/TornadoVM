@@ -26,6 +26,7 @@ import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -62,10 +63,10 @@ public class AddTornado extends BenchmarkDriver {
         Random r = new Random();
         for (int j = 0; j < numElementsY; j++) {
             for (int i = 0; i < numElementsX; i++) {
-                float[] ra = new float[4];
-                IntStream.range(0, ra.length).forEach(x -> ra[x] = r.nextFloat());
-                float[] rb = new float[4];
-                IntStream.range(0, rb.length).forEach(x -> rb[x] = r.nextFloat());
+                FloatArray ra = new FloatArray(4);
+                IntStream.range(0, ra.getSize()).forEach(x -> ra.set(x, r.nextFloat()));
+                FloatArray rb = new FloatArray(4);
+                IntStream.range(0, rb.getSize()).forEach(x -> rb.set(x, r.nextFloat()));
                 a.set(i, j, new Float4(ra));
                 b.set(i, j, new Float4(rb));
             }
