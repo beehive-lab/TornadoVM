@@ -9,6 +9,7 @@ import java.util.List;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat2;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
+import uk.ac.manchester.tornado.api.collections.types.VectorFloat8;
 import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.CharArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
@@ -104,6 +105,8 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
             segment = ((VectorFloat3) reference).getArray().getSegment();
         } else if (reference instanceof VectorFloat4) {
             segment = ((VectorFloat4) reference).getArray().getSegment();
+        } else if (reference instanceof VectorFloat8) {
+            segment = ((VectorFloat8) reference).getArray().getSegment();
         } else {
             segment = (MemorySegment) reference;
         }
@@ -136,6 +139,8 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
             seg = ((VectorFloat3) reference).getArray().getSegment();
         } else if (reference instanceof VectorFloat4) {
             seg = ((VectorFloat4) reference).getArray().getSegment();
+        } else if (reference instanceof VectorFloat8) {
+            seg = ((VectorFloat8) reference).getArray().getSegment();
         } else {
             seg = (MemorySegment) reference;
         }
@@ -167,6 +172,8 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
             seg = ((VectorFloat3) reference).getArray().getSegment();
         } else if (reference instanceof VectorFloat4) {
             seg = ((VectorFloat4) reference).getArray().getSegment();
+        } else if (reference instanceof VectorFloat8) {
+            seg = ((VectorFloat8) reference).getArray().getSegment();
         } else {
             seg = (MemorySegment) reference;
         }
@@ -199,6 +206,8 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
             seg = ((VectorFloat3) reference).getArray().getSegment();
         } else if (reference instanceof VectorFloat4) {
                 seg = ((VectorFloat4) reference).getArray().getSegment();
+        } else if (reference instanceof VectorFloat8) {
+            seg = ((VectorFloat8) reference).getArray().getSegment();
         } else {
             seg = (MemorySegment) reference;
         }
@@ -231,6 +240,8 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
             memref = ((VectorFloat3) reference).getArray().getSegment();
         } else if (reference instanceof VectorFloat4) {
             memref = ((VectorFloat4) reference).getArray().getSegment();
+        } else if (reference instanceof VectorFloat8) {
+            memref = ((VectorFloat8) reference).getArray().getSegment();
         } else {
             memref = (MemorySegment) reference;
         }

@@ -44,6 +44,7 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 
 public final class Float6 implements PrimitiveStorage<FloatBuffer> {
@@ -57,14 +58,14 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
      * backing array.
      */
     @Payload
-    final float[] storage;
+    final FloatArray storage;
 
-    public Float6(float[] storage) {
+    public Float6(FloatArray storage) {
         this.storage = storage;
     }
 
     public Float6() {
-        this(new float[NUM_ELEMENTS]);
+        this(new FloatArray(NUM_ELEMENTS));
     }
 
     public Float6(float s0, float s1, float s2, float s3, float s4, float s5) {
@@ -77,10 +78,10 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
         setS5(s5);
     }
 
-    public static Float6 loadFromArray(final float[] array, int index) {
+    public static Float6 loadFromArray(final FloatArray array, int index) {
         final Float6 result = new Float6();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
-            result.set(i, array[index + i]);
+            result.set(i, array.get(index + i));
         }
         return result;
     }
@@ -258,7 +259,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
-    public float[] getArray() {
+    public FloatArray getArray() {
         return storage;
     }
 
@@ -272,11 +273,11 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public float get(int index) {
-        return storage[index];
+        return storage.get(index);
     }
 
     public void set(int index, float value) {
-        storage[index] = value;
+        storage.set(index, value);
     }
 
     public float getS0() {
@@ -328,13 +329,11 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public Float3 getHigh() {
-        //TODO
-        return null; //Float3.loadFromArray(storage, 0);
+        return Float3.loadFromArray(storage, 0);
     }
 
     public Float3 getLow() {
-        //TODO
-        return null; //Float3.loadFromArray(storage, 3);
+        return Float3.loadFromArray(storage, 3);
     }
 
     /**
@@ -370,7 +369,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
+        return storage.getSegment().asByteBuffer().asFloatBuffer();
     }
 
     @Override
