@@ -41,11 +41,12 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.nio.FloatBuffer.wrap;
 import static uk.ac.manchester.tornado.api.collections.types.Float8.add;
 import static uk.ac.manchester.tornado.api.collections.types.Float8.loadFromArray;
 
 import java.nio.FloatBuffer;
+
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 
 public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
 
@@ -53,7 +54,7 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array.
      */
-    protected final float[] storage;
+    protected final FloatArray storage;
     /**
      * number of elements in the storage.
      */
@@ -65,7 +66,7 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
      * @param numElements
      * @param array
      */
-    protected VectorFloat8(int numElements, float[] array) {
+    protected VectorFloat8(int numElements, FloatArray array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -73,8 +74,8 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Creates a vector using the provided backing array.
      */
-    public VectorFloat8(float[] array) {
-        this(array.length / ELEMENT_SIZE, array);
+    public VectorFloat8(FloatArray array) {
+        this(array.getSize() / ELEMENT_SIZE, array);
     }
 
     /**
@@ -83,7 +84,7 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
      * @param numElements
      */
     public VectorFloat8(int numElements) {
-        this(numElements, new float[numElements * ELEMENT_SIZE]);
+        this(numElements, new FloatArray(numElements * ELEMENT_SIZE));
     }
 
     private int toIndex(int index) {
@@ -127,7 +128,7 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
      *
      * @param values
      */
-    public void set(float[] values) {
+    public void set(FloatArray values) {
         VectorFloat8 vector = new VectorFloat8(values);
         for (int i = 0; i < numElements; i++) {
             set(i, vector.get(i));
@@ -135,8 +136,8 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void fill(float value) {
-        for (int i = 0; i < storage.length; i++) {
-            storage[i] = value;
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, value);
         }
     }
 
@@ -193,19 +194,19 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return wrap(storage);
+        return storage.getSegment().asByteBuffer().asFloatBuffer();
     }
 
     @Override
     public int size() {
-        return storage.length;
+        return storage.getSize();
     }
 
     public int getLength() {
         return numElements;
     }
 
-    public float[] getArray() {
+    public FloatArray getArray() {
         return storage;
     }
 }

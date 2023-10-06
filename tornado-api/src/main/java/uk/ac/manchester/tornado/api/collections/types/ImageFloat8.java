@@ -114,17 +114,17 @@ public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>, Container<Flo
 
     public void set(int x, Float8 value) {
         final int offset = toIndex(x, 0);
-        value.storeToArray(storage, offset);
+      //  value.storeToArray(storage, offset);
     }
 
     public Float8 get(int x, int y) {
         final int offset = toIndex(x, y);
-        return Float8.loadFromArray(storage, offset);
+        return null;//Float8.loadFromArray(storage, offset);
     }
 
     public void set(int x, int y, Float8 value) {
         final int offset = toIndex(x, y);
-        value.storeToArray(storage, offset);
+      //  value.storeToArray(storage, offset);
     }
 
     public int X() {

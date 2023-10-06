@@ -44,6 +44,7 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
@@ -59,14 +60,14 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
      * backing array.
      */
     @Payload
-    final float[] storage;
+    final FloatArray storage;
 
-    public Float8(float[] storage) {
+    public Float8(FloatArray storage) {
         this.storage = storage;
     }
 
     public Float8() {
-        this(new float[NUM_ELEMENTS]);
+        this(new FloatArray(NUM_ELEMENTS));
     }
 
     public Float8(float s0, float s1, float s2, float s3, float s4, float s5, float s6, float s7) {
@@ -81,10 +82,10 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
         setS7(s7);
     }
 
-    static Float8 loadFromArray(final float[] array, int index) {
+    static Float8 loadFromArray(final FloatArray array, int index) {
         final Float8 result = new Float8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
-            result.set(i, array[index + i]);
+            result.set(i, array.get(index + i));
         }
         return result;
     }
@@ -209,16 +210,16 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
         return TornadoMath.findULPDistance(value.asBuffer().array(), expected.asBuffer().array());
     }
 
-    public float[] getArray() {
+    public FloatArray getArray() {
         return storage;
     }
 
     public float get(int index) {
-        return storage[index];
+        return storage.get(index);
     }
 
     public void set(int index, float value) {
-        storage[index] = value;
+        storage.set(index, value);
     }
 
     public void set(Float8 value) {
@@ -319,9 +320,9 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
         return toString(FloatOps.FMT_8);
     }
 
-    void storeToArray(final float[] array, int index) {
+    void storeToArray(final FloatArray array, int index) {
         for (int i = 0; i < NUM_ELEMENTS; i++) {
-            array[index + i] = get(i);
+            array.set(index + i, get(i));
         }
     }
 
@@ -332,7 +333,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
+        return storage.getSegment().asByteBuffer().asFloatBuffer();
     }
 
     @Override
