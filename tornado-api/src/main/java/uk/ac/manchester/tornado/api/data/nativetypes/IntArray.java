@@ -53,7 +53,7 @@ public class IntArray {
 
     public IntArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segment = Arena.ofAuto().allocate(numberOfElements * INT_BYTES, 1);
+        segment = Arena.ofAuto().allocate((numberOfElements * INT_BYTES) + 24L, 1);
     }
 
     public void set(int index, int value) {

@@ -54,7 +54,7 @@ public class FloatArray {
 
     public FloatArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segment = Arena.ofAuto().allocate(numberOfElements * FLOAT_BYTES, 1);
+        segment = Arena.ofAuto().allocate((numberOfElements * FLOAT_BYTES) + 24L, 1);
     }
 
     public void set(int index, float value) {

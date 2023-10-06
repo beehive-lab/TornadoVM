@@ -53,7 +53,7 @@ public class LongArray {
 
     public LongArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segment = Arena.ofAuto().allocate(numberOfElements * LONG_BYTES, 1);
+        segment = Arena.ofAuto().allocate((numberOfElements * LONG_BYTES) + 24L, 1);
     }
 
     public void set(int index, long value) {

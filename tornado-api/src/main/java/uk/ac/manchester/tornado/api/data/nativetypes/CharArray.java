@@ -13,7 +13,7 @@ public class CharArray {
 
     public CharArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segment = Arena.ofAuto().allocate(numberOfElements * CHAR_BYTES, 1);
+        segment = Arena.ofAuto().allocate((numberOfElements * CHAR_BYTES) + 24L, 1);
     }
 
     public void set(int index, char value) {

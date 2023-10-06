@@ -103,7 +103,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
-    private static final long OBJECT_HEADER_SIZE = 24;
+    private static final long OBJECT_HEADER_SIZE = TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
     private static OCLDriver driver = null;
     private static boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
     private static Pattern namePattern = Pattern.compile("^OpenCL (\\d)\\.(\\d).*");
@@ -528,23 +528,23 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 result = new OCLVectorWrapper(deviceContext, object, batchSize);
             } else if (object instanceof MemorySegment) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, OBJECT_HEADER_SIZE);
             } else if (object instanceof IntArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, OBJECT_HEADER_SIZE);
             } else if (object instanceof FloatArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, OBJECT_HEADER_SIZE);
             } else if (object instanceof DoubleArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, OBJECT_HEADER_SIZE);
             } else if (object instanceof LongArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, OBJECT_HEADER_SIZE);
             } else if (object instanceof ShortArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, OBJECT_HEADER_SIZE);
             } else if (object instanceof ByteArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, OBJECT_HEADER_SIZE);
             } else if (object instanceof CharArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, OBJECT_HEADER_SIZE);
             } else {
-                result = new OCLObjectWrapper(deviceContext, object);
+                result = new OCLObjectWrapper(deviceContext, object, OBJECT_HEADER_SIZE);
             }
         }
 
@@ -598,9 +598,9 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         final Class<?> type = object.getClass();
 
         // TODO: FIX
-        // if (!type.isArray()) {
-        // checkBatchSize(batchSize);
-        // }
+        if (!type.isArray()) {
+            checkBatchSize(batchSize);
+        }
         return -1;
     }
 

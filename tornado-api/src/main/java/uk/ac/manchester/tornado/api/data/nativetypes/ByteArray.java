@@ -13,7 +13,7 @@ public class ByteArray {
 
     public ByteArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segment = Arena.ofAuto().allocate(numberOfElements * BYTE_BYTES, 1);
+        segment = Arena.ofAuto().allocate((numberOfElements * BYTE_BYTES) + 24L, 1);
     }
 
     public void set(int index, byte value) {

@@ -25,9 +25,27 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins;
 
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.ATAN2;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMAX;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMIN;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.POW;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.ACOS;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.ASIN;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.ATAN;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.COS;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.EXP;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.FABS;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.LOG;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.SIN;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.TAN;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.TANH;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MAX;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MIN;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode.Operation.POPCOUNT;
+
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+
 import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryOrderMode;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -36,6 +54,7 @@ import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.nodes.extended.BoxNode;
 import org.graalvm.compiler.nodes.extended.JavaReadNode;
@@ -54,9 +73,12 @@ import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
 import org.graalvm.word.LocationIdentity;
+
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TornadoVMIntrinsics;
-import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
@@ -74,27 +96,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TPrintfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
-
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.ATAN2;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMAX;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMIN;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.POW;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.ACOS;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.ASIN;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.ATAN;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.COS;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.EXP;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.FABS;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.LOG;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.SIN;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.TAN;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.TANH;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MAX;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MIN;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode.Operation.POPCOUNT;
 
 public class OCLGraphBuilderPlugins {
 
@@ -139,8 +140,8 @@ public class OCLGraphBuilderPlugins {
     }
 
     private static boolean isMethodFromAtomicClass(ResolvedJavaMethod method) {
-        return method.getDeclaringClass().toJavaName().equals("uk.ac.manchester.tornado.api.atomics.TornadoAtomicInteger") || method.getDeclaringClass().toJavaName()
-                .equals("java.util.concurrent.atomic.AtomicInteger");
+        return method.getDeclaringClass().toJavaName().equals("uk.ac.manchester.tornado.api.atomics.TornadoAtomicInteger")
+                || method.getDeclaringClass().toJavaName().equals("java.util.concurrent.atomic.AtomicInteger");
     }
 
     private static void registerAtomicCall(Registration r, JavaKind returnedJavaKind) {
@@ -405,78 +406,30 @@ public class OCLGraphBuilderPlugins {
         Registration r = new Registration(plugins, MemorySegment.class);
 
         for (JavaKind kind : JavaKind.values()) {
-            if (kind == JavaKind.Object || kind == JavaKind.Void || kind == JavaKind.Illegal) {
-                continue;
+            if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal) {
+                r.register(new InvocationPlugin("getAtIndex", Receiver.class, getValueLayoutClass(kind.toJavaClass()), long.class) {
+                    @Override
+                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode layout, ValueNode index) {
+                        MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
+                        AddNode addNode = b.append(new AddNode(mulNode, ConstantNode.forLong(TornadoOptions.PANAMA_OBJECT_HEADER_SIZE)));
+                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), addNode));
+                        JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+                        b.addPush(kind, readNode);
+                        return true;
+                    }
+                });
+                r.register(new InvocationPlugin("setAtIndex", Receiver.class, getValueLayoutClass(kind.toJavaClass()), long.class, kind.toJavaClass()) {
+                    @Override
+                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode layout, ValueNode index, ValueNode value) {
+                        MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
+                        AddNode addNode = b.append(new AddNode(mulNode, ConstantNode.forLong(TornadoOptions.PANAMA_OBJECT_HEADER_SIZE)));
+                        AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), addNode));
+                        JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
+                        b.add(writeNode);
+                        return true;
+                    }
+                });
             }
-
-            r.register(new InvocationPlugin("getAtIndex", Receiver.class, getValueLayoutClass(kind.toJavaClass()), long.class) {
-                @Override
-                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode layout, ValueNode index) {
-                    // System.out.println(">> Apply get, node: " + layout);
-                    // Replace with equivalent implementation
-                    // locate the LoadField#segment & signExtend node
-                    // create the nodes below and remove LoadField#ValueLayout
-                    //b.append();
-
-                    MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
-                    AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
-                    JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
-                    b.addPush(kind, readNode);
-                    return true;
-                }
-            });
-
-            r.register(new InvocationPlugin("setAtIndex", Receiver.class, getValueLayoutClass(kind.toJavaClass()), long.class, kind.toJavaClass()) {
-                @Override
-                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode layout, ValueNode index, ValueNode value) {
-                    MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
-                    AddressNode addressNode = b.append(new OffsetAddressNode(receiver.get(), mulNode));
-                    JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
-                    b.add(writeNode);
-                    return true;
-                }
-            });
-        }
-    }
-
-    private static void registerIntArrayPlugins(InvocationPlugins plugins) {
-        Registration r = new Registration(plugins, IntArray.class);
-        System.out.println(">> Registration r " + r);
-
-        for (JavaKind kind : JavaKind.values()) {
-            if (kind == JavaKind.Object || kind == JavaKind.Void || kind == JavaKind.Illegal) {
-                continue;
-            }
-
-            r.register(new InvocationPlugin("get", int.class) {
-                @Override
-                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index) {
-                    // System.out.println(">> Apply get, node: " + layout);
-                    // Replace with equivalent implementation
-                    // locate the LoadField#segment & signExtend node
-                    // create the nodes below and remove LoadField#ValueLayout
-                    //b.append();
-                    int x = 0;
-                    //
-                    //                    MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
-                    //                    AddressNode addressNode = b.append(new OffsetAddressNode(layout, mulNode));
-                    //                    JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
-                    //                    b.addPush(kind, readNode);
-                    return true;
-                }
-            });
-
-            r.register(new InvocationPlugin("setAtIndex", Receiver.class, getValueLayoutClass(kind.toJavaClass()), long.class, kind.toJavaClass()) {
-                @Override
-                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode segment, ValueNode index, ValueNode value) {
-                    System.out.println(">> Apply set, segment node: " + segment);
-                    MulNode mulNode = b.append(new MulNode(index, ConstantNode.forInt(kind.getByteCount())));
-                    AddressNode addressNode = b.append(new OffsetAddressNode(segment, mulNode));
-                    JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
-                    b.add(writeNode);
-                    return true;
-                }
-            });
         }
     }
 

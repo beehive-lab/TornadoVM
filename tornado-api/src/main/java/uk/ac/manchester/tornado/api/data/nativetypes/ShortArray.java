@@ -53,7 +53,7 @@ public class ShortArray {
 
     public ShortArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segment = Arena.ofAuto().allocate(numberOfElements * SHORT_BYTES, 1);
+        segment = Arena.ofAuto().allocate((numberOfElements * SHORT_BYTES) + 24L, 1);
     }
 
     public void set(int index, short value) {

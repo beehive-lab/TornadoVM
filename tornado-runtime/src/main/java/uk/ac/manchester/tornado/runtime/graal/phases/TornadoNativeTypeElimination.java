@@ -82,12 +82,10 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoHighTierConte
             }
         }
 
-        for (int i = 0; i < nodesToBeRemoved.size(); i++) {
-            nodesToBeRemoved.get(i).safeDelete();
+        for (Node node : nodesToBeRemoved) {
+            node.safeDelete();
         }
-
         deleteFixed(fx);
-
     }
 
     public static void deleteFixed(Node n) {

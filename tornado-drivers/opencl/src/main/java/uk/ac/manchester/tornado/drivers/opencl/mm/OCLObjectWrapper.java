@@ -57,6 +57,7 @@ import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 public class OCLObjectWrapper implements ObjectBuffer {
 
     private static final int OPENCL_OBJECT_ALIGNMENT = 64;
+    private final long objectHeadersSize;
 
     private long bufferId;
     private long bufferOffset;
@@ -75,9 +76,10 @@ public class OCLObjectWrapper implements ObjectBuffer {
     private static final int BYTES_OBJECT_REFERENCE = 8;
     private long setSubRegionSize;
 
-    public OCLObjectWrapper(final OCLDeviceContext device, Object object) {
+    public OCLObjectWrapper(final OCLDeviceContext device, Object object, long objectHeaderSize) {
         this.objectType = object.getClass();
         this.deviceContext = device;
+        this.objectHeadersSize = objectHeaderSize;
 
         hubOffset = getVMConfig().hubOffset;
         fieldsOffset = getVMConfig().instanceKlassFieldsOffset();
@@ -119,13 +121,13 @@ public class OCLObjectWrapper implements ObjectBuffer {
                 }
             } else if (type == FloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new OCLMemorySegmentWrapper((FloatArray) objectFromField, device, 0);
+                wrappedField = new OCLMemorySegmentWrapper((FloatArray) objectFromField, device, 0, this.objectHeadersSize);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 wrappedField = new OCLVectorWrapper(device, object, 0);
             } else if (field.getJavaKind().isObject()) {
                 // We capture the field by the scope definition of the input
                 // lambda expression
-                wrappedField = new OCLObjectWrapper(device, TornadoUtils.getObjectFromField(reflectedField, object));
+                wrappedField = new OCLObjectWrapper(device, TornadoUtils.getObjectFromField(reflectedField, object), this.objectHeadersSize);
             }
 
             if (wrappedField != null) {

@@ -38,21 +38,25 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
 
     private long subregionSize;
 
-    public OCLMemorySegmentWrapper(OCLDeviceContext deviceContext, long batchSize) {
+    private final long panamaHeaderSize;
+
+    public OCLMemorySegmentWrapper(OCLDeviceContext deviceContext, long batchSize, long panamaHeaderSize) {
         this.deviceContext = deviceContext;
         this.batchSize = batchSize;
         this.bufferSize = INIT_VALUE; // this is in bytes, should it be in elements?
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
+        this.panamaHeaderSize = panamaHeaderSize;
         onDevice = false;
     }
 
-    public OCLMemorySegmentWrapper(FloatArray floatSegment, OCLDeviceContext deviceContext, long batchSize) {
+    public OCLMemorySegmentWrapper(FloatArray floatSegment, OCLDeviceContext deviceContext, long batchSize, long panamaHeaderSize) {
         this.deviceContext = deviceContext;
         this.batchSize = batchSize;
         this.bufferSize = floatSegment.getSegment().byteSize(); // this is in bytes, should it be in elements?
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
+        this.panamaHeaderSize = panamaHeaderSize;
         onDevice = false;
     }
 
@@ -109,7 +113,7 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         }
 
         final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : bufferSize;
-        final int returnEvent = deviceContext.readBuffer(toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
+        final int returnEvent = deviceContext.readBuffer(toBuffer(), bufferOffset + panamaHeaderSize, numBytes - panamaHeaderSize, segment.address(), hostOffset, (useDeps) ? events : null);
         return useDeps ? returnEvent : -1;
     }
 
@@ -139,7 +143,8 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         } else {
             seg = (MemorySegment) reference;
         }
-        deviceContext.writeBuffer(toBuffer(), bufferOffset, bufferSize, seg.address(), 0, null);
+        // buildArrayHeader(seg.byteSize()).write();
+        deviceContext.writeBuffer(toBuffer(), bufferOffset + panamaHeaderSize, bufferSize - panamaHeaderSize, seg.address(), 0, null);
         onDevice = true;
     }
 
@@ -171,7 +176,7 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
             seg = (MemorySegment) reference;
         }
 
-        final int returnEvent = deviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, bufferSize, seg.address(), hostOffset, (useDeps) ? events : null);
+        final int returnEvent = deviceContext.enqueueReadBuffer(toBuffer(), bufferOffset + panamaHeaderSize, bufferSize - panamaHeaderSize, seg.address(), hostOffset, (useDeps) ? events : null);
         return useDeps ? returnEvent : -1;
     }
 
@@ -198,11 +203,21 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         } else if (reference instanceof VectorFloat3) {
             seg = ((VectorFloat3) reference).getArray().getSegment();
         } else if (reference instanceof VectorFloat4) {
-                seg = ((VectorFloat4) reference).getArray().getSegment();
+            seg = ((VectorFloat4) reference).getArray().getSegment();
         } else {
             seg = (MemorySegment) reference;
         }
-        int internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset, bufferSize, seg.address(), hostOffset, (useDeps) ? events : null);
+
+        // We first write the header for the object, and then we write actual buffer
+        final int headerEvent;
+        if (batchSize <= 0) {
+            headerEvent = buildArrayHeader((int) (bufferSize - panamaHeaderSize)).enqueueWrite((useDeps) ? events : null);
+        } else {
+            headerEvent = buildArrayHeaderBatch((int) batchSize).enqueueWrite((useDeps) ? events : null);
+        }
+
+        int internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset + panamaHeaderSize, bufferSize - panamaHeaderSize, seg.address(), hostOffset, (useDeps) ? events : null);
+        returnEvents.add(headerEvent);
         returnEvents.add(internalEvent);
         onDevice = true;
         return useDeps ? returnEvents : null;
@@ -239,7 +254,6 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
             bufferSize = memref.byteSize();
         } else {
             bufferSize = batchSize;
-
         }
 
         if (bufferSize <= 0) {
@@ -251,6 +265,34 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         if (Tornado.FULL_DEBUG) {
             info("allocated: %s", toString());
         }
+    }
+
+    /*
+     * Retrieves a buffer that will contain the contents of the array header. The
+     * header is also populated using the header from the given array.
+     */
+    private OCLByteBuffer buildArrayHeader(final int arraySize) {
+        final OCLByteBuffer header = getArrayHeader();
+        for (int i = 0; i < (panamaHeaderSize - 4L); i++) {
+            header.buffer.put((byte) 0);
+        }
+        header.buffer.putInt(arraySize);
+        return header;
+    }
+
+    private OCLByteBuffer getArrayHeader() {
+        final OCLByteBuffer header = new OCLByteBuffer(deviceContext, bufferId, bufferOffset, panamaHeaderSize);
+        header.buffer.clear();
+        return header;
+    }
+
+    private OCLByteBuffer buildArrayHeaderBatch(final int arraySize) {
+        final OCLByteBuffer header = getArrayHeader();
+        for (int i = 0; i < (panamaHeaderSize - 4L); i++) {
+            header.buffer.put((byte) 0);
+        }
+        header.buffer.putInt(arraySize);
+        return header;
     }
 
     // TODO: Check if correct

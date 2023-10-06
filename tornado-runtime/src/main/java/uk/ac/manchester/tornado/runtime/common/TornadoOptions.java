@@ -243,6 +243,7 @@ public class TornadoOptions {
      * configuration. False by default.
      */
     public static final boolean CONCURRENT_INTERPRETERS = Boolean.parseBoolean(System.getProperty("tornado.concurrent.devices", "False"));
+    public static final long PANAMA_OBJECT_HEADER_SIZE = Long.parseLong(System.getProperty("tornado.panama.objectHeader", "24"));
 
     public static String PROFILER_LOG = "tornado.log.profiler";
     public static String PROFILER = "tornado.profiler";
