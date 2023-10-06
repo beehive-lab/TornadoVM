@@ -14,6 +14,10 @@ import uk.ac.manchester.tornado.api.collections.types.VectorFloat2;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat8;
+import uk.ac.manchester.tornado.api.collections.types.VectorInt2;
+import uk.ac.manchester.tornado.api.collections.types.VectorInt3;
+import uk.ac.manchester.tornado.api.collections.types.VectorInt4;
+import uk.ac.manchester.tornado.api.collections.types.VectorInt8;
 import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.CharArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
@@ -59,6 +63,15 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
     }
 
     public OCLMemorySegmentWrapper(DoubleArray doubleSegment, OCLDeviceContext deviceContext, long batchSize) {
+        this.deviceContext = deviceContext;
+        this.batchSize = batchSize;
+        this.bufferSize = doubleSegment.getSegment().byteSize(); // this is in bytes, should it be in elements?
+        this.bufferId = INIT_VALUE;
+        this.bufferOffset = 0;
+        onDevice = false;
+    }
+
+    public OCLMemorySegmentWrapper(IntArray doubleSegment, OCLDeviceContext deviceContext, long batchSize) {
         this.deviceContext = deviceContext;
         this.batchSize = batchSize;
         this.bufferSize = doubleSegment.getSegment().byteSize(); // this is in bytes, should it be in elements?
@@ -125,6 +138,14 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
             segment = ((VectorDouble4) reference).getArray().getSegment();
         } else if (reference instanceof VectorDouble8) {
             segment = ((VectorDouble8) reference).getArray().getSegment();
+        } else if (reference instanceof VectorInt2) {
+            segment = ((VectorInt2) reference).getArray().getSegment();
+        } else if (reference instanceof VectorInt3) {
+            segment = ((VectorInt3) reference).getArray().getSegment();
+        } else if (reference instanceof VectorInt4) {
+            segment = ((VectorInt4) reference).getArray().getSegment();
+        } else if (reference instanceof VectorInt8) {
+            segment = ((VectorInt8) reference).getArray().getSegment();
         } else {
             segment = (MemorySegment) reference;
         }

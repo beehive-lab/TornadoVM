@@ -43,6 +43,7 @@ package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.DoubleBuffer;
 
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 
 public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
@@ -208,10 +209,9 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
      *
      * @return true if vectors match
      */
-    // public boolean isEqual(VectorDouble vector) {
-    // return TornadoMath.isEqual(storage.getSegment(),
-    // vector.storage.getSegment());
-    // }
+    public boolean isEqual(VectorDouble vector) {
+        return TornadoMath.isEqual(storage, vector.storage);
+    }
 
     /**
      * Prints the vector using the specified format string.

@@ -51,6 +51,7 @@ import uk.ac.manchester.tornado.api.collections.types.DoubleOps;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 
 public class TornadoMath {
 
@@ -191,6 +192,22 @@ public class TornadoMath {
     }
 
     public static boolean isEqual(FloatArray a, FloatArray b) {
+        boolean result = true;
+        for (int i = 0; i < a.getSize() && result; i++) {
+            result = compareBits(a.get(i), b.get(i));
+        }
+        return result;
+    }
+
+    public static boolean isEqual(IntArray a, IntArray b) {
+        boolean result = true;
+        for (int i = 0; i < a.getSize() && result; i++) {
+            result = compareBits(a.get(i), b.get(i));
+        }
+        return result;
+    }
+
+    public static boolean isEqual(DoubleArray a, DoubleArray b) {
         boolean result = true;
         for (int i = 0; i < a.getSize() && result; i++) {
             result = compareBits(a.get(i), b.get(i));

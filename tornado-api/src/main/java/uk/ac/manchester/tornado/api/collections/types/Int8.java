@@ -44,6 +44,7 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.IntBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
@@ -59,14 +60,15 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
      * backing array.
      */
     @Payload
-    private final int[] storage;
+    private final IntArray storage;
 
-    public Int8(int[] storage) {
+    public Int8(IntArray storage) {
         this.storage = storage;
     }
 
     public Int8() {
-        this(new int[NUM_ELEMENTS]);
+        this(new IntArray(NUM_ELEMENTS));
+
     }
 
     public Int8(int s0, int s1, int s2, int s3, int s4, int s5, int s6, int s7) {
@@ -81,10 +83,10 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
         setS7(s7);
     }
 
-    static Int8 loadFromArray(final int[] array, int index) {
+    static Int8 loadFromArray(final IntArray array, int index) {
         final Int8 result = new Int8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
-            result.set(i, array[index + i]);
+            result.set(i, array.get(index + i));
         }
         return result;
     }
@@ -205,16 +207,16 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
-    public int[] getArray() {
+    public IntArray getArray() {
         return storage;
     }
 
     public int get(int index) {
-        return storage[index];
+        return storage.get(index);
     }
 
     public void set(int index, int value) {
-        storage[index] = value;
+        storage.set(index, value);
     }
 
     public void set(Int8 value) {
@@ -315,9 +317,9 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
         return toString(IntOps.FMT_8);
     }
 
-    void storeToArray(final int[] array, int index) {
+    void storeToArray(final IntArray array, int index) {
         for (int i = 0; i < NUM_ELEMENTS; i++) {
-            array[index + i] = get(i);
+            array.set(index + i, get(i));
         }
     }
 
@@ -328,7 +330,7 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public IntBuffer asBuffer() {
-        return null;
+        return storage.getSegment().asByteBuffer().asIntBuffer();
     }
 
     @Override
