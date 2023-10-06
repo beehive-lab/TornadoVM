@@ -2,14 +2,6 @@ Configuration for Code Formatting and Checkstyle
 ================================================
 This guide will walk you through the configuration of both code formatters and Checkstyle within IntelliJ IDEA.
 
-Multi-Language Global Settings
-------------------------------
-
-   To maintain consistent code style standards across multiple programming languages, we recommend using JetBrains' EditorConfig support. This allows you to import and export code style settings easily.
-
-   - For detailed instructions, refer to the JetBrains IntelliJ IDEA documentation:
-
-     `JetBrains IntelliJ IDEA EditorConfig Support Documentation <https://www.jetbrains.com/help/idea/editorconfig.html>`_
 
 Intellij Configurations
 -----------------------
@@ -24,7 +16,7 @@ Enable Eclipse Code Formatter for IntelliJ
 
    - After installation, navigate to **File > Settings > Other Settings > Eclipse Code Formatter**.
    - Select the option **“Use the Eclipse code formatter”**.
-   - Load the TornadoVM code formatter configuration file by specifying its location: ``./scripts/templates/eclipse-settings/Tornado.xml``.
+   - Load the TornadoVM code formatter configuration file by specifying its location: ``scripts/templates/eclipse-settings/Tornadovm_eclipse_formatter.xml``.
    - Click **Apply** to save the settings.
 
 Enable IntelliJ Formatter
@@ -39,6 +31,7 @@ Enable IntelliJ Formatter
 
 Checkstyle-IDEA Plugin
 ~~~~~~~~~~~~~~~~~~~~~~~~~
+This plugin provides both real-time and on-demand scanning of Java files with Checkstyle from within IDEA.
 
    - Install the Checkstyle-IDEA plugin by going to **File > Settings** (Windows/Linux) or **IntelliJ IDEA > Preferences…** (macOS).
    - Select **Plugins**, press **Browse Repository**, and find the plugin.
@@ -55,12 +48,13 @@ Checkstyle-IDEA Plugin
 
 EditorConfig
 ~~~~~~~~~~~~~~~
+   To maintain consistent code style standards across multiple programming languages, we recommend using JetBrains' EditorConfig support. This allows you to import and export code style settings easily.
 
    - Copy the EditorConfig file to the root of your project:
 
      .. code-block:: bash
 
-        cp scripts/templates/intellij-settings/.editorconfig $TORNADO_ROOT
+        cp scripts/templates/intellij-settings/.editorconfig PROJECT_ROOT_DIRECTORY
 
    - In IntelliJ IDEA, navigate to Menu Settings → Editor → Code Style.
    - At the bottom of the settings window, check the box that says "Use EditorConfig."
