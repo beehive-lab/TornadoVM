@@ -29,7 +29,7 @@ Eclipse Code Formatter
    - Load the TornadoVM code formatter configuration file by specifying its location: ``./scripts/templates/eclipse-settings/Tornado.xml``.
    - Click **Apply** to save the settings.
 
-IntelliJ Formatter
+Enable IntelliJ Formatter
 ~~~~~~~~~~~~~~~~~~~~~
 
    - Go to Menu Settings → Editor → Code Style.
