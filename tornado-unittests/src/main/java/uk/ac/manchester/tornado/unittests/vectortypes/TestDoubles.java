@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.api.collections.types.VectorDouble2;
 import uk.ac.manchester.tornado.api.collections.types.VectorDouble3;
 import uk.ac.manchester.tornado.api.collections.types.VectorDouble4;
 import uk.ac.manchester.tornado.api.collections.types.VectorDouble8;
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -76,9 +77,9 @@ public class TestDoubles extends TornadoTestBase {
         results.set(0, r);
     }
 
-    private static void addDouble(double[] a, double[] b, double[] result) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            result[i] = a[i] + b[i];
+    private static void addDouble(DoubleArray a, DoubleArray b, DoubleArray result) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            result.set(i, a.get(i) + b.get(i));
         }
     }
 
@@ -294,13 +295,13 @@ public class TestDoubles extends TornadoTestBase {
     public void testDoubleAdd() {
         int size = 8;
 
-        double[] a = new double[size];
-        double[] b = new double[size];
-        double[] output = new double[size];
+        DoubleArray a = new DoubleArray(size);
+        DoubleArray b = new DoubleArray(size);
+        DoubleArray output = new DoubleArray(size);
 
         for (int i = 0; i < size; i++) {
-            a[i] = i;
-            b[i] = i;
+            a.set(i, i);
+            b.set(i, i);
         }
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -313,7 +314,7 @@ public class TestDoubles extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
-            assertEquals(i + i, output[i], DELTA);
+            assertEquals(i + i, output.get(i), DELTA);
         }
     }
 
