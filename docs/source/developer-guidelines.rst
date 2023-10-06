@@ -17,7 +17,7 @@ Intellij Configurations
 When working with Java code, follow these guidelines for code formatting and style.
 IntelliJ Formatter offers deep customization and integration within IntelliJ IDEA, while EditorConfig provides a standardized, cross-platform solution for code style settings
 
-Eclipse Code Formatter
+Enable Eclipse Code Formatter for IntelliJ
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
    - Install the Eclipse Code Formatter plugin from the JetBrains plugin repository:
