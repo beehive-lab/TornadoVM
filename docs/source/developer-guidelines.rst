@@ -38,7 +38,6 @@ This plugin provides both real-time and on-demand scanning of Java files with Ch
    - Restart the IDE to complete the installation.
    - Click **File > Settings… > Other Settings > Checkstyle**.
    - Set the **Scan Scope** to "Only Java sources (including tests)" to run Checkstyle for test source codes as well.
-   - Ensure that the Checkstyle version is set to **8.1**, the same version used inside Gradle to avoid version incompatibility issues.
    - Click the plus sign under **Configuration File**.
    - Enter a description (e.g., "addressbook").
    - Select **Use a local Checkstyle file**.
