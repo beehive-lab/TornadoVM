@@ -1,6 +1,6 @@
 Configuration for Code Formatting and Checkstyle
 ================================================
-In software development, maintaining code quality and adhering to coding standards are paramount. Two essential tools help achieve this: code formatters, like Eclipse Code Formatter and IntelliJ Formatter, focus on consistent code formatting for style and readability. Meanwhile, Checkstyle enforces coding conventions and best practices to ensure code quality. This guide will walk you through the configuration of both code formatters and Checkstyle within IntelliJ IDEA, enabling you to strike a balance between code formatting consistency and code quality assurance.
+This guide will walk you through the configuration of both code formatters and Checkstyle within IntelliJ IDEA.
 
 Multi-Language Global Settings
 ------------------------------
