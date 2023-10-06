@@ -42,7 +42,8 @@ import static uk.ac.manchester.tornado.api.collections.types.Double3.add;
 import static uk.ac.manchester.tornado.api.collections.types.Double3.loadFromArray;
 
 import java.nio.DoubleBuffer;
-import java.util.Arrays;
+
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 
 public class VectorDouble3 implements PrimitiveStorage<DoubleBuffer> {
 
@@ -50,7 +51,7 @@ public class VectorDouble3 implements PrimitiveStorage<DoubleBuffer> {
     /**
      * backing array.
      */
-    protected final double[] storage;
+    protected final DoubleArray storage;
     /**
      * number of elements in the storage.
      */
@@ -62,7 +63,7 @@ public class VectorDouble3 implements PrimitiveStorage<DoubleBuffer> {
      * @param numElements
      * @param array
      */
-    protected VectorDouble3(int numElements, double[] array) {
+    protected VectorDouble3(int numElements, DoubleArray array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -70,8 +71,8 @@ public class VectorDouble3 implements PrimitiveStorage<DoubleBuffer> {
     /**
      * Creates a vector using the provided backing array.
      */
-    public VectorDouble3(double[] array) {
-        this(array.length / ELEMENT_SIZE, array);
+    public VectorDouble3(DoubleArray array) {
+        this(array.getSize() / ELEMENT_SIZE, array);
     }
 
     /**
@@ -80,7 +81,7 @@ public class VectorDouble3 implements PrimitiveStorage<DoubleBuffer> {
      * @param numElements
      */
     public VectorDouble3(int numElements) {
-        this(numElements, new double[numElements * ELEMENT_SIZE]);
+        this(numElements, new DoubleArray(numElements * ELEMENT_SIZE));
     }
 
     private int toIndex(int index) {
@@ -123,15 +124,17 @@ public class VectorDouble3 implements PrimitiveStorage<DoubleBuffer> {
      *
      * @param values
      */
-    public void set(double[] values) {
+    public void set(DoubleArray values) {
         VectorDouble3 vector = new VectorDouble3(values);
         for (int i = 0; i < numElements; i++) {
             set(i, vector.get(i));
         }
     }
 
-    public void fill(float value) {
-        Arrays.fill(storage, value);
+    public void fill(double value) {
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, value);
+        }
     }
 
     /**
@@ -196,14 +199,14 @@ public class VectorDouble3 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public int size() {
-        return storage.length;
+        return storage.getSize();
     }
 
     public int getLength() {
         return numElements;
     }
 
-    public double[] getArray() {
+    public DoubleArray getArray() {
         return storage;
     }
 

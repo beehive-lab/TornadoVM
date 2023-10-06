@@ -426,12 +426,12 @@ public class TestMatrixTypes extends TornadoTestBase {
         VectorDouble row1 = matrix.row(1);
         VectorDouble row2 = matrix.row(2);
 
-        assertEquals(1.0f, row0.getArray()[0], 0.01f);
-        assertEquals(2.0f, row0.getArray()[1], 0.01f);
-        assertEquals(3.0f, row1.getArray()[0], 0.01f);
-        assertEquals(4.0f, row1.getArray()[1], 0.01f);
-        assertEquals(5.0f, row2.getArray()[0], 0.01f);
-        assertEquals(6.0f, row2.getArray()[1], 0.01f);
+        assertEquals(1, row0.getArray().get(0), 0.01f);
+        assertEquals(2, row0.getArray().get(1), 0.01f);
+        assertEquals(3, row1.getArray().get(0), 0.01f);
+        assertEquals(4, row1.getArray().get(1), 0.01f);
+        assertEquals(5, row2.getArray().get(0), 0.01f);
+        assertEquals(6, row2.getArray().get(1), 0.01f);
     }
 
     @Test
@@ -449,12 +449,12 @@ public class TestMatrixTypes extends TornadoTestBase {
         VectorDouble row0 = matrix.row(0);
         VectorDouble row1 = matrix.row(1);
 
-        assertEquals(1.0f, row0.getArray()[0], 0.01f);
-        assertEquals(2.0f, row0.getArray()[1], 0.01f);
-        assertEquals(3.0f, row0.getArray()[2], 0.01f);
-        assertEquals(4.0f, row1.getArray()[0], 0.01f);
-        assertEquals(5.0f, row1.getArray()[1], 0.01f);
-        assertEquals(6.0f, row1.getArray()[2], 0.01f);
+        assertEquals(1, row0.getArray().get(0), 0.01f);
+        assertEquals(2, row0.getArray().get(1), 0.01f);
+        assertEquals(3, row0.getArray().get(2), 0.01f);
+        assertEquals(4, row1.getArray().get(0), 0.01f);
+        assertEquals(5, row1.getArray().get(1), 0.01f);
+        assertEquals(6, row1.getArray().get(2), 0.01f);
     }
 
     @Test

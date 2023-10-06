@@ -86,10 +86,6 @@ public class DoubleOps {
         return TornadoMath.findULPDistance(value.storage, expected.storage);
     }
 
-    public static double findMaxULP(Double6 value, Double6 expected) {
-        return TornadoMath.findULPDistance(value.storage, expected.storage);
-    }
-
     public static double findMaxULP(Double8 value, Double8 expected) {
         return TornadoMath.findULPDistance(value.storage, expected.storage);
     }

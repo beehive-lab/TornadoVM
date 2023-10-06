@@ -44,6 +44,7 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.DoubleBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
@@ -59,14 +60,14 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
      * backing array.
      */
     @Payload
-    final double[] storage;
+    final DoubleArray storage;
 
-    public Double3(double[] storage) {
+    public Double3(DoubleArray storage) {
         this.storage = storage;
     }
 
     public Double3() {
-        this(new double[NUM_ELEMENTS]);
+        this(new DoubleArray(NUM_ELEMENTS));
     }
 
     public Double3(double x, double y, double z) {
@@ -76,11 +77,11 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
         setZ(z);
     }
 
-    static Double3 loadFromArray(final double[] array, int index) {
+    static Double3 loadFromArray(final DoubleArray array, int index) {
         final Double3 result = new Double3();
-        result.setX(array[index]);
-        result.setY(array[index + 1]);
-        result.setZ(array[index + 2]);
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        result.setZ(array.get(index + 2));
         return result;
     }
 
@@ -211,19 +212,19 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public static double findULPDistance(Double3 a, Double3 b) {
-        return TornadoMath.findULPDistance(a.asBuffer().array(), b.asBuffer().array());
+        return TornadoMath.findULPDistance(a.getArray(), b.getArray());
     }
 
-    public double[] getArray() {
+    public DoubleArray getArray() {
         return storage;
     }
 
     public double get(int index) {
-        return storage[index];
+        return storage.get(index);
     }
 
     public void set(int index, double value) {
-        storage[index] = value;
+        storage.set(index, value);
     }
 
     public void set(Double3 value) {
@@ -297,10 +298,10 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
         return new Double2(getX(), getY());
     }
 
-    void storeToArray(final double[] array, int index) {
-        array[index] = getX();
-        array[index + 1] = getY();
-        array[index + 2] = getZ();
+    void storeToArray(final DoubleArray array, int index) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            array.set(index + i, get(i));
+        }
     }
 
     @Override
@@ -310,11 +311,17 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public DoubleBuffer asBuffer() {
-        return DoubleBuffer.wrap(storage);
+        return storage.getSegment().asByteBuffer().asDoubleBuffer();
     }
 
     @Override
     public int size() {
         return NUM_ELEMENTS;
+    }
+
+    public void fill(double value) {
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, value);
+        }
     }
 }

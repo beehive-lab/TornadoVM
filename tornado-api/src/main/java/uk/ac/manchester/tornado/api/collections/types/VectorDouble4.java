@@ -43,13 +43,15 @@ import static uk.ac.manchester.tornado.api.collections.types.Double4.loadFromArr
 
 import java.nio.DoubleBuffer;
 
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
+
 public class VectorDouble4 implements PrimitiveStorage<DoubleBuffer> {
 
     private static final int ELEMENT_SIZE = 4;
     /**
      * backing array.
      */
-    protected final double[] storage;
+    protected final DoubleArray storage;
     /**
      * number of elements in the storage.
      */
@@ -61,7 +63,7 @@ public class VectorDouble4 implements PrimitiveStorage<DoubleBuffer> {
      * @param numElements
      * @param array
      */
-    protected VectorDouble4(int numElements, double[] array) {
+    protected VectorDouble4(int numElements, DoubleArray array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -69,8 +71,8 @@ public class VectorDouble4 implements PrimitiveStorage<DoubleBuffer> {
     /**
      * Creates a vector using the provided backing array.
      */
-    public VectorDouble4(double[] array) {
-        this(array.length / ELEMENT_SIZE, array);
+    public VectorDouble4(DoubleArray array) {
+        this(array.getSize() / ELEMENT_SIZE, array);
     }
 
     /**
@@ -79,7 +81,7 @@ public class VectorDouble4 implements PrimitiveStorage<DoubleBuffer> {
      * @param numElements
      */
     public VectorDouble4(int numElements) {
-        this(numElements, new double[numElements * ELEMENT_SIZE]);
+        this(numElements, new DoubleArray(numElements * ELEMENT_SIZE));
     }
 
     private int toIndex(int index) {
@@ -122,7 +124,7 @@ public class VectorDouble4 implements PrimitiveStorage<DoubleBuffer> {
      *
      * @param values
      */
-    public void set(double[] values) {
+    public void set(DoubleArray values) {
         VectorDouble4 vector = new VectorDouble4(values);
         for (int i = 0; i < numElements; i++) {
             set(i, vector.get(i));
@@ -130,8 +132,8 @@ public class VectorDouble4 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public void fill(float value) {
-        for (int i = 0; i < storage.length; i++) {
-            storage[i] = value;
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, value);
         }
     }
 
@@ -197,14 +199,14 @@ public class VectorDouble4 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public int size() {
-        return storage.length;
+        return storage.getSize();
     }
 
     public int getLength() {
         return numElements;
     }
 
-    public double[] getArray() {
+    public DoubleArray getArray() {
         return storage;
     }
 
