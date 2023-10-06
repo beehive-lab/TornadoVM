@@ -44,6 +44,7 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.DoubleBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
@@ -59,14 +60,14 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
      * backing array.
      */
     @Payload
-    final double[] storage;
+    final DoubleArray storage;
 
-    public Double2(double[] storage) {
+    public Double2(DoubleArray storage) {
         this.storage = storage;
     }
 
     public Double2() {
-        this(new double[NUM_ELEMENTS]);
+        this(new DoubleArray(NUM_ELEMENTS));
     }
 
     public Double2(double x, double y) {
@@ -75,10 +76,10 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
         setY(y);
     }
 
-    static Double2 loadFromArray(final double[] array, int index) {
+    static Double2 loadFromArray(final DoubleArray array, int index) {
         final Double2 result = new Double2();
-        result.setX(array[index]);
-        result.setY(array[index + 1]);
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
         return result;
     }
 
@@ -203,11 +204,6 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
         x.setY(TornadoMath.clamp(x.getY(), min, max));
     }
 
-    public static void normalise(Double2 value) {
-        final double len = length(value);
-        scaleByInverse(value, len);
-    }
-
     /*
      * vector wide operations
      */
@@ -237,16 +233,16 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
-    public double[] getArray() {
+    public DoubleArray getArray() {
         return storage;
     }
 
     public double get(int index) {
-        return storage[index];
+        return storage.get(index);
     }
 
     public void set(int index, double value) {
-        storage[index] = value;
+        storage.set(index, value);
     }
 
     public void set(Double2 value) {
@@ -290,9 +286,10 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
         return toString(DoubleOps.FMT_2);
     }
 
-    void storeToArray(final double[] array, int index) {
-        array[index] = getX();
-        array[index + 1] = getY();
+    void storeToArray(final DoubleArray array, int index) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            array.set(index + i, get(i));
+        }
     }
 
     @Override
@@ -302,12 +299,18 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public DoubleBuffer asBuffer() {
-        return DoubleBuffer.wrap(storage);
+        return storage.getSegment().asByteBuffer().asDoubleBuffer();
     }
 
     @Override
     public int size() {
         return NUM_ELEMENTS;
+    }
+
+    public void fill(double value) {
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, value);
+        }
     }
 
 }

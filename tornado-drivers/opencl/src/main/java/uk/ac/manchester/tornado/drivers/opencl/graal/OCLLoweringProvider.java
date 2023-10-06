@@ -666,7 +666,23 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         if (!(valueStamp instanceof OCLStamp) || !((OCLStamp) valueStamp).getOCLKind().isVector()) {
             storeConvertValue = implicitStoreConvert(graph, elementKind, value);
         }
-        memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), storeConvertValue, BarrierType.NONE, GPU_MEMORY_MODE));
+        if (storeIndexed.predecessor() instanceof LoadFieldNode) {
+            LoadFieldNode lf = (LoadFieldNode) storeIndexed.predecessor();
+            if (lf.getLocationIdentity().toString().contains("Vector")) {
+                memoryWrite = graph.add(new WriteNode(address, LocationIdentity.any(), storeConvertValue, BarrierType.NONE, GPU_MEMORY_MODE));
+            } else {
+                memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), storeConvertValue, BarrierType.NONE, GPU_MEMORY_MODE));
+            }
+        } else if (storeIndexed.predecessor() instanceof ReadNode) {
+            ReadNode r = (ReadNode) storeIndexed.predecessor();
+            if (r.getLocationIdentity().toString().contains("Vector")) {
+                memoryWrite = graph.add(new WriteNode(address, LocationIdentity.any(), storeConvertValue, BarrierType.NONE, GPU_MEMORY_MODE));
+            } else {
+                memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), storeConvertValue, BarrierType.NONE, GPU_MEMORY_MODE));
+            }
+        } else {
+            memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), storeConvertValue, BarrierType.NONE, GPU_MEMORY_MODE));
+        }
         return memoryWrite;
     }
 }

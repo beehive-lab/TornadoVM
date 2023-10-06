@@ -44,6 +44,7 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.IntBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
@@ -61,14 +62,14 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
      * backing array.
      */
     @Payload
-    private final int[] storage;
+    private final IntArray storage;
 
-    public Int3(int[] storage) {
+    public Int3(IntArray storage) {
         this.storage = storage;
     }
 
     public Int3() {
-        this(new int[NUM_ELEMENTS]);
+        this(new IntArray(NUM_ELEMENTS));
     }
 
     public Int3(int x, int y, int z) {
@@ -78,11 +79,11 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
         setZ(z);
     }
 
-    static Int3 loadFromArray(final int[] array, int index) {
+    static Int3 loadFromArray(final IntArray array, int index) {
         final Int3 result = new Int3();
-        result.setX(array[index]);
-        result.setY(array[index + 1]);
-        result.setZ(array[index + 2]);
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        result.setZ(array.get(index + 2));
         return result;
     }
 
@@ -163,16 +164,16 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
-    public int[] getArray() {
+    public IntArray getArray() {
         return storage;
     }
 
     public int get(int index) {
-        return storage[index];
+        return storage.get(index);
     }
 
     public void set(int index, int value) {
-        storage[index] = value;
+        storage.set(index, value);
     }
 
     public void set(Int3 value) {
@@ -229,10 +230,10 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
         return toString(NUMBER_FORMAT);
     }
 
-    void storeToArray(final int[] array, int index) {
-        array[index] = getX();
-        array[index + 1] = getY();
-        array[index + 2] = getZ();
+    void storeToArray(final IntArray array, int index) {
+        array.set(index, getX());
+        array.set(index + 1, getY());
+        array.set(index + 2, getZ());
     }
 
     @Override
@@ -242,7 +243,7 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public IntBuffer asBuffer() {
-        return IntBuffer.wrap(storage);
+        return storage.getSegment().asByteBuffer().asIntBuffer();
     }
 
     @Override

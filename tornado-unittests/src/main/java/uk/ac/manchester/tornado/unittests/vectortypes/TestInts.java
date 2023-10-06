@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.api.collections.types.VectorInt2;
 import uk.ac.manchester.tornado.api.collections.types.VectorInt3;
 import uk.ac.manchester.tornado.api.collections.types.VectorInt4;
 import uk.ac.manchester.tornado.api.collections.types.VectorInt8;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -74,24 +75,25 @@ public class TestInts extends TornadoTestBase {
         results.set(0, r);
     }
 
-    private static void addIntVectors(int[] a, int[] b, int[] result) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            result[i] = a[i] + b[i];
+    private static void addIntVectors(IntArray a, IntArray b, IntArray result) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            result.set(i, a.get(i) + b.get(i));
         }
     }
 
-    public static void dotProductFunctionMap(int[] a, int[] b, int[] results) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            results[i] = a[i] * b[i];
+    public static void dotProductFunctionMap(IntArray a, IntArray b, IntArray results) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            results.set(i, a.get(i) + b.get(i));
+
         }
     }
 
-    public static void dotProductFunctionReduce(int[] input, int[] results) {
+    public static void dotProductFunctionReduce(IntArray input, IntArray results) {
         int sum = 0;
-        for (int i = 0; i < input.length; i++) {
-            sum += input[i];
+        for (int i = 0; i < input.getSize(); i++) {
+            sum += input.get(i);
         }
-        results[0] = sum;
+        results.set(0, sum);
     }
 
     public static void addVectorInt2(VectorInt2 a, VectorInt2 b, VectorInt2 results) {
@@ -347,13 +349,13 @@ public class TestInts extends TornadoTestBase {
 
         int size = 8;
 
-        int[] a = new int[size];
-        int[] b = new int[size];
-        int[] output = new int[size];
+        IntArray a = new IntArray(size);
+        IntArray b = new IntArray(size);
+        IntArray output = new IntArray(size);
 
         for (int i = 0; i < size; i++) {
-            a[i] = i;
-            b[i] = i;
+            a.set(i, i);
+            b.set(i, i);
         }
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -366,7 +368,7 @@ public class TestInts extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
-            assertEquals(i + i, output[i]);
+            assertEquals(i + i, output.get(i));
         }
     }
 
@@ -375,18 +377,18 @@ public class TestInts extends TornadoTestBase {
 
         int size = 8;
 
-        int[] a = new int[size];
-        int[] b = new int[size];
-        int[] outputMap = new int[size];
-        int[] outputReduce = new int[1];
+        IntArray a = new IntArray(size);
+        IntArray b = new IntArray(size);
+        IntArray outputMap = new IntArray(size);
+        IntArray outputReduce = new IntArray(1);
 
-        int[] seqMap = new int[size];
-        int[] seqReduce = new int[1];
+        IntArray seqMap = new IntArray(size);
+        IntArray seqReduce = new IntArray(1);
 
         Random r = new Random();
         for (int i = 0; i < size; i++) {
-            a[i] = r.nextInt(1000);
-            b[i] = r.nextInt(1000);
+            a.set(i, r.nextInt(1000));
+            b.set(i, r.nextInt(1000));
         }
 
         // Sequential computation
@@ -403,7 +405,7 @@ public class TestInts extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        assertEquals(seqReduce[0], outputReduce[0]);
+        assertEquals(seqReduce.get(0), outputReduce.get(0));
     }
 
     @Test

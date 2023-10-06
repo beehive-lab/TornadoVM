@@ -42,15 +42,15 @@
 package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.IntBuffer;
-import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 
 public class VectorInt implements PrimitiveStorage<IntBuffer> {
 
     private static final int ELEMENT_SIZE = 1;
     private final int numElements;
-    private final int[] storage;
+    private final IntArray storage;
 
     /**
      * Creates a vector using the provided backing array.
@@ -60,7 +60,7 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
      * @param array
      *            reference to the input array
      */
-    protected VectorInt(int numElements, int[] array) {
+    protected VectorInt(int numElements, IntArray array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -72,7 +72,7 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
      *            number of elements
      */
     public VectorInt(int numElements) {
-        this(numElements, new int[numElements]);
+        this(numElements, new IntArray(numElements));
     }
 
     /**
@@ -81,22 +81,22 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
      * @param storage
      *            vector int array
      */
-    public VectorInt(int[] storage) {
-        this(storage.length / ELEMENT_SIZE, storage);
+    public VectorInt(IntArray storage) {
+        this(storage.getSize() / ELEMENT_SIZE, storage);
     }
 
     public static int min(VectorInt v) {
         int result = Integer.MAX_VALUE;
-        for (int i = 0; i < v.storage.length; i++) {
-            result = Math.min(v.storage[i], result);
+        for (int i = 0; i < v.storage.getSize(); i++) {
+            result = Math.min(v.storage.get(i), result);
         }
         return result;
     }
 
     public static int max(VectorInt v) {
         int result = Integer.MIN_VALUE;
-        for (int i = 0; i < v.storage.length; i++) {
-            result = Math.max(v.storage[i], result);
+        for (int i = 0; i < v.storage.getSize(); i++) {
+            result = Math.max(v.storage.get(i), result);
         }
         return result;
     }
@@ -114,7 +114,7 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
         return sum;
     }
 
-    public int[] getArray() {
+    public IntArray getArray() {
         return storage;
     }
 
@@ -126,7 +126,7 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
      * @return int
      */
     public int get(int index) {
-        return storage[index];
+        return storage.get(index);
     }
 
     /**
@@ -138,7 +138,7 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
      *            value to be set in position index
      */
     public void set(int index, int value) {
-        storage[index] = value;
+        storage.set(index, value);
     }
 
     /**
@@ -148,8 +148,8 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
      *            assign an input vector int to the internal array
      */
     public void set(VectorInt values) {
-        for (int i = 0; i < values.storage.length; i++) {
-            storage[i] = values.storage[i];
+        for (int i = 0; i < values.storage.getSize(); i++) {
+            storage.set(i, values.storage.get(i));
         }
     }
 
@@ -161,7 +161,7 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
      */
     public void set(int[] values) {
         for (int i = 0; i < values.length; i++) {
-            storage[i] = values[i];
+            storage.set(i, values[i]);
         }
     }
 
@@ -172,7 +172,9 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
      *            Fill input vector with value
      */
     public void fill(int value) {
-        Arrays.fill(storage, value);
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, value);
+        }
     }
 
     /**
@@ -187,7 +189,7 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
     public VectorInt subVector(int start, int length) {
         final VectorInt v = new VectorInt(length);
         for (int i = 0; i < length; i++) {
-            v.storage[i] = storage[i + start];
+            v.storage.set(i, storage.get(i + start));
         }
 
         return v;
@@ -199,7 +201,11 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
      * @return {@link VectorInt}
      */
     public VectorInt duplicate() {
-        return new VectorInt(Arrays.copyOf(storage, storage.length));
+        IntArray cp = new IntArray(storage.getSize());
+        for (int i = 0; i < cp.getSize(); i++) {
+            cp.set(i, storage.get(i));
+        }
+        return new VectorInt(cp);
     }
 
     /**
@@ -245,7 +251,7 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public IntBuffer asBuffer() {
-        return IntBuffer.wrap(storage);
+        return storage.getSegment().asByteBuffer().asIntBuffer();
     }
 
     @Override

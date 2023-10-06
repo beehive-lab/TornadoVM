@@ -44,6 +44,7 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.DoubleBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
@@ -59,14 +60,14 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
      * backing array.
      */
     @Payload
-    final double[] storage;
+    final DoubleArray storage;
 
-    private Double8(double[] storage) {
+    private Double8(DoubleArray storage) {
         this.storage = storage;
     }
 
     public Double8() {
-        this(new double[NUM_ELEMENTS]);
+        this(new DoubleArray(NUM_ELEMENTS));
     }
 
     public Double8(double s0, double s1, double s2, double s3, double s4, double s5, double s6, double s7) {
@@ -81,10 +82,10 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
         setS7(s7);
     }
 
-    static Double8 loadFromArray(final double[] array, int index) {
+    static Double8 loadFromArray(final DoubleArray array, int index) {
         final Double8 result = new Double8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
-            result.set(i, array[index + i]);
+            result.set(i, array.get(index + i));
         }
         return result;
     }
@@ -201,19 +202,19 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public static double findULPDistance(Double8 value, Double8 expected) {
-        return TornadoMath.findULPDistance(value.asBuffer().array(), expected.asBuffer().array());
+        return TornadoMath.findULPDistance(value.getArray(), expected.getArray());
     }
 
-    public double[] getArray() {
+    public DoubleArray getArray() {
         return storage;
     }
 
     public double get(int index) {
-        return storage[index];
+        return storage.get(index);
     }
 
     public void set(int index, double value) {
-        storage[index] = value;
+        storage.set(index, value);
     }
 
     public void set(Double8 value) {
@@ -314,9 +315,9 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
         return toString(DoubleOps.FMT_8);
     }
 
-    void storeToArray(final double[] array, int index) {
+    void storeToArray(final DoubleArray array, int index) {
         for (int i = 0; i < NUM_ELEMENTS; i++) {
-            array[index + i] = get(i);
+            array.set(index + i, get(i));
         }
     }
 
@@ -327,7 +328,13 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public DoubleBuffer asBuffer() {
-        return DoubleBuffer.wrap(storage);
+        return storage.getSegment().asByteBuffer().asDoubleBuffer();
+    }
+
+    public void fill(double value) {
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, value);
+        }
     }
 
     @Override
