@@ -14,8 +14,6 @@ Multi-Language Global Settings
 Intellij Configurations
 -----------------------
 
-When working with Java code, follow these guidelines for code formatting and style.
-IntelliJ Formatter offers deep customization and integration within IntelliJ IDEA, while EditorConfig provides a standardized, cross-platform solution for code style settings
 
 Enable Eclipse Code Formatter for IntelliJ
 ~~~~~~~~~~~~~~~~~~~~~~~~~
