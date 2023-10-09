@@ -120,8 +120,6 @@ public class OCLGraphBuilderPlugins {
 
         registerMemoryAccessPlugins(plugins);
 
-        //        registerWrapperMemoryAccessPlugins(plugins);
-
     }
 
     private static void registerTornadoVMAtomicsPlugins(Registration r) {
@@ -401,18 +399,6 @@ public class OCLGraphBuilderPlugins {
             throw new TornadoRuntimeException("Class type " + k + " not supported.");
         }
     }
-
-    //    private static void registerWrapperMemoryAccessPlugins(InvocationPlugins plugins) {
-    //        Registration r = new Registration(plugins, IntArray.class);
-    //
-    //        r.register(new InvocationPlugin("getSize", Receiver.class) {
-    //            @Override
-    //            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
-    //                b.push(JavaKind.Int, b.append(ConstantNode.forInt(20)));
-    //                return true;
-    //            }
-    //        });
-    //    }
 
     private static void registerMemoryAccessPlugins(InvocationPlugins plugins) {
         Registration r = new Registration(plugins, MemorySegment.class);

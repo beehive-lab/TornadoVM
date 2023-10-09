@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -51,8 +51,8 @@ public class TornadoFieldAccessFixup extends BasePhase<TornadoHighTierContext> {
         ArrayDeque<LoadFieldNode> worklist = new ArrayDeque<>();
         graph.getNodes().filter(ParameterNode.class).forEach(parameterNode -> {
             worklist.addAll(parameterNode.usages().filter(LoadFieldNode.class).snapshot());
-            parameterNode.usages().filter(usage -> usage instanceof PiNode && ((PiNode) usage).object() instanceof ParameterNode)
-                    .forEach(usage -> worklist.addAll(usage.usages().filter(LoadFieldNode.class).snapshot()));
+            parameterNode.usages().filter(usage -> usage instanceof PiNode && ((PiNode) usage).object() instanceof ParameterNode).forEach(usage -> worklist.addAll(usage.usages().filter(
+                    LoadFieldNode.class).snapshot()));
         });
 
         while (!worklist.isEmpty()) {
@@ -92,6 +92,7 @@ public class TornadoFieldAccessFixup extends BasePhase<TornadoHighTierContext> {
                         TornadoInternalError.shouldNotReachHere("Unexpected node type = %s", accessFieldNode.getClass().getName());
                     }
                 } else if (usage instanceof OffsetAddressNode) {
+                    // TODO: FIX this phase
                     if (usage.usages().filter(JavaWriteNode.class).isNotEmpty()) {
                         ValueNode base = loadField.object();
                         if (base instanceof PiNode) {

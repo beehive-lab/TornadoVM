@@ -41,10 +41,11 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
+
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
@@ -60,27 +61,16 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
      * backing array.
      */
     @Payload
-    final FloatArray storage;
-
-    private Float2(FloatArray storage) {
-        this.storage = storage;
-    }
+    final NativeFloat2 nativeFloat2;
 
     public Float2() {
-        this(new FloatArray(NUM_ELEMENTS));
+        nativeFloat2 = new NativeFloat2();
     }
 
     public Float2(float x, float y) {
         this();
         setX(x);
         setY(y);
-    }
-
-    static Float2 loadFromArray(final FloatArray array, int index) {
-        final Float2 result = new Float2();
-        result.setX(array.get(index));
-        result.setY(array.get(index + 1));
-        return result;
     }
 
     public static Float2 add(Float2 a, Float2 b) {
@@ -231,16 +221,12 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
-    public FloatArray getArray() {
-        return storage;
-    }
-
     public float get(int index) {
-        return storage.get(index);
+        return nativeFloat2.get(index);
     }
 
     public void set(int index, float value) {
-        storage.set(index, value);
+        nativeFloat2.set(index, value);
     }
 
     public void set(Float2 value) {
@@ -284,11 +270,6 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
         return toString(FloatOps.FMT_2);
     }
 
-    void storeToArray(final FloatArray array, int index) {
-        array.set(index, getX());
-        array.set(index + 1, getY());
-    }
-
     @Override
     public void loadFromBuffer(FloatBuffer buffer) {
         asBuffer().put(buffer);
@@ -296,12 +277,16 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return storage.getSegment().asByteBuffer().asFloatBuffer();
+        return nativeFloat2.getSegment().asByteBuffer().asFloatBuffer();
     }
 
     @Override
     public int size() {
         return NUM_ELEMENTS;
+    }
+
+    public float[] toArray() {
+        return nativeFloat2.getSegment().toArray(JAVA_FLOAT);
     }
 
 }

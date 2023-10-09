@@ -23,7 +23,7 @@ public class CharArray {
 
     public CharArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        arrayHeaderSize = (int) TornadoArray.ARRAY_HEADER;
+        arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / CHAR_BYTES;
         arraySizeHeaderPosition = baseIndex - 2;
         segmentByteSize = numberOfElements * CHAR_BYTES + arrayHeaderSize;

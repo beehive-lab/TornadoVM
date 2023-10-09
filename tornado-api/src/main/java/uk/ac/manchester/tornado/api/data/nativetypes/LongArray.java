@@ -63,7 +63,7 @@ public class LongArray {
 
     public LongArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        arrayHeaderSize = (int) TornadoArray.ARRAY_HEADER;
+        arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / LONG_BYTES;
         arraySizeHeaderPosition = baseIndex - 1;
 

@@ -39,53 +39,38 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.data.nativetypes;
+package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
-import uk.ac.manchester.tornado.api.type.annotations.PanamaElementSize;
-
-@PanamaElementSize(size = 8)
-public class DoubleArray {
+public class NativeFloat2 {
     private MemorySegment segment;
-    private final int DOUBLE_BYTES = 8;
+    private final int FLOAT_BYTES = 4;
 
     private int numberOfElements;
 
-    private int arrayHeaderSize;
-
-    private int baseIndex;
-    private int arraySizeHeaderPosition;
-
     private long segmentByteSize;
 
-    public DoubleArray(int numberOfElements) {
-        this.numberOfElements = numberOfElements;
-        arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
-        assert arrayHeaderSize >= 8;
-        baseIndex = arrayHeaderSize / DOUBLE_BYTES;
-        arraySizeHeaderPosition = baseIndex - 1;
-        segmentByteSize = numberOfElements * DOUBLE_BYTES + arrayHeaderSize;
-
+    public NativeFloat2() {
+        segmentByteSize = 2 * FLOAT_BYTES;
+        this.numberOfElements = 2;
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
-        segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
-    public void set(int index, double value) {
-        segment.setAtIndex(JAVA_DOUBLE, baseIndex + index, value);
+    public void set(int index, float value) {
+        segment.setAtIndex(JAVA_FLOAT, index, value);
     }
 
-    public double get(int index) {
-        return segment.getAtIndex(JAVA_DOUBLE, baseIndex + index);
+    public float get(int index) {
+        return segment.getAtIndex(JAVA_FLOAT, index);
     }
 
-    public void init(double value) {
+    public void init(float value) {
         for (int i = 0; i < getSize(); i++) {
-            segment.setAtIndex(JAVA_DOUBLE, baseIndex + i, value);
+            segment.setAtIndex(JAVA_FLOAT, i, value);
         }
     }
 
@@ -100,5 +85,4 @@ public class DoubleArray {
     public long getNumBytesOfSegment() {
         return segmentByteSize;
     }
-
 }

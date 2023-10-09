@@ -49,7 +49,7 @@ import java.lang.foreign.MemorySegment;
 import uk.ac.manchester.tornado.api.type.annotations.PanamaElementSize;
 
 @PanamaElementSize(size = 4)
-public class IntArray extends TornadoArray {
+public class IntArray extends TornadoNativeArray {
     private int numberOfElements;
     private MemorySegment segment;
     private final int INT_BYTES = 4;
@@ -63,7 +63,7 @@ public class IntArray extends TornadoArray {
 
     public IntArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        arrayHeaderSize = (int) TornadoArray.ARRAY_HEADER;
+        arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / INT_BYTES;
         arraySizeHeaderPosition = baseIndex - 1;
         segmentByteSize = numberOfElements * INT_BYTES + arrayHeaderSize;

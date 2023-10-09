@@ -48,7 +48,6 @@ public class TornadoPanamaSegmentsHeader extends Phase {
                 if (address instanceof OffsetAddressNode offsetAddressNode) {
                     ValueNode offset = offsetAddressNode.getOffset();
                     if (offset instanceof ConstantNode) {
-                        //int objectHeaderSize = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
                         // Set the array size in position 0
                         ConstantNode constantNode = graph.addOrUnique(ConstantNode.forLong((0)));
                         offsetAddressNode.setOffset(constantNode);

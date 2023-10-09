@@ -59,15 +59,13 @@ public class FloatArray {
     private int arrayHeaderSize;
 
     private int baseIndex;
-    private int arraySizeHeaderPosition;
 
     private long segmentByteSize;
 
     public FloatArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        arrayHeaderSize = (int) TornadoArray.ARRAY_HEADER;
+        arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / FLOAT_BYTES;
-        arraySizeHeaderPosition = baseIndex - 1;
         segmentByteSize = numberOfElements * FLOAT_BYTES + arrayHeaderSize;
 
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
@@ -76,6 +74,7 @@ public class FloatArray {
 
     public void set(int index, float value) {
         segment.setAtIndex(JAVA_FLOAT, baseIndex + index, value);
+
     }
 
     public float get(int index) {

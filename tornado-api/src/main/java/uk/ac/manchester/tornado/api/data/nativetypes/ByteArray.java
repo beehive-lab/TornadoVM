@@ -23,7 +23,7 @@ public class ByteArray {
 
     public ByteArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        arrayHeaderSize = (int) TornadoArray.ARRAY_HEADER;
+        arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / BYTE_BYTES;
         arraySizeHeaderPosition = baseIndex - 4;
         segmentByteSize = numberOfElements * BYTE_BYTES + arrayHeaderSize;

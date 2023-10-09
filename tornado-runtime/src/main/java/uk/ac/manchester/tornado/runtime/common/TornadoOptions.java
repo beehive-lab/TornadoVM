@@ -25,7 +25,7 @@ package uk.ac.manchester.tornado.runtime.common;
 
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
-import uk.ac.manchester.tornado.api.data.nativetypes.TornadoArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.TornadoNativeArray;
 
 public class TornadoOptions {
 
@@ -245,7 +245,7 @@ public class TornadoOptions {
      * configuration. False by default.
      */
     public static final boolean CONCURRENT_INTERPRETERS = Boolean.parseBoolean(System.getProperty("tornado.concurrent.devices", "False"));
-    public static final long PANAMA_OBJECT_HEADER_SIZE = TornadoArray.ARRAY_HEADER;
+    public static final long PANAMA_OBJECT_HEADER_SIZE = TornadoNativeArray.ARRAY_HEADER;
 
     public static String PROFILER_LOG = "tornado.log.profiler";
     public static String PROFILER = "tornado.profiler";

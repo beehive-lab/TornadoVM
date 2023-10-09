@@ -63,7 +63,7 @@ public class ShortArray {
 
     public ShortArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        arrayHeaderSize = (int) TornadoArray.ARRAY_HEADER;
+        arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         assert arrayHeaderSize >= 4;
         baseIndex = arrayHeaderSize / SHORT_BYTES;
         segmentByteSize = numberOfElements * SHORT_BYTES + arrayHeaderSize;
