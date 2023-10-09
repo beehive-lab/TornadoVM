@@ -28,8 +28,8 @@ public class CharArray {
         arraySizeHeaderPosition = baseIndex - 2;
         segmentByteSize = numberOfElements * CHAR_BYTES + arrayHeaderSize;
 
-        segment = Arena.ofAuto().allocate((numberOfElements * CHAR_BYTES) + 24L, 1);
-        segment.setAtIndex(JAVA_INT, arraySizeHeaderPosition, numberOfElements);
+        segment = Arena.ofAuto().allocate(segmentByteSize, 1);
+        segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
     public void set(int index, char value) {

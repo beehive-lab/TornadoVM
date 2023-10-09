@@ -53,9 +53,6 @@ public class OCLVectorWrapper implements ObjectBuffer {
 
     private static final int INIT_VALUE = -1;
 
-    //    private final int arrayHeaderSize;
-    //    private final int arrayLengthOffset;
-
     private long bufferId;
     private long bufferOffset;
     private long bufferSize;
@@ -76,16 +73,6 @@ public class OCLVectorWrapper implements ObjectBuffer {
         Object payload = TornadoUtils.getAnnotatedObjectFromField(object, Payload.class);
         this.kind = getJavaKind(payload.getClass());
         this.bufferSize = sizeOf(payload);
-        //        if (this.kind == JavaKind.Object) {
-        //            this.arrayLengthOffset = 0;
-        //        } else {
-        //            this.arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
-        //        }
-        //        if (this.kind == JavaKind.Object) {
-        //            this.arrayHeaderSize = 0;
-        //        } else {
-        //            this.arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
-        //        }
     }
 
     public long getBatchSize() {

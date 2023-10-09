@@ -25,12 +25,11 @@ public class ByteArray {
         this.numberOfElements = numberOfElements;
         arrayHeaderSize = (int) TornadoArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / BYTE_BYTES;
-        arraySizeHeaderPosition = baseIndex - 1;
+        arraySizeHeaderPosition = baseIndex - 4;
         segmentByteSize = numberOfElements * BYTE_BYTES + arrayHeaderSize;
 
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
-        segment.setAtIndex(JAVA_INT, arraySizeHeaderPosition, numberOfElements);
-
+        segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
     public void set(int index, byte value) {

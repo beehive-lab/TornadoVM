@@ -64,12 +64,12 @@ public class ShortArray {
     public ShortArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
         arrayHeaderSize = (int) TornadoArray.ARRAY_HEADER;
+        assert arrayHeaderSize >= 4;
         baseIndex = arrayHeaderSize / SHORT_BYTES;
-        arraySizeHeaderPosition = baseIndex - 2;
         segmentByteSize = numberOfElements * SHORT_BYTES + arrayHeaderSize;
 
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
-        segment.setAtIndex(JAVA_INT, arraySizeHeaderPosition, numberOfElements);
+        segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
     public void set(int index, short value) {

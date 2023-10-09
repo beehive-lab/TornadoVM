@@ -66,12 +66,13 @@ public class DoubleArray {
     public DoubleArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
         arrayHeaderSize = (int) TornadoArray.ARRAY_HEADER;
+        assert arrayHeaderSize >= 8;
         baseIndex = arrayHeaderSize / DOUBLE_BYTES;
         arraySizeHeaderPosition = baseIndex - 1;
         segmentByteSize = numberOfElements * DOUBLE_BYTES + arrayHeaderSize;
 
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
-        segment.setAtIndex(JAVA_INT, arraySizeHeaderPosition, numberOfElements);
+        segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
     public void set(int index, double value) {

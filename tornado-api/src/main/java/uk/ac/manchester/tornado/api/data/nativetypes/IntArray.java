@@ -69,7 +69,7 @@ public class IntArray extends TornadoArray {
         segmentByteSize = numberOfElements * INT_BYTES + arrayHeaderSize;
 
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
-        segment.setAtIndex(JAVA_INT, arraySizeHeaderPosition, numberOfElements);
+        segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
     public void set(int index, int value) {

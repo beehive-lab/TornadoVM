@@ -32,8 +32,6 @@ import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.phases.Phase;
 
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-
 public class TornadoPanamaSegmentsHeader extends Phase {
 
     @Override
@@ -50,8 +48,9 @@ public class TornadoPanamaSegmentsHeader extends Phase {
                 if (address instanceof OffsetAddressNode offsetAddressNode) {
                     ValueNode offset = offsetAddressNode.getOffset();
                     if (offset instanceof ConstantNode) {
-                        int objectHeaderSize = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
-                        ConstantNode constantNode = graph.addOrUnique(ConstantNode.forLong((objectHeaderSize - 4)));
+                        //int objectHeaderSize = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
+                        // Set the array size in position 0
+                        ConstantNode constantNode = graph.addOrUnique(ConstantNode.forLong((0)));
                         offsetAddressNode.setOffset(constantNode);
                         offset.safeDelete();
                     }
