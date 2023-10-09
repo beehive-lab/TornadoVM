@@ -26,6 +26,7 @@
 import os
 import subprocess
 
+
 def update_paths():
     """
     Run the 'update_paths.py' script.
@@ -87,4 +88,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -38,6 +38,7 @@ Contents
    multi-device
    flags
    ide-integration
+   developer-guidelines
    faq
    unsupported
    resources

@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
  * objects.
  */
 public class BatchConfiguration {
+
     private final int totalChunks;
     private final int remainingChunkSize;
     private final short numBytesType;
@@ -45,11 +46,11 @@ public class BatchConfiguration {
      * Constructs a BatchConfiguration object with the specified parameters.
      *
      * @param totalChunks
-     *            The total number of chunks.
+     *     The total number of chunks.
      * @param remainingChunkSize
-     *            The size of the remaining chunk.
+     *     The size of the remaining chunk.
      * @param numBytesType
-     *            The number of bytes for the data type.
+     *     The number of bytes for the data type.
      */
     public BatchConfiguration(int totalChunks, int remainingChunkSize, short numBytesType) {
         this.totalChunks = totalChunks;
