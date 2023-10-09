@@ -312,7 +312,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
         private boolean isWrittenFalseCondition;
         private IfNode fatherNodeStore;
 
-        public MetaControlFlow(boolean isWrittenTrueCondition, boolean isWrittenFalseCondition, IfNode fatherNodeStore) {
+        MetaControlFlow(boolean isWrittenTrueCondition, boolean isWrittenFalseCondition, IfNode fatherNodeStore) {
             super();
             this.isWrittenTrueCondition = isWrittenTrueCondition;
             this.isWrittenFalseCondition = isWrittenFalseCondition;

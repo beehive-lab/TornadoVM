@@ -47,7 +47,7 @@ public class TimeProfiler implements TornadoProfiler {
 
     private HashMap<String, HashMap<ProfilerType, String>> taskBackends;
 
-    private StringBuffer indent;
+    private StringBuilder indent;
 
     public TimeProfiler() {
         profilerTime = new HashMap<>();
@@ -56,7 +56,7 @@ public class TimeProfiler implements TornadoProfiler {
         taskMethodNames = new HashMap<>();
         taskThroughputMetrics = new HashMap<>();
         taskBackends = new HashMap<>();
-        indent = new StringBuffer("");
+        indent = new StringBuilder("");
     }
 
     @Override
@@ -189,16 +189,16 @@ public class TimeProfiler implements TornadoProfiler {
         indent.delete(indent.length() - 4, indent.length());
     }
 
-    private void closeScope(StringBuffer json) {
+    private void closeScope(StringBuilder json) {
         json.append(indent.toString() + "}");
     }
 
-    private void newLine(StringBuffer json) {
+    private void newLine(StringBuilder json) {
         json.append("\n");
     }
 
     @Override
-    public String createJson(StringBuffer json, String sectionName) {
+    public String createJson(StringBuilder json, String sectionName) {
         json.append("{\n");
         increaseIndent();
         json.append(indent.toString() + "\"" + sectionName + "\": " + "{\n");
@@ -252,7 +252,7 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
-    public synchronized void dumpJson(StringBuffer json, String id) {
+    public synchronized void dumpJson(StringBuilder json, String id) {
         String jsonContent = createJson(json, id);
         System.out.println(jsonContent);
     }
@@ -262,7 +262,7 @@ public class TimeProfiler implements TornadoProfiler {
         taskThroughputMetrics.clear();
         profilerTime.clear();
         taskTimers.clear();
-        indent = new StringBuffer("");
+        indent = new StringBuilder("");
     }
 
     @Override

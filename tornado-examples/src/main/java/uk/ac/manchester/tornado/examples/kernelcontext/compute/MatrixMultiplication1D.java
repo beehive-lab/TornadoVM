@@ -38,6 +38,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  * </code>
  */
 public class MatrixMultiplication1D {
+    // CHECKSTYLE:OFF
 
     private static final int WARMING_UP_ITERATIONS = 15;
 
@@ -157,3 +158,4 @@ public class MatrixMultiplication1D {
         return check;
     }
 }
+// CHECKSTYLE:ON

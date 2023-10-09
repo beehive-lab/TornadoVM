@@ -40,7 +40,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  *
  */
 public class MatrixMul1D {
-
+    // CHECKSTYLE:OFF
     public static final int WARMUP_ITERATIONS = 15;
     public static final int EXECUTE_ITERATIONS = 100;
 
@@ -102,10 +102,11 @@ public class MatrixMul1D {
 
         OptionalDouble avgCudaOptional = Arrays.stream(execTimesCUDA).average();
         double averageCUDA;
-        if (avgCudaOptional.isPresent())
+        if (avgCudaOptional.isPresent()) {
             averageCUDA = avgCudaOptional.getAsDouble();
-        else
+        } else {
             throw new Exception("Could not get average execution time");
+        }
 
         TaskGraph oclTaskGraph = new TaskGraph("ocl_old_api") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA, matrixB) //
@@ -190,3 +191,4 @@ public class MatrixMul1D {
 
     }
 }
+// CHECKSTYLE:ON

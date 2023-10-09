@@ -41,7 +41,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
-public class TornadoVM_Intrinsics {
+public class TornadoVMIntrinsics {
 
     /**
      * Compute (old + value) and store result at location pointed by p. The function

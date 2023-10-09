@@ -135,10 +135,8 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
      */
     private OCLByteBuffer buildArrayHeader(final int arraySize) {
         final OCLByteBuffer header = getArrayHeader();
-        int index = 0;
-        while (index < arrayLengthOffset) {
+        for (int i = 0; i < arrayLengthOffset; i++) {
             header.buffer.put((byte) 0);
-            index++;
         }
         header.buffer.putInt(arraySize);
         return header;
@@ -146,10 +144,8 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
     private OCLByteBuffer buildArrayHeaderBatch(final long arraySize) {
         final OCLByteBuffer header = getArrayHeader();
-        int index = 0;
-        while (index < arrayLengthOffset) {
+        for (int i = 0; i < arrayLengthOffset; i++) {
             header.buffer.put((byte) 0);
-            index++;
         }
         header.buffer.putInt((int) arraySize);
         return header;
@@ -193,8 +189,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
             throw new TornadoRuntimeException("ERROR] Data to be copied is NULL");
         }
         final int returnEvent;
-        // We first write the header for the object, and then we write actual
-        // buffer
+        // We first write the header for the object, and then we write actual buffer
         final int headerEvent;
         if (batchSize <= 0) {
             headerEvent = buildArrayHeader(Array.getLength(array)).enqueueWrite((useDeps) ? events : null);

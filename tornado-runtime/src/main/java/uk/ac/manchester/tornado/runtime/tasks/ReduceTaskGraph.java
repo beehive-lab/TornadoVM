@@ -849,7 +849,7 @@ class ReduceTaskGraph {
         private TaskPackage taskPackage;
         private CompilationThread compilationThread;
 
-        public HybridThreadMeta(TaskPackage taskPackage, CompilationThread compilationThread) {
+        HybridThreadMeta(TaskPackage taskPackage, CompilationThread compilationThread) {
             this.taskPackage = taskPackage;
             this.compilationThread = compilationThread;
         }

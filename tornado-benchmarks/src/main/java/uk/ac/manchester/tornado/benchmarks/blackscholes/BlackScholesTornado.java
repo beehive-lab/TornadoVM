@@ -79,7 +79,11 @@ public class BlackScholesTornado extends BenchmarkDriver {
 
     @Override
     public boolean validate(TornadoDevice device) {
-        float[] randArrayTor,callTor,putTor,calSeq,putSeq;
+        float[] randArrayTor;
+        float[] callTor;
+        float[] putTor;
+        float[] calSeq;
+        float[] putSeq;
         boolean val;
 
         val = true;

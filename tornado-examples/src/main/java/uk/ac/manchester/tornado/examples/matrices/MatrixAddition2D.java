@@ -41,6 +41,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  *
  */
 public class MatrixAddition2D {
+    // CHECKSTYLE:OFF
 
     private static final int WARMING_UP_ITERATIONS = 25;
 
@@ -162,3 +163,4 @@ public class MatrixAddition2D {
     }
 
 }
+// CHECKSTYLE:ON

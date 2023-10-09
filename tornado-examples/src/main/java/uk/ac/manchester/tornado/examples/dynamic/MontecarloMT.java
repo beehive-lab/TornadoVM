@@ -110,7 +110,8 @@ public class MontecarloMT {
 
         float[] output = new float[size];
         float[] seq = new float[size];
-        long start,end;
+        long start;
+        long end;
 
         long startInit = System.nanoTime();
 

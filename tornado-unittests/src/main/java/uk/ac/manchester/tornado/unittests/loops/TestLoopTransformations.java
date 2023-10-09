@@ -43,6 +43,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </code>
  */
 public class TestLoopTransformations extends TornadoTestBase {
+    // CHECKSTYLE:OFF
 
     private static void matrixVectorMultiplication(final float[] A, final float[] B, final float[] C, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
@@ -51,6 +52,14 @@ public class TestLoopTransformations extends TornadoTestBase {
                 sum += A[(i * size) + j] * B[j];
             }
             C[i] = sum;
+        }
+    }
+
+    private static void matrixTranspose(final float[] A, float[] B, final int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (@Parallel int j = 0; j < size; j++) {
+                B[(i * size) + j] = A[(j * size) + i];
+            }
         }
     }
 
@@ -139,14 +148,6 @@ public class TestLoopTransformations extends TornadoTestBase {
         }
     }
 
-    private static void matrixTranspose(final float[] A, float[] B, final int size) {
-        for (@Parallel int i = 0; i < size; i++) {
-            for (@Parallel int j = 0; j < size; j++) {
-                B[(i * size) + j] = A[(j * size) + i];
-            }
-        }
-    }
-
     @Test
     public void testPartialUnrollParallelLoops() {
         final int N = 256;
@@ -183,4 +184,5 @@ public class TestLoopTransformations extends TornadoTestBase {
             }
         }
     }
+    // CHECKSTYLE:ON
 }

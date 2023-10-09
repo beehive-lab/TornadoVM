@@ -311,7 +311,6 @@ public class TornadoVMInterpreter extends TornadoLogger {
                 final int eventList = bytecodeResult.getInt();
                 final long offset = bytecodeResult.getLong();
                 final long sizeBatch = bytecodeResult.getLong();
-
                 final int[] waitList = (useDependencies) ? events[eventList] : null;
                 if (isWarmup) {
                     continue;
@@ -548,8 +547,8 @@ public class TornadoVMInterpreter extends TornadoLogger {
         }
 
         if (TornadoOptions.PRINT_BYTECODES) {
-            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("STREAM_OUT_BLOCKING") + " [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object,
-                    InterpreterUtilities.debugDeviceBC(deviceForInterpreter), sizeBatch, offset, eventList);
+            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING") + " [0x%x] %s on %s, size=%d, offset=%d [event list=%d]",
+                    object.hashCode(), object, InterpreterUtilities.debugDeviceBC(deviceForInterpreter), sizeBatch, offset, eventList);
             tornadoVMBytecodeList.append(verbose).append("\n");
 
         }
@@ -675,9 +674,12 @@ public class TornadoVMInterpreter extends TornadoLogger {
             final int argIndex = bytecodeResult.getInt();
 
             if (argType == TornadoVMBytecodes.PUSH_CONSTANT_ARGUMENT.value()) {
+                // Add a constant argument
                 callWrapper.addCallArgument(constants.get(argIndex), false);
             } else if (argType == TornadoVMBytecodes.PUSH_REFERENCE_ARGUMENT.value()) {
+
                 if (isObjectKernelContext(objects.get(argIndex))) {
+                    // Mark a kernel context
                     callWrapper.addCallArgument(new KernelArgs.KernelContextArgument(), false);
                     continue;
                 }
@@ -686,6 +688,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
                 final DeviceObjectState objectState = globalState.getDeviceState(deviceForInterpreter);
 
                 if (!isObjectInAtomicRegion(objectState, deviceForInterpreter, task)) {
+                    // Add a reference (arrays, vector types, panama regions)
                     callWrapper.addCallArgument(objectState.getObjectBuffer().toBuffer(), true);
                 } else {
                     atomicsArray = deviceForInterpreter.updateAtomicRegionAndObjectState(task, atomicsArray, i, objects.get(argIndex), objectState);
@@ -854,7 +857,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
         KernelArgs callWrapper;
         int[] waitList;
 
-        public ExecutionInfo(KernelArgs callWrapper, int[] waitList) {
+        ExecutionInfo(KernelArgs callWrapper, int[] waitList) {
             this.callWrapper = callWrapper;
             this.waitList = waitList;
         }

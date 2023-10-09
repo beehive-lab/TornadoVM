@@ -100,7 +100,7 @@ public class DgemmTornado extends BenchmarkDriver {
                             new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, //
                             device, //
                             new int[] { n, n })//
-                    .transferToHost(DataTransferMode.EVERY_EXECUTION, c);//
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, c); //
             immutableTaskGraph = taskGraph.snapshot();
             executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         }

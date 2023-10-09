@@ -51,9 +51,9 @@ public interface TornadoProfiler {
 
     void dump();
 
-    String createJson(StringBuffer json, String sectionName);
+    String createJson(StringBuilder json, String sectionName);
 
-    void dumpJson(StringBuffer stringBuffer, String id);
+    void dumpJson(StringBuilder stringBuffer, String id);
 
     void clean();
 

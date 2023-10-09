@@ -46,29 +46,26 @@ import java.util.Arrays;
 
 public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
 
+    private static final int ELEMENT_SIZE = 3;
     /**
-     * backing array
+     * backing array.
      */
     protected final float[] storage;
-
     /**
-     * number of elements in the storage
-     */
-    private final int numElements;
-    private static final int ELEMENT_SIZE = 3;
-
-    /**
-     * Number of rows
+     * Number of rows.
      */
     protected final int Y;
-
     /**
-     * Number of columns
+     * Number of columns.
      */
     protected final int X;
+    /**
+     * number of elements in the storage.
+     */
+    private final int numElements;
 
     /**
-     * Storage format for matrix
+     * Storage format for matrix.
      * 
      * @param width
      *            number of rows
@@ -85,7 +82,7 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Storage format for matrix
+     * Storage format for matrix.
      * 
      * @param width
      *            number of rows
@@ -219,7 +216,7 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
         return Float3.sqrt(varience);
     }
 
-    public String summerise() {
+    public String summarise() {
         return String.format("ImageFloat3<%dx%d>: min=%s, max=%s, mean=%s, sd=%s", X, Y, min(), max(), mean(), stdDev());
     }
 

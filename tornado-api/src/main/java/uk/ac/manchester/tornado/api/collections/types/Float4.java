@@ -42,6 +42,7 @@
 package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.FloatBuffer;
+import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
@@ -51,17 +52,15 @@ import uk.ac.manchester.tornado.api.type.annotations.Vector;
 public final class Float4 implements PrimitiveStorage<FloatBuffer> {
 
     public static final Class<Float4> TYPE = Float4.class;
-
     /**
-     * backing array
+     * number of elements in the storage.
+     */
+    private static final int NUM_ELEMENTS = 4;
+    /**
+     * backing array.
      */
     @Payload
     final float[] storage;
-
-    /**
-     * number of elements in the storage
-     */
-    private static final int NUM_ELEMENTS = 4;
 
     public Float4(float[] storage) {
         this.storage = storage;
@@ -69,14 +68,6 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
 
     public Float4() {
         this(new float[NUM_ELEMENTS]);
-    }
-
-    public float get(int index) {
-        return storage[index];
-    }
-
-    public void set(int index, float value) {
-        storage[index] = value;
     }
 
     public Float4(float x, float y, float z, float w) {
@@ -87,90 +78,6 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
         setW(w);
     }
 
-    public float[] getArray() {
-        return storage;
-    }
-
-    public void set(Float4 value) {
-        setX(value.getX());
-        setY(value.getY());
-        setZ(value.getZ());
-        setW(value.getW());
-    }
-
-    public float getX() {
-        return get(0);
-    }
-
-    public float getY() {
-        return get(1);
-    }
-
-    public float getZ() {
-        return get(2);
-    }
-
-    public float getW() {
-        return get(3);
-    }
-
-    public void setX(float value) {
-        set(0, value);
-    }
-
-    public void setY(float value) {
-        set(1, value);
-    }
-
-    public void setZ(float value) {
-        set(2, value);
-    }
-
-    public void setW(float value) {
-        set(3, value);
-    }
-
-    /**
-     * Duplicates this vector
-     *
-     * @return {@link Float4}
-     */
-    public Float4 duplicate() {
-        final Float4 vector = new Float4();
-        vector.set(this);
-        return vector;
-    }
-
-    public String toString(String fmt) {
-        return String.format(fmt, getX(), getY(), getZ(), getW());
-    }
-
-    @Override
-    public String toString() {
-        return toString(FloatOps.FMT_4);
-    }
-
-    /**
-     * Cast vector into a Float2
-     *
-     * @return {@link Float2}
-     */
-    public Float2 asFloat2() {
-        return new Float2(getX(), getY());
-    }
-
-    public Float3 asFloat3() {
-        return new Float3(getX(), getY(), getZ());
-    }
-
-    public Float2 getLow() {
-        return asFloat2();
-    }
-
-    public Float2 getHigh() {
-        return new Float2(getZ(), getW());
-    }
-
     static Float4 loadFromArray(final float[] array, int index) {
         final Float4 result = new Float4();
         result.setX(array[index]);
@@ -179,40 +86,6 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
         result.setW(array[index + 3]);
         return result;
     }
-
-    void storeToArray(final float[] array, int index) {
-        array[index] = getX();
-        array[index + 1] = getY();
-        array[index + 2] = getZ();
-        array[index + 3] = getW();
-    }
-
-    @Override
-    public void loadFromBuffer(FloatBuffer buffer) {
-        asBuffer().put(buffer);
-    }
-
-    @Override
-    public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
-    }
-
-    @Override
-    public int size() {
-        return NUM_ELEMENTS;
-    }
-
-    public void fill(float value) {
-        for (int i = 0; i < storage.length; i++) {
-            storage[i] = value;
-        }
-
-    }
-
-    // ===================================
-    // Operations on Float4 vectors
-    // vector = op( vector, vector )
-    // ===================================
 
     public static Float4 add(Float4 a, Float4 b) {
         return new Float4(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ(), a.getW() + b.getW());
@@ -320,7 +193,7 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Returns the vector length e.g. the sqrt of all elements squared
+     * Returns the vector length e.g. the sqrt of all elements squared.
      *
      * @return float
      */
@@ -328,12 +201,136 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
         return TornadoMath.sqrt(dot(value, value));
     }
 
+    // ===================================
+    // Operations on Float4 vectors
+    // vector = op( vector, vector )
+    // ===================================
+
     public static boolean isEqual(Float4 a, Float4 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
     public static float findULPDistance(Float4 a, Float4 b) {
         return TornadoMath.findULPDistance(a.asBuffer().array(), b.asBuffer().array());
+    }
+
+    public float get(int index) {
+        return storage[index];
+    }
+
+    public void set(int index, float value) {
+        storage[index] = value;
+    }
+
+    public float[] getArray() {
+        return storage;
+    }
+
+    public void set(Float4 value) {
+        setX(value.getX());
+        setY(value.getY());
+        setZ(value.getZ());
+        setW(value.getW());
+    }
+
+    public float getX() {
+        return get(0);
+    }
+
+    public void setX(float value) {
+        set(0, value);
+    }
+
+    public float getY() {
+        return get(1);
+    }
+
+    public void setY(float value) {
+        set(1, value);
+    }
+
+    public float getZ() {
+        return get(2);
+    }
+
+    public void setZ(float value) {
+        set(2, value);
+    }
+
+    public float getW() {
+        return get(3);
+    }
+
+    public void setW(float value) {
+        set(3, value);
+    }
+
+    /**
+     * Duplicates this vector.
+     *
+     * @return {@link Float4}
+     */
+    public Float4 duplicate() {
+        final Float4 vector = new Float4();
+        vector.set(this);
+        return vector;
+    }
+
+    public String toString(String fmt) {
+        return String.format(fmt, getX(), getY(), getZ(), getW());
+    }
+
+    @Override
+    public String toString() {
+        return toString(FloatOps.FMT_4);
+    }
+
+    /**
+     * Cast vector into a Float2.
+     *
+     * @return {@link Float2}
+     */
+    public Float2 asFloat2() {
+        return new Float2(getX(), getY());
+    }
+
+    public Float3 asFloat3() {
+        return new Float3(getX(), getY(), getZ());
+    }
+
+    public Float2 getLow() {
+        return asFloat2();
+    }
+
+    public Float2 getHigh() {
+        return new Float2(getZ(), getW());
+    }
+
+    void storeToArray(final float[] array, int index) {
+        array[index] = getX();
+        array[index + 1] = getY();
+        array[index + 2] = getZ();
+        array[index + 3] = getW();
+    }
+
+    @Override
+    public void loadFromBuffer(FloatBuffer buffer) {
+        asBuffer().put(buffer);
+    }
+
+    @Override
+    public FloatBuffer asBuffer() {
+        return FloatBuffer.wrap(storage);
+    }
+
+    @Override
+    public int size() {
+        return NUM_ELEMENTS;
+    }
+
+    public void fill(float value) {
+        Arrays.fill(storage, value);
+
     }
 
 }

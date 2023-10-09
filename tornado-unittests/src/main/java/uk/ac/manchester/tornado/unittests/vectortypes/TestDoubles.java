@@ -58,6 +58,154 @@ public class TestDoubles extends TornadoTestBase {
         results.set(0, r);
     }
 
+    private static void addDouble3(Double3 a, Double3 b, VectorDouble results) {
+        Double3 d3 = Double3.add(a, b);
+        double r = d3.getX() + d3.getY() + d3.getZ();
+        results.set(0, r);
+    }
+
+    private static void addDouble4(Double4 a, Double4 b, VectorDouble results) {
+        Double4 d4 = Double4.add(a, b);
+        double r = d4.getX() + d4.getY() + d4.getZ() + d4.getW();
+        results.set(0, r);
+    }
+
+    private static void addDouble8(Double8 a, Double8 b, VectorDouble results) {
+        Double8 d8 = Double8.add(a, b);
+        double r = d8.getS0() + d8.getS1() + d8.getS2() + d8.getS3() + d8.getS4() + d8.getS5() + d8.getS6() + d8.getS7();
+        results.set(0, r);
+    }
+
+    private static void addDouble(double[] a, double[] b, double[] result) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            result[i] = a[i] + b[i];
+        }
+    }
+
+    public static void dotProductFunctionMap(double[] a, double[] b, double[] results) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            results[i] = a[i] * b[i];
+        }
+    }
+
+    public static void dotProductFunctionReduce(double[] input, double[] results) {
+        double sum = 0.0f;
+        for (int i = 0; i < input.length; i++) {
+            sum += input[i];
+        }
+        results[0] = sum;
+    }
+
+    public static void addVectorDouble2(VectorDouble2 a, VectorDouble2 b, VectorDouble2 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Double2.add(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void addVectorDouble3(VectorDouble3 a, VectorDouble3 b, VectorDouble3 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Double3.add(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void addVectorDouble4(VectorDouble4 a, VectorDouble4 b, VectorDouble4 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Double4.add(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void testPrivateVectorDouble2(VectorDouble2 output) {
+        VectorDouble2 vectorDouble2 = new VectorDouble2(output.getLength());
+
+        for (int i = 0; i < vectorDouble2.getLength(); i++) {
+            vectorDouble2.set(i, new Double2(i, i));
+        }
+
+        Double2 sum = new Double2(0, 0);
+
+        for (int i = 0; i < vectorDouble2.getLength(); i++) {
+            Double2 f = vectorDouble2.get(i);
+            sum = Double2.add(f, sum);
+        }
+
+        output.set(0, sum);
+    }
+
+    public static void testPrivateVectorDouble4(VectorDouble4 output) {
+        VectorDouble4 vectorDouble4 = new VectorDouble4(output.getLength());
+
+        for (int i = 0; i < vectorDouble4.getLength(); i++) {
+            vectorDouble4.set(i, new Double4(i, i, i, i));
+        }
+
+        Double4 sum = new Double4(0, 0, 0, 0);
+
+        for (int i = 0; i < vectorDouble4.getLength(); i++) {
+            Double4 f = vectorDouble4.get(i);
+            sum = Double4.add(f, sum);
+        }
+
+        output.set(0, sum);
+    }
+
+    public static void testPrivateVectorDouble8(VectorDouble8 output) {
+        VectorDouble8 vectorDouble8 = new VectorDouble8(output.getLength());
+
+        for (int i = 0; i < vectorDouble8.getLength(); i++) {
+            vectorDouble8.set(i, new Double8(i, i, i, i, i, i, i, i));
+        }
+
+        Double8 sum = new Double8(0, 0, 0, 0, 0, 0, 0, 0);
+
+        for (int i = 0; i < vectorDouble8.getLength(); i++) {
+            Double8 f = vectorDouble8.get(i);
+            sum = Double8.add(f, sum);
+        }
+
+        output.set(0, sum);
+    }
+
+    private static void vectorComputation01(VectorDouble2 value, VectorDouble2 output) {
+        for (@Parallel int i = 0; i < output.getLength(); i++) {
+            Double2 double2 = new Double2();
+            double2.setX(value.get(i).getX() + value.get(i).getY());
+            double2.setY(value.get(i).getX() * 2);
+            output.set(i, double2);
+        }
+    }
+
+    private static void vectorComputation02(VectorDouble3 value, VectorDouble3 output) {
+        for (@Parallel int i = 0; i < output.getLength(); i++) {
+            Double3 double3 = new Double3();
+            double3.setX(value.get(i).getX() + value.get(i).getY());
+            double3.setY(value.get(i).getZ() * 2);
+            output.set(i, double3);
+        }
+    }
+
+    private static Double3 vectorComputation03(final Double4 value) {
+        Double3 output = new Double3();
+        output.setX(value.getX() + value.getY());
+        output.setY(value.getY());
+        output.setZ(value.getW());
+        return output;
+    }
+
+    private static void vectorComputation03(VectorDouble4 value, VectorDouble3 output) {
+        for (@Parallel int i = 0; i < output.getLength(); i++) {
+            output.set(i, vectorComputation03(value.get(i)));
+        }
+    }
+
+    private static void vectorComputation04(VectorDouble8 value, VectorDouble2 output) {
+        for (@Parallel int i = 0; i < output.getLength(); i++) {
+            Double2 double2 = new Double2();
+            double2.setX(value.get(i).getS0() + value.get(i).getS1());
+            double2.setY(value.get(i).getS1());
+            output.set(i, double2);
+        }
+    }
+
     @Test
     public void testDoubleAdd2() {
         int size = 1;
@@ -77,12 +225,6 @@ public class TestDoubles extends TornadoTestBase {
         for (int i = 0; i < size; i++) {
             assertEquals(8.0, output.get(i), DELTA);
         }
-    }
-
-    private static void addDouble3(Double3 a, Double3 b, VectorDouble results) {
-        Double3 d3 = Double3.add(a, b);
-        double r = d3.getX() + d3.getY() + d3.getZ();
-        results.set(0, r);
     }
 
     @Test
@@ -106,12 +248,6 @@ public class TestDoubles extends TornadoTestBase {
         }
     }
 
-    private static void addDouble4(Double4 a, Double4 b, VectorDouble results) {
-        Double4 d4 = Double4.add(a, b);
-        double r = d4.getX() + d4.getY() + d4.getZ() + d4.getW();
-        results.set(0, r);
-    }
-
     @Test
     public void testDoubleAdd4() {
         int size = 1;
@@ -133,12 +269,6 @@ public class TestDoubles extends TornadoTestBase {
         }
     }
 
-    private static void addDouble8(Double8 a, Double8 b, VectorDouble results) {
-        Double8 d8 = Double8.add(a, b);
-        double r = d8.getS0() + d8.getS1() + d8.getS2() + d8.getS3() + d8.getS4() + d8.getS5() + d8.getS6() + d8.getS7();
-        results.set(0, r);
-    }
-
     @Test
     public void testDoubleAdd8() {
         int size = 1;
@@ -157,12 +287,6 @@ public class TestDoubles extends TornadoTestBase {
 
         for (int i = 0; i < size; i++) {
             assertEquals(72., output.get(i), DELTA);
-        }
-    }
-
-    private static void addDouble(double[] a, double[] b, double[] result) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            result[i] = a[i] + b[i];
         }
     }
 
@@ -191,20 +315,6 @@ public class TestDoubles extends TornadoTestBase {
         for (int i = 0; i < size; i++) {
             assertEquals(i + i, output[i], DELTA);
         }
-    }
-
-    public static void dotProductFunctionMap(double[] a, double[] b, double[] results) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            results[i] = a[i] * b[i];
-        }
-    }
-
-    public static void dotProductFunctionReduce(double[] input, double[] results) {
-        double sum = 0.0f;
-        for (int i = 0; i < input.length; i++) {
-            sum += input[i];
-        }
-        results[0] = sum;
     }
 
     @Test
@@ -242,12 +352,6 @@ public class TestDoubles extends TornadoTestBase {
         assertEquals(seqReduce[0], outputReduce[0], DELTA);
     }
 
-    public static void addVectorDouble2(VectorDouble2 a, VectorDouble2 b, VectorDouble2 results) {
-        for (@Parallel int i = 0; i < a.getLength(); i++) {
-            results.set(i, Double2.add(a.get(i), b.get(i)));
-        }
-    }
-
     @Test
     public void testVectorDouble2() {
         int size = 256;
@@ -274,12 +378,6 @@ public class TestDoubles extends TornadoTestBase {
             Double2 sequential = new Double2(i + (size - i), i + (size - i));
             assertEquals(sequential.getX(), output.get(i).getX(), DELTA);
             assertEquals(sequential.getY(), output.get(i).getY(), DELTA);
-        }
-    }
-
-    public static void addVectorDouble3(VectorDouble3 a, VectorDouble3 b, VectorDouble3 results) {
-        for (@Parallel int i = 0; i < a.getLength(); i++) {
-            results.set(i, Double3.add(a.get(i), b.get(i)));
         }
     }
 
@@ -310,12 +408,6 @@ public class TestDoubles extends TornadoTestBase {
             assertEquals(sequential.getX(), output.get(i).getX(), DELTA);
             assertEquals(sequential.getY(), output.get(i).getY(), DELTA);
             assertEquals(sequential.getZ(), output.get(i).getZ(), DELTA);
-        }
-    }
-
-    public static void addVectorDouble4(VectorDouble4 a, VectorDouble4 b, VectorDouble4 results) {
-        for (@Parallel int i = 0; i < a.getLength(); i++) {
-            results.set(i, Double4.add(a.get(i), b.get(i)));
         }
     }
 
@@ -350,23 +442,6 @@ public class TestDoubles extends TornadoTestBase {
         }
     }
 
-    public static void testPrivateVectorDouble2(VectorDouble2 output) {
-        VectorDouble2 vectorDouble2 = new VectorDouble2(output.getLength());
-
-        for (int i = 0; i < vectorDouble2.getLength(); i++) {
-            vectorDouble2.set(i, new Double2(i, i));
-        }
-
-        Double2 sum = new Double2(0, 0);
-
-        for (int i = 0; i < vectorDouble2.getLength(); i++) {
-            Double2 f = vectorDouble2.get(i);
-            sum = Double2.add(f, sum);
-        }
-
-        output.set(0, sum);
-    }
-
     @Test
     public void privateVectorDouble2() {
         int size = 16;
@@ -387,23 +462,6 @@ public class TestDoubles extends TornadoTestBase {
             assertEquals(sequentialOutput.get(i).getX(), tornadoOutput.get(i).getX(), DELTA);
             assertEquals(sequentialOutput.get(i).getY(), tornadoOutput.get(i).getY(), DELTA);
         }
-    }
-
-    public static void testPrivateVectorDouble4(VectorDouble4 output) {
-        VectorDouble4 vectorDouble4 = new VectorDouble4(output.getLength());
-
-        for (int i = 0; i < vectorDouble4.getLength(); i++) {
-            vectorDouble4.set(i, new Double4(i, i, i, i));
-        }
-
-        Double4 sum = new Double4(0, 0, 0, 0);
-
-        for (int i = 0; i < vectorDouble4.getLength(); i++) {
-            Double4 f = vectorDouble4.get(i);
-            sum = Double4.add(f, sum);
-        }
-
-        output.set(0, sum);
     }
 
     @Test
@@ -428,23 +486,6 @@ public class TestDoubles extends TornadoTestBase {
             assertEquals(sequentialOutput.get(i).getZ(), tornadoOutput.get(i).getZ(), DELTA);
             assertEquals(sequentialOutput.get(i).getW(), tornadoOutput.get(i).getW(), DELTA);
         }
-    }
-
-    public static void testPrivateVectorDouble8(VectorDouble8 output) {
-        VectorDouble8 vectorDouble8 = new VectorDouble8(output.getLength());
-
-        for (int i = 0; i < vectorDouble8.getLength(); i++) {
-            vectorDouble8.set(i, new Double8(i, i, i, i, i, i, i, i));
-        }
-
-        Double8 sum = new Double8(0, 0, 0, 0, 0, 0, 0, 0);
-
-        for (int i = 0; i < vectorDouble8.getLength(); i++) {
-            Double8 f = vectorDouble8.get(i);
-            sum = Double8.add(f, sum);
-        }
-
-        output.set(0, sum);
     }
 
     @Test
@@ -472,15 +513,6 @@ public class TestDoubles extends TornadoTestBase {
             assertEquals(sequentialOutput.get(i).getS5(), tornadoOutput.get(i).getS5(), DELTA);
             assertEquals(sequentialOutput.get(i).getS6(), tornadoOutput.get(i).getS6(), DELTA);
             assertEquals(sequentialOutput.get(i).getS7(), tornadoOutput.get(i).getS7(), DELTA);
-        }
-    }
-
-    private static void vectorComputation01(VectorDouble2 value, VectorDouble2 output) {
-        for (@Parallel int i = 0; i < output.getLength(); i++) {
-            Double2 double2 = new Double2();
-            double2.setX(value.get(i).getX() + value.get(i).getY());
-            double2.setY(value.get(i).getX() * 2);
-            output.set(i, double2);
         }
     }
 
@@ -514,15 +546,6 @@ public class TestDoubles extends TornadoTestBase {
         for (int i = 0; i < size; i++) {
             assertEquals(sequentialOutput.get(i).getX(), tornadoOutput.get(i).getX(), DELTA);
             assertEquals(sequentialOutput.get(i).getY(), tornadoOutput.get(i).getY(), DELTA);
-        }
-    }
-
-    private static void vectorComputation02(VectorDouble3 value, VectorDouble3 output) {
-        for (@Parallel int i = 0; i < output.getLength(); i++) {
-            Double3 double3 = new Double3();
-            double3.setX(value.get(i).getX() + value.get(i).getY());
-            double3.setY(value.get(i).getZ() * 2);
-            output.set(i, double3);
         }
     }
 
@@ -560,20 +583,6 @@ public class TestDoubles extends TornadoTestBase {
         }
     }
 
-    private static Double3 vectorComputation03(final Double4 value) {
-        Double3 output = new Double3();
-        output.setX(value.getX() + value.getY());
-        output.setY(value.getY());
-        output.setZ(value.getW());
-        return output;
-    }
-
-    private static void vectorComputation03(VectorDouble4 value, VectorDouble3 output) {
-        for (@Parallel int i = 0; i < output.getLength(); i++) {
-            output.set(i, vectorComputation03(value.get(i)));
-        }
-    }
-
     @Test
     public void testInternalSetMethod03() {
         final int size = 16;
@@ -605,15 +614,6 @@ public class TestDoubles extends TornadoTestBase {
             assertEquals(sequentialOutput.get(i).getX(), tornadoOutput.get(i).getX(), DELTA);
             assertEquals(sequentialOutput.get(i).getY(), tornadoOutput.get(i).getY(), DELTA);
             assertEquals(sequentialOutput.get(i).getZ(), tornadoOutput.get(i).getZ(), DELTA);
-        }
-    }
-
-    private static void vectorComputation04(VectorDouble8 value, VectorDouble2 output) {
-        for (@Parallel int i = 0; i < output.getLength(); i++) {
-            Double2 double2 = new Double2();
-            double2.setX(value.get(i).getS0() + value.get(i).getS1());
-            double2.setY(value.get(i).getS1());
-            output.set(i, double2);
         }
     }
 

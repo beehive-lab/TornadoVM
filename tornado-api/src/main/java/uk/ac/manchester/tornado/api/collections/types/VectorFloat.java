@@ -48,9 +48,9 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
 public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
 
+    private static final int ELEMENT_SIZE = 1;
     private final int numElements;
     private final float[] storage;
-    private static final int ELEMENT_SIZE = 1;
 
     protected VectorFloat(int numElements, float[] array) {
         this.numElements = numElements;
@@ -58,7 +58,7 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Creates an empty vector with
+     * Creates an empty vector with.
      * 
      * @param numElements
      *            Number of elements
@@ -68,102 +68,13 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Creates an new vector from the provided storage
+     * Creates a new vector from the provided storage.
      * 
      * @param storage
      *            Array to be stored
      */
     public VectorFloat(float[] storage) {
         this(storage.length / ELEMENT_SIZE, storage);
-    }
-
-    public float[] getArray() {
-        return storage;
-    }
-
-    /**
-     * Returns the float at the given index of this vector
-     * 
-     * @param index
-     *            Position
-     * @return value
-     */
-    public float get(int index) {
-        return storage[index];
-    }
-
-    /**
-     * Sets the float at the given index of this vector
-     * 
-     * @param index
-     *            Position
-     * @param value
-     *            Float value to be stored
-     */
-    public void set(int index, float value) {
-        storage[index] = value;
-    }
-
-    /**
-     * Sets the elements of this vector to that of the provided vector
-     * 
-     * @param values
-     *            VectorFloat4
-     */
-    public void set(VectorFloat values) {
-        for (int i = 0; i < values.storage.length; i++) {
-            storage[i] = values.storage[i];
-        }
-    }
-
-    /**
-     * Sets the elements of this vector to that of the provided array
-     * 
-     * @param values
-     *            Set input array as internal stored
-     */
-    public void set(float[] values) {
-        for (int i = 0; i < values.length; i++) {
-            storage[i] = values[i];
-        }
-    }
-
-    /**
-     * Sets all elements to value
-     * 
-     * @param value
-     *            Fill input array with value
-     */
-    public void fill(float value) {
-        for (int i = 0; i < storage.length; i++) {
-            storage[i] = value;
-        }
-    }
-
-    /**
-     * Returns slice of this vector
-     * 
-     * @param start
-     *            starting index
-     * @param length
-     *            number of elements
-     * @return a new Vector Float
-     */
-    public VectorFloat subVector(int start, int length) {
-        final VectorFloat v = new VectorFloat(length);
-        for (int i = 0; i < length; i++) {
-            v.storage[i] = storage[i + start];
-        }
-        return v;
-    }
-
-    /**
-     * Duplicates this vector
-     * 
-     * @return a new Vector Float
-     */
-    public VectorFloat duplicate() {
-        return new VectorFloat(Arrays.copyOf(storage, storage.length));
     }
 
     public static float min(VectorFloat v) {
@@ -183,19 +94,8 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Vector equality test
-     * 
-     * @param vector
-     *            input vector
-     * @return true if vectors match
-     */
-    public boolean isEqual(VectorFloat vector) {
-        return TornadoMath.isEqual(storage, vector.storage);
-    }
-
-    /**
-     * Performs Dot-product
-     * 
+     * Performs Dot-product.
+     *
      * @return dot-product value
      */
     public static float dot(VectorFloat a, VectorFloat b) {
@@ -206,8 +106,102 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
         return sum;
     }
 
+    public float[] getArray() {
+        return storage;
+    }
+
     /**
-     * Prints the vector using the specified format string
+     * Returns the float at the given index of this vector.
+     *
+     * @param index
+     *            Position
+     * @return value
+     */
+    public float get(int index) {
+        return storage[index];
+    }
+
+    /**
+     * Sets the float at the given index of this vector.
+     *
+     * @param index
+     *            Position
+     * @param value
+     *            Float value to be stored
+     */
+    public void set(int index, float value) {
+        storage[index] = value;
+    }
+
+    /**
+     * Sets the elements of this vector to that of the provided vector.
+     *
+     * @param values
+     *            VectorFloat4
+     */
+    public void set(VectorFloat values) {
+        for (int i = 0; i < values.storage.length; i++) {
+            storage[i] = values.storage[i];
+        }
+    }
+
+    /**
+     * Sets the elements of this vector to that of the provided array.
+     *
+     * @param values
+     *            Set input array as internal stored
+     */
+    public void set(float[] values) {
+        System.arraycopy(values, 0, storage, 0, values.length);
+    }
+
+    /**
+     * Sets all elements to value.
+     *
+     * @param value
+     *            Fill input array with value
+     */
+    public void fill(float value) {
+        Arrays.fill(storage, value);
+    }
+
+    /**
+     * Returns slice of this vector.
+     *
+     * @param start
+     *            starting index
+     * @param length
+     *            number of elements
+     */
+    public VectorFloat subVector(int start, int length) {
+        final VectorFloat v = new VectorFloat(length);
+        for (int i = 0; i < length; i++) {
+            v.storage[i] = storage[i + start];
+        }
+        return v;
+    }
+
+    /**
+     * Duplicates this vector.
+     *
+     */
+    public VectorFloat duplicate() {
+        return new VectorFloat(Arrays.copyOf(storage, storage.length));
+    }
+
+    /**
+     * Vector equality test.
+     *
+     * @param vector
+     *            input vector
+     * @return true if vectors match
+     */
+    public boolean isEqual(VectorFloat vector) {
+        return TornadoMath.isEqual(storage, vector.storage);
+    }
+
+    /**
+     * Prints the vector using the specified format string.
      *
      * @param fmt
      *            String Format

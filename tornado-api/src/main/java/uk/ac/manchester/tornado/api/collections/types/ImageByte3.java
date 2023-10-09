@@ -46,33 +46,33 @@ import java.util.Arrays;
 
 public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
 
+    private static final int elementSize = 3;
     /**
-     * backing array
+     * backing array.
      */
-    final protected byte[] storage;
+    protected final byte[] storage;
+    /**
+     * Number of rows.
+     */
+    protected final int Y;
+    /**
+     * Number of columns.
+     */
+    protected final int X;
+    /**
+     * number of elements in the storage.
+     */
+    private final int numElements;
 
     /**
-     * number of elements in the storage
-     */
-    final private int numElements;
-    final private static int elementSize = 3;
-
-    /**
-     * Number of rows
-     */
-    final protected int Y;
-
-    /**
-     * Number of columns
-     */
-    final protected int X;
-
-    /**
-     * Storage format for matrix
+     * Storage format for matrix.
      *
-     * @param width  number of rows
-     * @param height number of columns
-     * @param array  array reference which contains data
+     * @param width
+     *            number of rows
+     * @param height
+     *            number of columns
+     * @param array
+     *            array reference which contains data
      */
     public ImageByte3(int width, int height, byte[] array) {
         storage = array;
@@ -82,10 +82,12 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
     }
 
     /**
-     * Storage format for matrix
+     * Storage format for matrix.
      *
-     * @param width  number of rows
-     * @param height number of columns
+     * @param width
+     *            number of rows
+     * @param height
+     *            number of columns
      */
     public ImageByte3(int width, int height) {
         this(width, height, new byte[width * height * elementSize]);

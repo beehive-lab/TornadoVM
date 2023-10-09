@@ -206,7 +206,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
     }
 
     /**
-     * Final Node Replacement
+     * Final Node Replacement.
      */
     private void performNodeReplacement(StructuredGraph graph, StoreIndexedNode store, Node predecessor, ReductionMetadataNode reductionNode) {
 

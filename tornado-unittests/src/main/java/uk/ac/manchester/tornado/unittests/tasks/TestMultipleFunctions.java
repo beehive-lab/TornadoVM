@@ -45,58 +45,6 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 public class TestMultipleFunctions extends TornadoTestBase {
 
-    private static class TestArrays {
-        final int N1 = 1024;
-
-        int[] calleeReadTor;
-        int[] callerReadCalleeWriteTor;
-        int[] callerReadTor;
-        int[] callerWriteTor;
-        int[] callerReadWriteTor;
-        int[] callee1WriteTor;
-        int[] callee2ReadTor;
-
-        int[] calleeReadSeq;
-        int[] callerReadCalleeWriteSeq;
-        int[] callerReadSeq;
-        int[] callerWriteSeq;
-        int[] callerReadWriteSeq;
-        int[] callee1WriteSeq;
-        int[] callee2ReadSeq;
-
-        int ignoreParam1 = 10;
-        int ignoreParam2 = -500;
-
-        public TestArrays() {
-            calleeReadTor = new int[N1];
-            callerReadCalleeWriteTor = new int[N1];
-            callerReadTor = new int[N1];
-            callerWriteTor = new int[N1];
-            callerReadWriteTor = new int[N1];
-            callee1WriteTor = new int[N1];
-            callee2ReadTor = new int[N1];
-
-            Random random = new Random();
-            for (int i = 0; i < N1; i++) {
-                calleeReadTor[i] = random.nextInt();
-                callerReadCalleeWriteTor[i] = random.nextInt();
-                callerReadTor[i] = random.nextInt();
-                callerWriteTor[i] = random.nextInt();
-                callerReadWriteTor[i] = random.nextInt();
-                callee1WriteTor[i] = random.nextInt();
-                callee2ReadTor[i] = random.nextInt();
-            }
-
-            calleeReadSeq = calleeReadTor.clone();
-            callerReadCalleeWriteSeq = callerReadCalleeWriteTor.clone();
-            callerReadSeq = callerReadTor.clone();
-            callerWriteSeq = callerWriteTor.clone();
-            callerReadWriteSeq = callerReadWriteTor.clone();
-            callee1WriteSeq = callee1WriteTor.clone();
-            callee2ReadSeq = callee2ReadTor.clone();
-        }
-    }
-
     private static int operation(int a, int b) {
         return a + b;
     }
@@ -169,6 +117,29 @@ public class TestMultipleFunctions extends TornadoTestBase {
      */
     public static void vectorTypes(Float4 a, Float4 b, Float4 c) {
         c.set(Float4.add(foo(a), bar(b)));
+    }
+
+    public static void callee2(int[] calleeReadWrite, int[] calleeRead) {
+        for (int i = 0; i < calleeReadWrite.length; i++) {
+            calleeReadWrite[i] = calleeReadWrite[i] - calleeRead[i];
+        }
+    }
+
+    private static void functionA(int[] arr) {
+        functionB(arr);
+        functionC(arr);
+    }
+
+    private static void functionB(int[] arr) {
+        functionD(arr);
+    }
+
+    private static void functionC(int[] arr) {
+        functionD(arr);
+    }
+
+    private static void functionD(int[] arr) {
+        arr[0] = -1;
     }
 
     @Test
@@ -346,7 +317,6 @@ public class TestMultipleFunctions extends TornadoTestBase {
         for (int i = 0; i < callerRead.length; i++) {
             callerWrite[i] = callerRead[i] + callerReadCalleeWrite[i] + 10;
         }
-
         callee1(calleeRead, callerReadCalleeWrite);
     }
 
@@ -358,12 +328,6 @@ public class TestMultipleFunctions extends TornadoTestBase {
 
     public void caller2(int[] calleeReadWrite, int[] calleeRead) {
         callee2(calleeReadWrite, calleeRead);
-    }
-
-    public static void callee2(int[] calleeReadWrite, int[] calleeRead) {
-        for (int i = 0; i < calleeReadWrite.length; i++) {
-            calleeReadWrite[i] = calleeReadWrite[i] - calleeRead[i];
-        }
     }
 
     public void caller3(int[] callerReadWrite, int[] callee1Read, int[] callee1Write, int[] callee2ReadWrite, int[] callee2Read) {
@@ -484,7 +448,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
                         arrays.callerReadTor, //
                         arrays.callerReadWriteTor, //
                         arrays.callee1WriteTor, //
-                        arrays.callerReadCalleeWriteTor);//
+                        arrays.callerReadCalleeWriteTor); //
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
@@ -497,23 +461,6 @@ public class TestMultipleFunctions extends TornadoTestBase {
         Assert.assertArrayEquals(arrays.callerReadWriteSeq, arrays.callerReadWriteTor);
         Assert.assertArrayEquals(arrays.callee1WriteSeq, arrays.callee1WriteTor);
         Assert.assertArrayEquals(arrays.callee2ReadSeq, arrays.callee2ReadTor);
-    }
-
-    private static void functionA(int[] arr) {
-        functionB(arr);
-        functionC(arr);
-    }
-
-    private static void functionB(int[] arr) {
-        functionD(arr);
-    }
-
-    private static void functionC(int[] arr) {
-        functionD(arr);
-    }
-
-    private static void functionD(int[] arr) {
-        arr[0] = -1;
     }
 
     //@formatter:off
@@ -535,6 +482,60 @@ public class TestMultipleFunctions extends TornadoTestBase {
         executionPlan.execute();
 
         Assert.assertEquals(-1, arr[0]);
+    }
+
+    //@formatter:off
+
+    private static class TestArrays {
+        final int N1 = 1024;
+
+        int[] calleeReadTor;
+        int[] callerReadCalleeWriteTor;
+        int[] callerReadTor;
+        int[] callerWriteTor;
+        int[] callerReadWriteTor;
+        int[] callee1WriteTor;
+        int[] callee2ReadTor;
+
+        int[] calleeReadSeq;
+        int[] callerReadCalleeWriteSeq;
+        int[] callerReadSeq;
+        int[] callerWriteSeq;
+        int[] callerReadWriteSeq;
+        int[] callee1WriteSeq;
+        int[] callee2ReadSeq;
+
+        int ignoreParam1 = 10;
+        int ignoreParam2 = -500;
+
+        TestArrays() {
+            calleeReadTor = new int[N1];
+            callerReadCalleeWriteTor = new int[N1];
+            callerReadTor = new int[N1];
+            callerWriteTor = new int[N1];
+            callerReadWriteTor = new int[N1];
+            callee1WriteTor = new int[N1];
+            callee2ReadTor = new int[N1];
+
+            Random random = new Random();
+            for (int i = 0; i < N1; i++) {
+                calleeReadTor[i] = random.nextInt();
+                callerReadCalleeWriteTor[i] = random.nextInt();
+                callerReadTor[i] = random.nextInt();
+                callerWriteTor[i] = random.nextInt();
+                callerReadWriteTor[i] = random.nextInt();
+                callee1WriteTor[i] = random.nextInt();
+                callee2ReadTor[i] = random.nextInt();
+            }
+
+            calleeReadSeq = calleeReadTor.clone();
+            callerReadCalleeWriteSeq = callerReadCalleeWriteTor.clone();
+            callerReadSeq = callerReadTor.clone();
+            callerWriteSeq = callerWriteTor.clone();
+            callerReadWriteSeq = callerReadWriteTor.clone();
+            callee1WriteSeq = callee1WriteTor.clone();
+            callee2ReadSeq = callee2ReadTor.clone();
+        }
     }
 
 }

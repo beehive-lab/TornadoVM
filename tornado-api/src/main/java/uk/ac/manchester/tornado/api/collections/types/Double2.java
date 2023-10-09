@@ -51,17 +51,15 @@ import uk.ac.manchester.tornado.api.type.annotations.Vector;
 public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
 
     public static final Class<Double2> TYPE = Double2.class;
-
     /**
-     * backing array
+     * number of elements in the storage.
+     */
+    private static final int NUM_ELEMENTS = 2;
+    /**
+     * backing array.
      */
     @Payload
     final double[] storage;
-
-    /**
-     * number of elements in the storage
-     */
-    private static final int NUM_ELEMENTS = 2;
 
     public Double2(double[] storage) {
         this.storage = storage;
@@ -77,59 +75,6 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
         setY(y);
     }
 
-    public double[] getArray() {
-        return storage;
-    }
-
-    public double get(int index) {
-        return storage[index];
-    }
-
-    public void set(int index, double value) {
-        storage[index] = value;
-    }
-
-    public void set(Double2 value) {
-        setX(value.getX());
-        setY(value.getY());
-    }
-
-    public double getX() {
-        return get(0);
-    }
-
-    public double getY() {
-        return get(1);
-    }
-
-    public void setX(double value) {
-        set(0, value);
-    }
-
-    public void setY(double value) {
-        set(1, value);
-    }
-
-    /**
-     * Duplicates this vector
-     *
-     * @return {@Double 2}
-     */
-    public Double2 duplicate() {
-        Double2 vector = new Double2();
-        vector.set(this);
-        return vector;
-    }
-
-    public String toString(String fmt) {
-        return String.format(fmt, getX(), getY());
-    }
-
-    @Override
-    public String toString() {
-        return toString(DoubleOps.FMT_2);
-    }
-
     static Double2 loadFromArray(final double[] array, int index) {
         final Double2 result = new Double2();
         result.setX(array[index]);
@@ -137,28 +82,8 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
         return result;
     }
 
-    void storeToArray(final double[] array, int index) {
-        array[index] = getX();
-        array[index + 1] = getY();
-    }
-
-    @Override
-    public void loadFromBuffer(DoubleBuffer buffer) {
-        asBuffer().put(buffer);
-    }
-
-    @Override
-    public DoubleBuffer asBuffer() {
-        return DoubleBuffer.wrap(storage);
-    }
-
-    @Override
-    public int size() {
-        return NUM_ELEMENTS;
-    }
-
     /**
-     * * Operations on Double2 vectors
+     * * Operations on Double2 vectors.
      */
     /*
      * vector = op( vector, vector )
@@ -300,7 +225,7 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     /**
-     * Returns the vector length e.g. the sqrt of all elements squared
+     * Returns the vector length e.g. the sqrt of all elements squared.
      *
      * @return {@link double}
      */
@@ -310,6 +235,79 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
 
     public static boolean isEqual(Double2 a, Double2 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+    }
+
+    public double[] getArray() {
+        return storage;
+    }
+
+    public double get(int index) {
+        return storage[index];
+    }
+
+    public void set(int index, double value) {
+        storage[index] = value;
+    }
+
+    public void set(Double2 value) {
+        setX(value.getX());
+        setY(value.getY());
+    }
+
+    public double getX() {
+        return get(0);
+    }
+
+    public void setX(double value) {
+        set(0, value);
+    }
+
+    public double getY() {
+        return get(1);
+    }
+
+    public void setY(double value) {
+        set(1, value);
+    }
+
+    /**
+     * Duplicates this vector.
+     *
+     * @return {@Double 2}
+     */
+    public Double2 duplicate() {
+        Double2 vector = new Double2();
+        vector.set(this);
+        return vector;
+    }
+
+    public String toString(String fmt) {
+        return String.format(fmt, getX(), getY());
+    }
+
+    @Override
+    public String toString() {
+        return toString(DoubleOps.FMT_2);
+    }
+
+    void storeToArray(final double[] array, int index) {
+        array[index] = getX();
+        array[index + 1] = getY();
+    }
+
+    @Override
+    public void loadFromBuffer(DoubleBuffer buffer) {
+        asBuffer().put(buffer);
+    }
+
+    @Override
+    public DoubleBuffer asBuffer() {
+        return DoubleBuffer.wrap(storage);
+    }
+
+    @Override
+    public int size() {
+        return NUM_ELEMENTS;
     }
 
 }

@@ -534,29 +534,29 @@ public class TornadoExecutionContext {
     }
 
     public void dumpExecutionContextMeta() {
-        final String ANSI_RESET = "\u001B[0m";
-        final String ANSI_CYAN = "\u001B[36m";
-        final String ANSI_YELLOW = "\u001B[33m";
-        final String ANSI_PURPLE = "\u001B[35m";
-        final String ANSI_GREEN = "\u001B[32m";
+        final String ansiReset = "\u001B[0m";
+        final String ansiCyan = "\u001B[36m";
+        final String ansiYellow = "\u001B[33m";
+        final String ansiPurple = "\u001B[35m";
+        final String ansiGreen = "\u001B[32m";
         System.out.println("-----------------------------------");
-        System.out.println(ANSI_CYAN + "Device Table:" + ANSI_RESET);
+        System.out.println(ansiCyan + "Device Table:" + ansiReset);
         for (int i = 0; i < devices.size(); i++) {
             System.out.printf("[%d]: %s\n", i, devices.get(i));
         }
 
-        System.out.println(ANSI_YELLOW + "Constant Table:" + ANSI_RESET);
+        System.out.println(ansiYellow + "Constant Table:" + ansiReset);
         for (int i = 0; i < constants.size(); i++) {
             System.out.printf("[%d]: %s\n", i, constants.get(i));
         }
 
-        System.out.println(ANSI_PURPLE + "Object Table:" + ANSI_RESET);
+        System.out.println(ansiPurple + "Object Table:" + ansiReset);
         for (int i = 0; i < objects.size(); i++) {
             final Object obj = objects.get(i);
             System.out.printf("[%d]: 0x%x %s\n", i, obj.hashCode(), obj);
         }
 
-        System.out.println(ANSI_GREEN + "Task Table:" + ANSI_RESET);
+        System.out.println(ansiGreen + "Task Table:" + ansiReset);
         for (int i = 0; i < tasks.size(); i++) {
             final SchedulableTask task = tasks.get(i);
             System.out.printf("[%d]: %s\n", i, task.getFullName());

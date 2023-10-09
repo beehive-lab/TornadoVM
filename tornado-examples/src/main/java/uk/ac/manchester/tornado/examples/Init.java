@@ -31,7 +31,7 @@ import uk.ac.manchester.tornado.examples.common.Messages;
 
 /**
  * <p>
- * Run with:
+ * Run with.
  * </p>
  * <code>
  *      tornado -m tornado.examples/uk.ac.manchester.tornado.examples.Init <size>

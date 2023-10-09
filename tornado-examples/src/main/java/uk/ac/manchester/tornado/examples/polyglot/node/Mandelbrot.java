@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 public class Mandelbrot {
-
+    // CHECKSTYLE:OFF
     private static final int SIZE = 1024;
 
     private static void mandelbrot(int size, short[] output) {
@@ -115,3 +115,4 @@ public class Mandelbrot {
         return result;
     }
 }
+// CHECKSTYLE:OFF

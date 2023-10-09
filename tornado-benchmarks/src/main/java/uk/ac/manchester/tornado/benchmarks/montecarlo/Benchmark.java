@@ -21,8 +21,6 @@ package uk.ac.manchester.tornado.benchmarks.montecarlo;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkRunner;
 
-import java.util.Arrays;
-
 public class Benchmark extends BenchmarkRunner {
 
     private int size;
