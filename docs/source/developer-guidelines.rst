@@ -9,7 +9,7 @@ IntelliJ Configurations
 
 
 1. Enable Eclipse Code Formatter for IntelliJ
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
    - Install the Eclipse Code Formatter plugin from the JetBrains plugin repository:
 
@@ -17,11 +17,11 @@ IntelliJ Configurations
 
    - After installation, navigate to **File > Settings > Adapter for Eclipse Code Formatter**.
    - Select the option **“Use the Eclipse code formatter”**.
-   - Load the TornadoVM code formatter from this path ``scripts/templates/eclipse-settings/Tornadovm_eclipse_formatter.xml`` using the selector **Eclipse Formatter Config** > **Eclipse workspace/project folder**. 
+   - Load the TornadoVM code formatter from this path ``scripts/templates/eclipse-settings/Tornadovm_eclipse_formatter.xml`` using the selector **Eclipse Formatter Config** > **Eclipse workspace/project folder**.
    - Click **Apply** to save the settings.
 
 2. Enable IntelliJ Code Formatter
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
    - Go to Menu Settings → Editor → Code Style.
    - Import the code style scheme by following these steps:
@@ -44,57 +44,55 @@ This plugin provides both real-time and on-demand scanning of Java files with Ch
    - Select **Use a local Checkstyle file**.
    - Use the Checkstyle configuration file found at ``tornado-assembly/src/etc/checkstyle.xml``.
    - Click **Next > Finish**.
-   - Mark the newly imported check configuration as **Active**.
+   - Mark the newly imported check configuration as **Active** and click **Apply**.
 
 4. EditorConfig
 ~~~~~~~~~~~~~~~
    We use JetBrains' EditorConfig. This allows us to import and export code style settings easily.
 
-   - Copy the EditorConfig file to the root of your project:
+- Copy the EditorConfig file to the root of your project:
 
-     .. code-block:: bash
-        cd $TORNADO_ROOT
-        cp scripts/templates/intellij-settings/.editorconfig .
+.. code:: bash
 
-   - In IntelliJ IDEA, navigate to Menu Settings → Editor → Code Style.
-   - At the bottom of the settings window, check the box that says "Use EditorConfig."
+  cd $TORNADO_ROOT
+  cp scripts/templates/intellij-settings/.editorconfig .
 
-5. Save Actions
+
+- In IntelliJ IDEA, navigate to Menu Settings → Editor → Code Style.
+- At the bottom of the settings window, check the box "Use EditorConfig".
+
+1. Save Actions
 ~~~~~~~~~~~~~~~
 
-   Install the **Save Actions** Plugin. This allows you  to define post-save actions, including code formatting.
+Install the **Save Actions** Plugin. This allows you  to define post-save actions, including code formatting.
 
-   - To enable the auto-formatter with save-actions, follow these steps:
-     - Go to **Settings > Other Settings > Save Actions**.
-     - Mark the following options: Activate save actions on save, Activate save actions in shortcut and Reformat file.
-
-
+- To enable the auto-formatter with save-actions, follow these steps:
+  - Go to **Settings > Other Settings > Save Actions**.
+  - Mark the following options: Activate save actions on save, Activate save actions in shortcut and Reformat file.
 
 
 
 Pre-commit hooks
------------------------
+----------------
 
 
-Install pre-commit hooks 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Install pre-commit hooks
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 Pre-commit docs: `<https://pre-commit.com/>_`
 
 
-   .. code-block:: bash
-      pip install pre-commit
-      pre-commit install
+.. code:: bash
+
+  pip install pre-commit
+  pre-commit install
 
 
 Every time there is a commit in the TornadoVM repo, the pre-commit will pass some checks (including code check style and code formatter).
-If all checks are correct, then the commit will be done. 
+If all checks are correct, then the commit will be done.
 
 To guarantee the commit, pass the check style before:
 
-   .. code-block:: bash
-      make checkstyle     ### If there are errors regarding the code formatting, fix it at this stage. 
+.. code:: bash
 
-
-
-
+  make checkstyle     ### If there are errors regarding the code formatting, fix it at this stage.

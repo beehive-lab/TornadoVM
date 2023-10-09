@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
  * objects.
  */
 public class BatchConfiguration {
+
     private final int totalChunks;
     private final int remainingChunkSize;
     private final short numBytesType;
