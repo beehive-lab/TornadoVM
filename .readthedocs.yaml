@@ -19,12 +19,7 @@ sphinx:
 formats:
     - pdf
 
-# Optionally declare the Python requirements required to build your docs
-#python:
-#    install:
-#    - method: pip
-#      path: .
-#      extra_requirements:
-#        - docs
-
-
+# Explicitly set the version of Python and its requirements
+python:
+  install:
+    - requirements: docs/requirements.txt

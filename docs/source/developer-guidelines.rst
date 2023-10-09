@@ -1,7 +1,7 @@
-Configuration of Code Formatting and Code Check Style for TornadoVM
-===================================================================
+Developer Guidelines
+====================
 
-This guide will walk you through the configuration of both code formatters and check style within the IntelliJ IDE.
+This guide shows the configuration for the code formatting and code check styles for TornadoVM and IntelliJ.
 
 
 IntelliJ Configurations
