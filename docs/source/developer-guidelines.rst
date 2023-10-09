@@ -1,70 +1,100 @@
-Configuration for Code Formatting and Checkstyle
-================================================
-This guide will walk you through the configuration of both code formatters and Checkstyle within IntelliJ IDEA.
+Configuration of Code Formatting and Code Check Style for TornadoVM
+===================================================================
+
+This guide will walk you through the configuration of both code formatters and check style within the IntelliJ IDE.
 
 
-Intellij Configurations
+IntelliJ Configurations
 -----------------------
 
 
-Enable Eclipse Code Formatter for IntelliJ
+1. Enable Eclipse Code Formatter for IntelliJ
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
    - Install the Eclipse Code Formatter plugin from the JetBrains plugin repository:
 
      `Eclipse Code Formatter Plugin <https://plugins.jetbrains.com/plugin/6546-eclipse-code-formatter>`_
 
-   - After installation, navigate to **File > Settings > Other Settings > Eclipse Code Formatter**.
+   - After installation, navigate to **File > Settings > Adapter for Eclipse Code Formatter**.
    - Select the option **“Use the Eclipse code formatter”**.
-   - Load the TornadoVM code formatter configuration file by specifying its location: ``scripts/templates/eclipse-settings/Tornadovm_eclipse_formatter.xml``.
+   - Load the TornadoVM code formatter from this path ``scripts/templates/eclipse-settings/Tornadovm_eclipse_formatter.xml`` using the selector **Eclipse Formatter Config** > **Eclipse workspace/project folder**. 
    - Click **Apply** to save the settings.
 
-Enable IntelliJ Formatter
+2. Enable IntelliJ Code Formatter
 ~~~~~~~~~~~~~~~~~~~~~
 
    - Go to Menu Settings → Editor → Code Style.
-   - Select the appropriate code style scheme.
    - Import the code style scheme by following these steps:
-     - Click on the gear icon in the top right corner of the Code Style settings.
-     - Choose "Scheme Import."
+     - Click on the cog icon in the top right corner of the Code Style settings ("Schema" field).
+     - Choose "Import Schema"
      - Import the file located at: ``scripts/templates/intellij-settings/Tornadovm_intellij_formatter.xml``
+     - Click **Apply**.
 
-Checkstyle-IDEA Plugin
+3. Checkstyle-IDEA Plugin
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 This plugin provides both real-time and on-demand scanning of Java files with Checkstyle from within IDEA.
 
    - Install the Checkstyle-IDEA plugin by going to **File > Settings** (Windows/Linux) or **IntelliJ IDEA > Preferences…** (macOS).
-   - Select **Plugins**, press **Browse Repository**, and find the plugin.
+   - Select **Plugins**, press **Browse Repository**, and find the plugin `CheckStyle-IDEA <https://plugins.jetbrains.com/plugin/1065-checkstyle-idea>`_
    - Restart the IDE to complete the installation.
-   - Click **File > Settings… > Other Settings > Checkstyle**.
+   - Click **File > Settings > Tools > Checkstyle**.
    - Set the **Scan Scope** to "Only Java sources (including tests)" to run Checkstyle for test source codes as well.
    - Click the plus sign under **Configuration File**.
-   - Enter a description (e.g., "addressbook").
+   - Enter a description (e.g., "TornadoVM Checkstyle").
    - Select **Use a local Checkstyle file**.
    - Use the Checkstyle configuration file found at ``tornado-assembly/src/etc/checkstyle.xml``.
    - Click **Next > Finish**.
    - Mark the newly imported check configuration as **Active**.
 
-EditorConfig
+4. EditorConfig
 ~~~~~~~~~~~~~~~
-   To maintain consistent code style standards across multiple programming languages, we recommend using JetBrains' EditorConfig support. This allows you to import and export code style settings easily.
+   We use JetBrains' EditorConfig. This allows us to import and export code style settings easily.
 
    - Copy the EditorConfig file to the root of your project:
 
      .. code-block:: bash
-
-        cp scripts/templates/intellij-settings/.editorconfig PROJECT_ROOT_DIRECTORY
+        cd $TORNADO_ROOT
+        cp scripts/templates/intellij-settings/.editorconfig .
 
    - In IntelliJ IDEA, navigate to Menu Settings → Editor → Code Style.
    - At the bottom of the settings window, check the box that says "Use EditorConfig."
 
-Save Actions
--------------
+5. Save Actions
+~~~~~~~~~~~~~~~
 
-   The Save Actions plugin allows you to define post-save actions, including code formatting on save.
+   Install the **Save Actions** Plugin. This allows you  to define post-save actions, including code formatting.
 
    - To enable the auto-formatter with save-actions, follow these steps:
-     - Go to **Settings -> Other Settings -> Save Actions**.
-     - Mark the following options: Activate save actions on save, Activate save actions in shortcut and Reformat file
+     - Go to **Settings > Other Settings > Save Actions**.
+     - Mark the following options: Activate save actions on save, Activate save actions in shortcut and Reformat file.
 
-By following these guidelines, you can ensure consistent code formatting and style for Java code in your project and use additional tools like Eclipse Code Formatter, Checkstyle-IDEA, and Save Actions to streamline your development process.
+
+
+
+
+Pre-commit hooks
+-----------------------
+
+
+Install pre-commit hooks 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Pre-commit docs: `<https://pre-commit.com/>_`
+
+
+   .. code-block:: bash
+      pip install pre-commit
+      pre-commit install
+
+
+Every time there is a commit in the TornadoVM repo, the pre-commit will pass some checks (including code check style and code formatter).
+If all checks are correct, then the commit will be done. 
+
+To guarantee the commit, pass the check style before:
+
+   .. code-block:: bash
+      make checkstyle     ### If there are errors regarding the code formatting, fix it at this stage. 
+
+
+
+
