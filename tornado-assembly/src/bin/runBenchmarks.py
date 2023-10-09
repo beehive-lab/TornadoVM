@@ -26,13 +26,15 @@ import re
 import subprocess
 from datetime import datetime
 
+
 def runBenchmarks(filename, command):
-    with open(filename, 'w') as fout:
+    with open(filename, "w") as fout:
         proc = subprocess.Popen(command, stdout=fout, shell=False)
         return_code = proc.wait()
 
+
 def main():
-    date = datetime.today().strftime('%d-%m-%Y-%T')
+    date = datetime.today().strftime("%d-%m-%Y-%T")
 
     directory = "benchmarks_results"
     try:
@@ -42,15 +44,17 @@ def main():
 
     ## Obtain the list of backends installed
     command = "tornado -- version"
-    process = subprocess.Popen(['tornado', '--version'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    process = subprocess.Popen(
+        ["tornado", "--version"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+    )
     output = str(process.stdout.read())
-    m = re.search(r'backends=(\w+(,\w+)?)', output)
+    m = re.search(r"backends=(\w+(,\w+)?)", output)
     match = m.group(0)
 
     ## Obtain if SPIR-V backend is installed
     m2 = re.search("spirv", match)
     spirvEnabled = False
-    if (m2 != None):
+    if m2 != None:
         spirvEnabled = True
 
     print("Is SPIRV Backend present? " + str(spirvEnabled))
@@ -62,7 +66,7 @@ def main():
     print("[SCRIPT] Running benchmarks with Profiler")
     runBenchmarks(filename, command)
 
-    if (spirvEnabled):
+    if spirvEnabled:
         # Run with Profiler and Optimizations Enabled
         filename = directory + "/BENCHMARKS_PROFILER_OPTIMIZED_" + date + ".log"
         command = ["tornado-benchmarks.py", "--profiler", "--spirvOptimizer"]
@@ -75,12 +79,13 @@ def main():
     print("[SCRIPT] Running benchmarks END 2 END")
     runBenchmarks(filename, command)
 
-    if (spirvEnabled):
+    if spirvEnabled:
         # Run end-to-end and Optimizations enabled
         filename = directory + "/BENCHMARKS_END2END_OPTIMZED_" + date + ".log"
         command = ["tornado-benchmarks.py", "--spirvOptimizer"]
         print("[SCRIPT] Running benchmarks END 2 END - Optimized SPIR-V")
         runBenchmarks(filename, command)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
