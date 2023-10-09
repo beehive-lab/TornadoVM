@@ -13,16 +13,16 @@
  *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * along with GNU Classpath; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  *
  * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
+ * making a combined work based on this library. Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
  *
@@ -32,41 +32,58 @@
  * modules, and to copy and distribute the resulting executable under
  * terms of your choice, provided that you also meet, for each linked
  * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
+ * module. An independent module is a module which is not derived from
+ * or based on this library. If you modify this library, you may extend
  * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
+ * obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  *
  */
 package uk.ac.manchester.tornado.api.data.nativetypes;
 
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
+import uk.ac.manchester.tornado.api.type.annotations.PanamaElementSize;
+
+@PanamaElementSize(size = 8)
 public class LongArray {
     private MemorySegment segment;
     private final int LONG_BYTES = 8;
     private int numberOfElements;
+    private int arrayHeaderSize;
+
+    private int baseIndex;
+    private int arraySizeHeaderPosition;
+
+    private long segmentByteSize;
 
     public LongArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segment = Arena.ofAuto().allocate((numberOfElements * LONG_BYTES) + 24L, 1);
+        arrayHeaderSize = (int) TornadoArray.ARRAY_HEADER;
+        baseIndex = arrayHeaderSize / LONG_BYTES;
+        arraySizeHeaderPosition = baseIndex - 1;
+
+        segmentByteSize = numberOfElements * LONG_BYTES + arrayHeaderSize;
+        segment = Arena.ofAuto().allocate(segmentByteSize, 1);
+        segment.setAtIndex(JAVA_INT, arraySizeHeaderPosition, numberOfElements);
+
     }
 
     public void set(int index, long value) {
-        segment.setAtIndex(JAVA_LONG, index, value);
+        segment.setAtIndex(JAVA_LONG, baseIndex + index, value);
     }
 
     public long get(int index) {
-        return segment.getAtIndex(JAVA_LONG, index);
+        return segment.getAtIndex(JAVA_LONG, baseIndex + index);
     }
 
     public void init(long value) {
-        for (int i = 0; i < segment.byteSize() / LONG_BYTES; i++) {
-            segment.setAtIndex(JAVA_LONG, i, value);
+        for (int i = 0; i < getSize(); i++) {
+            segment.setAtIndex(JAVA_LONG, baseIndex + i, value);
         }
     }
 
@@ -78,7 +95,7 @@ public class LongArray {
         return segment;
     }
 
-    public int getNumBytesOfSegment() {
-        return numberOfElements * LONG_BYTES;
+    public long getNumBytesOfSegment() {
+        return segmentByteSize;
     }
 }

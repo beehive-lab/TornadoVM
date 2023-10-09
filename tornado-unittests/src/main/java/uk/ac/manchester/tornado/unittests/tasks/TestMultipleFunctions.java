@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,8 +17,14 @@
  */
 package uk.ac.manchester.tornado.unittests.tasks;
 
+import static junit.framework.TestCase.assertEquals;
+
+import java.util.Random;
+import java.util.stream.IntStream;
+
 import org.junit.Assert;
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -28,11 +34,6 @@ import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import java.util.Random;
-import java.util.stream.IntStream;
-
-import static junit.framework.TestCase.assertEquals;
 
 /**
  * Tests TornadoVM compilation under different scenarios, when not performing inlining in the method passed to the task.
@@ -154,8 +155,8 @@ public class TestMultipleFunctions extends TornadoTestBase {
             b.set(i, r.nextInt());
         });
 
-        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b).task("t0", TestMultipleFunctions::vectorAddInteger, a, b, c)
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b).task("t0", TestMultipleFunctions::vectorAddInteger, a, b, c).transferToHost(
+                DataTransferMode.EVERY_EXECUTION, c);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
@@ -400,8 +401,8 @@ public class TestMultipleFunctions extends TornadoTestBase {
                         testArrays.ignoreParam2, //
                         testArrays.callerReadTor, //
                         testArrays.callerWriteTor) //
-                .task("t1", testTaskAccesses::caller2, testArrays.callerReadTor, testArrays.calleeReadTor)
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, testArrays.callerReadCalleeWriteTor, testArrays.callerWriteTor, testArrays.callerReadTor);
+                .task("t1", testTaskAccesses::caller2, testArrays.callerReadTor, testArrays.calleeReadTor).transferToHost(DataTransferMode.EVERY_EXECUTION, testArrays.callerReadCalleeWriteTor,
+                        testArrays.callerWriteTor, testArrays.callerReadTor);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
@@ -436,7 +437,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
         TestMultipleFunctions testTaskAccesses = new TestMultipleFunctions();
 
         TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, arrays.calleeReadTor, //
-                        arrays.callee2ReadTor)//
+                arrays.callee2ReadTor)//
                 .task("t0", testTaskAccesses::caller1, //
                         arrays.calleeReadTor, //
                         arrays.ignoreParam1, //
@@ -568,14 +569,6 @@ public class TestMultipleFunctions extends TornadoTestBase {
                 callee2ReadTor.set(i, random.nextInt());
                 callee2ReadSeq.set(i, callee2ReadTor.get(i));
             }
-
-            //            calleeReadSeq = calleeReadTor.clone();
-            //            callerReadCalleeWriteSeq = callerReadCalleeWriteTor.clone();
-            //            callerReadSeq = callerReadTor.clone();
-            //            callerWriteSeq = callerWriteTor.clone();
-            //            callerReadWriteSeq = callerReadWriteTor.clone();
-            //            callee1WriteSeq = callee1WriteTor.clone();
-            //            callee2ReadSeq = callee2ReadTor.clone();
         }
     }
 

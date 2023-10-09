@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -118,9 +118,9 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
      * Constructor used also in SLAMBench/KFusion
      *
      * @param platformIndex
-     *            OpenCL Platform index
+     *     OpenCL Platform index
      * @param deviceIndex
-     *            OpenCL Device Index
+     *     OpenCL Device Index
      */
     public OCLTornadoDevice(final int platformIndex, final int deviceIndex) {
         this.platformIndex = platformIndex;
@@ -528,23 +528,23 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 result = new OCLVectorWrapper(deviceContext, object, batchSize);
             } else if (object instanceof MemorySegment) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, OBJECT_HEADER_SIZE);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else if (object instanceof IntArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, OBJECT_HEADER_SIZE);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else if (object instanceof FloatArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, OBJECT_HEADER_SIZE);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else if (object instanceof DoubleArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, OBJECT_HEADER_SIZE);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else if (object instanceof LongArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, OBJECT_HEADER_SIZE);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else if (object instanceof ShortArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, OBJECT_HEADER_SIZE);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else if (object instanceof ByteArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, OBJECT_HEADER_SIZE);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else if (object instanceof CharArray) {
-                result = new OCLMemorySegmentWrapper(deviceContext, batchSize, OBJECT_HEADER_SIZE);
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else {
-                result = new OCLObjectWrapper(deviceContext, object, OBJECT_HEADER_SIZE);
+                result = new OCLObjectWrapper(deviceContext, object);
             }
         }
 

@@ -14,7 +14,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -59,7 +59,6 @@ import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 public class OCLObjectWrapper implements ObjectBuffer {
 
     private static final long BYTES_OBJECT_REFERENCE = 8;
-    private final long objectHeadersSize;
 
     private long bufferId;
     private long bufferOffset;
@@ -73,10 +72,9 @@ public class OCLObjectWrapper implements ObjectBuffer {
     private final OCLDeviceContext deviceContext;
     private long setSubRegionSize;
 
-    public OCLObjectWrapper(final OCLDeviceContext device, Object object, long objectHeaderSize) {
+    public OCLObjectWrapper(final OCLDeviceContext device, Object object) {
         this.objectType = object.getClass();
         this.deviceContext = device;
-        this.objectHeadersSize = objectHeaderSize;
 
         hubOffset = getVMConfig().hubOffset;
         fieldsOffset = getVMConfig().instanceKlassFieldsOffset();
@@ -118,19 +116,19 @@ public class OCLObjectWrapper implements ObjectBuffer {
                 }
             } else if (type == FloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new OCLMemorySegmentWrapper((FloatArray) objectFromField, device, 0, objectHeadersSize);
+                wrappedField = new OCLMemorySegmentWrapper((FloatArray) objectFromField, device, 0);
             } else if (type == DoubleArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new OCLMemorySegmentWrapper((DoubleArray) objectFromField, device, 0, objectHeadersSize);
+                wrappedField = new OCLMemorySegmentWrapper((DoubleArray) objectFromField, device, 0);
             } else if (type == IntArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new OCLMemorySegmentWrapper((IntArray) objectFromField, device, 0, objectHeadersSize);
+                wrappedField = new OCLMemorySegmentWrapper((IntArray) objectFromField, device, 0);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 wrappedField = new OCLVectorWrapper(device, object, 0);
             } else if (field.getJavaKind().isObject()) {
                 // We capture the field by the scope definition of the input
                 // lambda expression
-                wrappedField = new OCLObjectWrapper(device, TornadoUtils.getObjectFromField(reflectedField, object), objectHeadersSize);
+                wrappedField = new OCLObjectWrapper(device, TornadoUtils.getObjectFromField(reflectedField, object));
             }
 
             if (wrappedField != null) {
@@ -345,8 +343,8 @@ public class OCLObjectWrapper implements ObjectBuffer {
     }
 
     protected void dump(int width) {
-        System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities.humanReadableByteCount(getObjectSize(), true),
-                RuntimeUtilities.humanReadableByteCount(buffer.position(), true), deviceContext.getDevice().getDeviceName());
+        System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities.humanReadableByteCount(getObjectSize(), true), RuntimeUtilities.humanReadableByteCount(buffer
+                .position(), true), deviceContext.getDevice().getDeviceName());
         for (int i = 0; i < buffer.position(); i += width) {
             System.out.printf("[0x%04x]: ", i);
             for (int j = 0; j < Math.min(buffer.capacity() - i, width); j++) {

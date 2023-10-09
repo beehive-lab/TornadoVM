@@ -1,9 +1,32 @@
+/*
+ * Copyright (c) 2023, APT Group, Department of Computer Science,
+ * The University of Manchester. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Optional;
 
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedGuardNode;
 import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.PiNode;
@@ -15,6 +38,9 @@ import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.phases.BasePhase;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.type.annotations.PanamaElementSize;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNode;
 
 public class TornadoNativeTypeElimination extends BasePhase<TornadoHighTierContext> {
@@ -24,85 +50,96 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoHighTierConte
         return ALWAYS_APPLICABLE;
     }
 
+    private int getElementKindSize(LoadFieldNode baseIndexNode) {
+        int kindElement = 0;
+        Annotation[] declaredAnnotations = baseIndexNode.field().getDeclaringClass().getDeclaredAnnotations();
+        if (declaredAnnotations.length == 0) {
+            throw new TornadoRuntimeException("Annotation is missing");
+        } else {
+            for (Annotation annotation : declaredAnnotations) {
+                if (annotation instanceof PanamaElementSize panamaElementSize) {
+                    kindElement = panamaElementSize.size();
+                }
+            }
+        }
+        return kindElement;
+    }
+
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
-        for (Node n : graph.getNodes().filter(LoadFieldNode.class)) {
-            if (n.toString().contains("segment")) {
-                if (!TornadoLocalArrayHeaderEliminator.nativeTypes) {
-                    TornadoLocalArrayHeaderEliminator.nativeTypes = true;
+        for (LoadFieldNode loadFieldSegment : graph.getNodes().filter(LoadFieldNode.class)) {
+            if (loadFieldSegment.toString().contains("segment")) {
+
+                // Remove the loadField#baseIndex and replace it with a Constant value
+                if (loadFieldSegment.successors().first() instanceof LoadFieldNode baseIndexNode) {
+                    int elementKindSize = getElementKindSize(baseIndexNode);
+                    int panamaObjectHeaderSize = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
+                    int baseIndexPosition = panamaObjectHeaderSize / elementKindSize;
+                    ConstantNode constantNode = graph.addOrUnique(ConstantNode.forInt(baseIndexPosition));
+                    baseIndexNode.replaceAtUsages(constantNode);
+                    deleteFixed(baseIndexNode);
                 }
 
-                // Remove FixedGuard nodes
-                if (n.successors().filter(FixedGuardNode.class).isNotEmpty()) {
-                    FixedGuardNode fx = n.successors().filter(FixedGuardNode.class).first();
-                    removeFixedGuardNodes(fx, (LoadFieldNode) n);
+                // Remove FixedGuard nodes with its PI Node
+                if (loadFieldSegment.successors().filter(FixedGuardNode.class).isNotEmpty()) {
+                    FixedGuardNode fixedGuardNode = loadFieldSegment.successors().filter(FixedGuardNode.class).first();
+                    removeFixedGuardNodes(fixedGuardNode, loadFieldSegment);
                 }
 
-                for (Node in : n.inputs()) {
+                for (Node in : loadFieldSegment.inputs()) {
                     if (in instanceof PiNode) {
-                        for (Node us : n.usages()) {
+                        for (Node us : loadFieldSegment.usages()) {
                             if (us instanceof OffsetAddressNode) { // USAGE IS PI
-                                us.replaceFirstInput(n, in);
+                                us.replaceFirstInput(loadFieldSegment, in);
                             }
                         }
                         break;
                     }
                 }
-                deleteFixed(n);
+                deleteFixed(loadFieldSegment);
             }
         }
-        // check if reduction
-        if (graph.getNodes().filter(WriteAtomicNode.class).isNotEmpty()) {
-            TornadoLocalArrayHeaderEliminator.isReduction = true;
-        }
-
     }
 
-    public static void removeFixedGuardNodes(FixedGuardNode fx, LoadFieldNode lf) {
+    public static void removeFixedGuardNodes(FixedGuardNode fixedGuardNode, LoadFieldNode loadFieldSegment) {
         ArrayList<Node> nodesToBeRemoved = new ArrayList<>();
-        // identify the input nodes of fixedguardnode that need to be removed
-        for (Node fxin : fx.inputs()) {
-            if (fxin instanceof InstanceOfNode) {
-                nodesToBeRemoved.add(fxin);
+        for (Node node : fixedGuardNode.inputs()) {
+            if (node instanceof InstanceOfNode) {
+                nodesToBeRemoved.add(node);
             }
         }
 
         // identify the usages that need to be removed
-        for (Node fxuse : fx.usages()) {
-            if (fxuse instanceof PiNode) {
-                PiNode pi = (PiNode) fxuse;
-                if (pi.usages().filter(OffsetAddressNode.class).isNotEmpty()) {
-                    OffsetAddressNode off = pi.usages().filter(OffsetAddressNode.class).first();
-                    // if this address node is used by a javaread/javawrite node
-                    if (off.usages().filter(JavaReadNode.class).isNotEmpty() || off.usages().filter(JavaWriteNode.class).isNotEmpty() || off.usages().filter(WriteAtomicNode.class).isNotEmpty()) {
-                        off.replaceFirstInput(pi, lf);
-                        nodesToBeRemoved.add(pi);
-                    }
+        for (Node node : fixedGuardNode.usages()) {
+            if (node instanceof PiNode pi && (pi.usages().filter(OffsetAddressNode.class).isNotEmpty())) {
+                OffsetAddressNode off = pi.usages().filter(OffsetAddressNode.class).first();
+                // if this address node is used by a javaread/javawrite node
+                if (off.usages().filter(JavaReadNode.class).isNotEmpty() //
+                        || off.usages().filter(JavaWriteNode.class).isNotEmpty() //
+                        || off.usages().filter(WriteAtomicNode.class).isNotEmpty()) {
+                    off.replaceFirstInput(pi, loadFieldSegment);
+                    nodesToBeRemoved.add(pi);
                 }
             }
         }
-
-        for (Node node : nodesToBeRemoved) {
-            node.safeDelete();
-        }
-        deleteFixed(fx);
+        nodesToBeRemoved.forEach(Node::safeDelete);
+        deleteFixed(fixedGuardNode);
     }
 
-    public static void deleteFixed(Node n) {
-        if (!n.isDeleted()) {
-            Node pred = n.predecessor();
-            Node suc = n.successors().first();
+    public static void deleteFixed(Node node) {
+        if (!node.isDeleted()) {
+            Node predecessor = node.predecessor();
+            Node successor = node.successors().first();
 
-            n.replaceFirstSuccessor(suc, null);
-            n.replaceAtPredecessor(suc);
-            pred.replaceFirstSuccessor(n, suc);
+            node.replaceFirstSuccessor(successor, null);
+            node.replaceAtPredecessor(successor);
+            predecessor.replaceFirstSuccessor(node, successor);
 
-            for (Node us : n.usages()) {
-                n.removeUsage(us);
+            for (Node us : node.usages()) {
+                node.removeUsage(us);
             }
-            n.clearInputs();
-
-            n.safeDelete();
+            node.clearInputs();
+            node.safeDelete();
         }
     }
 }

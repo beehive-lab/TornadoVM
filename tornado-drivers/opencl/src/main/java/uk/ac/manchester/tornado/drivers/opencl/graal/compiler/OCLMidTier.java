@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -39,6 +39,7 @@ import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.BoundCheckEliminationPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoFloatingReadReplacement;
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPanamaSegmentsHeader;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPartialLoopUnroll;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoMidTier;
@@ -47,6 +48,8 @@ import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionCheckingEliminatio
 public class OCLMidTier extends TornadoMidTier {
 
     public OCLMidTier(OptionValues options) {
+
+        appendPhase(new TornadoPanamaSegmentsHeader());
 
         appendPhase(new ExceptionCheckingElimination());
 
