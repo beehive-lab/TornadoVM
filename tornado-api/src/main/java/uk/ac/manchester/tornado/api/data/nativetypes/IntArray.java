@@ -86,14 +86,17 @@ public class IntArray extends TornadoNativeArray {
         }
     }
 
+    @Override
     public int getSize() {
         return numberOfElements;
     }
 
+    @Override
     public long getNumBytesOfSegment() {
         return segmentByteSize;
     }
 
+    @Override
     public MemorySegment getSegment() {
         return segment;
     }

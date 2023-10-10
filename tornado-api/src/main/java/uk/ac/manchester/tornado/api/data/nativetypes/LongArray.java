@@ -50,7 +50,7 @@ import java.lang.foreign.MemorySegment;
 import uk.ac.manchester.tornado.api.type.annotations.PanamaElementSize;
 
 @PanamaElementSize(size = 8)
-public class LongArray {
+public class LongArray extends TornadoNativeArray {
     private MemorySegment segment;
     private final int LONG_BYTES = 8;
     private int numberOfElements;
@@ -86,14 +86,17 @@ public class LongArray {
         }
     }
 
+    @Override
     public int getSize() {
         return numberOfElements;
     }
 
+    @Override
     public MemorySegment getSegment() {
         return segment;
     }
 
+    @Override
     public long getNumBytesOfSegment() {
         return segmentByteSize;
     }

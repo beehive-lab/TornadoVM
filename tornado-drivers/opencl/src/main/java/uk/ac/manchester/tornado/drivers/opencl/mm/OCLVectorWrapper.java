@@ -32,7 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jdk.vm.ci.meta.JavaKind;
-import uk.ac.manchester.tornado.api.collections.types.NativeFloat2;
+import uk.ac.manchester.tornado.api.collections.types.Float2;
 import uk.ac.manchester.tornado.api.collections.types.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.CharArray;
@@ -41,6 +41,7 @@ import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -166,24 +167,10 @@ public class OCLVectorWrapper implements ObjectBuffer {
         } else if (kind == JavaKind.Byte) {
             return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, (byte[]) value, hostOffset, waitEvents);
         } else if (kind == JavaKind.Object) {
-            if (value instanceof IntArray) {
-                return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, ((IntArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof FloatArray) {
-                return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, ((FloatArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof DoubleArray) {
-                return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, ((DoubleArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof LongArray) {
-                return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, ((LongArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof ShortArray) {
-                return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, ((ShortArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof CharArray) {
-                return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, ((CharArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof ByteArray) {
-                return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, ((ByteArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof NativeFloat2) {
-                return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, ((NativeFloat2) value).getSegment().address(), hostOffset, waitEvents);
+            if (value instanceof TornadoNativeArray) {
+                return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, ((TornadoNativeArray) value).getSegment().address(), hostOffset, waitEvents);
             } else {
-                throw new TornadoRuntimeException("Type not supported");
+                throw new TornadoRuntimeException("Type not supported: " + value.getClass());
             }
         } else {
             TornadoInternalError.shouldNotReachHere("Expecting an array type");
@@ -219,24 +206,10 @@ public class OCLVectorWrapper implements ObjectBuffer {
         } else if (kind == JavaKind.Byte) {
             return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, (byte[]) value, hostOffset, waitEvents);
         } else if (kind == JavaKind.Object) {
-            if (value instanceof IntArray) {
-                return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, ((IntArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof FloatArray) {
-                return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, ((FloatArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof DoubleArray) {
-                return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, ((DoubleArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof LongArray) {
-                return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, ((LongArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof ShortArray) {
-                return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, ((ShortArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof CharArray) {
-                return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, ((CharArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof ByteArray) {
-                return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, ((ByteArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof NativeFloat2) {
-                return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, ((NativeFloat2) value).getSegment().address(), hostOffset, waitEvents);
+            if (value instanceof TornadoNativeArray) {
+                return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, ((TornadoNativeArray) value).getSegment().address(), hostOffset, waitEvents);
             } else {
-                throw new TornadoRuntimeException("Type not supported");
+                throw new TornadoRuntimeException("Type not supported: " + value.getClass());
             }
         } else {
             TornadoInternalError.shouldNotReachHere("Expecting an array type");
@@ -274,24 +247,10 @@ public class OCLVectorWrapper implements ObjectBuffer {
         } else if (kind == JavaKind.Byte) {
             return deviceContext.readBuffer(bufferId, offset, bytes, (byte[]) value, hostOffset, waitEvents);
         } else if (kind == JavaKind.Object) {
-            if (value instanceof IntArray) {
-                return deviceContext.readBuffer(bufferId, offset, bytes, ((IntArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof FloatArray) {
-                return deviceContext.readBuffer(bufferId, offset, bytes, ((FloatArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof DoubleArray) {
-                return deviceContext.readBuffer(bufferId, offset, bytes, ((DoubleArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof LongArray) {
-                return deviceContext.readBuffer(bufferId, offset, bytes, ((LongArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof ShortArray) {
-                return deviceContext.readBuffer(bufferId, offset, bytes, ((ShortArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof CharArray) {
-                return deviceContext.readBuffer(bufferId, offset, bytes, ((CharArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof ByteArray) {
-                return deviceContext.readBuffer(bufferId, offset, bytes, ((ByteArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof NativeFloat2) {
-                return deviceContext.readBuffer(bufferId, offset, bytes, ((NativeFloat2) value).getSegment().address(), hostOffset, waitEvents);
+            if (value instanceof TornadoNativeArray) {
+                return deviceContext.readBuffer(bufferId, offset, bytes, ((TornadoNativeArray) value).getSegment().address(), hostOffset, waitEvents);
             } else {
-                throw new TornadoRuntimeException("Type not supported");
+                throw new TornadoRuntimeException("Type not supported: " + value.getClass());
             }
         } else {
             TornadoInternalError.shouldNotReachHere("Expecting an array type");
@@ -301,24 +260,10 @@ public class OCLVectorWrapper implements ObjectBuffer {
 
     private long sizeOf(final Object array) {
         long size;
-        if (array.getClass() == IntArray.class) {
-            size = ((IntArray) array).getNumBytesOfSegment();
-        } else if (array.getClass() == FloatArray.class) {
-            size = ((FloatArray) array).getNumBytesOfSegment();
-        } else if (array.getClass() == DoubleArray.class) {
-            size = ((DoubleArray) array).getNumBytesOfSegment();
-        } else if (array.getClass() == LongArray.class) {
-            size = ((LongArray) array).getNumBytesOfSegment();
-        } else if (array.getClass() == ShortArray.class) {
-            size = ((ShortArray) array).getNumBytesOfSegment();
-        } else if (array.getClass() == CharArray.class) {
-            size = ((CharArray) array).getNumBytesOfSegment();
-        } else if (array.getClass() == ByteArray.class) {
-            size = ((ByteArray) array).getNumBytesOfSegment();
-        } else if (array.getClass() == NativeFloat2.class) {
-            size = ((NativeFloat2) array).getNumBytesOfSegment();
+        if (array instanceof TornadoNativeArray) {
+            size = ((TornadoNativeArray) array).getNumBytesOfSegment();
         } else {
-            size = (long) Array.getLength(array) * (long) kind.getByteCount();
+            size = (long) Array.getLength(array) * kind.getByteCount();
         }
         return size;
     }
@@ -371,22 +316,10 @@ public class OCLVectorWrapper implements ObjectBuffer {
         } else if (kind == JavaKind.Byte) {
             deviceContext.writeBuffer(bufferId, offset, bytes, (byte[]) value, hostOffset, waitEvents);
         } else if (kind == JavaKind.Object) {
-            if (value instanceof IntArray) {
-                deviceContext.writeBuffer(bufferId, offset, bytes, ((IntArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof FloatArray) {
-                deviceContext.writeBuffer(bufferId, offset, bytes, ((FloatArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof DoubleArray) {
-                deviceContext.writeBuffer(bufferId, offset, bytes, ((DoubleArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof LongArray) {
-                deviceContext.writeBuffer(bufferId, offset, bytes, ((LongArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof ShortArray) {
-                deviceContext.writeBuffer(bufferId, offset, bytes, ((ShortArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof CharArray) {
-                deviceContext.writeBuffer(bufferId, offset, bytes, ((CharArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof ByteArray) {
-                deviceContext.writeBuffer(bufferId, offset, bytes, ((ByteArray) value).getSegment().address(), hostOffset, waitEvents);
-            } else if (value instanceof NativeFloat2) {
-                deviceContext.writeBuffer(bufferId, offset, bytes, ((NativeFloat2) value).getSegment().address(), hostOffset, waitEvents);
+            if (value instanceof TornadoNativeArray) {
+                deviceContext.writeBuffer(bufferId, offset, bytes, ((TornadoNativeArray) value).getSegment().address(), hostOffset, waitEvents);
+            } else {
+                throw new TornadoRuntimeException("Data type not supported: " + value.getClass());
             }
         } else {
             TornadoInternalError.shouldNotReachHere("Expecting an array type");
@@ -412,7 +345,7 @@ public class OCLVectorWrapper implements ObjectBuffer {
             }
         } else if (type == FloatArray.class || type == IntArray.class || type == DoubleArray.class || type == LongArray.class || type == ShortArray.class || type == CharArray.class || type == ByteArray.class) {
             return JavaKind.Object;
-        } else if (type == NativeFloat2.class) {
+        } else if (type == Float2.FIELD_CLASS) {
             return JavaKind.Object;
         } else {
             TornadoInternalError.shouldNotReachHere("The type should be an array, but found: " + type);
