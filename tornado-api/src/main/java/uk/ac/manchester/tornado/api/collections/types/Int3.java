@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2023, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -10,32 +10,32 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
- * 
+ *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * along with GNU Classpath; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  *
  * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
+ * making a combined work based on this library. Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
- * 
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent
  * modules, and to copy and distribute the resulting executable under
  * terms of your choice, provided that you also meet, for each linked
  * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
+ * module. An independent module is a module which is not derived from
+ * or based on this library. If you modify this library, you may extend
  * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
+ * obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  *
  */
@@ -54,22 +54,24 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
     public static final Class<Int3> TYPE = Int3.class;
 
     private static final String NUMBER_FORMAT = "{ x=%-7d, y=%-7d, z=%-7d }";
+
     /**
      * number of elements in the storage.
      */
     private static final int NUM_ELEMENTS = 3;
+
     /**
      * backing array.
      */
     @Payload
-    private final IntArray storage;
+    private final NativeVectorInt nativeVectorInt;
 
-    public Int3(IntArray storage) {
-        this.storage = storage;
+    public Int3(NativeVectorInt storage) {
+        this.nativeVectorInt = storage;
     }
 
     public Int3() {
-        this(new IntArray(NUM_ELEMENTS));
+        this(new NativeVectorInt(NUM_ELEMENTS));
     }
 
     public Int3(int x, int y, int z) {
@@ -77,14 +79,6 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
         setX(x);
         setY(y);
         setZ(z);
-    }
-
-    static Int3 loadFromArray(final IntArray array, int index) {
-        final Int3 result = new Int3();
-        result.setX(array.get(index));
-        result.setY(array.get(index + 1));
-        result.setZ(array.get(index + 2));
-        return result;
     }
 
     /*
@@ -164,16 +158,12 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
-    public IntArray getArray() {
-        return storage;
-    }
-
     public int get(int index) {
-        return storage.get(index);
+        return nativeVectorInt.get(index);
     }
 
     public void set(int index, int value) {
-        storage.set(index, value);
+        nativeVectorInt.set(index, value);
     }
 
     public void set(Int3 value) {
@@ -230,12 +220,6 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
         return toString(NUMBER_FORMAT);
     }
 
-    void storeToArray(final IntArray array, int index) {
-        array.set(index, getX());
-        array.set(index + 1, getY());
-        array.set(index + 2, getZ());
-    }
-
     @Override
     public void loadFromBuffer(IntBuffer buffer) {
         asBuffer().put(buffer);
@@ -243,11 +227,26 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public IntBuffer asBuffer() {
-        return storage.getSegment().asByteBuffer().asIntBuffer();
+        return nativeVectorInt.getSegment().asByteBuffer().asIntBuffer();
     }
 
     @Override
     public int size() {
         return NUM_ELEMENTS;
     }
+
+    static Int3 loadFromArray(final IntArray array, int index) {
+        final Int3 result = new Int3();
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        result.setZ(array.get(index + 2));
+        return result;
+    }
+
+    void storeToArray(final IntArray array, int index) {
+        array.set(index, getX());
+        array.set(index + 1, getY());
+        array.set(index + 2, getZ());
+    }
+
 }

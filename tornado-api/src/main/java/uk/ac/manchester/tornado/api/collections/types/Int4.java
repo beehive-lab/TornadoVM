@@ -13,16 +13,16 @@
  *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * along with GNU Classpath; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  *
  * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
+ * making a combined work based on this library. Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
  *
@@ -32,10 +32,10 @@
  * modules, and to copy and distribute the resulting executable under
  * terms of your choice, provided that you also meet, for each linked
  * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
+ * module. An independent module is a module which is not derived from
+ * or based on this library. If you modify this library, you may extend
  * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
+ * obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  *
  */
@@ -62,14 +62,14 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
      * backing array.
      */
     @Payload
-    private final IntArray storage;
+    private final NativeVectorInt nativeVectorInt;
 
-    public Int4(IntArray storage) {
-        this.storage = storage;
+    public Int4(NativeVectorInt storage) {
+        this.nativeVectorInt = storage;
     }
 
     public Int4() {
-        this(new IntArray(NUM_ELEMENTS));
+        this(new NativeVectorInt(NUM_ELEMENTS));
     }
 
     public Int4(int x, int y, int z, int w) {
@@ -78,15 +78,6 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
         setY(y);
         setZ(z);
         setW(w);
-    }
-
-    static Int4 loadFromArray(final IntArray array, int index) {
-        final Int4 result = new Int4();
-        result.setX(array.get(index));
-        result.setY(array.get(index + 1));
-        result.setX(array.get(index + 2));
-        result.setY(array.get(index + 3));
-        return result;
     }
 
     /*
@@ -169,16 +160,12 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
-    public IntArray getArray() {
-        return storage;
-    }
-
     public int get(int index) {
-        return storage.get(index);
+        return nativeVectorInt.get(index);
     }
 
     public void set(int index, int value) {
-        storage.set(index, value);
+        nativeVectorInt.set(index, value);
     }
 
     public void set(Int4 value) {
@@ -248,13 +235,6 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
         return toString(NUMBER_FORMAT);
     }
 
-    void storeToArray(final IntArray array, int index) {
-        array.set(index, getX());
-        array.set(index + 1, getY());
-        array.set(index + 2, getZ());
-        array.set(index + 3, getZ());
-    }
-
     @Override
     public void loadFromBuffer(IntBuffer buffer) {
         asBuffer().put(buffer);
@@ -262,11 +242,27 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public IntBuffer asBuffer() {
-        return storage.getSegment().asByteBuffer().asIntBuffer();
+        return nativeVectorInt.getSegment().asByteBuffer().asIntBuffer();
     }
 
     @Override
     public int size() {
         return NUM_ELEMENTS;
+    }
+
+    static Int4 loadFromArray(final IntArray array, int index) {
+        final Int4 result = new Int4();
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        result.setZ(array.get(index + 2));
+        result.setW(array.get(index + 3));
+        return result;
+    }
+
+    void storeToArray(final IntArray array, int index) {
+        array.set(index, getX());
+        array.set(index + 1, getY());
+        array.set(index + 2, getZ());
+        array.set(index + 3, getW());
     }
 }

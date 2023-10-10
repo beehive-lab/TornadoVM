@@ -64,10 +64,10 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
      * backing array.
      */
     @Payload
-    private final NativeVectorInt nativeVectorFloat;
+    private final NativeVectorInt nativeVectorInt;
 
     public Int2(NativeVectorInt storage) {
-        this.nativeVectorFloat = storage;
+        this.nativeVectorInt = storage;
     }
 
     public Int2() {
@@ -170,11 +170,11 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
     }
 
     public int get(int index) {
-        return nativeVectorFloat.get(index);
+        return nativeVectorInt.get(index);
     }
 
     public void set(int index, int value) {
-        nativeVectorFloat.set(index, value);
+        nativeVectorInt.set(index, value);
     }
 
     public void set(Int2 value) {
@@ -233,7 +233,7 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public IntBuffer asBuffer() {
-        return nativeVectorFloat.getSegment().asByteBuffer().asIntBuffer();
+        return nativeVectorInt.getSegment().asByteBuffer().asIntBuffer();
     }
 
     @Override
