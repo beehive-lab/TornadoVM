@@ -41,39 +41,37 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
 import uk.ac.manchester.tornado.api.data.nativetypes.TornadoNativeArray;
 
-public class NativeVectorFloat extends TornadoNativeArray {
-    private MemorySegment segment;
-    private final int FLOAT_BYTES = 4;
-
+public class NativeVectorInt extends TornadoNativeArray {
     private int numberOfElements;
+    private MemorySegment segment;
+    private final int INT_BYTES = 4;
 
     private long segmentByteSize;
 
-    // TODO: Make this constructor private. Then we need to fix the benchmarks and KFusion not to access through this method, but rather to build from a primitive object array.
-    public NativeVectorFloat(int numElements) {
-        segmentByteSize = numElements * FLOAT_BYTES;
-        this.numberOfElements = numElements;
+    public NativeVectorInt(int numberOfElements) {
+        this.numberOfElements = numberOfElements;
+        segmentByteSize = numberOfElements * INT_BYTES;
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
     }
 
-    public void set(int index, float value) {
-        segment.setAtIndex(JAVA_FLOAT, index, value);
+    public void set(int index, int value) {
+        segment.setAtIndex(JAVA_INT, index, value);
     }
 
-    public float get(int index) {
-        return segment.getAtIndex(JAVA_FLOAT, index);
+    public int get(int index) {
+        return segment.getAtIndex(JAVA_INT, index);
     }
 
-    public void init(float value) {
+    public void init(int value) {
         for (int i = 0; i < getSize(); i++) {
-            segment.setAtIndex(JAVA_FLOAT, i, value);
+            segment.setAtIndex(JAVA_INT, i, value);
         }
     }
 
@@ -83,12 +81,12 @@ public class NativeVectorFloat extends TornadoNativeArray {
     }
 
     @Override
-    public MemorySegment getSegment() {
-        return segment;
+    public long getNumBytesOfSegment() {
+        return segmentByteSize;
     }
 
     @Override
-    public long getNumBytesOfSegment() {
-        return segmentByteSize;
+    public MemorySegment getSegment() {
+        return segment;
     }
 }
