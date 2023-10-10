@@ -43,12 +43,9 @@ package uk.ac.manchester.tornado.api.collections.types;
 
 import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemorySegment;
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
-import uk.ac.manchester.tornado.api.data.nativetypes.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
@@ -57,7 +54,7 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
 
     public static final Class<Float2> TYPE = Float2.class;
 
-    public static final Class<NativeFloat2> FIELD_CLASS = NativeFloat2.class;
+    public static final Class<NativeVectorFloat> FIELD_CLASS = NativeVectorFloat.class;
     /**
      * number of elements in the storage.
      */
@@ -66,10 +63,14 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
      * backing array.
      */
     @Payload
-    final NativeFloat2 nativeFloat2;
+    final NativeVectorFloat nativeVector;
+
+    public Float2(NativeVectorFloat nativeVector) {
+        this.nativeVector = nativeVector;
+    }
 
     public Float2() {
-        nativeFloat2 = new NativeFloat2();
+        this(new NativeVectorFloat(2));
     }
 
     public Float2(float x, float y) {
@@ -227,11 +228,11 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public float get(int index) {
-        return nativeFloat2.get(index);
+        return nativeVector.get(index);
     }
 
     public void set(int index, float value) {
-        nativeFloat2.set(index, value);
+        nativeVector.set(index, value);
     }
 
     public void set(Float2 value) {
@@ -282,7 +283,7 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return nativeFloat2.getSegment().asByteBuffer().asFloatBuffer();
+        return nativeVector.getSegment().asByteBuffer().asFloatBuffer();
     }
 
     @Override
@@ -291,51 +292,7 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public float[] toArray() {
-        return nativeFloat2.getSegment().toArray(JAVA_FLOAT);
-    }
-
-    private class NativeFloat2 extends TornadoNativeArray {
-        private MemorySegment segment;
-        private final int FLOAT_BYTES = 4;
-
-        private int numberOfElements;
-
-        private long segmentByteSize;
-
-        NativeFloat2() {
-            segmentByteSize = 2 * FLOAT_BYTES;
-            this.numberOfElements = 2;
-            segment = Arena.ofAuto().allocate(segmentByteSize, 1);
-        }
-
-        public void set(int index, float value) {
-            segment.setAtIndex(JAVA_FLOAT, index, value);
-        }
-
-        public float get(int index) {
-            return segment.getAtIndex(JAVA_FLOAT, index);
-        }
-
-        public void init(float value) {
-            for (int i = 0; i < getSize(); i++) {
-                segment.setAtIndex(JAVA_FLOAT, i, value);
-            }
-        }
-
-        @Override
-        public int getSize() {
-            return numberOfElements;
-        }
-
-        @Override
-        public MemorySegment getSegment() {
-            return segment;
-        }
-
-        @Override
-        public long getNumBytesOfSegment() {
-            return segmentByteSize;
-        }
+        return nativeVector.getSegment().toArray(JAVA_FLOAT);
     }
 
 }
