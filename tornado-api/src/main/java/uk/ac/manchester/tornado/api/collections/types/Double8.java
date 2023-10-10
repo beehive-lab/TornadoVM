@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -10,37 +10,38 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
- * 
+ *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * along with GNU Classpath; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  *
  * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
+ * making a combined work based on this library. Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
- * 
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent
  * modules, and to copy and distribute the resulting executable under
  * terms of your choice, provided that you also meet, for each linked
  * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
+ * module. An independent module is a module which is not derived from
+ * or based on this library. If you modify this library, you may extend
  * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
+ * obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  *
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import java.lang.foreign.ValueLayout;
 import java.nio.DoubleBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
@@ -60,14 +61,14 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
      * backing array.
      */
     @Payload
-    final DoubleArray storage;
+    final NativeVectorDouble nativeVectorDouble;
 
-    private Double8(DoubleArray storage) {
-        this.storage = storage;
+    private Double8(NativeVectorDouble nativeVectorDouble) {
+        this.nativeVectorDouble = nativeVectorDouble;
     }
 
     public Double8() {
-        this(new DoubleArray(NUM_ELEMENTS));
+        this(new NativeVectorDouble(NUM_ELEMENTS));
     }
 
     public Double8(double s0, double s1, double s2, double s3, double s4, double s5, double s6, double s7) {
@@ -80,14 +81,6 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
         setS5(s5);
         setS6(s6);
         setS7(s7);
-    }
-
-    static Double8 loadFromArray(final DoubleArray array, int index) {
-        final Double8 result = new Double8();
-        for (int i = 0; i < NUM_ELEMENTS; i++) {
-            result.set(i, array.get(index + i));
-        }
-        return result;
     }
 
     /**
@@ -202,19 +195,15 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public static double findULPDistance(Double8 value, Double8 expected) {
-        return TornadoMath.findULPDistance(value.getArray(), expected.getArray());
-    }
-
-    public DoubleArray getArray() {
-        return storage;
+        return TornadoMath.findULPDistance(value.toArray(), expected.toArray());
     }
 
     public double get(int index) {
-        return storage.get(index);
+        return nativeVectorDouble.get(index);
     }
 
     public void set(int index, double value) {
-        storage.set(index, value);
+        nativeVectorDouble.set(index, value);
     }
 
     public void set(Double8 value) {
@@ -315,12 +304,6 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
         return toString(DoubleOps.FMT_8);
     }
 
-    void storeToArray(final DoubleArray array, int index) {
-        for (int i = 0; i < NUM_ELEMENTS; i++) {
-            array.set(index + i, get(i));
-        }
-    }
-
     @Override
     public void loadFromBuffer(DoubleBuffer buffer) {
         asBuffer().put(buffer);
@@ -328,17 +311,35 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public DoubleBuffer asBuffer() {
-        return storage.getSegment().asByteBuffer().asDoubleBuffer();
+        return nativeVectorDouble.getSegment().asByteBuffer().asDoubleBuffer();
     }
 
     public void fill(double value) {
-        for (int i = 0; i < storage.getSize(); i++) {
-            storage.set(i, value);
+        for (int i = 0; i < nativeVectorDouble.getSize(); i++) {
+            nativeVectorDouble.set(i, value);
         }
     }
 
     @Override
     public int size() {
         return NUM_ELEMENTS;
+    }
+
+    static Double8 loadFromArray(final DoubleArray array, int index) {
+        final Double8 result = new Double8();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, array.get(index + i));
+        }
+        return result;
+    }
+
+    void storeToArray(final DoubleArray array, int index) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            array.set(index + i, get(i));
+        }
+    }
+
+    public double[] toArray() {
+        return nativeVectorDouble.getSegment().toArray(ValueLayout.JAVA_DOUBLE);
     }
 }

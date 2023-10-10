@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.collections.types.Double2;
 import uk.ac.manchester.tornado.api.collections.types.Float2;
 import uk.ac.manchester.tornado.api.collections.types.Int2;
 import uk.ac.manchester.tornado.api.collections.types.PrimitiveStorage;
@@ -349,6 +350,8 @@ public class OCLVectorWrapper implements ObjectBuffer {
         } else if (type == Float2.FIELD_CLASS) {
             return JavaKind.Object;
         } else if (type == Int2.FIELD_CLASS) {
+            return JavaKind.Object;
+        } else if (type == Double2.FIELD_CLASS) {
             return JavaKind.Object;
         } else {
             TornadoInternalError.shouldNotReachHere("The type should be an array, but found: " + type);
