@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,7 +27,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat4;
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.collections.types.NativeVectorFloat;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.matrices.MatrixAddition2D
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.matrices.MatrixAddition2D
  * </code>
  *
  */
@@ -119,8 +119,8 @@ public class MatrixAddition2D {
         Matrix2DFloat4 matrixAV = new Matrix2DFloat4(size, size);
         Matrix2DFloat4 matrixBV = new Matrix2DFloat4(size, size);
         Matrix2DFloat4 matrixCV = new Matrix2DFloat4(size, size);
-        FloatArray matrixArrayA = new FloatArray(4);
-        FloatArray matrixArrayB = new FloatArray(4);
+        NativeVectorFloat matrixArrayA = new NativeVectorFloat(4);
+        NativeVectorFloat matrixArrayB = new NativeVectorFloat(4);
         for (int i = 0; i < matrixArrayA.getSize(); i++) {
             matrixArrayA.set(i, r.nextFloat());
         }

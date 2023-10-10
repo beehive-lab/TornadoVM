@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -10,32 +10,32 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
- * 
+ *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * along with GNU Classpath; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  *
  * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
+ * making a combined work based on this library. Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
- * 
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent
  * modules, and to copy and distribute the resulting executable under
  * terms of your choice, provided that you also meet, for each linked
  * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
+ * module. An independent module is a module which is not derived from
+ * or based on this library. If you modify this library, you may extend
  * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
+ * obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  *
  */
@@ -49,6 +49,7 @@ import static uk.ac.manchester.tornado.api.collections.types.Float3.cross;
 import static uk.ac.manchester.tornado.api.collections.types.Float3.dot;
 import static uk.ac.manchester.tornado.api.collections.types.Float3.mult;
 
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 
 public class FloatSE3 {
@@ -60,11 +61,12 @@ public class FloatSE3 {
 
     }
 
-    public FloatSE3(Float6 v) {
+    public FloatSE3(FloatArray v) {
+        assert (v.getSize() == 6);
         matrix.identity();
         exp(v);
 
-        Float3 value = v.getHigh();
+        Float3 value = new Float3(v.get(0), v.get(1), v.get(2));
         matrix.set(0, 3, value.getX());
         matrix.set(1, 3, value.getY());
         matrix.set(2, 3, value.getZ());
@@ -110,12 +112,12 @@ public class FloatSE3 {
         return result;
     }
 
-    public void exp(Float6 mu) {
+    public void exp(FloatArray mu) {
         final float one6Th = 1f / 6f;
         final float one20Th = 1f / 20f;
 
-        Float3 muLo = mu.getHigh();
-        Float3 w = mu.getLow();
+        Float3 muLo = new Float3(mu.get(0), mu.get(1), mu.get(2));
+        Float3 w = new Float3(mu.get(3), mu.get(4), mu.get(5));
         final float thetaSq = dot(w, w);
         final float theta = sqrt(thetaSq);
 

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -47,7 +47,6 @@ import uk.ac.manchester.tornado.api.collections.types.Byte4;
 import uk.ac.manchester.tornado.api.collections.types.Float2;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.Float6;
 import uk.ac.manchester.tornado.api.collections.types.Float8;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.FloatSE3;
@@ -65,6 +64,7 @@ import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
 import uk.ac.manchester.tornado.api.collections.types.VolumeOps;
 import uk.ac.manchester.tornado.api.collections.types.VolumeShort2;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -73,7 +73,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.slam.graphics.GraphicsTests
+ * tornado-test -V uk.ac.manchester.tornado.unittests.slam.graphics.GraphicsTests
  * </code>
  */
 public class GraphicsTests extends TornadoTestBase {
@@ -130,8 +130,8 @@ public class GraphicsTests extends TornadoTestBase {
 
                     final Float2 projectedPixel = Float2.add(Float2.mult(projectedPos.asFloat2(), 1f / projectedPos.getZ()), 0.5f);
 
-                    boolean isNotInImage = (projectedPixel.getX() < 0) || (projectedPixel.getX() > (referenceVerticies.X() - 1)) || (projectedPixel.getY() < 0)
-                            || (projectedPixel.getY() > (referenceVerticies.Y() - 1));
+                    boolean isNotInImage = (projectedPixel.getX() < 0) || (projectedPixel.getX() > (referenceVerticies.X() - 1)) || (projectedPixel.getY() < 0) || (projectedPixel
+                            .getY() > (referenceVerticies.Y() - 1));
 
                     if (isNotInImage) {
                         results.set(x, y, NOT_IN_IMAGE);
@@ -159,8 +159,8 @@ public class GraphicsTests extends TornadoTestBase {
 
                                     final Float3 b = Float3.cross(projectedVertex, referenceNormal);
 
-                                    final Float8 tracking = new Float8(referenceNormal.getX(), referenceNormal.getY(), referenceNormal.getZ(), b.getX(), b.getY(), b.getZ(),
-                                            Float3.dot(referenceNormal, diff), (float) Constants.GREY);
+                                    final Float8 tracking = new Float8(referenceNormal.getX(), referenceNormal.getY(), referenceNormal.getZ(), b.getX(), b.getY(), b.getZ(), Float3.dot(referenceNormal,
+                                            diff), (float) Constants.GREY);
 
                                     results.set(x, y, tracking);
                                 }
@@ -307,10 +307,10 @@ public class GraphicsTests extends TornadoTestBase {
      * * Creates a 4x4 matrix representing the intrinsic camera matrix
      *
      * @param k
-     *            - camera parameters {f_x,f_y,x_0,y_0} where {f_x,f_y} specifies
-     *            the focal length of the camera and {x_0,y_0} the principle point
+     *     - camera parameters {f_x,f_y,x_0,y_0} where {f_x,f_y} specifies
+     *     the focal length of the camera and {x_0,y_0} the principle point
      * @param m
-     *            - returned matrix
+     *     - returned matrix
      */
     public static void getCameraMatrix(Float4 k, Matrix4x4Float m) {
         m.fill(0f);
@@ -1223,11 +1223,11 @@ public class GraphicsTests extends TornadoTestBase {
     }
 
     private Matrix4x4Float getInitPose(Float3 volumeDims) {
-        Float6 pos = new Float6();
+        FloatArray pos = new FloatArray(6);
         Float3 float3Pos = Float3.mult(new Float3(0.5f, 0.5f, 0), volumeDims);
-        pos.setS0(float3Pos.getX());
-        pos.setS1(float3Pos.getY());
-        pos.setS2(float3Pos.getZ());
+        pos.set(0, float3Pos.getX());
+        pos.set(1, float3Pos.getY());
+        pos.set(2, float3Pos.getZ());
         Matrix4x4Float view = new FloatSE3(pos).toMatrix4();
         return view;
     }

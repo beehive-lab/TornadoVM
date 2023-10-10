@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -10,41 +10,42 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
- * 
+ *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * along with GNU Classpath; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  *
  * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
+ * making a combined work based on this library. Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
- * 
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent
  * modules, and to copy and distribute the resulting executable under
  * terms of your choice, provided that you also meet, for each linked
  * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
+ * module. An independent module is a module which is not derived from
+ * or based on this library. If you modify this library, you may extend
  * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
+ * obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  *
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
+
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
@@ -60,14 +61,14 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
      * backing array.
      */
     @Payload
-    final FloatArray storage;
+    final NativeVectorFloat nativeVectorFloat;
 
-    public Float4(FloatArray storage) {
-        this.storage = storage;
+    public Float4(NativeVectorFloat storage) {
+        this.nativeVectorFloat = storage;
     }
 
     public Float4() {
-        this(new FloatArray(NUM_ELEMENTS));
+        this(new NativeVectorFloat(NUM_ELEMENTS));
     }
 
     public Float4(float x, float y, float z, float w) {
@@ -76,15 +77,6 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
         setY(y);
         setZ(z);
         setW(w);
-    }
-
-    static Float4 loadFromArray(final FloatArray array, int index) {
-        final Float4 result = new Float4();
-        result.setX(array.get(index));
-        result.setY(array.get(index + 1));
-        result.setZ(array.get(index + 2));
-        result.setW(array.get(index + 3));
-        return result;
     }
 
     public static Float4 add(Float4 a, Float4 b) {
@@ -207,7 +199,7 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
     // ===================================
 
     public static boolean isEqual(Float4 a, Float4 b) {
-        return TornadoMath.isEqual(a.getArray(), b.getArray());
+        return TornadoMath.isEqual(a.toArray(), b.toArray());
     }
 
     public static float findULPDistance(Float4 a, Float4 b) {
@@ -215,15 +207,15 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public float get(int index) {
-        return storage.get(index);
+        return nativeVectorFloat.get(index);
     }
 
     public void set(int index, float value) {
-        storage.set(index, value);
+        nativeVectorFloat.set(index, value);
     }
 
-    public FloatArray getArray() {
-        return storage;
+    public NativeVectorFloat getArray() {
+        return nativeVectorFloat;
     }
 
     public void set(Float4 value) {
@@ -306,13 +298,6 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
         return new Float2(getZ(), getW());
     }
 
-    void storeToArray(final FloatArray array, int index) {
-        array.set(index, getX());
-        array.set(index + 1, getY());
-        array.set(index + 2, getZ());
-        array.set(index + 3, getW());
-    }
-
     @Override
     public void loadFromBuffer(FloatBuffer buffer) {
         asBuffer().put(buffer);
@@ -321,15 +306,20 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
     @Override
     public FloatBuffer asBuffer() {
         //TODO: This needs to be removed
-        return storage.getSegment().asByteBuffer().asFloatBuffer();
+        return nativeVectorFloat.getSegment().asByteBuffer().asFloatBuffer();
     }
+
     @Override
     public int size() {
         return NUM_ELEMENTS;
     }
 
     public void fill(float value) {
-        storage.init(value);
+        nativeVectorFloat.init(value);
+    }
+
+    public float[] toArray() {
+        return nativeVectorFloat.getSegment().toArray(JAVA_FLOAT);
     }
 
 }
