@@ -92,7 +92,6 @@ public class TornadoFieldAccessFixup extends BasePhase<TornadoHighTierContext> {
                         TornadoInternalError.shouldNotReachHere("Unexpected node type = %s", accessFieldNode.getClass().getName());
                     }
                 } else if (usage instanceof OffsetAddressNode) {
-                    // TODO: FIX this phase
                     if (usage.usages().filter(JavaWriteNode.class).isNotEmpty()) {
                         ValueNode base = loadField.object();
                         if (base instanceof PiNode) {
@@ -100,16 +99,6 @@ public class TornadoFieldAccessFixup extends BasePhase<TornadoHighTierContext> {
                         } else if (base instanceof TornadoAddressArithmeticNode) {
                             base = ((TornadoAddressArithmeticNode) base).getBase();
                         }
-
-                        // Control the offset
-                        //                        OffsetAddressNode offsetAddressNode = (OffsetAddressNode) usage;
-                        //                        ValueNode offset = offsetAddressNode.getOffset();
-                        //                        if (offset instanceof ConstantNode) {
-                        //                            ConstantNode oldOffset = (ConstantNode) offset;
-                        //                            ConstantNode constantNode = graph.addOrUnique(ConstantNode.forLong(24));
-                        //                            offsetAddressNode.setOffset(constantNode);
-                        //                            oldOffset.safeDelete();
-                        //                        }
 
                         TornadoAddressArithmeticNode addNode = new TornadoAddressArithmeticNode(base, loadField);
                         graph.addWithoutUnique(addNode);
