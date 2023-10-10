@@ -327,8 +327,8 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
         final Float4 result = new Float4();
         result.setX(array.get(index));
         result.setY(array.get(index + 1));
-        result.setY(array.get(index + 2));
-        result.setY(array.get(index + 3));
+        result.setZ(array.get(index + 2));
+        result.setW(array.get(index + 3));
         return result;
     }
 
