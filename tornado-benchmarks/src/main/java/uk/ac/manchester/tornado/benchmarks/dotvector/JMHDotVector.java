@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -45,6 +45,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
+import uk.ac.manchester.tornado.api.collections.types.NativeVectorFloat;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -55,7 +56,7 @@ import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
  * How to run in isolation?
  * </p>
  * <code>
- *    tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.dotvector.JMHDotVector
+ * tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.dotvector.JMHDotVector
  * </code>
  */
 public class JMHDotVector {
@@ -76,9 +77,9 @@ public class JMHDotVector {
 
             Random r = new Random();
             for (int i = 0; i < numElements; i++) {
-                FloatArray ra = new FloatArray(3);
+                NativeVectorFloat ra = new NativeVectorFloat(3);
                 IntStream.range(0, ra.getSize()).forEach(x -> ra.set(x, r.nextFloat()));
-                FloatArray rb = new FloatArray(3);
+                NativeVectorFloat rb = new NativeVectorFloat(3);
                 IntStream.range(0, rb.getSize()).forEach(x -> rb.set(x, r.nextFloat()));
                 a.set(i, new Float3(ra));
                 b.set(i, new Float3(rb));

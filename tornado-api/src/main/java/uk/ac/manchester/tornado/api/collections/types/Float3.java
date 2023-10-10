@@ -43,13 +43,10 @@ package uk.ac.manchester.tornado.api.collections.types;
 
 import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemorySegment;
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
@@ -65,14 +62,14 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
      * backing array.
      */
     @Payload
-    final FloatArray storage;
+    final NativeVectorFloat nativeVectorFloat;
 
-    public Float3(FloatArray storage) {
-        this.storage = storage;
+    public Float3(NativeVectorFloat nativeVectorFloat) {
+        this.nativeVectorFloat = nativeVectorFloat;
     }
 
     public Float3() {
-        this(new FloatArray(NUM_ELEMENTS));
+        this(new NativeVectorFloat(NUM_ELEMENTS));
     }
 
     public Float3(float x, float y, float z) {
@@ -223,16 +220,16 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
         return TornadoMath.findULPDistance(a.asBuffer().array(), b.asBuffer().array());
     }
 
-    public FloatArray getArray() {
-        return storage;
+    public NativeVectorFloat getArray() {
+        return nativeVectorFloat;
     }
 
     public float get(int index) {
-        return storage.get(index);
+        return nativeVectorFloat.get(index);
     }
 
     public void set(int index, float value) {
-        storage.set(index, value);
+        nativeVectorFloat.set(index, value);
     }
 
     public void set(Float3 value) {
@@ -332,7 +329,7 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
     @Override
     public FloatBuffer asBuffer() {
         //TODO: This needs to be removed
-        return storage.getSegment().asByteBuffer().asFloatBuffer();
+        return nativeVectorFloat.getSegment().asByteBuffer().asFloatBuffer();
     }
 
     @Override
@@ -340,48 +337,8 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
         return NUM_ELEMENTS;
     }
 
-    private class NativeFloat3 extends TornadoNativeArray {
-        private MemorySegment segment;
-        private final int FLOAT_BYTES = 4;
-
-        private int numberOfElements;
-
-        private long segmentByteSize;
-
-        NativeFloat3() {
-            segmentByteSize = 3 * FLOAT_BYTES;
-            this.numberOfElements = 3;
-            segment = Arena.ofAuto().allocate(segmentByteSize, 1);
-        }
-
-        public void set(int index, float value) {
-            segment.setAtIndex(JAVA_FLOAT, index, value);
-        }
-
-        public float get(int index) {
-            return segment.getAtIndex(JAVA_FLOAT, index);
-        }
-
-        public void init(float value) {
-            for (int i = 0; i < getSize(); i++) {
-                segment.setAtIndex(JAVA_FLOAT, i, value);
-            }
-        }
-
-        @Override
-        public int getSize() {
-            return numberOfElements;
-        }
-
-        @Override
-        public MemorySegment getSegment() {
-            return segment;
-        }
-
-        @Override
-        public long getNumBytesOfSegment() {
-            return segmentByteSize;
-        }
+    public float[] toArray() {
+        return nativeVectorFloat.getSegment().toArray(JAVA_FLOAT);
     }
 
 }

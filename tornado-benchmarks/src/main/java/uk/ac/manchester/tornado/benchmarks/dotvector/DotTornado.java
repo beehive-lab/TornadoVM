@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,6 +25,7 @@ import java.util.stream.IntStream;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
+import uk.ac.manchester.tornado.api.collections.types.NativeVectorFloat;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
@@ -38,7 +39,7 @@ import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner dotvector
+ * tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner dotvector
  * </code>
  */
 public class DotTornado extends BenchmarkDriver {
@@ -47,7 +48,7 @@ public class DotTornado extends BenchmarkDriver {
 
     private VectorFloat3 a;
     private VectorFloat3 b;
-   // private float[] c;
+    // private float[] c;
     private FloatArray c;
 
     public DotTornado(int iterations, int numElements) {
@@ -63,9 +64,9 @@ public class DotTornado extends BenchmarkDriver {
 
         Random r = new Random();
         for (int i = 0; i < numElements; i++) {
-            FloatArray ra = new FloatArray(3);
+            NativeVectorFloat ra = new NativeVectorFloat(3);
             IntStream.range(0, ra.getSize()).forEach(x -> ra.set(x, r.nextFloat()));
-            FloatArray rb = new FloatArray(3);
+            NativeVectorFloat rb = new NativeVectorFloat(3);
             IntStream.range(0, rb.getSize()).forEach(x -> rb.set(x, r.nextFloat()));
             a.set(i, new Float3(ra));
             b.set(i, new Float3(rb));

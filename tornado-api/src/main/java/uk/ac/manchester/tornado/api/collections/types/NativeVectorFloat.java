@@ -15,7 +15,8 @@ public class NativeVectorFloat extends TornadoNativeArray {
 
     private long segmentByteSize;
 
-    NativeVectorFloat(int numElements) {
+    // TODO: Make this constructor private. Then we need to fix the benchmarks and KFusion not to access through this method, but rather to build from a primitive object array.
+    public NativeVectorFloat(int numElements) {
         segmentByteSize = numElements * FLOAT_BYTES;
         this.numberOfElements = numElements;
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
