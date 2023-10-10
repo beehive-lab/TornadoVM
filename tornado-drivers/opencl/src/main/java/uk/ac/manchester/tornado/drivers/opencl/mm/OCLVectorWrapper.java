@@ -180,6 +180,10 @@ public class OCLVectorWrapper implements ObjectBuffer {
                 return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, ((CharArray) value).getSegment().address(), hostOffset, waitEvents);
             } else if (value instanceof ByteArray) {
                 return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, ((ByteArray) value).getSegment().address(), hostOffset, waitEvents);
+            } else if (value instanceof NativeFloat2) {
+                return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, ((NativeFloat2) value).getSegment().address(), hostOffset, waitEvents);
+            } else {
+                throw new TornadoRuntimeException("Type not supported");
             }
         } else {
             TornadoInternalError.shouldNotReachHere("Expecting an array type");
@@ -229,6 +233,10 @@ public class OCLVectorWrapper implements ObjectBuffer {
                 return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, ((CharArray) value).getSegment().address(), hostOffset, waitEvents);
             } else if (value instanceof ByteArray) {
                 return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, ((ByteArray) value).getSegment().address(), hostOffset, waitEvents);
+            } else if (value instanceof NativeFloat2) {
+                return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, ((NativeFloat2) value).getSegment().address(), hostOffset, waitEvents);
+            } else {
+                throw new TornadoRuntimeException("Type not supported");
             }
         } else {
             TornadoInternalError.shouldNotReachHere("Expecting an array type");
@@ -249,7 +257,6 @@ public class OCLVectorWrapper implements ObjectBuffer {
         if (array == null) {
             throw new TornadoRuntimeException("[ERROR] output data is NULL");
         }
-
         return readArrayData(toBuffer(), bufferOffset, bufferSize, array, hostOffset, (useDeps) ? events : null);
     }
 
@@ -270,7 +277,6 @@ public class OCLVectorWrapper implements ObjectBuffer {
             if (value instanceof IntArray) {
                 return deviceContext.readBuffer(bufferId, offset, bytes, ((IntArray) value).getSegment().address(), hostOffset, waitEvents);
             } else if (value instanceof FloatArray) {
-                System.out.println("Reading data: " + offset);
                 return deviceContext.readBuffer(bufferId, offset, bytes, ((FloatArray) value).getSegment().address(), hostOffset, waitEvents);
             } else if (value instanceof DoubleArray) {
                 return deviceContext.readBuffer(bufferId, offset, bytes, ((DoubleArray) value).getSegment().address(), hostOffset, waitEvents);
@@ -282,6 +288,10 @@ public class OCLVectorWrapper implements ObjectBuffer {
                 return deviceContext.readBuffer(bufferId, offset, bytes, ((CharArray) value).getSegment().address(), hostOffset, waitEvents);
             } else if (value instanceof ByteArray) {
                 return deviceContext.readBuffer(bufferId, offset, bytes, ((ByteArray) value).getSegment().address(), hostOffset, waitEvents);
+            } else if (value instanceof NativeFloat2) {
+                return deviceContext.readBuffer(bufferId, offset, bytes, ((NativeFloat2) value).getSegment().address(), hostOffset, waitEvents);
+            } else {
+                throw new TornadoRuntimeException("Type not supported");
             }
         } else {
             TornadoInternalError.shouldNotReachHere("Expecting an array type");
@@ -304,11 +314,11 @@ public class OCLVectorWrapper implements ObjectBuffer {
         } else if (array.getClass() == CharArray.class) {
             size = ((CharArray) array).getNumBytesOfSegment();
         } else if (array.getClass() == ByteArray.class) {
-            size = ((CharArray) array).getNumBytesOfSegment();
+            size = ((ByteArray) array).getNumBytesOfSegment();
         } else if (array.getClass() == NativeFloat2.class) {
             size = ((NativeFloat2) array).getNumBytesOfSegment();
         } else {
-            size = ((long) Array.getLength(array) * (long) kind.getByteCount());
+            size = (long) Array.getLength(array) * (long) kind.getByteCount();
         }
         return size;
     }

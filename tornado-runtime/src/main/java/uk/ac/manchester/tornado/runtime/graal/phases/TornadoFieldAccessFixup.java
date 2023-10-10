@@ -100,6 +100,17 @@ public class TornadoFieldAccessFixup extends BasePhase<TornadoHighTierContext> {
                         } else if (base instanceof TornadoAddressArithmeticNode) {
                             base = ((TornadoAddressArithmeticNode) base).getBase();
                         }
+
+                        // Control the offset
+                        //                        OffsetAddressNode offsetAddressNode = (OffsetAddressNode) usage;
+                        //                        ValueNode offset = offsetAddressNode.getOffset();
+                        //                        if (offset instanceof ConstantNode) {
+                        //                            ConstantNode oldOffset = (ConstantNode) offset;
+                        //                            ConstantNode constantNode = graph.addOrUnique(ConstantNode.forLong(24));
+                        //                            offsetAddressNode.setOffset(constantNode);
+                        //                            oldOffset.safeDelete();
+                        //                        }
+
                         TornadoAddressArithmeticNode addNode = new TornadoAddressArithmeticNode(base, loadField);
                         graph.addWithoutUnique(addNode);
                         usage.replaceFirstInput(loadField, addNode);
