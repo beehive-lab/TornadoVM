@@ -103,7 +103,11 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
      * @return value
      */
     public Float4 get(int index) {
-        return new Float4(storage.get(toIndex(index)), storage.get(toIndex(index + 1)), storage.get(toIndex(index + 2)), storage.get(toIndex(index + 3)));
+        int baseIndex = toIndex(index);
+        return new Float4(storage.get(baseIndex), //
+                storage.get(baseIndex + 1), //
+                storage.get(baseIndex + 2), //
+                storage.get(baseIndex + 3));
     }
 
     /**
@@ -119,10 +123,11 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
         float y = value.getY();
         float z = value.getZ();
         float w = value.getW();
-        storage.set(toIndex(index), x);
-        storage.set(toIndex(index + 1), y);
-        storage.set(toIndex(index + 2), z);
-        storage.set(toIndex(index + 3), w);
+        int baseIndex = toIndex(index);
+        storage.set(baseIndex, x);
+        storage.set(baseIndex + 1, y);
+        storage.set(baseIndex + 2, z);
+        storage.set(baseIndex + 3, w);
     }
 
     /**

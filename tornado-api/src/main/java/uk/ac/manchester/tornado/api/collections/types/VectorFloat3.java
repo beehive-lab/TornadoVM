@@ -103,7 +103,10 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
      * @return {@link Float3}
      */
     public Float3 get(int index) {
-        return new Float3(storage.get(toIndex(index)), storage.get(toIndex(index + 1)), storage.get(toIndex(index + 2)));
+        int baseIndex = toIndex(index);
+        return new Float3(storage.get(baseIndex), //
+                storage.get(baseIndex + 1), //
+                storage.get(baseIndex + 2));
     }
 
     /**
@@ -118,9 +121,10 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
         float x = value.getX();
         float y = value.getY();
         float z = value.getZ();
-        storage.set(toIndex(index), x);
-        storage.set(toIndex(index + 1), y);
-        storage.set(toIndex(index + 2), z);
+        int baseIndex = toIndex(index);
+        storage.set(baseIndex, x);
+        storage.set(baseIndex + 1, y);
+        storage.set(baseIndex + 2, z);
     }
 
     /**

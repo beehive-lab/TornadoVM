@@ -91,7 +91,7 @@ public class FloatOps {
     }
 
     public static float findMaxULP(Float8 value, Float8 expected) {
-        return TornadoMath.findULPDistance(value.storage, expected.storage);
+        return TornadoMath.findULPDistance(value.toArray(), expected.toArray());
     }
 
     public static float findMaxULP(float value, float expected) {

@@ -41,6 +41,8 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
+
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
@@ -60,14 +62,14 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
      * backing array.
      */
     @Payload
-    final FloatArray storage;
+    final NativeVectorFloat nativeVectorFloat;
 
-    public Float8(FloatArray storage) {
-        this.storage = storage;
+    public Float8(NativeVectorFloat storage) {
+        this.nativeVectorFloat = storage;
     }
 
     public Float8() {
-        this(new FloatArray(NUM_ELEMENTS));
+        this(new NativeVectorFloat(NUM_ELEMENTS));
     }
 
     public Float8(float s0, float s1, float s2, float s3, float s4, float s5, float s6, float s7) {
@@ -80,14 +82,6 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
         setS5(s5);
         setS6(s6);
         setS7(s7);
-    }
-
-    static Float8 loadFromArray(final FloatArray array, int index) {
-        final Float8 result = new Float8();
-        for (int i = 0; i < NUM_ELEMENTS; i++) {
-            result.set(i, array.get(index + i));
-        }
-        return result;
     }
 
     /**
@@ -210,16 +204,16 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
         return TornadoMath.findULPDistance(value.asBuffer().array(), expected.asBuffer().array());
     }
 
-    public FloatArray getArray() {
-        return storage;
+    public NativeVectorFloat getArray() {
+        return nativeVectorFloat;
     }
 
     public float get(int index) {
-        return storage.get(index);
+        return nativeVectorFloat.get(index);
     }
 
     public void set(int index, float value) {
-        storage.set(index, value);
+        nativeVectorFloat.set(index, value);
     }
 
     public void set(Float8 value) {
@@ -333,12 +327,16 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return storage.getSegment().asByteBuffer().asFloatBuffer();
+        return nativeVectorFloat.getSegment().asByteBuffer().asFloatBuffer();
     }
 
     @Override
     public int size() {
         return NUM_ELEMENTS;
+    }
+
+    public float[] toArray() {
+        return nativeVectorFloat.getSegment().toArray(JAVA_FLOAT);
     }
 
 }

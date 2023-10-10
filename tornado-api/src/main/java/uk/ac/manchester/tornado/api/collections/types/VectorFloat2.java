@@ -69,19 +69,19 @@ public class VectorFloat2 implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Creates a vector using the provided backing array.
-     */
-    public VectorFloat2(FloatArray array) {
-        this(array.getSize() / ELEMENT_SIZE, array);
-    }
-
-    /**
      * Creates an empty vector.
      *
      * @param numElements
      */
     public VectorFloat2(int numElements) {
         this(numElements, new FloatArray(numElements * ELEMENT_SIZE));
+    }
+
+    /**
+     * Creates a vector using the provided backing array.
+     */
+    private VectorFloat2(FloatArray array) {
+        this(array.getSize() / ELEMENT_SIZE, array);
     }
 
     private int toIndex(int index) {
@@ -95,9 +95,8 @@ public class VectorFloat2 implements PrimitiveStorage<FloatBuffer> {
      * @return value
      */
     public Float2 get(int index) {
-        Float2 float2 = new Float2(storage.get(toIndex(index)), storage.get(toIndex(index + 1)));
-        return float2;
-        //return storage.get(toIndex(index));
+        int baseIndex = toIndex(index);
+        return new Float2(storage.get(baseIndex), storage.get(baseIndex + 1));
     }
 
     /**
@@ -107,11 +106,11 @@ public class VectorFloat2 implements PrimitiveStorage<FloatBuffer> {
      * @param value
      */
     public void set(int index, Float2 value) {
-        //value.storeToArray(storage, toIndex(index));
+        int baseIndex = toIndex(index);
         float x = value.getX();
         float y = value.getY();
-        storage.set(toIndex(index), x);
-        storage.set(toIndex(index + 1), y);
+        storage.set(baseIndex, x);
+        storage.set(baseIndex + 1, y);
     }
 
     /**
