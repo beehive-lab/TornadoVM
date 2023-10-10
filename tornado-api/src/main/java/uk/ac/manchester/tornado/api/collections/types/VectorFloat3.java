@@ -41,6 +41,8 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import static uk.ac.manchester.tornado.api.collections.types.Float3.loadFromArray;
+
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
@@ -103,10 +105,7 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
      * @return {@link Float3}
      */
     public Float3 get(int index) {
-        int baseIndex = toIndex(index);
-        return new Float3(storage.get(baseIndex), //
-                storage.get(baseIndex + 1), //
-                storage.get(baseIndex + 2));
+        return loadFromArray(storage, toIndex(index));
     }
 
     /**
@@ -118,13 +117,7 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
      *     Value to be set
      */
     public void set(int index, Float3 value) {
-        float x = value.getX();
-        float y = value.getY();
-        float z = value.getZ();
-        int baseIndex = toIndex(index);
-        storage.set(baseIndex, x);
-        storage.set(baseIndex + 1, y);
-        storage.set(baseIndex + 2, z);
+        value.storeToArray(storage, toIndex(index));
     }
 
     /**

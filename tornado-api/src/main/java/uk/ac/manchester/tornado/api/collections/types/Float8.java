@@ -314,12 +314,6 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
         return toString(FloatOps.FMT_8);
     }
 
-    void storeToArray(final FloatArray array, int index) {
-        for (int i = 0; i < NUM_ELEMENTS; i++) {
-            array.set(index + i, get(i));
-        }
-    }
-
     @Override
     public void loadFromBuffer(FloatBuffer buffer) {
         asBuffer().put(buffer);
@@ -339,4 +333,22 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
         return nativeVectorFloat.getSegment().toArray(JAVA_FLOAT);
     }
 
+    static Float8 loadFromArray(final FloatArray array, int index) {
+        final Float8 result = new Float8();
+        result.setS0(array.get(index));
+        result.setS1(array.get(index + 1));
+        result.setS2(array.get(index + 2));
+        result.setS3(array.get(index + 3));
+        result.setS4(array.get(index + 4));
+        result.setS5(array.get(index + 5));
+        result.setS6(array.get(index + 6));
+        result.setS7(array.get(index + 7));
+        return result;
+    }
+
+    void storeToArray(final FloatArray array, int index) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            array.set(index + i, get(i));
+        }
+    }
 }

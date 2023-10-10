@@ -39,6 +39,7 @@
 package uk.ac.manchester.tornado.api.collections.types;
 
 import static uk.ac.manchester.tornado.api.collections.types.Float2.add;
+import static uk.ac.manchester.tornado.api.collections.types.Float2.loadFromArray;
 
 import java.nio.FloatBuffer;
 
@@ -95,8 +96,7 @@ public class VectorFloat2 implements PrimitiveStorage<FloatBuffer> {
      * @return value
      */
     public Float2 get(int index) {
-        int baseIndex = toIndex(index);
-        return new Float2(storage.get(baseIndex), storage.get(baseIndex + 1));
+        return loadFromArray(storage, toIndex(index));
     }
 
     /**
@@ -106,11 +106,7 @@ public class VectorFloat2 implements PrimitiveStorage<FloatBuffer> {
      * @param value
      */
     public void set(int index, Float2 value) {
-        int baseIndex = toIndex(index);
-        float x = value.getX();
-        float y = value.getY();
-        storage.set(baseIndex, x);
-        storage.set(baseIndex + 1, y);
+        value.storeToArray(storage, toIndex(index));
     }
 
     /**

@@ -79,14 +79,6 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
         setZ(z);
     }
 
-    static Float3 loadFromArray(final FloatArray array, int index) {
-        final Float3 result = new Float3();
-        result.setX(array.get(index));
-        result.setY(array.get(index + 1));
-        result.setZ(array.get(index + 2));
-        return result;
-    }
-
     /**
      * * Operations on Float3 vectors.
      */
@@ -315,12 +307,6 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
         return new Float2(getX(), getY());
     }
 
-    void storeToArray(final FloatArray array, int index) {
-        array.set(index, getX());
-        array.set(index + 1, getY());
-        array.set(index + 2, getZ());
-    }
-
     @Override
     public void loadFromBuffer(FloatBuffer buffer) {
         asBuffer().put(buffer);
@@ -339,6 +325,20 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
 
     public float[] toArray() {
         return nativeVectorFloat.getSegment().toArray(JAVA_FLOAT);
+    }
+
+    static Float3 loadFromArray(final FloatArray array, int index) {
+        final Float3 result = new Float3();
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        result.setZ(array.get(index + 2));
+        return result;
+    }
+
+    void storeToArray(final FloatArray array, int index) {
+        array.set(index, getX());
+        array.set(index + 1, getY());
+        array.set(index + 2, getZ());
     }
 
 }

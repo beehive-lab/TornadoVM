@@ -46,6 +46,7 @@ import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
@@ -320,6 +321,22 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
 
     public float[] toArray() {
         return nativeVectorFloat.getSegment().toArray(JAVA_FLOAT);
+    }
+
+    static Float4 loadFromArray(final FloatArray array, int index) {
+        final Float4 result = new Float4();
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        result.setY(array.get(index + 2));
+        result.setY(array.get(index + 3));
+        return result;
+    }
+
+    void storeToArray(final FloatArray array, int index) {
+        array.set(index, getX());
+        array.set(index + 1, getY());
+        array.set(index + 2, getZ());
+        array.set(index + 3, getW());
     }
 
 }

@@ -99,15 +99,7 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
      * @return value
      */
     public Float8 get(int index) {
-        int baseIndex = toIndex(index);
-        return new Float8(storage.get(baseIndex), //
-                storage.get(baseIndex + 1),  //
-                storage.get(baseIndex + 2),  //
-                storage.get(baseIndex + 3), //
-                storage.get(baseIndex + 4), //
-                storage.get(baseIndex + 5), //
-                storage.get(baseIndex + 6), //
-                storage.get(baseIndex + 7));
+        return Float8.loadFromArray(storage, toIndex(index));
     }
 
     /**
@@ -117,9 +109,7 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
      * @param value
      */
     public void set(int index, Float8 value) {
-        for (int i = 0; i < value.size(); i++) {
-            storage.set(index + i, value.get(i));
-        }
+        value.storeToArray(storage, toIndex(index));
     }
 
     /**
