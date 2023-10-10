@@ -32,10 +32,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.collections.types.Byte3;
 import uk.ac.manchester.tornado.api.collections.types.Double2;
 import uk.ac.manchester.tornado.api.collections.types.Float2;
 import uk.ac.manchester.tornado.api.collections.types.Int2;
 import uk.ac.manchester.tornado.api.collections.types.PrimitiveStorage;
+import uk.ac.manchester.tornado.api.collections.types.Short2;
 import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.CharArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
@@ -352,6 +354,10 @@ public class OCLVectorWrapper implements ObjectBuffer {
         } else if (type == Int2.FIELD_CLASS) {
             return JavaKind.Object;
         } else if (type == Double2.FIELD_CLASS) {
+            return JavaKind.Object;
+        } else if (type == Short2.FIELD_CLASS) {
+            return JavaKind.Object;
+        } else if (type == Byte3.FIELD_CLASS) {
             return JavaKind.Object;
         } else {
             TornadoInternalError.shouldNotReachHere("The type should be an array, but found: " + type);

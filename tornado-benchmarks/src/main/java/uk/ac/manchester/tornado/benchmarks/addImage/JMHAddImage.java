@@ -44,7 +44,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
-import uk.ac.manchester.tornado.api.collections.types.NativeVectorFloat;
+import uk.ac.manchester.tornado.api.collections.types.natives.NativeVectorFloat;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 

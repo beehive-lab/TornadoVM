@@ -39,39 +39,41 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.collections.types;
+package uk.ac.manchester.tornado.api.collections.types.natives;
 
 import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
 import uk.ac.manchester.tornado.api.data.nativetypes.TornadoNativeArray;
 
-public class NativeVectorInt extends TornadoNativeArray {
-    private int numberOfElements;
+public class NativeVectorShort extends TornadoNativeArray {
     private MemorySegment segment;
-    private final int INT_BYTES = 4;
-
+    private final int SHORT_BYTES = 2;
+    private int numberOfElements;
     private long segmentByteSize;
 
-    public NativeVectorInt(int numberOfElements) {
+    public NativeVectorShort(int numberOfElements) {
         this.numberOfElements = numberOfElements;
-        segmentByteSize = numberOfElements * INT_BYTES;
+        segmentByteSize = numberOfElements * SHORT_BYTES;
+
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
+        segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
-    public void set(int index, int value) {
-        segment.setAtIndex(JAVA_INT, index, value);
+    public void set(int index, short value) {
+        segment.setAtIndex(JAVA_SHORT, index, value);
     }
 
-    public int get(int index) {
-        return segment.getAtIndex(JAVA_INT, index);
+    public short get(int index) {
+        return segment.getAtIndex(JAVA_SHORT, index);
     }
 
-    public void init(int value) {
+    public void init(short value) {
         for (int i = 0; i < getSize(); i++) {
-            segment.setAtIndex(JAVA_INT, i, value);
+            segment.setAtIndex(JAVA_SHORT, i, value);
         }
     }
 
@@ -81,12 +83,12 @@ public class NativeVectorInt extends TornadoNativeArray {
     }
 
     @Override
-    public long getNumBytesOfSegment() {
-        return segmentByteSize;
+    public MemorySegment getSegment() {
+        return segment;
     }
 
     @Override
-    public MemorySegment getSegment() {
-        return segment;
+    public long getNumBytesOfSegment() {
+        return segmentByteSize;
     }
 }

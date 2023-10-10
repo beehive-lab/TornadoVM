@@ -23,8 +23,8 @@ import java.util.Random;
 import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.collections.types.Float3;
-import uk.ac.manchester.tornado.api.collections.types.NativeVectorFloat;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
+import uk.ac.manchester.tornado.api.collections.types.natives.NativeVectorFloat;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;

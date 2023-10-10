@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -47,7 +47,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.images.TestImages
+ * tornado-test -V uk.ac.manchester.tornado.unittests.images.TestImages
  * </code>
  *
  */
@@ -481,7 +481,7 @@ public class TestImages extends TornadoTestBase {
 
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
-                Byte3 value = new Byte3(new byte[] { 10, 11, 12 });
+                Byte3 value = new Byte3((byte) 10, (byte) 11, (byte) 12);
                 imageA.set(i, j, value);
             }
         }
@@ -517,7 +517,7 @@ public class TestImages extends TornadoTestBase {
 
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
-                Byte3 value = new Byte3(new byte[] { 10, 11, 12 });
+                Byte3 value = new Byte3((byte) 10, (byte) 11, (byte) 12);
                 imageA.set(i, j, value);
             }
         }
@@ -553,7 +553,7 @@ public class TestImages extends TornadoTestBase {
 
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
-                Byte4 value = new Byte4(new byte[] { 10, 11, 12, 13 });
+                Byte4 value = new Byte4((byte) 10, (byte) 11, (byte) 12, (byte) 13);
                 imageA.set(i, j, value);
             }
         }
@@ -590,7 +590,7 @@ public class TestImages extends TornadoTestBase {
 
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
-                Byte4 value = new Byte4(new byte[] { 10, 11, 12, 13 });
+                Byte4 value = new Byte4((byte) 10, (byte) 11, (byte) 12, (byte) 13);
                 imageA.set(i, j, value);
             }
         }
