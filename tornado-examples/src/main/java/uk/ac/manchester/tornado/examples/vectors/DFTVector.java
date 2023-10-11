@@ -18,18 +18,14 @@
 package uk.ac.manchester.tornado.examples.vectors;
 
 import java.util.ArrayList;
-import java.util.Random;
-import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
-import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat4;
-import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -42,57 +38,72 @@ import uk.ac.manchester.tornado.examples.utils.Utils;
  * How to run?
  * </p>
  * <code>
- * tornado --threadInfo --enableProfiler silent -m tornado.examples/uk.ac.manchester.tornado.examples.vectors.MatrixVector
+ * tornado --threadInfo --enableProfiler silent -m tornado.examples/uk.ac.manchester.tornado.examples.vectors.DFTVector
  * </code>
  *
  */
-public class MatrixVector {
+public class DFTVector {
 
     public static final int WARMUP = 100;
     public static final int ITERATIONS = 100;
 
-    private static void compute(Matrix2DFloat matrix, VectorFloat vector, VectorFloat output) {
-        for (@Parallel int i = 0; i < vector.size(); i++) {
-            float sum = 0.0f;
-            for (int j = 0; j < matrix.getNumColumns(); j++) {
-                sum += vector.get(i) * matrix.get(i, i);
+    public static void computeDFT(float[] inreal, float[] inimag, float[] outreal, float[] outimag) {
+        int n = inreal.length;
+        for (@Parallel int k = 0; k < n; k++) { // For each output element
+            float sumReal = 0;
+            float simImag = 0;
+            for (int t = 0; t < n; t++) { // For each input element
+                float angle = (float) ((2 * Math.PI * t * k) / n);
+                sumReal += inreal[t] * TornadoMath.cos(angle) + inimag[t] * TornadoMath.sin(angle);
+                simImag += -inreal[t] * TornadoMath.sin(angle) + inimag[t] * TornadoMath.cos(angle);
             }
-            output.set(i, sum);
+            outreal[k] = sumReal;
+            outimag[k] = simImag;
         }
     }
 
-    private static void computeWithVectors(Matrix2DFloat4 matrix, VectorFloat4 vector, VectorFloat4 output) {
-        for (@Parallel int i = 0; i < vector.getLength(); i++) {
-            Float4 sum = new Float4(0, 0, 0, 0);
-            for (int j = 0; j < matrix.getNumColumns(); j++) {
-                sum = Float4.add(sum, Float4.mult(vector.get(i), matrix.get(i, i)));
+    public static void computeDFTVector(VectorFloat4 inreal, VectorFloat4 inimag, VectorFloat4 outreal, VectorFloat4 outimag) {
+        int n = inreal.getLength();
+        for (@Parallel int k = 0; k < n; k++) { // For each output element
+            Float4 sumReal = new Float4();
+            Float4 simImag = new Float4();
+            for (int t = 0; t < n; t++) { // For each input element
+                float angle = (float) ((2 * Math.PI * t * k) / n);
+
+                Float4 partA = Float4.mult(inreal.get(t), TornadoMath.cos(angle));
+                Float4 partB = Float4.mult(inimag.get(t), TornadoMath.sin(angle));
+                Float4 partC = Float4.add(partA, partB);
+                sumReal = Float4.add(sumReal, partC);
+
+                Float4 neg = Float4.mult(inreal.get(t), new Float4(-1, -1, -1, -1));
+                Float4 partAImag = Float4.mult(neg, TornadoMath.sin(angle));
+                Float4 partBImag = Float4.mult(inimag.get(t), TornadoMath.cos(angle));
+                Float4 partCImag = Float4.add(partAImag, partBImag);
+                simImag = Float4.add(simImag, partCImag);
+
             }
-            output.set(i, sum);
+            outreal.set(k, sumReal);
+            outimag.set(k, simImag);
         }
     }
 
     private static void runWithVectorTypes(int size, TornadoDevice device) {
-        Matrix2DFloat4 matrix2DFloat = new Matrix2DFloat4(size, size);
+        VectorFloat4 inReal = new VectorFloat4(size);
+        VectorFloat4 inImag = new VectorFloat4(size);
+        VectorFloat4 outReal = new VectorFloat4(size);
+        VectorFloat4 outImag = new VectorFloat4(size);
 
-        // Vector must be of size N
-        VectorFloat4 vectorFloat = new VectorFloat4(size);
+        for (int i = 0; i < size; i++) {
+            float valA = 1 / (float) (i + 2);
+            float valB = 1 / (float) (i + 2);
+            inReal.set(i, new Float4(valA, valA, valA, valA));
+            inImag.set(i, new Float4(valB, valB, valB, valB));
+        }
 
-        // Output
-        VectorFloat4 result = new VectorFloat4(size);
-
-        Random r = new Random();
-        final int s = size;
-
-        // Init Data
-        IntStream.range(0, size).forEach(idx -> vectorFloat.set(idx, new Float4(r.nextFloat(), r.nextFloat(), r.nextFloat(), r.nextFloat())));
-        IntStream.range(0, size).forEach(idx -> IntStream.range(0, s) //
-                .forEach(jdx -> //
-                matrix2DFloat.set(idx, jdx, new Float4(r.nextFloat(), r.nextFloat(), r.nextFloat(), r.nextFloat()))));
-
-        TaskGraph taskGraph = new TaskGraph("computeVectors") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, vectorFloat, matrix2DFloat) //
-                .task("witVectors", MatrixVector::computeWithVectors, matrix2DFloat, vectorFloat, result) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+        TaskGraph taskGraph = new TaskGraph("compute") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, inReal, inImag) //
+                .task("withVectors", DFTVector::computeDFTVector, inReal, inImag, outReal, outImag) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outReal, outImag);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
@@ -116,28 +127,21 @@ public class MatrixVector {
     }
 
     private static void runWithoutVectorTypes(int size, TornadoDevice device) {
-        final int s = size * 4;
-        size = size * 4;
-        Matrix2DFloat matrix2DFloat = new Matrix2DFloat(size, size);
+        size *= 4;
+        float[] inReal = new float[size];
+        float[] inImag = new float[size];
+        float[] outReal = new float[size];
+        float[] outImag = new float[size];
 
-        // Vector must be of size N
-        VectorFloat vectorFloat = new VectorFloat(size);
+        for (int i = 0; i < size; i++) {
+            inReal[i] = 1 / (float) (i + 2);
+            inImag[i] = 1 / (float) (i + 2);
+        }
 
-        // Output
-        VectorFloat result = new VectorFloat(size);
-
-        Random r = new Random();
-
-        // Init Data
-        IntStream.range(0, size).forEach(idx -> vectorFloat.set(idx, r.nextFloat()));
-        IntStream.range(0, size).forEach(idx -> IntStream.range(0, s) //
-                .forEach(jdx -> //
-                matrix2DFloat.set(idx, jdx, r.nextFloat())));
-
-        TaskGraph taskGraph = new TaskGraph("compute") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, vectorFloat, matrix2DFloat) //
-                .task("noVectors", MatrixVector::compute, matrix2DFloat, vectorFloat, result) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, inReal, inImag) //
+                .task("t0", DFTVector::computeDFT, inReal, inImag, outReal, outImag) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outReal, outImag);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
@@ -169,7 +173,7 @@ public class MatrixVector {
 
             }
         }
-        int size = 2048;
+        int size = 8192;
         if (args.length > 1) {
             try {
                 size = Integer.parseInt(args[1]);
