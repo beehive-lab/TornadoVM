@@ -158,7 +158,7 @@ public class VectorAddTest {
     }
 
     private static void runWithJavaStreams(int size) {
-        size = size + 4;
+        size = size * 4;
         float[] a = new float[size];
         float[] b = new float[size];
         float[] results = new float[size];

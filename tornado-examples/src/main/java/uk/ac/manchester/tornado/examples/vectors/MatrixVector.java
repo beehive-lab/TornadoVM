@@ -192,7 +192,6 @@ public class MatrixVector {
     }
 
     private static void runWithJavaStreams(int size) {
-        final int s = size * 4;
         size = size * 4;
         Matrix2DFloat matrix2DFloat = new Matrix2DFloat(size, size);
 
@@ -206,6 +205,7 @@ public class MatrixVector {
 
         // Init Data
         IntStream.range(0, size).forEach(idx -> vectorFloat.set(idx, r.nextFloat()));
+        final int s = size;
         IntStream.range(0, size).forEach(idx -> IntStream.range(0, s) //
                 .forEach(jdx -> //
                 matrix2DFloat.set(idx, jdx, r.nextFloat())));
