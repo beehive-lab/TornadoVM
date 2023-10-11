@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -54,6 +54,7 @@ import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
+import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStampFactory;
@@ -68,6 +69,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreEle
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreGlobalMemory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorSubNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.PanamaPrivateMemoryNode;
 
 public final class VectorPlugins {
 
@@ -103,36 +105,36 @@ public final class VectorPlugins {
             });
 
             // Adding floats
-            registerVectorPlugins(plugins, OCLKind.FLOAT2, FloatArray.class, float.class);
-            registerVectorPlugins(plugins, OCLKind.FLOAT3, FloatArray.class, float.class);
-            registerVectorPlugins(plugins, OCLKind.FLOAT4, FloatArray.class, float.class);
-            registerVectorPlugins(plugins, OCLKind.FLOAT8, FloatArray.class, float.class);
+            registerVectorPlugins(ps, plugins, OCLKind.FLOAT2, FloatArray.class, float.class);
+            registerVectorPlugins(ps, plugins, OCLKind.FLOAT3, FloatArray.class, float.class);
+            registerVectorPlugins(ps, plugins, OCLKind.FLOAT4, FloatArray.class, float.class);
+            registerVectorPlugins(ps, plugins, OCLKind.FLOAT8, FloatArray.class, float.class);
 
             // Adding ints
-            registerVectorPlugins(plugins, OCLKind.INT2, IntArray.class, int.class);
-            registerVectorPlugins(plugins, OCLKind.INT3, IntArray.class, int.class);
-            registerVectorPlugins(plugins, OCLKind.INT4, IntArray.class, int.class);
-            registerVectorPlugins(plugins, OCLKind.INT8, IntArray.class, int.class);
+            registerVectorPlugins(ps, plugins, OCLKind.INT2, IntArray.class, int.class);
+            registerVectorPlugins(ps, plugins, OCLKind.INT3, IntArray.class, int.class);
+            registerVectorPlugins(ps, plugins, OCLKind.INT4, IntArray.class, int.class);
+            registerVectorPlugins(ps, plugins, OCLKind.INT8, IntArray.class, int.class);
 
             // Adding shorts
-            registerVectorPlugins(plugins, OCLKind.SHORT2, ShortArray.class, short.class);
+            registerVectorPlugins(ps, plugins, OCLKind.SHORT2, ShortArray.class, short.class);
 
             // Adding char
-            registerVectorPlugins(plugins, OCLKind.CHAR3, ByteArray.class, byte.class);
-            registerVectorPlugins(plugins, OCLKind.CHAR4, ByteArray.class, byte.class);
+            registerVectorPlugins(ps, plugins, OCLKind.CHAR3, ByteArray.class, byte.class);
+            registerVectorPlugins(ps, plugins, OCLKind.CHAR4, ByteArray.class, byte.class);
 
             // Adding double
-            registerVectorPlugins(plugins, OCLKind.DOUBLE2, DoubleArray.class, double.class);
-            registerVectorPlugins(plugins, OCLKind.DOUBLE3, DoubleArray.class, double.class);
-            registerVectorPlugins(plugins, OCLKind.DOUBLE4, DoubleArray.class, double.class);
-            registerVectorPlugins(plugins, OCLKind.DOUBLE8, DoubleArray.class, double.class);
+            registerVectorPlugins(ps, plugins, OCLKind.DOUBLE2, DoubleArray.class, double.class);
+            registerVectorPlugins(ps, plugins, OCLKind.DOUBLE3, DoubleArray.class, double.class);
+            registerVectorPlugins(ps, plugins, OCLKind.DOUBLE4, DoubleArray.class, double.class);
+            registerVectorPlugins(ps, plugins, OCLKind.DOUBLE8, DoubleArray.class, double.class);
 
             /*
              * Geometric BIFS for floating point vectors
              */
             if (TORNADO_ENABLE_BIFS) {
-                registerGeometricBIFS(plugins, OCLKind.FLOAT3, float[].class, float.class);
-                registerGeometricBIFS(plugins, OCLKind.FLOAT4, float[].class, float.class);
+                registerGeometricBIFS(plugins, OCLKind.FLOAT3, FloatArray.class, float.class);
+                registerGeometricBIFS(plugins, OCLKind.FLOAT4, FloatArray.class, float.class);
             }
         }
 
@@ -155,12 +157,37 @@ public final class VectorPlugins {
         return resolveReceiver(thisObject);
     }
 
-    private static void registerVectorPlugins(final InvocationPlugins plugins, final OCLKind vectorKind, final Class<?> storageType, final Class<?> elementType) {
+    private static Class resolveJavaClass(String panamaType) throws TornadoCompilationException {
+        if (panamaType.contains("IntArray")) {
+            return int.class;
+        } else if (panamaType.contains("DoubleArray")) {
+            return double.class;
+        } else if (panamaType.contains("FloatArray")) {
+            return float.class;
+        } else {
+            throw new TornadoCompilationException("Private vectors that use " + panamaType + " for storage are not currently supported.");
+        }
+    }
+
+    private static void registerVectorPlugins(final Plugins ps, final InvocationPlugins plugins, final OCLKind vectorKind, final Class<?> storageType, final Class<?> elementType) {
 
         final Class<?> declaringClass = vectorKind.getJavaClass();
         final JavaKind javaElementKind = vectorKind.getElementKind().asJavaKind();
 
         final Registration r = new Registration(plugins, declaringClass);
+
+        ps.appendNodePlugin(new NodePlugin() {
+            @Override
+            public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
+                if (method.getName().equals("<init>") && (method.toString().contains("FloatArray.<init>(int)") || method.toString().contains("DoubleArray.<init>(int)") || method.toString().contains(
+                        "IntArray.<init>(int)"))) {
+                    Class javaType = resolveJavaClass(method.toString());
+                    b.append(new PanamaPrivateMemoryNode(b.getMetaAccess().lookupJavaType(javaType), args[1]));
+                    return true;
+                }
+                return false;
+            }
+        });
 
         r.register(new InvocationPlugin("get", Receiver.class, int.class) {
             @Override

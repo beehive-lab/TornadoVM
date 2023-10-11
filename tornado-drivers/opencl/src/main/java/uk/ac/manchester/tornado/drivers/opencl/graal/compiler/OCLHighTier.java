@@ -48,6 +48,7 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoNewArrayDevirtualizationReplacement;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoOpenCLIntrinsicsReplacements;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoParallelScheduler;
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPrivateArrayPiRemoval;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoTaskSpecialisation;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
@@ -92,6 +93,9 @@ public class OCLHighTier extends TornadoHighTier {
         if (PartialEscapeAnalysis.getValue(options)) {
             appendPhase(new PartialEscapePhase(true, canonicalizer, options));
         }
+
+        appendPhase(new TornadoPrivateArrayPiRemoval());
+
         appendPhase(new TornadoValueTypeCleanup());
 
         if (OptConvertDeoptsToGuards.getValue(options)) {
@@ -101,6 +105,7 @@ public class OCLHighTier extends TornadoHighTier {
         appendPhase(new TornadoShapeAnalysis());
         appendPhase(canonicalizer);
         appendPhase(new TornadoParallelScheduler());
+
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
 
         if (!deviceContext.isPlatformFPGA()) {
