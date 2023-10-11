@@ -38,7 +38,7 @@ import uk.ac.manchester.tornado.examples.utils.Utils;
  * How to run?
  * </p>
  * <code>
- * tornado --enableProfiler console --jvm="-Dtornado.profiler=True" -m tornado.examples/uk.ac.manchester.tornado.examples.vectors.VectorAddTest
+ * tornado --threadInfo --enableProfiler console -m tornado.examples/uk.ac.manchester.tornado.examples.vectors.VectorAddTest
  * </code>
  *
  */
