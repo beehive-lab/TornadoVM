@@ -39,8 +39,19 @@ import uk.ac.manchester.tornado.examples.utils.Utils;
  * <p>
  * How to run?
  * </p>
+ * Run with the vector types:
  * <code>
- * tornado --threadInfo --enableProfiler silent -m tornado.examples/uk.ac.manchester.tornado.examples.vectors.MatrixVector
+ * tornado --threadInfo --enableProfiler silent -m tornado.examples/uk.ac.manchester.tornado.examples.vectors.MatrixVector vector
+ * </code>
+ *
+ * Run with no vector types:
+ * <code>
+ * tornado --threadInfo --enableProfiler silent -m tornado.examples/uk.ac.manchester.tornado.examples.vectors.MatrixVector plain
+ * </code>
+ *
+ * Run with Java Streams:
+ * <code>
+ * tornado --threadInfo --enableProfiler silent -m tornado.examples/uk.ac.manchester.tornado.examples.vectors.MatrixVector stream
  * </code>
  *
  */
@@ -101,16 +112,22 @@ public class MatrixVector {
         }
 
         ArrayList<Long> kernelTimers = new ArrayList<>();
+        ArrayList<Long> totalTimers = new ArrayList<>();
+        // Execution with no vector types
         for (int i = 0; i < ITERATIONS; i++) {
             TornadoExecutionResult executionResult = executionPlan.execute();
             kernelTimers.add(executionResult.getProfilerResult().getDeviceKernelTime());
+            totalTimers.add(executionResult.getProfilerResult().getTotalTime());
         }
 
         executionPlan.freeDeviceMemory();
 
         long[] kernelTimersLong = kernelTimers.stream().mapToLong(Long::longValue).toArray();
-        System.out.println("Stats");
+        long[] totalTimersLong = totalTimers.stream().mapToLong(Long::longValue).toArray();
+        System.out.println("Stats KernelTime");
         Utils.computeStatistics(kernelTimersLong);
+        System.out.println("Stats TotalTime");
+        Utils.computeStatistics(totalTimersLong);
     }
 
     private static void runWithoutVectorTypes(int size, TornadoDevice device) {
@@ -146,27 +163,76 @@ public class MatrixVector {
         }
 
         ArrayList<Long> kernelTimers = new ArrayList<>();
+        ArrayList<Long> totalTimers = new ArrayList<>();
+        // Execution with no vector types
         for (int i = 0; i < ITERATIONS; i++) {
             TornadoExecutionResult executionResult = executionPlan.execute();
             kernelTimers.add(executionResult.getProfilerResult().getDeviceKernelTime());
+            totalTimers.add(executionResult.getProfilerResult().getTotalTime());
         }
 
         executionPlan.freeDeviceMemory();
 
         long[] kernelTimersLong = kernelTimers.stream().mapToLong(Long::longValue).toArray();
-        System.out.println("Stats");
+        long[] totalTimersLong = totalTimers.stream().mapToLong(Long::longValue).toArray();
+        System.out.println("Stats KernelTime");
         Utils.computeStatistics(kernelTimersLong);
+        System.out.println("Stats TotalTime");
+        Utils.computeStatistics(totalTimersLong);
+    }
+
+    private static void computeWithStreams(final int size, Matrix2DFloat matrix, VectorFloat vector, VectorFloat output) {
+        IntStream.range(0, size).parallel().forEach(i -> {
+            float sum = 0.0f;
+            for (int j = 0; j < matrix.getNumColumns(); j++) {
+                sum += vector.get(i) * matrix.get(i, i);
+            }
+            output.set(i, sum);
+        });
+    }
+
+    private static void runWithJavaStreams(int size) {
+        final int s = size * 4;
+        size = size * 4;
+        Matrix2DFloat matrix2DFloat = new Matrix2DFloat(size, size);
+
+        // Vector must be of size N
+        VectorFloat vectorFloat = new VectorFloat(size);
+
+        // Output
+        VectorFloat result = new VectorFloat(size);
+
+        Random r = new Random();
+
+        // Init Data
+        IntStream.range(0, size).forEach(idx -> vectorFloat.set(idx, r.nextFloat()));
+        IntStream.range(0, size).forEach(idx -> IntStream.range(0, s) //
+                .forEach(jdx -> //
+                matrix2DFloat.set(idx, jdx, r.nextFloat())));
+
+        ArrayList<Long> kernelTimersVectors = new ArrayList<>();
+        // Execution of vector types version
+        for (int i = 0; i < ITERATIONS; i++) {
+            long start = System.nanoTime();
+            computeWithStreams(size, matrix2DFloat, vectorFloat, result);
+            long end = System.nanoTime();
+            kernelTimersVectors.add((end - start));
+        }
+
+        long[] kernelTimersVectorsLong = kernelTimersVectors.stream().mapToLong(Long::longValue).toArray();
+        System.out.println("Stats");
+        Utils.computeStatistics(kernelTimersVectorsLong);
     }
 
     public static void main(String[] args) {
-        boolean runWithVectors = true;
+        String version = "vector";
         if (args.length > 0) {
             try {
-                runWithVectors = Boolean.parseBoolean(args[0]);
+                version = args[0];
             } catch (NumberFormatException ignored) {
-
             }
         }
+
         int size = 2048;
         if (args.length > 1) {
             try {
@@ -176,8 +242,11 @@ public class MatrixVector {
         }
 
         TornadoDevice device = TornadoExecutionPlan.getDevice(0, 2);
-        if (runWithVectors) {
+
+        if (version.startsWith("vector")) {
             runWithVectorTypes(size, device);
+        } else if (version.startsWith("stream")) {
+            runWithJavaStreams(size);
         } else {
             runWithoutVectorTypes(size, device);
         }

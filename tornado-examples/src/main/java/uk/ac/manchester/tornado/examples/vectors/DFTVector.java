@@ -18,6 +18,7 @@
 package uk.ac.manchester.tornado.examples.vectors;
 
 import java.util.ArrayList;
+import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -35,8 +36,19 @@ import uk.ac.manchester.tornado.examples.utils.Utils;
  * <p>
  * How to run?
  * </p>
+ * Run with the vector types:
  * <code>
- * tornado --threadInfo --enableProfiler silent -m tornado.examples/uk.ac.manchester.tornado.examples.vectors.DFTVector
+ * tornado --threadInfo --enableProfiler silent -m tornado.examples/uk.ac.manchester.tornado.examples.vectors.DFTVector vector
+ * </code>
+ *
+ * Run with no vector types:
+ * <code>
+ * tornado --threadInfo --enableProfiler silent -m tornado.examples/uk.ac.manchester.tornado.examples.vectors.DFTVector plain
+ * </code>
+ *
+ * Run with Java Streams:
+ * <code>
+ * tornado --threadInfo --enableProfiler silent -m tornado.examples/uk.ac.manchester.tornado.examples.vectors.DFTVector stream
  * </code>
  *
  */
@@ -112,16 +124,62 @@ public class DFTVector {
         }
 
         ArrayList<Long> kernelTimers = new ArrayList<>();
+        ArrayList<Long> totalTimers = new ArrayList<>();
+        // Execution with no vector types
         for (int i = 0; i < ITERATIONS; i++) {
             TornadoExecutionResult executionResult = executionPlan.execute();
             kernelTimers.add(executionResult.getProfilerResult().getDeviceKernelTime());
+            totalTimers.add(executionResult.getProfilerResult().getTotalTime());
         }
 
         executionPlan.freeDeviceMemory();
 
         long[] kernelTimersLong = kernelTimers.stream().mapToLong(Long::longValue).toArray();
-        System.out.println("Stats");
+        long[] totalTimersLong = totalTimers.stream().mapToLong(Long::longValue).toArray();
+        System.out.println("Stats KernelTime");
         Utils.computeStatistics(kernelTimersLong);
+        System.out.println("Stats TotalTime");
+        Utils.computeStatistics(totalTimersLong);
+    }
+
+    private static void computeWithStreams(final int size, float[] inreal, float[] inimag, float[] outreal, float[] outimag) {
+        int n = inreal.length;
+        IntStream.range(0, size).parallel().forEach(k -> {
+            float sumReal = 0;
+            float simImag = 0;
+            for (int t = 0; t < n; t++) { // For each input element
+                float angle = (float) ((2 * Math.PI * t * k) / n);
+                sumReal += inreal[t] * TornadoMath.cos(angle) + inimag[t] * TornadoMath.sin(angle);
+                simImag += -inreal[t] * TornadoMath.sin(angle) + inimag[t] * TornadoMath.cos(angle);
+            }
+            outreal[k] = sumReal;
+            outimag[k] = simImag;
+        });
+    }
+
+    private static void runWithJavaStreams(int size) {
+        size *= 4;
+        float[] inReal = new float[size];
+        float[] inImag = new float[size];
+        float[] outReal = new float[size];
+        float[] outImag = new float[size];
+
+        for (int i = 0; i < size; i++) {
+            inReal[i] = 1 / (float) (i + 2);
+            inImag[i] = 1 / (float) (i + 2);
+        }
+
+        ArrayList<Long> kernelTimersVectors = new ArrayList<>();
+        for (int i = 0; i < ITERATIONS; i++) {
+            long start = System.nanoTime();
+            computeWithStreams(size, inReal, inImag, outReal, outImag);
+            long end = System.nanoTime();
+            kernelTimersVectors.add((end - start));
+        }
+
+        long[] kernelTimersVectorsLong = kernelTimersVectors.stream().mapToLong(Long::longValue).toArray();
+        System.out.println("Stats");
+        Utils.computeStatistics(kernelTimersVectorsLong);
     }
 
     private static void runWithoutVectorTypes(int size, TornadoDevice device) {
@@ -150,26 +208,33 @@ public class DFTVector {
         }
 
         ArrayList<Long> kernelTimers = new ArrayList<>();
+        ArrayList<Long> totalTimers = new ArrayList<>();
+        // Execution with no vector types
         for (int i = 0; i < ITERATIONS; i++) {
             TornadoExecutionResult executionResult = executionPlan.execute();
             kernelTimers.add(executionResult.getProfilerResult().getDeviceKernelTime());
+            totalTimers.add(executionResult.getProfilerResult().getTotalTime());
         }
 
         executionPlan.freeDeviceMemory();
 
         long[] kernelTimersLong = kernelTimers.stream().mapToLong(Long::longValue).toArray();
-        System.out.println("Stats");
+        long[] totalTimersLong = totalTimers.stream().mapToLong(Long::longValue).toArray();
+        System.out.println("Stats KernelTime");
         Utils.computeStatistics(kernelTimersLong);
+        System.out.println("Stats TotalTime");
+        Utils.computeStatistics(totalTimersLong);
     }
 
     public static void main(String[] args) {
-        boolean runWithVectors = true;
+        String version = "vector";
         if (args.length > 0) {
             try {
-                runWithVectors = Boolean.parseBoolean(args[0]);
+                version = args[0];
             } catch (NumberFormatException ignored) {
             }
         }
+
         int size = 8192;
         if (args.length > 1) {
             try {
@@ -179,8 +244,11 @@ public class DFTVector {
         }
 
         TornadoDevice device = TornadoExecutionPlan.getDevice(0, 2);
-        if (runWithVectors) {
+
+        if (version.startsWith("vector")) {
             runWithVectorTypes(size, device);
+        } else if (version.startsWith("stream")) {
+            runWithJavaStreams(size);
         } else {
             runWithoutVectorTypes(size, device);
         }
