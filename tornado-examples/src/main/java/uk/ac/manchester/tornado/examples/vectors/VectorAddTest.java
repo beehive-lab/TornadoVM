@@ -32,7 +32,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.examples.utils.Utils;
 
 /**
- * Test Using the Profiler
+ * Test Using the Profiler and Vector Types in TornadoVM
  *
  * <p>
  * How to run?

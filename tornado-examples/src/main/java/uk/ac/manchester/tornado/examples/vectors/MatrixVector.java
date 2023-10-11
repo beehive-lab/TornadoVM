@@ -36,8 +36,6 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.examples.utils.Utils;
 
 /**
- *
- *
  * <p>
  * How to run?
  * </p>

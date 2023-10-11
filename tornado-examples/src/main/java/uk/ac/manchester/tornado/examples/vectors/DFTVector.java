@@ -32,8 +32,6 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.examples.utils.Utils;
 
 /**
- *
- *
  * <p>
  * How to run?
  * </p>
@@ -170,7 +168,6 @@ public class DFTVector {
             try {
                 runWithVectors = Boolean.parseBoolean(args[0]);
             } catch (NumberFormatException ignored) {
-
             }
         }
         int size = 8192;
