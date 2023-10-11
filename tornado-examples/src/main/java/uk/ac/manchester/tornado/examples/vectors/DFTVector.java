@@ -169,6 +169,10 @@ public class DFTVector {
             inImag[i] = 1 / (float) (i + 2);
         }
 
+        for (int i = 0; i < WARMUP; i++) {
+            computeWithStreams(size, inReal, inImag, outReal, outImag);
+        }
+
         ArrayList<Long> kernelTimersVectors = new ArrayList<>();
         for (int i = 0; i < ITERATIONS; i++) {
             long start = System.nanoTime();

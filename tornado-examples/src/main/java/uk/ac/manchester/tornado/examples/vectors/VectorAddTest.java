@@ -168,6 +168,10 @@ public class VectorAddTest {
             b[i] = 2.0f * i;
         }
 
+        for (int i = 0; i < WARMUP; i++) {
+            computeWithStreams(size, a, b, results);
+        }
+
         ArrayList<Long> kernelTimersVectors = new ArrayList<>();
         // Execution of vector types version
         for (int i = 0; i < ITERATIONS; i++) {

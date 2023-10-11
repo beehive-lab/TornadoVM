@@ -210,6 +210,10 @@ public class MatrixVector {
                 .forEach(jdx -> //
                 matrix2DFloat.set(idx, jdx, r.nextFloat())));
 
+        for (int i = 0; i < WARMUP; i++) {
+            computeWithStreams(size, matrix2DFloat, vectorFloat, result);
+        }
+
         ArrayList<Long> kernelTimersVectors = new ArrayList<>();
         // Execution of vector types version
         for (int i = 0; i < ITERATIONS; i++) {
