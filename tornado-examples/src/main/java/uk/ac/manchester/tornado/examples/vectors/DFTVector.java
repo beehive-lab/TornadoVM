@@ -173,7 +173,7 @@ public class DFTVector {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withWarmUp().withDevice(device);
+        executionPlan.withDevice(device).withWarmUp();
 
         for (int i = 0; i < WARMUP; i++) {
             executionPlan.execute();
@@ -218,7 +218,7 @@ public class DFTVector {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withWarmUp().withDevice(device);
+        executionPlan.withDevice(device).withWarmUp();
 
         for (int i = 0; i < WARMUP; i++) {
             executionPlan.execute();
@@ -263,7 +263,7 @@ public class DFTVector {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withWarmUp().withDevice(device);
+        executionPlan.withDevice(device).withWarmUp();
 
         for (int i = 0; i < WARMUP; i++) {
             executionPlan.execute();

@@ -81,6 +81,7 @@ public class MatrixVector {
     }
 
     private static void runWithVectorTypes(int size, TornadoDevice device) {
+
         Matrix2DFloat4 matrix2DFloat = new Matrix2DFloat4(size, size);
 
         // Vector must be of size N
@@ -105,7 +106,7 @@ public class MatrixVector {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withWarmUp().withDevice(device);
+        executionPlan.withDevice(device).withWarmUp();
 
         for (int i = 0; i < WARMUP; i++) {
             executionPlan.execute();
@@ -155,7 +156,7 @@ public class MatrixVector {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.withWarmUp().withDevice(device);
+        executionPlan.withDevice(device).withWarmUp();
 
         for (int i = 0; i < WARMUP; i++) {
             executionPlan.execute();

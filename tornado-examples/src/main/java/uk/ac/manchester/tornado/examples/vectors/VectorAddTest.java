@@ -103,7 +103,7 @@ public class VectorAddTest {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executorPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executorPlan.withDevice(device);
+        executorPlan.withDevice(device).withWarmUp();
 
         ArrayList<Long> kernelTimers = new ArrayList<>();
         ArrayList<Long> totalTimers = new ArrayList<>();
@@ -141,7 +141,7 @@ public class VectorAddTest {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executorPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executorPlan.withDevice(device);
+        executorPlan.withDevice(device).withWarmUp();
 
         ArrayList<Long> kernelTimers = new ArrayList<>();
         ArrayList<Long> totalTimers = new ArrayList<>();
@@ -179,7 +179,7 @@ public class VectorAddTest {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executorPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executorPlan.withDevice(device);
+        executorPlan.withDevice(device).withWarmUp();
 
         ArrayList<Long> kernelTimers = new ArrayList<>();
         ArrayList<Long> totalTimers = new ArrayList<>();
@@ -216,7 +216,7 @@ public class VectorAddTest {
 
         ImmutableTaskGraph immutableTaskGraph2 = taskGraphNonVector.snapshot();
         TornadoExecutionPlan executorPlan = new TornadoExecutionPlan(immutableTaskGraph2);
-        executorPlan.withDevice(device);
+        executorPlan.withDevice(device).withWarmUp();
 
         for (int i = 0; i < WARMUP; i++) {
             executorPlan.execute();
