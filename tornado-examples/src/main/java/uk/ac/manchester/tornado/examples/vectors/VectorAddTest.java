@@ -107,7 +107,6 @@ public class VectorAddTest {
 
         ArrayList<Long> kernelTimers = new ArrayList<>();
         ArrayList<Long> totalTimers = new ArrayList<>();
-        // Execution with no vector types
         for (int i = 0; i < ITERATIONS; i++) {
             TornadoExecutionResult executionResult = executorPlan.execute();
             kernelTimers.add(executionResult.getProfilerResult().getDeviceKernelTime());
@@ -146,7 +145,6 @@ public class VectorAddTest {
 
         ArrayList<Long> kernelTimers = new ArrayList<>();
         ArrayList<Long> totalTimers = new ArrayList<>();
-        // Execution with no vector types
         for (int i = 0; i < ITERATIONS; i++) {
             TornadoExecutionResult executionResult = executorPlan.execute();
             kernelTimers.add(executionResult.getProfilerResult().getDeviceKernelTime());
@@ -185,7 +183,6 @@ public class VectorAddTest {
 
         ArrayList<Long> kernelTimers = new ArrayList<>();
         ArrayList<Long> totalTimers = new ArrayList<>();
-        // Execution with no vector types
         for (int i = 0; i < ITERATIONS; i++) {
             TornadoExecutionResult executionResult = executorPlan.execute();
             kernelTimers.add(executionResult.getProfilerResult().getDeviceKernelTime());
