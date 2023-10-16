@@ -140,18 +140,18 @@ public class VectorAddTest {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, results);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executorPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executorPlan.withDevice(device).withWarmUp();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withDevice(device).withWarmUp();
 
         ArrayList<Long> kernelTimers = new ArrayList<>();
         ArrayList<Long> totalTimers = new ArrayList<>();
         for (int i = 0; i < ITERATIONS; i++) {
-            TornadoExecutionResult executionResult = executorPlan.execute();
+            TornadoExecutionResult executionResult = executionPlan.execute();
             kernelTimers.add(executionResult.getProfilerResult().getDeviceKernelTime());
             totalTimers.add(executionResult.getProfilerResult().getTotalTime());
         }
 
-        executorPlan.freeDeviceMemory();
+        executionPlan.freeDeviceMemory();
 
         long[] kernelTimersLong = kernelTimers.stream().mapToLong(Long::longValue).toArray();
         long[] totalTimersLong = totalTimers.stream().mapToLong(Long::longValue).toArray();

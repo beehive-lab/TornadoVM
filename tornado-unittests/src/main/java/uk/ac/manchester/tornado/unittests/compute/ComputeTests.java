@@ -122,7 +122,7 @@ public class ComputeTests extends TornadoTestBase {
             float sumReal = 0;
             float simImag = 0;
             for (int t = 0; t < n; t++) { // For each input element
-                float angle = (float) ((2 * Math.PI * t * k) / n);
+                float angle = (2 * TornadoMath.floatPI() * t * k) / n;
                 sumReal += inreal[t] * Math.cos(angle) + inimag[t] * Math.sin(angle);
                 simImag += -inreal[t] * Math.sin(angle) + inimag[t] * Math.cos(angle);
             }
@@ -137,7 +137,7 @@ public class ComputeTests extends TornadoTestBase {
             Float4 sumReal = new Float4();
             Float4 simImag = new Float4();
             for (int t = 0; t < n; t++) { // For each input element
-                float angle = (float) ((2 * Math.PI * t * k) / n);
+                float angle = ((2 * TornadoMath.floatPI() * t * k) / n);
 
                 Float4 partA = Float4.mult(inreal.get(t), TornadoMath.cos(angle));
                 Float4 partB = Float4.mult(inimag.get(t), TornadoMath.sin(angle));
