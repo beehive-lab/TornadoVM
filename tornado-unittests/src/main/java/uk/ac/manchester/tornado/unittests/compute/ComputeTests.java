@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,10 +41,12 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.collections.types.Byte3;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
+import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
+import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -57,7 +59,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </p>
  *
  * <code>
- *     tornado-test -V --fast uk.ac.manchester.tornado.unittests.compute.ComputeTests
+ * tornado-test -V --fast uk.ac.manchester.tornado.unittests.compute.ComputeTests
  * </code>
  *
  */
@@ -120,12 +122,37 @@ public class ComputeTests extends TornadoTestBase {
             float sumReal = 0;
             float simImag = 0;
             for (int t = 0; t < n; t++) { // For each input element
-                float angle = (float) ((2 * Math.PI * t * k) / n);
+                float angle = (2 * TornadoMath.floatPI() * t * k) / n;
                 sumReal += inreal[t] * Math.cos(angle) + inimag[t] * Math.sin(angle);
                 simImag += -inreal[t] * Math.sin(angle) + inimag[t] * Math.cos(angle);
             }
             outreal[k] = sumReal;
             outimag[k] = simImag;
+        }
+    }
+
+    public static void computeDFTVector(VectorFloat4 inreal, VectorFloat4 inimag, VectorFloat4 outreal, VectorFloat4 outimag) {
+        int n = inreal.getLength();
+        for (@Parallel int k = 0; k < n; k++) { // For each output element
+            Float4 sumReal = new Float4();
+            Float4 simImag = new Float4();
+            for (int t = 0; t < n; t++) { // For each input element
+                float angle = ((2 * TornadoMath.floatPI() * t * k) / n);
+
+                Float4 partA = Float4.mult(inreal.get(t), TornadoMath.cos(angle));
+                Float4 partB = Float4.mult(inimag.get(t), TornadoMath.sin(angle));
+                Float4 partC = Float4.add(partA, partB);
+                sumReal = Float4.add(sumReal, partC);
+
+                Float4 neg = Float4.mult(inreal.get(t), new Float4(-1, -1, -1, -1));
+                Float4 partAImag = Float4.mult(neg, TornadoMath.sin(angle));
+                Float4 partBImag = Float4.mult(inimag.get(t), TornadoMath.cos(angle));
+                Float4 partCImag = Float4.add(partAImag, partBImag);
+                simImag = Float4.add(simImag, partCImag);
+
+            }
+            outreal.set(k, sumReal);
+            outimag.set(k, simImag);
         }
     }
 
@@ -499,6 +526,16 @@ public class ComputeTests extends TornadoTestBase {
         }
     }
 
+    private void validateDFTVector(int size, VectorFloat4 inReal, VectorFloat4 inImag, VectorFloat4 outReal, VectorFloat4 outImag) {
+        VectorFloat4 outRealSeq = new VectorFloat4(size);
+        VectorFloat4 outImagSeq = new VectorFloat4(size);
+        computeDFTVector(inReal, inImag, outRealSeq, outImagSeq);
+        for (int i = 0; i < size; i++) {
+            Float4.isEqual(outImagSeq.get(i), outImag.get(i));
+            Float4.isEqual(outRealSeq.get(i), outReal.get(i));
+        }
+    }
+
     @Test
     public void testDFTDouble() {
         final int size = 4096;
@@ -523,6 +560,33 @@ public class ComputeTests extends TornadoTestBase {
         executionPlan.execute();
 
         validateDFT(size, inReal, inImag, outReal, outImag);
+    }
+
+    @Test
+    public void testDFTVectorTypes() {
+        final int size = 4096;
+        VectorFloat4 inReal = new VectorFloat4(size);
+        VectorFloat4 inImag = new VectorFloat4(size);
+        VectorFloat4 outReal = new VectorFloat4(size);
+        VectorFloat4 outImag = new VectorFloat4(size);
+
+        for (int i = 0; i < size; i++) {
+            float valA = 1 / (float) (i + 2);
+            float valB = 1 / (float) (i + 2);
+            inReal.set(i, new Float4(valA, valA, valA, valA));
+            inImag.set(i, new Float4(valB, valB, valB, valB));
+        }
+
+        TaskGraph taskGraph = new TaskGraph("dft") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, inReal, inImag) //
+                .task("withVectors", ComputeTests::computeDFTVector, inReal, inImag, outReal, outImag) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outReal, outImag);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+
+        validateDFTVector(size, inReal, inImag, outReal, outImag);
     }
 
     @Test
