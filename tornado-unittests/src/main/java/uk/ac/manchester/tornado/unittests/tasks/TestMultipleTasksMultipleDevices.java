@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,8 +41,8 @@ import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupporte
  * How to test?
  *
  * <code>
- *    tornado-test -V --fullDebug --debug --printBytecodes
- *    --jvm="-Dtornado.concurrent.devices=true -Ds0.t0.device=0:0 -Ds0.t1.device=0:0 -Ds0.t2.device=1:0 " uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices
+ * tornado-test -V --fullDebug --debug --printBytecodes
+ * --jvm="-Dtornado.concurrent.devices=true -Ds0.t0.device=0:0 -Ds0.t1.device=0:0 -Ds0.t2.device=1:0 " uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices
  * </code>
  */
 public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
@@ -67,6 +67,12 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
     public static void task1Multiplication(int[] a, int alpha) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = a[i] * i;
+        }
+    }
+
+    public static void taskMultiplication(int[] a, int[] b, int alpha) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = b[i] * i;
         }
     }
 
@@ -155,4 +161,25 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
             assertEquals(12L * c[i] + e[i], d[i]);
         }
     }
+
+    @Test
+    public void testTwoTasksTwoDevicesSharedReadOnlyRead() {
+        TaskGraph taskGraph = new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, d, c) //
+                .task("t0", TestMultipleTasksMultipleDevices::taskMultiplication, a, b, 12) //
+                .task("t1", TestMultipleTasksMultipleDevices::task2Saxpy, c, b, d, 12) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a, c, d); //
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        executionPlan.execute();
+
+        for (int i = 0; i < a.length; i++) {
+            assertEquals((b[i] * i), a[i]);
+            assertEquals(12L * c[i] + b[i], d[i]);
+        }
+    }
+
 }
