@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -13,16 +13,16 @@
  * 
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * along with GNU Classpath; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  *
  * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
+ * making a combined work based on this library. Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
  * 
@@ -32,10 +32,10 @@
  * modules, and to copy and distribute the resulting executable under
  * terms of your choice, provided that you also meet, for each linked
  * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
+ * module. An independent module is a module which is not derived from
+ * or based on this library. If you modify this library, you may extend
  * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
+ * obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  *
  */
@@ -45,13 +45,14 @@ import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 
 public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
 
     /**
      * backing array.
      */
-    protected final float[] storage;
+    protected final FloatArray storage;
     /**
      * Number of rows.
      */
@@ -69,13 +70,13 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
      * Storage format for matrix.
      * 
      * @param width
-     *            number of rows
+     *     number of rows
      * @param height
-     *            number of columns
+     *     number of columns
      * @param array
-     *            array reference which contains data
+     *     array reference which contains data
      */
-    public ImageFloat(int width, int height, float[] array) {
+    public ImageFloat(int width, int height, FloatArray array) {
         storage = array;
         X = width;
         Y = height;
@@ -86,12 +87,12 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
      * Storage format for matrix.
      * 
      * @param width
-     *            number of rows
+     *     number of rows
      * @param height
-     *            number of columns
+     *     number of columns
      */
     public ImageFloat(int width, int height) {
-        this(width, height, new float[width * height]);
+        this(width, height, new FloatArray(width * height));
     }
 
     public ImageFloat(float[][] matrix) {
@@ -99,48 +100,48 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
     }
 
     public static void scale(ImageFloat image, float alpha) {
-        for (int i = 0; i < image.storage.length; i++) {
-            image.storage[i] *= alpha;
+        for (int i = 0; i < image.storage.getSize(); i++) {
+            image.storage.set(i, image.storage.get(i) * alpha);
         }
     }
 
-    public float[] getArray() {
+    public FloatArray getArray() {
         return storage;
     }
 
     public float get(int i) {
-        return storage[i];
+        return storage.get(i);
     }
 
     public void set(int i, float value) {
-        storage[i] = value;
+        storage.set(i, value);
     }
 
     /***
      * returns the ith column of the jth row.
      *
      * @param i
-     *            row index
+     *     row index
      * @param j
-     *            column index
+     *     column index
      * @return float
      */
     public float get(int i, int j) {
-        return storage[StorageFormats.toRowMajor(j, i, X)];
+        return storage.get(StorageFormats.toRowMajor(j, i, X));
     }
 
     /***
      * sets the ith column of the jth row to value.
      *
      * @param i
-     *            row index
+     *     row index
      * @param j
-     *            column index
+     *     column index
      * @param value
-     *            new value
+     *     new value
      */
     public void set(int i, int j, float value) {
-        storage[StorageFormats.toRowMajor(j, i, X)] = value;
+        storage.set(StorageFormats.toRowMajor(j, i, X), value);
     }
 
     public void put(float[] array) {
@@ -170,7 +171,7 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void set(ImageFloat m) {
-        System.arraycopy(storage, 0, m.storage, 0, storage.length);
+        System.arraycopy(storage, 0, m.storage, 0, storage.getSize());
     }
 
     public String toString(String fmt) {
@@ -194,24 +195,24 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
 
     public float mean() {
         float result = 0f;
-        for (float v : storage) {
-            result += v;
+        for (int i = 0; i < storage.getSize(); i++) {
+            result += storage.get(i);
         }
         return result / (X * Y);
     }
 
     public float min() {
         float result = Float.MAX_VALUE;
-        for (float v : storage) {
-            result = Math.min(result, v);
+        for (int i = 0; i < storage.getSize(); i++) {
+            result = Math.min(result, storage.get(i));
         }
         return result;
     }
 
     public float max() {
         float result = Float.MIN_VALUE;
-        for (float v : storage) {
-            result = Math.max(result, v);
+        for (int i = 0; i < storage.getSize(); i++) {
+            result = Math.max(result, storage.get(i));
         }
         return result;
     }
@@ -219,8 +220,8 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
     public float stdDev() {
         final float mean = mean();
         float varience = 0f;
-        for (int i = 0; i < storage.length; i++) {
-            float v = storage[i];
+        for (int i = 0; i < storage.getSize(); i++) {
+            float v = storage.get(i);
             v -= mean;
             v *= v;
             varience = v / X;
@@ -239,7 +240,7 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
+        return storage.getSegment().asByteBuffer().asFloatBuffer();
     }
 
     @Override
@@ -247,29 +248,4 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
         return numElements;
     }
 
-    public FloatingPointError calculateULP(ImageFloat ref) {
-        float maxULP = Float.MIN_VALUE;
-        float minULP = Float.MAX_VALUE;
-        float averageULP = 0f;
-
-        /*
-         * check to make sure dimensions match
-         */
-        if (ref.X != X && ref.Y != Y) {
-            return new FloatingPointError(-1f, 0f, 0f, 0f);
-        }
-
-        for (int j = 0; j < Y; j++) {
-            for (int i = 0; i < X; i++) {
-                final float v = get(i, j);
-                final float r = ref.get(i, j);
-                final float ulpFactor = FloatOps.findMaxULP(v, r);
-                averageULP += ulpFactor;
-                minULP = Math.min(ulpFactor, minULP);
-                maxULP = Math.max(ulpFactor, maxULP);
-            }
-        }
-        averageULP /= (float) X * Y;
-        return new FloatingPointError(averageULP, minULP, maxULP, -1f);
-    }
 }

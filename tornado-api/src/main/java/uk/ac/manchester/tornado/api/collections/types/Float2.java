@@ -52,7 +52,7 @@ import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
 @Vector
-public final class Float2 implements PrimitiveStorage<FloatBuffer> {
+public final class  Float2 implements PrimitiveStorage<FloatBuffer> {
 
     public static final Class<Float2> TYPE = Float2.class;
 
@@ -229,6 +229,13 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
+    static Float2 loadFromArray(final FloatArray array, int index) {
+        final Float2 result = new Float2();
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        return result;
+    }
+
     public float get(int index) {
         return nativeVector.get(index);
     }
@@ -295,13 +302,6 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
 
     public float[] toArray() {
         return nativeVector.getSegment().toArray(JAVA_FLOAT);
-    }
-
-    static Float2 loadFromArray(final FloatArray array, int index) {
-        final Float2 result = new Float2();
-        result.setX(array.get(index));
-        result.setY(array.get(index + 1));
-        return result;
     }
 
     void storeToArray(final FloatArray array, int index) {

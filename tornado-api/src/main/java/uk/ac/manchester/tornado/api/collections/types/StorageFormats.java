@@ -41,6 +41,8 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+
 public final class StorageFormats {
 
     private StorageFormats() {
@@ -186,15 +188,15 @@ public final class StorageFormats {
      *            input matrix
      * @return float[]
      */
-    public static float[] toRowMajor(float[][] matrix) {
+    public static FloatArray toRowMajor(float[][] matrix) {
         final int dimX = matrix.length;
         final int dimY = matrix[0].length;
 
-        float[] flattenMatrix = new float[dimX * dimY];
+        FloatArray flattenMatrix = new FloatArray(dimX * dimY);
 
         for (int i = 0; i < dimX; i++) {
             for (int j = 0; j < dimY; j++) {
-                flattenMatrix[toRowMajor(i, j, dimY)] = matrix[i][j];
+                flattenMatrix.set(toRowMajor(i, j, dimY), matrix[i][j]);
             }
         }
 

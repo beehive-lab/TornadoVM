@@ -95,10 +95,9 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
         this(width, height, new FloatArray(width * height * ELEMENT_SIZE));
     }
 
-    //  public ImageFloat4(float[][] matrix) {
-    //TODO
-    //  this(matrix.length / ELEMENT_SIZE, matrix[0].length / ELEMENT_SIZE, StorageFormats.toRowMajor(matrix));
-    //  }
+    public ImageFloat4(float[][] matrix) {
+        this(matrix.length / ELEMENT_SIZE, matrix[0].length / ELEMENT_SIZE, StorageFormats.toRowMajor(matrix));
+    }
 
     public FloatArray getArray() {
         return storage;
@@ -234,38 +233,6 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
     @Override
     public int size() {
         return numElements;
-    }
-
-    public FloatingPointError calculateULP(ImageFloat4 ref) {
-        float maxULP = Float.MIN_VALUE;
-        float minULP = Float.MAX_VALUE;
-        float averageULP = 0f;
-
-        /*
-         * check to make sure dimensions match
-         */
-        if (ref.X != X && ref.Y != Y) {
-            return new FloatingPointError(-1f, 0f, 0f, 0f);
-        }
-
-        int errors = 0;
-        for (int j = 0; j < Y; j++) {
-            for (int i = 0; i < X; i++) {
-                final Float4 v = get(i, j);
-                final Float4 r = ref.get(i, j);
-
-                final float ulpFactor = Float4.findULPDistance(v, r);
-                averageULP += ulpFactor;
-                minULP = Math.min(ulpFactor, minULP);
-                maxULP = Math.max(ulpFactor, maxULP);
-
-                if (ulpFactor > 5f) {
-                    errors++;
-                }
-            }
-        }
-        averageULP /= (float) X * Y;
-        return new FloatingPointError(averageULP, minULP, maxULP, -1f, errors);
     }
 
 }
