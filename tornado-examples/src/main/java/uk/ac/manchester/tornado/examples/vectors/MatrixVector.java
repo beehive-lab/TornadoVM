@@ -36,6 +36,8 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.examples.utils.Utils;
 
 /**
+ * This test sets the device index to 2. To change the device index.
+ *
  * <p>
  * How to run?
  * </p>

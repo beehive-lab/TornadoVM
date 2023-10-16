@@ -37,14 +37,15 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.examples.utils.Utils;
 
 /**
- * Select in the first argument the desired vector length: {vector2, vector4, vector8}
+ * Select in the first argument the desired vector length: {vector2, vector4, vector8}.
+ * This test sets the device index to 2. To change the device index.
  *
  * <p>
  * How to run?
  * </p>
  * Run with the vector types:
  * <code>
- * tornado --threadInfo --enableProfiler silent -m tornado.examples/uk.ac.manchester.tornado.examples.vectors.DFTVector vector4
+ * tornado --threadInfo --enableProfiler silent -m tornado.examples/uk.ac.manchester.tornado.examples.vectors.DFTVector vector8
  * </code>
  *
  * Run with no vector types:

@@ -37,14 +37,14 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.examples.utils.Utils;
 
 /**
- * Test Using the Profiler and Vector Types in TornadoVM
+ * Test Using the Profiler and Vector Types in TornadoVM. This test sets the device index to 2. To change the device index.
  *
  * <p>
- * How to run?
+ * How to run? Select in the first argument the desired vector length: {vector2, vector4, vector8}.
  * </p>
  * Run with the vector types:
  * <code>
- * tornado --threadInfo --enableProfiler console -m tornado.examples/uk.ac.manchester.tornado.examples.vectors.VectorAddTest vector
+ * tornado --threadInfo --enableProfiler console -m tornado.examples/uk.ac.manchester.tornado.examples.vectors.VectorAddTest vector8
  * </code>
  *
  * Run with no vector types:
