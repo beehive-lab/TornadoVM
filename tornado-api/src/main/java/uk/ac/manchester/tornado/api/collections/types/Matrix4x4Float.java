@@ -44,7 +44,6 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
 public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
 
@@ -131,8 +130,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
 
     public Float4 row(int row) {
         int offset = ROWS * row;
-        throw new TornadoRuntimeException("Operation Not Supported");
-        //        return Float4.loadFromArray(storage, offset);
+        return Float4.loadFromArray(storage, offset);
     }
 
     public Float4 column(int col) {
@@ -154,11 +152,10 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void set(Matrix4x4Float m) {
-        throw new TornadoRuntimeException("Operation Not Supported");
-        //        for (int i = 0; i < ROWS; i++) {
-        //            int offset = ROWS * i;
-        //            //m.row(i).storeToArray(storage, offset);
-        //        }
+        for (int i = 0; i < ROWS; i++) {
+            int offset = ROWS * i;
+            m.row(i).storeToArray(storage, offset);
+        }
     }
 
     public String toString(String fmt) {
