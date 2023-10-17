@@ -41,6 +41,7 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
@@ -262,14 +263,14 @@ public final class StorageFormats {
      *     input matrix
      * @return byte[]
      */
-    public static byte[] toRowMajor(byte[][] matrix) {
+    public static ByteArray toRowMajor(byte[][] matrix) {
         final int m = matrix[0].length;
         final int n = matrix.length;
-        byte[] matrixRM = new byte[m * n];
+        ByteArray matrixRM = new ByteArray(m * n);
 
         for (int i = 0; i < m; i++) {
             for (int j = 0; j < n; j++) {
-                matrixRM[toRowMajor(i, j, m)] = matrix[i][j];
+                matrixRM.set(toRowMajor(i, j, m), matrix[i][j]);
             }
         }
         return matrixRM;

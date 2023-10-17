@@ -44,7 +44,6 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
 public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
 
@@ -117,14 +116,12 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
 
     public Float4 get(int x, int y) {
         final int offset = toIndex(x, y);
-        throw new TornadoRuntimeException("Operation Not Supported");
-        //return Float4.loadFromArray(storage, offset);
+        return Float4.loadFromArray(storage, offset);
     }
 
     public void set(int x, int y, Float4 value) {
         final int offset = toIndex(x, y);
-        throw new TornadoRuntimeException("Operation Not Supported");
-        //        value.storeToArray(storage, offset);
+        value.storeToArray(storage, offset);
     }
 
     public int X() {
@@ -137,7 +134,6 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
 
     public void fill(float value) {
         storage.init(value);
-        //  Arrays.fill(storage, value);
     }
 
     public ImageFloat4 duplicate() {

@@ -45,6 +45,7 @@ import java.nio.ByteBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.collections.types.natives.NativeVectorByte;
+import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
@@ -159,6 +160,15 @@ public final class Byte4 implements PrimitiveStorage<ByteBuffer> {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
+    static Byte4 loadFromArray(final ByteArray array, int index) {
+        final Byte4 result = new Byte4();
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        result.setZ(array.get(index + 2));
+        result.setW(array.get(index + 3));
+        return result;
+    }
+
     public void set(Byte4 value) {
         setX(value.getX());
         setY(value.getY());
@@ -241,20 +251,11 @@ public final class Byte4 implements PrimitiveStorage<ByteBuffer> {
         return NUM_ELEMENTS;
     }
 
-    static Byte4 loadFromArray(final byte[] array, int index) {
-        final Byte4 result = new Byte4();
-        result.setX(array[index]);
-        result.setY(array[index + 1]);
-        result.setZ(array[index + 2]);
-        result.setW(array[index + 3]);
-        return result;
-    }
-
-    void storeToArray(final byte[] array, int index) {
-        array[index] = getX();
-        array[index + 1] = getY();
-        array[index + 2] = getZ();
-        array[index + 3] = getW();
+    void storeToArray(ByteArray array, int index) {
+        array.set(index, getX());
+        array.set(index + 1, getY());
+        array.set(index + 2, getZ());
+        array.set(index + 3, getW());
     }
 
 }

@@ -13,16 +13,16 @@
  *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * along with GNU Classpath; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  *
  * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
+ * making a combined work based on this library. Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
  *
@@ -32,17 +32,18 @@
  * modules, and to copy and distribute the resulting executable under
  * terms of your choice, provided that you also meet, for each linked
  * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
+ * module. An independent module is a module which is not derived from
+ * or based on this library. If you modify this library, you may extend
  * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
+ * obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  *
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
+
+import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
 
 public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
 
@@ -50,7 +51,7 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
     /**
      * backing array.
      */
-    protected final byte[] storage;
+    protected final ByteArray storage;
     /**
      * Number of rows.
      */
@@ -68,13 +69,13 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
      * Storage format for matrix.
      *
      * @param width
-     *            number of rows
+     *     number of rows
      * @param height
-     *            number of columns
+     *     number of columns
      * @param array
-     *            array reference which contains data
+     *     array reference which contains data
      */
-    public ImageByte3(int width, int height, byte[] array) {
+    public ImageByte3(int width, int height, ByteArray array) {
         storage = array;
         X = width;
         Y = height;
@@ -85,19 +86,19 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
      * Storage format for matrix.
      *
      * @param width
-     *            number of rows
+     *     number of rows
      * @param height
-     *            number of columns
+     *     number of columns
      */
     public ImageByte3(int width, int height) {
-        this(width, height, new byte[width * height * elementSize]);
+        this(width, height, new ByteArray(width * height * elementSize));
     }
 
     public ImageByte3(byte[][] matrix) {
         this(matrix.length / elementSize, matrix[0].length / elementSize, StorageFormats.toRowMajor(matrix));
     }
 
-    public byte[] getArray() {
+    public ByteArray getArray() {
         return storage;
     }
 
@@ -132,7 +133,7 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
     }
 
     public void fill(byte value) {
-        Arrays.fill(storage, value);
+        storage.init(value);
     }
 
     public ImageByte3 duplicate() {
@@ -142,7 +143,7 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
     }
 
     public void set(ImageByte3 m) {
-        System.arraycopy(storage, 0, m.storage, 0, storage.length);
+        //        System.arraycopy(storage, 0, m.storage, 0, storage.length);
     }
 
     public String toString(String fmt) {
@@ -170,7 +171,7 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
 
     @Override
     public ByteBuffer asBuffer() {
-        return ByteBuffer.wrap(storage);
+        return storage.getSegment().asByteBuffer();
     }
 
     @Override
