@@ -94,9 +94,9 @@ public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>, Container<Flo
         this(width, height, new FloatArray(width * height * ELEMENT_SIZE));
     }
 
-    public ImageFloat8(float[][] matrix) {
-        this(matrix.length / ELEMENT_SIZE, matrix[0].length / ELEMENT_SIZE, StorageFormats.toRowMajor(matrix));
-    }
+    //    public ImageFloat8(float[][] matrix) {
+    //        this(matrix.length / ELEMENT_SIZE, matrix[0].length / ELEMENT_SIZE, StorageFormats.toRowMajor(matrix));
+    //    }
 
     public FloatArray getArray() {
         return storage;

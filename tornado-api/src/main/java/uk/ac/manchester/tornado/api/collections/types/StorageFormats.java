@@ -13,16 +13,16 @@
  *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * along with GNU Classpath; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  *
  * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
+ * making a combined work based on this library. Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
  *
@@ -32,16 +32,18 @@
  * modules, and to copy and distribute the resulting executable under
  * terms of your choice, provided that you also meet, for each linked
  * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
+ * module. An independent module is a module which is not derived from
+ * or based on this library. If you modify this library, you may extend
  * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
+ * obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  *
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 
 public final class StorageFormats {
 
@@ -52,11 +54,11 @@ public final class StorageFormats {
      * Converts a given i,j index to a column-major index.
      *
      * @param i
-     *            row index
+     *     row index
      * @param j
-     *            column index
+     *     column index
      * @param ld
-     *            length of a column
+     *     length of a column
      * @return int
      */
     public static int toColumnMajor(int i, int j, int ld) {
@@ -67,11 +69,11 @@ public final class StorageFormats {
      * Converts a given i,j index to a row-major index.
      *
      * @param i
-     *            row index
+     *     row index
      * @param j
-     *            column index
+     *     column index
      * @param yMax
-     *            length of a row
+     *     length of a row
      * @return int
      */
     public static int toRowMajor(int i, int j, int yMax) {
@@ -94,13 +96,13 @@ public final class StorageFormats {
      * Converts a given i,j index to row-major index.
      *
      * @param i
-     *            row index
+     *     row index
      * @param j
-     *            column index
+     *     column index
      * @param ld
-     *            length of a row
+     *     length of a row
      * @param el
-     *            length of each element in a row
+     *     length of each element in a row
      * @return int
      */
     public static int toRowMajor(int i, int j, int ld, int el) {
@@ -111,17 +113,17 @@ public final class StorageFormats {
      * Converts a given i,j,k index to row-major index.
      *
      * @param i
-     *            index in 1st dimension
+     *     index in 1st dimension
      * @param j
-     *            index in 2nd dimension
+     *     index in 2nd dimension
      * @param k
-     *            index in 3rd dimension
+     *     index in 3rd dimension
      * @param ld1
-     *            leading edge length 1st dimension
+     *     leading edge length 1st dimension
      * @param ld2
-     *            leading edge length 2dn dimension
+     *     leading edge length 2dn dimension
      * @param el
-     *            basic element length
+     *     basic element length
      * @return int
      */
     public static int toRowMajor(int i, int j, int k, int ld1, int ld2, int el) {
@@ -132,15 +134,15 @@ public final class StorageFormats {
      * Converts a given i,j index to a row-major index.
      *
      * @param i
-     *            row index
+     *     row index
      * @param j
-     *            column index
+     *     column index
      * @param incm
-     *            row step
+     *     row step
      * @param incn
-     *            col step
+     *     col step
      * @param ld
-     *            length of a row
+     *     length of a row
      * @return int
      */
     public static int toRowMajor(int i, int j, int incm, int incn, int ld) {
@@ -151,11 +153,11 @@ public final class StorageFormats {
      * Converts a given i,j index to Fortran index.
      *
      * @param i
-     *            row index
+     *     row index
      * @param j
-     *            column index
+     *     column index
      * @param ld
-     *            length of a column
+     *     length of a column
      * @return int
      */
     public static int toFortran(int i, int j, int ld) {
@@ -166,16 +168,16 @@ public final class StorageFormats {
      * Converts a matrix stored in multidimensional arrays into Row-Major format.
      *
      * @param matrix
-     *            input matrix
+     *     input matrix
      * @return double[]
      */
-    public static double[] toRowMajor(double[][] matrix) {
+    public static DoubleArray toRowMajor(double[][] matrix) {
         final int cols = matrix[0].length;
         final int rows = matrix.length;
-        double[] flattenMatrix = new double[rows * cols];
+        DoubleArray flattenMatrix = new DoubleArray(rows * cols);
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                flattenMatrix[toRowMajor(i, j, cols)] = matrix[i][j];
+                flattenMatrix.set(toRowMajor(i, j, cols), matrix[i][j]);
             }
         }
         return flattenMatrix;
@@ -185,7 +187,7 @@ public final class StorageFormats {
      * Converts a matrix stored in multidimensional arrays into Row-Major format.
      *
      * @param matrix
-     *            input matrix
+     *     input matrix
      * @return float[]
      */
     public static FloatArray toRowMajor(float[][] matrix) {
@@ -203,17 +205,17 @@ public final class StorageFormats {
         return flattenMatrix;
     }
 
-    public static float[] toRowMajor3D(float[][][] matrix) {
+    public static FloatArray toRowMajor3D(float[][][] matrix) {
         final int dimX = matrix.length;
         final int dimY = matrix[0].length;
         final int dimZ = matrix[0][0].length;
-        float[] flattenMatrix = new float[dimX * dimY * dimZ];
+        FloatArray flattenMatrix = new FloatArray(dimX * dimY * dimZ);
 
         for (int i = 0; i < dimX; i++) {
             for (int j = 0; j < dimY; j++) {
                 for (int k = 0; k < dimZ; k++) {
                     int index = toRowMajor3D(i, j, k, dimZ, dimY);
-                    flattenMatrix[index] = matrix[i][j][k];
+                    flattenMatrix.set(index, matrix[i][j][k]);
                 }
             }
         }
@@ -224,17 +226,30 @@ public final class StorageFormats {
      * Converts a matrix stored in multidimensional arrays into Row-Major format.
      *
      * @param matrix
-     *            input matrix
+     *     input matrix
      * @return int[]
      */
-    public static int[] toRowMajor(int[][] matrix) {
+    //    public static int[] toRowMajor(int[][] matrix) {
+    //        final int dimX = matrix.length;
+    //        final int dimY = matrix[0].length;
+    //
+    //        int[] matrixRM = new int[dimX * dimY];
+    //        for (int i = 0; i < dimX; i++) {
+    //            for (int j = 0; j < dimY; j++) {
+    //                matrixRM[toRowMajor(i, j, dimY)] = matrix[i][j];
+    //            }
+    //        }
+    //        return matrixRM;
+    //    }
+
+    public static IntArray toRowMajor(int[][] matrix) {
         final int dimX = matrix.length;
         final int dimY = matrix[0].length;
 
-        int[] matrixRM = new int[dimX * dimY];
+        IntArray matrixRM = new IntArray(dimX * dimY);
         for (int i = 0; i < dimX; i++) {
             for (int j = 0; j < dimY; j++) {
-                matrixRM[toRowMajor(i, j, dimY)] = matrix[i][j];
+                matrixRM.set(toRowMajor(i, j, dimY), matrix[i][j]);
             }
         }
         return matrixRM;
@@ -244,7 +259,7 @@ public final class StorageFormats {
      * Converts a matrix stored in multidimensional arrays into Row-Major format.
      *
      * @param matrix
-     *            input matrix
+     *     input matrix
      * @return byte[]
      */
     public static byte[] toRowMajor(byte[][] matrix) {

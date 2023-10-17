@@ -44,7 +44,6 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
 public class Matrix3DFloat4 extends Matrix3DType implements PrimitiveStorage<FloatBuffer> {
     /**
@@ -100,19 +99,16 @@ public class Matrix3DFloat4 extends Matrix3DType implements PrimitiveStorage<Flo
 
     public Float4 get(int i, int j, int k) {
         int baseIndex = StorageFormats.toRowMajor3DVector(i, j, k, DEPTH, COLUMNS, VECTOR_ELEMENTS);
-        throw new TornadoRuntimeException("Operation Not Supported");
-        //        return Float4.loadFromArray(storage, baseIndex);
+        return Float4.loadFromArray(storage, baseIndex);
     }
 
     public void set(int i, int j, int k, Float4 value) {
         int baseIndex = StorageFormats.toRowMajor3DVector(i, j, k, DEPTH, COLUMNS, VECTOR_ELEMENTS);
-        throw new TornadoRuntimeException("Operation Not Supported");
-        //        value.storeToArray(storage, baseIndex);
+        value.storeToArray(storage, baseIndex);
     }
 
     public void fill(float value) {
         storage.init(value);
-        // Arrays.fill(storage, value);
     }
 
     public Matrix3DFloat4 duplicate() {

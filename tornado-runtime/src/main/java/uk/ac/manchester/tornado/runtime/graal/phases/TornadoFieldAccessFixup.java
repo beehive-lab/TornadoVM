@@ -29,6 +29,7 @@ import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.extended.JavaReadNode;
 import org.graalvm.compiler.nodes.extended.JavaWriteNode;
 import org.graalvm.compiler.nodes.java.AccessFieldNode;
 import org.graalvm.compiler.nodes.java.AccessIndexedNode;
@@ -92,7 +93,7 @@ public class TornadoFieldAccessFixup extends BasePhase<TornadoHighTierContext> {
                         TornadoInternalError.shouldNotReachHere("Unexpected node type = %s", accessFieldNode.getClass().getName());
                     }
                 } else if (usage instanceof OffsetAddressNode) {
-                    if (usage.usages().filter(JavaWriteNode.class).isNotEmpty()) {
+                    if (usage.usages().filter(JavaWriteNode.class).isNotEmpty() || usage.usages().filter(JavaReadNode.class).isNotEmpty()) {
                         ValueNode base = loadField.object();
                         if (base instanceof PiNode) {
                             base = ((PiNode) base).object();

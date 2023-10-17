@@ -116,14 +116,12 @@ public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<Flo
 
     public Float4 get(int i, int j) {
         int baseIndex = StorageFormats.toRowMajorVector(i, j, COLUMNS, VECTOR_ELEMENTS);
-        throw new TornadoRuntimeException("Operation Not Supported");
-        //        return Float4.loadFromArray(storage, baseIndex);
+        return Float4.loadFromArray(storage, baseIndex);
     }
 
     public void set(int i, int j, Float4 value) {
         int baseIndex = StorageFormats.toRowMajorVector(i, j, COLUMNS, VECTOR_ELEMENTS);
-        throw new TornadoRuntimeException("Operation Not Supported");
-        //        value.storeToArray(storage, baseIndex);
+        value.storeToArray(storage, baseIndex);
     }
 
     public VectorFloat row(int row) {
@@ -134,7 +132,7 @@ public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<Flo
         int size = to - from;
         FloatArray f = new FloatArray(size);
         int j = 0;
-        for (int i = to; i < from; i++) {
+        for (int i = from; i < to; i++) {
             f.set(j, storage.get(i));
             j++;
         }
