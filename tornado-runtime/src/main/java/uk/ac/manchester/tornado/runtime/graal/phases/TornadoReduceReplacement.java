@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -87,11 +87,11 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
      * </p>
      *
      * @param arrayToStore
-     *         Array to store
+     *     Array to store
      * @param indexToStore
-     *         Index used in the store array
+     *     Index used in the store array
      * @param currentNode
-     *         Current node to be inspected
+     *     Current node to be inspected
      * @return boolean
      */
     private boolean recursiveCheck(ValueNode arrayToStore, ValueNode indexToStore, ValueNode currentNode) {
@@ -188,9 +188,11 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                 }
             }
         } else if (currentNode instanceof PiNode) {
-            if (currentNode.inputs().filter(LoadFieldNode.class).isNotEmpty()) {
-                LoadFieldNode ldf = currentNode.inputs().filter(LoadFieldNode.class).first();
-                return obtainInputArray(ldf, outputArray);
+            if (((PiNode) currentNode).object() instanceof ParameterNode) {
+                ParameterNode par = (ParameterNode) (((PiNode) currentNode)).object();
+                if (par != outputArray) {
+                    array = par;
+                }
             }
         }
         return array;
@@ -342,39 +344,28 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             } else if (node instanceof PiNode) {
                 // for memory segments
                 for (Node piUsage : node.usages()) {
-                    if (piUsage instanceof LoadFieldNode) {
-                        LoadFieldNode lf = (LoadFieldNode) piUsage;
-                        if (lf.uncheckedStamp().toString().contains("jdk.internal.foreign.NativeMemorySegmentImpl")) {
-                            // We have the loading of the segment field
-                            if (lf.usages().filter(PiNode.class).isNotEmpty()) {
-                                PiNode pi = lf.usages().filter(PiNode.class).first();
-                                if (pi.usages().filter(OffsetAddressNode.class).isNotEmpty()) {
-                                    OffsetAddressNode offset = pi.usages().filter(OffsetAddressNode.class).first();
-                                    if (offset.usages().filter(JavaWriteNode.class).isNotEmpty()) {
-                                        JavaWriteNode jwrite = offset.usages().filter(JavaWriteNode.class).first();
-                                        // follow these steps but adapted to jwrite
-                                        ParameterNode par = node.inputs().filter(ParameterNode.class).first();
-                                        boolean isReductionValue = recursiveCheck(par, offset, jwrite.value());
-                                        if (!isReductionValue) {
-                                            continue;
-                                        }
-
-                                        boolean isInALoop = checkIfVarIsInLoop(jwrite);
-                                        if (!isInALoop) {
-                                            continue;
-                                        }
-
-                                        ValueNode inputArray = obtainInputArray(jwrite.value(), par);
-                                        ValueNode startNode = obtainStartLoopNode(jwrite);
-                                        //
-                                        ReductionMetadataNode reductionNode = createReductionNode(graph, jwrite, inputArray, startNode);
-                                        Node predecessor = jwrite.predecessor();
-                                        performNodeReplacement(graph, jwrite, predecessor, reductionNode, par);
-                                    }
-                                }
+                    if (piUsage instanceof OffsetAddressNode) {
+                        OffsetAddressNode offset = (OffsetAddressNode) piUsage;
+                        if (offset.usages().filter(JavaWriteNode.class).isNotEmpty()) {
+                            JavaWriteNode jwrite = offset.usages().filter(JavaWriteNode.class).first();
+                            // follow these steps but adapted to jwrite
+                            ParameterNode par = node.inputs().filter(ParameterNode.class).first();
+                            boolean isReductionValue = recursiveCheck(par, offset, jwrite.value());
+                            if (!isReductionValue) {
+                                continue;
                             }
-                        }
 
+                            boolean isInALoop = checkIfVarIsInLoop(jwrite);
+                            if (!isInALoop) {
+                                continue;
+                            }
+
+                            ValueNode inputArray = obtainInputArray(jwrite.value(), par);
+                            ValueNode startNode = obtainStartLoopNode(jwrite);
+                            ReductionMetadataNode reductionNode = createReductionNode(graph, jwrite, inputArray, startNode);
+                            Node predecessor = jwrite.predecessor();
+                            performNodeReplacement(graph, jwrite, predecessor, reductionNode, par);
+                        }
                     }
                 }
 

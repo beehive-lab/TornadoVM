@@ -43,7 +43,7 @@ import uk.ac.manchester.tornado.api.type.annotations.PanamaElementSize;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNode;
 
-public class TornadoNativeTypeElimination extends BasePhase<TornadoHighTierContext> {
+public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierContext> {
 
     @Override
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
@@ -66,12 +66,12 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoHighTierConte
     }
 
     @Override
-    protected void run(StructuredGraph graph, TornadoHighTierContext context) {
+    protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
         for (LoadFieldNode loadFieldSegment : graph.getNodes().filter(LoadFieldNode.class)) {
             if (loadFieldSegment.toString().contains("segment")) {
 
                 // Remove the loadField#baseIndex and replace it with a Constant value
-                if (loadFieldSegment.successors().first() instanceof LoadFieldNode baseIndexNode) {
+                if (loadFieldSegment.successors().first()instanceof LoadFieldNode baseIndexNode) {
                     int elementKindSize = getElementKindSize(baseIndexNode);
                     int panamaObjectHeaderSize = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
                     int baseIndexPosition = panamaObjectHeaderSize / elementKindSize;
