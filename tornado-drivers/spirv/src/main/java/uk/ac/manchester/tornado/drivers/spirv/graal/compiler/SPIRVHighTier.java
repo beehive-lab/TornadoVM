@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -57,7 +57,6 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFullInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLocalArrayHeaderEliminator;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLocalMemoryAllocation;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoNativeTypeElimination;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoPartialInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoShapeAnalysis;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeCleanup;
@@ -67,7 +66,6 @@ public class SPIRVHighTier extends TornadoHighTier {
     public SPIRVHighTier(OptionValues options, TornadoDeviceContext deviceContext, CanonicalizerPhase.CustomSimplification customCanonicalizer, MetaAccessProvider metaAccessProvider) {
         super(customCanonicalizer);
 
-        appendPhase(new TornadoNativeTypeElimination());
         CanonicalizerPhase canonicalizer = createCanonicalizerPhase(customCanonicalizer);
         appendPhase(canonicalizer);
 

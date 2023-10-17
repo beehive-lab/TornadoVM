@@ -57,7 +57,6 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFieldAccessFixup;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFullInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLocalMemoryAllocation;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoNativeTypeElimination;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoPartialInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoShapeAnalysis;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeCleanup;
@@ -67,7 +66,6 @@ public class OCLHighTier extends TornadoHighTier {
     public OCLHighTier(OptionValues options, TornadoDeviceContext deviceContext, CanonicalizerPhase.CustomSimplification customCanonicalizer, MetaAccessProvider metaAccessProvider) {
         super(customCanonicalizer);
 
-        appendPhase(new TornadoNativeTypeElimination());
         CanonicalizerPhase canonicalizer = createCanonicalizerPhase(options, customCanonicalizer);
         appendPhase(canonicalizer);
 
