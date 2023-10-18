@@ -49,12 +49,10 @@ import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.api.memory.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.memory.TornadoDeviceObjectState;
@@ -593,9 +591,11 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         final Class<?> type = object.getClass();
 
         // TODO: FIX
-        if (!(object instanceof TornadoNativeArray)) {
-            throw new TornadoRuntimeException("[ERROR] Batch computation with non-Panama not supported yet.");
-        }
+        //        if (!(type.isArray())) {
+        //            if (!(object instanceof TornadoNativeArray)) {
+        //                throw new TornadoRuntimeException("[ERROR] Batch computation with non-Panama not supported yet.");
+        //            }
+        //        }
         return -1;
     }
 
@@ -821,39 +821,39 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return false;
     }
 
-    // @Override
-    // public MemorySegment allocateNonPinnedBuffer(long hostBufferSize, long
-    // deviceBufferSize) {
-    // OCLBufferInfo bufferInfo = new OCLBufferInfo();
+    //     @Override
+    //     public MemorySegment allocateNonPinnedBuffer(long hostBufferSize, long
+    //     deviceBufferSize) {
+    //     OCLBufferInfo bufferInfo = new OCLBufferInfo();
     //
-    // // Allocate the device buffer.
-    // long bufferId = ((OCLMemoryManager)
-    // getMemoryProvider()).allocateRegion(OCLMemFlags.CL_MEM_READ_WRITE,
-    // deviceBufferSize, false);
-    // bufferInfo.setBufferId(bufferId);
-    // bufferInfo.setBufferSize(deviceBufferSize);
+    //     // Allocate the device buffer.
+    //     long bufferId = ((OCLMemoryManager)
+    //     getMemoryProvider()).allocateRegion(OCLMemFlags.CL_MEM_READ_WRITE,
+    //     deviceBufferSize, false);
+    //     bufferInfo.setBufferId(bufferId);
+    //     bufferInfo.setBufferSize(deviceBufferSize);
     //
-    //// // Make sure the lookup buffer kernel is compiled and obtain the required
-    // meta data.
-    //// TaskMetaData meta = getBackend().compileLookupBufferKernel();
-    ////
-    //// // Run the lookup buffer kernel and obtain the device address of the
-    // buffer.
-    //// long deviceBufferAddress =
-    // getBackend().readMemorySegmentBaseAddress(bufferInfo, meta);
-    //// bufferInfo.setDevicePointer(deviceBufferAddress);
+    //    // // Make sure the lookup buffer kernel is compiled and obtain the required
+    //     meta data.
+    //    // TaskMetaData meta = getBackend().compileLookupBufferKernel();
+    //    //
+    //    // // Run the lookup buffer kernel and obtain the device address of the
+    //     buffer.
+    //    // long deviceBufferAddress =
+    //     getBackend().readMemorySegmentBaseAddress(bufferInfo, meta);
+    //    // bufferInfo.setDevicePointer(deviceBufferAddress);
     //
-    // // Allocate the memory segment on the host.
-    // MemorySegment segment = MemorySegment.allocateNative(hostBufferSize,
-    // 8).share();
-    // long hostBufferAddress = segment.address().toRawLongValue();
-    // bufferInfo.setHostBufferPointer(hostBufferAddress);
-    // bufferInfo.setBufferSize(hostBufferSize);
+    //     // Allocate the memory segment on the host.
+    //     MemorySegment segment = MemorySegment.allocateNative(hostBufferSize,
+    //     8).share();
+    //     long hostBufferAddress = segment.address().toRawLongValue();
+    //     bufferInfo.setHostBufferPointer(hostBufferAddress);
+    //     bufferInfo.setBufferSize(hostBufferSize);
     //
-    // // Register the buffer, to be able to release it on device.reset().
-    // // getDeviceContext().registerPinnedBuffer(segment, bufferInfo);
+    //     // Register the buffer, to be able to release it on device.reset().
+    //     // getDeviceContext().registerPinnedBuffer(segment, bufferInfo);
     //
-    // return segment;
-    // }
+    //     return segment;
+    //     }
 
 }
