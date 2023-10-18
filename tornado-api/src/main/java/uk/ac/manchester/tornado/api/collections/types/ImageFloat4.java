@@ -143,8 +143,9 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void set(ImageFloat4 m) {
-        //TODO
-        //   System.arraycopy(storage, 0, m.storage, 0, storage.length);
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, m.storage.get(i));
+        }
     }
 
     public String toString(String fmt) {

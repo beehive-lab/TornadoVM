@@ -143,7 +143,9 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
     }
 
     public void set(ImageByte3 m) {
-        //        System.arraycopy(storage, 0, m.storage, 0, storage.length);
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, m.storage.get(i));
+        }
     }
 
     public String toString(String fmt) {

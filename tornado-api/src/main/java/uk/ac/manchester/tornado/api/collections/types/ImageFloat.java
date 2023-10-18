@@ -65,6 +65,9 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
      * number of elements in the storage.
      */
     private final int numElements;
+    float maxULP = Float.MIN_VALUE;
+    float minULP = Float.MAX_VALUE;
+    float averageULP = 0f;
 
     /**
      * Storage format for matrix.
@@ -248,4 +251,25 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
         return numElements;
     }
 
+    /*
+     * check to make sure dimensions match
+     */
+    public FloatingPointError calculateULP(ImageFloat ref) {
+        if (ref.X != X && ref.Y != Y) {
+            return new FloatingPointError(-1f, 0f, 0f, 0f);
+        }
+
+        for (int j = 0; j < Y; j++) {
+            for (int i = 0; i < X; i++) {
+                final float v = get(i, j);
+                final float r = ref.get(i, j);
+                final float ulpFactor = FloatOps.findMaxULP(v, r);
+                averageULP += ulpFactor;
+                minULP = Math.min(ulpFactor, minULP);
+                maxULP = Math.max(ulpFactor, maxULP);
+            }
+        }
+        averageULP /= (float) X * Y;
+        return new FloatingPointError(averageULP, minULP, maxULP, -1f);
+    }
 }

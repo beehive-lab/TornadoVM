@@ -145,7 +145,9 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void set(ImageFloat3 m) {
-        //        System.arraycopy(storage, 0, m.storage, 0, storage.getSize());
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, m.storage.get(i));
+        }
     }
 
     public String toString(String fmt) {

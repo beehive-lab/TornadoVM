@@ -59,7 +59,6 @@ public class NativeVectorByte extends TornadoNativeArray {
         this.numberOfElements = numberOfElements;
         segmentByteSize = numberOfElements * BYTE_BYTES;
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
-        //        segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
     public void set(int index, byte value) {
