@@ -53,6 +53,15 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         onDevice = false;
     }
 
+    public OCLMemorySegmentWrapper(ByteArray floatSegment, OCLDeviceContext deviceContext, long batchSize) {
+        this.deviceContext = deviceContext;
+        this.batchSize = batchSize;
+        this.bufferSize = floatSegment.getSegment().byteSize();
+        this.bufferId = INIT_VALUE;
+        this.bufferOffset = 0;
+        onDevice = false;
+    }
+
     public OCLMemorySegmentWrapper(FloatArray floatSegment, OCLDeviceContext deviceContext, long batchSize) {
         this.deviceContext = deviceContext;
         this.batchSize = batchSize;
