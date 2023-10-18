@@ -159,8 +159,14 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
             segment = (MemorySegment) reference;
         }
 
+        final int returnEvent;
         final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : bufferSize;
-        final int returnEvent = deviceContext.readBuffer(toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
+        if (batchSize <= 0) {
+            returnEvent = deviceContext.readBuffer(toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
+        } else {
+            returnEvent = deviceContext.readBuffer(toBuffer(), 24L, numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
+        }
+
         return useDeps ? returnEvent : -1;
     }
 
@@ -200,7 +206,6 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         } else {
             seg = (MemorySegment) reference;
         }
-        // buildArrayHeader(seg.byteSize()).write();
         deviceContext.writeBuffer(toBuffer(), bufferOffset, bufferSize, seg.address(), 0, null);
         onDevice = true;
     }
@@ -243,7 +248,12 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
             seg = (MemorySegment) reference;
         }
 
-        final int returnEvent = deviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, bufferSize, seg.address(), hostOffset, (useDeps) ? events : null);
+        final int returnEvent;
+        if (batchSize <= 0) {
+            returnEvent = deviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, bufferSize, seg.address(), hostOffset, (useDeps) ? events : null);
+        } else {
+            returnEvent = deviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, bufferSize, seg.address(), hostOffset, (useDeps) ? events : null);
+        }
         return useDeps ? returnEvent : -1;
     }
 
@@ -292,8 +302,13 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         //        } else {
         //            headerEvent = buildArrayHeaderBatch((int) batchSize).enqueueWrite((useDeps) ? events : null);
         //        }
+        int internalEvent;
+        if (batchSize <= 0) {
+            internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset, bufferSize, seg.address(), hostOffset, (useDeps) ? events : null);
+        } else {
+            internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset + 24, bufferSize, seg.address(), hostOffset, (useDeps) ? events : null);
 
-        int internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset, bufferSize, seg.address(), hostOffset, (useDeps) ? events : null);
+        }
         returnEvents.add(internalEvent);
         onDevice = true;
         return useDeps ? returnEvents : null;
@@ -338,15 +353,16 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
 
         if (batchSize <= 0) {
             bufferSize = memref.byteSize();
+            bufferId = deviceContext.getBufferProvider().getBufferWithSize(bufferSize);
+
         } else {
             bufferSize = batchSize;
+            bufferId = deviceContext.getBufferProvider().getBufferWithSize(bufferSize + 24L);
         }
 
         if (bufferSize <= 0) {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
-
-        bufferId = deviceContext.getBufferProvider().getBufferWithSize(bufferSize);
 
         if (Tornado.FULL_DEBUG) {
             info("allocated: %s", toString());
