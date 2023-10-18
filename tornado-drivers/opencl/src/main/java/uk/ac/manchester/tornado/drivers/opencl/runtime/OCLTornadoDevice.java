@@ -49,6 +49,7 @@ import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
@@ -552,12 +553,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return result;
     }
 
-    private void checkBatchSize(long batchSize) {
-        if (batchSize > 0) {
-            throw new TornadoRuntimeException("[ERROR] Batch computation with non-arrays not supported yet.");
-        }
-    }
-
     @Override
     public int allocateObjects(Object[] objects, long batchSize, TornadoDeviceObjectState[] states) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
@@ -598,8 +593,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         final Class<?> type = object.getClass();
 
         // TODO: FIX
-        if (!type.isArray()) {
-            checkBatchSize(batchSize);
+        if (!(object instanceof TornadoNativeArray)) {
+            throw new TornadoRuntimeException("[ERROR] Batch computation with non-Panama not supported yet.");
         }
         return -1;
     }
