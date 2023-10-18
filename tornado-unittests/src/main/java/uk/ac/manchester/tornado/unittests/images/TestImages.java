@@ -203,6 +203,7 @@ public class TestImages extends TornadoTestBase {
         final ImageFloat imageA = new ImageFloat(M, N);
         final ImageFloat imageB = new ImageFloat(M, N);
         imageA.fill(100f);
+        imageB.fill(0f);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, imageA) //

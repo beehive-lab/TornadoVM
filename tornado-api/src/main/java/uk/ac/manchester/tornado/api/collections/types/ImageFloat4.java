@@ -44,7 +44,6 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
 public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
 
@@ -95,10 +94,9 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
         this(width, height, new FloatArray(width * height * ELEMENT_SIZE));
     }
 
-    //  public ImageFloat4(float[][] matrix) {
-    //TODO
-    //  this(matrix.length / ELEMENT_SIZE, matrix[0].length / ELEMENT_SIZE, StorageFormats.toRowMajor(matrix));
-    //  }
+    public ImageFloat4(float[][] matrix) {
+        this(matrix.length / ELEMENT_SIZE, matrix[0].length / ELEMENT_SIZE, StorageFormats.toRowMajor(matrix));
+    }
 
     public FloatArray getArray() {
         return storage;
@@ -118,14 +116,12 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
 
     public Float4 get(int x, int y) {
         final int offset = toIndex(x, y);
-        throw new TornadoRuntimeException("Operation Not Supported");
-        //return Float4.loadFromArray(storage, offset);
+        return Float4.loadFromArray(storage, offset);
     }
 
     public void set(int x, int y, Float4 value) {
         final int offset = toIndex(x, y);
-        throw new TornadoRuntimeException("Operation Not Supported");
-        //        value.storeToArray(storage, offset);
+        value.storeToArray(storage, offset);
     }
 
     public int X() {
@@ -138,7 +134,6 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
 
     public void fill(float value) {
         storage.init(value);
-        //  Arrays.fill(storage, value);
     }
 
     public ImageFloat4 duplicate() {
@@ -148,8 +143,9 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void set(ImageFloat4 m) {
-        //TODO
-        //   System.arraycopy(storage, 0, m.storage, 0, storage.length);
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, m.storage.get(i));
+        }
     }
 
     public String toString(String fmt) {
@@ -234,38 +230,6 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
     @Override
     public int size() {
         return numElements;
-    }
-
-    public FloatingPointError calculateULP(ImageFloat4 ref) {
-        float maxULP = Float.MIN_VALUE;
-        float minULP = Float.MAX_VALUE;
-        float averageULP = 0f;
-
-        /*
-         * check to make sure dimensions match
-         */
-        if (ref.X != X && ref.Y != Y) {
-            return new FloatingPointError(-1f, 0f, 0f, 0f);
-        }
-
-        int errors = 0;
-        for (int j = 0; j < Y; j++) {
-            for (int i = 0; i < X; i++) {
-                final Float4 v = get(i, j);
-                final Float4 r = ref.get(i, j);
-
-                final float ulpFactor = Float4.findULPDistance(v, r);
-                averageULP += ulpFactor;
-                minULP = Math.min(ulpFactor, minULP);
-                maxULP = Math.max(ulpFactor, maxULP);
-
-                if (ulpFactor > 5f) {
-                    errors++;
-                }
-            }
-        }
-        averageULP /= (float) X * Y;
-        return new FloatingPointError(averageULP, minULP, maxULP, -1f, errors);
     }
 
 }

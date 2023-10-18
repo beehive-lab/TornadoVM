@@ -42,7 +42,6 @@
 package uk.ac.manchester.tornado.api.collections.types.natives;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -50,9 +49,8 @@ import java.lang.foreign.MemorySegment;
 import uk.ac.manchester.tornado.api.data.nativetypes.TornadoNativeArray;
 
 public class NativeVectorByte extends TornadoNativeArray {
-    private MemorySegment segment;
     private final int BYTE_BYTES = 1;
-
+    private MemorySegment segment;
     private int numberOfElements;
 
     private long segmentByteSize;
@@ -60,9 +58,7 @@ public class NativeVectorByte extends TornadoNativeArray {
     public NativeVectorByte(int numberOfElements) {
         this.numberOfElements = numberOfElements;
         segmentByteSize = numberOfElements * BYTE_BYTES;
-
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
-        segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
     public void set(int index, byte value) {

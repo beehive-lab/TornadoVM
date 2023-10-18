@@ -45,13 +45,14 @@ import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 
 public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
 
     /**
      * backing array.
      */
-    protected final float[] storage;
+    protected final FloatArray storage;
     /**
      * Number of rows.
      */
@@ -64,6 +65,9 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
      * number of elements in the storage.
      */
     private final int numElements;
+    float maxULP = Float.MIN_VALUE;
+    float minULP = Float.MAX_VALUE;
+    float averageULP = 0f;
 
     /**
      * Storage format for matrix.
@@ -75,7 +79,7 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
      * @param array
      *     array reference which contains data
      */
-    public ImageFloat(int width, int height, float[] array) {
+    public ImageFloat(int width, int height, FloatArray array) {
         storage = array;
         X = width;
         Y = height;
@@ -91,7 +95,7 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
      *     number of columns
      */
     public ImageFloat(int width, int height) {
-        this(width, height, new float[width * height]);
+        this(width, height, new FloatArray(width * height));
     }
 
     public ImageFloat(float[][] matrix) {
@@ -99,21 +103,21 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
     }
 
     public static void scale(ImageFloat image, float alpha) {
-        for (int i = 0; i < image.storage.length; i++) {
-            image.storage[i] *= alpha;
+        for (int i = 0; i < image.storage.getSize(); i++) {
+            image.storage.set(i, image.storage.get(i) * alpha);
         }
     }
 
-    public float[] getArray() {
+    public FloatArray getArray() {
         return storage;
     }
 
     public float get(int i) {
-        return storage[i];
+        return storage.get(i);
     }
 
     public void set(int i, float value) {
-        storage[i] = value;
+        storage.set(i, value);
     }
 
     /***
@@ -126,7 +130,7 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
      * @return float
      */
     public float get(int i, int j) {
-        return storage[StorageFormats.toRowMajor(j, i, X)];
+        return storage.get(StorageFormats.toRowMajor(j, i, X));
     }
 
     /***
@@ -140,7 +144,7 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
      *     new value
      */
     public void set(int i, int j, float value) {
-        storage[StorageFormats.toRowMajor(j, i, X)] = value;
+        storage.set(StorageFormats.toRowMajor(j, i, X), value);
     }
 
     public void put(float[] array) {
@@ -170,7 +174,7 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void set(ImageFloat m) {
-        System.arraycopy(storage, 0, m.storage, 0, storage.length);
+        System.arraycopy(storage, 0, m.storage, 0, storage.getSize());
     }
 
     public String toString(String fmt) {
@@ -194,24 +198,24 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
 
     public float mean() {
         float result = 0f;
-        for (float v : storage) {
-            result += v;
+        for (int i = 0; i < storage.getSize(); i++) {
+            result += storage.get(i);
         }
         return result / (X * Y);
     }
 
     public float min() {
         float result = Float.MAX_VALUE;
-        for (float v : storage) {
-            result = Math.min(result, v);
+        for (int i = 0; i < storage.getSize(); i++) {
+            result = Math.min(result, storage.get(i));
         }
         return result;
     }
 
     public float max() {
         float result = Float.MIN_VALUE;
-        for (float v : storage) {
-            result = Math.max(result, v);
+        for (int i = 0; i < storage.getSize(); i++) {
+            result = Math.max(result, storage.get(i));
         }
         return result;
     }
@@ -219,8 +223,8 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
     public float stdDev() {
         final float mean = mean();
         float varience = 0f;
-        for (int i = 0; i < storage.length; i++) {
-            float v = storage[i];
+        for (int i = 0; i < storage.getSize(); i++) {
+            float v = storage.get(i);
             v -= mean;
             v *= v;
             varience = v / X;
@@ -239,7 +243,7 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
+        return storage.getSegment().asByteBuffer().asFloatBuffer();
     }
 
     @Override
@@ -247,14 +251,10 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
         return numElements;
     }
 
+    /*
+     * check to make sure dimensions match
+     */
     public FloatingPointError calculateULP(ImageFloat ref) {
-        float maxULP = Float.MIN_VALUE;
-        float minULP = Float.MAX_VALUE;
-        float averageULP = 0f;
-
-        /*
-         * check to make sure dimensions match
-         */
         if (ref.X != X && ref.Y != Y) {
             return new FloatingPointError(-1f, 0f, 0f, 0f);
         }

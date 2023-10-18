@@ -42,7 +42,8 @@
 package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.FloatBuffer;
-import java.util.Arrays;
+
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 
 public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
 
@@ -50,7 +51,7 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array.
      */
-    protected final float[] storage;
+    protected final FloatArray storage;
     /**
      * Number of rows.
      */
@@ -74,7 +75,7 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
      * @param array
      *     array reference which contains data
      */
-    public ImageFloat3(int width, int height, float[] array) {
+    public ImageFloat3(int width, int height, FloatArray array) {
         storage = array;
         X = width;
         Y = height;
@@ -90,14 +91,14 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
      *     number of columns
      */
     public ImageFloat3(int width, int height) {
-        this(width, height, new float[width * height * ELEMENT_SIZE]);
+        this(width, height, new FloatArray(width * height * ELEMENT_SIZE));
     }
 
     public ImageFloat3(float[][] matrix) {
         this(matrix.length / ELEMENT_SIZE, matrix[0].length / ELEMENT_SIZE);
     }
 
-    public float[] getArray() {
+    public FloatArray getArray() {
         return storage;
     }
 
@@ -115,14 +116,12 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
 
     public Float3 get(int x, int y) {
         final int offset = toIndex(x, y);
-        //TODO
-        return null; //Float3.loadFromArray(storage, offset);
+        return Float3.loadFromArray(storage, offset);
     }
 
     public void set(int x, int y, Float3 value) {
         final int offset = toIndex(x, y);
-        //TODO
-        //value.storeToArray(storage, offset);
+        value.storeToArray(storage, offset);
     }
 
     public int X() {
@@ -134,7 +133,9 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void fill(float value) {
-        Arrays.fill(storage, value);
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, value);
+        }
     }
 
     public ImageFloat3 duplicate() {
@@ -144,7 +145,9 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void set(ImageFloat3 m) {
-        System.arraycopy(storage, 0, m.storage, 0, storage.length);
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, m.storage.get(i));
+        }
     }
 
     public String toString(String fmt) {
@@ -229,7 +232,7 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
+        return storage.getSegment().asByteBuffer().asFloatBuffer();
     }
 
     @Override
