@@ -486,8 +486,43 @@ public class TestMatrixTypes extends TornadoTestBase {
         assertEquals(6, matrix.get(1, 2));
     }
 
+    /**
+     * Tests testMatrix01-testMatrix06 had to be moved before the tests for float matrices.
+     * The reason is that when they were executed at a later stage (after testMatrix21),
+     * the plugin for MemorySegment (getAtIndex) was not being invoked.
+     */
     @Test
     public void testMatrix01() {
+        testMatrixIntegers(640, 480);
+    }
+
+    @Test
+    public void testMatrix02() {
+        testMatrixIntegers(480, 640);
+    }
+
+    @Test
+    public void testMatrix03() {
+        testMatrixIntegers(640, 640);
+    }
+
+    @Test
+    public void testMatrix04() {
+        testMatrixDoubles(640, 480);
+    }
+
+    @Test
+    public void testMatrix05() {
+        testMatrixDoubles(480, 640);
+    }
+
+    @Test
+    public void testMatrix06() {
+        testMatrixDoubles(640, 640);
+    }
+
+    @Test
+    public void testMatrix07() {
         final int N = 256;
         Matrix2DFloat matrixA = new Matrix2DFloat(N, N);
         Matrix2DFloat matrixB = new Matrix2DFloat(N, N);
@@ -515,7 +550,7 @@ public class TestMatrixTypes extends TornadoTestBase {
     }
 
     @Test
-    public void testMatrix02() {
+    public void testMatrix08() {
         final int N = 256;
         float[][] a = new float[N][N];
         Random r = new Random();
@@ -544,7 +579,7 @@ public class TestMatrixTypes extends TornadoTestBase {
     }
 
     @Test
-    public void testMatrix03() {
+    public void testMatrix09() {
         final int N = 256;
         Matrix2DFloat matrixA = new Matrix2DFloat(N, N);
         Matrix2DFloat matrixB = new Matrix2DFloat(N, N);
@@ -577,7 +612,7 @@ public class TestMatrixTypes extends TornadoTestBase {
     }
 
     @Test
-    public void testMatrix04() {
+    public void testMatrix10() {
         final int N = 256;
         Matrix3DFloat matrixA = new Matrix3DFloat(N, N, N);
         Matrix3DFloat matrixB = new Matrix3DFloat(N, N, N);
@@ -608,35 +643,34 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
     }
 
-    // FROM
     @Test
-    public void testMatrix05() {
+    public void testMatrix11() {
         final int X = 512;
         testMatrix2DVectorType(X, X);
     }
 
     @Test
-    public void testMatrix06() {
+    public void testMatrix12() {
         final int X = 512;
         final int Y = 128;
         testMatrix2DVectorType(X, Y);
     }
 
     @Test
-    public void testMatrix07() {
+    public void testMatrix13() {
         final int X = 512;
         final int Y = 128;
         testMatrix2DVectorType(Y, X);
     }
 
     @Test
-    public void testMatrix08() {
+    public void testMatrix14() {
         final int X = 128;
         testMatrix3DVectorType(X, X, X);
     }
 
     @Test
-    public void testMatrix09() {
+    public void testMatrix15() {
         final int X = 128;
         final int Y = 64;
         final int Z = 2;
@@ -644,7 +678,7 @@ public class TestMatrixTypes extends TornadoTestBase {
     }
 
     @Test
-    public void testMatrix10() {
+    public void testMatrix16() {
         final int X = 128;
         final int Y = 64;
         final int Z = 2;
@@ -652,7 +686,7 @@ public class TestMatrixTypes extends TornadoTestBase {
     }
 
     @Test
-    public void testMatrix11() {
+    public void testMatrix17() {
         final int SMALL_SIZE = 128;
         Matrix3DFloat4 matrixA = new Matrix3DFloat4(SMALL_SIZE, SMALL_SIZE, SMALL_SIZE);
         Matrix3DFloat4 matrixB = new Matrix3DFloat4(SMALL_SIZE, SMALL_SIZE, SMALL_SIZE);
@@ -689,12 +723,11 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
     }
 
-    // TO
     @Test
-    public void testMatrix12() {
-        final int X = 4; //480;
-        final int Y = 4; //854;
-        final int Z = 4; //3;
+    public void testMatrix18() {
+        final int X = 480;
+        final int Y = 854;
+        final int Z = 3;
 
         float[][][] a = new float[X][Y][Z];
         Random r = new Random();
@@ -710,7 +743,7 @@ public class TestMatrixTypes extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("iiiii") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, matrixA) //
-                .task("t0", TestMatrixTypes::computeMatrixSum2, matrixA, matrixB, X, Y, Z) //
+                .task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y, Z) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixB);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -727,53 +760,23 @@ public class TestMatrixTypes extends TornadoTestBase {
     }
 
     @Test
-    public void testMatrix13() {
+    public void testMatrix19() {
         final int X = 854;
         final int Y = 480;
         testMatricesFloats(X, Y);
     }
 
     @Test
-    public void testMatrix14() {
+    public void testMatrix20() {
         final int X = 854;
         final int Y = 480;
         testMatricesFloats(Y, X);
     }
 
     @Test
-    public void testMatrix15() {
+    public void testMatrix21() {
         final int X = 854;
         testMatricesFloats(X, X);
-    }
-
-    @Test
-    public void testMatrix16() {
-        testMatrixIntegers(640, 480);
-    }
-
-    @Test
-    public void testMatrix17() {
-        testMatrixIntegers(480, 640);
-    }
-
-    @Test
-    public void testMatrix18() {
-        testMatrixIntegers(640, 640);
-    }
-
-    @Test
-    public void testMatrix19() {
-        testMatrixDoubles(640, 480);
-    }
-
-    @Test
-    public void testMatrix20() {
-        testMatrixDoubles(480, 640);
-    }
-
-    @Test
-    public void testMatrix21() {
-        testMatrixDoubles(640, 640);
     }
 
     @Test
