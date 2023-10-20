@@ -51,13 +51,12 @@ import uk.ac.manchester.tornado.api.type.annotations.PanamaElementSize;
 
 @PanamaElementSize(size = 2)
 public class ShortArray extends TornadoNativeArray {
-    private MemorySegment segment;
     private final int SHORT_BYTES = 2;
+    private MemorySegment segment;
     private int numberOfElements;
     private int arrayHeaderSize;
 
     private int baseIndex;
-    private int arraySizeHeaderPosition;
 
     private long segmentByteSize;
 
@@ -70,6 +69,13 @@ public class ShortArray extends TornadoNativeArray {
 
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+    }
+
+    public ShortArray(short... values) {
+        this(values.length);
+        for (int i = 0; i < values.length; i++) {
+            set(i, values[i]);
+        }
     }
 
     public void set(int index, short value) {
