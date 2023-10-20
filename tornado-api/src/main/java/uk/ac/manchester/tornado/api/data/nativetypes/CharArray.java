@@ -10,14 +10,12 @@ import uk.ac.manchester.tornado.api.type.annotations.PanamaElementSize;
 
 @PanamaElementSize(size = 2)
 public class CharArray extends TornadoNativeArray {
-    private MemorySegment segment;
     private final int CHAR_BYTES = 2;
-
+    private MemorySegment segment;
     private int numberOfElements;
     private int arrayHeaderSize;
 
     private int baseIndex;
-    private int arraySizeHeaderPosition;
 
     private long segmentByteSize;
 
@@ -25,11 +23,17 @@ public class CharArray extends TornadoNativeArray {
         this.numberOfElements = numberOfElements;
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / CHAR_BYTES;
-        arraySizeHeaderPosition = baseIndex - 2;
         segmentByteSize = numberOfElements * CHAR_BYTES + arrayHeaderSize;
 
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+    }
+
+    public CharArray(char... values) {
+        this(values.length);
+        for (int i = 0; i < values.length; i++) {
+            set(i, values[i]);
+        }
     }
 
     public void set(int index, char value) {

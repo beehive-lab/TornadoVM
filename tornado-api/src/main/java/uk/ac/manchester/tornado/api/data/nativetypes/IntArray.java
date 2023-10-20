@@ -50,14 +50,12 @@ import uk.ac.manchester.tornado.api.type.annotations.PanamaElementSize;
 
 @PanamaElementSize(size = 4)
 public class IntArray extends TornadoNativeArray {
+    private final int INT_BYTES = 4;
     private int numberOfElements;
     private MemorySegment segment;
-    private final int INT_BYTES = 4;
-
     private int arrayHeaderSize;
 
     private int baseIndex;
-    private int arraySizeHeaderPosition;
 
     private long segmentByteSize;
 
@@ -65,11 +63,17 @@ public class IntArray extends TornadoNativeArray {
         this.numberOfElements = numberOfElements;
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / INT_BYTES;
-        arraySizeHeaderPosition = baseIndex - 1;
         segmentByteSize = numberOfElements * INT_BYTES + arrayHeaderSize;
 
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+    }
+
+    public IntArray(int... values) {
+        this(values.length);
+        for (int i = 0; i < values.length; i++) {
+            set(i, values[i]);
+        }
     }
 
     public void set(int index, int value) {

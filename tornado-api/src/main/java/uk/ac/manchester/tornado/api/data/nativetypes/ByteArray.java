@@ -10,9 +10,8 @@ import uk.ac.manchester.tornado.api.type.annotations.PanamaElementSize;
 
 @PanamaElementSize(size = 1)
 public class ByteArray extends TornadoNativeArray {
-    private MemorySegment segment;
     private final int BYTE_BYTES = 1;
-
+    private MemorySegment segment;
     private int numberOfElements;
     private int arrayHeaderSize;
 
@@ -30,6 +29,13 @@ public class ByteArray extends TornadoNativeArray {
 
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+    }
+
+    public ByteArray(byte... values) {
+        this(values.length);
+        for (int i = 0; i < values.length; i++) {
+            set(i, values[i]);
+        }
     }
 
     public void set(int index, byte value) {

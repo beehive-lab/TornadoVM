@@ -51,9 +51,8 @@ import uk.ac.manchester.tornado.api.type.annotations.PanamaElementSize;
 
 @PanamaElementSize(size = 4)
 public class FloatArray extends TornadoNativeArray {
-    private MemorySegment segment;
     private final int FLOAT_BYTES = 4;
-
+    private MemorySegment segment;
     private int numberOfElements;
 
     private int arrayHeaderSize;
@@ -72,9 +71,15 @@ public class FloatArray extends TornadoNativeArray {
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
+    public FloatArray(float... values) {
+        this(values.length);
+        for (int i = 0; i < values.length; i++) {
+            set(i, values[i]);
+        }
+    }
+
     public void set(int index, float value) {
         segment.setAtIndex(JAVA_FLOAT, baseIndex + index, value);
-
     }
 
     public float get(int index) {

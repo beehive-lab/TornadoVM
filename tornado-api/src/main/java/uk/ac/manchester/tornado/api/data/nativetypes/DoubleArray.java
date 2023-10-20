@@ -51,15 +51,13 @@ import uk.ac.manchester.tornado.api.type.annotations.PanamaElementSize;
 
 @PanamaElementSize(size = 8)
 public class DoubleArray extends TornadoNativeArray {
-    private MemorySegment segment;
     private final int DOUBLE_BYTES = 8;
-
+    private MemorySegment segment;
     private int numberOfElements;
 
     private int arrayHeaderSize;
 
     private int baseIndex;
-    private int arraySizeHeaderPosition;
 
     private long segmentByteSize;
 
@@ -68,11 +66,17 @@ public class DoubleArray extends TornadoNativeArray {
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         assert arrayHeaderSize >= 8;
         baseIndex = arrayHeaderSize / DOUBLE_BYTES;
-        arraySizeHeaderPosition = baseIndex - 1;
         segmentByteSize = numberOfElements * DOUBLE_BYTES + arrayHeaderSize;
 
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
+    }
+
+    public DoubleArray(double... values) {
+        this(values.length);
+        for (int i = 0; i < values.length; i++) {
+            set(i, values[i]);
+        }
     }
 
     public void set(int index, double value) {
