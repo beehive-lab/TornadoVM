@@ -92,7 +92,7 @@ public class FloatSE3 {
         return result;
     }
 
-    public static Matrix4x4Float toMatrix4(Float6 v) {
+    public static Matrix4x4Float toMatrix4(FloatArray v) {
         Matrix4x4Float result = new Matrix4x4Float();
 
         result.identity();

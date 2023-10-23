@@ -19,7 +19,6 @@
 package uk.ac.manchester.tornado.matrix;
 
 import static java.lang.Math.abs;
-import static uk.ac.manchester.tornado.api.collections.types.Float6.dot;
 import static uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat.scale;
 import static uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat.transpose;
 
@@ -227,6 +226,23 @@ public final class MatrixMath {
         for (int i = 0; i < m.getNumColumns(); i++) {
             y.set(i, VectorFloat.dot(m.row(i), x));
         }
+    }
+
+    public static FloatArray mult(FloatArray a, FloatArray b) {
+        final FloatArray result = new FloatArray(6);
+        for (int i = 0; i < a.getSize(); i++) {
+            result.set(i, a.get(i) * b.get(i));
+        }
+        return result;
+    }
+
+    public static float dot(FloatArray a, FloatArray b) {
+        float result = 0f;
+        final FloatArray m = mult(a, b);
+        for (int i = 0; i < a.getSize(); i++) {
+            result += m.get(i);
+        }
+        return result;
     }
 
     public static void multiply(FloatArray y, Matrix2DFloat m, FloatArray x) {
