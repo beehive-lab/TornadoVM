@@ -29,8 +29,10 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedGuardNode;
 import org.graalvm.compiler.nodes.GraphState;
+import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.calc.PointerEqualsNode;
 import org.graalvm.compiler.nodes.extended.JavaReadNode;
 import org.graalvm.compiler.nodes.extended.JavaWriteNode;
@@ -98,7 +100,15 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
                         break;
                     }
                 }
-                deleteFixed(loadFieldSegment);
+                if (loadFieldSegment.predecessor() instanceof FixedGuardNode) {
+                    FixedGuardNode fixedGuardNode = (FixedGuardNode) loadFieldSegment.predecessor();
+                    deleteFixed(loadFieldSegment);
+                    if (fixedGuardNode.predecessor()instanceof LoadFieldNode ldf) {
+                        removeFixedGuardNodes(fixedGuardNode, ldf);
+                    }
+                } else {
+                    deleteFixed(loadFieldSegment);
+                }
             }
         }
     }
@@ -107,7 +117,7 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
         ArrayList<Node> nodesToBeRemoved = new ArrayList<>();
         nodesToBeRemoved.add(fixedGuardNode);
         for (Node node : fixedGuardNode.inputs()) {
-            if (node instanceof InstanceOfNode) {
+            if (node instanceof InstanceOfNode || node instanceof IsNullNode) {
                 nodesToBeRemoved.add(node);
             }
         }
@@ -122,9 +132,19 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
                     if (off.usages().filter(JavaReadNode.class).isNotEmpty() //
                             || off.usages().filter(JavaWriteNode.class).isNotEmpty() //
                             || off.usages().filter(WriteAtomicNode.class).isNotEmpty()) {
-                        off.replaceFirstInput(pi, loadFieldSegment);
+
+                        if (pi.inputs().filter(ParameterNode.class).isNotEmpty()) {
+                            return;
+                        }
+
+                        if (pi.inputs().filter(LoadFieldNode.class).isNotEmpty()) {
+                            LoadFieldNode ldf = pi.inputs().filter(LoadFieldNode.class).first();
+                            off.replaceFirstInput(pi, ldf);
+                        } else {
+                            off.replaceFirstInput(pi, loadFieldSegment);
+                        }
+                        nodesToBeRemoved.add(pi);
                     }
-                    nodesToBeRemoved.add(pi);
                 }
             } else if (node instanceof PiNode pi && (pi.usages().filter(LoadHubNode.class).isNotEmpty())) {
                 //NOTE: This is a special case where Graal includes additional FixedGuardNodes during sketching
@@ -146,7 +166,17 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
                                     if (off.usages().filter(JavaReadNode.class).isNotEmpty() //
                                             || off.usages().filter(JavaWriteNode.class).isNotEmpty() //
                                             || off.usages().filter(WriteAtomicNode.class).isNotEmpty()) {
-                                        off.replaceFirstInput(piF, loadFieldSegment);
+
+                                        if (piF.inputs().filter(ParameterNode.class).isNotEmpty()) {
+                                            return;
+                                        }
+
+                                        if (piF.inputs().filter(LoadFieldNode.class).isNotEmpty()) {
+                                            LoadFieldNode ldf = pi.inputs().filter(LoadFieldNode.class).first();
+                                            off.replaceFirstInput(piF, ldf);
+                                        } else {
+                                            off.replaceFirstInput(piF, loadFieldSegment);
+                                        }
                                         nodesToBeRemoved.add(piF);
                                     }
                                 }
