@@ -46,6 +46,7 @@ import java.nio.ShortBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.collections.types.natives.NativeVectorShort;
+import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
@@ -228,15 +229,15 @@ public final class Short2 implements PrimitiveStorage<ShortBuffer> {
         return nativeVectorShort.getSegment().toArray(ValueLayout.JAVA_SHORT);
     }
 
-    static Short2 loadFromArray(final short[] array, int index) {
+    static Short2 loadFromArray(final ShortArray array, int index) {
         final Short2 result = new Short2();
-        result.setX(array[index]);
-        result.setY(array[index + 1]);
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
         return result;
     }
 
-    void storeToArray(final short[] array, int index) {
-        array[index] = getX();
-        array[index + 1] = getY();
+    void storeToArray(final ShortArray array, int index) {
+        array.set(index, getX());
+        array.set(index + 1, getY());
     }
 }

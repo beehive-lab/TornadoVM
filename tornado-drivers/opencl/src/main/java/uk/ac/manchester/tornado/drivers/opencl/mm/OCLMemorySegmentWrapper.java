@@ -53,10 +53,10 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         onDevice = false;
     }
 
-    public OCLMemorySegmentWrapper(ByteArray floatSegment, OCLDeviceContext deviceContext, long batchSize) {
+    public OCLMemorySegmentWrapper(ByteArray byteSegment, OCLDeviceContext deviceContext, long batchSize) {
         this.deviceContext = deviceContext;
         this.batchSize = batchSize;
-        this.bufferSize = floatSegment.getSegment().byteSize();
+        this.bufferSize = byteSegment.getSegment().byteSize();
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
         onDevice = false;
@@ -80,10 +80,19 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         onDevice = false;
     }
 
-    public OCLMemorySegmentWrapper(IntArray doubleSegment, OCLDeviceContext deviceContext, long batchSize) {
+    public OCLMemorySegmentWrapper(IntArray intSegment, OCLDeviceContext deviceContext, long batchSize) {
         this.deviceContext = deviceContext;
         this.batchSize = batchSize;
-        this.bufferSize = doubleSegment.getSegment().byteSize();
+        this.bufferSize = intSegment.getSegment().byteSize();
+        this.bufferId = INIT_VALUE;
+        this.bufferOffset = 0;
+        onDevice = false;
+    }
+
+    public OCLMemorySegmentWrapper(ShortArray shortSegment, OCLDeviceContext deviceContext, long batchSize) {
+        this.deviceContext = deviceContext;
+        this.batchSize = batchSize;
+        this.bufferSize = shortSegment.getSegment().byteSize();
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
         onDevice = false;
