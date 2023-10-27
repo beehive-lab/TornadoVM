@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -47,7 +47,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run.
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.vectortypes.TestFloats
+ * tornado-test -V uk.ac.manchester.tornado.unittests.vectortypes.TestFloats
  * </code>
  */
 public class TestFloats extends TornadoTestBase {
@@ -899,6 +899,16 @@ public class TestFloats extends TornadoTestBase {
         for (int i = 0; i < size; i++) {
             assertEquals(sequentialOutput.get(i).getX(), tornadoOutput.get(i).getX(), DELTA);
             assertEquals(sequentialOutput.get(i).getY(), tornadoOutput.get(i).getY(), DELTA);
+        }
+    }
+
+    @Test(timeout = 1000) //timeout of 1sec
+    public void testAllocationIssue() {
+        int size = 8192 * 4096;
+
+        VectorFloat4 buffer = new VectorFloat4(size);
+        for (int x = 0; x < size; x++) {
+            buffer.set(x, new Float4(x, x, x, x));
         }
     }
 
