@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, 2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2023, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,17 +41,20 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
+
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.collections.types.natives.NativeVectorFloat;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
 @Vector
-public final class Float3 implements PrimitiveStorage<FloatBuffer> {
+public final class NativeFloat3 implements PrimitiveStorage<FloatBuffer> {
 
-    public static final Class<Float3> TYPE = Float3.class;
+    public static final Class<NativeFloat3> TYPE = NativeFloat3.class;
     /**
      * number of elements in the storage.
      */
@@ -60,17 +63,17 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
      * backing array.
      */
     @Payload
-    final float[] storage;
+    final NativeVectorFloat nativeVectorFloat;
 
-    private Float3(float[] nativeVectorFloat) {
-        this.storage = nativeVectorFloat;
+    public NativeFloat3(NativeVectorFloat nativeVectorFloat) {
+        this.nativeVectorFloat = nativeVectorFloat;
     }
 
-    public Float3() {
-        this(new float[NUM_ELEMENTS]);
+    public NativeFloat3() {
+        this(new NativeVectorFloat(NUM_ELEMENTS));
     }
 
-    public Float3(float x, float y, float z) {
+    public NativeFloat3(float x, float y, float z) {
         this();
         setX(x);
         setY(y);
@@ -83,92 +86,92 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
     /*
      * vector = op( vector, vector )
      */
-    public static Float3 add(Float3 a, Float3 b) {
-        return new Float3(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ());
+    public static NativeFloat3 add(NativeFloat3 a, NativeFloat3 b) {
+        return new NativeFloat3(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ());
     }
 
-    public static Float3 sub(Float3 a, Float3 b) {
-        return new Float3(a.getX() - b.getX(), a.getY() - b.getY(), a.getZ() - b.getZ());
+    public static NativeFloat3 sub(NativeFloat3 a, NativeFloat3 b) {
+        return new NativeFloat3(a.getX() - b.getX(), a.getY() - b.getY(), a.getZ() - b.getZ());
     }
 
-    public static Float3 div(Float3 a, Float3 b) {
-        return new Float3(a.getX() / b.getX(), a.getY() / b.getY(), a.getZ() / b.getZ());
+    public static NativeFloat3 div(NativeFloat3 a, NativeFloat3 b) {
+        return new NativeFloat3(a.getX() / b.getX(), a.getY() / b.getY(), a.getZ() / b.getZ());
     }
 
-    public static Float3 mult(Float3 a, Float3 b) {
-        return new Float3(a.getX() * b.getX(), a.getY() * b.getY(), a.getZ() * b.getZ());
+    public static NativeFloat3 mult(NativeFloat3 a, NativeFloat3 b) {
+        return new NativeFloat3(a.getX() * b.getX(), a.getY() * b.getY(), a.getZ() * b.getZ());
     }
 
-    public static Float3 min(Float3 a, Float3 b) {
-        return new Float3(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()));
+    public static NativeFloat3 min(NativeFloat3 a, NativeFloat3 b) {
+        return new NativeFloat3(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()));
     }
 
-    public static Float3 max(Float3 a, Float3 b) {
-        return new Float3(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(a.getZ(), b.getZ()));
+    public static NativeFloat3 max(NativeFloat3 a, NativeFloat3 b) {
+        return new NativeFloat3(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(a.getZ(), b.getZ()));
     }
 
-    public static Float3 cross(Float3 a, Float3 b) {
-        return new Float3(a.getY() * b.getZ() - a.getZ() * b.getY(), a.getZ() * b.getX() - a.getX() * b.getZ(), a.getX() * b.getY() - a.getY() * b.getX());
+    public static NativeFloat3 cross(NativeFloat3 a, NativeFloat3 b) {
+        return new NativeFloat3(a.getY() * b.getZ() - a.getZ() * b.getY(), a.getZ() * b.getX() - a.getX() * b.getZ(), a.getX() * b.getY() - a.getY() * b.getX());
     }
 
     /*
      * vector = op (vector, scalar)
      */
-    public static Float3 add(Float3 a, float b) {
-        return new Float3(a.getX() + b, a.getY() + b, a.getZ() + b);
+    public static NativeFloat3 add(NativeFloat3 a, float b) {
+        return new NativeFloat3(a.getX() + b, a.getY() + b, a.getZ() + b);
     }
 
-    public static Float3 sub(Float3 a, float b) {
-        return new Float3(a.getX() - b, a.getY() - b, a.getZ() - b);
+    public static NativeFloat3 sub(NativeFloat3 a, float b) {
+        return new NativeFloat3(a.getX() - b, a.getY() - b, a.getZ() - b);
     }
 
-    public static Float3 mult(Float3 a, float b) {
-        return new Float3(a.getX() * b, a.getY() * b, a.getZ() * b);
+    public static NativeFloat3 mult(NativeFloat3 a, float b) {
+        return new NativeFloat3(a.getX() * b, a.getY() * b, a.getZ() * b);
     }
 
-    public static Float3 div(Float3 a, float b) {
-        return new Float3(a.getX() / b, a.getY() / b, a.getZ() / b);
+    public static NativeFloat3 div(NativeFloat3 a, float b) {
+        return new NativeFloat3(a.getX() / b, a.getY() / b, a.getZ() / b);
     }
 
-    public static Float3 inc(Float3 a, float value) {
-        return new Float3(a.getX() + value, a.getY() + value, a.getZ() + value);
+    public static NativeFloat3 inc(NativeFloat3 a, float value) {
+        return new NativeFloat3(a.getX() + value, a.getY() + value, a.getZ() + value);
     }
 
-    public static Float3 dec(Float3 a, float value) {
-        return new Float3(a.getX() - value, a.getY() - value, a.getZ() - value);
+    public static NativeFloat3 dec(NativeFloat3 a, float value) {
+        return new NativeFloat3(a.getX() - value, a.getY() - value, a.getZ() - value);
     }
 
-    public static Float3 scaleByInverse(Float3 a, float value) {
+    public static NativeFloat3 scaleByInverse(NativeFloat3 a, float value) {
         return mult(a, 1f / value);
     }
 
-    public static Float3 scale(Float3 a, float value) {
+    public static NativeFloat3 scale(NativeFloat3 a, float value) {
         return mult(a, value);
     }
 
     /*
      * vector = op(vector)
      */
-    public static Float3 sqrt(Float3 a) {
-        return new Float3(TornadoMath.sqrt(a.getX()), TornadoMath.sqrt(a.getY()), TornadoMath.sqrt(a.getZ()));
+    public static NativeFloat3 sqrt(NativeFloat3 a) {
+        return new NativeFloat3(TornadoMath.sqrt(a.getX()), TornadoMath.sqrt(a.getY()), TornadoMath.sqrt(a.getZ()));
     }
 
-    public static Float3 floor(Float3 a) {
-        return new Float3(TornadoMath.floor(a.getX()), TornadoMath.floor(a.getY()), TornadoMath.floor(a.getZ()));
+    public static NativeFloat3 floor(NativeFloat3 a) {
+        return new NativeFloat3(TornadoMath.floor(a.getX()), TornadoMath.floor(a.getY()), TornadoMath.floor(a.getZ()));
     }
 
-    public static Float3 fract(Float3 a) {
-        return new Float3(TornadoMath.fract(a.getX()), TornadoMath.fract(a.getY()), TornadoMath.fract(a.getZ()));
+    public static NativeFloat3 fract(NativeFloat3 a) {
+        return new NativeFloat3(TornadoMath.fract(a.getX()), TornadoMath.fract(a.getY()), TornadoMath.fract(a.getZ()));
     }
 
     /*
      * misc inplace vector ops
      */
-    public static Float3 clamp(Float3 x, float min, float max) {
-        return new Float3(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max));
+    public static NativeFloat3 clamp(NativeFloat3 x, float min, float max) {
+        return new NativeFloat3(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max));
     }
 
-    public static Float3 normalise(Float3 value) {
+    public static NativeFloat3 normalise(NativeFloat3 value) {
         final float len = 1f / length(value);
         return mult(value, len);
     }
@@ -176,16 +179,16 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
     /*
      * vector wide operations
      */
-    public static float min(Float3 value) {
+    public static float min(NativeFloat3 value) {
         return Math.min(value.getX(), Math.min(value.getY(), value.getZ()));
     }
 
-    public static float max(Float3 value) {
+    public static float max(NativeFloat3 value) {
         return Math.max(value.getX(), Math.max(value.getY(), value.getZ()));
     }
 
-    public static float dot(Float3 a, Float3 b) {
-        final Float3 m = mult(a, b);
+    public static float dot(NativeFloat3 a, NativeFloat3 b) {
+        final NativeFloat3 m = mult(a, b);
         return m.getX() + m.getY() + m.getZ();
     }
 
@@ -194,31 +197,35 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
      *
      * @return float
      */
-    public static float length(Float3 value) {
+    public static float length(NativeFloat3 value) {
         return TornadoMath.sqrt(dot(value, value));
     }
 
-    public static boolean isEqual(Float3 a, Float3 b) {
+    public static boolean isEqual(NativeFloat3 a, NativeFloat3 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
-    public static boolean isEqualULP(Float3 a, Float3 b, float numULP) {
+    public static boolean isEqualULP(NativeFloat3 a, NativeFloat3 b, float numULP) {
         return TornadoMath.isEqualULP(a.asBuffer().array(), b.asBuffer().array(), numULP);
     }
 
-    public static float findULPDistance(Float3 a, Float3 b) {
+    public static float findULPDistance(NativeFloat3 a, NativeFloat3 b) {
         return TornadoMath.findULPDistance(a.asBuffer().array(), b.asBuffer().array());
     }
 
+    public NativeVectorFloat getArray() {
+        return nativeVectorFloat;
+    }
+
     public float get(int index) {
-        return storage[index];
+        return nativeVectorFloat.get(index);
     }
 
     public void set(int index, float value) {
-        storage[index] = value;
+        nativeVectorFloat.set(index, value);
     }
 
-    public void set(Float3 value) {
+    public void set(NativeFloat3 value) {
         setX(value.getX());
         setY(value.getY());
         setZ(value.getZ());
@@ -275,10 +282,10 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Duplicates this vector.
      *
-     * @return {@link Float3}
+     * @return {@link NativeFloat3}
      */
-    public Float3 duplicate() {
-        final Float3 vector = new Float3();
+    public NativeFloat3 duplicate() {
+        final NativeFloat3 vector = new NativeFloat3();
         vector.set(this);
         return vector;
     }
@@ -308,7 +315,8 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
+        //TODO: This needs to be removed
+        return nativeVectorFloat.getSegment().asByteBuffer().asFloatBuffer();
     }
 
     @Override
@@ -317,11 +325,11 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public float[] toArray() {
-        return storage;
+        return nativeVectorFloat.getSegment().toArray(JAVA_FLOAT);
     }
 
-    static Float3 loadFromArray(final FloatArray array, int index) {
-        final Float3 result = new Float3();
+    static NativeFloat3 loadFromArray(final FloatArray array, int index) {
+        final NativeFloat3 result = new NativeFloat3();
         result.setX(array.get(index));
         result.setY(array.get(index + 1));
         result.setZ(array.get(index + 2));
@@ -333,4 +341,5 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
         array.set(index + 1, getY());
         array.set(index + 2, getZ());
     }
+
 }

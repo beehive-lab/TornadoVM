@@ -21,7 +21,6 @@ import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.dotVector;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -46,7 +45,6 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
-import uk.ac.manchester.tornado.api.collections.types.natives.NativeVectorFloat;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
@@ -77,12 +75,8 @@ public class JMHDotVector {
 
             Random r = new Random();
             for (int i = 0; i < numElements; i++) {
-                NativeVectorFloat ra = new NativeVectorFloat(3);
-                IntStream.range(0, ra.getSize()).forEach(x -> ra.set(x, r.nextFloat()));
-                NativeVectorFloat rb = new NativeVectorFloat(3);
-                IntStream.range(0, rb.getSize()).forEach(x -> rb.set(x, r.nextFloat()));
-                a.set(i, new Float3(ra));
-                b.set(i, new Float3(rb));
+                a.set(i, new Float3(r.nextFloat(), r.nextFloat(), r.nextFloat()));
+                b.set(i, new Float3(r.nextFloat(), r.nextFloat(), r.nextFloat()));
             }
             TaskGraph taskGraph = new TaskGraph("benchmark")//
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //

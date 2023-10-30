@@ -20,14 +20,12 @@ package uk.ac.manchester.tornado.benchmarks.dotimage;
 import static uk.ac.manchester.tornado.api.collections.types.FloatOps.findMaxULP;
 
 import java.util.Random;
-import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
-import uk.ac.manchester.tornado.api.collections.types.natives.NativeVectorFloat;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -66,12 +64,8 @@ public class DotTornado extends BenchmarkDriver {
         Random r = new Random();
         for (int i = 0; i < numElementsX; i++) {
             for (int j = 0; j < numElementsY; j++) {
-                NativeVectorFloat ra = new NativeVectorFloat(3);
-                IntStream.range(0, ra.getSize()).forEach(x -> ra.set(x, r.nextFloat()));
-                NativeVectorFloat rb = new NativeVectorFloat(3);
-                IntStream.range(0, rb.getSize()).forEach(x -> rb.set(x, r.nextFloat()));
-                a.set(i, j, new Float3(ra));
-                b.set(i, j, new Float3(rb));
+                a.set(i, j, new Float3(r.nextFloat(), r.nextFloat(), r.nextFloat()));
+                b.set(i, j, new Float3(r.nextFloat(), r.nextFloat(), r.nextFloat()));
             }
         }
         taskGraph = new TaskGraph("benchmark") //

@@ -63,7 +63,7 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
     @Payload
     final float[] storage;
 
-    public Float4(float[] storage) {
+    private Float4(float[] storage) {
         this.storage = storage;
     }
 
