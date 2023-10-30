@@ -32,8 +32,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jdk.vm.ci.meta.JavaKind;
-import uk.ac.manchester.tornado.api.collections.types.Double2;
 import uk.ac.manchester.tornado.api.collections.types.Int2;
+import uk.ac.manchester.tornado.api.collections.types.NativeDouble2;
 import uk.ac.manchester.tornado.api.collections.types.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.collections.types.natives.NativeByte3;
 import uk.ac.manchester.tornado.api.collections.types.natives.NativeFloat2;
@@ -353,7 +353,7 @@ public class OCLVectorWrapper implements ObjectBuffer {
             return JavaKind.Object;
         } else if (type == Int2.FIELD_CLASS) {
             return JavaKind.Object;
-        } else if (type == Double2.FIELD_CLASS) {
+        } else if (type == NativeDouble2.FIELD_CLASS) {
             return JavaKind.Object;
         } else if (type == NativeShort2.FIELD_CLASS) {
             return JavaKind.Object;

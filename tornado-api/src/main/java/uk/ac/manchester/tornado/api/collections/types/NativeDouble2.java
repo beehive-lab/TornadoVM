@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2023, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,46 +41,44 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import java.lang.foreign.ValueLayout;
 import java.nio.DoubleBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.collections.types.natives.NativeVectorDouble;
 import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
 @Vector
-public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
+public class NativeDouble2 implements PrimitiveStorage<DoubleBuffer> {
 
-    public static final Class<Double2> TYPE = Double2.class;
+    public static final Class<NativeDouble2> TYPE = NativeDouble2.class;
+    public static final Class<NativeVectorDouble> FIELD_CLASS = NativeVectorDouble.class;
+
     /**
      * number of elements in the storage.
      */
     private static final int NUM_ELEMENTS = 2;
+
     /**
      * backing array.
      */
     @Payload
-    final double[] storage;
+    final NativeVectorDouble nativeVectorDouble;
 
-    public Double2(double[] storage) {
-        this.storage = storage;
+    public NativeDouble2(NativeVectorDouble nativeVectorDouble) {
+        this.nativeVectorDouble = nativeVectorDouble;
     }
 
-    public Double2() {
-        this(new double[NUM_ELEMENTS]);
+    public NativeDouble2() {
+        this(new NativeVectorDouble(NUM_ELEMENTS));
     }
 
-    public Double2(double x, double y) {
+    public NativeDouble2(double x, double y) {
         this();
         setX(x);
         setY(y);
-    }
-
-    static Double2 loadFromArray(final DoubleArray array, int index) {
-        final Double2 result = new Double2();
-        result.setX(array.get(index));
-        result.setY(array.get(index + 1));
-        return result;
     }
 
     /**
@@ -89,139 +87,134 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
     /*
      * vector = op( vector, vector )
      */
-    public static Double2 add(Double2 a, Double2 b) {
-        return new Double2(a.getX() + b.getX(), a.getY() + b.getY());
+    public static NativeDouble2 add(NativeDouble2 a, NativeDouble2 b) {
+        return new NativeDouble2(a.getX() + b.getX(), a.getY() + b.getY());
     }
 
-    public static Double2 sub(Double2 a, Double2 b) {
-        return new Double2(a.getX() - b.getX(), a.getY() - b.getY());
+    public static NativeDouble2 sub(NativeDouble2 a, NativeDouble2 b) {
+        return new NativeDouble2(a.getX() - b.getX(), a.getY() - b.getY());
     }
 
-    public static Double2 div(Double2 a, Double2 b) {
-        return new Double2(a.getX() / b.getX(), a.getY() / b.getY());
+    public static NativeDouble2 div(NativeDouble2 a, NativeDouble2 b) {
+        return new NativeDouble2(a.getX() / b.getX(), a.getY() / b.getY());
     }
 
-    public static Double2 mult(Double2 a, Double2 b) {
-        return new Double2(a.getX() * b.getX(), a.getY() * b.getY());
+    public static NativeDouble2 mult(NativeDouble2 a, NativeDouble2 b) {
+        return new NativeDouble2(a.getX() * b.getX(), a.getY() * b.getY());
     }
 
-    public static Double2 min(Double2 a, Double2 b) {
-        return new Double2(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()));
+    public static NativeDouble2 min(NativeDouble2 a, NativeDouble2 b) {
+        return new NativeDouble2(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()));
     }
 
-    public static Double2 max(Double2 a, Double2 b) {
-        return new Double2(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()));
+    public static NativeDouble2 max(NativeDouble2 a, NativeDouble2 b) {
+        return new NativeDouble2(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()));
     }
 
     /*
      * vector = op (vector, scalar)
      */
-    public static Double2 add(Double2 a, double b) {
-        return new Double2(a.getX() + b, a.getY() + b);
+    public static NativeDouble2 add(NativeDouble2 a, double b) {
+        return new NativeDouble2(a.getX() + b, a.getY() + b);
     }
 
-    public static Double2 sub(Double2 a, double b) {
-        return new Double2(a.getX() - b, a.getY() - b);
+    public static NativeDouble2 sub(NativeDouble2 a, double b) {
+        return new NativeDouble2(a.getX() - b, a.getY() - b);
     }
 
-    public static Double2 mult(Double2 a, double b) {
-        return new Double2(a.getX() * b, a.getY() * b);
+    public static NativeDouble2 mult(NativeDouble2 a, double b) {
+        return new NativeDouble2(a.getX() * b, a.getY() * b);
     }
 
-    public static Double2 div(Double2 a, double b) {
-        return new Double2(a.getX() / b, a.getY() / b);
+    public static NativeDouble2 div(Double2 a, double b) {
+        return new NativeDouble2(a.getX() / b, a.getY() / b);
     }
 
     /*
      * vector = op (vector, vector)
      */
-    public static void add(Double2 a, Double2 b, Double2 c) {
+    public static void add(NativeDouble2 a, NativeDouble2 b, NativeDouble2 c) {
         c.setX(a.getX() + b.getX());
         c.setY(a.getY() + b.getY());
     }
 
-    public static void sub(Double2 a, Double2 b, Double2 c) {
+    public static void sub(NativeDouble2 a, NativeDouble2 b, NativeDouble2 c) {
         c.setX(a.getX() - b.getX());
         c.setY(a.getY() - b.getY());
     }
 
-    public static void mult(Double2 a, Double2 b, Double2 c) {
+    public static void mult(NativeDouble2 a, NativeDouble2 b, NativeDouble2 c) {
         c.setX(a.getX() * b.getX());
         c.setY(a.getY() * b.getY());
     }
 
-    public static void div(Double2 a, Double2 b, Double2 c) {
+    public static void div(NativeDouble2 a, NativeDouble2 b, NativeDouble2 c) {
         c.setX(a.getX() / b.getX());
         c.setY(a.getY() / b.getY());
     }
 
-    public static void min(Double2 a, Double2 b, Double2 c) {
+    public static void min(NativeDouble2 a, NativeDouble2 b, NativeDouble2 c) {
         c.setX(Math.min(a.getX(), b.getX()));
         c.setY(Math.min(a.getY(), b.getY()));
     }
 
-    public static void max(Double2 a, Double2 b, Double2 c) {
+    public static void max(NativeDouble2 a, NativeDouble2 b, NativeDouble2 c) {
         c.setX(Math.max(a.getX(), b.getX()));
         c.setY(Math.max(a.getY(), b.getY()));
     }
 
-    public static Double2 inc(Double2 a, double value) {
+    public static NativeDouble2 inc(NativeDouble2 a, double value) {
         return add(a, value);
     }
 
-    public static Double2 dec(Double2 a, double value) {
+    public static NativeDouble2 dec(NativeDouble2 a, double value) {
         return sub(a, value);
     }
 
-    public static Double2 scaleByInverse(Double2 a, double value) {
+    public static NativeDouble2 scaleByInverse(NativeDouble2 a, double value) {
         return mult(a, 1f / value);
     }
 
-    public static Double2 scale(Double2 a, double value) {
+    public static NativeDouble2 scale(NativeDouble2 a, double value) {
         return mult(a, value);
     }
 
     /*
      * vector = op(vector)
      */
-    public static Double2 sqrt(Double2 a) {
-        return new Double2(TornadoMath.sqrt(a.getX()), TornadoMath.sqrt(a.getY()));
+    public static NativeDouble2 sqrt(NativeDouble2 a) {
+        return new NativeDouble2(TornadoMath.sqrt(a.getX()), TornadoMath.sqrt(a.getY()));
     }
 
-    public static Double2 floor(Double2 a) {
-        return new Double2(TornadoMath.floor(a.getX()), TornadoMath.floor(a.getY()));
+    public static NativeDouble2 floor(NativeDouble2 a) {
+        return new NativeDouble2(TornadoMath.floor(a.getX()), TornadoMath.floor(a.getY()));
     }
 
-    public static Double2 fract(Double2 a) {
-        return new Double2(TornadoMath.fract(a.getX()), TornadoMath.fract(a.getY()));
+    public static NativeDouble2 fract(NativeDouble2 a) {
+        return new NativeDouble2(TornadoMath.fract(a.getX()), TornadoMath.fract(a.getY()));
     }
 
     /*
      * misc inplace vector ops
      */
-    public static void clamp(Double2 x, double min, double max) {
+    public static void clamp(NativeDouble2 x, double min, double max) {
         x.setX(TornadoMath.clamp(x.getX(), min, max));
         x.setY(TornadoMath.clamp(x.getY(), min, max));
-    }
-
-    public static void normalise(Double2 value) {
-        final double len = length(value);
-        scaleByInverse(value, len);
     }
 
     /*
      * vector wide operations
      */
-    public static double min(Double2 value) {
+    public static double min(NativeDouble2 value) {
         return Math.min(value.getX(), value.getY());
     }
 
-    public static double max(Double2 value) {
+    public static double max(NativeDouble2 value) {
         return Math.max(value.getX(), value.getY());
     }
 
-    public static double dot(Double2 a, Double2 b) {
-        final Double2 m = mult(a, b);
+    public static double dot(NativeDouble2 a, NativeDouble2 b) {
+        final NativeDouble2 m = mult(a, b);
         return m.getX() + m.getY();
     }
 
@@ -230,27 +223,23 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
      *
      * @return {@link double}
      */
-    public static double length(Double2 value) {
+    public static double length(NativeDouble2 value) {
         return TornadoMath.sqrt(dot(value, value));
     }
 
-    public static boolean isEqual(Double2 a, Double2 b) {
+    public static boolean isEqual(NativeDouble2 a, NativeDouble2 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
-    public double[] getArray() {
-        return storage;
-    }
-
     public double get(int index) {
-        return storage[index];
+        return nativeVectorDouble.get(index);
     }
 
     public void set(int index, double value) {
-        storage[index] = value;
+        nativeVectorDouble.set(index, value);
     }
 
-    public void set(Double2 value) {
+    public void set(NativeDouble2 value) {
         setX(value.getX());
         setY(value.getY());
     }
@@ -276,8 +265,8 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
      *
      * @return {@Double 2}
      */
-    public Double2 duplicate() {
-        Double2 vector = new Double2();
+    public NativeDouble2 duplicate() {
+        NativeDouble2 vector = new NativeDouble2();
         vector.set(this);
         return vector;
     }
@@ -291,11 +280,6 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
         return toString(DoubleOps.FMT_2);
     }
 
-    void storeToArray(final DoubleArray array, int index) {
-        array.set(index, getX());
-        array.set(index + 1, getY());
-    }
-
     @Override
     public void loadFromBuffer(DoubleBuffer buffer) {
         asBuffer().put(buffer);
@@ -303,7 +287,7 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public DoubleBuffer asBuffer() {
-        return DoubleBuffer.wrap(storage);
+        return nativeVectorDouble.getSegment().asByteBuffer().asDoubleBuffer();
     }
 
     @Override
@@ -311,8 +295,27 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
         return NUM_ELEMENTS;
     }
 
+    public void fill(double value) {
+        for (int i = 0; i < nativeVectorDouble.getSize(); i++) {
+            nativeVectorDouble.set(i, value);
+        }
+    }
+
+    static NativeDouble2 loadFromArray(final DoubleArray array, int index) {
+        final NativeDouble2 result = new NativeDouble2();
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        return result;
+    }
+
+    void storeToArray(final DoubleArray array, int index) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            array.set(index + i, get(i));
+        }
+    }
+
     public double[] toArray() {
-        return storage;
+        return nativeVectorDouble.getSegment().toArray(ValueLayout.JAVA_DOUBLE);
     }
 
 }

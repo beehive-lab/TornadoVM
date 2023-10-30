@@ -41,17 +41,19 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import java.nio.DoubleBuffer;
-
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.collections.types.natives.NativeVectorDouble;
 import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
-@Vector
-public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
+import java.lang.foreign.ValueLayout;
+import java.nio.DoubleBuffer;
 
-    public static final Class<Double8> TYPE = Double8.class;
+@Vector
+public class NativeDouble8 implements PrimitiveStorage<DoubleBuffer> {
+
+    public static final Class<NativeDouble8> TYPE = NativeDouble8.class;
     /**
      * number of elements in the storage.
      */
@@ -60,17 +62,17 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
      * backing array.
      */
     @Payload
-    final double[] storage;
+    final NativeVectorDouble nativeVectorDouble;
 
-    private Double8(double[] storage) {
-        this.storage = storage;
+    private NativeDouble8(NativeVectorDouble nativeVectorDouble) {
+        this.nativeVectorDouble = nativeVectorDouble;
     }
 
-    public Double8() {
-        this(new double[NUM_ELEMENTS]);
+    public NativeDouble8() {
+        this(new NativeVectorDouble(NUM_ELEMENTS));
     }
 
-    public Double8(double s0, double s1, double s2, double s3, double s4, double s5, double s6, double s7) {
+    public NativeDouble8(double s0, double s1, double s2, double s3, double s4, double s5, double s6, double s7) {
         this();
         setS0(s0);
         setS1(s1);
@@ -82,90 +84,82 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
         setS7(s7);
     }
 
-    static Double8 loadFromArray(final DoubleArray array, int index) {
-        final Double8 result = new Double8();
-        for (int i = 0; i < NUM_ELEMENTS; i++) {
-            result.set(i, array.get(index + i));
-        }
-        return result;
-    }
-
     /**
      * * Operations on Double8 vectors.
      */
-    public static Double8 add(Double8 a, Double8 b) {
-        final Double8 result = new Double8();
+    public static NativeDouble8 add(NativeDouble8 a, NativeDouble8 b) {
+        final NativeDouble8 result = new NativeDouble8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) + b.get(i));
         }
         return result;
     }
 
-    public static Double8 add(Double8 a, double b) {
-        final Double8 result = new Double8();
+    public static NativeDouble8 add(NativeDouble8 a, double b) {
+        final NativeDouble8 result = new NativeDouble8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) + b);
         }
         return result;
     }
 
-    public static Double8 sub(Double8 a, Double8 b) {
-        final Double8 result = new Double8();
+    public static NativeDouble8 sub(NativeDouble8 a, NativeDouble8 b) {
+        final NativeDouble8 result = new NativeDouble8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) - b.get(i));
         }
         return result;
     }
 
-    public static Double8 sub(Double8 a, double b) {
-        final Double8 result = new Double8();
+    public static NativeDouble8 sub(NativeDouble8 a, double b) {
+        final NativeDouble8 result = new NativeDouble8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) - b);
         }
         return result;
     }
 
-    public static Double8 div(Double8 a, Double8 b) {
-        final Double8 result = new Double8();
+    public static NativeDouble8 div(NativeDouble8 a, NativeDouble8 b) {
+        final NativeDouble8 result = new NativeDouble8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) / b.get(i));
         }
         return result;
     }
 
-    public static Double8 div(Double8 a, double value) {
-        final Double8 result = new Double8();
+    public static NativeDouble8 div(NativeDouble8 a, double value) {
+        final NativeDouble8 result = new NativeDouble8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) / value);
         }
         return result;
     }
 
-    public static Double8 mult(Double8 a, Double8 b) {
-        final Double8 result = new Double8();
+    public static NativeDouble8 mult(NativeDouble8 a, NativeDouble8 b) {
+        final NativeDouble8 result = new NativeDouble8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) * b.get(i));
         }
         return result;
     }
 
-    public static Double8 mult(Double8 a, double value) {
-        final Double8 result = new Double8();
+    public static NativeDouble8 mult(NativeDouble8 a, double value) {
+        final NativeDouble8 result = new NativeDouble8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) * value);
         }
         return result;
     }
 
-    public static Double8 min(Double8 a, Double8 b) {
-        final Double8 result = new Double8();
+    public static NativeDouble8 min(NativeDouble8 a, NativeDouble8 b) {
+        final NativeDouble8 result = new NativeDouble8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, Math.min(a.get(i), b.get(i)));
         }
         return result;
     }
 
-    public static double min(Double8 value) {
+    public static double min(NativeDouble8 value) {
         double result = Double.MAX_VALUE;
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result = Math.min(result, value.get(i));
@@ -173,15 +167,15 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
         return result;
     }
 
-    public static Double8 max(Double8 a, Double8 b) {
-        final Double8 result = new Double8();
+    public static NativeDouble8 max(NativeDouble8 a, NativeDouble8 b) {
+        final NativeDouble8 result = new NativeDouble8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, Math.max(a.get(i), b.get(i)));
         }
         return result;
     }
 
-    public static double max(Double8 value) {
+    public static double max(NativeDouble8 value) {
         double result = Double.MIN_VALUE;
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result = Math.max(result, value.get(i));
@@ -189,35 +183,31 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
         return result;
     }
 
-    public static Double8 sqrt(Double8 a) {
-        final Double8 result = new Double8();
+    public static NativeDouble8 sqrt(NativeDouble8 a) {
+        final NativeDouble8 result = new NativeDouble8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             a.set(i, TornadoMath.sqrt(a.get(i)));
         }
         return result;
     }
 
-    public static boolean isEqual(Double8 a, Double8 b) {
+    public static boolean isEqual(NativeDouble8 a, NativeDouble8 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
-    public static double findULPDistance(Double8 value, Double8 expected) {
-        return TornadoMath.findULPDistance(value.asBuffer().array(), expected.asBuffer().array());
-    }
-
-    public double[] getArray() {
-        return storage;
+    public static double findULPDistance(NativeDouble8 value, NativeDouble8 expected) {
+        return TornadoMath.findULPDistance(value.toArray(), expected.toArray());
     }
 
     public double get(int index) {
-        return storage[index];
+        return nativeVectorDouble.get(index);
     }
 
     public void set(int index, double value) {
-        storage[index] = value;
+        nativeVectorDouble.set(index, value);
     }
 
-    public void set(Double8 value) {
+    public void set(NativeDouble8 value) {
         for (int i = 0; i < 8; i++) {
             set(i, value.get(i));
         }
@@ -300,8 +290,8 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
      *
      * @return {@link Double8}
      */
-    public Double8 duplicate() {
-        Double8 vector = new Double8();
+    public NativeDouble8 duplicate() {
+        NativeDouble8 vector = new NativeDouble8();
         vector.set(this);
         return vector;
     }
@@ -315,12 +305,6 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
         return toString(DoubleOps.FMT_8);
     }
 
-    void storeToArray(final DoubleArray array, int index) {
-        for (int i = 0; i < NUM_ELEMENTS; i++) {
-            array.set(index + i, get(i));
-        }
-    }
-
     @Override
     public void loadFromBuffer(DoubleBuffer buffer) {
         asBuffer().put(buffer);
@@ -328,7 +312,13 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public DoubleBuffer asBuffer() {
-        return DoubleBuffer.wrap(storage);
+        return nativeVectorDouble.getSegment().asByteBuffer().asDoubleBuffer();
+    }
+
+    public void fill(double value) {
+        for (int i = 0; i < nativeVectorDouble.getSize(); i++) {
+            nativeVectorDouble.set(i, value);
+        }
     }
 
     @Override
@@ -336,7 +326,21 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
         return NUM_ELEMENTS;
     }
 
+    static NativeDouble8 loadFromArray(final DoubleArray array, int index) {
+        final NativeDouble8 result = new NativeDouble8();
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            result.set(i, array.get(index + i));
+        }
+        return result;
+    }
+
+    void storeToArray(final DoubleArray array, int index) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            array.set(index + i, get(i));
+        }
+    }
+
     public double[] toArray() {
-        return storage;
+        return nativeVectorDouble.getSegment().toArray(ValueLayout.JAVA_DOUBLE);
     }
 }

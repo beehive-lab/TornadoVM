@@ -41,18 +41,19 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import java.nio.DoubleBuffer;
-import java.util.Arrays;
-
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.collections.types.natives.NativeVectorDouble;
 import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
-@Vector
-public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
+import java.lang.foreign.ValueLayout;
+import java.nio.DoubleBuffer;
 
-    public static final Class<Double4> TYPE = Double4.class;
+@Vector
+public class NativeDouble4 implements PrimitiveStorage<DoubleBuffer> {
+
+    public static final Class<NativeDouble4> TYPE = NativeDouble4.class;
     /**
      * number of elements in the storage.
      */
@@ -61,31 +62,22 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
      * backing array.
      */
     @Payload
-    final double[] storage;
+    final NativeVectorDouble nativeVectorDouble;
 
-    public Double4(double[] storage) {
-        this.storage = storage;
+    public NativeDouble4(NativeVectorDouble nativeVectorDouble) {
+        this.nativeVectorDouble = nativeVectorDouble;
     }
 
-    public Double4() {
-        this(new double[NUM_ELEMENTS]);
+    public NativeDouble4() {
+        this(new NativeVectorDouble(NUM_ELEMENTS));
     }
 
-    public Double4(double x, double y, double z, double w) {
+    public NativeDouble4(double x, double y, double z, double w) {
         this();
         setX(x);
         setY(y);
         setZ(z);
         setW(w);
-    }
-
-    static Double4 loadFromArray(final DoubleArray array, int index) {
-        final Double4 result = new Double4();
-        result.setX(array.get(index));
-        result.setY(array.get(index + 1));
-        result.setZ(array.get(index + 2));
-        result.setW(array.get(index + 3));
-        return result;
     }
 
     /**
@@ -95,88 +87,88 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
     /*
      * vector = op( vector, vector )
      */
-    public static Double4 add(Double4 a, Double4 b) {
-        return new Double4(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ(), a.getW() + b.getW());
+    public static NativeDouble4 add(NativeDouble4 a, NativeDouble4 b) {
+        return new NativeDouble4(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ(), a.getW() + b.getW());
     }
 
-    public static Double4 sub(Double4 a, Double4 b) {
-        return new Double4(a.getX() - b.getX(), a.getY() - b.getY(), a.getZ() - b.getZ(), a.getW() - b.getW());
+    public static NativeDouble4 sub(NativeDouble4 a, NativeDouble4 b) {
+        return new NativeDouble4(a.getX() - b.getX(), a.getY() - b.getY(), a.getZ() - b.getZ(), a.getW() - b.getW());
     }
 
-    public static Double4 div(Double4 a, Double4 b) {
-        return new Double4(a.getX() / b.getX(), a.getY() / b.getY(), a.getZ() / b.getZ(), a.getW() / b.getW());
+    public static NativeDouble4 div(NativeDouble4 a, NativeDouble4 b) {
+        return new NativeDouble4(a.getX() / b.getX(), a.getY() / b.getY(), a.getZ() / b.getZ(), a.getW() / b.getW());
     }
 
-    public static Double4 mult(Double4 a, Double4 b) {
-        return new Double4(a.getX() * b.getX(), a.getY() * b.getY(), a.getZ() * b.getZ(), a.getW() * b.getW());
+    public static NativeDouble4 mult(NativeDouble4 a, NativeDouble4 b) {
+        return new NativeDouble4(a.getX() * b.getX(), a.getY() * b.getY(), a.getZ() * b.getZ(), a.getW() * b.getW());
     }
 
-    public static Double4 min(Double4 a, Double4 b) {
-        return new Double4(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()), Math.min(a.getW(), b.getW()));
+    public static NativeDouble4 min(NativeDouble4 a, NativeDouble4 b) {
+        return new NativeDouble4(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()), Math.min(a.getW(), b.getW()));
     }
 
-    public static Double4 max(Double4 a, Double4 b) {
-        return new Double4(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(a.getZ(), b.getZ()), Math.max(a.getW(), b.getW()));
+    public static NativeDouble4 max(NativeDouble4 a, NativeDouble4 b) {
+        return new NativeDouble4(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(a.getZ(), b.getZ()), Math.max(a.getW(), b.getW()));
     }
 
     /*
      * vector = op (vector, scalar)
      */
-    public static Double4 add(Double4 a, double b) {
-        return new Double4(a.getX() + b, a.getY() + b, a.getZ() + b, a.getW() + b);
+    public static NativeDouble4 add(NativeDouble4 a, double b) {
+        return new NativeDouble4(a.getX() + b, a.getY() + b, a.getZ() + b, a.getW() + b);
     }
 
-    public static Double4 sub(Double4 a, double b) {
-        return new Double4(a.getX() - b, a.getY() - b, a.getZ() - b, a.getW() - b);
+    public static NativeDouble4 sub(NativeDouble4 a, double b) {
+        return new NativeDouble4(a.getX() - b, a.getY() - b, a.getZ() - b, a.getW() - b);
     }
 
-    public static Double4 mult(Double4 a, double b) {
-        return new Double4(a.getX() * b, a.getY() * b, a.getZ() * b, a.getW() * b);
+    public static NativeDouble4 mult(NativeDouble4 a, double b) {
+        return new NativeDouble4(a.getX() * b, a.getY() * b, a.getZ() * b, a.getW() * b);
     }
 
-    public static Double4 div(Double4 a, double b) {
-        return new Double4(a.getX() / b, a.getY() / b, a.getZ() / b, a.getW() / b);
+    public static NativeDouble4 div(NativeDouble4 a, double b) {
+        return new NativeDouble4(a.getX() / b, a.getY() / b, a.getZ() / b, a.getW() / b);
     }
 
-    public static Double4 inc(Double4 a, double value) {
+    public static NativeDouble4 inc(NativeDouble4 a, double value) {
         return add(a, value);
     }
 
-    public static Double4 dec(Double4 a, double value) {
+    public static NativeDouble4 dec(NativeDouble4 a, double value) {
         return sub(a, value);
     }
 
-    public static Double4 scaleByInverse(Double4 a, double value) {
+    public static NativeDouble4 scaleByInverse(NativeDouble4 a, double value) {
         return mult(a, 1f / value);
     }
 
-    public static Double4 scale(Double4 a, double value) {
+    public static NativeDouble4 scale(NativeDouble4 a, double value) {
         return mult(a, value);
     }
 
     /*
      * vector = op(vector)
      */
-    public static Double4 sqrt(Double4 a) {
-        return new Double4(TornadoMath.sqrt(a.getX()), TornadoMath.sqrt(a.getY()), TornadoMath.sqrt(a.getZ()), TornadoMath.sqrt(a.getW()));
+    public static NativeDouble4 sqrt(NativeDouble4 a) {
+        return new NativeDouble4(TornadoMath.sqrt(a.getX()), TornadoMath.sqrt(a.getY()), TornadoMath.sqrt(a.getZ()), TornadoMath.sqrt(a.getW()));
     }
 
-    public static Double4 floor(Double4 a) {
-        return new Double4(TornadoMath.floor(a.getX()), TornadoMath.floor(a.getY()), TornadoMath.floor(a.getZ()), TornadoMath.floor(a.getW()));
+    public static NativeDouble4 floor(NativeDouble4 a) {
+        return new NativeDouble4(TornadoMath.floor(a.getX()), TornadoMath.floor(a.getY()), TornadoMath.floor(a.getZ()), TornadoMath.floor(a.getW()));
     }
 
-    public static Double4 fract(Double4 a) {
-        return new Double4(TornadoMath.fract(a.getX()), TornadoMath.fract(a.getY()), TornadoMath.fract(a.getZ()), TornadoMath.fract(a.getW()));
+    public static NativeDouble4 fract(NativeDouble4 a) {
+        return new NativeDouble4(TornadoMath.fract(a.getX()), TornadoMath.fract(a.getY()), TornadoMath.fract(a.getZ()), TornadoMath.fract(a.getW()));
     }
 
     /*
      * misc inplace vector ops
      */
-    public static Double4 clamp(Double4 x, double min, double max) {
-        return new Double4(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max), TornadoMath.clamp(x.getW(), min, max));
+    public static NativeDouble4 clamp(NativeDouble4 x, double min, double max) {
+        return new NativeDouble4(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max), TornadoMath.clamp(x.getW(), min, max));
     }
 
-    public static void normalise(Double4 value) {
+    public static void normalise(NativeDouble4 value) {
         final double len = length(value);
         scaleByInverse(value, len);
     }
@@ -184,16 +176,16 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
     /*
      * vector wide operations
      */
-    public static double min(Double4 value) {
+    public static double min(NativeDouble4 value) {
         return Math.min(value.getX(), Math.min(value.getY(), Math.min(value.getZ(), value.getW())));
     }
 
-    public static double max(Double4 value) {
+    public static double max(NativeDouble4 value) {
         return Math.max(value.getX(), Math.max(value.getY(), Math.max(value.getZ(), value.getW())));
     }
 
-    public static double dot(Double4 a, Double4 b) {
-        final Double4 m = mult(a, b);
+    public static double dot(NativeDouble4 a, NativeDouble4 b) {
+        final NativeDouble4 m = mult(a, b);
         return m.getX() + m.getY() + m.getZ() + m.getW();
     }
 
@@ -202,27 +194,23 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
      *
      * @return {@link double}
      */
-    public static double length(Double4 value) {
+    public static double length(NativeDouble4 value) {
         return TornadoMath.sqrt(dot(value, value));
     }
 
-    public static boolean isEqual(Double4 a, Double4 b) {
+    public static boolean isEqual(NativeDouble4 a, NativeDouble4 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
     public double get(int index) {
-        return storage[index];
+        return nativeVectorDouble.get(index);
     }
 
     public void set(int index, double value) {
-        storage[index] = value;
+        nativeVectorDouble.set(index, value);
     }
 
-    public double[] getArray() {
-        return storage;
-    }
-
-    public void set(Double4 value) {
+    public void set(NativeDouble4 value) {
         setX(value.getX());
         setY(value.getY());
         setZ(value.getZ());
@@ -266,8 +254,8 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
      *
      * @return {@link Double4}
      */
-    public Double4 duplicate() {
-        final Double4 vector = new Double4();
+    public NativeDouble4 duplicate() {
+        final NativeDouble4 vector = new NativeDouble4();
         vector.set(this);
         return vector;
     }
@@ -302,13 +290,6 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
         return new Double2(getZ(), getW());
     }
 
-    void storeToArray(final DoubleArray array, int index) {
-        array.set(index, getX());
-        array.set(index + 1, getY());
-        array.set(index + 2, getZ());
-        array.set(index + 3, getW());
-    }
-
     @Override
     public void loadFromBuffer(DoubleBuffer buffer) {
         asBuffer().put(buffer);
@@ -316,7 +297,7 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public DoubleBuffer asBuffer() {
-        return DoubleBuffer.wrap(storage);
+        return nativeVectorDouble.getSegment().asByteBuffer().asDoubleBuffer();
     }
 
     @Override
@@ -325,10 +306,27 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public void fill(double value) {
-        Arrays.fill(storage, value);
+        for (int i = 0; i < nativeVectorDouble.getSize(); i++) {
+            nativeVectorDouble.set(i, value);
+        }
     }
 
     public double[] toArray() {
-        return storage;
+        return nativeVectorDouble.getSegment().toArray(ValueLayout.JAVA_DOUBLE);
+    }
+
+    static NativeDouble4 loadFromArray(final DoubleArray array, int index) {
+        final NativeDouble4 result = new NativeDouble4();
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        result.setZ(array.get(index + 2));
+        result.setW(array.get(index + 3));
+        return result;
+    }
+
+    void storeToArray(final DoubleArray array, int index) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            array.set(index + i, get(i));
+        }
     }
 }
