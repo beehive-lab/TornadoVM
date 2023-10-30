@@ -19,7 +19,6 @@ package uk.ac.manchester.tornado.benchmarks.addImage;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -44,7 +43,6 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
-import uk.ac.manchester.tornado.api.collections.types.natives.NativeVectorFloat;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
@@ -80,12 +78,8 @@ public class JMHAddImage {
             Random r = new Random();
             for (int j = 0; j < numElementsY; j++) {
                 for (int i = 0; i < numElementsX; i++) {
-                    NativeVectorFloat ra = new NativeVectorFloat(4);
-                    IntStream.range(0, ra.getSize()).forEach(x -> ra.set(x, r.nextFloat()));
-                    NativeVectorFloat rb = new NativeVectorFloat(4);
-                    IntStream.range(0, rb.getSize()).forEach(x -> rb.set(x, r.nextFloat()));
-                    a.set(i, j, new Float4(ra));
-                    b.set(i, j, new Float4(rb));
+                    a.set(i, j, new Float4(r.nextFloat(), r.nextFloat(), r.nextFloat(), r.nextFloat()));
+                    b.set(i, j, new Float4(r.nextFloat(), r.nextFloat(), r.nextFloat(), r.nextFloat()));
                 }
             }
             taskGraph = new TaskGraph("benchmark") //

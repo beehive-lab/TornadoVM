@@ -41,18 +41,20 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
+
 import java.nio.FloatBuffer;
-import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.collections.types.natives.NativeVectorFloat;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
 @Vector
-public final class Float4 implements PrimitiveStorage<FloatBuffer> {
+public final class NativeFloat4 implements PrimitiveStorage<FloatBuffer> {
 
-    public static final Class<Float4> TYPE = Float4.class;
+    public static final Class<NativeFloat4> TYPE = NativeFloat4.class;
     /**
      * number of elements in the storage.
      */
@@ -61,17 +63,17 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
      * backing array.
      */
     @Payload
-    final float[] storage;
+    final NativeVectorFloat nativeVectorFloat;
 
-    public Float4(float[] storage) {
-        this.storage = storage;
+    public NativeFloat4(NativeVectorFloat storage) {
+        this.nativeVectorFloat = storage;
     }
 
-    public Float4() {
-        this(new float[NUM_ELEMENTS]);
+    public NativeFloat4() {
+        this(new NativeVectorFloat(NUM_ELEMENTS));
     }
 
-    public Float4(float x, float y, float z, float w) {
+    public NativeFloat4(float x, float y, float z, float w) {
         this();
         setX(x);
         setY(y);
@@ -79,108 +81,108 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
         setW(w);
     }
 
-    public static Float4 add(Float4 a, Float4 b) {
-        return new Float4(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ(), a.getW() + b.getW());
+    public static NativeFloat4 add(NativeFloat4 a, NativeFloat4 b) {
+        return new NativeFloat4(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ(), a.getW() + b.getW());
     }
 
-    public static Float4 sub(Float4 a, Float4 b) {
-        return new Float4(a.getX() - b.getX(), a.getY() - b.getY(), a.getZ() - b.getZ(), a.getW() - b.getW());
+    public static NativeFloat4 sub(NativeFloat4 a, NativeFloat4 b) {
+        return new NativeFloat4(a.getX() - b.getX(), a.getY() - b.getY(), a.getZ() - b.getZ(), a.getW() - b.getW());
     }
 
-    public static Float4 div(Float4 a, Float4 b) {
-        return new Float4(a.getX() / b.getX(), a.getY() / b.getY(), a.getZ() / b.getZ(), a.getW() / b.getW());
+    public static NativeFloat4 div(NativeFloat4 a, NativeFloat4 b) {
+        return new NativeFloat4(a.getX() / b.getX(), a.getY() / b.getY(), a.getZ() / b.getZ(), a.getW() / b.getW());
     }
 
-    public static Float4 mult(Float4 a, Float4 b) {
-        return new Float4(a.getX() * b.getX(), a.getY() * b.getY(), a.getZ() * b.getZ(), a.getW() * b.getW());
+    public static NativeFloat4 mult(NativeFloat4 a, NativeFloat4 b) {
+        return new NativeFloat4(a.getX() * b.getX(), a.getY() * b.getY(), a.getZ() * b.getZ(), a.getW() * b.getW());
     }
 
-    public static Float4 min(Float4 a, Float4 b) {
-        return new Float4(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()), Math.min(a.getW(), b.getW()));
+    public static NativeFloat4 min(NativeFloat4 a, NativeFloat4 b) {
+        return new NativeFloat4(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()), Math.min(a.getW(), b.getW()));
     }
 
-    public static Float4 max(Float4 a, Float4 b) {
-        return new Float4(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(a.getZ(), b.getZ()), Math.max(a.getW(), b.getW()));
+    public static NativeFloat4 max(NativeFloat4 a, NativeFloat4 b) {
+        return new NativeFloat4(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(a.getZ(), b.getZ()), Math.max(a.getW(), b.getW()));
     }
 
     /*
      * vector = op (vector, scalar)
      */
-    public static Float4 add(Float4 a, float b) {
-        return new Float4(a.getX() + b, a.getY() + b, a.getZ() + b, a.getW() + b);
+    public static NativeFloat4 add(NativeFloat4 a, float b) {
+        return new NativeFloat4(a.getX() + b, a.getY() + b, a.getZ() + b, a.getW() + b);
     }
 
-    public static Float4 sub(Float4 a, float b) {
-        return new Float4(a.getX() - b, a.getY() - b, a.getZ() - b, a.getW() - b);
+    public static NativeFloat4 sub(NativeFloat4 a, float b) {
+        return new NativeFloat4(a.getX() - b, a.getY() - b, a.getZ() - b, a.getW() - b);
     }
 
-    public static Float4 mult(Float4 a, float b) {
-        return new Float4(a.getX() * b, a.getY() * b, a.getZ() * b, a.getW() * b);
+    public static NativeFloat4 mult(NativeFloat4 a, float b) {
+        return new NativeFloat4(a.getX() * b, a.getY() * b, a.getZ() * b, a.getW() * b);
     }
 
-    public static Float4 div(Float4 a, float b) {
-        return new Float4(a.getX() / b, a.getY() / b, a.getZ() / b, a.getW() / b);
+    public static NativeFloat4 div(NativeFloat4 a, float b) {
+        return new NativeFloat4(a.getX() / b, a.getY() / b, a.getZ() / b, a.getW() / b);
     }
 
-    public static Float4 inc(Float4 a, float value) {
+    public static NativeFloat4 inc(NativeFloat4 a, float value) {
         return add(a, value);
     }
 
-    public static Float4 dec(Float4 a, float value) {
+    public static NativeFloat4 dec(NativeFloat4 a, float value) {
         return sub(a, value);
     }
 
-    public static Float4 scaleByInverse(Float4 a, float value) {
+    public static NativeFloat4 scaleByInverse(NativeFloat4 a, float value) {
         return mult(a, 1f / value);
     }
 
-    public static Float4 scale(Float4 a, float value) {
+    public static NativeFloat4 scale(NativeFloat4 a, float value) {
         return mult(a, value);
     }
 
-    public static float sum(Float4 a) {
+    public static float sum(NativeFloat4 a) {
         return a.getX() + a.getY() + a.getZ() + a.getW();
     }
 
     /*
      * vector = op(vector)
      */
-    public static Float4 sqrt(Float4 a) {
-        return new Float4(TornadoMath.sqrt(a.getX()), TornadoMath.sqrt(a.getY()), TornadoMath.sqrt(a.getZ()), TornadoMath.sqrt(a.getW()));
+    public static NativeFloat4 sqrt(NativeFloat4 a) {
+        return new NativeFloat4(TornadoMath.sqrt(a.getX()), TornadoMath.sqrt(a.getY()), TornadoMath.sqrt(a.getZ()), TornadoMath.sqrt(a.getW()));
     }
 
-    public static Float4 floor(Float4 a) {
-        return new Float4(TornadoMath.floor(a.getX()), TornadoMath.floor(a.getY()), TornadoMath.floor(a.getZ()), TornadoMath.floor(a.getW()));
+    public static NativeFloat4 floor(NativeFloat4 a) {
+        return new NativeFloat4(TornadoMath.floor(a.getX()), TornadoMath.floor(a.getY()), TornadoMath.floor(a.getZ()), TornadoMath.floor(a.getW()));
     }
 
-    public static Float4 fract(Float4 a) {
-        return new Float4(TornadoMath.fract(a.getX()), TornadoMath.fract(a.getY()), TornadoMath.fract(a.getZ()), TornadoMath.fract(a.getW()));
+    public static NativeFloat4 fract(NativeFloat4 a) {
+        return new NativeFloat4(TornadoMath.fract(a.getX()), TornadoMath.fract(a.getY()), TornadoMath.fract(a.getZ()), TornadoMath.fract(a.getW()));
     }
 
     /*
      * misc inplace vector ops
      */
-    public static Float4 clamp(Float4 x, float min, float max) {
-        return new Float4(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max), TornadoMath.clamp(x.getW(), min, max));
+    public static NativeFloat4 clamp(NativeFloat4 x, float min, float max) {
+        return new NativeFloat4(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max), TornadoMath.clamp(x.getW(), min, max));
     }
 
-    public static Float4 normalise(Float4 value) {
+    public static NativeFloat4 normalise(NativeFloat4 value) {
         return scaleByInverse(value, length(value));
     }
 
     /*
      * vector wide operations
      */
-    public static float min(Float4 value) {
+    public static float min(NativeFloat4 value) {
         return Math.min(value.getX(), Math.min(value.getY(), Math.min(value.getZ(), value.getW())));
     }
 
-    public static float max(Float4 value) {
+    public static float max(NativeFloat4 value) {
         return Math.max(value.getX(), Math.max(value.getY(), Math.max(value.getZ(), value.getW())));
     }
 
-    public static float dot(Float4 a, Float4 b) {
-        final Float4 m = mult(a, b);
+    public static float dot(NativeFloat4 a, NativeFloat4 b) {
+        final NativeFloat4 m = mult(a, b);
         return m.getX() + m.getY() + m.getZ() + m.getW();
     }
 
@@ -189,7 +191,7 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
      *
      * @return float
      */
-    public static float length(Float4 value) {
+    public static float length(NativeFloat4 value) {
         return TornadoMath.sqrt(dot(value, value));
     }
 
@@ -198,27 +200,27 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
     // vector = op( vector, vector )
     // ===================================
 
-    public static boolean isEqual(Float4 a, Float4 b) {
+    public static boolean isEqual(NativeFloat4 a, NativeFloat4 b) {
         return TornadoMath.isEqual(a.toArray(), b.toArray());
     }
 
-    public static float findULPDistance(Float4 a, Float4 b) {
+    public static float findULPDistance(NativeFloat4 a, NativeFloat4 b) {
         return TornadoMath.findULPDistance(a.asBuffer().array(), b.asBuffer().array());
     }
 
     public float get(int index) {
-        return storage[index];
+        return nativeVectorFloat.get(index);
     }
 
     public void set(int index, float value) {
-        storage[index] = value;
+        nativeVectorFloat.set(index, value);
     }
 
-    public float[] getArray() {
-        return storage;
+    public NativeVectorFloat getArray() {
+        return nativeVectorFloat;
     }
 
-    public void set(Float4 value) {
+    public void set(NativeFloat4 value) {
         setX(value.getX());
         setY(value.getY());
         setZ(value.getZ());
@@ -260,10 +262,10 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Duplicates this vector.
      *
-     * @return {@link Float4}
+     * @return {@link NativeFloat4}
      */
-    public Float4 duplicate() {
-        final Float4 vector = new Float4();
+    public NativeFloat4 duplicate() {
+        final NativeFloat4 vector = new NativeFloat4();
         vector.set(this);
         return vector;
     }
@@ -305,7 +307,8 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(getArray());
+        //TODO: This needs to be removed
+        return nativeVectorFloat.getSegment().asByteBuffer().asFloatBuffer();
     }
 
     @Override
@@ -314,15 +317,15 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void fill(float value) {
-        Arrays.fill(storage, value);
+        nativeVectorFloat.init(value);
     }
 
     public float[] toArray() {
-        return storage;
+        return nativeVectorFloat.getSegment().toArray(JAVA_FLOAT);
     }
 
-    static Float4 loadFromArray(final FloatArray array, int index) {
-        final Float4 result = new Float4();
+    static NativeFloat4 loadFromArray(final FloatArray array, int index) {
+        final NativeFloat4 result = new NativeFloat4();
         result.setX(array.get(index));
         result.setY(array.get(index + 1));
         result.setZ(array.get(index + 2));
@@ -336,4 +339,5 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
         array.set(index + 2, getZ());
         array.set(index + 3, getW());
     }
+
 }
