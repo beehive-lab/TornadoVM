@@ -149,10 +149,9 @@ public class TestFloats extends TornadoTestBase {
         }
     }
 
-    public static void addVectorFloat8Storage(VectorFloat8 a, VectorFloat8 results) {
+    public static void testVectorFloat8Storage(VectorFloat8 a, VectorFloat8 results) {
         for (@Parallel int i = 0; i < a.getLength(); i++) {
-            Float8 float8 = a.get(i);
-            results.set(i, new Float8(float8.getArray()));
+            results.set(i, a.get(i));
         }
     }
 
@@ -591,7 +590,7 @@ public class TestFloats extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
-                .task("t0", TestFloats::addVectorFloat8Storage, a, output) //
+                .task("t0", TestFloats::testVectorFloat8Storage, a, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();

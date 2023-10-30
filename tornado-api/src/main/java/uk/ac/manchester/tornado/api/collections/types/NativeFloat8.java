@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, 2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2023, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,17 +41,20 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
+
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.collections.types.natives.NativeVectorFloat;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
 @Vector
-public final class Float8 implements PrimitiveStorage<FloatBuffer> {
+public final class NativeFloat8 implements PrimitiveStorage<FloatBuffer> {
 
-    public static final Class<Float8> TYPE = Float8.class;
+    public static final Class<NativeFloat8> TYPE = NativeFloat8.class;
     /**
      * number of elements in the storage.
      */
@@ -60,17 +63,17 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
      * backing array.
      */
     @Payload
-    final float[] storage;
+    final NativeVectorFloat nativeVectorFloat;
 
-    private Float8(float[] storage) {
-        this.storage = storage;
+    public NativeFloat8(NativeVectorFloat storage) {
+        this.nativeVectorFloat = storage;
     }
 
-    public Float8() {
-        this(new float[NUM_ELEMENTS]);
+    public NativeFloat8() {
+        this(new NativeVectorFloat(NUM_ELEMENTS));
     }
 
-    public Float8(float s0, float s1, float s2, float s3, float s4, float s5, float s6, float s7) {
+    public NativeFloat8(float s0, float s1, float s2, float s3, float s4, float s5, float s6, float s7) {
         this();
         setS0(s0);
         setS1(s1);
@@ -85,79 +88,79 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
     /**
      * * Operations on Float8 vectors.
      */
-    public static Float8 add(Float8 a, Float8 b) {
-        final Float8 result = new Float8();
+    public static NativeFloat8 add(NativeFloat8 a, NativeFloat8 b) {
+        final NativeFloat8 result = new NativeFloat8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) + b.get(i));
         }
         return result;
     }
 
-    public static Float8 add(Float8 a, float b) {
-        final Float8 result = new Float8();
+    public static NativeFloat8 add(NativeFloat8 a, float b) {
+        final NativeFloat8 result = new NativeFloat8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) + b);
         }
         return result;
     }
 
-    public static Float8 sub(Float8 a, Float8 b) {
-        final Float8 result = new Float8();
+    public static NativeFloat8 sub(NativeFloat8 a, NativeFloat8 b) {
+        final NativeFloat8 result = new NativeFloat8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) - b.get(i));
         }
         return result;
     }
 
-    public static Float8 sub(Float8 a, float b) {
-        final Float8 result = new Float8();
+    public static NativeFloat8 sub(NativeFloat8 a, float b) {
+        final NativeFloat8 result = new NativeFloat8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) - b);
         }
         return result;
     }
 
-    public static Float8 div(Float8 a, Float8 b) {
-        final Float8 result = new Float8();
+    public static NativeFloat8 div(NativeFloat8 a, NativeFloat8 b) {
+        final NativeFloat8 result = new NativeFloat8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) / b.get(i));
         }
         return result;
     }
 
-    public static Float8 div(Float8 a, float value) {
-        final Float8 result = new Float8();
+    public static NativeFloat8 div(NativeFloat8 a, float value) {
+        final NativeFloat8 result = new NativeFloat8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) / value);
         }
         return result;
     }
 
-    public static Float8 mult(Float8 a, Float8 b) {
-        final Float8 result = new Float8();
+    public static NativeFloat8 mult(NativeFloat8 a, NativeFloat8 b) {
+        final NativeFloat8 result = new NativeFloat8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) * b.get(i));
         }
         return result;
     }
 
-    public static Float8 mult(Float8 a, float value) {
-        final Float8 result = new Float8();
+    public static NativeFloat8 mult(NativeFloat8 a, float value) {
+        final NativeFloat8 result = new NativeFloat8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) * value);
         }
         return result;
     }
 
-    public static Float8 min(Float8 a, Float8 b) {
-        final Float8 result = new Float8();
+    public static NativeFloat8 min(NativeFloat8 a, NativeFloat8 b) {
+        final NativeFloat8 result = new NativeFloat8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, Math.min(a.get(i), b.get(i)));
         }
         return result;
     }
 
-    public static float min(Float8 value) {
+    public static float min(NativeFloat8 value) {
         float result = Float.MAX_VALUE;
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result = Math.min(result, value.get(i));
@@ -165,15 +168,15 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
         return result;
     }
 
-    public static Float8 max(Float8 a, Float8 b) {
-        final Float8 result = new Float8();
+    public static NativeFloat8 max(NativeFloat8 a, NativeFloat8 b) {
+        final NativeFloat8 result = new NativeFloat8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, Math.max(a.get(i), b.get(i)));
         }
         return result;
     }
 
-    public static float max(Float8 value) {
+    public static float max(NativeFloat8 value) {
         float result = Float.MIN_VALUE;
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result = Math.max(result, value.get(i));
@@ -181,40 +184,40 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
         return result;
     }
 
-    public static Float8 sqrt(Float8 a) {
-        final Float8 result = new Float8();
+    public static NativeFloat8 sqrt(NativeFloat8 a) {
+        final NativeFloat8 result = new NativeFloat8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             a.set(i, TornadoMath.sqrt(a.get(i)));
         }
         return result;
     }
 
-    public static float dot(Float8 a, Float8 b) {
-        final Float8 m = mult(a, b);
+    public static float dot(NativeFloat8 a, NativeFloat8 b) {
+        final NativeFloat8 m = mult(a, b);
         return m.getS0() + m.getS1() + m.getS2() + m.getS3() + m.getS4() + m.getS5() + m.getS6() + m.getS7();
     }
 
-    public static boolean isEqual(Float8 a, Float8 b) {
+    public static boolean isEqual(NativeFloat8 a, NativeFloat8 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
-    public static float findULPDistance(Float8 value, Float8 expected) {
+    public static float findULPDistance(NativeFloat8 value, NativeFloat8 expected) {
         return TornadoMath.findULPDistance(value.asBuffer().array(), expected.asBuffer().array());
     }
 
-    public float[] getArray() {
-        return storage;
+    public NativeVectorFloat getArray() {
+        return nativeVectorFloat;
     }
 
     public float get(int index) {
-        return storage[index];
+        return nativeVectorFloat.get(index);
     }
 
     public void set(int index, float value) {
-        storage[index] = value;
+        nativeVectorFloat.set(index, value);
     }
 
-    public void set(Float8 value) {
+    public void set(NativeFloat8 value) {
         for (int i = 0; i < 8; i++) {
             set(i, value.get(i));
         }
@@ -295,10 +298,10 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Duplicates this vector.
      *
-     * @return {@link Float8}
+     * @return {@link NativeFloat8}
      */
-    public Float8 duplicate() {
-        Float8 vector = new Float8();
+    public NativeFloat8 duplicate() {
+        NativeFloat8 vector = new NativeFloat8();
         vector.set(this);
         return vector;
     }
@@ -319,7 +322,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
+        return nativeVectorFloat.getSegment().asByteBuffer().asFloatBuffer();
     }
 
     @Override
@@ -328,11 +331,11 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public float[] toArray() {
-        return storage;
+        return nativeVectorFloat.getSegment().toArray(JAVA_FLOAT);
     }
 
-    static Float8 loadFromArray(final FloatArray array, int index) {
-        final Float8 result = new Float8();
+    static NativeFloat8 loadFromArray(final FloatArray array, int index) {
+        final NativeFloat8 result = new NativeFloat8();
         result.setS0(array.get(index));
         result.setS1(array.get(index + 1));
         result.setS2(array.get(index + 2));
