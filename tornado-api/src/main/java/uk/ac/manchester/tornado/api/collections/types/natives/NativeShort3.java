@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, 2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2023, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,18 +39,20 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.collections.types;
+package uk.ac.manchester.tornado.api.collections.types.natives;
 
+import java.lang.foreign.ValueLayout;
 import java.nio.ShortBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.collections.types.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
 @Vector
-public final class Short3 implements PrimitiveStorage<ShortBuffer> {
+public final class NativeShort3 implements PrimitiveStorage<ShortBuffer> {
 
-    public static final Class<Short3> TYPE = Short3.class;
+    public static final Class<NativeShort3> TYPE = NativeShort3.class;
 
     private static final String NUMBER_FORMAT = "{ x=%-7d, y=%-7d, z=%-7d }";
     /**
@@ -61,17 +63,17 @@ public final class Short3 implements PrimitiveStorage<ShortBuffer> {
      * backing array.
      */
     @Payload
-    private final short[] storage;
+    private final NativeVectorShort nativeVectorShort;
 
-    public Short3(short[] nativeVectorShort) {
-        this.storage = nativeVectorShort;
+    public NativeShort3(NativeVectorShort nativeVectorShort) {
+        this.nativeVectorShort = nativeVectorShort;
     }
 
-    public Short3() {
-        this(new short[NUM_ELEMENTS]);
+    public NativeShort3() {
+        this(new NativeVectorShort(NUM_ELEMENTS));
     }
 
-    public Short3(short x, short y, short z) {
+    public NativeShort3(short x, short y, short z) {
         this();
         setX(x);
         setY(y);
@@ -81,95 +83,95 @@ public final class Short3 implements PrimitiveStorage<ShortBuffer> {
     /*
      * vector = op( vector, vector )
      */
-    public static Short3 add(Short3 a, Short3 b) {
-        return new Short3((short) (a.getX() + b.getX()), (short) (a.getY() + b.getY()), (short) (a.getZ() + b.getZ()));
+    public static NativeShort3 add(NativeShort3 a, NativeShort3 b) {
+        return new NativeShort3((short) (a.getX() + b.getX()), (short) (a.getY() + b.getY()), (short) (a.getZ() + b.getZ()));
     }
 
-    public static Short3 sub(Short3 a, Short3 b) {
-        return new Short3((short) (a.getX() - b.getX()), (short) (a.getY() - b.getY()), (short) (a.getZ() - b.getZ()));
+    public static NativeShort3 sub(NativeShort3 a, NativeShort3 b) {
+        return new NativeShort3((short) (a.getX() - b.getX()), (short) (a.getY() - b.getY()), (short) (a.getZ() - b.getZ()));
     }
 
-    public static Short3 div(Short3 a, Short3 b) {
-        return new Short3((short) (a.getX() / b.getX()), (short) (a.getY() / b.getY()), (short) (a.getZ() / b.getZ()));
+    public static NativeShort3 div(NativeShort3 a, NativeShort3 b) {
+        return new NativeShort3((short) (a.getX() / b.getX()), (short) (a.getY() / b.getY()), (short) (a.getZ() / b.getZ()));
     }
 
-    public static Short3 mult(Short3 a, Short3 b) {
-        return new Short3((short) (a.getX() * b.getX()), (short) (a.getY() * b.getY()), (short) (a.getZ() * b.getZ()));
+    public static NativeShort3 mult(NativeShort3 a, NativeShort3 b) {
+        return new NativeShort3((short) (a.getX() * b.getX()), (short) (a.getY() * b.getY()), (short) (a.getZ() * b.getZ()));
     }
 
-    public static Short3 min(Short3 a, Short3 b) {
-        return new Short3(TornadoMath.min(a.getX(), b.getX()), TornadoMath.min(a.getY(), b.getY()), TornadoMath.min(a.getZ(), b.getZ()));
+    public static NativeShort3 min(NativeShort3 a, NativeShort3 b) {
+        return new NativeShort3(TornadoMath.min(a.getX(), b.getX()), TornadoMath.min(a.getY(), b.getY()), TornadoMath.min(a.getZ(), b.getZ()));
     }
 
-    public static Short3 max(Short3 a, Short3 b) {
-        return new Short3(TornadoMath.max(a.getX(), b.getX()), TornadoMath.max(a.getY(), b.getY()), TornadoMath.max(a.getZ(), b.getZ()));
+    public static NativeShort3 max(NativeShort3 a, NativeShort3 b) {
+        return new NativeShort3(TornadoMath.max(a.getX(), b.getX()), TornadoMath.max(a.getY(), b.getY()), TornadoMath.max(a.getZ(), b.getZ()));
     }
 
     /*
      * vector = op (vector, scalar)
      */
-    public static Short3 add(Short3 a, short b) {
-        return new Short3((short) (a.getX() + b), (short) (a.getY() + b), (short) (a.getZ() + b));
+    public static NativeShort3 add(NativeShort3 a, short b) {
+        return new NativeShort3((short) (a.getX() + b), (short) (a.getY() + b), (short) (a.getZ() + b));
     }
 
-    public static Short3 sub(Short3 a, short b) {
-        return new Short3((short) (a.getX() - b), (short) (a.getY() - b), (short) (a.getZ() - b));
+    public static NativeShort3 sub(NativeShort3 a, short b) {
+        return new NativeShort3((short) (a.getX() - b), (short) (a.getY() - b), (short) (a.getZ() - b));
     }
 
-    public static Short3 mult(Short3 a, short b) {
-        return new Short3((short) (a.getX() * b), (short) (a.getY() * b), (short) (a.getZ() * b));
+    public static NativeShort3 mult(NativeShort3 a, short b) {
+        return new NativeShort3((short) (a.getX() * b), (short) (a.getY() * b), (short) (a.getZ() * b));
     }
 
-    public static Short3 div(Short3 a, short b) {
-        return new Short3((short) (a.getX() / b), (short) (a.getY() / b), (short) (a.getZ() / b));
+    public static NativeShort3 div(NativeShort3 a, short b) {
+        return new NativeShort3((short) (a.getX() / b), (short) (a.getY() / b), (short) (a.getZ() / b));
     }
 
-    public static Short3 inc(Short3 a, short value) {
+    public static NativeShort3 inc(NativeShort3 a, short value) {
         return add(a, value);
     }
 
-    public static Short3 dec(Short3 a, short value) {
+    public static NativeShort3 dec(NativeShort3 a, short value) {
         return sub(a, value);
     }
 
-    public static Short3 scale(Short3 a, short value) {
+    public static NativeShort3 scale(NativeShort3 a, short value) {
         return mult(a, value);
     }
 
     /*
      * misc inplace vector ops
      */
-    public static Short3 clamp(Short3 x, short min, short max) {
-        return new Short3(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max));
+    public static NativeShort3 clamp(NativeShort3 x, short min, short max) {
+        return new NativeShort3(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max));
     }
 
     /*
      * vector wide operations
      */
-    public static short min(Short3 value) {
+    public static short min(NativeShort3 value) {
         return TornadoMath.min(value.getX(), TornadoMath.min(value.getY(), value.getZ()));
     }
 
-    public static short max(Short3 value) {
+    public static short max(NativeShort3 value) {
         return TornadoMath.max(value.getX(), TornadoMath.max(value.getY(), value.getZ()));
     }
 
-    public static boolean isEqual(Short3 a, Short3 b) {
+    public static boolean isEqual(NativeShort3 a, NativeShort3 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
-    public void set(Short3 value) {
+    public void set(NativeShort3 value) {
         setX(value.getX());
         setY(value.getY());
         setZ(value.getZ());
     }
 
     public short get(int index) {
-        return storage[index];
+        return nativeVectorShort.get(index);
     }
 
     public void set(int index, short value) {
-        storage[index] = value;
+        nativeVectorShort.set(index, value);
     }
 
     public short getX() {
@@ -196,8 +198,8 @@ public final class Short3 implements PrimitiveStorage<ShortBuffer> {
         set(2, value);
     }
 
-    public Short3 duplicate() {
-        Short3 vector = new Short3();
+    public NativeShort3 duplicate() {
+        NativeShort3 vector = new NativeShort3();
         vector.set(this);
         return vector;
     }
@@ -218,7 +220,7 @@ public final class Short3 implements PrimitiveStorage<ShortBuffer> {
 
     @Override
     public ShortBuffer asBuffer() {
-        return ShortBuffer.wrap(storage);
+        return nativeVectorShort.getSegment().asByteBuffer().asShortBuffer();
     }
 
     @Override
@@ -227,11 +229,11 @@ public final class Short3 implements PrimitiveStorage<ShortBuffer> {
     }
 
     public short[] toArray() {
-        return storage;
+        return nativeVectorShort.getSegment().toArray(ValueLayout.JAVA_SHORT);
     }
 
-    private static Short3 loadFromArray(final short[] array, int index) {
-        final Short3 result = new Short3();
+    private static NativeShort3 loadFromArray(final short[] array, int index) {
+        final NativeShort3 result = new NativeShort3();
         result.setX(array[index]);
         result.setY(array[index + 1]);
         result.setZ(array[index + 2]);
