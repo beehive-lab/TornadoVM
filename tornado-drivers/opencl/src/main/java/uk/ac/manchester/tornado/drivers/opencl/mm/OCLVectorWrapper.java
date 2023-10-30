@@ -32,12 +32,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jdk.vm.ci.meta.JavaKind;
-import uk.ac.manchester.tornado.api.collections.types.Byte3;
 import uk.ac.manchester.tornado.api.collections.types.Double2;
-import uk.ac.manchester.tornado.api.collections.types.Float2;
 import uk.ac.manchester.tornado.api.collections.types.Int2;
 import uk.ac.manchester.tornado.api.collections.types.PrimitiveStorage;
-import uk.ac.manchester.tornado.api.collections.types.Short2;
+import uk.ac.manchester.tornado.api.collections.types.natives.NativeByte3;
+import uk.ac.manchester.tornado.api.collections.types.natives.NativeFloat2;
+import uk.ac.manchester.tornado.api.collections.types.natives.NativeShort2;
 import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.CharArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
@@ -349,15 +349,15 @@ public class OCLVectorWrapper implements ObjectBuffer {
             }
         } else if (type == FloatArray.class || type == IntArray.class || type == DoubleArray.class || type == LongArray.class || type == ShortArray.class || type == CharArray.class || type == ByteArray.class) {
             return JavaKind.Object;
-        } else if (type == Float2.FIELD_CLASS) {
+        } else if (type == NativeFloat2.FIELD_CLASS) {
             return JavaKind.Object;
         } else if (type == Int2.FIELD_CLASS) {
             return JavaKind.Object;
         } else if (type == Double2.FIELD_CLASS) {
             return JavaKind.Object;
-        } else if (type == Short2.FIELD_CLASS) {
+        } else if (type == NativeShort2.FIELD_CLASS) {
             return JavaKind.Object;
-        } else if (type == Byte3.FIELD_CLASS) {
+        } else if (type == NativeByte3.FIELD_CLASS) {
             return JavaKind.Object;
         } else {
             TornadoInternalError.shouldNotReachHere("The type should be an array, but found: " + type);

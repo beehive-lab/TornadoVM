@@ -57,6 +57,8 @@ public final class NativeFloat2 implements PrimitiveStorage<FloatBuffer> {
 
     public static final Class<NativeFloat2> TYPE = NativeFloat2.class;
 
+    public static final Class<NativeVectorFloat> FIELD_CLASS = NativeVectorFloat.class;
+
     /**
      * number of elements in the storage.
      */

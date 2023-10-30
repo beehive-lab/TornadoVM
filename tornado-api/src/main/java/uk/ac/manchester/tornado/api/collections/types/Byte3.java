@@ -44,15 +44,12 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.ByteBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
-import uk.ac.manchester.tornado.api.collections.types.natives.NativeVectorByte;
 import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
 @Vector
 public final class Byte3 implements PrimitiveStorage<ByteBuffer> {
-
-    public static final Class<NativeVectorByte> FIELD_CLASS = NativeVectorByte.class;
 
     public static final Class<Byte3> TYPE = Byte3.class;
     private static final String NUMBER_FORMAT = "{ x=%-7d, y=%-7d, z=%-7d }";

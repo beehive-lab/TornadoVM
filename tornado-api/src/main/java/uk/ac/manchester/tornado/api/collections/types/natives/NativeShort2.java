@@ -56,6 +56,8 @@ public final class NativeShort2 implements PrimitiveStorage<ShortBuffer> {
 
     public static final Class<NativeShort2> TYPE = NativeShort2.class;
 
+    public static final Class<NativeVectorShort> FIELD_CLASS = NativeVectorShort.class;
+
     /**
      * number of elements in the storage.
      */

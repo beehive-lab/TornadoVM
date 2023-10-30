@@ -44,7 +44,6 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.ShortBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
-import uk.ac.manchester.tornado.api.collections.types.natives.NativeVectorShort;
 import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
@@ -53,7 +52,6 @@ import uk.ac.manchester.tornado.api.type.annotations.Vector;
 public final class Short2 implements PrimitiveStorage<ShortBuffer> {
 
     public static final Class<Short2> TYPE = Short2.class;
-    public static final Class<NativeVectorShort> FIELD_CLASS = NativeVectorShort.class;
 
     /**
      * number of elements in the storage.

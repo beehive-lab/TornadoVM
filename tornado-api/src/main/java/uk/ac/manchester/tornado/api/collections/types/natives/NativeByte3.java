@@ -54,6 +54,9 @@ import uk.ac.manchester.tornado.api.type.annotations.Vector;
 public final class NativeByte3 implements PrimitiveStorage<ByteBuffer> {
 
     public static final Class<NativeByte3> TYPE = NativeByte3.class;
+
+    public static final Class<NativeVectorByte> FIELD_CLASS = NativeVectorByte.class;
+
     private static final String NUMBER_FORMAT = "{ x=%-7d, y=%-7d, z=%-7d }";
 
     private static final int NUM_ELEMENTS = 3;
