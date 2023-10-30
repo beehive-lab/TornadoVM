@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2023, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,38 +39,39 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.collections.types;
+package uk.ac.manchester.tornado.api.collections.types.natives;
 
+import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
-import uk.ac.manchester.tornado.api.collections.types.natives.NativeVectorByte;
+import uk.ac.manchester.tornado.api.collections.types.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
 @Vector
-public final class Byte3 implements PrimitiveStorage<ByteBuffer> {
+public final class NativeByte3 implements PrimitiveStorage<ByteBuffer> {
 
     public static final Class<NativeVectorByte> FIELD_CLASS = NativeVectorByte.class;
 
-    public static final Class<Byte3> TYPE = Byte3.class;
+    public static final Class<NativeByte3> TYPE = NativeByte3.class;
     private static final String NUMBER_FORMAT = "{ x=%-7d, y=%-7d, z=%-7d }";
 
     private static final int NUM_ELEMENTS = 3;
 
     @Payload
-    private final byte[] storage;
+    private final NativeVectorByte nativeVectorByte;
 
-    private Byte3(byte[] nativeVectorByte) {
-        this.storage = nativeVectorByte;
+    public NativeByte3(NativeVectorByte nativeVectorByte) {
+        this.nativeVectorByte = nativeVectorByte;
     }
 
-    public Byte3() {
-        this(new byte[NUM_ELEMENTS]);
+    public NativeByte3() {
+        this(new NativeVectorByte(NUM_ELEMENTS));
     }
 
-    public Byte3(byte x, byte y, byte z) {
+    public NativeByte3(byte x, byte y, byte z) {
         this();
         setX(x);
         setY(y);
@@ -80,97 +81,97 @@ public final class Byte3 implements PrimitiveStorage<ByteBuffer> {
     /*
      * vector = op( vector, vector )
      */
-    public static Byte3 add(Byte3 a, Byte3 b) {
-        return new Byte3((byte) (a.getX() + b.getX()), (byte) (a.getY() + b.getY()), (byte) (a.getZ() + b.getZ()));
+    public static NativeByte3 add(NativeByte3 a, NativeByte3 b) {
+        return new NativeByte3((byte) (a.getX() + b.getX()), (byte) (a.getY() + b.getY()), (byte) (a.getZ() + b.getZ()));
     }
 
-    public static Byte3 sub(Byte3 a, Byte3 b) {
-        return new Byte3((byte) (a.getX() - b.getX()), (byte) (a.getY() - b.getY()), (byte) (a.getZ() - b.getZ()));
+    public static NativeByte3 sub(NativeByte3 a, NativeByte3 b) {
+        return new NativeByte3((byte) (a.getX() - b.getX()), (byte) (a.getY() - b.getY()), (byte) (a.getZ() - b.getZ()));
     }
 
-    public static Byte3 div(Byte3 a, Byte3 b) {
-        return new Byte3((byte) (a.getX() / b.getX()), (byte) (a.getY() / b.getY()), (byte) (a.getZ() / b.getZ()));
+    public static NativeByte3 div(NativeByte3 a, NativeByte3 b) {
+        return new NativeByte3((byte) (a.getX() / b.getX()), (byte) (a.getY() / b.getY()), (byte) (a.getZ() / b.getZ()));
     }
 
-    public static Byte3 mult(Byte3 a, Byte3 b) {
-        return new Byte3((byte) (a.getX() * b.getX()), (byte) (a.getY() * b.getY()), (byte) (a.getZ() * b.getZ()));
+    public static NativeByte3 mult(NativeByte3 a, NativeByte3 b) {
+        return new NativeByte3((byte) (a.getX() * b.getX()), (byte) (a.getY() * b.getY()), (byte) (a.getZ() * b.getZ()));
     }
 
-    public static Byte3 min(Byte3 a, Byte3 b) {
-        return new Byte3(TornadoMath.min(a.getX(), b.getX()), TornadoMath.min(a.getY(), b.getY()), TornadoMath.min(a.getZ(), b.getZ()));
+    public static NativeByte3 min(NativeByte3 a, NativeByte3 b) {
+        return new NativeByte3(TornadoMath.min(a.getX(), b.getX()), TornadoMath.min(a.getY(), b.getY()), TornadoMath.min(a.getZ(), b.getZ()));
     }
 
-    public static Byte3 max(Byte3 a, Byte3 b) {
-        return new Byte3(TornadoMath.max(a.getX(), b.getX()), TornadoMath.max(a.getY(), b.getY()), TornadoMath.max(a.getZ(), b.getZ()));
+    public static NativeByte3 max(NativeByte3 a, NativeByte3 b) {
+        return new NativeByte3(TornadoMath.max(a.getX(), b.getX()), TornadoMath.max(a.getY(), b.getY()), TornadoMath.max(a.getZ(), b.getZ()));
     }
 
     /*
      * vector = op (vector, scalar)
      */
-    public static Byte3 add(Byte3 a, byte b) {
-        return new Byte3((byte) (a.getX() + b), (byte) (a.getY() + b), (byte) (a.getZ() + b));
+    public static NativeByte3 add(NativeByte3 a, byte b) {
+        return new NativeByte3((byte) (a.getX() + b), (byte) (a.getY() + b), (byte) (a.getZ() + b));
     }
 
-    public static Byte3 sub(Byte3 a, byte b) {
-        return new Byte3((byte) (a.getX() - b), (byte) (a.getY() - b), (byte) (a.getZ() - b));
+    public static NativeByte3 sub(NativeByte3 a, byte b) {
+        return new NativeByte3((byte) (a.getX() - b), (byte) (a.getY() - b), (byte) (a.getZ() - b));
     }
 
-    public static Byte3 mult(Byte3 a, byte b) {
-        return new Byte3((byte) (a.getX() * b), (byte) (a.getY() * b), (byte) (a.getZ() * b));
+    public static NativeByte3 mult(NativeByte3 a, byte b) {
+        return new NativeByte3((byte) (a.getX() * b), (byte) (a.getY() * b), (byte) (a.getZ() * b));
     }
 
-    public static Byte3 div(Byte3 a, byte b) {
-        return new Byte3((byte) (a.getX() / b), (byte) (a.getY() / b), (byte) (a.getZ() / b));
+    public static NativeByte3 div(NativeByte3 a, byte b) {
+        return new NativeByte3((byte) (a.getX() / b), (byte) (a.getY() / b), (byte) (a.getZ() / b));
     }
 
-    public static Byte3 inc(Byte3 a, byte value) {
+    public static NativeByte3 inc(NativeByte3 a, byte value) {
         return add(a, value);
     }
 
-    public static Byte3 dec(Byte3 a, byte value) {
+    public static NativeByte3 dec(NativeByte3 a, byte value) {
         return sub(a, value);
     }
 
-    public static Byte3 scale(Byte3 a, byte value) {
+    public static NativeByte3 scale(NativeByte3 a, byte value) {
         return mult(a, value);
     }
 
-    public static Byte3 clamp(Byte3 x, byte min, byte max) {
-        return new Byte3(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max));
+    public static NativeByte3 clamp(NativeByte3 x, byte min, byte max) {
+        return new NativeByte3(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max));
     }
 
-    public static byte min(Byte3 value) {
+    public static byte min(NativeByte3 value) {
         return TornadoMath.min(value.getX(), TornadoMath.min(value.getY(), value.getZ()));
     }
 
-    public static byte max(Byte3 value) {
+    public static byte max(NativeByte3 value) {
         return TornadoMath.max(value.getX(), TornadoMath.max(value.getY(), value.getZ()));
     }
 
-    public static boolean isEqual(Byte3 a, Byte3 b) {
+    public static boolean isEqual(NativeByte3 a, NativeByte3 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
-    static Byte3 loadFromArray(final ByteArray array, int index) {
-        final Byte3 result = new Byte3();
+    static NativeByte3 loadFromArray(final ByteArray array, int index) {
+        final NativeByte3 result = new NativeByte3();
         result.setX(array.get(index));
         result.setY(array.get(index + 1));
         result.setZ(array.get(index + 2));
         return result;
     }
 
-    public void set(Byte3 value) {
+    public void set(NativeByte3 value) {
         setX(value.getX());
         setY(value.getY());
         setZ(value.getZ());
     }
 
     public byte get(int index) {
-        return storage[index];
+        return nativeVectorByte.get(index);
     }
 
     public void set(int index, byte value) {
-        storage[index] = value;
+        nativeVectorByte.set(index, value);
     }
 
     public byte getX() {
@@ -202,8 +203,8 @@ public final class Byte3 implements PrimitiveStorage<ByteBuffer> {
      *
      * @return {@Byte3}
      */
-    public Byte3 duplicate() {
-        final Byte3 vector = new Byte3();
+    public NativeByte3 duplicate() {
+        final NativeByte3 vector = new NativeByte3();
         vector.set(this);
         return vector;
     }
@@ -223,7 +224,7 @@ public final class Byte3 implements PrimitiveStorage<ByteBuffer> {
 
     @Override
     public ByteBuffer asBuffer() {
-        return ByteBuffer.wrap(storage);
+        return nativeVectorByte.getSegment().asByteBuffer();
     }
 
     @Override
@@ -232,7 +233,7 @@ public final class Byte3 implements PrimitiveStorage<ByteBuffer> {
     }
 
     public byte[] toArray() {
-        return storage;
+        return nativeVectorByte.getSegment().toArray(ValueLayout.JAVA_BYTE);
     }
 
     void storeToArray(final ByteArray array, int index) {
