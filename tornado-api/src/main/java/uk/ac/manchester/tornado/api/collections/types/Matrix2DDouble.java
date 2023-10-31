@@ -110,12 +110,6 @@ public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<Dou
         }
     }
 
-    // public static void scale(Matrix2DDouble matrix, double value) {
-    // for (int i = 0; i < matrix.storage.getLength(); i++) {
-    // matrix.storage[i] *= value;
-    // }
-    // }
-
     public double get(int i, int j) {
         return storage.get(toRowMajor(i, j, COLUMNS));
     }
