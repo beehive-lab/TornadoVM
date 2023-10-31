@@ -49,6 +49,7 @@ import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
@@ -124,7 +125,7 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
 
     @Override
     public long toBuffer() {
-        return this.bufferId; 
+        return this.bufferId;
     }
 
     @Override
@@ -330,7 +331,7 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         if (batchSize <= 0) {
             internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset, bufferSize, seg.address(), hostOffset, (useDeps) ? events : null);
         } else {
-            internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset + 24, bufferSize, seg.address(), hostOffset, (useDeps) ? events : null);
+            internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset + TornadoNativeArray.ARRAY_HEADER, bufferSize, seg.address(), hostOffset, (useDeps) ? events : null);
 
         }
         returnEvents.add(internalEvent);
@@ -393,11 +394,9 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         }
     }
 
-    // TODO: Check if correct
     @Override
     public void deallocate() throws TornadoMemoryException {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
-        // long bufferSize = memref.byteSize();
         deviceContext.getBufferProvider().markBufferReleased(bufferId, bufferSize);
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
