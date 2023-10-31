@@ -53,6 +53,7 @@ import uk.ac.manchester.tornado.api.type.annotations.PanamaElementSize;
 public class FloatArray extends TornadoNativeArray {
     private final int FLOAT_BYTES = 4;
     private MemorySegment segment;
+
     private int numberOfElements;
 
     private int arrayHeaderSize;

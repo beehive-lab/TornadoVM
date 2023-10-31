@@ -590,12 +590,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
         final Class<?> type = object.getClass();
 
-        // TODO: FIX
-        //        if (!(type.isArray())) {
-        //            if (!(object instanceof TornadoNativeArray)) {
-        //                throw new TornadoRuntimeException("[ERROR] Batch computation with non-Panama not supported yet.");
-        //            }
-        //        }
         return -1;
     }
 
