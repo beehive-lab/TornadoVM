@@ -32,7 +32,7 @@ import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.phases.Phase;
 
-public class TornadoPanamaSegmentsHeader extends Phase {
+public class TornadoPanamaSegmentsHeaderPhase extends Phase {
 
     @Override
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
