@@ -156,7 +156,7 @@ public final class Byte4 implements PrimitiveStorage<ByteBuffer> {
     }
 
     public static boolean isEqual(Byte4 a, Byte4 b) {
-        return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+        return TornadoMath.isEqual(a.toArray(), b.toArray());
     }
 
     static Byte4 loadFromArray(final ByteArray array, int index) {
@@ -248,6 +248,10 @@ public final class Byte4 implements PrimitiveStorage<ByteBuffer> {
     @Override
     public int size() {
         return NUM_ELEMENTS;
+    }
+
+    public byte[] toArray() {
+        return storage;
     }
 
     void storeToArray(ByteArray array, int index) {

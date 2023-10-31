@@ -204,7 +204,7 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public static boolean isEqual(Double3 a, Double3 b) {
-        return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+        return TornadoMath.isEqual(a.toArray(), b.toArray());
     }
 
     public static boolean isEqualULP(Double3 a, Double3 b, double numULP) {

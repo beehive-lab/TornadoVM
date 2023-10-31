@@ -199,7 +199,7 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public static boolean isEqual(Float3 a, Float3 b) {
-        return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+        return TornadoMath.isEqual(a.toArray(), b.toArray());
     }
 
     public static boolean isEqualULP(Float3 a, Float3 b, float numULP) {

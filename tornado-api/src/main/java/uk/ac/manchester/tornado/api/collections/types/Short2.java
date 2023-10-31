@@ -151,7 +151,7 @@ public final class Short2 implements PrimitiveStorage<ShortBuffer> {
     }
 
     public static boolean isEqual(Short2 a, Short2 b) {
-        return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+        return TornadoMath.isEqual(a.toArray(), b.toArray());
     }
 
     public short get(int index) {

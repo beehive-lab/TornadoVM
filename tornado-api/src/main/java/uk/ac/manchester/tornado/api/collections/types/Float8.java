@@ -195,7 +195,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public static boolean isEqual(Float8 a, Float8 b) {
-        return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+        return TornadoMath.isEqual(a.toArray(), b.toArray());
     }
 
     public static float findULPDistance(Float8 value, Float8 expected) {

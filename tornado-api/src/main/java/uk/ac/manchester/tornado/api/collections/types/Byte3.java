@@ -145,7 +145,7 @@ public final class Byte3 implements PrimitiveStorage<ByteBuffer> {
     }
 
     public static boolean isEqual(Byte3 a, Byte3 b) {
-        return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+        return TornadoMath.isEqual(a.toArray(), b.toArray());
     }
 
     static Byte3 loadFromArray(final ByteArray array, int index) {

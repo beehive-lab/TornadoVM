@@ -198,7 +198,7 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public static boolean isEqual(Double8 a, Double8 b) {
-        return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+        return TornadoMath.isEqual(a.toArray(), b.toArray());
     }
 
     public static double findULPDistance(Double8 value, Double8 expected) {

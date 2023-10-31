@@ -235,7 +235,7 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public static boolean isEqual(Double2 a, Double2 b) {
-        return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+        return TornadoMath.isEqual(a.toArray(), b.toArray());
     }
 
     public double[] getArray() {

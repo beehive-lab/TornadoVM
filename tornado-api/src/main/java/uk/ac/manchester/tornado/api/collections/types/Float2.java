@@ -222,7 +222,7 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public static boolean isEqual(Float2 a, Float2 b) {
-        return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+        return TornadoMath.isEqual(a.toArray(), b.toArray());
     }
 
     static Float2 loadFromArray(final FloatArray array, int index) {

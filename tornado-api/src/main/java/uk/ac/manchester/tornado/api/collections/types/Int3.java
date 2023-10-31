@@ -155,7 +155,11 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
     }
 
     public static boolean isEqual(Int3 a, Int3 b) {
-        return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+        return TornadoMath.isEqual(a.toArray(), b.toArray());
+    }
+
+    public int[] toArray() {
+        return storage;
     }
 
     static Int3 loadFromArray(final IntArray array, int index) {

@@ -198,7 +198,11 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
     }
 
     public static boolean isEqual(Int8 a, Int8 b) {
-        return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+        return TornadoMath.isEqual(a.toArray(), b.toArray());
+    }
+
+    public int[] toArray() {
+        return storage;
     }
 
     static Int8 loadFromArray(final IntArray array, int index) {
