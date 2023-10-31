@@ -99,8 +99,7 @@ public class OCLVectorWrapper implements ObjectBuffer {
         this.bufferId = deviceContext.getBufferProvider().getBufferWithSize(bufferSize);
 
         if (Tornado.FULL_DEBUG) {
-            info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), bufferOffset,
-                    TornadoOptions.PANAMA_OBJECT_HEADER_SIZE);
+            info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), bufferOffset, TornadoOptions.PANAMA_OBJECT_HEADER_SIZE);
         }
     }
 
@@ -113,8 +112,7 @@ public class OCLVectorWrapper implements ObjectBuffer {
         bufferSize = INIT_VALUE;
 
         if (Tornado.FULL_DEBUG) {
-            info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), bufferOffset,
-                    TornadoOptions.PANAMA_OBJECT_HEADER_SIZE);
+            info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), bufferOffset, TornadoOptions.PANAMA_OBJECT_HEADER_SIZE);
         }
     }
 
