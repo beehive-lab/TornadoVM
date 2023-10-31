@@ -100,9 +100,7 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
 
     @Override
     public long toBuffer() {
-        // guarantee(deviceContext.getSegmentToBufferMap().containsKey(segment), "Should
-        // contain the segment by this point");
-        return this.bufferId; // deviceContext.getSegmentToBufferMap().get(segment).getBufferId();
+        return this.bufferId; 
     }
 
     @Override
