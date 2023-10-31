@@ -44,7 +44,6 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.IntBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
-import uk.ac.manchester.tornado.api.collections.types.natives.NativeVectorInt;
 import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
@@ -65,14 +64,14 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
      * backing array.
      */
     @Payload
-    private final NativeVectorInt nativeVectorInt;
+    private final int[] storage;
 
-    public Int3(NativeVectorInt storage) {
-        this.nativeVectorInt = storage;
+    public Int3(int[] storage) {
+        this.storage = storage;
     }
 
     public Int3() {
-        this(new NativeVectorInt(NUM_ELEMENTS));
+        this(new int[NUM_ELEMENTS]);
     }
 
     public Int3(int x, int y, int z) {
@@ -159,12 +158,20 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
+    static Int3 loadFromArray(final IntArray array, int index) {
+        final Int3 result = new Int3();
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        result.setZ(array.get(index + 2));
+        return result;
+    }
+
     public int get(int index) {
-        return nativeVectorInt.get(index);
+        return storage[index];
     }
 
     public void set(int index, int value) {
-        nativeVectorInt.set(index, value);
+        storage[index] = value;
     }
 
     public void set(Int3 value) {
@@ -228,20 +235,12 @@ public final class Int3 implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public IntBuffer asBuffer() {
-        return nativeVectorInt.getSegment().asByteBuffer().asIntBuffer();
+        return IntBuffer.wrap(storage);
     }
 
     @Override
     public int size() {
         return NUM_ELEMENTS;
-    }
-
-    static Int3 loadFromArray(final IntArray array, int index) {
-        final Int3 result = new Int3();
-        result.setX(array.get(index));
-        result.setY(array.get(index + 1));
-        result.setZ(array.get(index + 2));
-        return result;
     }
 
     void storeToArray(final IntArray array, int index) {

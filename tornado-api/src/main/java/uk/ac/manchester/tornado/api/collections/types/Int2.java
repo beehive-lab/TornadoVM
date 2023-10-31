@@ -65,14 +65,14 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
      * backing array.
      */
     @Payload
-    private final NativeVectorInt nativeVectorInt;
+    private final int[] storage;
 
-    public Int2(NativeVectorInt storage) {
-        this.nativeVectorInt = storage;
+    public Int2(int[] storage) {
+        this.storage = storage;
     }
 
     public Int2() {
-        this(new NativeVectorInt(NUM_ELEMENTS));
+        this(new int[NUM_ELEMENTS]);
     }
 
     public Int2(int x, int y) {
@@ -170,12 +170,19 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
+    static Int2 loadFromArray(final IntArray array, int index) {
+        final Int2 result = new Int2();
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        return result;
+    }
+
     public int get(int index) {
-        return nativeVectorInt.get(index);
+        return storage[index];
     }
 
     public void set(int index, int value) {
-        nativeVectorInt.set(index, value);
+        storage[index] = value;
     }
 
     public void set(Int2 value) {
@@ -234,19 +241,12 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public IntBuffer asBuffer() {
-        return nativeVectorInt.getSegment().asByteBuffer().asIntBuffer();
+        return IntBuffer.wrap(storage);
     }
 
     @Override
     public int size() {
         return NUM_ELEMENTS;
-    }
-
-    static Int2 loadFromArray(final IntArray array, int index) {
-        final Int2 result = new Int2();
-        result.setX(array.get(index));
-        result.setY(array.get(index + 1));
-        return result;
     }
 
     void storeToArray(final IntArray array, int index) {

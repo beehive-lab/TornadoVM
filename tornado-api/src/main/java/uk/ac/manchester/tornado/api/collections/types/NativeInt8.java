@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2023, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -44,15 +44,15 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.IntBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.collections.types.natives.NativeVectorInt;
 import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
 @Vector
-public final class Int8 implements PrimitiveStorage<IntBuffer> {
-
-    public static final Class<Int8> TYPE = Int8.class;
+public class NativeInt8 implements PrimitiveStorage<IntBuffer> {
+    public static final Class<NativeInt8> TYPE = NativeInt8.class;
 
     /**
      * number of elements in the storage.
@@ -63,17 +63,18 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
      * backing array.
      */
     @Payload
-    private final int[] storage;
+    private final NativeVectorInt nativeVectorInt;
 
-    public Int8(int[] storage) {
-        this.storage = storage;
+    public NativeInt8(NativeVectorInt storage) {
+        this.nativeVectorInt = storage;
     }
 
-    public Int8() {
-        this(new int[NUM_ELEMENTS]);
+    public NativeInt8() {
+        this(new NativeVectorInt(NUM_ELEMENTS));
+
     }
 
-    public Int8(int s0, int s1, int s2, int s3, int s4, int s5, int s6, int s7) {
+    public NativeInt8(int s0, int s1, int s2, int s3, int s4, int s5, int s6, int s7) {
         this();
         setS0(s0);
         setS1(s1);
@@ -86,81 +87,81 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
     }
 
     /**
-     * * Operations on int8 vectors.
+     * * Operations on NativeInt8 vectors.
      */
-    public static Int8 add(Int8 a, Int8 b) {
-        final Int8 result = new Int8();
+    public static NativeInt8 add(NativeInt8 a, NativeInt8 b) {
+        final NativeInt8 result = new NativeInt8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) + b.get(i));
         }
         return result;
     }
 
-    public static Int8 add(Int8 a, int b) {
-        final Int8 result = new Int8();
+    public static NativeInt8 add(NativeInt8 a, int b) {
+        final NativeInt8 result = new NativeInt8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) + b);
         }
         return result;
     }
 
-    public static Int8 sub(Int8 a, Int8 b) {
-        final Int8 result = new Int8();
+    public static NativeInt8 sub(NativeInt8 a, NativeInt8 b) {
+        final NativeInt8 result = new NativeInt8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) - b.get(i));
         }
         return result;
     }
 
-    public static Int8 sub(Int8 a, int b) {
-        final Int8 result = new Int8();
+    public static NativeInt8 sub(NativeInt8 a, int b) {
+        final NativeInt8 result = new NativeInt8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) - b);
         }
         return result;
     }
 
-    public static Int8 div(Int8 a, Int8 b) {
-        final Int8 result = new Int8();
+    public static NativeInt8 div(NativeInt8 a, NativeInt8 b) {
+        final NativeInt8 result = new NativeInt8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) / b.get(i));
         }
         return result;
     }
 
-    public static Int8 div(Int8 a, int value) {
-        final Int8 result = new Int8();
+    public static NativeInt8 div(NativeInt8 a, int value) {
+        final NativeInt8 result = new NativeInt8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) / value);
         }
         return result;
     }
 
-    public static Int8 mult(Int8 a, Int8 b) {
-        final Int8 result = new Int8();
+    public static NativeInt8 mult(NativeInt8 a, NativeInt8 b) {
+        final NativeInt8 result = new NativeInt8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) * b.get(i));
         }
         return result;
     }
 
-    public static Int8 mult(Int8 a, int value) {
-        final Int8 result = new Int8();
+    public static NativeInt8 mult(NativeInt8 a, int value) {
+        final NativeInt8 result = new NativeInt8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) * value);
         }
         return result;
     }
 
-    public static Int8 min(Int8 a, Int8 b) {
-        final Int8 result = new Int8();
+    public static NativeInt8 min(NativeInt8 a, NativeInt8 b) {
+        final NativeInt8 result = new NativeInt8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, Math.min(a.get(i), b.get(i)));
         }
         return result;
     }
 
-    public static int min(Int8 value) {
+    public static int min(NativeInt8 value) {
         int result = Integer.MAX_VALUE;
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result = Math.min(result, value.get(i));
@@ -168,15 +169,15 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
         return result;
     }
 
-    public static Int8 max(Int8 a, Int8 b) {
-        final Int8 result = new Int8();
+    public static NativeInt8 max(NativeInt8 a, NativeInt8 b) {
+        final NativeInt8 result = new NativeInt8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, Math.max(a.get(i), b.get(i)));
         }
         return result;
     }
 
-    public static int max(Int8 value) {
+    public static int max(NativeInt8 value) {
         int result = Integer.MIN_VALUE;
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result = Math.max(result, value.get(i));
@@ -184,25 +185,25 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
         return result;
     }
 
-    public static Int8 sqrt(Int8 a) {
-        final Int8 result = new Int8();
+    public static NativeInt8 sqrt(NativeInt8 a) {
+        final NativeInt8 result = new NativeInt8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             a.set(i, (int) TornadoMath.sqrt(a.get(i)));
         }
         return result;
     }
 
-    public static int dot(Int8 a, Int8 b) {
-        final Int8 m = mult(a, b);
+    public static int dot(NativeInt8 a, NativeInt8 b) {
+        final NativeInt8 m = mult(a, b);
         return m.getS0() + m.getS1() + m.getS2() + m.getS3() + m.getS4() + m.getS5() + m.getS6() + m.getS7();
     }
 
-    public static boolean isEqual(Int8 a, Int8 b) {
+    public static boolean isEqual(NativeInt8 a, NativeInt8 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
-    static Int8 loadFromArray(final IntArray array, int index) {
-        final Int8 result = new Int8();
+    static NativeInt8 loadFromArray(final IntArray array, int index) {
+        final NativeInt8 result = new NativeInt8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, array.get(index + i));
         }
@@ -210,14 +211,14 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
     }
 
     public int get(int index) {
-        return storage[index];
+        return nativeVectorInt.get(index);
     }
 
     public void set(int index, int value) {
-        storage[index] = value;
+        nativeVectorInt.set(index, value);
     }
 
-    public void set(Int8 value) {
+    public void set(NativeInt8 value) {
         for (int i = 0; i < 8; i++) {
             set(i, value.get(i));
         }
@@ -298,10 +299,10 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
     /**
      * Duplicates this vector.
      *
-     * @return {@link Int8}
+     * @return {@link NativeInt8}
      */
-    public Int8 duplicate() {
-        Int8 vector = new Int8();
+    public NativeInt8 duplicate() {
+        NativeInt8 vector = new NativeInt8();
         vector.set(this);
         return vector;
     }
@@ -323,7 +324,7 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public IntBuffer asBuffer() {
-        return IntBuffer.wrap(storage);
+        return nativeVectorInt.getSegment().asByteBuffer().asIntBuffer();
     }
 
     @Override

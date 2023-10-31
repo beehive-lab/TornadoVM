@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2023 APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -44,14 +44,14 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.IntBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.collections.types.natives.NativeVectorInt;
 import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
 @Vector
-public final class Int4 implements PrimitiveStorage<IntBuffer> {
-
-    public static final Class<Int4> TYPE = Int4.class;
+public class NativeInt4 implements PrimitiveStorage<IntBuffer> {
+    public static final Class<NativeInt4> TYPE = NativeInt4.class;
 
     private static final String NUMBER_FORMAT = "{ x=%-7d, y=%-7d, z=%-7d, w=%-7d }";
     /**
@@ -62,17 +62,17 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
      * backing array.
      */
     @Payload
-    private final int[] storage;
+    private final NativeVectorInt nativeVectorInt;
 
-    public Int4(int[] storage) {
-        this.storage = storage;
+    public NativeInt4(NativeVectorInt storage) {
+        this.nativeVectorInt = storage;
     }
 
-    public Int4() {
-        this(new int[NUM_ELEMENTS]);
+    public NativeInt4() {
+        this(new NativeVectorInt(NUM_ELEMENTS));
     }
 
-    public Int4(int x, int y, int z, int w) {
+    public NativeInt4(int x, int y, int z, int w) {
         this();
         setX(x);
         setY(y);
@@ -83,85 +83,85 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
     /*
      * vector = op( vector, vector )
      */
-    public static Int4 add(Int4 a, Int4 b) {
-        return new Int4(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ(), a.getW() + b.getW());
+    public static NativeInt4 add(NativeInt4 a, NativeInt4 b) {
+        return new NativeInt4(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ(), a.getW() + b.getW());
     }
 
-    public static Int4 sub(Int4 a, Int4 b) {
-        return new Int4(a.getX() - b.getX(), a.getY() - b.getY(), a.getZ() - b.getZ(), a.getW() - b.getW());
+    public static NativeInt4 sub(NativeInt4 a, NativeInt4 b) {
+        return new NativeInt4(a.getX() - b.getX(), a.getY() - b.getY(), a.getZ() - b.getZ(), a.getW() - b.getW());
     }
 
-    public static Int4 div(Int4 a, Int4 b) {
-        return new Int4(a.getX() / b.getX(), a.getY() / b.getY(), a.getZ() / b.getZ(), a.getW() / b.getW());
+    public static NativeInt4 div(NativeInt4 a, NativeInt4 b) {
+        return new NativeInt4(a.getX() / b.getX(), a.getY() / b.getY(), a.getZ() / b.getZ(), a.getW() / b.getW());
     }
 
-    public static Int4 mult(Int4 a, Int4 b) {
-        return new Int4(a.getX() * b.getX(), a.getY() * b.getY(), a.getZ() * b.getZ(), a.getW() * b.getW());
+    public static NativeInt4 mult(NativeInt4 a, NativeInt4 b) {
+        return new NativeInt4(a.getX() * b.getX(), a.getY() * b.getY(), a.getZ() * b.getZ(), a.getW() * b.getW());
     }
 
-    public static Int4 min(Int4 a, Int4 b) {
-        return new Int4(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()), Math.min(a.getW(), b.getW()));
+    public static NativeInt4 min(NativeInt4 a, NativeInt4 b) {
+        return new NativeInt4(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()), Math.min(a.getW(), b.getW()));
     }
 
-    public static Int4 max(Int4 a, Int4 b) {
-        return new Int4(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(a.getZ(), b.getZ()), Math.max(a.getW(), b.getW()));
+    public static NativeInt4 max(NativeInt4 a, NativeInt4 b) {
+        return new NativeInt4(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(a.getZ(), b.getZ()), Math.max(a.getW(), b.getW()));
     }
 
     /*
      * vector = op (vector, scalar)
      */
-    public static Int4 add(Int4 a, int b) {
-        return new Int4(a.getX() + b, a.getY() + b, a.getZ() + b, a.getW() + b);
+    public static NativeInt4 add(NativeInt4 a, int b) {
+        return new NativeInt4(a.getX() + b, a.getY() + b, a.getZ() + b, a.getW() + b);
     }
 
-    public static Int4 sub(Int4 a, int b) {
-        return new Int4(a.getX() - b, a.getY() - b, a.getZ() - b, a.getW() - b);
+    public static NativeInt4 sub(NativeInt4 a, int b) {
+        return new NativeInt4(a.getX() - b, a.getY() - b, a.getZ() - b, a.getW() - b);
     }
 
-    public static Int4 mult(Int4 a, int b) {
-        return new Int4(a.getX() * b, a.getY() * b, a.getZ() * b, a.getW() * b);
+    public static NativeInt4 mult(NativeInt4 a, int b) {
+        return new NativeInt4(a.getX() * b, a.getY() * b, a.getZ() * b, a.getW() * b);
     }
 
-    public static Int4 div(Int4 a, int b) {
-        return new Int4(a.getX() / b, a.getY() / b, a.getZ() / b, a.getW() / b);
+    public static NativeInt4 div(NativeInt4 a, int b) {
+        return new NativeInt4(a.getX() / b, a.getY() / b, a.getZ() / b, a.getW() / b);
     }
 
-    public static Int4 inc(Int4 a, int value) {
+    public static NativeInt4 inc(NativeInt4 a, int value) {
         return add(a, value);
     }
 
-    public static Int4 dec(Int4 a, int value) {
+    public static NativeInt4 dec(NativeInt4 a, int value) {
         return sub(a, value);
     }
 
-    public static Int4 scale(Int4 a, int value) {
+    public static NativeInt4 scale(NativeInt4 a, int value) {
         return mult(a, value);
     }
 
     /*
      * misc inplace vector ops
      */
-    public static Int4 clamp(Int4 x, int min, int max) {
-        return new Int4(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max), TornadoMath.clamp(x.getW(), min, max));
+    public static NativeInt4 clamp(NativeInt4 x, int min, int max) {
+        return new NativeInt4(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max), TornadoMath.clamp(x.getW(), min, max));
     }
 
     /*
      * vector wide operations
      */
-    public static int min(Int4 value) {
+    public static int min(NativeInt4 value) {
         return Math.min(value.getX(), Math.min(value.getY(), Math.min(value.getZ(), value.getW())));
     }
 
-    public static int max(Int4 value) {
+    public static int max(NativeInt4 value) {
         return Math.max(value.getX(), Math.max(value.getY(), Math.max(value.getZ(), value.getW())));
     }
 
-    public static boolean isEqual(Int4 a, Int4 b) {
+    public static boolean isEqual(NativeInt4 a, NativeInt4 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
-    static Int4 loadFromArray(final IntArray array, int index) {
-        final Int4 result = new Int4();
+    static NativeInt4 loadFromArray(final IntArray array, int index) {
+        final NativeInt4 result = new NativeInt4();
         result.setX(array.get(index));
         result.setY(array.get(index + 1));
         result.setZ(array.get(index + 2));
@@ -170,14 +170,14 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
     }
 
     public int get(int index) {
-        return storage[index];
+        return nativeVectorInt.get(index);
     }
 
     public void set(int index, int value) {
-        storage[index] = value;
+        nativeVectorInt.set(index, value);
     }
 
-    public void set(Int4 value) {
+    public void set(NativeInt4 value) {
         setX(value.getX());
         setY(value.getY());
         setZ(value.getZ());
@@ -219,10 +219,10 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
     /**
      * Duplicates this vector.
      *
-     * @return {@link Int4}
+     * @return {@link NativeInt4}
      */
-    public Int4 duplicate() {
-        Int4 vector = new Int4();
+    public NativeInt4 duplicate() {
+        NativeInt4 vector = new NativeInt4();
         vector.set(this);
         return vector;
     }
@@ -251,7 +251,7 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public IntBuffer asBuffer() {
-        return IntBuffer.wrap(storage);
+        return nativeVectorInt.getSegment().asByteBuffer().asIntBuffer();
     }
 
     @Override
