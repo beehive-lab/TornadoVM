@@ -108,7 +108,4 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     }
 
 
-    public long allocateRegion(long memFlags, long numBytes, boolean retainBuffer) {
-        return deviceContext.getPlatformContext().createBuffer(memFlags, numBytes).getBuffer();
-    }
 }
