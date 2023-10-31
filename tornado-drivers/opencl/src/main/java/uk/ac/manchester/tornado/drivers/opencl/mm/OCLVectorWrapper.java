@@ -32,8 +32,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jdk.vm.ci.meta.JavaKind;
-import uk.ac.manchester.tornado.api.collections.types.Int2;
 import uk.ac.manchester.tornado.api.collections.types.NativeDouble2;
+import uk.ac.manchester.tornado.api.collections.types.NativeInt2;
 import uk.ac.manchester.tornado.api.collections.types.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.collections.types.natives.NativeByte3;
 import uk.ac.manchester.tornado.api.collections.types.natives.NativeFloat2;
@@ -58,16 +58,12 @@ import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 public class OCLVectorWrapper implements ObjectBuffer {
 
     private static final int INIT_VALUE = -1;
-
+    protected final OCLDeviceContext deviceContext;
+    private final long batchSize;
+    private final JavaKind kind;
     private long bufferId;
     private long bufferOffset;
     private long bufferSize;
-
-    protected final OCLDeviceContext deviceContext;
-
-    private final long batchSize;
-
-    private final JavaKind kind;
     private long setSubRegionSize;
 
     public OCLVectorWrapper(final OCLDeviceContext device, final Object object, long batchSize) {
@@ -102,8 +98,7 @@ public class OCLVectorWrapper implements ObjectBuffer {
         this.bufferId = deviceContext.getBufferProvider().getBufferWithSize(bufferSize);
 
         if (Tornado.FULL_DEBUG) {
-            info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
-            info("allocated: %s", toString());
+            info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), 0, TornadoNativeArray.ARRAY_HEADER);
         }
     }
 
@@ -351,7 +346,7 @@ public class OCLVectorWrapper implements ObjectBuffer {
             return JavaKind.Object;
         } else if (type == NativeFloat2.FIELD_CLASS) {
             return JavaKind.Object;
-        } else if (type == Int2.FIELD_CLASS) {
+        } else if (type == NativeInt2.FIELD_CLASS) {
             return JavaKind.Object;
         } else if (type == NativeDouble2.FIELD_CLASS) {
             return JavaKind.Object;
