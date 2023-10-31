@@ -409,17 +409,6 @@ public class OCLDeviceContext extends TornadoLogger implements OCLDeviceContextI
     public void reset() {
         oclEventPool.reset();
         codeCache.reset();
-        // TODO
-        // // Release the pinned buffers
-        // for (OCLBufferInfo segmentInfo : segmentToBufferMap.values()) {
-        // try {
-        // OCLContext.clReleaseMemObject(segmentInfo.getBufferId());
-        // } catch (OCLException e) {
-        // Tornado.fatal("Failed to release buffer %ld", segmentInfo.getBufferId());
-        // e.printStackTrace();
-        // }
-        // }
-        // segmentToBufferMap.clear();
         wasReset = true;
     }
 
