@@ -223,26 +223,6 @@ public final class StorageFormats {
         return flattenMatrix;
     }
 
-    /**
-     * Converts a matrix stored in multidimensional arrays into Row-Major format.
-     *
-     * @param matrix
-     *     input matrix
-     * @return int[]
-     */
-    //    public static int[] toRowMajor(int[][] matrix) {
-    //        final int dimX = matrix.length;
-    //        final int dimY = matrix[0].length;
-    //
-    //        int[] matrixRM = new int[dimX * dimY];
-    //        for (int i = 0; i < dimX; i++) {
-    //            for (int j = 0; j < dimY; j++) {
-    //                matrixRM[toRowMajor(i, j, dimY)] = matrix[i][j];
-    //            }
-    //        }
-    //        return matrixRM;
-    //    }
-
     public static IntArray toRowMajor(int[][] matrix) {
         final int dimX = matrix.length;
         final int dimY = matrix[0].length;
