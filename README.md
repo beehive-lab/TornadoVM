@@ -25,7 +25,7 @@ For a quick introduction please read the following [FAQ](https://tornadovm.readt
 In Linux and Mac OSx, TornadoVM can be installed automatically with the [installation script](https://tornadovm.readthedocs.io/en/latest/installation.html). For example:
 
 ```bash
-$ ./scripts/tornadovm-installer 
+$ ./bin/tornadovm-installer 
 usage: tornadovm-installer [-h] [--version] [--jdk JDK] [--backend BACKEND] [--listJDKs] [--javaHome JAVAHOME]
 
 TornadoVM Installer Tool. It will install all software dependencies except the GPU/FPGA drivers
@@ -49,10 +49,10 @@ Example of installation:
 
 ```bash
 # Install the OpenCL backend with OpenJDK 17
-$ ./scripts/tornadovm-installer --jdk jdk17 --backend opencl 
+$ ./bin/tornadovm-installer --jdk jdk17 --backend opencl 
 
 # It is also possible to combine different backends:
-$ ./scripts/tornadovm-installer -- jdk jdk17 --backend opencl,spirv,ptx
+$ ./bin/tornadovm-installer -- jdk jdk17 --backend opencl,spirv,ptx
 ```
 
 Alternatively, TornadoVM can be installed either manually [from source](https://tornadovm.readthedocs.io/en/latest/installation.html#b-manual-installation) or by [using Docker](https://tornadovm.readthedocs.io/en/latest/docker.html).
