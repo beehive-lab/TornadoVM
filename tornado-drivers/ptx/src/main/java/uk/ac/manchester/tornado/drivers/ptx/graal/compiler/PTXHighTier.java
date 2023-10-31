@@ -54,18 +54,12 @@ import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionSuppression;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFullInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLocalArrayHeaderEliminator;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLocalMemoryAllocation;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoPartialInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoShapeAnalysis;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeCleanup;
 
 public class PTXHighTier extends TornadoHighTier {
-
-    private CanonicalizerPhase createCanonicalizerPhase(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer) {
-        CanonicalizerPhase canonicalizer = CanonicalizerPhase.create();
-        return canonicalizer.copyWithCustomSimplification(customCanonicalizer);
-    }
 
     public PTXHighTier(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer, MetaAccessProvider metaAccessProvider) {
         super(customCanonicalizer);
@@ -120,10 +114,13 @@ public class PTXHighTier extends TornadoHighTier {
         // that contains method calls to barriers.
         appendPhase(new TornadoPTXIntrinsicsReplacements(metaAccessProvider));
 
-        appendPhase(new TornadoLocalArrayHeaderEliminator());
-
         appendPhase(new TornadoLocalMemoryAllocation());
 
         appendPhase(new ExceptionSuppression());
+    }
+
+    private CanonicalizerPhase createCanonicalizerPhase(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer) {
+        CanonicalizerPhase canonicalizer = CanonicalizerPhase.create();
+        return canonicalizer.copyWithCustomSimplification(customCanonicalizer);
     }
 }

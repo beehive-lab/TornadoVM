@@ -40,12 +40,11 @@ package uk.ac.manchester.tornado.api.collections.types;
 
 import static uk.ac.manchester.tornado.api.collections.types.Int4.add;
 
-import java.nio.DoubleBuffer;
 import java.nio.IntBuffer;
 
 import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 
-public class VectorInt4 implements PrimitiveStorage<DoubleBuffer> {
+public class VectorInt4 implements PrimitiveStorage<IntBuffer> {
 
     private static final int ELEMENT_SIZE = 4;
     /**
@@ -184,18 +183,18 @@ public class VectorInt4 implements PrimitiveStorage<DoubleBuffer> {
         return result;
     }
 
-    @Override
-    public void loadFromBuffer(DoubleBuffer buffer) {
-        asBuffer().put(buffer);
-    }
-
-    @Override
-    public DoubleBuffer asBuffer() {
-        return null;
-    }
-
     public IntBuffer asBuffer(IntArray buffer) {
         return storage.getSegment().asByteBuffer().asIntBuffer();
+    }
+
+    @Override
+    public void loadFromBuffer(IntBuffer buffer) {
+
+    }
+
+    @Override
+    public IntBuffer asBuffer() {
+        return null;
     }
 
     @Override

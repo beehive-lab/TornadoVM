@@ -55,7 +55,6 @@ import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionSuppression;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFieldAccessFixup;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFullInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLocalArrayHeaderEliminator;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLocalMemoryAllocation;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoPartialInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoShapeAnalysis;
@@ -115,7 +114,6 @@ public class SPIRVHighTier extends TornadoHighTier {
 
         appendPhase(new TornadoSPIRVIntrinsicsReplacements(metaAccessProvider));
 
-        appendPhase(new TornadoLocalArrayHeaderEliminator());
         appendPhase(new TornadoLocalMemoryAllocation());
         appendPhase(new ExceptionSuppression());
 
