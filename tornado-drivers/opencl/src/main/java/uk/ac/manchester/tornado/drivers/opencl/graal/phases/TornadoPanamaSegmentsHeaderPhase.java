@@ -32,6 +32,10 @@ import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.phases.Phase;
 
+/**
+ * Compiler phase to set the position in the Panama Object header in which the Array Size will be located.
+ * By default, we set the size in position 0 of the input array. The array header size is determined by the TornadoVM API.
+ */
 public class TornadoPanamaSegmentsHeaderPhase extends Phase {
 
     @Override
@@ -48,7 +52,7 @@ public class TornadoPanamaSegmentsHeaderPhase extends Phase {
                 if (address instanceof OffsetAddressNode offsetAddressNode) {
                     ValueNode offset = offsetAddressNode.getOffset();
                     if (offset instanceof ConstantNode) {
-                        // Set the array size in position 0
+                        // Reserve the position 0 of the array to set the array size.
                         ConstantNode constantNode = graph.addOrUnique(ConstantNode.forLong((0)));
                         offsetAddressNode.setOffset(constantNode);
                         offset.safeDelete();
