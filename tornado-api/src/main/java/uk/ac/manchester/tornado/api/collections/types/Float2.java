@@ -68,7 +68,7 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public Float2() {
-        this(new float[2]);
+        this(new float[NUM_ELEMENTS]);
     }
 
     public Float2(float x, float y) {
