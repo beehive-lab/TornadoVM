@@ -397,7 +397,6 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
     @Override
     public void deallocate() throws TornadoMemoryException {
         TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
-        // long bufferSize = memref.byteSize();
         deviceContext.getBufferProvider().markBufferReleased(bufferId, bufferSize);
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
