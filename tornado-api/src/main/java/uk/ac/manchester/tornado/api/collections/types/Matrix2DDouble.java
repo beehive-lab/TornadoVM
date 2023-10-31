@@ -127,7 +127,6 @@ public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<Dou
         int j = 0;
         for (int i = from; i < to; i++, j++) {
             f.set(j, storage.get(i));
-            j++;
         }
         return new VectorDouble(COLUMNS, f);
     }
