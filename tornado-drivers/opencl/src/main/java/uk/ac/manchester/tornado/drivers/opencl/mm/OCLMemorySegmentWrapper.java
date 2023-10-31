@@ -196,7 +196,7 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         if (batchSize <= 0) {
             returnEvent = deviceContext.readBuffer(toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
-            returnEvent = deviceContext.readBuffer(toBuffer(), 24L, numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
+            returnEvent = deviceContext.readBuffer(toBuffer(), TornadoNativeArray.ARRAY_HEADER, numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
         }
 
         return useDeps ? returnEvent : -1;
@@ -382,7 +382,7 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
 
         } else {
             bufferSize = batchSize;
-            bufferId = deviceContext.getBufferProvider().getBufferWithSize(bufferSize + 24L);
+            bufferId = deviceContext.getBufferProvider().getBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER);
         }
 
         if (bufferSize <= 0) {
