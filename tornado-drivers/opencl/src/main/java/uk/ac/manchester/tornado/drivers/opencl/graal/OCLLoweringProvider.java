@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -189,7 +189,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         } else if (node instanceof StoreAtomicIndexedNode) {
             lowerStoreAtomicsReduction(node, tool);
         } else if (node instanceof WriteAtomicNode) {
-            lowerWriteAtomicsReduction((WriteAtomicNode)node, tool);
+            lowerWriteAtomicsReduction((WriteAtomicNode) node, tool);
         } else if (node instanceof LoadFieldNode) {
             lowerLoadFieldNode((LoadFieldNode) node, tool);
         } else if (node instanceof StoreFieldNode) {
@@ -327,8 +327,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         }
 
         AddressNode address = createArrayAddress(graph, array, elementKind, writeAtomicNode.getIndex());
-        OCLWriteAtomicNode memoryWrite = graph.add(new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, BarrierType.NONE, accumulator,
-                accumulator.stamp(NodeView.DEFAULT), writeAtomicNode.getElementKind(), operation));
+        OCLWriteAtomicNode memoryWrite = graph.add(new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, BarrierType.NONE, accumulator, accumulator.stamp(
+                NodeView.DEFAULT), writeAtomicNode.getElementKind(), operation));
         graph.replaceFixedWithFixed(writeAtomicNode, memoryWrite);
     }
 
@@ -411,7 +411,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         if (loadIndexed instanceof LoadIndexedVectorNode) {
             memoryRead = graph.add(new ReadNode(address, LocationIdentity.any(), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
         } else {
-            memoryRead = graph.add(new ReadNode(address, LocationIdentity.any(), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+            memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
         }
         loadIndexed.replaceAtUsages(memoryRead);
         graph.replaceFixed(loadIndexed, memoryRead);
@@ -436,8 +436,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         }
 
         AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
-        OCLWriteAtomicNode memoryWrite = graph.add(new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, BarrierType.NONE, accumulator,
-                accumulator.stamp(NodeView.DEFAULT), storeIndexed.elementKind(), operation));
+        OCLWriteAtomicNode memoryWrite = graph.add(new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, BarrierType.NONE, accumulator, accumulator.stamp(
+                NodeView.DEFAULT), storeIndexed.elementKind(), operation));
         memoryWrite.setStateAfter(storeIndexed.stateAfter());
         graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
     }
