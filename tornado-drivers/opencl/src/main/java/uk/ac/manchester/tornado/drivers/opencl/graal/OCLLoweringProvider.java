@@ -294,9 +294,17 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         }
         // Depending on the Scheduler, call the proper snippet factory
         if (cpuScheduler) {
-            cpuReduceSnippets.lower(node, threadID, oclIdNode, startIndexNode, tool);
+            if (node instanceof StoreAtomicIndexedNode storeAtomicIndexedNode) {
+                cpuReduceSnippets.lower(storeAtomicIndexedNode, threadID, oclIdNode, startIndexNode, tool);
+            } else if (node instanceof WriteAtomicNode writeAtomicNode) {
+                cpuReduceSnippets.lower(writeAtomicNode, threadID, oclIdNode, startIndexNode, tool);
+            }
         } else {
-            gpuReduceSnippets.lower(node, threadID, oclGlobalSize, tool);
+            if (node instanceof StoreAtomicIndexedNode storeAtomicIndexedNode) {
+                gpuReduceSnippets.lower(storeAtomicIndexedNode, threadID, oclGlobalSize, tool);
+            } else if (node instanceof WriteAtomicNode writeAtomicNode) {
+                gpuReduceSnippets.lower(writeAtomicNode, threadID, oclGlobalSize, tool);
+            }
         }
     }
 
