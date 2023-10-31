@@ -215,12 +215,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                 node.replaceAtUsages(kernelContextAccessNode);
                 index++;
             } else {
-                final ConstantNode constant;
-                if (batchThreads <= 0) {
-                    constant = ConstantNode.forInt(length);
-                } else {
-                    constant = ConstantNode.forInt((int) batchThreads);
-                }
+                final ConstantNode constant = (batchThreads <= 0) ? ConstantNode.forInt(length) : ConstantNode.forInt((int) batchThreads);
                 node.replaceAtUsages(graph.addOrUnique(constant));
             }
             arrayLength.clearInputs();
