@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -25,11 +25,8 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.snippets;
 
-import jdk.vm.ci.meta.JavaKind;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -40,6 +37,8 @@ import org.graalvm.compiler.replacements.SnippetTemplate.AbstractTemplates;
 import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
 import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
 import org.graalvm.compiler.replacements.Snippets;
+
+import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.drivers.opencl.builtins.OpenCLIntrinsics;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
@@ -997,53 +996,52 @@ public class ReduceGPUSnippets implements Snippets {
             return snippet;
         }
 
-        public void lower(Node node, ValueNode globalId, GlobalThreadSizeNode globalSize, LoweringTool tool) {
-            if (node instanceof StoreAtomicIndexedNode) {
-                StoreAtomicIndexedNode storeAtomicIndexed = (StoreAtomicIndexedNode) node;
-                JavaKind elementKind = storeAtomicIndexed.elementKind();
-                ValueNode value = storeAtomicIndexed.value();
-                ValueNode extra = storeAtomicIndexed.getExtraOperation();
+        public void lower(StoreAtomicIndexedNode storeAtomicIndexed, ValueNode globalId, GlobalThreadSizeNode globalSize, LoweringTool tool) {
+            JavaKind elementKind = storeAtomicIndexed.elementKind();
+            ValueNode value = storeAtomicIndexed.value();
+            ValueNode extra = storeAtomicIndexed.getExtraOperation();
 
-                SnippetInfo snippet = getSnippetInstance(elementKind, value, extra);
+            SnippetInfo snippet = getSnippetInstance(elementKind, value, extra);
 
-                // Sets the guard stage to AFTER_FSA because we want to avoid any frame state
-                // assignment for the snippet (see SnippetTemplate::assignNecessaryFrameStates)
-                // This is needed because we have nodes in the snippet which have multiple side
-                // effects and this is not allowed (see
-                // SnippetFrameStateAssignment.NodeStateAssignment.INVALID)
-                Arguments args = new Arguments(snippet, GraphState.GuardsStage.AFTER_FSA, tool.getLoweringStage());
-                args.add("inputData", storeAtomicIndexed.getInputArray());
-                args.add("outputArray", storeAtomicIndexed.array());
-                args.add("gidx", globalId);
-                if (extra != null) {
-                    args.add("value", extra);
-                }
-                SnippetTemplate template = template(tool, storeAtomicIndexed, args);
-                template.instantiate(tool.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
-            } else if (node instanceof WriteAtomicNode) {
-                WriteAtomicNode writeAtomic = (WriteAtomicNode) node;
-                JavaKind elementKind = writeAtomic.getElementKind();
-                ValueNode value = writeAtomic.value();
-                ValueNode extra = writeAtomic.getExtraOperation();
-
-                SnippetInfo snippet = getSnippetInstance(elementKind, value, extra);
-
-                // Sets the guard stage to AFTER_FSA because we want to avoid any frame state
-                // assignment for the snippet (see SnippetTemplate::assignNecessaryFrameStates)
-                // This is needed because we have nodes in the snippet which have multiple side
-                // effects and this is not allowed (see
-                // SnippetFrameStateAssignment.NodeStateAssignment.INVALID)
-                Arguments args = new Arguments(snippet, GraphState.GuardsStage.AFTER_FSA, tool.getLoweringStage());
-                args.add("inputData", writeAtomic.getInputArray());
-                args.add("outputArray", writeAtomic.getOutArray());
-                args.add("gidx", globalId);
-                if (extra != null) {
-                    args.add("value", extra);
-                }
-
-                SnippetTemplate template = template(tool, writeAtomic, args);
-                template.instantiate(tool.getMetaAccess(), writeAtomic, SnippetTemplate.DEFAULT_REPLACER, args);
+            // Sets the guard stage to AFTER_FSA because we want to avoid any frame state
+            // assignment for the snippet (see SnippetTemplate::assignNecessaryFrameStates)
+            // This is needed because we have nodes in the snippet which have multiple side
+            // effects and this is not allowed (see
+            // SnippetFrameStateAssignment.NodeStateAssignment.INVALID)
+            Arguments args = new Arguments(snippet, GraphState.GuardsStage.AFTER_FSA, tool.getLoweringStage());
+            args.add("inputData", storeAtomicIndexed.getInputArray());
+            args.add("outputArray", storeAtomicIndexed.array());
+            args.add("gidx", globalId);
+            if (extra != null) {
+                args.add("value", extra);
             }
+            SnippetTemplate template = template(tool, storeAtomicIndexed, args);
+            template.instantiate(tool.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
+
+        }
+
+        public void lower(WriteAtomicNode writeAtomic, ValueNode globalId, GlobalThreadSizeNode globalSize, LoweringTool tool) {
+            JavaKind elementKind = writeAtomic.getElementKind();
+            ValueNode value = writeAtomic.value();
+            ValueNode extra = writeAtomic.getExtraOperation();
+
+            SnippetInfo snippet = getSnippetInstance(elementKind, value, extra);
+
+            // Sets the guard stage to AFTER_FSA because we want to avoid any frame state
+            // assignment for the snippet (see SnippetTemplate::assignNecessaryFrameStates)
+            // This is needed because we have nodes in the snippet which have multiple side
+            // effects and this is not allowed (see
+            // SnippetFrameStateAssignment.NodeStateAssignment.INVALID)
+            Arguments args = new Arguments(snippet, GraphState.GuardsStage.AFTER_FSA, tool.getLoweringStage());
+            args.add("inputData", writeAtomic.getInputArray());
+            args.add("outputArray", writeAtomic.getOutArray());
+            args.add("gidx", globalId);
+            if (extra != null) {
+                args.add("value", extra);
+            }
+
+            SnippetTemplate template = template(tool, writeAtomic, args);
+            template.instantiate(tool.getMetaAccess(), writeAtomic, SnippetTemplate.DEFAULT_REPLACER, args);
         }
     }
 }
