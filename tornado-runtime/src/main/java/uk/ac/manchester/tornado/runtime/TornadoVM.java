@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -23,8 +23,6 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
-//<<<<<<< HEAD
-//=======
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
@@ -36,19 +34,8 @@ import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
-//>>>>>>> develop
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.common.Event;
-//<<<<<<< HEAD
-//import uk.ac.manchester.tornado.api.common.SchedulableTask;
-//import uk.ac.manchester.tornado.api.common.TornadoEvents;
-//import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-//import uk.ac.manchester.tornado.api.exceptions.*;
-//import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
-//import uk.ac.manchester.tornado.api.profiler.ProfilerType;
-//import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
-//import uk.ac.manchester.tornado.runtime.common.*;
-//=======
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
@@ -56,7 +43,6 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-//>>>>>>> develop
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraph;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodeResult;
@@ -82,12 +68,12 @@ public class TornadoVM extends TornadoLogger {
      * It constructs a new TornadoVM instance.
      *
      * @param executionContext
-     *            the {@link TornadoExecutionContext} for containing the execution
-     *            context
+     *     the {@link TornadoExecutionContext} for containing the execution
+     *     context
      * @param tornadoGraph
-     *            the {@link TornadoGraph} representing the TaskGraph
+     *     the {@link TornadoGraph} representing the TaskGraph
      * @param timeProfiler
-     *            the {@link TornadoProfiler} for profiling execution time
+     *     the {@link TornadoProfiler} for profiling execution time
      */
     public TornadoVM(TornadoExecutionContext executionContext, TornadoGraph tornadoGraph, TornadoProfiler timeProfiler) {
         this.executionContext = executionContext;
@@ -104,8 +90,8 @@ public class TornadoVM extends TornadoLogger {
     private void bindBytecodesToInterpreters() {
         assert tornadoVMInterpreters.length == executionContext.getValidContextSize();
         final Deque<Integer> activeDevices = executionContext.getActiveDeviceIndexes();
-        IntStream.range(0, executionContext.getValidContextSize())
-                .forEach(i -> tornadoVMInterpreters[i] = new TornadoVMInterpreter(executionContext, tornadoVMBytecodes[i], timeProfiler, executionContext.getDevice(activeDevices.pop())));
+        IntStream.range(0, executionContext.getValidContextSize()).forEach(i -> tornadoVMInterpreters[i] = new TornadoVMInterpreter(executionContext, tornadoVMBytecodes[i], timeProfiler,
+                executionContext.getDevice(activeDevices.pop())));
     }
 
     /**
