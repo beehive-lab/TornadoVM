@@ -123,9 +123,6 @@ public class OCLHighTier extends TornadoHighTier {
 
         appendPhase(new TornadoOpenCLIntrinsicsReplacements(metaAccessProvider));
 
-        // Remove Headers for Panama Regions and Object Primitive Arrays
-        // appendPhase(new TornadoLocalArrayHeaderEliminator());
-
         appendPhase(new TornadoLocalMemoryAllocation());
 
         appendPhase(new ExceptionSuppression());
