@@ -65,7 +65,7 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
     @Payload
     private final int[] storage;
 
-    public Int8(int[] storage) {
+    private Int8(int[] storage) {
         this.storage = storage;
     }
 

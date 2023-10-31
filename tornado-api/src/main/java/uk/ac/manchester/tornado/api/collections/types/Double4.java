@@ -63,7 +63,7 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
     @Payload
     final double[] storage;
 
-    public Double4(double[] storage) {
+    private Double4(double[] storage) {
         this.storage = storage;
     }
 

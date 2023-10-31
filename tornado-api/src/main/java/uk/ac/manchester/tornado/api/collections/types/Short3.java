@@ -63,7 +63,7 @@ public final class Short3 implements PrimitiveStorage<ShortBuffer> {
     @Payload
     private final short[] storage;
 
-    public Short3(short[] nativeVectorShort) {
+    private Short3(short[] nativeVectorShort) {
         this.storage = nativeVectorShort;
     }
 
