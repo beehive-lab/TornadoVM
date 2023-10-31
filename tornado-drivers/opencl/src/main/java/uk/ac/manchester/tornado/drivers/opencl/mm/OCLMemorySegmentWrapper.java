@@ -302,13 +302,6 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
             seg = (MemorySegment) reference;
         }
 
-        // We first write the header for the object, and then we write actual buffer
-        //        final int headerEvent;
-        //        if (batchSize <= 0) {
-        //            headerEvent = buildArrayHeader((int) (bufferSize - panamaHeaderSize)).enqueueWrite((useDeps) ? events : null);
-        //        } else {
-        //            headerEvent = buildArrayHeaderBatch((int) batchSize).enqueueWrite((useDeps) ? events : null);
-        //        }
         int internalEvent;
         if (batchSize <= 0) {
             internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset, bufferSize, seg.address(), hostOffset, (useDeps) ? events : null);
