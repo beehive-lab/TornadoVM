@@ -125,7 +125,7 @@ public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<Dou
         int size = to - from;
         DoubleArray f = new DoubleArray(size);
         int j = 0;
-        for (int i = from; i < to; i++) {
+        for (int i = from; i < to; i++, j++) {
             f.set(j, storage.get(i));
             j++;
         }
