@@ -126,7 +126,7 @@ public class SPIRVVectorWrapper implements ObjectBuffer {
     }
 
     @Override
-    public long getSizeSubRegionSize() {
+    public long getSizeSubRegion() {
         return setSubRegionSize;
     }
 

@@ -25,6 +25,8 @@ package uk.ac.manchester.tornado.drivers.spirv;
 
 import java.util.List;
 
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+
 public abstract class SPIRVContext {
 
     SPIRVPlatform platform;
@@ -58,7 +60,6 @@ public abstract class SPIRVContext {
     public abstract int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
 
     public abstract int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
-    public abstract int readBuffer(int deviceIndex, long bufferId, long offset, long bytes, long hostpointer, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
 
     public abstract int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, byte[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
 
@@ -73,8 +74,6 @@ public abstract class SPIRVContext {
     public abstract int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
 
     public abstract int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
-
-    public abstract int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, long hostpointer, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
 
     public abstract void enqueueBarrier(int deviceIndex);
 

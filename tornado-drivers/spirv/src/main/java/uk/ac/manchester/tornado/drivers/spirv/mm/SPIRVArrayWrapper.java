@@ -157,7 +157,7 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
                 shouldNotReachHere("Array header is invalid");
             }
         } else {
-            final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : (bufferSize - arrayHeaderSize);
+            final long numBytes = getSizeSubRegion() > 0 ? getSizeSubRegion() : (bufferSize - arrayHeaderSize);
             return readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, numBytes, array, hostOffset, (useDeps) ? events : null);
         }
         return -1;
@@ -294,7 +294,7 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
     }
 
     @Override
-    public long getSizeSubRegionSize() {
+    public long getSizeSubRegion() {
         return setSubRegionSize;
     }
 

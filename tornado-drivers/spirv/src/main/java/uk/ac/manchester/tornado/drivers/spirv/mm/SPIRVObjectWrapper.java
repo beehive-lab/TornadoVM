@@ -422,7 +422,7 @@ public class SPIRVObjectWrapper implements ObjectBuffer {
     }
 
     @Override
-    public long getSizeSubRegionSize() {
+    public long getSizeSubRegion() {
         return subRegionSize;
     }
 }

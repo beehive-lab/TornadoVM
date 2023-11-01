@@ -8,7 +8,6 @@ module tornado.drivers.spirv {
 
     // FIXME: Remove dependency to tornado.drivers.opencl
     requires tornado.drivers.opencl;
-    requires jdk.incubator.foreign;
 
     exports uk.ac.manchester.tornado.drivers.spirv;
     exports uk.ac.manchester.tornado.drivers.spirv.graal;
