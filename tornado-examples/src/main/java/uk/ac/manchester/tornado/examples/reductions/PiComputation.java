@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,9 @@
 
 package uk.ac.manchester.tornado.examples.reductions;
 
+import java.util.ArrayList;
+import java.util.stream.IntStream;
+
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -27,27 +30,16 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
-import java.util.ArrayList;
-import java.util.stream.IntStream;
-
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.reductions.PiComputation
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.reductions.PiComputation
  * </code>
  *
  */
 public class PiComputation {
-
-//    public static void computePi(float[] input, @Reduce float[] result) {
-//        result[0] = 0.0f;
-//        for (@Parallel int i = 1; i < input.length; i++) {
-//            float value = input[i] + (TornadoMath.pow(-1, i + 1) / (2 * i - 1));
-//            result[0] += value;
-//        }
-//    }
 
     public static void computePi(FloatArray input, @Reduce FloatArray result) {
         result.set(0, 0.0f);
@@ -61,9 +53,6 @@ public class PiComputation {
         FloatArray input = new FloatArray(size);
         FloatArray result = new FloatArray(1);
         result.init(0.0f);
-//        float[] input = new float[size];
-//        float[] result = new float[1];
-//        Arrays.fill(result, 0.0f);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//
@@ -78,7 +67,6 @@ public class PiComputation {
 
             IntStream.range(0, size).sequential().forEach(idx -> {
                 input.set(idx, 0);
-                //input[idx] = 0;
             });
 
             long start = System.nanoTime();
@@ -86,7 +74,6 @@ public class PiComputation {
             long end = System.nanoTime();
 
             final float piValue = result.get(0) * 4;
-            //final float piValue = result[0] * 4;
             System.out.println("PI VALUE: " + piValue);
             timers.add((end - start));
         }
