@@ -32,17 +32,11 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-import jdk.incubator.foreign.MemorySegment;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
@@ -70,7 +64,6 @@ import uk.ac.manchester.tornado.drivers.ptx.mm.PTXDoubleArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXFloatArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXIntArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXLongArrayWrapper;
-import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMemorySegmentWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMultiDimArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXObjectWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXShortArrayWrapper;
@@ -263,24 +256,6 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
         } else if (!type.isPrimitive()) {
             if (arg.getClass().getAnnotation(Vector.class) != null) {
                 result = new PTXVectorWrapper(getDeviceContext(), arg, batchSize);
-            } else if (arg instanceof MemorySegment) {
-                MemorySegment segment = (MemorySegment) arg;
-                result = new PTXMemorySegmentWrapper(segment, getDeviceContext());
-            } else if (arg instanceof IntArray) {
-                    MemorySegment segment = ((IntArray) arg).getSegment();
-                    result = new PTXMemorySegmentWrapper(segment, getDeviceContext());
-            } else if (arg instanceof FloatArray) {
-                    MemorySegment segment = ((FloatArray) arg).getSegment();
-                    result = new PTXMemorySegmentWrapper(segment, getDeviceContext());
-            } else if (arg instanceof DoubleArray) {
-                    MemorySegment segment = ((DoubleArray) arg).getSegment();
-                    result = new PTXMemorySegmentWrapper(segment, getDeviceContext());
-            } else if (arg instanceof LongArray) {
-                    MemorySegment segment = ((LongArray) arg).getSegment();
-                    result = new PTXMemorySegmentWrapper(segment, getDeviceContext());
-            } else if (arg instanceof ShortArray) {
-                    MemorySegment segment = ((ShortArray) arg).getSegment();
-                    result = new PTXMemorySegmentWrapper(segment, getDeviceContext());
             } else {
                 result = new PTXObjectWrapper(getDeviceContext(), arg);
             }

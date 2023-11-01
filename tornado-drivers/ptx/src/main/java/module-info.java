@@ -4,7 +4,6 @@ module tornado.drivers.ptx {
     requires transitive tornado.api;
     requires transitive tornado.runtime;
     requires tornado.drivers.common;
-    requires jdk.incubator.foreign;
 
     exports uk.ac.manchester.tornado.drivers.ptx;
     exports uk.ac.manchester.tornado.drivers.ptx.enums;
