@@ -39,7 +39,7 @@ import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.BoundCheckEliminationPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoFloatingReadReplacement;
-import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPanamaSegmentsHeader;
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPanamaSegmentsHeaderPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPartialLoopUnroll;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoMidTier;
@@ -49,7 +49,7 @@ public class OCLMidTier extends TornadoMidTier {
 
     public OCLMidTier(OptionValues options) {
 
-        appendPhase(new TornadoPanamaSegmentsHeader());
+        appendPhase(new TornadoPanamaSegmentsHeaderPhase());
 
         appendPhase(new ExceptionCheckingElimination());
 
