@@ -81,8 +81,7 @@ public class ReduceCodeAnalysis {
                 return true;
             } else if (node instanceof StartNode) {
                 hasPred = false;
-            } else if (node instanceof MergeNode) {
-                MergeNode merge = (MergeNode) node;
+            } else if (node instanceof MergeNode merge) {
                 EndNode endNode = merge.forwardEndAt(0);
                 node = endNode.predecessor();
             } else {
@@ -102,8 +101,7 @@ public class ReduceCodeAnalysis {
                 operations.add(REDUCE_OPERATION.SUM);
             } else if (operation instanceof MulNode) {
                 operations.add(REDUCE_OPERATION.MUL);
-            } else if (operation instanceof InvokeNode) {
-                InvokeNode invoke = (InvokeNode) operation;
+            } else if (operation instanceof InvokeNode invoke) {
                 if (invoke.callTarget().targetName().equals("Math.max")) {
                     operations.add(REDUCE_OPERATION.MAX);
                 } else if (invoke.callTarget().targetName().equals("Math.min")) {
@@ -159,23 +157,19 @@ public class ReduceCodeAnalysis {
             NodeIterable<Node> usages = parameterNode.usages();
             // Get Input-Range for the reduction loop
             for (Node node : usages) {
-                if (node instanceof StoreIndexedNode) {
-                    StoreIndexedNode store = (StoreIndexedNode) node;
+                if (node instanceof StoreIndexedNode store) {
                     if (!checkIfVarIsInLoop(store)) {
                         continue;
                     }
                     if (store.value() instanceof BinaryNode) {
                         ValueNode value = store.value();
                         reduceOperation.add(value);
-                    } else if (store.value() instanceof InvokeNode) {
-                        InvokeNode invoke = (InvokeNode) store.value();
+                    } else if (store.value() instanceof InvokeNode invoke) {
                         if (invoke.callTarget().targetName().startsWith("Math")) {
                             reduceOperation.add(invoke);
                         }
                     }
-                } else if (node instanceof MethodCallTargetNode) {
-                    MethodCallTargetNode method = (MethodCallTargetNode) node;
-
+                } else if (node instanceof MethodCallTargetNode method) {
                     if (method.inputs().filter(BinaryNode.class).isNotEmpty()) {
                         ValueNode value = method.inputs().filter(BinaryNode.class).first();
                         reduceOperation.add(value);
@@ -200,9 +194,7 @@ public class ReduceCodeAnalysis {
             NodeIterable<Node> usages = parameterNode.usages();
             // Get Input-Range for the reduction loop
             for (Node node : usages) {
-                if (node instanceof StoreAtomicIndexedNode) {
-                    StoreAtomicIndexedNode store = (StoreAtomicIndexedNode) node;
-
+                if (node instanceof StoreAtomicIndexedNode store) {
                     if (store.value() instanceof BinaryNode || store.value() instanceof BinaryArithmeticNode) {
                         ValueNode value = store.value();
                         reduceOperation.add(value);
@@ -212,14 +204,11 @@ public class ReduceCodeAnalysis {
                             reduceOperation.add(invoke);
                         }
                     }
-                } else if (node instanceof WriteAtomicNode) {
-                    WriteAtomicNode write = (WriteAtomicNode) node;
-
+                } else if (node instanceof WriteAtomicNode write) {
                     if (write.value() instanceof BinaryNode || write.value() instanceof BinaryArithmeticNode) {
                         ValueNode value = write.value();
                         reduceOperation.add(value);
-                    } else if (write.value() instanceof InvokeNode) {
-                        InvokeNode invoke = (InvokeNode) write.value();
+                    } else if (write.value() instanceof InvokeNode invoke) {
                         if (invoke.callTarget().targetName().startsWith("Math")) {
                             reduceOperation.add(invoke);
                         }
@@ -457,26 +446,20 @@ public class ReduceCodeAnalysis {
      *     Low value to include in the compile-graph
      */
     public static void performLoopBoundNodeSubstitution(StructuredGraph graph, int lowValue) {
-        for (Node n : graph.getNodes()) {
-            if (n instanceof LoopBeginNode) {
-                LoopBeginNode beginNode = (LoopBeginNode) n;
-                FixedNode node = beginNode.next();
-                while (!(node instanceof IfNode)) {
-                    node = (FixedNode) node.successors().first();
-                }
+        for (LoopBeginNode beginNode : graph.getNodes().filter(LoopBeginNode.class)) {
+            FixedNode node = beginNode.next();
+            while (!(node instanceof IfNode ifNode)) {
+                node = (FixedNode) node.successors().first();
+            }
 
-                IfNode ifNode = (IfNode) node;
-                LogicNode condition = ifNode.condition();
-                if (condition instanceof IntegerLessThanNode) {
-                    IntegerLessThanNode integer = (IntegerLessThanNode) condition;
-                    ValueNode x = integer.getX();
-                    final ConstantNode lowBound = graph.addOrUnique(ConstantNode.forInt(lowValue));
-                    if (x instanceof PhiNode) {
-                        // Node substitution
-                        PhiNode phi = (PhiNode) x;
-                        if (phi.valueAt(0) instanceof ConstantNode) {
-                            phi.setValueAt(0, lowBound);
-                        }
+            LogicNode condition = ifNode.condition();
+            if (condition instanceof IntegerLessThanNode integer) {
+                ValueNode x = integer.getX();
+                final ConstantNode lowBound = graph.addOrUnique(ConstantNode.forInt(lowValue));
+                if (x instanceof PhiNode phi) {
+                    // Node substitution
+                    if (phi.valueAt(0) instanceof ConstantNode) {
+                        phi.setValueAt(0, lowBound);
                     }
                 }
             }
