@@ -112,7 +112,6 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             }
         } else if (currentNode instanceof JavaReadNode) {
             JavaReadNode readNode = (JavaReadNode) currentNode;
-            //((OffsetAddressNode)readNode.getAddress()).getOffset();
             if (readNode.getAddress() instanceof OffsetAddressNode) {
                 OffsetAddressNode readAddress = (OffsetAddressNode) readNode.getAddress();
                 if (indexToStore instanceof OffsetAddressNode) {
