@@ -14,7 +14,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -123,11 +123,11 @@ class ReduceTaskGraph {
 
     /**
      * @param driverIndex
-     *            Index within the Tornado drivers' index
+     *     Index within the Tornado drivers' index
      * @param device
-     *            Index of the device within the Tornado's device list.
+     *     Index of the device within the Tornado's device list.
      * @param inputSize
-     *            Input size
+     *     Input size
      * @return Output array size
      */
     private static int obtainSizeArrayResult(int driverIndex, int device, int inputSize) {
@@ -149,9 +149,9 @@ class ReduceTaskGraph {
      * It computes the right local work group size for GPUs/FPGAs.
      *
      * @param device
-     *            Input device.
+     *     Input device.
      * @param globalWorkSize
-     *            Number of global threads to run.
+     *     Number of global threads to run.
      * @return Local Work Threads.
      */
     private static int calculateAcceleratorGroupSize(TornadoDevice device, long globalWorkSize) {
@@ -328,7 +328,7 @@ class ReduceTaskGraph {
      * either the GPU or the FPGA.
      *
      * @param targetDeviceToRun
-     *            index of the target device within the Tornado device list.
+     *     index of the target device within the Tornado device list.
      * @return boolean
      */
     private boolean isTaskEligibleSplitHostAndDevice(final int targetDeviceToRun, final long elementsReductionLeftOver) {
@@ -437,7 +437,7 @@ class ReduceTaskGraph {
      * sub-range that does not fit into the power-of-two part.
      *
      * @param metaReduceTable
-     *            Metadata to create all new tasks for the reductions dynamically.
+     *     Metadata to create all new tasks for the reductions dynamically.
      * @return {@link TaskGraph} with the new reduction
      */
     TaskGraph scheduleWithReduction(MetaReduceCodeAnalysis metaReduceTable) {
@@ -663,8 +663,8 @@ class ReduceTaskGraph {
                     continue;
                 }
                 if (!rewrittenTaskGraph.getArgumentsLookup().contains(parameter)) {
-                    throw new TornadoTaskRuntimeException(
-                            "Parameter #" + i + " <" + parameter + "> from task <" + task.getId() + "> not specified either in `transferToDevice` or `transferToHost` functions");
+                    throw new TornadoTaskRuntimeException("Parameter #" + i + " <" + parameter + "> from task <" + task
+                            .getId() + "> not specified either in `transferToDevice` or `transferToHost` functions");
                 }
             }
         }
@@ -785,80 +785,62 @@ class ReduceTaskGraph {
     }
 
     private void updateVariableFromAccelerator(Object originalReduceVariable, Object newArray) {
-        switch (newArray.getClass().getTypeName()) {
-            case "int[]":
-                ((int[]) originalReduceVariable)[0] = ((int[]) newArray)[0];
-                break;
-            case "float[]":
-                ((float[]) originalReduceVariable)[0] = ((float[]) newArray)[0];
-                break;
-            case "double[]":
-                ((double[]) originalReduceVariable)[0] = ((double[]) newArray)[0];
-                break;
-            case "long[]":
-                ((long[]) originalReduceVariable)[0] = ((long[]) newArray)[0];
-                break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.IntArray":
-                ((IntArray) originalReduceVariable).set(0, ((IntArray) newArray).get(0));
-                break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.FloatArray":
-                ((FloatArray) originalReduceVariable).set(0, ((FloatArray) newArray).get(0));
-                break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray":
-                ((DoubleArray) originalReduceVariable).set(0, ((DoubleArray) newArray).get(0));
-                break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.LongArray":
-                ((LongArray) originalReduceVariable).set(0, ((LongArray) newArray).get(0));
-                break;
-            default:
-                throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
+        switch (newArray) {
+            case int[] intArray -> ((int[]) originalReduceVariable)[0] = intArray[0];
+            case float[] floatArray -> ((float[]) originalReduceVariable)[0] = floatArray[0];
+            case double[] doubleArray -> ((double[]) originalReduceVariable)[0] = doubleArray[0];
+            case long[] longArray -> ((long[]) originalReduceVariable)[0] = longArray[0];
+            case IntArray panamaIntArray -> ((IntArray) originalReduceVariable).set(0, panamaIntArray.get(0));
+            case FloatArray panamaFloatArray -> ((FloatArray) originalReduceVariable).set(0, panamaFloatArray.get(0));
+            case DoubleArray panamaDoubleArray -> ((DoubleArray) originalReduceVariable).set(0, panamaDoubleArray.get(0));
+            case LongArray panamaLongArray -> ((LongArray) originalReduceVariable).set(0, panamaLongArray.get(0));
+            default -> new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
         }
     }
 
     private void mergeHybridMode(Object originalReduceVariable, Object newArray) {
-        switch (newArray.getClass().getTypeName()) {
-            case "int[]":
-                int a = ((int[]) hostHybridVariables.get(newArray))[0];
-                int b = ((int[]) newArray)[0];
-                ((int[]) originalReduceVariable)[0] = operateFinalReduction(a, b, hybridMergeTable.get(newArray));
-                break;
-            case "float[]":
-                float af = ((float[]) hostHybridVariables.get(newArray))[0];
-                float bf = ((float[]) newArray)[0];
-                ((float[]) originalReduceVariable)[0] = operateFinalReduction(af, bf, hybridMergeTable.get(newArray));
-                break;
-            case "double[]":
-                double ad = ((double[]) hostHybridVariables.get(newArray))[0];
-                double bd = ((double[]) newArray)[0];
-                ((double[]) originalReduceVariable)[0] = operateFinalReduction(ad, bd, hybridMergeTable.get(newArray));
-                break;
-            case "long[]":
-                long al = ((long[]) hostHybridVariables.get(newArray))[0];
-                long bl = ((long[]) newArray)[0];
-                ((long[]) originalReduceVariable)[0] = operateFinalReduction(al, bl, hybridMergeTable.get(newArray));
-                break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.IntArray":
-                int ani = ((IntArray) hostHybridVariables.get(newArray)).get(0);
-                int bni = ((IntArray) newArray).get(0);
-                ((IntArray) originalReduceVariable).set(0, operateFinalReduction(ani, bni, hybridMergeTable.get(newArray)));
-                break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.FloatArray":
-                float anf = ((FloatArray) hostHybridVariables.get(newArray)).get(0);
-                float bnf = ((FloatArray) newArray).get(0);
-                ((FloatArray) originalReduceVariable).set(0, operateFinalReduction(anf, bnf, hybridMergeTable.get(newArray)));
-                break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray":
-                double and = ((DoubleArray) hostHybridVariables.get(newArray)).get(0);
-                double bnd = ((DoubleArray) newArray).get(0);
-                ((DoubleArray) originalReduceVariable).set(0, operateFinalReduction(and, bnd, hybridMergeTable.get(newArray)));
-                break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.LongArray":
-                long anl = ((LongArray) hostHybridVariables.get(newArray)).get(0);
-                long bnl = ((LongArray) newArray).get(0);
-                ((LongArray) originalReduceVariable).set(0, operateFinalReduction(anl, bnl, hybridMergeTable.get(newArray)));
-                break;
-            default:
-                throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
+        switch (newArray) {
+            case int[] intArray -> {
+                int a = ((int[]) hostHybridVariables.get(intArray))[0];
+                int b = intArray[0];
+                ((int[]) originalReduceVariable)[0] = operateFinalReduction(a, b, hybridMergeTable.get(intArray));
+            }
+            case float[] floatArray -> {
+                float af = ((float[]) hostHybridVariables.get(floatArray))[0];
+                float bf = floatArray[0];
+                ((float[]) originalReduceVariable)[0] = operateFinalReduction(af, bf, hybridMergeTable.get(floatArray));
+            }
+            case double[] doubleArray -> {
+                double ad = ((double[]) hostHybridVariables.get(doubleArray))[0];
+                double bd = doubleArray[0];
+                ((double[]) originalReduceVariable)[0] = operateFinalReduction(ad, bd, hybridMergeTable.get(doubleArray));
+            }
+            case long[] longArray -> {
+                long al = ((long[]) hostHybridVariables.get(longArray))[0];
+                long bl = longArray[0];
+                ((long[]) originalReduceVariable)[0] = operateFinalReduction(al, bl, hybridMergeTable.get(longArray));
+            }
+            case IntArray panamaIntArray -> {
+                int ani = ((IntArray) hostHybridVariables.get(panamaIntArray)).get(0);
+                int bni = panamaIntArray.get(0);
+                ((IntArray) originalReduceVariable).set(0, operateFinalReduction(ani, bni, hybridMergeTable.get(panamaIntArray)));
+            }
+            case FloatArray panamaFloatArray -> {
+                float anf = ((FloatArray) hostHybridVariables.get(panamaFloatArray)).get(0);
+                float bnf = panamaFloatArray.get(0);
+                ((FloatArray) originalReduceVariable).set(0, operateFinalReduction(anf, bnf, hybridMergeTable.get(panamaFloatArray)));
+            }
+            case DoubleArray panamaDoubleArray -> {
+                double and = ((DoubleArray) hostHybridVariables.get(panamaDoubleArray)).get(0);
+                double bnd = panamaDoubleArray.get(0);
+                ((DoubleArray) originalReduceVariable).set(0, operateFinalReduction(and, bnd, hybridMergeTable.get(panamaDoubleArray)));
+            }
+            case LongArray panamaLongArray -> {
+                long anl = ((LongArray) hostHybridVariables.get(panamaLongArray)).get(0);
+                long bnl = panamaLongArray.get(0);
+                ((LongArray) originalReduceVariable).set(0, operateFinalReduction(anl, bnl, hybridMergeTable.get(panamaLongArray)));
+            }
+            default -> new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
         }
     }
 
@@ -939,11 +921,11 @@ class ReduceTaskGraph {
          * It runs a compiled method by Graal in HotSpot.
          *
          * @param taskPackage
-         *            {@link TaskPackage} metadata that stores the method parameters.
+         *     {@link TaskPackage} metadata that stores the method parameters.
          * @param code
-         *            {@link InstalledCode} code to be executed
+         *     {@link InstalledCode} code to be executed
          * @param hostHybridVariables
-         *            HashMap that relates the GPU buffer with the new CPU buffer.
+         *     HashMap that relates the GPU buffer with the new CPU buffer.
          */
         private void runBinaryCodeForReduction(TaskPackage taskPackage, InstalledCode code, Map<Object, Object> hostHybridVariables) {
             try {
