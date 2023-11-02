@@ -1107,7 +1107,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private TornadoTaskGraphInterface reduceAnalysis() {
         TornadoTaskGraphInterface abstractTaskGraph = null;
         if (analysisTaskGraph == null && !reduceAnalysis) {
-            analysisTaskGraph = ReduceCodeAnalysis.analysisTaskGraph(taskPackages);
+            analysisTaskGraph = ReduceCodeAnalysis.analyzeTaskGraph(taskPackages);
             reduceAnalysis = true;
             if (analysisTaskGraph != null && analysisTaskGraph.isValid()) {
                 rewriteTaskForReduceSkeleton(analysisTaskGraph);
