@@ -125,7 +125,6 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
         // identify the usages that need to be removed
         for (Node node : fixedGuardNode.usages()) {
             if (node instanceof PiNode pi && (pi.usages().filter(OffsetAddressNode.class).isNotEmpty())) {
-                // System.out.println(">> Remove pi " + pi);
                 for (OffsetAddressNode off : pi.usages().filter(OffsetAddressNode.class)) {
                     //OffsetAddressNode off = pi.usages().filter(OffsetAddressNode.class).first();
                     // if this address node is used by a javaread/javawrite node
