@@ -97,25 +97,20 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
      */
     private boolean recursiveCheck(ValueNode arrayToStore, ValueNode indexToStore, ValueNode currentNode) {
         boolean isReduction = false;
-        if (currentNode instanceof BinaryNode) {
-            BinaryNode value = (BinaryNode) currentNode;
+        if (currentNode instanceof BinaryNode value) {
             ValueNode x = value.getX();
             isReduction = recursiveCheck(arrayToStore, indexToStore, x);
             if (!isReduction) {
                 ValueNode y = value.getY();
                 return recursiveCheck(arrayToStore, indexToStore, y);
             }
-        } else if (currentNode instanceof LoadIndexedNode) {
-            LoadIndexedNode loadNode = (LoadIndexedNode) currentNode;
+        } else if (currentNode instanceof LoadIndexedNode loadNode) {
             if (loadNode.array() == arrayToStore && loadNode.index() == indexToStore) {
                 isReduction = true;
             }
-        } else if (currentNode instanceof JavaReadNode) {
-            JavaReadNode readNode = (JavaReadNode) currentNode;
-            if (readNode.getAddress() instanceof OffsetAddressNode) {
-                OffsetAddressNode readAddress = (OffsetAddressNode) readNode.getAddress();
-                if (indexToStore instanceof OffsetAddressNode) {
-                    OffsetAddressNode writeAddress = (OffsetAddressNode) indexToStore;
+        } else if (currentNode instanceof JavaReadNode readNode) {
+            if (readNode.getAddress() instanceof OffsetAddressNode readAddress) {
+                if (indexToStore instanceof OffsetAddressNode writeAddress) {
                     isReduction = writeAddress.valueEquals(readAddress);
                 }
             }
@@ -139,8 +134,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                 return true;
             } else if (node instanceof StartNode) {
                 hasPred = false;
-            } else if (node instanceof MergeNode) {
-                MergeNode merge = (MergeNode) node;
+            } else if (node instanceof MergeNode merge) {
                 EndNode endNode = merge.forwardEndAt(0);
                 node = endNode.predecessor();
             } else {
@@ -152,11 +146,9 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
 
     private ValueNode obtainInputArray(ValueNode currentNode, ValueNode outputArray) {
         ValueNode array = null;
-        if (currentNode instanceof StoreIndexedNode) {
-            StoreIndexedNode store = (StoreIndexedNode) currentNode;
+        if (currentNode instanceof StoreIndexedNode store) {
             return obtainInputArray(store.value(), store.array());
-        } else if (currentNode instanceof BinaryArithmeticNode) {
-            BinaryArithmeticNode<?> value = (BinaryArithmeticNode<?>) currentNode;
+        } else if (currentNode instanceof BinaryArithmeticNode<?> value) {
             array = obtainInputArray(value.getX(), outputArray);
             if (array == null) {
                 array = obtainInputArray(value.getY(), outputArray);
@@ -168,8 +160,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                     array = obtainInputArray(((BinaryNode) currentNode).getY(), outputArray);
                 }
             }
-        } else if (currentNode instanceof LoadIndexedNode) {
-            LoadIndexedNode loadNode = (LoadIndexedNode) currentNode;
+        } else if (currentNode instanceof LoadIndexedNode loadNode) {
             if (loadNode.array() != outputArray) {
                 array = loadNode.array();
             }
@@ -177,10 +168,8 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             return obtainInputArray(((JavaReadNode) currentNode).getAddress(), outputArray);
         } else if (currentNode instanceof OffsetAddressNode) {
             return obtainInputArray(((OffsetAddressNode) currentNode).getBase(), outputArray);
-        } else if (currentNode instanceof LoadFieldNode) {
-            LoadFieldNode ldf = (LoadFieldNode) currentNode;
-            if (ldf.getValue() instanceof PiNode) {
-                PiNode piNode = (PiNode) ldf.getValue();
+        } else if (currentNode instanceof LoadFieldNode loadFieldNode) {
+            if (loadFieldNode.getValue() instanceof PiNode piNode) {
                 ParameterNode parameterNode = piNode.inputs().filter(ParameterNode.class).first();
                 if (parameterNode != outputArray) {
                     array = parameterNode;
@@ -211,20 +200,17 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             throw new TornadoRuntimeException("\n\n[NODE REDUCTION NOT SUPPORTED] Node : " + store + " not supported yet.");
         }
 
-        if (storeValue instanceof AddNode) {
-            AddNode addNode = (AddNode) storeValue;
+        if (storeValue instanceof AddNode addNode) {
             final TornadoReduceAddNode atomicAdd = graph.addOrUnique(new TornadoReduceAddNode(addNode.getX(), addNode.getY()));
             accumulator = addNode.getY();
             value = atomicAdd;
             addNode.safeDelete();
-        } else if (storeValue instanceof MulNode) {
-            MulNode mulNode = (MulNode) storeValue;
+        } else if (storeValue instanceof MulNode mulNode) {
             final TornadoReduceMulNode atomicMultiplication = graph.addOrUnique(new TornadoReduceMulNode(mulNode.getX(), mulNode.getY()));
             accumulator = mulNode.getX();
             value = atomicMultiplication;
             mulNode.safeDelete();
-        } else if (storeValue instanceof SubNode) {
-            SubNode subNode = (SubNode) storeValue;
+        } else if (storeValue instanceof SubNode subNode) {
             final TornadoReduceSubNode atomicSub = graph.addOrUnique(new TornadoReduceSubNode(subNode.getX(), subNode.getY()));
             accumulator = subNode.getX();
             value = atomicSub;
@@ -259,22 +245,34 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         ValueNode inputArray = reductionNode.inputArray;
         ValueNode startNode = reductionNode.startNode;
         FixedWithNextNode storeNode = null;
-        if (node instanceof StoreIndexedNode) {
+        if (node instanceof StoreIndexedNode store) {
             StoreAtomicIndexedNodeExtension storeAtomicIndexedNodeExtension = new StoreAtomicIndexedNodeExtension(startNode);
             graph.addOrUnique(storeAtomicIndexedNodeExtension);
-            StoreIndexedNode store = (StoreIndexedNode) node;
             storeNode = graph.addOrUnique(new StoreAtomicIndexedNode(store.array(), store.index(), store.elementKind(), //
                     store.getBoundsCheck(), value, accumulator, inputArray, storeAtomicIndexedNodeExtension));
-        } else if (node instanceof JavaWriteNode) {
+        } else if (node instanceof JavaWriteNode javaWriteNode) {
             WriteAtomicNodeExtension writeAtomicNodeExtension = new WriteAtomicNodeExtension(startNode);
             graph.addOrUnique(writeAtomicNodeExtension);
-            JavaWriteNode jwrite = (JavaWriteNode) node;
-            storeNode = graph.addOrUnique(new WriteAtomicNode(jwrite.getWriteKind(), jwrite.getAddress(), value, accumulator, inputArray, outArray, writeAtomicNodeExtension));
+            storeNode = graph.addOrUnique(new WriteAtomicNode(javaWriteNode.getWriteKind(), javaWriteNode.getAddress(), value, accumulator, inputArray, outArray, writeAtomicNodeExtension));
         }
 
+        ValueNode arithmeticNode = getArithmeticNode(value, accumulator);
+
+        if (storeNode instanceof StoreAtomicIndexedNode storeAtomicIndexedNode) {
+            storeAtomicIndexedNode.setOptionalOperation(arithmeticNode);
+        } else if (storeNode instanceof WriteAtomicNode writeAtomicNode) {
+            writeAtomicNode.setOptionalOperation(arithmeticNode);
+        }
+
+        FixedNode next = node.next();
+        predecessor.replaceFirstSuccessor(node, storeNode);
+        node.replaceAndDelete(storeNode);
+        storeNode.setNext(next);
+    }
+
+    private static ValueNode getArithmeticNode(ValueNode value, ValueNode accumulator) {
         ValueNode arithmeticNode = null;
-        if (value instanceof TornadoReduceAddNode) {
-            TornadoReduceAddNode reduce = (TornadoReduceAddNode) value;
+        if (value instanceof TornadoReduceAddNode reduce) {
             if (reduce.getX() instanceof BinaryArithmeticNode) {
                 arithmeticNode = reduce.getX();
             } else if (reduce.getY() instanceof BinaryArithmeticNode) {
@@ -289,18 +287,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         if (arithmeticNode == null && accumulator instanceof BinaryNode) {
             arithmeticNode = accumulator;
         }
-
-        if (storeNode instanceof StoreAtomicIndexedNode) {
-            ((StoreAtomicIndexedNode) storeNode).setOptionalOperation(arithmeticNode);
-        } else if (storeNode instanceof WriteAtomicNode) {
-            ((WriteAtomicNode) storeNode).setOptionalOperation(arithmeticNode);
-        }
-
-        FixedNode next = node.next();
-
-        predecessor.replaceFirstSuccessor(node, storeNode);
-        node.replaceAndDelete(storeNode);
-        storeNode.setNext(next);
+        return arithmeticNode;
     }
 
     private boolean shouldSkip(int index, StructuredGraph graph) {
@@ -318,8 +305,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         NodeIterable<Node> usages = reduceParameter.usages();
 
         for (Node node : usages) {
-            if (node instanceof StoreIndexedNode) {
-                StoreIndexedNode store = (StoreIndexedNode) node;
+            if (node instanceof StoreIndexedNode store) {
 
                 boolean isReductionValue = checkIfReduction(store);
                 if (!isReductionValue) {
@@ -391,22 +377,19 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                 }
             }
 
-            if (node instanceof MergeNode) {
+            if (node instanceof MergeNode merge) {
                 // When having a merge node, we follow the path any merges. We
                 // choose the first
                 // one, but any path will be joined.
-                MergeNode merge = (MergeNode) node;
                 EndNode endNode = merge.forwardEndAt(0);
                 node = endNode.predecessor();
-            } else if (node instanceof LoopBeginNode) {
+            } else if (node instanceof LoopBeginNode loopBeginNode) {
                 // It could happen that the start index is controlled by a
                 // PhiNode instead of an
                 // if-condition. In this case, we get the PhiNode
-                LoopBeginNode loopBeginNode = (LoopBeginNode) node;
                 NodeIterable<Node> usages = loopBeginNode.usages();
                 for (Node u : usages) {
-                    if (u instanceof PhiNode) {
-                        PhiNode phiNode = (PhiNode) u;
+                    if (u instanceof PhiNode phiNode) {
                         startNode = phiNode.valueAt(0);
                         startFound = true;
                     }
