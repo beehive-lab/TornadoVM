@@ -14,7 +14,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -59,10 +59,7 @@ import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
-import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
@@ -237,15 +234,13 @@ public class ReduceCodeAnalysis {
     private static ArrayLengthNode inspectArrayLengthNode(Node aux) {
         ArrayLengthNode arrayLengthNode = null;
         aux = aux.successors().first();
-        if (aux instanceof IfNode) {
-            IfNode ifNode = (IfNode) aux;
+        if (aux instanceof IfNode ifNode) {
             LogicNode condition = ifNode.condition();
-            if (condition instanceof IntegerLessThanNode) {
-                IntegerLessThanNode iln = (IntegerLessThanNode) condition;
-                if (iln.getX() instanceof ArrayLengthNode) {
-                    arrayLengthNode = (ArrayLengthNode) iln.getX();
-                } else if (iln.getY() instanceof ArrayLengthNode) {
-                    arrayLengthNode = (ArrayLengthNode) iln.getY();
+            if (condition instanceof IntegerLessThanNode integerLessThanNode) {
+                if (integerLessThanNode.getX() instanceof ArrayLengthNode) {
+                    arrayLengthNode = (ArrayLengthNode) integerLessThanNode.getX();
+                } else if (integerLessThanNode.getY() instanceof ArrayLengthNode) {
+                    arrayLengthNode = (ArrayLengthNode) integerLessThanNode.getY();
                 }
             }
         }
@@ -255,15 +250,13 @@ public class ReduceCodeAnalysis {
     private static ValueNode inspectConstantNode(Node aux) {
         ConstantNode constantNode = null;
         aux = aux.successors().first();
-        if (aux instanceof IfNode) {
-            IfNode ifNode = (IfNode) aux;
+        if (aux instanceof IfNode ifNode) {
             LogicNode condition = ifNode.condition();
-            if (condition instanceof IntegerLessThanNode) {
-                IntegerLessThanNode iln = (IntegerLessThanNode) condition;
-                if (iln.getX() instanceof ConstantNode) {
-                    constantNode = (ConstantNode) iln.getX();
-                } else if (iln.getY() instanceof ConstantNode) {
-                    constantNode = (ConstantNode) iln.getY();
+            if (condition instanceof IntegerLessThanNode integerLessThanNode) {
+                if (integerLessThanNode.getX() instanceof ConstantNode) {
+                    constantNode = (ConstantNode) integerLessThanNode.getX();
+                } else if (integerLessThanNode.getY() instanceof ConstantNode) {
+                    constantNode = (ConstantNode) integerLessThanNode.getY();
                 }
             }
         }
@@ -274,81 +267,122 @@ public class ReduceCodeAnalysis {
         return graph.getNodes().filter(ParameterNode.class).count();
     }
 
+    private static void getInputRageForReductionNode(ParameterNode parameterNode, ArrayList<ValueNode> loopBound) {
+        // Get Input-Range for the reduction loop
+        for (Node node : parameterNode.usages()) {
+            if (node instanceof MethodCallTargetNode methodCallTargetNode) {
+                Node aux = methodCallTargetNode.usages().first();
+                if (!(aux instanceof InvokeNode)) {
+                    continue;
+                }
+                InvokeNode panamaStoreNode = (InvokeNode) aux;
+                if (!panamaStoreNode.getTargetMethod().getName().equals("set")) {
+                    continue;
+                }
+                LoopBeginNode loopBegin = null;
+                ValueNode loopBoundNode = null;
+
+                while (!(aux instanceof LoopBeginNode)) {
+                    // Move reference to predecessor (bottom-up traversal)
+                    if (aux instanceof MergeNode mergeNode) {
+                        aux = mergeNode.forwardEndAt(0);
+                    } else {
+                        aux = aux.predecessor();
+                    }
+
+                    if (aux instanceof StartNode) {
+                        // We reach the beginning of the graph
+                        break;
+                    } else if (aux instanceof LoopBeginNode) {
+                        loopBegin = (LoopBeginNode) aux;
+                    } else if (aux instanceof InvokeNode invokeNode) {
+                        if (invokeNode.getTargetMethod().getName().equals("getSize")) {
+                            ValueNode valueNode = invokeNode.callTarget().arguments().first();
+                            loopBoundNode = valueNode;
+                            loopBound.add(valueNode);
+                        }
+                    }
+                }
+
+                // If the loopBoundNode is still null, we look for ConstantNode as a loop bound
+                // instead of ArrayLength
+                if (loopBoundNode == null) {
+                    loopBoundNode = inspectConstantNode(aux);
+                }
+
+                if (loopBegin != null) {
+                    loopBound.add(Objects.requireNonNull(loopBoundNode));
+                }
+            } else if (node instanceof StoreIndexedNode) {
+                Node aux = node;
+                LoopBeginNode loopBegin = null;
+                ValueNode loopBoundNode = null;
+
+                while (!(aux instanceof LoopBeginNode)) {
+                    // Move reference to predecessor (bottom-up traversal)
+                    if (aux instanceof MergeNode mergeNode) {
+                        aux = mergeNode.forwardEndAt(0);
+                    } else {
+                        aux = aux.predecessor();
+                    }
+
+                    if (aux instanceof StartNode) {
+                        // We reach the beginning of the graph
+                        break;
+                    } else if (aux instanceof LoopBeginNode) {
+                        loopBegin = (LoopBeginNode) aux;
+                    } else if (aux instanceof ArrayLengthNode) {
+                        loopBoundNode = (ArrayLengthNode) aux;
+                    }
+                }
+
+                if (loopBoundNode == null) {
+                    // XXX: Patch to support PE when using ArrayLength at the beginning of the
+                    // method.
+                    // TODO: Find a better way to PE loop bounds
+                    loopBoundNode = inspectArrayLengthNode(aux);
+                }
+
+                // If the loopBoundNode is still null, we look for ConstantNode as a loop bound
+                // instead of ArrayLength
+                if (loopBoundNode == null) {
+                    loopBoundNode = inspectConstantNode(aux);
+                }
+
+                if (loopBegin != null) {
+                    if (loopBoundNode instanceof ArrayLengthNode) {
+                        loopBound.add(((ArrayLengthNode) Objects.requireNonNull(loopBoundNode)).array());
+                    } else {
+                        loopBound.add(Objects.requireNonNull(loopBoundNode));
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * A method can apply multiple reduction variables. We return a list of all its
      * loop bounds.
      *
      * @param graph
-     *            Graal-IR graph to be analyzed
+     *     Graal-IR graph to be analyzed
      * @param reduceIndexes
-     *            List of reduce indexes within the method parameter list
+     *     List of reduce indexes within the method parameter list
      * @return ArrayList<ValueNode>
      */
     private static ArrayList<ValueNode> findLoopUpperBoundNode(StructuredGraph graph, ArrayList<Integer> reduceIndexes) {
-        ArrayList<ValueNode> loopBound = new ArrayList<>();
+        ArrayList<ValueNode> loopBoundNodes = new ArrayList<>();
         for (Integer paramIndex : reduceIndexes) {
-
             if (!graph.method().isStatic()) {
                 paramIndex++;
             }
-
             if (shouldSkip(paramIndex, graph)) {
                 continue;
             }
-
             ParameterNode parameterNode = graph.getParameter(paramIndex);
-            NodeIterable<Node> usages = parameterNode.usages();
-
-            // Get Input-Range for the reduction loop
-            for (Node node : usages) {
-                if (node instanceof StoreIndexedNode) {
-                    Node aux = node;
-                    LoopBeginNode loopBegin = null;
-                    ValueNode loopBoundNode = null;
-
-                    while (!(aux instanceof LoopBeginNode)) {
-                        // Move reference to predecessor (bottom-up traversal)
-                        if (aux instanceof MergeNode) {
-                            MergeNode mergeNode = (MergeNode) aux;
-                            aux = mergeNode.forwardEndAt(0);
-                        } else {
-                            aux = aux.predecessor();
-                        }
-
-                        if (aux instanceof StartNode) {
-                            // We reach the beginning of the graph
-                            break;
-                        } else if (aux instanceof LoopBeginNode) {
-                            loopBegin = (LoopBeginNode) aux;
-                        } else if (aux instanceof ArrayLengthNode) {
-                            loopBoundNode = (ArrayLengthNode) aux;
-                        }
-                    }
-
-                    if (loopBoundNode == null) {
-                        // XXX: Patch to support PE when using ArrayLength at the beginning of the
-                        // method.
-                        // TODO: Find a better way to PE loop bounds
-                        loopBoundNode = inspectArrayLengthNode(aux);
-                    }
-
-                    // If the loopBoundNode is still null, we look for ConstantNode as a loop bound
-                    // instead of ArrayLength
-                    if (loopBoundNode == null) {
-                        loopBoundNode = inspectConstantNode(aux);
-                    }
-
-                    if (loopBegin != null) {
-                        if (loopBoundNode instanceof ArrayLengthNode) {
-                            loopBound.add(((ArrayLengthNode) Objects.requireNonNull(loopBoundNode)).array());
-                        } else {
-                            loopBound.add(Objects.requireNonNull(loopBoundNode));
-                        }
-                    }
-                }
-            }
+            getInputRageForReductionNode(parameterNode, loopBoundNodes);
         }
-        return loopBound;
+        return loopBoundNodes;
     }
 
     /**
@@ -384,31 +418,22 @@ public class ReduceCodeAnalysis {
                 continue;
             }
 
-            if (taskPackages.get(taskIndex).getTaskParameters()[1] instanceof FloatArray) {
-                FloatArray object = (FloatArray) taskPackages.get(taskIndex).getTaskParameters()[1];
-                inputSize = object.getSize();
-            } else if (taskPackages.get(taskIndex).getTaskParameters()[1] instanceof IntArray) {
-                IntArray object = (IntArray) taskPackages.get(taskIndex).getTaskParameters()[1];
-                inputSize = object.getSize();
-            } else if (taskPackages.get(taskIndex).getTaskParameters()[1] instanceof DoubleArray) {
-                DoubleArray object = (DoubleArray) taskPackages.get(taskIndex).getTaskParameters()[1];
-                inputSize = object.getSize();
-            } else if (taskPackages.get(taskIndex).getTaskParameters()[1] instanceof LongArray) {
-                LongArray object = (LongArray) taskPackages.get(taskIndex).getTaskParameters()[1];
-                inputSize = object.getSize();
-            } else {
-                // Perform PE to obtain the value of the upper-bound loop
-                ArrayList<ValueNode> loopBound = findLoopUpperBoundNode(graph, reduceIndices);
-                for (int i = 0; i < graph.method().getParameters().length; i++) {
-                    for (ValueNode valueNode : loopBound) {
-                        int position = !graph.method().isStatic() ? i + 1 : i;
-                        if (valueNode.equals(graph.getParameter(position))) {
-                            Object object = taskPackages.get(taskIndex).getTaskParameters()[i + 1];
+            // Perform Partial Evaluation (PE) to obtain the value of the upper-bound loop
+            ArrayList<ValueNode> loopBound = findLoopUpperBoundNode(graph, reduceIndices);
+            for (int i = 0; i < graph.method().getParameters().length; i++) {
+                for (ValueNode valueNode : loopBound) {
+                    int position = !graph.method().isStatic() ? i + 1 : i;
+                    if (valueNode.equals(graph.getParameter(position))) {
+                        Object object = taskPackages.get(taskIndex).getTaskParameters()[i + 1];
+                        if (object instanceof TornadoNativeArray tornadoNativeArray) {
+                            inputSize = tornadoNativeArray.getSize();
+                        } else if (object.getClass().isArray()) {
                             inputSize = Array.getLength(object);
-                        } else if (valueNode instanceof ConstantNode) {
-                            ConstantNode constant = (ConstantNode) valueNode;
-                            inputSize = Integer.parseInt(constant.getValue().toValueString());
+                        } else {
+                            throw new TornadoRuntimeException("[ERROR] Unsupported type for reductions: " + object.getClass());
                         }
+                    } else if (valueNode instanceof ConstantNode constant) {
+                        inputSize = Integer.parseInt(constant.getValue().toValueString());
                     }
                 }
             }
@@ -424,9 +449,9 @@ public class ReduceCodeAnalysis {
      * It performs a loop-range substitution for the lower part of the reduction.
      *
      * @param graph
-     *            Input Graal {@link StructuredGraph}
+     *     Input Graal {@link StructuredGraph}
      * @param lowValue
-     *            Low value to include in the compile-graph
+     *     Low value to include in the compile-graph
      */
     public static void performLoopBoundNodeSubstitution(StructuredGraph graph, int lowValue) {
         for (Node n : graph.getNodes()) {
