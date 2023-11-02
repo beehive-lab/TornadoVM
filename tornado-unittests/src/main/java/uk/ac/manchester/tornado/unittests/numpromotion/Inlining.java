@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,40 +38,13 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.numpromotion.Inlining
+ * tornado-test -V uk.ac.manchester.tornado.unittests.numpromotion.Inlining
  * </code>
  */
 public class Inlining extends TornadoTestBase {
 
     public static void bitwiseOr(ByteArray result, ByteArray input, ByteArray elements) {
         result.set(0, (byte) (result.get(0) | input.get(1)));
-    }
-
-    @Test
-    public void test0() {
-
-        ByteArray elements = new ByteArray(1);
-        elements.init((byte) 4);
-        ByteArray result = new ByteArray(4);
-        ByteArray input = new ByteArray(8);
-        input.set(0, (byte) 127);
-        input.set(1, (byte) 127);
-        input.set(2, (byte) 127);
-        input.set(3, (byte) 127);
-        input.set(4, (byte) 1);
-        input.set(5, (byte) 1);
-        input.set(6, (byte) 1);
-        input.set(7, (byte) 1);
-
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements) //
-                .task("t0", Inlining::bitwiseOr, result, input, elements) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
-
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
-
     }
 
     public static int b2i(byte v) {
@@ -117,6 +90,25 @@ public class Inlining extends TornadoTestBase {
             byte r = rgbBytes.get(i);
             greyInts.set(i, grey(r));
         }
+    }
+
+    @Test
+    public void test0() {
+
+        ByteArray elements = new ByteArray(1);
+        elements.init((byte) 4);
+        ByteArray result = new ByteArray(4);
+        ByteArray input = new ByteArray((byte) 127, (byte) 127, (byte) 127, (byte) 127, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements) //
+                .task("t0", Inlining::bitwiseOr, result, input, elements) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+
     }
 
     @TornadoNotSupported
