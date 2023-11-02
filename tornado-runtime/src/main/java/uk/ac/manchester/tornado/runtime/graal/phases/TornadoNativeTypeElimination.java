@@ -75,7 +75,7 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
             if (loadFieldSegment.toString().contains("segment")) {
 
                 // Remove the loadField#baseIndex and replace it with a Constant value
-                if (loadFieldSegment.successors().first()instanceof LoadFieldNode baseIndexNode) {
+                if (loadFieldSegment.successors().first() instanceof LoadFieldNode baseIndexNode) {
                     int elementKindSize = getElementKindSize(baseIndexNode);
                     int panamaObjectHeaderSize = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
                     int baseIndexPosition = panamaObjectHeaderSize / elementKindSize;
@@ -99,7 +99,7 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
                 if (loadFieldSegment.predecessor() instanceof FixedGuardNode) {
                     FixedGuardNode fixedGuardNode = (FixedGuardNode) loadFieldSegment.predecessor();
                     deleteFixed(loadFieldSegment);
-                    if (fixedGuardNode.predecessor()instanceof LoadFieldNode ldf) {
+                    if (fixedGuardNode.predecessor() instanceof LoadFieldNode ldf) {
                         removeFixedGuardNodes(fixedGuardNode, ldf);
                     }
                 } else {
@@ -133,11 +133,11 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
                 //NOTE: This is a special case where Graal includes additional FixedGuardNodes during sketching
                 // It was encountered in the TestMatrixTypes unittest
                 nodesToBeRemoved.add(piNode);
-                LoadHubNode ldhub = piNode.usages().filter(LoadHubNode.class).first();
-                nodesToBeRemoved.add(ldhub);
-                for (Node pointerEqualsNode : ldhub.usages().filter(PointerEqualsNode.class)) {
+                LoadHubNode loadHubNode = piNode.usages().filter(LoadHubNode.class).first();
+                nodesToBeRemoved.add(loadHubNode);
+                for (Node pointerEqualsNode : loadHubNode.usages().filter(PointerEqualsNode.class)) {
                     nodesToBeRemoved.add(pointerEqualsNode);
-                    // the constant node assosiated with the PointerEquals node is not necessary and should also be removed
+                    // the constant node associated with the PointerEquals node is not necessary and should also be removed
                     nodesToBeRemoved.add(pointerEqualsNode.inputs().filter(ConstantNode.class).first());
                     if (pointerEqualsNode.usages().filter(FixedGuardNode.class).isNotEmpty()) {
                         FixedGuardNode typeCheckingFixed = pointerEqualsNode.usages().filter(FixedGuardNode.class).first();
@@ -177,8 +177,7 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
     }
 
     private static void deleteFixedGuardAndInputNodes(ArrayList<Node> nodesToBeRemoved) {
-        for (int i = 0; i < nodesToBeRemoved.size(); i++) {
-            Node n = nodesToBeRemoved.get(i);
+        for (Node n : nodesToBeRemoved) {
             if (n != null && !n.isDeleted()) {
                 if (n instanceof FixedGuardNode) {
                     deleteFixed(n);
