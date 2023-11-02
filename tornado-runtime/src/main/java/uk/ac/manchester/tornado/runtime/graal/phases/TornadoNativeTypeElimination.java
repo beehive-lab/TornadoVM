@@ -165,11 +165,6 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
 
     private static boolean piNodeUsageReplacement(OffsetAddressNode off, PiNode piNode, LoadFieldNode loadFieldSegment) {
         if (off.usages().filter(JavaReadNode.class).isNotEmpty() || off.usages().filter(JavaWriteNode.class).isNotEmpty() || off.usages().filter(WriteAtomicNode.class).isNotEmpty()) {
-
-            if (piNode.inputs().filter(ParameterNode.class).isNotEmpty()) {
-                return false;
-            }
-
             if (piNode.inputs().filter(LoadFieldNode.class).isNotEmpty()) {
                 LoadFieldNode ldf = piNode.inputs().filter(LoadFieldNode.class).first();
                 off.replaceFirstInput(piNode, ldf);
@@ -178,7 +173,7 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
             }
             return true;
         }
-        return true;
+        return false;
     }
 
     private static void deleteFixedGuardAndInputNodes(ArrayList<Node> nodesToBeRemoved) {
