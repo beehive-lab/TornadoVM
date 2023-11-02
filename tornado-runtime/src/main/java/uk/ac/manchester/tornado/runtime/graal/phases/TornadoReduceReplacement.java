@@ -121,7 +121,6 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                 }
             }
 
-            // isReduction = ((OffsetAddressNode) indexToStore).getOffset().valueEquals(((OffsetAddressNode)readNode.getAddress()).getOffset());
         }
         return isReduction;
     }
