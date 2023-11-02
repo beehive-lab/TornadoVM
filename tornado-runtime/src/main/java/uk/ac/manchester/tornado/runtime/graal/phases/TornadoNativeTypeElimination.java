@@ -90,16 +90,12 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
                     removeFixedGuardNodes(fixedGuardNode, loadFieldSegment);
                 }
 
-                for (Node in : loadFieldSegment.inputs()) {
-                    if (in instanceof PiNode) {
-                        for (Node us : loadFieldSegment.usages()) {
-                            if (us instanceof OffsetAddressNode) { // USAGE IS PI
-                                us.replaceFirstInput(loadFieldSegment, in);
-                            }
-                        }
-                        break;
+                for (PiNode piNode : loadFieldSegment.inputs().filter(PiNode.class)) {
+                    for (OffsetAddressNode offsetAddressNode : loadFieldSegment.usages().filter(OffsetAddressNode.class)) {
+                        offsetAddressNode.replaceFirstInput(loadFieldSegment, piNode);
                     }
                 }
+
                 if (loadFieldSegment.predecessor() instanceof FixedGuardNode) {
                     FixedGuardNode fixedGuardNode = (FixedGuardNode) loadFieldSegment.predecessor();
                     deleteFixed(loadFieldSegment);
@@ -113,7 +109,7 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
         }
     }
 
-    public static void removeFixedGuardNodes(FixedGuardNode fixedGuardNode, LoadFieldNode loadFieldSegment) {
+    private static void removeFixedGuardNodes(FixedGuardNode fixedGuardNode, LoadFieldNode loadFieldSegment) {
         ArrayList<Node> nodesToBeRemoved = new ArrayList<>();
         nodesToBeRemoved.add(fixedGuardNode);
         for (Node node : fixedGuardNode.inputs()) {
@@ -124,61 +120,35 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
 
         // identify the usages that need to be removed
         for (Node node : fixedGuardNode.usages()) {
-            if (node instanceof PiNode pi && (pi.usages().filter(OffsetAddressNode.class).isNotEmpty())) {
-                // System.out.println(">> Remove pi " + pi);
-                for (OffsetAddressNode off : pi.usages().filter(OffsetAddressNode.class)) {
-                    //OffsetAddressNode off = pi.usages().filter(OffsetAddressNode.class).first();
-                    // if this address node is used by a javaread/javawrite node
-                    if (off.usages().filter(JavaReadNode.class).isNotEmpty() //
-                            || off.usages().filter(JavaWriteNode.class).isNotEmpty() //
-                            || off.usages().filter(WriteAtomicNode.class).isNotEmpty()) {
-
-                        if (pi.inputs().filter(ParameterNode.class).isNotEmpty()) {
-                            return;
-                        }
-
-                        if (pi.inputs().filter(LoadFieldNode.class).isNotEmpty()) {
-                            LoadFieldNode ldf = pi.inputs().filter(LoadFieldNode.class).first();
-                            off.replaceFirstInput(pi, ldf);
-                        } else {
-                            off.replaceFirstInput(pi, loadFieldSegment);
-                        }
-                        nodesToBeRemoved.add(pi);
+            if (node instanceof PiNode piNode && (piNode.usages().filter(OffsetAddressNode.class).isNotEmpty())) {
+                for (OffsetAddressNode offsetAddressNode : piNode.usages().filter(OffsetAddressNode.class)) {
+                    if (piHasParameterInput(piNode)) {
+                        return;
+                    }
+                    if (piNodeUsageReplacement(offsetAddressNode, piNode, loadFieldSegment)) {
+                        nodesToBeRemoved.add(piNode);
                     }
                 }
-            } else if (node instanceof PiNode pi && (pi.usages().filter(LoadHubNode.class).isNotEmpty())) {
+            } else if (node instanceof PiNode piNode && (piNode.usages().filter(LoadHubNode.class).isNotEmpty())) {
                 //NOTE: This is a special case where Graal includes additional FixedGuardNodes during sketching
                 // It was encountered in the TestMatrixTypes unittest
-                nodesToBeRemoved.add(pi);
-                LoadHubNode ldhub = pi.usages().filter(LoadHubNode.class).first();
+                nodesToBeRemoved.add(piNode);
+                LoadHubNode ldhub = piNode.usages().filter(LoadHubNode.class).first();
                 nodesToBeRemoved.add(ldhub);
-                for (Node ldhubUsage : ldhub.usages()) {
-                    if (ldhubUsage instanceof PointerEqualsNode) {
-                        nodesToBeRemoved.add(ldhubUsage);
-                        nodesToBeRemoved.add(ldhubUsage.inputs().filter(ConstantNode.class).first());
-                        if (ldhubUsage.usages().filter(FixedGuardNode.class).isNotEmpty()) {
-                            FixedGuardNode typeCheckingFixed = ldhubUsage.usages().filter(FixedGuardNode.class).first();
-                            nodesToBeRemoved.add(typeCheckingFixed);
-                            for (Node fxus : typeCheckingFixed.usages()) {
-                                if (fxus instanceof PiNode piF && (piF.usages().filter(OffsetAddressNode.class).isNotEmpty())) {
-                                    OffsetAddressNode off = piF.usages().filter(OffsetAddressNode.class).first();
-                                    // if this address node is used by a javaread/javawrite node
-                                    if (off.usages().filter(JavaReadNode.class).isNotEmpty() //
-                                            || off.usages().filter(JavaWriteNode.class).isNotEmpty() //
-                                            || off.usages().filter(WriteAtomicNode.class).isNotEmpty()) {
-
-                                        if (piF.inputs().filter(ParameterNode.class).isNotEmpty()) {
-                                            return;
-                                        }
-
-                                        if (piF.inputs().filter(LoadFieldNode.class).isNotEmpty()) {
-                                            LoadFieldNode ldf = pi.inputs().filter(LoadFieldNode.class).first();
-                                            off.replaceFirstInput(piF, ldf);
-                                        } else {
-                                            off.replaceFirstInput(piF, loadFieldSegment);
-                                        }
-                                        nodesToBeRemoved.add(piF);
-                                    }
+                for (Node pointerEqualsNode : ldhub.usages().filter(PointerEqualsNode.class)) {
+                    nodesToBeRemoved.add(pointerEqualsNode);
+                    // the constant node assosiated with the PointerEquals node is not necessary and should also be removed
+                    nodesToBeRemoved.add(pointerEqualsNode.inputs().filter(ConstantNode.class).first());
+                    if (pointerEqualsNode.usages().filter(FixedGuardNode.class).isNotEmpty()) {
+                        FixedGuardNode typeCheckingFixed = pointerEqualsNode.usages().filter(FixedGuardNode.class).first();
+                        nodesToBeRemoved.add(typeCheckingFixed);
+                        for (PiNode piNodeOfTypeCheckingFixed : typeCheckingFixed.usages().filter(PiNode.class)) {
+                            for (OffsetAddressNode offsetAddressNode : piNodeOfTypeCheckingFixed.usages().filter(OffsetAddressNode.class)) {
+                                if (piHasParameterInput(piNodeOfTypeCheckingFixed)) {
+                                    return;
+                                }
+                                if (piNodeUsageReplacement(offsetAddressNode, piNodeOfTypeCheckingFixed, loadFieldSegment)) {
+                                    nodesToBeRemoved.add(piNodeOfTypeCheckingFixed);
                                 }
                             }
                         }
@@ -186,7 +156,32 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
                 }
             }
         }
+        deleteFixedGuardAndInputNodes(nodesToBeRemoved);
+    }
 
+    private static boolean piHasParameterInput(PiNode piNode) {
+        return piNode.inputs().filter(ParameterNode.class).isNotEmpty();
+    }
+
+    private static boolean piNodeUsageReplacement(OffsetAddressNode off, PiNode piNode, LoadFieldNode loadFieldSegment) {
+        if (off.usages().filter(JavaReadNode.class).isNotEmpty() || off.usages().filter(JavaWriteNode.class).isNotEmpty() || off.usages().filter(WriteAtomicNode.class).isNotEmpty()) {
+
+            if (piNode.inputs().filter(ParameterNode.class).isNotEmpty()) {
+                return false;
+            }
+
+            if (piNode.inputs().filter(LoadFieldNode.class).isNotEmpty()) {
+                LoadFieldNode ldf = piNode.inputs().filter(LoadFieldNode.class).first();
+                off.replaceFirstInput(piNode, ldf);
+            } else {
+                off.replaceFirstInput(piNode, loadFieldSegment);
+            }
+            return true;
+        }
+        return true;
+    }
+
+    private static void deleteFixedGuardAndInputNodes(ArrayList<Node> nodesToBeRemoved) {
         for (int i = 0; i < nodesToBeRemoved.size(); i++) {
             Node n = nodesToBeRemoved.get(i);
             if (n != null && !n.isDeleted()) {
@@ -199,7 +194,7 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
         }
     }
 
-    public static void deleteFixed(Node node) {
+    private static void deleteFixed(Node node) {
         if (!node.isDeleted()) {
             Node predecessor = node.predecessor();
             Node successor = node.successors().first();
