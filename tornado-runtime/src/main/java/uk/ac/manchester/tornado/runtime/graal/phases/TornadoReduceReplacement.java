@@ -422,18 +422,6 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         }
     }
 
-    private static class ReductionMetadataNode {
-        private final ValueNode value;
-        private final ValueNode accumulator;
-        private final ValueNode inputArray;
-        private final ValueNode startNode;
-
-        ReductionMetadataNode(ValueNode value, ValueNode accumulator, ValueNode inputArray, ValueNode startNode) {
-            super();
-            this.value = value;
-            this.accumulator = accumulator;
-            this.inputArray = inputArray;
-            this.startNode = startNode;
-        }
+    private record ReductionMetadataNode(ValueNode value, ValueNode accumulator, ValueNode inputArray, ValueNode startNode) {
     }
 }
