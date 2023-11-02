@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,10 @@
 
 package uk.ac.manchester.tornado.examples.reductions;
 
+import java.util.ArrayList;
+import java.util.Random;
+import java.util.stream.IntStream;
+
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -26,16 +30,12 @@ import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
-import java.util.ArrayList;
-import java.util.Random;
-import java.util.stream.IntStream;
-
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.reductions.ReductionAddFloats
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.reductions.ReductionAddFloats
  * </code>
  *
  */
@@ -44,14 +44,11 @@ public class ReductionAddFloats {
     public static void reductionAddFloats(FloatArray input, @Reduce FloatArray result) {
         for (@Parallel int i = 0; i < input.getSize(); i++) {
             result.set(0, result.get(0) + input.get(i));
-           // result[0] += input[i];
         }
     }
 
     public void run(int size) {
 
-//        float[] input = new float[size];
-//        float[] result = new float[1];
         FloatArray input = new FloatArray(size);
         FloatArray result = new FloatArray(1);
 

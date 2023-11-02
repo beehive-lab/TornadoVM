@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,38 +18,39 @@
 
 package uk.ac.manchester.tornado.examples.reductions;
 
+import java.util.ArrayList;
+import java.util.Random;
+import java.util.stream.IntStream;
+
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-
-import java.util.ArrayList;
-import java.util.Random;
-import java.util.stream.IntStream;
 
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.reductions.ReductionIrregular
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.reductions.ReductionIrregular
  * </code>
  *
  */
 public class ReductionIrregular {
 
-    private static void reduceFloats(float[] input, @Reduce float[] output) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            output[0] += input[i];
+    private static void reduceFloats(FloatArray input, @Reduce FloatArray output) {
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            output.set(0, output.get(0) + input.get(i));
         }
     }
 
     private void run(final int inputSize) {
 
-        float[] input = new float[inputSize];
-        float[] result = new float[] { 0.0f };
+        FloatArray input = new FloatArray(inputSize);
+        FloatArray result = new FloatArray(0.0f);
         Random r = new Random(101);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -61,12 +62,12 @@ public class ReductionIrregular {
         TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
 
         ArrayList<Long> timers = new ArrayList<>();
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < ConfigurationReduce.MAX_ITERATIONS; i++) {
 
             IntStream.range(0, inputSize).parallel().forEach(idx -> {
-                input[idx] = r.nextFloat();
+                input.set(idx, r.nextFloat());
             });
-            float[] sequential = new float[1];
+            FloatArray sequential = new FloatArray(1);
             reduceFloats(input, sequential);
 
             long start = System.nanoTime();
@@ -74,14 +75,14 @@ public class ReductionIrregular {
             long end = System.nanoTime();
             timers.add((end - start));
 
-            if (Math.abs(sequential[0] - result[0]) > 0.1f) {
-                System.out.println("Result is not correct - iteration: " + i + " expected: " + sequential[0] + " but found: " + result[0]);
+            if (Math.abs(sequential.get(0) - result.get(0)) > 0.1f) {
+                System.out.println("Result is not correct - iteration: " + i + " expected: " + sequential.get(0) + " but found: " + result.get(0));
             } else {
                 System.out.println("Iteration: " + i + " is correct");
             }
         }
 
-       // System.out.println("Median TotalTime: " + Stats.computeMedian(timers));
+        System.out.println("Median TotalTime: " + Stats.computeMedian(timers));
 
     }
 

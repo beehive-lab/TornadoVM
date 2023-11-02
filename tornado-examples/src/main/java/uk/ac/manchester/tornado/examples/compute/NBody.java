@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,8 @@
 
 package uk.ac.manchester.tornado.examples.compute;
 
+import static uk.ac.manchester.tornado.api.profiler.ChromeEventTracer.enqueueTaskIfEnabled;
+
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -26,14 +28,12 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
-import static uk.ac.manchester.tornado.api.profiler.ChromeEventTracer.enqueueTaskIfEnabled;
-
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.NBody
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.NBody
  * </code>
  */
 public class NBody {
@@ -44,17 +44,16 @@ public class NBody {
         for (@Parallel int i = 0; i < numBodies; i++) {
             int body = 4 * i;
 
-            float[] acc = new float[] {0.0f, 0.0f, 0.0f};
-            //FloatArray acc = new FloatArray(3);
-            //acc.init(0.0f);
+            float[] acc = new float[] { 0.0f, 0.0f, 0.0f };
+
             for (int j = 0; j < numBodies; j++) {
-                FloatArray r = new FloatArray(3);
+                float[] r = new float[3];
                 int index = 4 * j;
 
                 float distSqr = 0.0f;
                 for (int k = 0; k < 3; k++) {
-                    r.set(k, refPos.get(index + k) - refPos.get(body + k));
-                    distSqr += r.get(k) * r.get(k);
+                    r[k] = refPos.get(index + k) - refPos.get(body + k);
+                    distSqr += r[k] * r[k];
                 }
 
                 float invDist = (float) (1.0f / Math.sqrt(distSqr + espSqr));
@@ -63,7 +62,7 @@ public class NBody {
                 float s = refPos.get(index + 3) * invDistCube;
 
                 for (int k = 0; k < 3; k++) {
-                    acc[k] += s * r.get(k);
+                    acc[k] += s * r[k];
                 }
             }
             for (int k = 0; k < 3; k++) {
@@ -90,9 +89,9 @@ public class NBody {
     }
 
     public static void main(String[] args) {
-        float delT,espSqr;
-        FloatArray posSeq,velSeq;
-        FloatArray posTornadoVM,velTornadoVM;
+        float delT, espSqr;
+        FloatArray posSeq, velSeq;
+        FloatArray posTornadoVM, velTornadoVM;
 
         StringBuffer resultsIterations = new StringBuffer();
 

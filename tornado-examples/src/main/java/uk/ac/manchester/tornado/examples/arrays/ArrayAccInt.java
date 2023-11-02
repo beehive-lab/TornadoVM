@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.arrays.ArrayAccInt
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.arrays.ArrayAccInt
  * </code>
  */
 public class ArrayAccInt {
@@ -38,7 +38,6 @@ public class ArrayAccInt {
     public static void acc(IntArray a, int value) {
         for (@Parallel int i = 0; i < a.getSize(); i++) {
             a.set(i, a.get(i) + value);
-           // a[i] += value;
         }
     }
 

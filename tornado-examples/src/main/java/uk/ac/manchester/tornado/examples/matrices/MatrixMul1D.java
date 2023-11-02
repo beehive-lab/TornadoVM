@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -36,7 +36,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.matrices.MatrixMul1D
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.matrices.MatrixMul1D
  * </code>
  *
  */
@@ -51,9 +51,7 @@ public class MatrixMul1D {
                 float sum = 0.0f;
                 for (int k = 0; k < size; k++) {
                     sum += A.get((i * size) + k) * B.get((k * size) + j);
-                    //sum += A[(i * size) + k] * B[(k * size) + j];
                 }
-                //C[(i * size) + j] = sum;
                 C.set((i * size) + j, sum);
             }
         }
@@ -94,7 +92,7 @@ public class MatrixMul1D {
         }
 
         // Time CUDA
-        long start,stop;
+        long start, stop;
         long[] execTimesCUDA = new long[EXECUTE_ITERATIONS];
         for (int i = 0; i < execTimesCUDA.length; i++) {
             start = System.currentTimeMillis();

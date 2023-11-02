@@ -191,7 +191,6 @@ public class VectorFloat2 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        //TODO: Check if this is correct
         return storage.getSegment().asByteBuffer().asFloatBuffer();
     }
 

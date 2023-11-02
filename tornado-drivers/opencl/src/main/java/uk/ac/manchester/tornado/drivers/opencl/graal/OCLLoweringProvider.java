@@ -187,9 +187,9 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         } else if (node instanceof StoreIndexedNode) {
             lowerStoreIndexedNode((StoreIndexedNode) node, tool);
         } else if (node instanceof StoreAtomicIndexedNode) {
-            lowerStoreAtomicsReduction(node, tool);
+            lowerReduceSnippets(node, tool);
         } else if (node instanceof WriteAtomicNode) {
-            lowerWriteAtomicsReduction((WriteAtomicNode) node, tool);
+            lowerReduceSnippets(node, tool);
         } else if (node instanceof LoadFieldNode) {
             lowerLoadFieldNode((LoadFieldNode) node, tool);
         } else if (node instanceof StoreFieldNode) {
@@ -305,47 +305,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             } else if (node instanceof WriteAtomicNode writeAtomicNode) {
                 gpuReduceSnippets.lower(writeAtomicNode, threadID, oclGlobalSize, tool);
             }
-        }
-    }
-
-    private void lowerStoreAtomicsReduction(Node node, LoweringTool tool) {
-        StoreAtomicIndexedNode storeAtomicNode = (StoreAtomicIndexedNode) node;
-        if (USE_ATOMICS) {
-            lowerAtomicStoreIndexedNode(storeAtomicNode);
-        } else {
-            lowerReduceSnippets(storeAtomicNode, tool);
-        }
-    }
-
-    private void lowerAtomicWriteNode(WriteAtomicNode writeAtomicNode) {
-        StructuredGraph graph = writeAtomicNode.graph();
-        JavaKind elementKind = writeAtomicNode.getElementKind();
-
-        ValueNode value = writeAtomicNode.value();
-        ValueNode array = writeAtomicNode.getInputArray();
-        ValueNode accumulator = writeAtomicNode.getAccumulator();
-
-        ATOMIC_OPERATION operation = ATOMIC_OPERATION.CUSTOM;
-        if (value instanceof TornadoReduceAddNode) {
-            operation = ATOMIC_OPERATION.ADD;
-        } else if (value instanceof TornadoReduceSubNode) {
-            operation = ATOMIC_OPERATION.SUB;
-        } else if (value instanceof TornadoReduceMulNode) {
-            operation = ATOMIC_OPERATION.MUL;
-        }
-
-        AddressNode address = createArrayAddress(graph, array, elementKind, writeAtomicNode.getIndex());
-        OCLWriteAtomicNode memoryWrite = graph.add(new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, BarrierType.NONE, accumulator, accumulator.stamp(
-                NodeView.DEFAULT), writeAtomicNode.getElementKind(), operation));
-        graph.replaceFixedWithFixed(writeAtomicNode, memoryWrite);
-    }
-
-    protected void lowerWriteAtomicsReduction(WriteAtomicNode jwrite, LoweringTool tool) {
-        if (USE_ATOMICS) {
-            //TODO: Fix this
-            lowerAtomicWriteNode(jwrite);
-        } else {
-            lowerReduceSnippets(jwrite, tool);
         }
     }
 
