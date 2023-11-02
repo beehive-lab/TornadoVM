@@ -325,7 +325,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                 for (OffsetAddressNode offsetAddressNode : node.usages().filter(OffsetAddressNode.class)) {
                     if (offsetAddressNode.usages().filter(JavaWriteNode.class).isNotEmpty()) {
                         JavaWriteNode javaWriteNode = offsetAddressNode.usages().filter(JavaWriteNode.class).first();
-                        // follow these steps but adapted to jwrite
+                        // follow these steps but adapted to javaWriteNode
                         ParameterNode parameterNode = node.inputs().filter(ParameterNode.class).first();
                         boolean isReductionValue = recursiveCheck(parameterNode, offsetAddressNode, javaWriteNode.value());
                         if (!isReductionValue) {
@@ -370,8 +370,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                 }
                 // in this point node = loopBeginNode
                 CompareNode condition = (CompareNode) ifNode.condition();
-                if (condition.getX() instanceof PhiNode) {
-                    PhiNode phi = (PhiNode) condition.getX();
+                if (condition.getX() instanceof PhiNode phi) {
                     startNode = phi.valueAt(0);
                     break;
                 }
