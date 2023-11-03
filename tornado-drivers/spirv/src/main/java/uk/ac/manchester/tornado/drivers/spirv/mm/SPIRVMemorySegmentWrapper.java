@@ -24,6 +24,8 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.mm;
 
+import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
+
 import java.lang.foreign.MemorySegment;
 import java.util.List;
 
@@ -47,10 +49,13 @@ import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.TornadoNativeArray;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
 
@@ -64,8 +69,6 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
 
     private long bufferOffset;
 
-    private boolean onDevice;
-
     private long bufferSize;
 
     private long subregionSize;
@@ -76,7 +79,6 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
         this.bufferSize = INIT_VALUE;
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
-        onDevice = false;
     }
 
     public SPIRVMemorySegmentWrapper(IntArray intSegment, SPIRVDeviceContext deviceContext, long batchSize) {
@@ -85,7 +87,6 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
         this.bufferSize = intSegment.getNumBytesOfSegment();
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
-        onDevice = false;
     }
 
     @Override
@@ -136,17 +137,17 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
     }
 
     @Override
-    public int read(Object reference, long hostOffset, int[] events, boolean useDeps) {
+    public int read(Object reference, long hostOffset, int[] waitEvents, boolean useDeps) {
         MemorySegment segment = getSegment(reference);
         final int returnEvent;
         final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : bufferSize;
 
         if (batchSize <= 0) {
-            returnEvent = spirvDeviceContext.readBuffer(toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
+            returnEvent = spirvDeviceContext.readBuffer(toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, waitEvents);
         } else {
-            returnEvent = spirvDeviceContext.readBuffer(toBuffer(), TornadoNativeArray.ARRAY_HEADER, numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
+            returnEvent = spirvDeviceContext.readBuffer(toBuffer(), TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, numBytes, segment.address(), hostOffset, waitEvents);
         }
-        return useDeps ? returnEvent : -1;
+        return returnEvent;
     }
 
     @Override
@@ -155,8 +156,16 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
     }
 
     @Override
-    public int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps) {
-        return 0;
+    public int enqueueRead(Object reference, long hostOffset, int[] waitEvents, boolean useDeps) {
+        MemorySegment segment = getSegment(reference);
+        final int returnEvent;
+        final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : bufferSize;
+        if (batchSize <= 0) {
+            returnEvent = spirvDeviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, waitEvents);
+        } else {
+            returnEvent = spirvDeviceContext.enqueueReadBuffer(toBuffer(), TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, numBytes, segment.address(), hostOffset, waitEvents);
+        }
+        return returnEvent;
     }
 
     @Override
@@ -166,12 +175,33 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
 
     @Override
     public void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
+        MemorySegment memorySegment = getSegment(reference);
+        if (batchSize <= 0 && memorySegment != null) {
+            bufferSize = memorySegment.byteSize();
+            bufferId = spirvDeviceContext.getBufferProvider().getBufferWithSize(bufferSize);
+        } else {
+            bufferSize = batchSize;
+            bufferId = spirvDeviceContext.getBufferProvider().getBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER);
+        }
 
+        if (bufferSize <= 0) {
+            throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
+        }
+
+        if (Tornado.FULL_DEBUG) {
+            info("allocated: %s", toString());
+        }
     }
 
     @Override
     public void deallocate() throws TornadoMemoryException {
-
+        TornadoInternalError.guarantee(bufferId != INIT_VALUE, "Fatal error: trying to deallocate an invalid buffer");
+        spirvDeviceContext.getBufferProvider().markBufferReleased(bufferId, bufferSize);
+        bufferId = INIT_VALUE;
+        bufferSize = INIT_VALUE;
+        if (Tornado.FULL_DEBUG) {
+            info("allocated: %s", toString());
+        }
     }
 
     @Override
