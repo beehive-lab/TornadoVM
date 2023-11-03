@@ -252,7 +252,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     private void lowerReduceSnippets(Node node, LoweringTool tool) {
-
         StructuredGraph graph = null;
         ValueNode startIndexNode = null;
         if (node instanceof StoreAtomicIndexedNode) {
