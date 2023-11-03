@@ -96,8 +96,6 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode.ATOMIC_OPERATION;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.CastNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
@@ -120,9 +118,6 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadLocalIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceMulNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceSubNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
@@ -382,31 +377,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         }
         loadIndexed.replaceAtUsages(memoryRead);
         graph.replaceFixed(loadIndexed, memoryRead);
-    }
-
-    private void lowerAtomicStoreIndexedNode(StoreAtomicIndexedNode storeIndexed) {
-
-        StructuredGraph graph = storeIndexed.graph();
-        JavaKind elementKind = storeIndexed.elementKind();
-
-        ValueNode value = storeIndexed.value();
-        ValueNode array = storeIndexed.array();
-        ValueNode accumulator = storeIndexed.getAccumulator();
-
-        ATOMIC_OPERATION operation = ATOMIC_OPERATION.CUSTOM;
-        if (value instanceof TornadoReduceAddNode) {
-            operation = ATOMIC_OPERATION.ADD;
-        } else if (value instanceof TornadoReduceSubNode) {
-            operation = ATOMIC_OPERATION.SUB;
-        } else if (value instanceof TornadoReduceMulNode) {
-            operation = ATOMIC_OPERATION.MUL;
-        }
-
-        AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
-        OCLWriteAtomicNode memoryWrite = graph.add(new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, BarrierType.NONE, accumulator, accumulator.stamp(
-                NodeView.DEFAULT), storeIndexed.elementKind(), operation));
-        memoryWrite.setStateAfter(storeIndexed.stateAfter());
-        graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
     }
 
     @Override

@@ -319,12 +319,6 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         return null;
     }
 
-    private void checkBatchSize(long batchSize) {
-        if (batchSize > 0) {
-            throw new TornadoRuntimeException("[ERROR] Batch computation with non-arrays not supported yet.");
-        }
-    }
-
     @Override
     public int allocateObjects(Object[] objects, long batchSize, TornadoDeviceObjectState[] states) {
         TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
@@ -363,9 +357,6 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         }
 
         final Class<?> type = object.getClass();
-        if (!type.isArray()) {
-            checkBatchSize(batchSize);
-        }
         return -1;
     }
 

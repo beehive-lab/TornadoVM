@@ -82,10 +82,10 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
         this.bufferOffset = 0;
     }
 
-    public SPIRVMemorySegmentWrapper(IntArray intSegment, SPIRVDeviceContext deviceContext, long batchSize) {
+    public SPIRVMemorySegmentWrapper(long bufferSize, SPIRVDeviceContext deviceContext, long batchSize) {
         this.spirvDeviceContext = deviceContext;
         this.batchSize = batchSize;
-        this.bufferSize = intSegment.getNumBytesOfSegment();
+        this.bufferSize = bufferSize;
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
     }
