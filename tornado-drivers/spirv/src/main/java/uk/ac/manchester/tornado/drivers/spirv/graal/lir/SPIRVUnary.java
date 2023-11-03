@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -57,6 +57,7 @@ import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVMemor
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVMultipleOperands;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVOptionalOperand;
 import uk.ac.manchester.beehivespirvtoolkit.lib.instructions.operands.SPIRVStorageClass;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.common.logging.Logger;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVThreadBuiltIn;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVArchitecture;
@@ -221,9 +222,9 @@ public class SPIRVUnary {
          * Equivalent generated code:
          *
          * <code>
-         *    %46 = OpLoad %_ptr_CrossWorkgroup_uchar %a_addr Aligned 8
-         *    %47 = OpConvertPtrToU %ulong %46
-         *          OpStore %ul_0 %47 Aligned 8
+         * %46 = OpLoad %_ptr_CrossWorkgroup_uchar %a_addr Aligned 8
+         * %47 = OpConvertPtrToU %ulong %46
+         * OpStore %ul_0 %47 Aligned 8
          * </code>
          */
         public AssignLoadFromInputFrame(LIRKind lirKind, SPIRVKind type, int indexFromKernelContext, int parameterIndex) {
@@ -551,9 +552,9 @@ public class SPIRVUnary {
          * </code>
          *
          * @param crb
-         *            {@link SPIRVCompilationResultBuilder}
+         *     {@link SPIRVCompilationResultBuilder}
          * @param asm
-         *            {@link SPIRVAssembler}
+         *     {@link SPIRVAssembler}
          */
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
@@ -714,14 +715,12 @@ public class SPIRVUnary {
 
             SPIRVId loadConvert = loadConvertIfNeeded(crb, asm, type, spirvKind);
 
-            SPIRVId toTypeId;
-            if (toBits == 64) {
-                toTypeId = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
-            } else if (toBits == 32) {
-                toTypeId = asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32);
-            } else {
-                throw new RuntimeException("to Type not supported: " + toBits);
-            }
+            SPIRVId toTypeId = switch (toBits) {
+                case 64 -> asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_64);
+                case 32 -> asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_32);
+                case 16 -> asm.primitives.getTypePrimitive(SPIRVKind.OP_TYPE_INT_16);
+                default -> throw new TornadoRuntimeException("to Type not supported: " + toBits);
+            };
 
             SPIRVId result = obtainPhiValueIdIfNeeded(asm);
             asm.currentBlockScope().add(new SPIRVOpSConvert(toTypeId, result, loadConvert));
@@ -752,9 +751,9 @@ public class SPIRVUnary {
          * represents signed format.
          *
          * @param crb
-         *            {@link SPIRVCompilationResultBuilder}
+         *     {@link SPIRVCompilationResultBuilder}
          * @param asm
-         *            {@link SPIRVAssembler}
+         *     {@link SPIRVAssembler}
          */
         @Override
         public void emit(SPIRVCompilationResultBuilder crb, SPIRVAssembler asm) {
