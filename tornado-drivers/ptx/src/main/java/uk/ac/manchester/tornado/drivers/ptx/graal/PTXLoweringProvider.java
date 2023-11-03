@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -106,6 +106,7 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadLocalIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
 /**
@@ -242,7 +243,9 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         } else if (node instanceof StoreIndexedNode) {
             lowerStoreIndexedNode((StoreIndexedNode) node, tool);
         } else if (node instanceof StoreAtomicIndexedNode) {
-            lowerStoreAtomicsReduction(node, tool);
+            lowerReduceSnippets(node, tool);
+        } else if (node instanceof WriteAtomicNode) {
+            lowerReduceSnippets(node, tool);
         } else if (node instanceof LoadFieldNode) {
             lowerLoadFieldNode((LoadFieldNode) node, tool);
         } else if (node instanceof StoreFieldNode) {
@@ -291,8 +294,8 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
                 }
             }
 
-            LoweredCallTargetNode loweredCallTarget = graph.add(new TornadoDirectCallTargetNode(parameters.toArray(new ValueNode[parameters.size()]), returnStampPair, signature,
-                    callTarget.targetMethod(), HotSpotCallingConventionType.JavaCall, callTarget.invokeKind()));
+            LoweredCallTargetNode loweredCallTarget = graph.add(new TornadoDirectCallTargetNode(parameters.toArray(new ValueNode[parameters.size()]), returnStampPair, signature, callTarget
+                    .targetMethod(), HotSpotCallingConventionType.JavaCall, callTarget.invokeKind()));
 
             callTarget.replaceAndDelete(loweredCallTarget);
         }
@@ -349,10 +352,19 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         }
     }
 
-    private void lowerReduceSnippets(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
-        StructuredGraph graph = storeIndexed.graph();
+    private void lowerReduceSnippets(Node node, LoweringTool tool) {
+        StructuredGraph graph = null;
+        ValueNode startIndexNode = null;
         GlobalThreadIdNode threadIdNode = graph.getNodes().filter(GlobalThreadIdNode.class).first();
         ValueNode threadID = null;
+
+        if (node instanceof StoreAtomicIndexedNode) {
+            graph = ((StoreAtomicIndexedNode) node).graph();
+            startIndexNode = ((StoreAtomicIndexedNode) node).getStartNode();
+        } else if (node instanceof WriteAtomicNode) {
+            graph = ((WriteAtomicNode) node).graph();
+            startIndexNode = ((WriteAtomicNode) node).getStartNode();
+        }
 
         for (Node n : threadIdNode.usages()) {
             // GPU SCHEDULER
@@ -362,7 +374,11 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
                 break;
             }
         }
-        gpuReduceSnippets.lower(storeIndexed, threadID, tool);
+        if (node instanceof StoreAtomicIndexedNode storeAtomicIndexedNode) {
+            gpuReduceSnippets.lower(storeAtomicIndexedNode, threadID, tool);
+        } else if (node instanceof WriteAtomicNode writeAtomicNode) {
+            gpuReduceSnippets.lower(writeAtomicNode, threadID, tool);
+        }
     }
 
     private void lowerAtomicStoreIndexedNode(StoreAtomicIndexedNode storeIndexed) {
