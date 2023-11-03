@@ -453,7 +453,6 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
             loadStamp = loadStamp(loadIndexed.stamp(NodeView.DEFAULT), elementKind, false);
         }
         address = createArrayAccess(graph, loadIndexed, elementKind);
-        //        ReadNode memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, BarrierType.NONE, TornadoMemoryOrder.GPU_MEMORY_MODE));
         ReadNode memoryRead;
 
         if (loadIndexed instanceof LoadIndexedVectorNode) {

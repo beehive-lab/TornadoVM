@@ -96,6 +96,15 @@ public class PTXMemorySegmentWrapper implements ObjectBuffer {
         onDevice = false;
     }
 
+    public PTXMemorySegmentWrapper(long bufferSize, PTXDeviceContext deviceContext, long batchSize) {
+        this.deviceContext = deviceContext;
+        this.batchSize = batchSize;
+        this.bufferSize = bufferSize;
+        this.bufferId = INIT_VALUE;
+        this.bufferOffset = 0;
+        onDevice = false;
+    }
+
     @Override
     public long toBuffer() {
         return this.bufferId;
