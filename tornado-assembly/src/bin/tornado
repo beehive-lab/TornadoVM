@@ -79,7 +79,7 @@ __OPENCL_MODULE__  = "tornado.drivers.opencl"
 __JAVA_GC_JDK11__        = "-XX:+UseParallelOldGC -XX:-UseBiasedLocking "
 __JAVA_GC_JDK16__        = "-XX:+UseParallelGC "
 __JAVA_BASE_OPTIONS__    = "-server -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseCompressedClassPointers "
-__TRUFFLE_BASE_OPTIONS__ = "--jvm --polyglot --vm.XX:-UseCompressedOops --vm.XX:+UnlockExperimentalVMOptions --vm.XX:+EnableJVMCI -XX:-UseCompressedClassPointers "
+__TRUFFLE_BASE_OPTIONS__ = "--jvm --polyglot --vm.XX:-UseCompressedOops --vm.XX:+UnlockExperimentalVMOptions --vm.XX:+EnableJVMCI --vm.XX:-UseCompressedClassPointers "
 
 # We do not satisfy the Graal compiler assertions because we only support a subset of the Java specification.
 # This allows us to have the GraalIR in states which normally would be illegal.
@@ -105,22 +105,34 @@ class TornadoVMRunnerTool():
             print("Please ensure the JAVA_HOME environment variable is set correctly")
             sys.exit(0)
 
+        if "GRAALPY_HOME" in os.environ:
+            self.graalpy = os.environ["GRAALPY_HOME"] + "/bin/graalpy "
+        else:
+            self.graalpy = None
+        if "GRAALJS_HOME" in os.environ:
+            self.graaljs = os.environ["GRAALJS_HOME"] + "/bin/js "
+        else:
+            self.graaljs = None
+        if "GRAALNODEJS_HOME" in os.environ:
+            self.graalnodejs = os.environ["GRAALNODEJS_HOME"] + "/bin/node "
+        else:
+            self.graalnodejs = None
+
         self.commands = {
                             "java": self.java_home + "/bin/java", 
-                            "python": self.java_home + "/bin/graalpy ", 
-                            "r": self.java_home + "/bin/Rscript ", 
-                            "js": self.java_home + "/bin/js ", 
-                            "node": self.java_home + "/bin/node "
-                        }
+                            "python": self.graalpy,
+                            "js": self.graaljs,
+                            "node": self.graalnodejs
+        }
         
         self.isTruffleCommand = args.truffle_language != None
-        
+
         if (self.isTruffleCommand):
-            if (args.truffle_language in self.commands):
+            if (args.truffle_language in self.commands) and (self.commands[args.truffle_language] != None):
                 self.cmd = self.commands[args.truffle_language]
             else:
-                print("Support for " + args.truffle_language + " not provided yet. Please run --truffle with one of the following options: python|r|js|node")
-                sys.exit(0)         
+                print("Support for " + args.truffle_language + " not provided yet. Please run --truffle with one of the following options: python|r|js|node, and ensure that the (GRAALPY_HOME, GRAALJS_HOME, GRAALNODEJS_HOME) environment variables are set correctly.")
+                sys.exit(0)
         else:
             self.cmd = self.commands["java"]
 

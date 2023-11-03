@@ -1980,6 +1980,27 @@
             <version>${graalvm.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.graalvm.polyglot</groupId>
+            <artifactId>python</artifactId>
+            <version>${graalvm.version}</version>
+            <scope>runtime</scope>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.polyglot</groupId>
+            <artifactId>js</artifactId>
+            <version>${graalvm.version}</version>
+            <scope>runtime</scope>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.polyglot</groupId>
+            <artifactId>ruby</artifactId>
+            <version>${graalvm.version}</version>
+            <scope>runtime</scope>
+            <type>pom</type>
+        </dependency>
+        <dependency>
             <groupId>org.graalvm.sdk</groupId>
             <artifactId>word</artifactId>
             <version>${graalvm.version}</version>
