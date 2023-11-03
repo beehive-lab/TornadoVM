@@ -227,9 +227,9 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         return spirvEventPool.registerEvent(EventDescriptor.DESC_READ_BYTE, profilerTransfer);
     }
 
-    public int readBuffer(long bufferId, long offset, long bytes, long value, long hostOffset, int[] waitEvents) {
+    public int readBuffer(long bufferId, long offset, long bytes, long offHeapSegmentAddress, long hostOffset, int[] waitEvents) {
         ProfilerTransfer profilerTransfer = createStartAndStopBufferTimers();
-        spirvContext.readBuffer(getDeviceIndex(), bufferId, offset, bytes, value, hostOffset, waitEvents, profilerTransfer);
+        spirvContext.readBuffer(getDeviceIndex(), bufferId, offset, bytes, offHeapSegmentAddress, hostOffset, waitEvents, profilerTransfer);
         return spirvEventPool.registerEvent(EventDescriptor.DESC_READ_BYTE, profilerTransfer);
     }
 

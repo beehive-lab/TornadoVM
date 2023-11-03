@@ -164,7 +164,7 @@ public class SPIRVOCLContext extends SPIRVContext {
     }
 
     @Override
-    public void readBuffer(int deviceIndex, long bufferId, long offset, long bytes, long value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
+    public void readBuffer(int deviceIndex, long bufferId, long offset, long bytes, long offHeapSegmentAddress, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
         throw new TornadoRuntimeException("Unimplemented");
     }
 }

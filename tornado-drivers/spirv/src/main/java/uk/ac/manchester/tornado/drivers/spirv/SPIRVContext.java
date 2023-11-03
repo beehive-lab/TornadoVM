@@ -79,5 +79,5 @@ public abstract class SPIRVContext {
 
     public abstract void flush(int deviceIndex);
 
-    public abstract void readBuffer(int deviceIndex, long bufferId, long offset, long bytes, long value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
+    public abstract void readBuffer(int deviceIndex, long bufferId, long offset, long bytes, long offHeapSegmentAddress, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
 }

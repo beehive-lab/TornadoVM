@@ -296,9 +296,10 @@ public class LevelZeroCommandList {
         return zeCommandListAppendMemoryCopy_nativeBackLong(commandListHandlerPtr, dstBuffer, srcBuffer, allocSize, dstOffset, srcOffset, hSignalEvents, numWaitEvents, phWaitEvents);
     }
 
-    public int zeCommandListAppendMemoryCopyWithOffset(long commandListHandlerPtr, long dstBuffer, LevelZeroByteBuffer srcBuffer, long allocSize, long dstOffset, long srcOffset,
+    public int zeCommandListAppendMemoryCopyWithOffset(long commandListHandlerPtr, long offHeapSegmentAddress, LevelZeroByteBuffer srcBuffer, long allocSize, long dstOffset, long srcOffset,
             ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents) {
-        return zeCommandListAppendMemoryCopy_nativeBackOffHeapSegment(commandListHandlerPtr, dstBuffer, srcBuffer, allocSize, dstOffset, srcOffset, hSignalEvents, numWaitEvents, phWaitEvents);
+        return zeCommandListAppendMemoryCopy_nativeBackOffHeapSegment(commandListHandlerPtr, offHeapSegmentAddress, srcBuffer, allocSize, dstOffset, srcOffset, hSignalEvents, numWaitEvents,
+                phWaitEvents);
     }
 
     private native int zeCommandListAppendMemoryCopy_nativeBack(long commandListHandlerPtr, byte[] deviceBuffer, LevelZeroByteBuffer heapBuffer, long allocSize, long dstOffset, long srcOffset,
@@ -322,7 +323,7 @@ public class LevelZeroCommandList {
     private native int zeCommandListAppendMemoryCopy_nativeBackLong(long commandListHandlerPtr, long[] deviceBuffer, LevelZeroByteBuffer heapBuffer, long allocSize, long dstOffset, long srcOffset,
             ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents);
 
-    private native int zeCommandListAppendMemoryCopy_nativeBackOffHeapSegment(long commandListHandlerPtr, long dstBuffer, LevelZeroByteBuffer heapBuffer, long allocSize, long dstOffset,
+    private native int zeCommandListAppendMemoryCopy_nativeBackOffHeapSegment(long commandListHandlerPtr, long offHeapSegmentAddress, LevelZeroByteBuffer heapBuffer, long allocSize, long dstOffset,
             long srcOffset, ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents);
 
     public int zeCommandListAppendMemoryCopy(long commandListHandlerPtr, byte[] dstBuffer, LevelZeroByteBuffer srcBuffer, int allocSize, ZeEventHandle hSignalEvents, int numWaitEvents,
