@@ -322,7 +322,7 @@ public class LevelZeroCommandList {
     private native int zeCommandListAppendMemoryCopy_nativeBackLong(long commandListHandlerPtr, long[] deviceBuffer, LevelZeroByteBuffer heapBuffer, long allocSize, long dstOffset, long srcOffset,
             ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents);
 
-    private native int zeCommandListAppendMemoryCopy_nativeBackOffHeapSegment(long commandListHandlerPtr, long deviceBuffer, LevelZeroByteBuffer heapBuffer, long allocSize, long dstOffset,
+    private native int zeCommandListAppendMemoryCopy_nativeBackOffHeapSegment(long commandListHandlerPtr, long dstBuffer, LevelZeroByteBuffer heapBuffer, long allocSize, long dstOffset,
             long srcOffset, ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents);
 
     public int zeCommandListAppendMemoryCopy(long commandListHandlerPtr, byte[] dstBuffer, LevelZeroByteBuffer srcBuffer, int allocSize, ZeEventHandle hSignalEvents, int numWaitEvents,
