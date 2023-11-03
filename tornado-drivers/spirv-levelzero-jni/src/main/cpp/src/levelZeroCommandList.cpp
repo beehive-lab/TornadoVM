@@ -223,7 +223,6 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_Lev
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_spirv_levelzero_LevelZeroCommandList_zeCommandListAppendMemoryCopy_1nativeOffHeap
         (JNIEnv * env, jobject object, jlong javaCommandListHandler, jobject javaLevelZeroBuffer, jlong offHeapArray, jlong size, jlong dstOffset, jlong srcOffset, jobject javaEvenHandle, jint numWaitEvents, jobject javaWaitEvents) {
-    std::cout << "[JNI] from Host -> Device "<< std::endl;
     jbyte *sourceBuffer = reinterpret_cast<jbyte *>(offHeapArray);
     ze_result_t result = copyFromHostToDevice(env, object, javaCommandListHandler, javaLevelZeroBuffer, sourceBuffer, size, dstOffset, srcOffset, javaEvenHandle, numWaitEvents, javaWaitEvents);
     return result;
