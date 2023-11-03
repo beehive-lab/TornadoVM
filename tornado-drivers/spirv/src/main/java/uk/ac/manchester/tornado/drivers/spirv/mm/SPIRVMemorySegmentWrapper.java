@@ -27,6 +27,7 @@ package uk.ac.manchester.tornado.drivers.spirv.mm;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
 import java.lang.foreign.MemorySegment;
+import java.util.ArrayList;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.collections.types.VectorDouble2;
@@ -152,7 +153,8 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
 
     @Override
     public void write(Object reference) {
-
+        MemorySegment segment = getSegment(reference);
+        spirvDeviceContext.writeBuffer(toBuffer(), bufferOffset, bufferSize, segment.address(), 0, null);
     }
 
     @Override
@@ -170,7 +172,17 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
 
     @Override
     public List<Integer> enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
-        return null;
+        List<Integer> returnEvents = new ArrayList<>();
+        MemorySegment segment = getSegment(reference);
+        int internalEvent;
+        if (batchSize <= 0) {
+            internalEvent = spirvDeviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+        } else {
+            internalEvent = spirvDeviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+
+        }
+        returnEvents.add(internalEvent);
+        return useDeps ? returnEvents : null;
     }
 
     @Override

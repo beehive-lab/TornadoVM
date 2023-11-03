@@ -73,6 +73,8 @@ public abstract class SPIRVContext {
 
     public abstract int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
 
+    public abstract int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, long value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
+
     public abstract void enqueueBarrier(int deviceIndex);
 
     public abstract void flush(int deviceIndex);

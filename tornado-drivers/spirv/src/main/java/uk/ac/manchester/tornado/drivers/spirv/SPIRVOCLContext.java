@@ -149,6 +149,11 @@ public class SPIRVOCLContext extends SPIRVContext {
     }
 
     @Override
+    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, long value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
+        throw new RuntimeException("Unimplemented");
+    }
+
+    @Override
     public void enqueueBarrier(int deviceIndex) {
         throw new RuntimeException("Unimplemented");
     }
