@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -50,5 +50,20 @@ public class PTXIntArrayWrapper extends PTXArrayWrapper<int[]> {
     @Override
     protected int enqueueWriteArrayData(long address, long bytes, int[] value, long hostOffset, int[] waitEvents) {
         return deviceContext.enqueueWriteBuffer(address, bytes, value, hostOffset, waitEvents);
+    }
+
+    @Override
+    public long getSizeSubRegionSize() {
+        return 0;
+    }
+
+    @Override
+    public int[] getIntBuffer() {
+        return super.getIntBuffer();
+    }
+
+    @Override
+    public void setIntBuffer(int[] arr) {
+        super.setIntBuffer(arr);
     }
 }

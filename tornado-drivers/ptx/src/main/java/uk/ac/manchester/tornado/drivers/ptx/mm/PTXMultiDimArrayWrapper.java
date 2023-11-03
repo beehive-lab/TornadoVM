@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2021, APT Group, Department of Computer Science,
@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -37,9 +37,9 @@ public class PTXMultiDimArrayWrapper<T, E> extends PTXArrayWrapper<T> {
 
     private final Function<PTXDeviceContext, ? extends PTXArrayWrapper<E>> innerWrapperFactory;
     private final PTXLongArrayWrapper tableWrapper;
+    private final PTXDeviceContext deviceContext;
     private long[] addresses;
     private PTXArrayWrapper<E>[] wrappers;
-    private final PTXDeviceContext deviceContext;
 
     public PTXMultiDimArrayWrapper(PTXDeviceContext device, Function<PTXDeviceContext, ? extends PTXArrayWrapper<E>> factory, long batchSize) {
         this(device, factory);
@@ -65,6 +65,21 @@ public class PTXMultiDimArrayWrapper<T, E> extends PTXArrayWrapper<T> {
     @Override
     public long size() {
         return tableWrapper.size();
+    }
+
+    @Override
+    public long getSizeSubRegionSize() {
+        return 0;
+    }
+
+    @Override
+    public int[] getIntBuffer() {
+        return super.getIntBuffer();
+    }
+
+    @Override
+    public void setIntBuffer(int[] arr) {
+        super.setIntBuffer(arr);
     }
 
     @Override
