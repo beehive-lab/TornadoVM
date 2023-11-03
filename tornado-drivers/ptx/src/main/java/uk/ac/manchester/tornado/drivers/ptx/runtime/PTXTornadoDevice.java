@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.drivers.ptx.runtime;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
 
 import java.io.IOException;
+import java.lang.foreign.MemorySegment;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,11 +38,17 @@ import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.CharArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.api.memory.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
@@ -64,6 +71,7 @@ import uk.ac.manchester.tornado.drivers.ptx.mm.PTXDoubleArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXFloatArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXIntArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXLongArrayWrapper;
+import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMemorySegmentWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXMultiDimArrayWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXObjectWrapper;
 import uk.ac.manchester.tornado.drivers.ptx.mm.PTXShortArrayWrapper;
@@ -75,6 +83,7 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
@@ -85,6 +94,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class PTXTornadoDevice implements TornadoAcceleratorDevice {
 
     private static final boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
+    private static final long OBJECT_HEADER_SIZE = TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
     private static PTXDriver driver = null;
     private final PTXDevice device;
     private final int deviceIndex;
@@ -233,13 +243,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
         return getDeviceContext().getInstalledCode(functionName);
     }
 
-    private void checkBatchSize(long batchSize) {
-        if (batchSize > 0) {
-            throw new TornadoRuntimeException("[ERROR] Batch computation with non-arrays not supported yet.");
-        }
-    }
-
-    private ObjectBuffer createDeviceBuffer(Class<?> type, Object arg, long batchSize) {
+    private ObjectBuffer createDeviceBuffer(Class<?> type, Object object, long batchSize) {
         ObjectBuffer result = null;
         if (type.isArray()) {
 
@@ -254,10 +258,26 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
                 }
             }
         } else if (!type.isPrimitive()) {
-            if (arg.getClass().getAnnotation(Vector.class) != null) {
-                result = new PTXVectorWrapper(getDeviceContext(), arg, batchSize);
+            if (object.getClass().getAnnotation(Vector.class) != null) {
+                result = new PTXVectorWrapper(getDeviceContext(), object, batchSize);
+            } else if (object instanceof MemorySegment) {
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
+            } else if (object instanceof IntArray) {
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
+            } else if (object instanceof FloatArray) {
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
+            } else if (object instanceof DoubleArray) {
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
+            } else if (object instanceof LongArray) {
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
+            } else if (object instanceof ShortArray) {
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
+            } else if (object instanceof ByteArray) {
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
+            } else if (object instanceof CharArray) {
+                result = new PTXMemorySegmentWrapper(getDeviceContext(), batchSize);
             } else {
-                result = new PTXObjectWrapper(getDeviceContext(), arg);
+                result = new PTXObjectWrapper(getDeviceContext(), object);
             }
         }
 
@@ -292,10 +312,6 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
             }
         }
 
-        final Class<?> type = object.getClass();
-        if (!type.isArray()) {
-            checkBatchSize(batchSize);
-        }
         return -1;
     }
 
@@ -361,18 +377,18 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
      * It allocates and copy in the content of the object to the target device.
      *
      * @param object
-     *            to be allocated
+     *     to be allocated
      * @param objectState
-     *            state of the object in the target device
-     *            {@link TornadoDeviceObjectState}
+     *     state of the object in the target device
+     *     {@link TornadoDeviceObjectState}
      * @param events
-     *            list of pending events (dependencies)
+     *     list of pending events (dependencies)
      * @param batchSize
-     *            size of the object to be allocated. If this value is <= 0, then it
-     *            allocates the sizeof(object).
+     *     size of the object to be allocated. If this value is <= 0, then it
+     *     allocates the sizeof(object).
      * @param hostOffset
-     *            offset in bytes for the copy within the host input array (or
-     *            object)
+     *     offset in bytes for the copy within the host input array (or
+     *     object)
      * @return an event ID
      */
     @Override
@@ -389,18 +405,18 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
      * device.
      *
      * @param object
-     *            to be copied
+     *     to be copied
      * @param batchSize
-     *            size of the object to be allocated. If this value is <= 0, then it
-     *            allocates the sizeof(object).
+     *     size of the object to be allocated. If this value is <= 0, then it
+     *     allocates the sizeof(object).
      * @param hostOffset
-     *            offset in bytes for the copy within the host input array (or
-     *            object)
+     *     offset in bytes for the copy within the host input array (or
+     *     object)
      * @param objectState
-     *            state of the object in the target device
-     *            {@link TornadoDeviceObjectState}
+     *     state of the object in the target device
+     *     {@link TornadoDeviceObjectState}
      * @param events
-     *            list of previous events
+     *     list of previous events
      * @return and event ID
      */
     @Override
@@ -414,15 +430,15 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
      * non-blocking
      *
      * @param object
-     *            to be copied.
+     *     to be copied.
      * @param hostOffset
-     *            offset in bytes for the copy within the host input array (or
-     *            object)
+     *     offset in bytes for the copy within the host input array (or
+     *     object)
      * @param objectState
-     *            state of the object in the target device
-     *            {@link TornadoDeviceObjectState}
+     *     state of the object in the target device
+     *     {@link TornadoDeviceObjectState}
      * @param events
-     *            of pending events
+     *     of pending events
      * @return and event ID
      */
     @Override
@@ -440,15 +456,15 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
      * blocking between the device and the host.
      *
      * @param object
-     *            to be copied.
+     *     to be copied.
      * @param hostOffset
-     *            offset in bytes for the copy within the host input array (or
-     *            object)
+     *     offset in bytes for the copy within the host input array (or
+     *     object)
      * @param objectState
-     *            state of the object in the target device
-     *            {@link TornadoDeviceObjectState}
+     *     state of the object in the target device
+     *     {@link TornadoDeviceObjectState}
      * @param events
-     *            of pending events
+     *     of pending events
      * @return and event ID
      */
     @Override
@@ -461,7 +477,7 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
      * It resolves an pending event.
      *
      * @param event
-     *            ID
+     *     ID
      * @return an object of type {@link Event}
      */
     @Override
