@@ -93,31 +93,31 @@ public class BatchConfiguration {
                     throw new TornadoRuntimeException("[UNSUPPORTED] Input objects with different sizes not currently supported");
                 }
             } else if (o instanceof IntArray) {
-                totalSize = ((IntArray) o).getNumBytesOfSegment();
+                totalSize = ((IntArray) o).getNumBytesWithoutHeader();
                 inputSizes.add(totalSize);
                 dataTypeSize = findDataTypeSize(int.class);
             } else if (o instanceof FloatArray) {
-                totalSize = ((FloatArray) o).getNumBytesOfSegment();
+                totalSize = ((FloatArray) o).getNumBytesWithoutHeader();
                 inputSizes.add(totalSize);
                 dataTypeSize = findDataTypeSize(float.class);
             } else if (o instanceof DoubleArray) {
-                totalSize = ((DoubleArray) o).getNumBytesOfSegment();
+                totalSize = ((DoubleArray) o).getNumBytesWithoutHeader();
                 inputSizes.add(totalSize);
                 dataTypeSize = findDataTypeSize(double.class);
             } else if (o instanceof LongArray) {
-                totalSize = ((LongArray) o).getNumBytesOfSegment();
+                totalSize = ((LongArray) o).getNumBytesWithoutHeader();
                 inputSizes.add(totalSize);
                 dataTypeSize = findDataTypeSize(long.class);
             } else if (o instanceof ShortArray) {
-                totalSize = ((ShortArray) o).getNumBytesOfSegment();
+                totalSize = ((ShortArray) o).getNumBytesWithoutHeader();
                 inputSizes.add(totalSize);
                 dataTypeSize = findDataTypeSize(short.class);
             } else if (o instanceof ByteArray) {
-                totalSize = ((ByteArray) o).getNumBytesOfSegment();
+                totalSize = ((ByteArray) o).getNumBytesWithoutHeader();
                 inputSizes.add(totalSize);
                 dataTypeSize = findDataTypeSize(byte.class);
             } else if (o instanceof CharArray) {
-                totalSize = ((CharArray) o).getNumBytesOfSegment();
+                totalSize = ((CharArray) o).getNumBytesWithoutHeader();
                 inputSizes.add(totalSize);
                 dataTypeSize = findDataTypeSize(char.class);
             } else {
