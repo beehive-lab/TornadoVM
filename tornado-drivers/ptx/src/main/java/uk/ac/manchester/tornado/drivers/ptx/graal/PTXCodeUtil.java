@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -39,6 +39,7 @@ import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Signature;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.data.nativetypes.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDevice;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants;
@@ -48,6 +49,7 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 
 public class PTXCodeUtil {
 
+    private static final String PACKAGE_PANAMA_TYPES = "uk_ac_manchester_tornado_api_data_nativetypes_";
     private static final String PTX_HEADER_FORMAT = PTXAssemblerConstants.COMPUTE_VERSION + " %s \n" + PTXAssemblerConstants.TARGET_ARCH + " %s \n" + PTXAssemblerConstants.ADDRESS_HEADER + " %s \n";
 
     /**
@@ -108,6 +110,17 @@ public class PTXCodeUtil {
                 } else {
                     sb.append(Array.getLength(arg));
                 }
+            } else if (arg instanceof TornadoNativeArray) {
+                if (task.getBatchThreads() != 0) {
+                    sb.append(task.getBatchThreads());
+                } else {
+                    sb.append(argClass.getName().replace('.', '_'));
+
+                    // Since with objects there is no way to know what will be a
+                    // constant differentiate using the hashcode of the object
+                    sb.append('_');
+                    sb.append(arg.hashCode());
+                }
             } else {
                 sb.append(argClass.getName().replace('.', '_'));
 
@@ -117,8 +130,8 @@ public class PTXCodeUtil {
                 sb.append(arg.hashCode());
             }
         }
-
-        return sb.toString();
+        //        sb.toString().replaceAll(PACKAGE_PANAMA_TYPES, "");
+        return sb.toString().replaceAll(PACKAGE_PANAMA_TYPES, "").toLowerCase();
     }
 
     public static byte[] getCodeWithAttachedPTXHeader(byte[] targetCode, PTXBackend backend) {
