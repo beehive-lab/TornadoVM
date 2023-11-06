@@ -90,47 +90,82 @@ public class PTXCodeUtil {
         return new CallingConvention(0, returnParameter, inputParameters);
     }
 
+    /**
+     * Only need to append value. If negative value, remove the minus sign in front
+     *
+     * @param sb
+     * @param parameter
+     */
+    private static void emitSignatureForPrimitiveParameter(StringBuilder sb, Object parameter) {
+        // Only need to append value. If negative value, remove the minus sign in front
+        sb.append(parameter.toString().replace('.', '_').replaceAll("-", ""));
+    }
+
+    /**
+     * Append type and length of the array
+     *
+     * @param sb
+     * @param arg
+     * @param task
+     */
+    private static void emitSignatureForArrayParameter(StringBuilder sb, Object arg, SchedulableTask task) {
+        Class<?> argClass = arg.getClass();
+        // Need to append type and length
+        sb.append(argClass.getComponentType().getName().replace('[', '_'));
+        if (task.getBatchThreads() != 0) {
+            sb.append(task.getBatchThreads());
+        } else {
+            sb.append(Array.getLength(arg));
+        }
+    }
+
+    /**
+     * Append Type and batch size
+     *
+     * @param sb
+     * @param arg
+     * @param task
+     */
+    private static void emitSignatureForOffHeapSegments(StringBuilder sb, Object arg, SchedulableTask task) {
+        Class<?> argClass = arg.getClass();
+        if (task.getBatchThreads() != 0) {
+            sb.append(task.getBatchThreads());
+        } else {
+            sb.append(argClass.getName().replace('.', '_'));
+        }
+    }
+
+    /**
+     * Since with objects there is no way to know what will be a
+     * constant differentiate using the hashcode of the object
+     *
+     * @param sb
+     * @param arg
+     */
+    private static void emitSignatureForGenericParameter(StringBuilder sb, Object arg) {
+        Class<?> argClass = arg.getClass();
+        sb.append(argClass.getName().replace('.', '_'));
+        sb.append('_');
+        sb.append(arg.hashCode());
+    }
+
     public static String buildKernelName(String methodName, SchedulableTask task) {
         StringBuilder sb = new StringBuilder(task.getId().replaceAll("[.\\-]", "_"));
         sb.append('_').append(methodName);
 
         for (Object arg : task.getArguments()) {
-            // Object is either array or primitive
             sb.append('_');
             Class<?> argClass = arg.getClass();
             if (RuntimeUtilities.isBoxedPrimitiveClass(argClass)) {
-                // Only need to append value.
-                // If negative value, remove the minus sign in front
-                sb.append(arg.toString().replace('.', '_').replaceAll("-", ""));
+                emitSignatureForPrimitiveParameter(sb, arg);
             } else if (argClass.isArray() && RuntimeUtilities.isPrimitiveArray(argClass)) {
-                // Need to append type and length
-                sb.append(argClass.getComponentType().getName().replace('[', '_'));
-                if (task.getBatchThreads() != 0) {
-                    sb.append(task.getBatchThreads());
-                } else {
-                    sb.append(Array.getLength(arg));
-                }
+                emitSignatureForArrayParameter(sb, arg, task);
             } else if (arg instanceof TornadoNativeArray) {
-                if (task.getBatchThreads() != 0) {
-                    sb.append(task.getBatchThreads());
-                } else {
-                    sb.append(argClass.getName().replace('.', '_'));
-
-                    // Since with objects there is no way to know what will be a
-                    // constant differentiate using the hashcode of the object
-                    sb.append('_');
-                    sb.append(arg.hashCode());
-                }
+                emitSignatureForOffHeapSegments(sb, arg, task);
             } else {
-                sb.append(argClass.getName().replace('.', '_'));
-
-                // Since with objects there is no way to know what will be a
-                // constant differentiate using the hashcode of the object
-                sb.append('_');
-                sb.append(arg.hashCode());
+                emitSignatureForGenericParameter(sb, arg);
             }
         }
-        //        sb.toString().replaceAll(PACKAGE_PANAMA_TYPES, "");
         return sb.toString().replaceAll(PACKAGE_PANAMA_TYPES, "").toLowerCase();
     }
 
