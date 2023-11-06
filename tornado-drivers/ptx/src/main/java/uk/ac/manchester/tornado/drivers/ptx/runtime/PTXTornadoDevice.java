@@ -83,7 +83,6 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
@@ -94,7 +93,6 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class PTXTornadoDevice implements TornadoAcceleratorDevice {
 
     private static final boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
-    private static final long OBJECT_HEADER_SIZE = TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
     private static PTXDriver driver = null;
     private final PTXDevice device;
     private final int deviceIndex;
@@ -151,13 +149,11 @@ public class PTXTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public TornadoInstalledCode installCode(SchedulableTask task) {
-        if (task instanceof CompilableTask) {
-            return compileTask(task);
-        } else if (task instanceof PrebuiltTask) {
-            return compilePreBuiltTask(task);
-        }
-        TornadoInternalError.shouldNotReachHere("task of unknown type: " + task.getClass().getSimpleName());
-        return null;
+        return switch (task) {
+            case CompilableTask compilableTask -> compileTask(task);
+            case PrebuiltTask prebuiltTask -> compilePreBuiltTask(task);
+            default -> throw new TornadoInternalError("task of unknown type: " + task.getClass().getSimpleName());
+        };
     }
 
     private TornadoInstalledCode compileTask(SchedulableTask task) {
