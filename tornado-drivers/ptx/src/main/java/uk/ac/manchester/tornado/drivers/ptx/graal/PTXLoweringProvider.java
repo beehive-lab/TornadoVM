@@ -345,28 +345,16 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         newArray.replaceAtUsages(fixedArrayNode);
     }
 
-    private void lowerStoreAtomicsReduction(Node node, LoweringTool tool) {
-        StoreAtomicIndexedNode storeAtomicNode = (StoreAtomicIndexedNode) node;
-        if (USE_ATOMICS) {
-            lowerAtomicStoreIndexedNode(storeAtomicNode);
-        } else {
-            lowerReduceSnippets(storeAtomicNode, tool);
-        }
-    }
-
     private void lowerReduceSnippets(Node node, LoweringTool tool) {
-        StructuredGraph graph = null;
-        ValueNode startIndexNode = null;
-        GlobalThreadIdNode threadIdNode = graph.getNodes().filter(GlobalThreadIdNode.class).first();
-        ValueNode threadID = null;
 
+        StructuredGraph graph = null;
         if (node instanceof StoreAtomicIndexedNode) {
             graph = ((StoreAtomicIndexedNode) node).graph();
-            startIndexNode = ((StoreAtomicIndexedNode) node).getStartNode();
         } else if (node instanceof WriteAtomicNode) {
             graph = ((WriteAtomicNode) node).graph();
-            startIndexNode = ((WriteAtomicNode) node).getStartNode();
         }
+        GlobalThreadIdNode threadIdNode = graph.getNodes().filter(GlobalThreadIdNode.class).first();
+        ValueNode threadID = null;
 
         for (Node n : threadIdNode.usages()) {
             // GPU SCHEDULER

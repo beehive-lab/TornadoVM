@@ -174,13 +174,18 @@ public class TornadoPTXIntrinsicsReplacements extends BasePhase<TornadoHighTierC
     }
 
     private JavaKind getJavaKindFromConstantNode(ConstantNode signatureNode) {
+        JavaKind kind = null;
         switch (signatureNode.getValue().toValueString()) {
+            case "Class:int":
             case "Class:uk.ac.manchester.tornado.api.data.nativetypes.IntArray":
                 return JavaKind.Int;
+            case "Class:long":
             case "Class:uk.ac.manchester.tornado.api.data.nativetypes.LongArray":
                 return JavaKind.Long;
+            case "Class:float":
             case "Class:uk.ac.manchester.tornado.api.data.nativetypes.FloatArray":
                 return JavaKind.Float;
+            case "Class:double":
             case "Class:uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray":
                 return JavaKind.Double;
             default:
