@@ -167,8 +167,7 @@ public class PTXMemorySegmentWrapper implements ObjectBuffer {
                     ? events
                     : null);
         }
-
-        return useDeps ? returnEvent : -1;
+        return returnEvent;
     }
 
     @Override
