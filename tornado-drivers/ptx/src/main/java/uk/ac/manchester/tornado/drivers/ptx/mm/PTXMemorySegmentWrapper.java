@@ -41,6 +41,7 @@ public class PTXMemorySegmentWrapper implements ObjectBuffer {
     private long bufferSize;
 
     private long subregionSize;
+    private long setSubRegionSize;
 
     public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long batchSize) {
         this.deviceContext = deviceContext;
@@ -128,58 +129,41 @@ public class PTXMemorySegmentWrapper implements ObjectBuffer {
         read(reference, 0, null, false);
     }
 
+    private MemorySegment getSegment(final Object reference) {
+        return switch (reference) {
+            case IntArray intArray -> intArray.getSegment();
+            case FloatArray floatArray -> floatArray.getSegment();
+            case DoubleArray doubleArray -> doubleArray.getSegment();
+            case LongArray longArray -> longArray.getSegment();
+            case ShortArray shortArray -> shortArray.getSegment();
+            case ByteArray byteArray -> byteArray.getSegment();
+            case CharArray charArray -> charArray.getSegment();
+            case VectorFloat2 vectorFloat2 -> vectorFloat2.getArray().getSegment();
+            case VectorFloat3 vectorFloat3 -> vectorFloat3.getArray().getSegment();
+            case VectorFloat4 vectorFloat4 -> vectorFloat4.getArray().getSegment();
+            case VectorFloat8 vectorFloat8 -> vectorFloat8.getArray().getSegment();
+            case VectorDouble2 vectorDouble2 -> vectorDouble2.getArray().getSegment();
+            case VectorDouble3 vectorDouble3 -> vectorDouble3.getArray().getSegment();
+            case VectorDouble4 vectorDouble4 -> vectorDouble4.getArray().getSegment();
+            case VectorDouble8 vectorDouble8 -> vectorDouble8.getArray().getSegment();
+            case VectorInt2 vectorInt2 -> vectorInt2.getArray().getSegment();
+            case VectorInt3 vectorInt3 -> vectorInt3.getArray().getSegment();
+            case VectorInt4 vectorInt4 -> vectorInt4.getArray().getSegment();
+            case VectorInt8 vectorInt8 -> vectorInt8.getArray().getSegment();
+            default -> (MemorySegment) reference;
+        };
+    }
+
     @Override
     public int read(final Object reference, long hostOffset, int[] events, boolean useDeps) {
-        MemorySegment segment;
-        if (reference instanceof IntArray) {
-            segment = ((IntArray) reference).getSegment();
-        } else if (reference instanceof FloatArray) {
-            segment = ((FloatArray) reference).getSegment();
-        } else if (reference instanceof DoubleArray) {
-            segment = ((DoubleArray) reference).getSegment();
-        } else if (reference instanceof LongArray) {
-            segment = ((LongArray) reference).getSegment();
-        } else if (reference instanceof ShortArray) {
-            segment = ((ShortArray) reference).getSegment();
-        } else if (reference instanceof ByteArray) {
-            segment = ((ByteArray) reference).getSegment();
-        } else if (reference instanceof CharArray) {
-            segment = ((CharArray) reference).getSegment();
-        } else if (reference instanceof VectorFloat2) {
-            segment = ((VectorFloat2) reference).getArray().getSegment();
-        } else if (reference instanceof VectorFloat3) {
-            segment = ((VectorFloat3) reference).getArray().getSegment();
-        } else if (reference instanceof VectorFloat4) {
-            segment = ((VectorFloat4) reference).getArray().getSegment();
-        } else if (reference instanceof VectorFloat8) {
-            segment = ((VectorFloat8) reference).getArray().getSegment();
-        } else if (reference instanceof VectorDouble2) {
-            segment = ((VectorDouble2) reference).getArray().getSegment();
-        } else if (reference instanceof VectorDouble3) {
-            segment = ((VectorDouble3) reference).getArray().getSegment();
-        } else if (reference instanceof VectorDouble4) {
-            segment = ((VectorDouble4) reference).getArray().getSegment();
-        } else if (reference instanceof VectorDouble8) {
-            segment = ((VectorDouble8) reference).getArray().getSegment();
-        } else if (reference instanceof VectorInt2) {
-            segment = ((VectorInt2) reference).getArray().getSegment();
-        } else if (reference instanceof VectorInt3) {
-            segment = ((VectorInt3) reference).getArray().getSegment();
-        } else if (reference instanceof VectorInt4) {
-            segment = ((VectorInt4) reference).getArray().getSegment();
-        } else if (reference instanceof VectorInt8) {
-            segment = ((VectorInt8) reference).getArray().getSegment();
-        } else {
-            segment = (MemorySegment) reference;
-        }
+        MemorySegment segment = getSegment(reference);
 
         final int returnEvent;
         final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : bufferSize;
         if (batchSize <= 0) {
             returnEvent = deviceContext.readBuffer(toBuffer(), numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
-            //            returnEvent = deviceContext.readBuffer(toBuffer(), numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
-            returnEvent = deviceContext.readBuffer(toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize - TornadoNativeArray.ARRAY_HEADER, segment.address(), hostOffset, (useDeps)
+            returnEvent = deviceContext.readBuffer(toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(), hostOffset + TornadoNativeArray.ARRAY_HEADER, (useDeps)
                     ? events
                     : null);
         }
@@ -189,87 +173,23 @@ public class PTXMemorySegmentWrapper implements ObjectBuffer {
 
     @Override
     public void write(Object reference) {
-        MemorySegment seg;
-        if (reference instanceof IntArray) {
-            seg = ((IntArray) reference).getSegment();
-        } else if (reference instanceof FloatArray) {
-            seg = ((FloatArray) reference).getSegment();
-        } else if (reference instanceof DoubleArray) {
-            seg = ((DoubleArray) reference).getSegment();
-        } else if (reference instanceof LongArray) {
-            seg = ((LongArray) reference).getSegment();
-        } else if (reference instanceof ShortArray) {
-            seg = ((ShortArray) reference).getSegment();
-        } else if (reference instanceof ByteArray) {
-            seg = ((ByteArray) reference).getSegment();
-        } else if (reference instanceof CharArray) {
-            seg = ((CharArray) reference).getSegment();
-        } else if (reference instanceof VectorFloat2) {
-            seg = ((VectorFloat2) reference).getArray().getSegment();
-        } else if (reference instanceof VectorFloat3) {
-            seg = ((VectorFloat3) reference).getArray().getSegment();
-        } else if (reference instanceof VectorFloat4) {
-            seg = ((VectorFloat4) reference).getArray().getSegment();
-        } else if (reference instanceof VectorFloat8) {
-            seg = ((VectorFloat8) reference).getArray().getSegment();
-        } else if (reference instanceof VectorDouble2) {
-            seg = ((VectorDouble2) reference).getArray().getSegment();
-        } else if (reference instanceof VectorDouble3) {
-            seg = ((VectorDouble3) reference).getArray().getSegment();
-        } else if (reference instanceof VectorDouble4) {
-            seg = ((VectorDouble4) reference).getArray().getSegment();
-        } else if (reference instanceof VectorDouble8) {
-            seg = ((VectorDouble8) reference).getArray().getSegment();
-        } else {
-            seg = (MemorySegment) reference;
-        }
-        deviceContext.writeBuffer(toBuffer(), bufferSize, seg.address(), 0, null);
+        MemorySegment segment = getSegment(reference);
+
+        deviceContext.writeBuffer(toBuffer(), bufferSize, segment.address(), 0, null);
         onDevice = true;
     }
 
     @Override
     public int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps) {
-
-        MemorySegment seg;
-        if (reference instanceof IntArray) {
-            seg = ((IntArray) reference).getSegment();
-        } else if (reference instanceof FloatArray) {
-            seg = ((FloatArray) reference).getSegment();
-        } else if (reference instanceof DoubleArray) {
-            seg = ((DoubleArray) reference).getSegment();
-        } else if (reference instanceof LongArray) {
-            seg = ((LongArray) reference).getSegment();
-        } else if (reference instanceof ShortArray) {
-            seg = ((ShortArray) reference).getSegment();
-        } else if (reference instanceof ByteArray) {
-            seg = ((ByteArray) reference).getSegment();
-        } else if (reference instanceof CharArray) {
-            seg = ((CharArray) reference).getSegment();
-        } else if (reference instanceof VectorFloat2) {
-            seg = ((VectorFloat2) reference).getArray().getSegment();
-        } else if (reference instanceof VectorFloat3) {
-            seg = ((VectorFloat3) reference).getArray().getSegment();
-        } else if (reference instanceof VectorFloat4) {
-            seg = ((VectorFloat4) reference).getArray().getSegment();
-        } else if (reference instanceof VectorFloat8) {
-            seg = ((VectorFloat8) reference).getArray().getSegment();
-        } else if (reference instanceof VectorDouble2) {
-            seg = ((VectorDouble2) reference).getArray().getSegment();
-        } else if (reference instanceof VectorDouble3) {
-            seg = ((VectorDouble3) reference).getArray().getSegment();
-        } else if (reference instanceof VectorDouble4) {
-            seg = ((VectorDouble4) reference).getArray().getSegment();
-        } else if (reference instanceof VectorDouble8) {
-            seg = ((VectorDouble8) reference).getArray().getSegment();
-        } else {
-            seg = (MemorySegment) reference;
-        }
+        MemorySegment segment = getSegment(reference);
 
         final int returnEvent;
         if (batchSize <= 0) {
-            returnEvent = deviceContext.enqueueReadBuffer(toBuffer(), bufferSize, seg.address(), hostOffset, (useDeps) ? events : null);
+            returnEvent = deviceContext.enqueueReadBuffer(toBuffer(), bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
-            returnEvent = deviceContext.enqueueReadBuffer(toBuffer(), bufferSize, seg.address(), hostOffset, (useDeps) ? events : null);
+            returnEvent = deviceContext.enqueueReadBuffer(toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize - TornadoNativeArray.ARRAY_HEADER, segment.address(), hostOffset, (useDeps)
+                    ? events
+                    : null);
         }
         return useDeps ? returnEvent : -1;
     }
@@ -277,50 +197,17 @@ public class PTXMemorySegmentWrapper implements ObjectBuffer {
     @Override
     public List<Integer> enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         List<Integer> returnEvents = new ArrayList<>();
-        MemorySegment seg;
-        if (reference instanceof IntArray) {
-            seg = ((IntArray) reference).getSegment();
-        } else if (reference instanceof FloatArray) {
-            seg = ((FloatArray) reference).getSegment();
-        } else if (reference instanceof DoubleArray) {
-            seg = ((DoubleArray) reference).getSegment();
-        } else if (reference instanceof LongArray) {
-            seg = ((LongArray) reference).getSegment();
-        } else if (reference instanceof ShortArray) {
-            seg = ((ShortArray) reference).getSegment();
-        } else if (reference instanceof ByteArray) {
-            seg = ((ByteArray) reference).getSegment();
-        } else if (reference instanceof CharArray) {
-            seg = ((CharArray) reference).getSegment();
-        } else if (reference instanceof VectorFloat2) {
-            seg = ((VectorFloat2) reference).getArray().getSegment();
-        } else if (reference instanceof VectorFloat3) {
-            seg = ((VectorFloat3) reference).getArray().getSegment();
-        } else if (reference instanceof VectorFloat4) {
-            seg = ((VectorFloat4) reference).getArray().getSegment();
-        } else if (reference instanceof VectorFloat8) {
-            seg = ((VectorFloat8) reference).getArray().getSegment();
-        } else if (reference instanceof VectorDouble2) {
-            seg = ((VectorDouble2) reference).getArray().getSegment();
-        } else if (reference instanceof VectorDouble3) {
-            seg = ((VectorDouble3) reference).getArray().getSegment();
-        } else if (reference instanceof VectorDouble4) {
-            seg = ((VectorDouble4) reference).getArray().getSegment();
-        } else if (reference instanceof VectorDouble8) {
-            seg = ((VectorDouble8) reference).getArray().getSegment();
-        } else {
-            seg = (MemorySegment) reference;
-        }
+
+        MemorySegment segment = getSegment(reference);
 
         int internalEvent;
         if (batchSize <= 0) {
-            internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), bufferSize, seg.address(), hostOffset, (useDeps) ? events : null);
+            internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
-            //            internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), bufferSize, seg.address(), hostOffset, (useDeps) ? events : null);
-            internalEvent = deviceContext.enqueueWriteBuffer(toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize - TornadoNativeArray.ARRAY_HEADER, seg.address(), hostOffset, (useDeps)
+            internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), TornadoNativeArray.ARRAY_HEADER, segment.address(), 0, (useDeps) ? events : null);
+            internalEvent = deviceContext.enqueueWriteBuffer(toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(), hostOffset + TornadoNativeArray.ARRAY_HEADER, (useDeps)
                     ? events
                     : null);
-
         }
         returnEvents.add(internalEvent);
         onDevice = true;
@@ -329,45 +216,11 @@ public class PTXMemorySegmentWrapper implements ObjectBuffer {
 
     @Override
     public void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
-        MemorySegment memref;
-        if (reference instanceof IntArray) {
-            memref = ((IntArray) reference).getSegment();
-        } else if (reference instanceof FloatArray) {
-            memref = ((FloatArray) reference).getSegment();
-        } else if (reference instanceof DoubleArray) {
-            memref = ((DoubleArray) reference).getSegment();
-        } else if (reference instanceof LongArray) {
-            memref = ((LongArray) reference).getSegment();
-        } else if (reference instanceof ShortArray) {
-            memref = ((ShortArray) reference).getSegment();
-        } else if (reference instanceof ByteArray) {
-            memref = ((ByteArray) reference).getSegment();
-        } else if (reference instanceof CharArray) {
-            memref = ((CharArray) reference).getSegment();
-        } else if (reference instanceof VectorFloat2) {
-            memref = ((VectorFloat2) reference).getArray().getSegment();
-        } else if (reference instanceof VectorFloat3) {
-            memref = ((VectorFloat3) reference).getArray().getSegment();
-        } else if (reference instanceof VectorFloat4) {
-            memref = ((VectorFloat4) reference).getArray().getSegment();
-        } else if (reference instanceof VectorFloat8) {
-            memref = ((VectorFloat8) reference).getArray().getSegment();
-        } else if (reference instanceof VectorDouble2) {
-            memref = ((VectorDouble2) reference).getArray().getSegment();
-        } else if (reference instanceof VectorDouble3) {
-            memref = ((VectorDouble3) reference).getArray().getSegment();
-        } else if (reference instanceof VectorDouble4) {
-            memref = ((VectorDouble4) reference).getArray().getSegment();
-        } else if (reference instanceof VectorDouble8) {
-            memref = ((VectorDouble8) reference).getArray().getSegment();
-        } else {
-            memref = (MemorySegment) reference;
-        }
+        MemorySegment segment = getSegment(reference);
 
-        if (batchSize <= 0) {
-            bufferSize = memref.byteSize();
+        if (batchSize <= 0 && segment != null) {
+            bufferSize = segment.byteSize();
             bufferId = deviceContext.getBufferProvider().getBufferWithSize(bufferSize);
-
         } else {
             bufferSize = batchSize;
             bufferId = deviceContext.getBufferProvider().getBufferWithSize(bufferSize + TornadoNativeArray.ARRAY_HEADER);
@@ -400,18 +253,13 @@ public class PTXMemorySegmentWrapper implements ObjectBuffer {
     }
 
     @Override
-    public long getSizeSubRegion() {
-        return 0;
+    public long getSizeSubRegionSize() {
+        return setSubRegionSize;
     }
 
     @Override
     public void setSizeSubRegion(long batchSize) {
-        this.subregionSize = batchSize;
-    }
-
-    @Override
-    public long getSizeSubRegionSize() {
-        return subregionSize;
+        this.setSubRegionSize = batchSize;
     }
 
     @Override
@@ -424,7 +272,4 @@ public class PTXMemorySegmentWrapper implements ObjectBuffer {
         ObjectBuffer.super.setIntBuffer(arr);
     }
 
-    public long getBatchSize() {
-        return batchSize;
-    }
 }

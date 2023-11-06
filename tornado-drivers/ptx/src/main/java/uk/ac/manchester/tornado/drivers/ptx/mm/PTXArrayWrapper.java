@@ -106,7 +106,7 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
                 shouldNotReachHere("Array header is invalid");
             }
         } else {
-            final long numBytes = getSizeSubRegion() > 0 ? getSizeSubRegion() : (bufferSize - arrayHeaderSize);
+            final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : (bufferSize - arrayHeaderSize);
             return readArrayData(toBuffer() + arrayHeaderSize, numBytes, array, hostOffset, (useDeps) ? events : null);
         }
         return -1;
@@ -284,7 +284,7 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
     protected abstract void writeArrayData(long address, long bytes, T value, int hostOffset, int[] waitEvents);
 
     @Override
-    public long getSizeSubRegion() {
+    public long getSizeSubRegionSize() {
         return setSubRegionSize;
     }
 
