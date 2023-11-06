@@ -101,6 +101,11 @@ public class IntArray extends TornadoNativeArray {
     }
 
     @Override
+    public long getNumBytesWithoutHeader() {
+        return segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
+    }
+
+    @Override
     public MemorySegment getSegment() {
         return segment;
     }

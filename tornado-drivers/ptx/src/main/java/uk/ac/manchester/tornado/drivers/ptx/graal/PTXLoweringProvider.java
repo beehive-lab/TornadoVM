@@ -371,10 +371,6 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         }
     }
 
-    private void lowerAtomicStoreIndexedNode(StoreAtomicIndexedNode storeIndexed) {
-        unimplemented();
-    }
-
     private void lowerIntegerDivRemNode(IntegerDivRemNode integerDivRemNode) {
         StructuredGraph graph = integerDivRemNode.graph();
         switch (integerDivRemNode.getOp()) {

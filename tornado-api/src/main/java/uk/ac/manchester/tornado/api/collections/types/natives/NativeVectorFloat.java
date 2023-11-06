@@ -49,9 +49,8 @@ import java.lang.foreign.MemorySegment;
 import uk.ac.manchester.tornado.api.data.nativetypes.TornadoNativeArray;
 
 public class NativeVectorFloat extends TornadoNativeArray {
-    private MemorySegment segment;
     private final int FLOAT_BYTES = 4;
-
+    private MemorySegment segment;
     private int numberOfElements;
 
     private long segmentByteSize;
@@ -89,6 +88,11 @@ public class NativeVectorFloat extends TornadoNativeArray {
 
     @Override
     public long getNumBytesOfSegment() {
+        return segmentByteSize;
+    }
+
+    @Override
+    public long getNumBytesWithoutHeader() {
         return segmentByteSize;
     }
 }
