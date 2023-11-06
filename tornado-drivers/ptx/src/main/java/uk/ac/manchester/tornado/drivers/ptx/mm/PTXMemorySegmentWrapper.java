@@ -30,8 +30,9 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-public class PTXMemorySegmentWrapper implements ObjectBuffer {
+public class PTXMemorySegmentWrapper extends TornadoLogger implements ObjectBuffer {
     private static final int INIT_VALUE = -1;
     private final PTXDeviceContext deviceContext;
     private final long batchSize;
@@ -40,7 +41,6 @@ public class PTXMemorySegmentWrapper implements ObjectBuffer {
     private boolean onDevice;
     private long bufferSize;
 
-    private long subregionSize;
     private long setSubRegionSize;
 
     public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long batchSize) {
@@ -230,7 +230,7 @@ public class PTXMemorySegmentWrapper implements ObjectBuffer {
         }
 
         if (Tornado.FULL_DEBUG) {
-            //            info("allocated: %s", toString());
+            info("allocated: %s", toString());
         }
     }
 
@@ -242,7 +242,7 @@ public class PTXMemorySegmentWrapper implements ObjectBuffer {
         bufferSize = INIT_VALUE;
 
         if (Tornado.FULL_DEBUG) {
-            //            Debug.info("deallocated: %s", toString());
+            info("deallocated: %s", toString());
         }
     }
 
