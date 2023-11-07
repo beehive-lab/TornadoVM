@@ -454,10 +454,10 @@ public class GraphicsTests extends TornadoTestBase {
         }
     }
 
-    private void generateGaussian(float[] gaussian, int radius, float delta) {
-        for (int i = 0; i < gaussian.length; i++) {
+    private void generateGaussian(FloatArray gaussian, int radius, float delta) {
+        for (int i = 0; i < gaussian.getSize(); i++) {
             final int x = i - radius;
-            gaussian[i] = (float) Math.exp(-(x * x) / (2 * delta * delta));
+            gaussian.set(i, (float) Math.exp(-(x * x) / (2 * delta * delta)));
         }
     }
 
@@ -473,7 +473,7 @@ public class GraphicsTests extends TornadoTestBase {
         float e_delta = 0.1f;
         int radius = 2;
         float delta = 4.0f;
-        float[] gaussian = new float[(radius * 2) + 1];
+        FloatArray gaussian = new FloatArray((radius * 2) + 1);
         generateGaussian(gaussian, radius, delta);
 
         Random r = new Random();
@@ -513,7 +513,7 @@ public class GraphicsTests extends TornadoTestBase {
         float e_delta = 0.1f;
         int radius = 2;
         float delta = 4.0f;
-        float[] gaussian = new float[(radius * 2) + 1];
+        FloatArray gaussian = new FloatArray((radius * 2) + 1);
         generateGaussian(gaussian, radius, delta);
 
         Random r = new Random();
