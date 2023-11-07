@@ -206,4 +206,8 @@ public class VectorFloat2 implements PrimitiveStorage<FloatBuffer> {
     public FloatArray getArray() {
         return storage;
     }
+
+    public void clear() {
+        storage.clear();
+    }
 }

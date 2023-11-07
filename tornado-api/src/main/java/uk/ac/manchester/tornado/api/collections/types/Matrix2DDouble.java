@@ -87,6 +87,11 @@ public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<Dou
         this(rows, columns, new DoubleArray(rows * columns));
     }
 
+    @Override
+    public void clear() {
+        storage.clear();
+    }
+
     public Matrix2DDouble(double[][] matrix) {
         this(matrix.length, matrix[0].length, StorageFormats.toRowMajor(matrix));
     }

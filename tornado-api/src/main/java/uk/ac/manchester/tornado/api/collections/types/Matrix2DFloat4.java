@@ -88,6 +88,11 @@ public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<Flo
         this(rows, columns, new FloatArray(rows * columns * VECTOR_ELEMENTS));
     }
 
+    @Override
+    public void clear() {
+        storage.clear();
+    }
+
     /**
      * Transposes the matrix in-place.
      *

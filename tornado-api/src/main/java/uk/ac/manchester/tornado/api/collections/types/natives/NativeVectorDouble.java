@@ -92,7 +92,7 @@ public class NativeVectorDouble extends TornadoNativeArray {
     }
 
     @Override
-    protected void clear() {
+    public void clear() {
         init(0.0);
     }
 

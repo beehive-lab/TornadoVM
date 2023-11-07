@@ -337,4 +337,8 @@ public class NativeInt8 implements PrimitiveStorage<IntBuffer> {
             array.set(index + i, get(i));
         }
     }
+
+    public void clear() {
+        nativeVectorInt.clear();
+    }
 }

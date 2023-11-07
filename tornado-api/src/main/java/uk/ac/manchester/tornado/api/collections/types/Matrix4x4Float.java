@@ -229,4 +229,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
         return new FloatingPointError(averageULP, minULP, maxULP, -1f);
     }
 
+    public void clear() {
+        storage.clear();
+    }
 }

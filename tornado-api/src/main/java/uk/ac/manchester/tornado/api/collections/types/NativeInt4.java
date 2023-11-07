@@ -265,4 +265,8 @@ public class NativeInt4 implements PrimitiveStorage<IntBuffer> {
         array.set(index + 2, getZ());
         array.set(index + 3, getW());
     }
+
+    public void clear() {
+        nativeVectorInt.clear();
+    }
 }
