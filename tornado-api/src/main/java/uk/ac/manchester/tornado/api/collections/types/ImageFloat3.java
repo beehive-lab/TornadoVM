@@ -272,4 +272,8 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
         return new FloatingPointError(averageULP, minULP, maxULP, -1f, errors);
     }
 
+    public void clear() {
+        storage.clear();
+    }
+
 }
