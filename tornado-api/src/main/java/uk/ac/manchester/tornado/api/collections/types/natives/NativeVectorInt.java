@@ -86,6 +86,11 @@ public class NativeVectorInt extends TornadoNativeArray {
     }
 
     @Override
+    protected void clear() {
+        init(0);
+    }
+
+    @Override
     public MemorySegment getSegment() {
         return segment;
     }

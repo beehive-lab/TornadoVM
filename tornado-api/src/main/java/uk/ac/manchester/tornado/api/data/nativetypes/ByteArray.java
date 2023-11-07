@@ -87,6 +87,11 @@ public class ByteArray extends TornadoNativeArray {
         return segment.getAtIndex(JAVA_BYTE, baseIndex + index);
     }
 
+    @Override
+    public void clear() {
+        init((byte) 0);
+    }
+
     public void init(byte value) {
         for (int i = 0; i < getSize(); i++) {
             segment.setAtIndex(JAVA_BYTE, baseIndex + i, value);

@@ -70,6 +70,11 @@ public class CharArray extends TornadoNativeArray {
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
+    @Override
+    public void clear() {
+        init('\u0000');
+    }
+
     public CharArray(char... values) {
         this(values.length);
         for (int i = 0; i < values.length; i++) {

@@ -87,6 +87,11 @@ public class FloatArray extends TornadoNativeArray {
         return segment.getAtIndex(JAVA_FLOAT, baseIndex + index);
     }
 
+    @Override
+    public void clear() {
+        init(0.0f);
+    }
+
     public void init(float value) {
         for (int i = 0; i < getSize(); i++) {
             segment.setAtIndex(JAVA_FLOAT, baseIndex + i, value);

@@ -91,4 +91,9 @@ public class NativeVectorDouble extends TornadoNativeArray {
         return segmentByteSize;
     }
 
+    @Override
+    protected void clear() {
+        init(0.0);
+    }
+
 }
