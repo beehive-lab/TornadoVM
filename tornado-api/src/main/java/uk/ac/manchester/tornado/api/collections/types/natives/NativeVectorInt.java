@@ -85,7 +85,6 @@ public class NativeVectorInt extends TornadoNativeArray {
     }
 
     @Override
-
     public void clear() {
         init(0);
     }

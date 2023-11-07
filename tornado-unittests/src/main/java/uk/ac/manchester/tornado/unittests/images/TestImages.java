@@ -615,6 +615,88 @@ public class TestImages extends TornadoTestBase {
             }
         }
     }
+
+    @Test
+    public void testImageFloat16() {
+
+        final int M = 64;
+        final int N = 64;
+        final int base = 10;
+
+        final ImageFloat imageA = new ImageFloat(M, N);
+        final ImageFloat imageB = new ImageFloat(M, N);
+        imageA.fill(base);
+
+        final TaskGraph taskGraph = new TaskGraph("testLoop") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, imageA) //
+                .task("image", TestImages::testCopyImagesParallel, imageA, imageB)//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, imageB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        // Execute 10000 times
+        int iteration = 0;
+        while (iteration < 10000) {
+            executionPlan.execute();
+
+            // Check result
+            for (int i = 0; i < M; i++) {
+                for (int j = 0; j < N; j++) {
+                    assertEquals((11 + iteration), imageB.get(i, j), 0.1f);
+                }
+            }
+
+            // Set the new array
+            for (int i = 0; i < M; i++) {
+                for (int j = 0; j < N; j++) {
+                    imageA.set(i, j, imageB.get(i, j));
+                }
+            }
+            iteration++;
+        }
+    }
+
+    @Test
+    public void testImageFloat17() {
+
+        final int M = 64;
+        final int N = 64;
+        final int base = 10;
+
+        final ImageFloat imageA = new ImageFloat(M, N);
+        final ImageFloat imageB = new ImageFloat(M, N);
+        imageA.fill(base);
+
+        final TaskGraph taskGraph = new TaskGraph("testLoop") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, imageA) //
+                .task("image", TestImages::testCopyImagesSequential, imageA, imageB)//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, imageB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        // Execute 10000 times
+        int iteration = 0;
+        while (iteration < 10000) {
+            executionPlan.execute();
+
+            // Check result
+            for (int i = 0; i < M; i++) {
+                for (int j = 0; j < N; j++) {
+                    assertEquals((11 + iteration), imageB.get(i, j), 0.1f);
+                }
+            }
+
+            // Set the new array
+            for (int i = 0; i < M; i++) {
+                for (int j = 0; j < N; j++) {
+                    imageA.set(i, j, imageB.get(i, j));
+                }
+            }
+            iteration++;
+        }
+    }
     // CHECKSTYLE:ON
 
 }
