@@ -86,6 +86,11 @@ public class Matrix2DInt extends Matrix2DType implements PrimitiveStorage<IntBuf
         this(rows, columns, new IntArray(rows * columns));
     }
 
+    @Override
+    public void clear() {
+        storage.clear();
+    }
+
     public Matrix2DInt(int[][] matrix) {
         this(matrix.length, matrix[0].length, StorageFormats.toRowMajor(matrix));
     }

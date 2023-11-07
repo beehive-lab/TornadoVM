@@ -41,14 +41,14 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import java.lang.foreign.ValueLayout;
+import java.nio.DoubleBuffer;
+
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.collections.types.natives.NativeVectorDouble;
 import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
-
-import java.lang.foreign.ValueLayout;
-import java.nio.DoubleBuffer;
 
 @Vector
 public class NativeDouble3 implements PrimitiveStorage<DoubleBuffer> {
@@ -325,6 +325,10 @@ public class NativeDouble3 implements PrimitiveStorage<DoubleBuffer> {
 
     public double[] toArray() {
         return nativeVectorDouble.getSegment().toArray(ValueLayout.JAVA_DOUBLE);
+    }
+
+    public void clear() {
+        nativeVectorDouble.clear();
     }
 
 }

@@ -318,4 +318,8 @@ public class NativeDouble2 implements PrimitiveStorage<DoubleBuffer> {
         return nativeVectorDouble.getSegment().toArray(ValueLayout.JAVA_DOUBLE);
     }
 
+    public void clear() {
+        nativeVectorDouble.clear();
+    }
+
 }

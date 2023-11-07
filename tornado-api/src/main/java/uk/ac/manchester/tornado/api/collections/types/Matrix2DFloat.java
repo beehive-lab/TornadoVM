@@ -90,6 +90,11 @@ public class Matrix2DFloat extends Matrix2DType implements PrimitiveStorage<Floa
         this(rows, columns, new FloatArray(rows * columns));
     }
 
+    @Override
+    public void clear() {
+        storage.clear();
+    }
+
     public Matrix2DFloat(float[][] matrix) {
         this(matrix.length, matrix[0].length, toRowMajor(matrix));
     }

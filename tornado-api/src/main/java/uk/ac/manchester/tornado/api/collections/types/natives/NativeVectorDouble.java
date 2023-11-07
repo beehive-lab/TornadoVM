@@ -93,6 +93,12 @@ public class NativeVectorDouble extends TornadoNativeArray {
     @Override
     public long getNumBytesWithoutHeader() {
         return segmentByteSize;
+
+    }
+
+    @Override
+    public void clear() {
+        storage.clear();
     }
 
 }

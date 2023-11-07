@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
@@ -10,32 +10,32 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
- * 
+ *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * along with GNU Classpath; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  *
  * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
+ * making a combined work based on this library. Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
- * 
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent
  * modules, and to copy and distribute the resulting executable under
  * terms of your choice, provided that you also meet, for each linked
  * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
+ * module. An independent module is a module which is not derived from
+ * or based on this library. If you modify this library, you may extend
  * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
+ * obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  *
  */
@@ -61,7 +61,7 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
      * Creates an empty vector with.
      *
      * @param numElements
-     *            Number of elements
+     *     Number of elements
      */
     public VectorDouble(int numElements) {
         this(numElements, new DoubleArray(numElements));
@@ -71,7 +71,7 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
      * Creates an new vector from the provided storage.
      *
      * @param storage
-     *            vector to be stored
+     *     vector to be stored
      */
     public VectorDouble(DoubleArray storage) {
         this(storage.getSize() / ELEMENT_SIZE, storage);
@@ -116,7 +116,7 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
      * Returns the double at the given index of this vector.
      *
      * @param index
-     *            Position
+     *     Position
      * @return value
      */
     public double get(int index) {
@@ -127,9 +127,9 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
      * Sets the double at the given index of this vector.
      *
      * @param index
-     *            Position
+     *     Position
      * @param value
-     *            value to be stored
+     *     value to be stored
      */
     public void set(int index, double value) {
         storage.set(index, value);
@@ -150,7 +150,7 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
      * Sets the elements of this vector to that of the provided array.
      *
      * @param values
-     *            input vector to be stored
+     *     input vector to be stored
      */
     public void set(double[] values) {
         for (int i = 0; i < values.length; i++) {
@@ -162,7 +162,7 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
      * Sets all elements to value.
      *
      * @param value
-     *            input vector to be stored
+     *     input vector to be stored
      */
     public void fill(double value) {
         for (int i = 0; i < storage.getSize(); i++) {
@@ -174,9 +174,9 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
      * Returns slice of this vector.
      *
      * @param start
-     *            starting index
+     *     starting index
      * @param length
-     *            number of elements
+     *     number of elements
      *
      * @return vector with elements updated
      */
@@ -205,7 +205,7 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
      * Vector equality test.
      *
      * @param vector
-     *            input Vector
+     *     input Vector
      *
      * @return true if vectors match
      */
@@ -217,7 +217,7 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
      * Prints the vector using the specified format string.
      *
      * @param fmt
-     *            String Format
+     *     String Format
      * @return String
      */
     public String toString(String fmt) {
@@ -256,5 +256,9 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
 
     public int getLength() {
         return numElements;
+    }
+
+    public void clear() {
+        storage.clear();
     }
 }
