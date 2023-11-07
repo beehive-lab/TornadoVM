@@ -54,4 +54,6 @@ public abstract class TornadoNativeArray {
 
     public abstract long getNumBytesWithoutHeader();
 
+    protected abstract void clear();
+
 }

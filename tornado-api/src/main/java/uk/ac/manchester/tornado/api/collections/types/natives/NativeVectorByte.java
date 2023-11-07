@@ -94,4 +94,9 @@ public class NativeVectorByte extends TornadoNativeArray {
     public long getNumBytesWithoutHeader() {
         return segmentByteSize;
     }
+
+    @Override
+    protected void clear() {
+        init((byte) 0);
+    }
 }

@@ -86,6 +86,11 @@ public class ShortArray extends TornadoNativeArray {
         return segment.getAtIndex(JAVA_SHORT, baseIndex + index);
     }
 
+    @Override
+    public void clear() {
+        init((short) 0);
+    }
+
     public void init(short value) {
         for (int i = 0; i < getSize(); i++) {
             segment.setAtIndex(JAVA_SHORT, baseIndex + i, value);
