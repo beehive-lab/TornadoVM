@@ -131,18 +131,15 @@ public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<Flo
 
     public VectorFloat row(int row) {
         int index = StorageFormats.toRowMajor(row, 0, COLUMNS);
-        //TODO: CHECK
-        int from = index;
         int to = getFinalIndexOfRange(index);
-        int size = to - from;
+        int size = to - index;
         FloatArray f = new FloatArray(size);
         int j = 0;
-        for (int i = from; i < to; i++) {
+        for (int i = index; i < to; i++) {
             f.set(j, storage.get(i));
             j++;
         }
         return new VectorFloat(COLUMNS, f);
-        //return new VectorFloat(COLUMNS, Arrays.copyOfRange(storage, index, getFinalIndexOfRange(index)));
     }
 
     public VectorFloat column(int col) {
