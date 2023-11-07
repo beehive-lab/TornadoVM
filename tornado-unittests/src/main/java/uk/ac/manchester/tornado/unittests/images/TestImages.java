@@ -108,6 +108,24 @@ public class TestImages extends TornadoTestBase {
         }
     }
 
+    public static void testCopyImagesParallel(final ImageFloat a, final ImageFloat b) {
+        for (@Parallel int i = 0; i < a.X(); i++) {
+            for (@Parallel int j = 0; j < a.Y(); j++) {
+                float value = a.get(i, j) + 1;
+                b.set(i, j, value);
+            }
+        }
+    }
+
+    public static void testCopyImagesSequential(final ImageFloat a, final ImageFloat b) {
+        for (int i = 0; i < a.X(); i++) {
+            for (int j = 0; j < a.Y(); j++) {
+                float value = a.get(i, j) + 1;
+                b.set(i, j, value);
+            }
+        }
+    }
+
     /**
      * Test for image::fill kernel with square image.
      */
@@ -621,6 +639,7 @@ public class TestImages extends TornadoTestBase {
 
         final int M = 64;
         final int N = 64;
+
         final int base = 10;
 
         final ImageFloat imageA = new ImageFloat(M, N);
@@ -662,6 +681,7 @@ public class TestImages extends TornadoTestBase {
 
         final int M = 64;
         final int N = 64;
+
         final int base = 10;
 
         final ImageFloat imageA = new ImageFloat(M, N);
