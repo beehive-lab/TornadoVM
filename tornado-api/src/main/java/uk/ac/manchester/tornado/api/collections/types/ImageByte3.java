@@ -181,4 +181,8 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
         return numElements;
     }
 
+    public void clear() {
+        storage.clear();
+    }
+
 }
