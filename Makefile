@@ -11,6 +11,9 @@ build jdk-17-plus:
 graal-jdk-17-plus:
 	bin/compile --jdk graal-jdk-17-plus $(BACKENDS)
 
+polyglot:
+	bin/compile --jdk graal-jdk-17-plus $(BACKENDS) --polyglot
+
 ptx:
 	bin/compile --jdk jdk-17-plus --backends ptx,opencl
 
