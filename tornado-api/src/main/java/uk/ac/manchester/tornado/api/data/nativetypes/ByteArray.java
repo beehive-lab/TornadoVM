@@ -112,4 +112,9 @@ public class ByteArray extends TornadoNativeArray {
     public long getNumBytesOfSegment() {
         return segmentByteSize;
     }
+
+    @Override
+    public long getNumBytesWithoutHeader() {
+        return segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
+    }
 }

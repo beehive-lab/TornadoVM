@@ -146,7 +146,7 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
         if (batchSize <= 0) {
             returnEvent = spirvDeviceContext.readBuffer(toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, waitEvents);
         } else {
-            returnEvent = spirvDeviceContext.readBuffer(toBuffer(), TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, numBytes, segment.address(), hostOffset, waitEvents);
+            returnEvent = spirvDeviceContext.readBuffer(toBuffer(), TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, numBytes, segment.address(), hostOffset + TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, waitEvents);
         }
         return returnEvent;
     }
@@ -165,7 +165,7 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
         if (batchSize <= 0) {
             returnEvent = spirvDeviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, waitEvents);
         } else {
-            returnEvent = spirvDeviceContext.enqueueReadBuffer(toBuffer(), TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, numBytes, segment.address(), hostOffset, waitEvents);
+            returnEvent = spirvDeviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, waitEvents);
         }
         return returnEvent;
     }
@@ -178,7 +178,9 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
         if (batchSize <= 0) {
             internalEvent = spirvDeviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
-            internalEvent = spirvDeviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            internalEvent = spirvDeviceContext.enqueueWriteBuffer(toBuffer(), 0, TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, segment.address(), 0,(useDeps) ? events : null);
+            returnEvents.add(internalEvent);
+            internalEvent = spirvDeviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(), hostOffset + TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, (useDeps) ? events : null);
 
         }
         returnEvents.add(internalEvent);

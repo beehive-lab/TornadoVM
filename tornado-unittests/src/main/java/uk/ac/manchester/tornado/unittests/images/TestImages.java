@@ -639,6 +639,7 @@ public class TestImages extends TornadoTestBase {
 
         final int M = 64;
         final int N = 64;
+
         final int base = 10;
 
         final ImageFloat imageA = new ImageFloat(M, N);
@@ -680,6 +681,7 @@ public class TestImages extends TornadoTestBase {
 
         final int M = 64;
         final int N = 64;
+
         final int base = 10;
 
         final ImageFloat imageA = new ImageFloat(M, N);

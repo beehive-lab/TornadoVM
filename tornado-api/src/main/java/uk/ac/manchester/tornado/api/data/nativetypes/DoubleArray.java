@@ -113,4 +113,9 @@ public class DoubleArray extends TornadoNativeArray {
         return segmentByteSize;
     }
 
+    @Override
+    public long getNumBytesWithoutHeader() {
+        return segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
+    }
+
 }
