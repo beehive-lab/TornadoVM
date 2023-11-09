@@ -157,7 +157,7 @@ public final class VectorPlugins {
         return resolveReceiver(thisObject);
     }
 
-    private static Class resolveJavaClass(String panamaType) throws TornadoCompilationException {
+    private static Class<?> resolveJavaClass(String panamaType) throws TornadoCompilationException {
         if (panamaType.contains("IntArray")) {
             return int.class;
         } else if (panamaType.contains("DoubleArray")) {
@@ -181,7 +181,7 @@ public final class VectorPlugins {
             public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
                 if (method.getName().equals("<init>") && (method.toString().contains("FloatArray.<init>(int)") || method.toString().contains("DoubleArray.<init>(int)") || method.toString().contains(
                         "IntArray.<init>(int)"))) {
-                    Class javaType = resolveJavaClass(method.toString());
+                    Class<?> javaType = resolveJavaClass(method.toString());
                     b.append(new PanamaPrivateMemoryNode(b.getMetaAccess().lookupJavaType(javaType), args[1]));
                     return true;
                 }

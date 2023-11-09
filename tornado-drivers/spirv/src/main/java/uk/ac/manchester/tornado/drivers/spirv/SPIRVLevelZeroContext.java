@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -561,6 +561,28 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
     }
 
     @Override
+    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, long value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
+        SPIRVLevelZeroCommandQueue spirvCommandQueue = commandQueues.get(deviceIndex);
+        LevelZeroCommandList commandList = spirvCommandQueue.getCommandList();
+        LevelZeroByteBuffer deviceBuffer = deviceBufferMap.get(bufferId);
+        if (deviceBuffer == null) {
+            TornadoInternalError.shouldNotReachHere(BUFFER_NOT_FOUND_ERROR_MESSAGE);
+        }
+
+        if (profilerTransfer != null) {
+            registerTimeStamp(commandList, profilerTransfer.getStart(), profilerTransfer.getStop());
+        }
+
+        int result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), deviceBuffer, value, bytes, offset, hostOffset, null, 0, null);
+        LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopyWithOffset", result);
+        enqueueBarrier(deviceIndex);
+        if (profilerTransfer != null) {
+            appendTimeStamp(profilerTransfer.getStop());
+        }
+        return 0;
+    }
+
+    @Override
     public void enqueueBarrier(int deviceIndex) {
         SPIRVLevelZeroCommandQueue spirvCommandQueue = commandQueues.get(deviceIndex);
         LevelZeroCommandList commandList = spirvCommandQueue.getCommandList();
@@ -589,6 +611,27 @@ public class SPIRVLevelZeroContext extends SPIRVContext {
         // Reset for the rest of executions
         result = commandList.zeCommandListReset(commandList.getCommandListHandlerPtr());
         LevelZeroUtils.errorLog("zeCommandListReset", result);
+    }
+
+    @Override
+    public void readBuffer(int deviceIndex, long bufferId, long srcOffset, long bytes, long offHeapSegmentAddress, long dstOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
+        SPIRVLevelZeroCommandQueue spirvCommandQueue = commandQueues.get(deviceIndex);
+        LevelZeroCommandList commandList = spirvCommandQueue.getCommandList();
+        LevelZeroByteBuffer deviceBuffer = deviceBufferMap.get(bufferId);
+        if (deviceBuffer == null) {
+            TornadoInternalError.shouldNotReachHere(BUFFER_NOT_FOUND_ERROR_MESSAGE);
+        }
+
+        if (profilerTransfer != null) {
+            registerTimeStamp(commandList, profilerTransfer.getStart(), profilerTransfer.getStop());
+        }
+        int result = commandList.zeCommandListAppendMemoryCopyWithOffset(commandList.getCommandListHandlerPtr(), offHeapSegmentAddress, deviceBuffer, bytes, dstOffset, srcOffset, null, 0, null);
+        LevelZeroUtils.errorLog("zeCommandListAppendMemoryCopyWithOffset", result);
+        enqueueBarrier(deviceIndex);
+
+        if (profilerTransfer != null) {
+            appendTimeStamp(profilerTransfer.getStop());
+        }
     }
 
 }

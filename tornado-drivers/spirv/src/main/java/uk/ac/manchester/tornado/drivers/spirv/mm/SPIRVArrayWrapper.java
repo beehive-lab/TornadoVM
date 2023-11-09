@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -157,7 +157,7 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
                 shouldNotReachHere("Array header is invalid");
             }
         } else {
-            final long numBytes = getSizeSubRegion() > 0 ? getSizeSubRegion() : (bufferSize - arrayHeaderSize);
+            final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : (bufferSize - arrayHeaderSize);
             return readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, numBytes, array, hostOffset, (useDeps) ? events : null);
         }
         return -1;
@@ -294,7 +294,7 @@ public abstract class SPIRVArrayWrapper<T> implements ObjectBuffer {
     }
 
     @Override
-    public long getSizeSubRegion() {
+    public long getSizeSubRegionSize() {
         return setSubRegionSize;
     }
 

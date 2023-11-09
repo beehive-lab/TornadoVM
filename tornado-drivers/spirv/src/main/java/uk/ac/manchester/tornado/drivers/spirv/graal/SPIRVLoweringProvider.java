@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -27,6 +27,7 @@ package uk.ac.manchester.tornado.drivers.spirv.graal;
 import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.drivers.graal.TornadoMemoryOrder.GPU_MEMORY_MODE;
 
 import java.util.Iterator;
 
@@ -78,6 +79,7 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.replacements.DefaultJavaLoweringProvider;
 import org.graalvm.compiler.replacements.SnippetCounter;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
@@ -89,7 +91,9 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.graal.TornadoMemoryOrder;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVTargetDescription;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.CastNode;
@@ -110,6 +114,7 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadLocalIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
 /**
@@ -174,7 +179,9 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         } else if (node instanceof StoreIndexedNode) {
             lowerStoreIndexedNode((StoreIndexedNode) node, tool);
         } else if (node instanceof StoreAtomicIndexedNode) {
-            lowerStoreAtomicsReduction(node, tool);
+            lowerReduceSnippets(node, tool);
+        } else if (node instanceof WriteAtomicNode) {
+            lowerReduceSnippets(node, tool);
         } else if (node instanceof FloatConvertNode) {
             lowerFloatConvertNode((FloatConvertNode) node);
         } else if (node instanceof LoadFieldNode) {
@@ -210,8 +217,17 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         graph.replaceFixedWithFloating(threadIdNode, globalThreadIdNode);
     }
 
-    private void lowerReduceSnippets(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
-        StructuredGraph graph = storeIndexed.graph();
+    private void lowerReduceSnippets(Node node, LoweringTool tool) {
+
+        StructuredGraph graph = null;
+        ValueNode startIndexNode = null;
+        if (node instanceof StoreAtomicIndexedNode) {
+            graph = ((StoreAtomicIndexedNode) node).graph();
+            startIndexNode = ((StoreAtomicIndexedNode) node).getStartNode();
+        } else if (node instanceof WriteAtomicNode) {
+            graph = ((WriteAtomicNode) node).graph();
+            startIndexNode = ((WriteAtomicNode) node).getStartNode();
+        }
 
         // Find Get Global ID node and Global Size;
         GlobalThreadIdNode spirvIDNode = graph.getNodes().filter(GlobalThreadIdNode.class).first();
@@ -234,16 +250,15 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
         }
         // Depending on the Scheduler, call the proper snippet factory
         if (cpuScheduler) {
-            throw new RuntimeException("CPU Snippets for SPIR-V not implemented yet");
+            throw new TornadoRuntimeException("CPU Snippets for SPIR-V not implemented yet");
         } else {
-            gpuReduceSnippets.lower(storeIndexed, threadID, spirvGlobalSize, tool);
+            if (node instanceof StoreAtomicIndexedNode storeIndexed) {
+                gpuReduceSnippets.lower(storeIndexed, threadID, spirvGlobalSize, tool);
+            } else if (node instanceof WriteAtomicNode writeAtomicNode) {
+                gpuReduceSnippets.lower(writeAtomicNode, threadID, spirvGlobalSize, tool);
+            }
         }
 
-    }
-
-    private void lowerStoreAtomicsReduction(Node node, LoweringTool tool) {
-        StoreAtomicIndexedNode storeAtomicNode = (StoreAtomicIndexedNode) node;
-        lowerReduceSnippets(storeAtomicNode, tool);
     }
 
     private void lowerLocalNewArray(StructuredGraph graph, int length, NewArrayNonVirtualizableNode newArray) {
@@ -473,7 +488,12 @@ public class SPIRVLoweringProvider extends DefaultJavaLoweringProvider {
             loadStamp = loadStamp(loadIndexed.stamp(NodeView.DEFAULT), elementKind, false);
         }
         address = createArrayAccess(graph, loadIndexed, elementKind);
-        ReadNode memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, BarrierType.NONE, TornadoMemoryOrder.GPU_MEMORY_MODE));
+        ReadNode memoryRead;
+        if (loadIndexed instanceof LoadIndexedVectorNode) {
+            memoryRead = graph.add(new ReadNode(address, LocationIdentity.any(), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+        } else {
+            memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+        }
         loadIndexed.replaceAtUsages(memoryRead);
         graph.replaceFixed(loadIndexed, memoryRead);
     }

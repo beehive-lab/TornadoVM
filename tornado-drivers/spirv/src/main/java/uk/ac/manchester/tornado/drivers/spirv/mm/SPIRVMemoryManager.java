@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -46,10 +46,6 @@ public class SPIRVMemoryManager implements TornadoMemoryProvider {
     public SPIRVKernelArgs createCallWrapper(final int maxArgs) {
         long kernelCallBuffer = deviceContext.getSpirvContext().allocateMemory(deviceContext.getDevice().getDeviceIndex(), RESERVED_SLOTS * Long.BYTES);
         return new SPIRVKernelArgs(kernelCallBuffer, maxArgs, deviceContext);
-    }
-
-    private static long align(final long address, final long alignment) {
-        return (address % alignment == 0) ? address : address + (alignment - address % alignment);
     }
 
 }

@@ -64,14 +64,14 @@ public class LevelZeroCommandList {
      * </ul>
      *
      * @param ptrZeCommandListHandle
-     *            [in] Pointer handler of command list object to close
+     *     [in] Pointer handler of command list object to close
      * @return ZE_RESULT_SUCCESS
-     *         <p>
-     *         ZE_RESULT_ERROR_UNINITIALIZED
-     *         <p>
-     *         ZE_RESULT_ERROR_DEVICE_LOST
-     *         <p>
-     *         ZE_RESULT_ERROR_INVALID_NULL_HANDLE: (null == hCommandList)
+     *     <p>
+     *     ZE_RESULT_ERROR_UNINITIALIZED
+     *     <p>
+     *     ZE_RESULT_ERROR_DEVICE_LOST
+     *     <p>
+     *     ZE_RESULT_ERROR_INVALID_NULL_HANDLE: (null == hCommandList)
      */
     public int zeCommandListClose(long ptrZeCommandListHandle) {
         return zeCommandListClose_native(ptrZeCommandListHandle);
@@ -98,6 +98,9 @@ public class LevelZeroCommandList {
     private native int zeCommandListAppendMemoryCopy_nativeLong(long commandListHandlerPtr, LevelZeroByteBuffer deviceBuffer, long[] heapBuffer, long allocSize, long dstOffset, long srcOffset,
             ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents);
 
+    private native int zeCommandListAppendMemoryCopy_nativeOffHeap(long commandListHandlerPtr, LevelZeroByteBuffer deviceBuffer, long offHeapBuffer, long allocSize, long dstOffset, long srcOffset,
+            ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents);
+
     /**
      * Copies host, device, or shared memory.
      * <p>
@@ -122,39 +125,39 @@ public class LevelZeroCommandList {
      * clEnqueueWriteBuffer, and clEnqueueSVMMemCpy.
      *
      * @param commandListHandlerPtr
-     *            [in] handle of command list
+     *     [in] handle of command list
      * @param dstBuffer
-     *            [in] {@link LevelZeroByteBuffer} to destination memory to copy to
+     *     [in] {@link LevelZeroByteBuffer} to destination memory to copy to
      * @param srcBuffer
-     *            [in] Java array to source memory to copy from
+     *     [in] Java array to source memory to copy from
      * @param allocSize
-     *            [in] size in bytes to copy
+     *     [in] size in bytes to copy
      * @param hSignalEvents
-     *            [in][optional] {@link ZeEventHandle} handler of the event to
-     *            signal on completion
+     *     [in][optional] {@link ZeEventHandle} handler of the event to
+     *     signal on completion
      * @param numWaitEvents
-     *            [in][optional] number of events to wait on before launching; must
-     *            be 0 if `null == phWaitEvents`
+     *     [in][optional] number of events to wait on before launching; must
+     *     be 0 if `null == phWaitEvents`
      * @param phWaitEvents
-     *            [in][optional][range(0, numWaitEvents)] handle of the events to
-     *            wait on before launching
+     *     [in][optional][range(0, numWaitEvents)] handle of the events to
+     *     wait on before launching
      * @return Status of the call:
-     *         <p>
-     *         ZE_RESULT_SUCCESS
-     *         <p>
-     *         ZE_RESULT_ERROR_UNINITIALIZED
-     *         <p>
-     *         ZE_RESULT_ERROR_DEVICE_LOST
-     *         <p>
-     *         ZE_RESULT_ERROR_INVALID_NULL_HANDLE: null == hCommandList
-     *         <p>
-     *         ZE_RESULT_ERROR_INVALID_NULL_POINTER: null == dstptr or null ==
-     *         srcptr
-     *         <p>
-     *         ZE_RESULT_ERROR_INVALID_SYNCHRONIZATION_OBJECT
-     *         <p>
-     *         ZE_RESULT_ERROR_INVALID_SIZE: (null == phWaitEvents) && (0 <
-     *         numWaitEvents)
+     *     <p>
+     *     ZE_RESULT_SUCCESS
+     *     <p>
+     *     ZE_RESULT_ERROR_UNINITIALIZED
+     *     <p>
+     *     ZE_RESULT_ERROR_DEVICE_LOST
+     *     <p>
+     *     ZE_RESULT_ERROR_INVALID_NULL_HANDLE: null == hCommandList
+     *     <p>
+     *     ZE_RESULT_ERROR_INVALID_NULL_POINTER: null == dstptr or null ==
+     *     srcptr
+     *     <p>
+     *     ZE_RESULT_ERROR_INVALID_SYNCHRONIZATION_OBJECT
+     *     <p>
+     *     ZE_RESULT_ERROR_INVALID_SIZE: (null == phWaitEvents) && (0 <
+     *     numWaitEvents)
      */
     public int zeCommandListAppendMemoryCopy(long commandListHandlerPtr, LevelZeroByteBuffer dstBuffer, byte[] srcBuffer, long allocSize, ZeEventHandle hSignalEvents, int numWaitEvents,
             ZeEventHandle phWaitEvents) {
@@ -185,43 +188,43 @@ public class LevelZeroCommandList {
      * clEnqueueWriteBuffer, and clEnqueueSVMMemCpy.
      *
      * @param commandListHandlerPtr
-     *            [in] handle of command list
+     *     [in] handle of command list
      * @param dstBuffer
-     *            [in] {@link LevelZeroByteBuffer} to destination memory to copy to
+     *     [in] {@link LevelZeroByteBuffer} to destination memory to copy to
      * @param srcBuffer
-     *            [in] Java array to source memory to copy from
+     *     [in] Java array to source memory to copy from
      * @param allocSize
-     *            [in] size in bytes to copy
+     *     [in] size in bytes to copy
      * @param dstOffset
-     *            [in] offset in bytes for the dstBuffer
+     *     [in] offset in bytes for the dstBuffer
      * @param srcOffset
-     *            [in] offset in bytes for the srcBuffer
+     *     [in] offset in bytes for the srcBuffer
      * @param hSignalEvents
-     *            [in][optional] {@link ZeEventHandle} handler of the event to
-     *            signal on completion
+     *     [in][optional] {@link ZeEventHandle} handler of the event to
+     *     signal on completion
      * @param numWaitEvents
-     *            [in][optional] number of events to wait on before launching; must
-     *            be 0 if `null == phWaitEvents`
+     *     [in][optional] number of events to wait on before launching; must
+     *     be 0 if `null == phWaitEvents`
      * @param phWaitEvents
-     *            [in][optional][range(0, numWaitEvents)] handle of the events to
-     *            wait on before launching
+     *     [in][optional][range(0, numWaitEvents)] handle of the events to
+     *     wait on before launching
      * @return Status of the call:
-     *         <p>
-     *         ZE_RESULT_SUCCESS
-     *         <p>
-     *         ZE_RESULT_ERROR_UNINITIALIZED
-     *         <p>
-     *         ZE_RESULT_ERROR_DEVICE_LOST
-     *         <p>
-     *         ZE_RESULT_ERROR_INVALID_NULL_HANDLE: null == hCommandList
-     *         <p>
-     *         ZE_RESULT_ERROR_INVALID_NULL_POINTER: null == dstptr or null ==
-     *         srcptr
-     *         <p>
-     *         ZE_RESULT_ERROR_INVALID_SYNCHRONIZATION_OBJECT
-     *         <p>
-     *         ZE_RESULT_ERROR_INVALID_SIZE: (null == phWaitEvents) && (0 <
-     *         numWaitEvents)
+     *     <p>
+     *     ZE_RESULT_SUCCESS
+     *     <p>
+     *     ZE_RESULT_ERROR_UNINITIALIZED
+     *     <p>
+     *     ZE_RESULT_ERROR_DEVICE_LOST
+     *     <p>
+     *     ZE_RESULT_ERROR_INVALID_NULL_HANDLE: null == hCommandList
+     *     <p>
+     *     ZE_RESULT_ERROR_INVALID_NULL_POINTER: null == dstptr or null ==
+     *     srcptr
+     *     <p>
+     *     ZE_RESULT_ERROR_INVALID_SYNCHRONIZATION_OBJECT
+     *     <p>
+     *     ZE_RESULT_ERROR_INVALID_SIZE: (null == phWaitEvents) && (0 <
+     *     numWaitEvents)
      */
     public int zeCommandListAppendMemoryCopyWithOffset(long commandListHandlerPtr, LevelZeroByteBuffer dstBuffer, byte[] srcBuffer, long allocSize, long dstOffset, long srcOffset,
             ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents) {
@@ -258,6 +261,11 @@ public class LevelZeroCommandList {
         return zeCommandListAppendMemoryCopy_nativeLong(commandListHandlerPtr, dstBuffer, srcBuffer, allocSize, dstOffset, srcOffset, hSignalEvents, numWaitEvents, phWaitEvents);
     }
 
+    public int zeCommandListAppendMemoryCopyWithOffset(long commandListHandlerPtr, LevelZeroByteBuffer dstBuffer, long srcBuffer, long allocSize, long dstOffset, long srcOffset,
+            ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents) {
+        return zeCommandListAppendMemoryCopy_nativeOffHeap(commandListHandlerPtr, dstBuffer, srcBuffer, allocSize, dstOffset, srcOffset, hSignalEvents, numWaitEvents, phWaitEvents);
+    }
+
     public int zeCommandListAppendMemoryCopyWithOffset(long commandListHandlerPtr, int[] dstBuffer, LevelZeroByteBuffer srcBuffer, long allocSize, long dstOffset, long srcOffset,
             ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents) {
         return zeCommandListAppendMemoryCopy_nativeBackInt(commandListHandlerPtr, dstBuffer, srcBuffer, allocSize, dstOffset, srcOffset, hSignalEvents, numWaitEvents, phWaitEvents);
@@ -288,6 +296,12 @@ public class LevelZeroCommandList {
         return zeCommandListAppendMemoryCopy_nativeBackLong(commandListHandlerPtr, dstBuffer, srcBuffer, allocSize, dstOffset, srcOffset, hSignalEvents, numWaitEvents, phWaitEvents);
     }
 
+    public int zeCommandListAppendMemoryCopyWithOffset(long commandListHandlerPtr, long offHeapSegmentAddress, LevelZeroByteBuffer srcBuffer, long allocSize, long dstOffset, long srcOffset,
+            ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents) {
+        return zeCommandListAppendMemoryCopy_nativeBackOffHeapSegment(commandListHandlerPtr, offHeapSegmentAddress, srcBuffer, allocSize, dstOffset, srcOffset, hSignalEvents, numWaitEvents,
+                phWaitEvents);
+    }
+
     private native int zeCommandListAppendMemoryCopy_nativeBack(long commandListHandlerPtr, byte[] deviceBuffer, LevelZeroByteBuffer heapBuffer, long allocSize, long dstOffset, long srcOffset,
             ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents);
 
@@ -309,6 +323,9 @@ public class LevelZeroCommandList {
     private native int zeCommandListAppendMemoryCopy_nativeBackLong(long commandListHandlerPtr, long[] deviceBuffer, LevelZeroByteBuffer heapBuffer, long allocSize, long dstOffset, long srcOffset,
             ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents);
 
+    private native int zeCommandListAppendMemoryCopy_nativeBackOffHeapSegment(long commandListHandlerPtr, long offHeapSegmentAddress, LevelZeroByteBuffer heapBuffer, long allocSize, long dstOffset,
+            long srcOffset, ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents);
+
     public int zeCommandListAppendMemoryCopy(long commandListHandlerPtr, byte[] dstBuffer, LevelZeroByteBuffer srcBuffer, int allocSize, ZeEventHandle hSignalEvents, int numWaitEvents,
             ZeEventHandle phWaitEvents) {
         return zeCommandListAppendMemoryCopy_nativeBack(commandListHandlerPtr, dstBuffer, srcBuffer, allocSize, 0, 0, hSignalEvents, numWaitEvents, phWaitEvents);
@@ -325,28 +342,28 @@ public class LevelZeroCommandList {
      * Appends an execution and global memory barrier into a command list.
      *
      * @param commandListHandlerPtr
-     *            [in] handle pointer of the command list
+     *     [in] handle pointer of the command list
      * @param hSignalEvent
-     *            [in][optional] {@link ZeEventHandle} of the event to signal on
-     *            completion
+     *     [in][optional] {@link ZeEventHandle} of the event to signal on
+     *     completion
      * @param numWaitEvents
-     *            [in][optional] number of events to wait on before executing
-     *            barrier; It must be 0 if `null == phWaitEvents`
+     *     [in][optional] number of events to wait on before executing
+     *     barrier; It must be 0 if `null == phWaitEvents`
      * @param phWaitEvents
-     *            [in][optional][range(0, numWaitEvents)] handle of the events to
-     *            wait on before executing the barrier.
+     *     [in][optional][range(0, numWaitEvents)] handle of the events to
+     *     wait on before executing the barrier.
      * @return ZE_RESULT_SUCCESS
-     *         <p>
-     *         ZE_RESULT_ERROR_UNINITIALIZED
-     *         <p>
-     *         ZE_RESULT_ERROR_DEVICE_LOST
-     *         <p>
-     *         ZE_RESULT_ERROR_INVALID_NULL_HANDLE: nullptr == hCommandList
-     *         <p>
-     *         ZE_RESULT_ERROR_INVALID_SYNCHRONIZATION_OBJECT
-     *         <p>
-     *         ZE_RESULT_ERROR_INVALID_SIZE: (nullptr == phWaitEvents) && (0 <
-     *         numWaitEvents)
+     *     <p>
+     *     ZE_RESULT_ERROR_UNINITIALIZED
+     *     <p>
+     *     ZE_RESULT_ERROR_DEVICE_LOST
+     *     <p>
+     *     ZE_RESULT_ERROR_INVALID_NULL_HANDLE: nullptr == hCommandList
+     *     <p>
+     *     ZE_RESULT_ERROR_INVALID_SYNCHRONIZATION_OBJECT
+     *     <p>
+     *     ZE_RESULT_ERROR_INVALID_SIZE: (nullptr == phWaitEvents) && (0 <
+     *     numWaitEvents)
      * @remark: This method is similar to: clEnqueueBarrierWithWaitList
      */
     public int zeCommandListAppendBarrier(long commandListHandlerPtr, ZeEventHandle hSignalEvent, int numWaitEvents, Object phWaitEvents) {
@@ -380,39 +397,39 @@ public class LevelZeroCommandList {
      * clEnqueueWriteBuffer, and clEnqueueSVMMemCpy.
      *
      * @param commandListHandlerPtr
-     *            [in] handle of command list
+     *     [in] handle of command list
      * @param dstBuffer
-     *            [in] {@link LevelZeroByteBuffer} to destination memory to copy to
+     *     [in] {@link LevelZeroByteBuffer} to destination memory to copy to
      * @param srcBuffer
-     *            [in] Java array to source memory to copy from
+     *     [in] Java array to source memory to copy from
      * @param allocSize
-     *            [in] size in bytes to copy
+     *     [in] size in bytes to copy
      * @param hSignalEvents
-     *            [in][optional] {@link ZeEventHandle} handler of the event to
-     *            signal on completion
+     *     [in][optional] {@link ZeEventHandle} handler of the event to
+     *     signal on completion
      * @param numWaitEvents
-     *            [in][optional] number of events to wait on before launching; must
-     *            be 0 if `null == phWaitEvents`
+     *     [in][optional] number of events to wait on before launching; must
+     *     be 0 if `null == phWaitEvents`
      * @param phWaitEvents
-     *            [in][optional][range(0, numWaitEvents)] handle of the events to
-     *            wait on before launching
+     *     [in][optional][range(0, numWaitEvents)] handle of the events to
+     *     wait on before launching
      * @return Status of the call:
-     *         <p>
-     *         ZE_RESULT_SUCCESS
-     *         <p>
-     *         ZE_RESULT_ERROR_UNINITIALIZED
-     *         <p>
-     *         ZE_RESULT_ERROR_DEVICE_LOST
-     *         <p>
-     *         ZE_RESULT_ERROR_INVALID_NULL_HANDLE: null == hCommandList
-     *         <p>
-     *         ZE_RESULT_ERROR_INVALID_NULL_POINTER: null == dstptr or null ==
-     *         srcptr
-     *         <p>
-     *         ZE_RESULT_ERROR_INVALID_SYNCHRONIZATION_OBJECT
-     *         <p>
-     *         ZE_RESULT_ERROR_INVALID_SIZE: (null == phWaitEvents) && (0 <
-     *         numWaitEvents)
+     *     <p>
+     *     ZE_RESULT_SUCCESS
+     *     <p>
+     *     ZE_RESULT_ERROR_UNINITIALIZED
+     *     <p>
+     *     ZE_RESULT_ERROR_DEVICE_LOST
+     *     <p>
+     *     ZE_RESULT_ERROR_INVALID_NULL_HANDLE: null == hCommandList
+     *     <p>
+     *     ZE_RESULT_ERROR_INVALID_NULL_POINTER: null == dstptr or null ==
+     *     srcptr
+     *     <p>
+     *     ZE_RESULT_ERROR_INVALID_SYNCHRONIZATION_OBJECT
+     *     <p>
+     *     ZE_RESULT_ERROR_INVALID_SIZE: (null == phWaitEvents) && (0 <
+     *     numWaitEvents)
      */
     public int zeCommandListAppendMemoryCopy(long commandListHandlerPtr, LevelZeroByteBuffer dstBuffer, LevelZeroByteBuffer srcBuffer, int allocSize, ZeEventHandle hSignalEvents, int numWaitEvents,
             ZeEventHandle phWaitEvents) {
@@ -433,16 +450,16 @@ public class LevelZeroCommandList {
      * </ul>
      *
      * @param commandListHandlerPtr
-     *            [in] handle of command list object to reset
+     *     [in] handle of command list object to reset
      * @return
      *
-     *         ZE_RESULT_SUCCESS
+     *     ZE_RESULT_SUCCESS
      *
-     *         ZE_RESULT_ERROR_UNINITIALIZED
+     *     ZE_RESULT_ERROR_UNINITIALIZED
      *
-     *         ZE_RESULT_ERROR_DEVICE_LOST
+     *     ZE_RESULT_ERROR_DEVICE_LOST
      *
-     *         ZE_RESULT_ERROR_INVALID_NULL_HANDLE: null == commandListHandlerPtr
+     *     ZE_RESULT_ERROR_INVALID_NULL_HANDLE: null == commandListHandlerPtr
      */
     public int zeCommandListReset(long commandListHandlerPtr) {
         return zeCommandListReset_native(commandListHandlerPtr);
@@ -464,30 +481,30 @@ public class LevelZeroCommandList {
      * list.
      *
      * @param commandListHandlerPtr
-     *            Pointer to the command list handler
+     *     Pointer to the command list handler
      * @param bufferTimeStamp
-     *            pointer to memory where timestamp value will be written; must be
-     *            8byte-aligned.
+     *     pointer to memory where timestamp value will be written; must be
+     *     8byte-aligned.
      * @param hSignalEvents
-     *            handle of the event to signal on completion
+     *     handle of the event to signal on completion
      * @param numWaitEvents
-     *            number of events to wait on before executing query;
+     *     number of events to wait on before executing query;
      * @param phWaitEvents
-     *            handle of the events to wait on before executing query
+     *     handle of the events to wait on before executing query
      * @return Error code
      *
-     *         <code>
-     *  - ZE_RESULT_SUCCESS
-     *  - ZE_RESULT_ERROR_UNINITIALIZED
-     *  - ZE_RESULT_ERROR_DEVICE_LOST
-     *  - ZE_RESULT_ERROR_INVALID_NULL_HANDLE
-     *    + `-1 == commandListHandlerPtr`
-     *  - ZE_RESULT_ERROR_INVALID_NULL_POINTER
-     *    + `null == bufferTimeStamp`
-     *  - ZE_RESULT_ERROR_INVALID_SYNCHRONIZATION_OBJECT
-     *  - ZE_RESULT_ERROR_INVALID_SIZE
-     *   + `(null == phWaitEvents) && (0 < numWaitEvents)`
-     *      </code>
+     *     <code>
+     *     - ZE_RESULT_SUCCESS
+     *     - ZE_RESULT_ERROR_UNINITIALIZED
+     *     - ZE_RESULT_ERROR_DEVICE_LOST
+     *     - ZE_RESULT_ERROR_INVALID_NULL_HANDLE
+     *     + `-1 == commandListHandlerPtr`
+     *     - ZE_RESULT_ERROR_INVALID_NULL_POINTER
+     *     + `null == bufferTimeStamp`
+     *     - ZE_RESULT_ERROR_INVALID_SYNCHRONIZATION_OBJECT
+     *     - ZE_RESULT_ERROR_INVALID_SIZE
+     *     + `(null == phWaitEvents) && (0 < numWaitEvents)`
+     *     </code>
      *
      */
     public int zeCommandListAppendWriteGlobalTimestamp(long commandListHandlerPtr, LevelZeroByteBuffer bufferTimeStamp, ZeEventHandle hSignalEvents, int numWaitEvents, ZeEventHandle phWaitEvents) {
@@ -500,11 +517,11 @@ public class LevelZeroCommandList {
      * Asynchronously prefetches shared memory to the device associated with the specified command list.
      *
      * @param commandListHandlerPtr
-     *         Pointer Handler to the command list
+     *     Pointer Handler to the command list
      * @param bufferA
-     *         LevelZeroBufferInteger - pointer to start of the memory range to prefetch.
+     *     LevelZeroBufferInteger - pointer to start of the memory range to prefetch.
      * @param bufferSize
-     *        Size in bytes of the memory range to prefetch.
+     *     Size in bytes of the memory range to prefetch.
      * @return
      */
     public int zeCommandListAppendMemoryPrefetch(long commandListHandlerPtr, LevelZeroBufferInteger bufferA, int bufferSize) {
@@ -516,4 +533,5 @@ public class LevelZeroCommandList {
     public int zeCommandListAppendMemAdvise(long commandListHandlerPtr, long deviceHandlerPtr, LevelZeroBufferInteger bufferA, int bufferSize, int memoryAdvice) {
         return zeCommandListAppendMemAdvise_native(commandListHandlerPtr, deviceHandlerPtr, bufferA, bufferSize, memoryAdvice);
     }
+
 }
