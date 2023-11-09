@@ -56,6 +56,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.exceptions.TornadoUnsupportedError;
 
 public class OCLMemorySegmentWrapper implements ObjectBuffer {
 
@@ -192,7 +193,11 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
     public void write(Object reference) {
         MemorySegment segment;
         segment = getSegment(reference);
-        deviceContext.writeBuffer(toBuffer(), bufferOffset, bufferSize, segment.address(), 0, null);
+        if (batchSize <= 0) {
+            deviceContext.writeBuffer(toBuffer(), bufferOffset, bufferSize, segment.address(), 0, null);
+        } else {
+            throw new TornadoUnsupportedError("[UNSUPPORTED] batch processing for writeBuffer operation");
+        }
         onDevice = true;
     }
 
@@ -205,7 +210,7 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
         if (batchSize <= 0) {
             returnEvent = deviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
-            returnEvent = deviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            throw new TornadoUnsupportedError("[UNSUPPORTED] batch processing for enqueueReadBuffer operation");
         }
         return useDeps ? returnEvent : -1;
     }

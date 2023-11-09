@@ -57,6 +57,7 @@ import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.exceptions.TornadoUnsupportedError;
 
 public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
 
@@ -154,7 +155,11 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
     @Override
     public void write(Object reference) {
         MemorySegment segment = getSegment(reference);
-        spirvDeviceContext.writeBuffer(toBuffer(), bufferOffset, bufferSize, segment.address(), 0, null);
+        if(batchSize <= 0) {
+            spirvDeviceContext.writeBuffer(toBuffer(), bufferOffset, bufferSize, segment.address(), 0, null);
+        } else {
+            throw new TornadoUnsupportedError("[UNSUPPORTED] batch processing for writeBuffer operation");
+        }
     }
 
     @Override
@@ -165,7 +170,7 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
         if (batchSize <= 0) {
             returnEvent = spirvDeviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, waitEvents);
         } else {
-            returnEvent = spirvDeviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, waitEvents);
+            throw new TornadoUnsupportedError("[UNSUPPORTED] batch processing for enqueueReadBuffer operation");
         }
         return returnEvent;
     }
