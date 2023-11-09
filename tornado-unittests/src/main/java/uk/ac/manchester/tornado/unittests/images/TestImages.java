@@ -20,6 +20,8 @@ package uk.ac.manchester.tornado.unittests.images;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Random;
+
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -112,6 +114,15 @@ public class TestImages extends TornadoTestBase {
         for (@Parallel int i = 0; i < a.X(); i++) {
             for (@Parallel int j = 0; j < a.Y(); j++) {
                 float value = a.get(i, j) + 1;
+                b.set(i, j, value);
+            }
+        }
+    }
+
+    public static void testCopyImagesParallelRandom(final ImageFloat a, final ImageFloat b) {
+        for (@Parallel int i = 0; i < a.X(); i++) {
+            for (@Parallel int j = 0; j < a.Y(); j++) {
+                float value = a.get(i, j) + 0.01f;
                 b.set(i, j, value);
             }
         }
@@ -707,6 +718,49 @@ public class TestImages extends TornadoTestBase {
                     assertEquals((11 + iteration), imageB.get(i, j), 0.1f);
                 }
             }
+
+            // Set the new array
+            for (int i = 0; i < M; i++) {
+                for (int j = 0; j < N; j++) {
+                    imageA.set(i, j, imageB.get(i, j));
+                }
+            }
+            iteration++;
+        }
+    }
+
+    @Test
+    public void testImageFloat18() {
+
+        final int M = 64;
+        final int N = 64;
+
+        float base = new Random().nextFloat();
+
+        final ImageFloat imageA = new ImageFloat(M, N);
+        final ImageFloat imageB = new ImageFloat(M, N);
+        imageA.fill(base);
+
+        final TaskGraph taskGraph = new TaskGraph("testLoop") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, imageA) //
+                .task("image", TestImages::testCopyImagesParallelRandom, imageA, imageB)//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, imageB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        // Execute 10000 times
+        int iteration = 0;
+        while (iteration < 10000) {
+            executionPlan.execute();
+
+            // Check result
+            for (int i = 0; i < M; i++) {
+                for (int j = 0; j < N; j++) {
+                    assertEquals((base + 0.01f), imageB.get(i, j), 0.01f);
+                }
+            }
+            base += 0.01f;
 
             // Set the new array
             for (int i = 0; i < M; i++) {
