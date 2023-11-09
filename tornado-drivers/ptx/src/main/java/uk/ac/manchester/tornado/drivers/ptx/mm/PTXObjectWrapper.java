@@ -44,6 +44,7 @@ import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
@@ -109,19 +110,22 @@ public class PTXObjectWrapper implements ObjectBuffer {
                 }
             } else if (type == FloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper((FloatArray) objectFromField, device, 0);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((FloatArray) objectFromField).getSegment().byteSize(), 0);
             } else if (type == ByteArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper((ByteArray) objectFromField, device, 0);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((ByteArray) objectFromField).getSegment().byteSize(), 0);
             } else if (type == DoubleArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper((DoubleArray) objectFromField, device, 0);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((DoubleArray) objectFromField).getSegment().byteSize(), 0);
             } else if (type == IntArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper((IntArray) objectFromField, device, 0);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((IntArray) objectFromField).getSegment().byteSize(), 0);
             } else if (type == ShortArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new PTXMemorySegmentWrapper((ShortArray) objectFromField, device, 0);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((ShortArray) objectFromField).getSegment().byteSize(), 0);
+            } else if (type == LongArray.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                wrappedField = new PTXMemorySegmentWrapper(device, ((LongArray) objectFromField).getSegment().byteSize(), 0);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 wrappedField = new PTXVectorWrapper(device, TornadoUtils.getObjectFromField(reflectedField, object), 0);
             } else if (field.getJavaKind().isObject()) {

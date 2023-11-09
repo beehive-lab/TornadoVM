@@ -54,6 +54,7 @@ import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.exceptions.TornadoUnsupportedError;
 
 public class PTXMemorySegmentWrapper extends TornadoLogger implements ObjectBuffer {
     private static final int INIT_VALUE = -1;
@@ -61,7 +62,6 @@ public class PTXMemorySegmentWrapper extends TornadoLogger implements ObjectBuff
     private final long batchSize;
     private long bufferId;
     private long bufferOffset;
-    private boolean onDevice;
     private long bufferSize;
 
     private long setSubRegionSize;
@@ -72,61 +72,14 @@ public class PTXMemorySegmentWrapper extends TornadoLogger implements ObjectBuff
         this.bufferSize = INIT_VALUE;
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
-        onDevice = false;
     }
 
-    public PTXMemorySegmentWrapper(ByteArray byteSegment, PTXDeviceContext deviceContext, long batchSize) {
-        this.deviceContext = deviceContext;
-        this.batchSize = batchSize;
-        this.bufferSize = byteSegment.getSegment().byteSize();
-        this.bufferId = INIT_VALUE;
-        this.bufferOffset = 0;
-        onDevice = false;
-    }
-
-    public PTXMemorySegmentWrapper(FloatArray floatSegment, PTXDeviceContext deviceContext, long batchSize) {
-        this.deviceContext = deviceContext;
-        this.batchSize = batchSize;
-        this.bufferSize = floatSegment.getSegment().byteSize();
-        this.bufferId = INIT_VALUE;
-        this.bufferOffset = 0;
-        onDevice = false;
-    }
-
-    public PTXMemorySegmentWrapper(DoubleArray doubleSegment, PTXDeviceContext deviceContext, long batchSize) {
-        this.deviceContext = deviceContext;
-        this.batchSize = batchSize;
-        this.bufferSize = doubleSegment.getSegment().byteSize();
-        this.bufferId = INIT_VALUE;
-        this.bufferOffset = 0;
-        onDevice = false;
-    }
-
-    public PTXMemorySegmentWrapper(IntArray intSegment, PTXDeviceContext deviceContext, long batchSize) {
-        this.deviceContext = deviceContext;
-        this.batchSize = batchSize;
-        this.bufferSize = intSegment.getSegment().byteSize();
-        this.bufferId = INIT_VALUE;
-        this.bufferOffset = 0;
-        onDevice = false;
-    }
-
-    public PTXMemorySegmentWrapper(ShortArray shortSegment, PTXDeviceContext deviceContext, long batchSize) {
-        this.deviceContext = deviceContext;
-        this.batchSize = batchSize;
-        this.bufferSize = shortSegment.getSegment().byteSize();
-        this.bufferId = INIT_VALUE;
-        this.bufferOffset = 0;
-        onDevice = false;
-    }
-
-    public PTXMemorySegmentWrapper(long bufferSize, PTXDeviceContext deviceContext, long batchSize) {
+    public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long bufferSize, long batchSize) {
         this.deviceContext = deviceContext;
         this.batchSize = batchSize;
         this.bufferSize = bufferSize;
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
-        onDevice = false;
     }
 
     @Override
@@ -197,8 +150,11 @@ public class PTXMemorySegmentWrapper extends TornadoLogger implements ObjectBuff
     public void write(Object reference) {
         MemorySegment segment = getSegment(reference);
 
-        deviceContext.writeBuffer(toBuffer(), bufferSize, segment.address(), 0, null);
-        onDevice = true;
+        if (batchSize <= 0) {
+            deviceContext.writeBuffer(toBuffer(), bufferSize, segment.address(), 0, null);
+        } else {
+            throw new TornadoUnsupportedError("[UNSUPPORTED] Batch processing for the writeBuffer operation");
+        }
     }
 
     @Override
@@ -227,12 +183,12 @@ public class PTXMemorySegmentWrapper extends TornadoLogger implements ObjectBuff
             internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
             internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), TornadoNativeArray.ARRAY_HEADER, segment.address(), 0, (useDeps) ? events : null);
+            returnEvents.add(internalEvent);
             internalEvent = deviceContext.enqueueWriteBuffer(toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(), hostOffset + TornadoNativeArray.ARRAY_HEADER, (useDeps)
                     ? events
                     : null);
         }
         returnEvents.add(internalEvent);
-        onDevice = true;
         return useDeps ? returnEvents : null;
     }
 
