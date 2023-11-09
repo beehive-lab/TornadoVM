@@ -59,6 +59,7 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
     private final PTXCodeCache codeCache;
     private final PTXScheduler scheduler;
     private final TornadoBufferProvider bufferProvider;
+    private boolean wasReset;
 
     public PTXDeviceContext(PTXDevice device, PTXStream stream) {
         this.device = device;
@@ -68,6 +69,7 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
         codeCache = new PTXCodeCache(this);
         memoryManager = new PTXMemoryManager(this);
         bufferProvider = new PTXBufferProvider(this);
+        wasReset = false;
     }
 
     @Override
