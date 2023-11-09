@@ -70,7 +70,12 @@ public class PTXMultiDimArrayWrapper<T, E> extends PTXArrayWrapper<T> {
 
     @Override
     public long getSizeSubRegionSize() {
-        return 0;
+        return setSubRegionSize;
+    }
+
+    @Override
+    public void setSizeSubRegion(long batchSize) {
+        this.setSubRegionSize = batchSize;
     }
 
     @Override
