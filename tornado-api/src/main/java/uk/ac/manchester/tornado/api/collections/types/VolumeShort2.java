@@ -169,4 +169,8 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
         return numElements;
     }
 
+    public void clear() {
+        storage.clear();
+    }
+
 }

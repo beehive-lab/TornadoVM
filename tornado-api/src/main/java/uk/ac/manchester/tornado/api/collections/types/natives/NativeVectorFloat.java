@@ -95,4 +95,10 @@ public class NativeVectorFloat extends TornadoNativeArray {
     public long getNumBytesWithoutHeader() {
         return segmentByteSize;
     }
+
+
+    @Override
+    protected void clear() {
+        init(0.0f);
+    }
 }

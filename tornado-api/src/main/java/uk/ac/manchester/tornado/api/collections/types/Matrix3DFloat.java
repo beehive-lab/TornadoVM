@@ -85,6 +85,11 @@ public class Matrix3DFloat extends Matrix3DType implements PrimitiveStorage<Floa
         this(rows, columns, depth, new FloatArray(rows * columns * depth));
     }
 
+    @Override
+    public void clear() {
+        storage.clear();
+    }
+
     public Matrix3DFloat(float[][][] matrix) {
         this(matrix.length, matrix[0].length, matrix[0][0].length, StorageFormats.toRowMajor3D(matrix));
     }

@@ -248,4 +248,8 @@ public class NativeInt3 implements PrimitiveStorage<IntBuffer> {
         array.set(index + 1, getY());
         array.set(index + 2, getZ());
     }
+
+    public void clear() {
+        nativeVectorInt.clear();
+    }
 }

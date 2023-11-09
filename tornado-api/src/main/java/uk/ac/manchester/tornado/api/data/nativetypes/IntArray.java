@@ -84,6 +84,11 @@ public class IntArray extends TornadoNativeArray {
         return segment.getAtIndex(JAVA_INT, baseIndex + index);
     }
 
+    @Override
+    public void clear() {
+        init(0);
+    }
+
     public void init(int value) {
         for (int i = 0; i < getSize(); i++) {
             segment.setAtIndex(JAVA_INT, baseIndex + i, value);

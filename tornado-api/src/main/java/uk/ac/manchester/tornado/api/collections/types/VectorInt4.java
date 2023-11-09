@@ -210,4 +210,8 @@ public class VectorInt4 implements PrimitiveStorage<IntBuffer> {
         return storage;
     }
 
+    public void clear() {
+        storage.clear();
+    }
+
 }

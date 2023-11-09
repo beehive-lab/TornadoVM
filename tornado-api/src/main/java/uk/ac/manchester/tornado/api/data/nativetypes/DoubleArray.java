@@ -87,6 +87,11 @@ public class DoubleArray extends TornadoNativeArray {
         return segment.getAtIndex(JAVA_DOUBLE, baseIndex + index);
     }
 
+    @Override
+    public void clear() {
+        init(0.0);
+    }
+
     public void init(double value) {
         for (int i = 0; i < getSize(); i++) {
             segment.setAtIndex(JAVA_DOUBLE, baseIndex + i, value);

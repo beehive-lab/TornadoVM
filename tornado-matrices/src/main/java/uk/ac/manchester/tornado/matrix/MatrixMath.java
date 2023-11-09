@@ -247,8 +247,8 @@ public final class MatrixMath {
 
     public static void multiply(FloatArray y, Matrix2DFloat m, FloatArray x) {
         final FloatArray row = new FloatArray(6);
-        for (int i = 0; i < 6; i++) {
-            for (int j = 0; j < 6; j++) {
+        for (int i = 0; i < row.getSize(); i++) {
+            for (int j = 0; j < row.getSize(); j++) {
                 row.set(j, m.get(i, j));
             }
             y.set(i, dot(row, x));

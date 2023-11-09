@@ -232,4 +232,8 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
         return numElements;
     }
 
+    public void clear() {
+        storage.clear();
+    }
+
 }

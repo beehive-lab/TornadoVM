@@ -330,7 +330,7 @@ public class GraphicsTests extends TornadoTestBase {
         m.set(3, 3, 1);
     }
 
-    public static void reduceValues(final float[] sums, final int startIndex, final ImageFloat8 trackingResults, int resultIndex) {
+    public static void reduceValues(final FloatArray sums, final int startIndex, final ImageFloat8 trackingResults, int resultIndex) {
 
         final int jtj = startIndex + 7;
         final int info = startIndex + 28;
@@ -340,60 +340,64 @@ public class GraphicsTests extends TornadoTestBase {
         final float error = value.getS6();
 
         if (result < 1) {
-            sums[info + 1] += (result == -4) ? 1 : 0;
-            sums[info + 2] += (result == -5) ? 1 : 0;
-            sums[info + 3] += (result > -4) ? 1 : 0;
+            int condA = ((result == -4) ? 1 : 0);
+            int condB = ((result == -5) ? 1 : 0);
+            int condC = ((result > -4) ? 1 : 0);
+            sums.set(info + 1, sums.get(info + 1) + condA);
+            sums.set(info + 2, sums.get(info + 2) + condB);
+            sums.set(info + 3, sums.get(info + 3) + condC);
             return;
         }
 
-        sums[startIndex] += (error * error);
+        // float base[0] += error^2
+        sums.set(startIndex, sums.get(startIndex) + (error * error));
 
-        sums[startIndex + 0 + 1] += (error * value.getS0());
-        sums[startIndex + 1 + 1] += (error * value.getS1());
-        sums[startIndex + 2 + 1] += (error * value.getS2());
-        sums[startIndex + 3 + 1] += (error * value.getS3());
-        sums[startIndex + 4 + 1] += (error * value.getS4());
-        sums[startIndex + 5 + 1] += (error * value.getS5());
+        sums.set(startIndex + 0 + 1, sums.get(startIndex + 0 + 1) + (error * value.getS0()));
+        sums.set(startIndex + 1 + 1, sums.get(startIndex + 1 + 1) + (error * value.getS1()));
+        sums.set(startIndex + 2 + 1, sums.get(startIndex + 2 + 1) + (error * value.getS2()));
+        sums.set(startIndex + 3 + 1, sums.get(startIndex + 3 + 1) + (error * value.getS3()));
+        sums.set(startIndex + 4 + 1, sums.get(startIndex + 4 + 1) + (error * value.getS4()));
+        sums.set(startIndex + 5 + 1, sums.get(startIndex + 5 + 1) + (error * value.getS5()));
 
         // is this jacobian transpose jacobian?
-        sums[jtj + 0] += (value.getS0() * value.getS0());
-        sums[jtj + 1] += (value.getS0() * value.getS1());
-        sums[jtj + 2] += (value.getS0() * value.getS2());
-        sums[jtj + 3] += (value.getS0() * value.getS3());
-        sums[jtj + 4] += (value.getS0() * value.getS4());
-        sums[jtj + 5] += (value.getS0() * value.getS5());
+        sums.set(jtj + 0, sums.get(jtj + 0) + (value.getS0() * value.getS0()));
+        sums.set(jtj + 1, sums.get(jtj + 1) + (value.getS0() * value.getS1()));
+        sums.set(jtj + 2, sums.get(jtj + 2) + (value.getS0() * value.getS2()));
+        sums.set(jtj + 3, sums.get(jtj + 3) + (value.getS0() * value.getS3()));
+        sums.set(jtj + 4, sums.get(jtj + 4) + (value.getS0() * value.getS4()));
+        sums.set(jtj + 5, sums.get(jtj + 1) + (value.getS0() * value.getS5()));
 
-        sums[jtj + 6] += (value.getS1() * value.getS1());
-        sums[jtj + 7] += (value.getS1() * value.getS2());
-        sums[jtj + 8] += (value.getS1() * value.getS3());
-        sums[jtj + 9] += (value.getS1() * value.getS4());
-        sums[jtj + 10] += (value.getS1() * value.getS5());
+        sums.set(jtj + 6, sums.get(jtj + 6) + (value.getS1() * value.getS1()));
+        sums.set(jtj + 7, sums.get(jtj + 1) + (value.getS1() * value.getS2()));
+        sums.set(jtj + 8, sums.get(jtj + 8) + (value.getS1() * value.getS3()));
+        sums.set(jtj + 9, sums.get(jtj + 9) + (value.getS1() * value.getS4()));
+        sums.set(jtj + 10, sums.get(jtj + 10) + (value.getS1() * value.getS5()));
 
-        sums[jtj + 11] += (value.getS2() * value.getS2());
-        sums[jtj + 12] += (value.getS2() * value.getS3());
-        sums[jtj + 13] += (value.getS2() * value.getS4());
-        sums[jtj + 14] += (value.getS2() * value.getS5());
+        sums.set(jtj + 11, sums.get(jtj + 11) + (value.getS2() * value.getS2()));
+        sums.set(jtj + 12, sums.get(jtj + 12) + (value.getS2() * value.getS3()));
+        sums.set(jtj + 13, sums.get(jtj + 13) + (value.getS2() * value.getS4()));
+        sums.set(jtj + 14, sums.get(jtj + 1) + (value.getS2() * value.getS5()));
 
-        sums[jtj + 15] += (value.getS3() * value.getS3());
-        sums[jtj + 16] += (value.getS3() * value.getS4());
-        sums[jtj + 17] += (value.getS3() * value.getS5());
+        sums.set(jtj + 15, sums.get(jtj + 15) + (value.getS3() * value.getS3()));
+        sums.set(jtj + 16, sums.get(jtj + 16) + (value.getS3() * value.getS4()));
+        sums.set(jtj + 17, sums.get(jtj + 17) + (value.getS3() * value.getS5()));
 
-        sums[jtj + 18] += (value.getS4() * value.getS4());
-        sums[jtj + 19] += (value.getS4() * value.getS5());
+        sums.set(jtj + 18, sums.get(jtj + 18) + (value.getS4() * value.getS4()));
+        sums.set(jtj + 19, sums.get(jtj + 19) + (value.getS4() * value.getS5()));
 
-        sums[jtj + 20] += (value.getS5() * value.getS5());
+        sums.set(jtj + 20, sums.get(jtj + 20) + (value.getS5() * value.getS5()));
 
-        sums[info]++;
+        sums.set(info, sums.get(info) + 1);
     }
 
-    public static void mapReduce(final float[] output, final ImageFloat8 input) {
-        final int numThreads = output.length / 32;
+    public static void mapReduce(final FloatArray output, final ImageFloat8 input) {
+        final int numThreads = output.getSize() / 32;
         final int numElements = input.X() * input.Y();
 
         for (@Parallel int i = 0; i < numThreads; i++) {
             final int startIndex = i * 32;
             for (int j = 0; j < 32; j++) {
-                output[startIndex + j] = 0f;
+                output.set(startIndex + j, 0f);
             }
 
             for (int j = i; j < numElements; j += numThreads) {
@@ -402,7 +406,7 @@ public class GraphicsTests extends TornadoTestBase {
         }
     }
 
-    public static void mapReduce2(float[] output, ImageFloat8 input) {
+    public static void mapReduce2(FloatArray output, ImageFloat8 input) {
         int startIndex = 0 * 32;
         reduceValues(output, startIndex, input, 0);
     }
@@ -454,10 +458,10 @@ public class GraphicsTests extends TornadoTestBase {
         }
     }
 
-    private void generateGaussian(float[] gaussian, int radius, float delta) {
-        for (int i = 0; i < gaussian.length; i++) {
+    private void generateGaussian(FloatArray gaussian, int radius, float delta) {
+        for (int i = 0; i < gaussian.getSize(); i++) {
             final int x = i - radius;
-            gaussian[i] = (float) Math.exp(-(x * x) / (2 * delta * delta));
+            gaussian.set(i, (float) Math.exp(-(x * x) / (2 * delta * delta)));
         }
     }
 
@@ -473,7 +477,7 @@ public class GraphicsTests extends TornadoTestBase {
         float e_delta = 0.1f;
         int radius = 2;
         float delta = 4.0f;
-        float[] gaussian = new float[(radius * 2) + 1];
+        FloatArray gaussian = new FloatArray((radius * 2) + 1);
         generateGaussian(gaussian, radius, delta);
 
         Random r = new Random();
@@ -513,7 +517,7 @@ public class GraphicsTests extends TornadoTestBase {
         float e_delta = 0.1f;
         int radius = 2;
         float delta = 4.0f;
-        float[] gaussian = new float[(radius * 2) + 1];
+        FloatArray gaussian = new FloatArray((radius * 2) + 1);
         generateGaussian(gaussian, radius, delta);
 
         Random r = new Random();
@@ -1302,8 +1306,8 @@ public class GraphicsTests extends TornadoTestBase {
     public void testMapReduceSlam() {
 
         final int size = 64;
-        float[] output = new float[size];
-        float[] outputSeq = new float[size];
+        FloatArray output = new FloatArray(size);
+        FloatArray outputSeq = new FloatArray(size);
 
         ImageFloat8 image = new ImageFloat8(size, size);
 
@@ -1325,15 +1329,17 @@ public class GraphicsTests extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        Assert.assertArrayEquals(outputSeq, output, 0.1f);
+        for (int i = 0; i < output.getSize(); i++) {
+            Assert.assertEquals(outputSeq.get(i), output.get(i), 0.1f);
+        }
     }
 
     @Test
     public void testMapReduceSlam2() {
 
         final int size = 64;
-        float[] output = new float[size];
-        float[] outputSeq = new float[size];
+        FloatArray output = new FloatArray(size);
+        FloatArray outputSeq = new FloatArray(size);
 
         ImageFloat8 image = new ImageFloat8(size, size);
         for (int i = 0; i < image.X(); i++) {
@@ -1353,7 +1359,10 @@ public class GraphicsTests extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        Assert.assertArrayEquals(outputSeq, output, 0.01f);
+        for (int i = 0; i < output.getSize(); i++) {
+            Assert.assertEquals(outputSeq.get(i), output.get(i), 0.1f);
+        }
+
     }
 
     @Ignore

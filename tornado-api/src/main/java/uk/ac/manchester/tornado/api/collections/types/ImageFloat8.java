@@ -263,4 +263,8 @@ public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>, Container<Flo
         averageULP /= (float) X * Y;
         return new FloatingPointError(averageULP, minULP, maxULP, -1f);
     }
+
+    public void clear() {
+        storage.clear();
+    }
 }

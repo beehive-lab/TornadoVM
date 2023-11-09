@@ -216,4 +216,8 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
         return numElements;
     }
 
+    public void clear() {
+        storage.clear();
+    }
+
 }

@@ -212,4 +212,8 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
         return numElements;
     }
 
+    public void clear() {
+        storage.clear();
+    }
+
 }

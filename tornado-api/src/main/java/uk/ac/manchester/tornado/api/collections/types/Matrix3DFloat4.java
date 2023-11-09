@@ -91,6 +91,11 @@ public class Matrix3DFloat4 extends Matrix3DType implements PrimitiveStorage<Flo
         this(rows, columns, depth, new FloatArray(rows * columns * depth * VECTOR_ELEMENTS));
     }
 
+    @Override
+    public void clear() {
+        storage.clear();
+    }
+
     public static void scale(Matrix3DFloat4 matrix, float value) {
         for (int i = 0; i < matrix.storage.getSize(); i++) {
             matrix.storage.set(i, matrix.storage.get(i) * value);
