@@ -27,6 +27,8 @@ import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 
 public class PTXByteArrayWrapper extends PTXArrayWrapper<byte[]> {
+    private long setSubRegionSize;
+
     public PTXByteArrayWrapper(PTXDeviceContext deviceContext) {
         super(deviceContext, JavaKind.Byte);
     }
@@ -81,7 +83,7 @@ public class PTXByteArrayWrapper extends PTXArrayWrapper<byte[]> {
 
     @Override
     public long getSizeSubRegionSize() {
-        return 0;
+        return setSubRegionSize;
     }
 
     @Override

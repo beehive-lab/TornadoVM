@@ -40,6 +40,7 @@ public class PTXMultiDimArrayWrapper<T, E> extends PTXArrayWrapper<T> {
     private final PTXDeviceContext deviceContext;
     private long[] addresses;
     private PTXArrayWrapper<E>[] wrappers;
+    private long setSubRegionSize;
 
     public PTXMultiDimArrayWrapper(PTXDeviceContext device, Function<PTXDeviceContext, ? extends PTXArrayWrapper<E>> factory, long batchSize) {
         this(device, factory);

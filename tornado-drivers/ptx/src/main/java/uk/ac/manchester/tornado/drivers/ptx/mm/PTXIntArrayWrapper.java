@@ -27,6 +27,7 @@ import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 
 public class PTXIntArrayWrapper extends PTXArrayWrapper<int[]> {
+    private long setSubRegionSize;
 
     public PTXIntArrayWrapper(PTXDeviceContext deviceContext) {
         super(deviceContext, JavaKind.Int);
@@ -54,7 +55,12 @@ public class PTXIntArrayWrapper extends PTXArrayWrapper<int[]> {
 
     @Override
     public long getSizeSubRegionSize() {
-        return 0;
+        return setSubRegionSize;
+    }
+
+    @Override
+    public void setSizeSubRegion(long batchSize) {
+        this.setSubRegionSize = batchSize;
     }
 
     @Override
