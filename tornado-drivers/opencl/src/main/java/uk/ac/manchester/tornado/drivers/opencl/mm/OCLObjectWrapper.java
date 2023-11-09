@@ -48,6 +48,7 @@ import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
@@ -117,19 +118,28 @@ public class OCLObjectWrapper implements ObjectBuffer {
                 }
             } else if (type == FloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new OCLMemorySegmentWrapper((FloatArray) objectFromField, device, 0);
+                long size = ((FloatArray) objectFromField).getSegment().byteSize();
+                wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
             } else if (type == ByteArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new OCLMemorySegmentWrapper((ByteArray) objectFromField, device, 0);
+                long size = ((ByteArray) objectFromField).getSegment().byteSize();
+                wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
             } else if (type == DoubleArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new OCLMemorySegmentWrapper((DoubleArray) objectFromField, device, 0);
+                long size = ((DoubleArray) objectFromField).getSegment().byteSize();
+                wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
             } else if (type == IntArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new OCLMemorySegmentWrapper((IntArray) objectFromField, device, 0);
+                long size = ((IntArray) objectFromField).getSegment().byteSize();
+                wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
             } else if (type == ShortArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
-                wrappedField = new OCLMemorySegmentWrapper((ShortArray) objectFromField, device, 0);
+                long size = ((ShortArray) objectFromField).getSegment().byteSize();
+                wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
+            } else if (type == LongArray.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                long size = ((LongArray) objectFromField).getSegment().byteSize();
+                wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 wrappedField = new OCLVectorWrapper(device, object, 0);
             } else if (field.getJavaKind().isObject()) {
