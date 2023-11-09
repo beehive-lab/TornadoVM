@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -111,7 +112,8 @@ public class CodeFail extends TornadoTestBase {
             TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
             executionPlan.execute();
         } catch (TornadoBailoutRuntimeException e) {
-            // This is to catch the exception in the PTX backend
+            assertNotBackend(TornadoVMBackendType.OPENCL);
+            assertNotBackend(TornadoVMBackendType.SPIRV);
         }
     }
 
