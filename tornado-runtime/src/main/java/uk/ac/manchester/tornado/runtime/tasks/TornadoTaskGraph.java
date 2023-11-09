@@ -2154,25 +2154,17 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private long __getProfilerTime(ProfilerType profilerType) {
-        switch (profilerType) {
-            case TOTAL_KERNEL_TIME:
-                return timeProfiler.getTimer(TOTAL_KERNEL_TIME);
-            case TOTAL_DISPATCH_KERNEL_TIME:
-                return timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
-            case TOTAL_DISPATCH_DATA_TRANSFERS_TIME:
-                return timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
-            case COPY_OUT_TIME:
-                return timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
-            case COPY_IN_TIME:
-                return timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
-            case TOTAL_DRIVER_COMPILE_TIME:
-                return timeProfiler.getTimer(ProfilerType.TOTAL_DRIVER_COMPILE_TIME);
-            case TOTAL_GRAAL_COMPILE_TIME:
-                return timeProfiler.getTimer(ProfilerType.TOTAL_GRAAL_COMPILE_TIME);
-            case TOTAL_TASK_GRAPH_TIME:
-                return timeProfiler.getTimer(ProfilerType.TOTAL_TASK_GRAPH_TIME);
-        }
-        return 0;
+        return switch (profilerType) {
+            case TOTAL_KERNEL_TIME -> timeProfiler.getTimer(TOTAL_KERNEL_TIME);
+            case TOTAL_DISPATCH_KERNEL_TIME -> timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
+            case TOTAL_DISPATCH_DATA_TRANSFERS_TIME -> timeProfiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
+            case COPY_OUT_TIME -> timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
+            case COPY_IN_TIME -> timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
+            case TOTAL_DRIVER_COMPILE_TIME -> timeProfiler.getTimer(ProfilerType.TOTAL_DRIVER_COMPILE_TIME);
+            case TOTAL_GRAAL_COMPILE_TIME -> timeProfiler.getTimer(ProfilerType.TOTAL_GRAAL_COMPILE_TIME);
+            case TOTAL_TASK_GRAPH_TIME -> timeProfiler.getTimer(ProfilerType.TOTAL_TASK_GRAPH_TIME);
+            default -> 0;
+        };
     }
 
     private long getProfilerTimer(ProfilerType profilerType) {

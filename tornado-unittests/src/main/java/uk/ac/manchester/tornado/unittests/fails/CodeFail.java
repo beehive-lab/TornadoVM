@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -42,7 +43,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.fails.CodeFail
+ * tornado-test -V uk.ac.manchester.tornado.unittests.fails.CodeFail
  * </code>
  */
 public class CodeFail extends TornadoTestBase {
@@ -93,22 +94,27 @@ public class CodeFail extends TornadoTestBase {
 
     @Test
     public void codeFail02() {
-        FloatArray a = new FloatArray(1000);
-        FloatArray b = new FloatArray(1000);
-        Random r = new Random();
-        IntStream.range(0, a.getSize()).forEach(i -> {
-            a.set(i, r.nextFloat());
-            b.set(i, a.get(i));
-        });
+        try {
+            FloatArray a = new FloatArray(1000);
+            FloatArray b = new FloatArray(1000);
+            Random r = new Random();
+            IntStream.range(0, a.getSize()).forEach(i -> {
+                a.set(i, r.nextFloat());
+                b.set(i, a.get(i));
+            });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
+            TaskGraph taskGraph = new TaskGraph("s0");
 
-        taskGraph.task("t0", CodeFail::bar, a) //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+            taskGraph.task("t0", CodeFail::bar, a) //
+                    .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+            TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+            executionPlan.execute();
+        } catch (TornadoBailoutRuntimeException e) {
+            assertNotBackend(TornadoVMBackendType.OPENCL);
+            assertNotBackend(TornadoVMBackendType.SPIRV);
+        }
     }
 
     /**

@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -51,6 +51,7 @@ public class PTXStream extends TornadoLogger {
 
     //@formatter:off
     private static native byte[][] writeArrayDtoH(long address, long length, byte[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayDtoH(long address, long length, long hostPointer, long hostOffset, byte[] streamWrapper);
 
     private static native byte[][] writeArrayDtoH(long address, long length, short[] array, long hostOffset, byte[] streamWrapper);
 
@@ -65,6 +66,7 @@ public class PTXStream extends TornadoLogger {
     private static native byte[][] writeArrayDtoH(long address, long length, double[] array, long hostOffset, byte[] streamWrapper);
 
     private static native byte[][] writeArrayDtoHAsync(long address, long length, byte[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayDtoHAsync(long address, long length, long hostPointer, long hostOffset, byte[] streamWrapper);
 
     private static native byte[][] writeArrayDtoHAsync(long address, long length, short[] array, long hostOffset, byte[] streamWrapper);
 
@@ -79,6 +81,7 @@ public class PTXStream extends TornadoLogger {
     private static native byte[][] writeArrayDtoHAsync(long address, long length, double[] array, long hostOffset, byte[] streamWrapper);
 
     private static native byte[][] writeArrayHtoD(long address, long length, byte[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoD(long address, long length, long hostPointer, long hostOffset, byte[] streamWrapper);
 
     private static native byte[][] writeArrayHtoD(long address, long length, short[] array, long hostOffset, byte[] streamWrapper);
 
@@ -93,6 +96,7 @@ public class PTXStream extends TornadoLogger {
     private static native byte[][] writeArrayHtoD(long address, long length, double[] array, long hostOffset, byte[] streamWrapper);
 
     private static native byte[][] writeArrayHtoDAsync(long address, long length, byte[] array, long hostOffset, byte[] streamWrapper);
+    private static native byte[][] writeArrayHtoDAsync(long address, long length, long hostPointer, long hostOffset, byte[] streamWrapper);
 
     private static native byte[][] writeArrayHtoDAsync(long address, long length, short[] array, long hostOffset, byte[] streamWrapper);
 
@@ -197,6 +201,11 @@ public class PTXStream extends TornadoLogger {
         return registerEvent(writeArrayDtoH(address, length, array, hostOffset, streamPool), EventDescriptor.DESC_READ_BYTE);
     }
 
+    public int enqueueRead(long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
+        return registerEvent(writeArrayDtoH(address, length, hostPointer, hostOffset, streamPool), EventDescriptor.DESC_READ_BYTE);
+    }
+
     public int enqueueRead(long address, long length, short[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
         return registerEvent(writeArrayDtoH(address, length, array, hostOffset, streamPool), EventDescriptor.DESC_READ_SHORT);
@@ -225,6 +234,11 @@ public class PTXStream extends TornadoLogger {
     public int enqueueRead(long address, long length, double[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
         return registerEvent(writeArrayDtoH(address, length, array, hostOffset, streamPool), EventDescriptor.DESC_READ_DOUBLE);
+    }
+
+    public int enqueueAsyncRead(long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
+        return registerEvent(writeArrayDtoHAsync(address, length, hostPointer, hostOffset, streamPool), EventDescriptor.DESC_READ_BYTE);
     }
 
     public int enqueueAsyncRead(long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
@@ -262,6 +276,11 @@ public class PTXStream extends TornadoLogger {
         return registerEvent(writeArrayDtoHAsync(address, length, array, hostOffset, streamPool), EventDescriptor.DESC_READ_DOUBLE);
     }
 
+    public void enqueueWrite(long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
+        registerEvent(writeArrayHtoD(address, length, hostPointer, hostOffset, streamPool), EventDescriptor.DESC_WRITE_BYTE);
+    }
+
     public void enqueueWrite(long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
         registerEvent(writeArrayHtoD(address, length, array, hostOffset, streamPool), EventDescriptor.DESC_WRITE_BYTE);
@@ -295,6 +314,11 @@ public class PTXStream extends TornadoLogger {
     public void enqueueWrite(long address, long length, double[] array, int hostOffset, int[] waitEvents) {
         waitForEvents(waitEvents);
         registerEvent(writeArrayHtoD(address, length, array, hostOffset, streamPool), EventDescriptor.DESC_WRITE_DOUBLE);
+    }
+
+    public int enqueueAsyncWrite(long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
+        waitForEvents(waitEvents);
+        return registerEvent(writeArrayHtoDAsync(address, length, hostPointer, hostOffset, streamPool), EventDescriptor.DESC_WRITE_BYTE);
     }
 
     public int enqueueAsyncWrite(long address, long length, byte[] array, long hostOffset, int[] waitEvents) {

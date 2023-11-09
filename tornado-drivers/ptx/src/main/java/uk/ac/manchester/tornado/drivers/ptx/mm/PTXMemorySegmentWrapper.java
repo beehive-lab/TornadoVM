@@ -3,7 +3,7 @@
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2023, APT Group, Department of Computer Science,
- * The University of Manchester. All rights reserved.
+ * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,11 +20,8 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- *
  */
-package uk.ac.manchester.tornado.drivers.opencl.mm;
-
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
+package uk.ac.manchester.tornado.drivers.ptx.mm;
 
 import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;
@@ -54,38 +51,35 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.exceptions.TornadoUnsupportedError;
 
-public class OCLMemorySegmentWrapper implements ObjectBuffer {
-
+public class PTXMemorySegmentWrapper extends TornadoLogger implements ObjectBuffer {
     private static final int INIT_VALUE = -1;
-    private final OCLDeviceContext deviceContext;
+    private final PTXDeviceContext deviceContext;
     private final long batchSize;
     private long bufferId;
     private long bufferOffset;
-    private boolean onDevice;
     private long bufferSize;
 
-    private long subregionSize;
+    private long setSubRegionSize;
 
-    public OCLMemorySegmentWrapper(OCLDeviceContext deviceContext, long batchSize) {
+    public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long batchSize) {
         this.deviceContext = deviceContext;
         this.batchSize = batchSize;
         this.bufferSize = INIT_VALUE;
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
-        onDevice = false;
     }
 
-    public OCLMemorySegmentWrapper(long bufferSize, OCLDeviceContext deviceContext, long batchSize) {
+    public PTXMemorySegmentWrapper(PTXDeviceContext deviceContext, long bufferSize, long batchSize) {
         this.deviceContext = deviceContext;
         this.batchSize = batchSize;
         this.bufferSize = bufferSize;
         this.bufferId = INIT_VALUE;
         this.bufferOffset = 0;
-        onDevice = false;
     }
 
     @Override
@@ -138,43 +132,42 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
 
     @Override
     public int read(final Object reference, long hostOffset, int[] events, boolean useDeps) {
-        MemorySegment segment;
-        segment = getSegment(reference);
+        MemorySegment segment = getSegment(reference);
 
         final int returnEvent;
         final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : bufferSize;
         if (batchSize <= 0) {
-            returnEvent = deviceContext.readBuffer(toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
+            returnEvent = deviceContext.readBuffer(toBuffer(), numBytes, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
-            returnEvent = deviceContext.readBuffer(toBuffer(), TornadoNativeArray.ARRAY_HEADER, numBytes, segment.address(), hostOffset + TornadoNativeArray.ARRAY_HEADER, (useDeps) ? events : null);
+            returnEvent = deviceContext.readBuffer(toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(), hostOffset + TornadoNativeArray.ARRAY_HEADER, (useDeps)
+                    ? events
+                    : null);
         }
-
-        return useDeps ? returnEvent : -1;
+        return returnEvent;
     }
 
     @Override
-
     public void write(Object reference) {
-        MemorySegment segment;
-        segment = getSegment(reference);
+        MemorySegment segment = getSegment(reference);
+
         if (batchSize <= 0) {
-            deviceContext.writeBuffer(toBuffer(), bufferOffset, bufferSize, segment.address(), 0, null);
+            deviceContext.writeBuffer(toBuffer(), bufferSize, segment.address(), 0, null);
         } else {
-            throw new TornadoUnsupportedError("[UNSUPPORTED] batch processing for writeBuffer operation");
+            throw new TornadoUnsupportedError("[UNSUPPORTED] Batch processing for the writeBuffer operation");
         }
-        onDevice = true;
     }
 
     @Override
     public int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps) {
-        MemorySegment segment;
-        segment = getSegment(reference);
+        MemorySegment segment = getSegment(reference);
 
         final int returnEvent;
         if (batchSize <= 0) {
-            returnEvent = deviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            returnEvent = deviceContext.enqueueReadBuffer(toBuffer(), bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
-            throw new TornadoUnsupportedError("[UNSUPPORTED] batch processing for enqueueReadBuffer operation");
+            returnEvent = deviceContext.enqueueReadBuffer(toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize - TornadoNativeArray.ARRAY_HEADER, segment.address(), hostOffset, (useDeps)
+                    ? events
+                    : null);
         }
         return useDeps ? returnEvent : -1;
     }
@@ -182,29 +175,28 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
     @Override
     public List<Integer> enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         List<Integer> returnEvents = new ArrayList<>();
-        MemorySegment segment;
-        segment = getSegment(reference);
+
+        MemorySegment segment = getSegment(reference);
 
         int internalEvent;
         if (batchSize <= 0) {
-            internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
+            internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
-            internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), 0, TornadoNativeArray.ARRAY_HEADER, segment.address(), 0, (useDeps) ? events : null);
+            internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), TornadoNativeArray.ARRAY_HEADER, segment.address(), 0, (useDeps) ? events : null);
             returnEvents.add(internalEvent);
-            internalEvent = deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(), hostOffset + TornadoNativeArray.ARRAY_HEADER,
-                    (useDeps) ? events : null);
+            internalEvent = deviceContext.enqueueWriteBuffer(toBuffer() + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(), hostOffset + TornadoNativeArray.ARRAY_HEADER, (useDeps)
+                    ? events
+                    : null);
         }
         returnEvents.add(internalEvent);
-        onDevice = true;
         return useDeps ? returnEvents : null;
     }
 
     @Override
     public void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
-        MemorySegment segment;
-        segment = getSegment(reference);
+        MemorySegment segment = getSegment(reference);
 
-        if (batchSize <= 0) {
+        if (batchSize <= 0 && segment != null) {
             bufferSize = segment.byteSize();
             bufferId = deviceContext.getBufferProvider().getBufferWithSize(bufferSize);
         } else {
@@ -239,16 +231,23 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
     }
 
     @Override
-    public void setSizeSubRegion(long batchSize) {
-        this.subregionSize = batchSize;
+    public long getSizeSubRegionSize() {
+        return setSubRegionSize;
     }
 
     @Override
-    public long getSizeSubRegionSize() {
-        return subregionSize;
+    public void setSizeSubRegion(long batchSize) {
+        this.setSubRegionSize = batchSize;
     }
 
-    public long getBatchSize() {
-        return batchSize;
+    @Override
+    public int[] getIntBuffer() {
+        return ObjectBuffer.super.getIntBuffer();
     }
+
+    @Override
+    public void setIntBuffer(int[] arr) {
+        ObjectBuffer.super.setIntBuffer(arr);
+    }
+
 }
