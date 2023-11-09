@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -10,32 +10,32 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
- * 
+ *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * along with GNU Classpath; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  *
  * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
+ * making a combined work based on this library. Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
- * 
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent
  * modules, and to copy and distribute the resulting executable under
  * terms of your choice, provided that you also meet, for each linked
  * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
+ * module. An independent module is a module which is not derived from
+ * or based on this library. If you modify this library, you may extend
  * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
+ * obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  *
  */
@@ -44,6 +44,7 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.ByteBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
@@ -58,8 +59,8 @@ public final class Byte3 implements PrimitiveStorage<ByteBuffer> {
     @Payload
     private final byte[] storage;
 
-    public Byte3(byte[] storage) {
-        this.storage = storage;
+    private Byte3(byte[] nativeVectorByte) {
+        this.storage = nativeVectorByte;
     }
 
     public Byte3() {
@@ -71,14 +72,6 @@ public final class Byte3 implements PrimitiveStorage<ByteBuffer> {
         setX(x);
         setY(y);
         setZ(z);
-    }
-
-    static Byte3 loadFromArray(final byte[] array, int index) {
-        final Byte3 result = new Byte3();
-        result.setX(array[index]);
-        result.setY(array[index + 1]);
-        result.setZ(array[index + 2]);
-        return result;
     }
 
     /*
@@ -152,11 +145,15 @@ public final class Byte3 implements PrimitiveStorage<ByteBuffer> {
     }
 
     public static boolean isEqual(Byte3 a, Byte3 b) {
-        return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+        return TornadoMath.isEqual(a.toArray(), b.toArray());
     }
 
-    public byte[] getArray() {
-        return storage;
+    static Byte3 loadFromArray(final ByteArray array, int index) {
+        final Byte3 result = new Byte3();
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        result.setZ(array.get(index + 2));
+        return result;
     }
 
     public void set(Byte3 value) {
@@ -216,12 +213,6 @@ public final class Byte3 implements PrimitiveStorage<ByteBuffer> {
         return toString(NUMBER_FORMAT);
     }
 
-    void storeToArray(final byte[] array, int index) {
-        array[index] = getX();
-        array[index + 1] = getY();
-        array[index + 2] = getZ();
-    }
-
     @Override
     public void loadFromBuffer(ByteBuffer buffer) {
         asBuffer().put(buffer);
@@ -235,6 +226,16 @@ public final class Byte3 implements PrimitiveStorage<ByteBuffer> {
     @Override
     public int size() {
         return NUM_ELEMENTS;
+    }
+
+    public byte[] toArray() {
+        return storage;
+    }
+
+    void storeToArray(final ByteArray array, int index) {
+        array.set(index, getX());
+        array.set(index + 1, getY());
+        array.set(index + 2, getZ());
     }
 
 }

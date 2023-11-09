@@ -13,16 +13,16 @@
  *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * along with GNU Classpath; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  *
  * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
+ * making a combined work based on this library. Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
  *
@@ -32,18 +32,18 @@
  * modules, and to copy and distribute the resulting executable under
  * terms of your choice, provided that you also meet, for each linked
  * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
+ * module. An independent module is a module which is not derived from
+ * or based on this library. If you modify this library, you may extend
  * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
+ * obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  *
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.FloatBuffer;
-import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
 public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<FloatBuffer> {
@@ -54,7 +54,7 @@ public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<Flo
     /**
      * backing array.
      */
-    protected final float[] storage;
+    protected final FloatArray storage;
     /**
      * number of elements in the storage.
      */
@@ -64,13 +64,13 @@ public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<Flo
      * Storage format for matrix.
      *
      * @param rows
-     *            number of rows
+     *     number of rows
      * @param columns
-     *            number of columns
+     *     number of columns
      * @param array
-     *            array reference which contains data
+     *     array reference which contains data
      */
-    public Matrix2DFloat4(int rows, int columns, float[] array) {
+    public Matrix2DFloat4(int rows, int columns, FloatArray array) {
         super(rows, columns);
         storage = array;
         numElements = columns * rows * VECTOR_ELEMENTS;
@@ -80,19 +80,24 @@ public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<Flo
      * Storage format for matrix.
      *
      * @param rows
-     *            number of rows
+     *     number of rows
      * @param columns
-     *            number of columns
+     *     number of columns
      */
     public Matrix2DFloat4(int rows, int columns) {
-        this(rows, columns, new float[rows * columns * VECTOR_ELEMENTS]);
+        this(rows, columns, new FloatArray(rows * columns * VECTOR_ELEMENTS));
+    }
+
+    @Override
+    public void clear() {
+        storage.clear();
     }
 
     /**
      * Transposes the matrix in-place.
      *
      * @param matrix
-     *            matrix to transpose
+     *     matrix to transpose
      */
     public static void transpose(Matrix2DFloat4 matrix) {
         if (matrix.COLUMNS == matrix.ROWS) {
@@ -109,8 +114,8 @@ public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<Flo
     }
 
     public static void scale(Matrix2DFloat4 matrix, float value) {
-        for (int i = 0; i < matrix.storage.length; i++) {
-            matrix.storage[i] *= value;
+        for (int i = 0; i < matrix.storage.getSize(); i++) {
+            matrix.storage.set(i, matrix.storage.get(i) * value);
         }
     }
 
@@ -126,14 +131,22 @@ public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<Flo
 
     public VectorFloat row(int row) {
         int index = StorageFormats.toRowMajor(row, 0, COLUMNS);
-        return new VectorFloat(COLUMNS, Arrays.copyOfRange(storage, index, getFinalIndexOfRange(index)));
+        int to = getFinalIndexOfRange(index);
+        int size = to - index;
+        FloatArray f = new FloatArray(size);
+        int j = 0;
+        for (int i = index; i < to; i++) {
+            f.set(j, storage.get(i));
+            j++;
+        }
+        return new VectorFloat(COLUMNS, f);
     }
 
     public VectorFloat column(int col) {
         int index = StorageFormats.toRowMajor(0, col, COLUMNS);
         final VectorFloat v = new VectorFloat(ROWS);
         for (int i = 0; i < ROWS; i++) {
-            v.set(i, storage[index + (i * COLUMNS)]);
+            v.set(i, storage.get(index + (i * COLUMNS)));
         }
         return v;
     }
@@ -141,14 +154,14 @@ public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<Flo
     public VectorFloat diag() {
         final VectorFloat v = new VectorFloat(Math.min(ROWS, COLUMNS));
         for (int i = 0; i < ROWS; i++) {
-            v.set(i, storage[i * (COLUMNS + 1)]);
+            v.set(i, storage.get(i * (COLUMNS + 1)));
         }
         return v;
     }
 
     public void fill(float value) {
-        for (int i = 0; i < storage.length; i++) {
-            storage[i] = value;
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, value);
         }
     }
 
@@ -174,8 +187,8 @@ public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<Flo
     }
 
     public void set(Matrix2DFloat4 m) {
-        for (int i = 0; i < m.storage.length; i++) {
-            storage[i] = m.storage[i];
+        for (int i = 0; i < m.storage.getSize(); i++) {
+            storage.set(i, m.storage.get(i));
         }
     }
 
@@ -207,7 +220,7 @@ public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<Flo
 
     @Override
     public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
+        return storage.getSegment().asByteBuffer().asFloatBuffer();
     }
 
     @Override

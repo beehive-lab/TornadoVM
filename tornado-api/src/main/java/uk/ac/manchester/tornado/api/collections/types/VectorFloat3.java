@@ -13,16 +13,16 @@
  *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * along with GNU Classpath; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  *
  * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
+ * making a combined work based on this library. Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
  *
@@ -32,17 +32,20 @@
  * modules, and to copy and distribute the resulting executable under
  * terms of your choice, provided that you also meet, for each linked
  * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
+ * module. An independent module is a module which is not derived from
+ * or based on this library. If you modify this library, you may extend
  * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
+ * obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  *
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import static uk.ac.manchester.tornado.api.collections.types.Float3.loadFromArray;
+
 import java.nio.FloatBuffer;
-import java.util.Arrays;
+
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 
 public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
 
@@ -50,7 +53,7 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array.
      */
-    protected final float[] storage;
+    protected final FloatArray storage;
     /**
      * number of elements in the storage.
      */
@@ -60,11 +63,11 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
      * Creates a vector using the provided backing array.
      *
      * @param numElements
-     *            Number of elements
+     *     Number of elements
      * @param array
-     *            array to be copied
+     *     array to be copied
      */
-    protected VectorFloat3(int numElements, float[] array) {
+    protected VectorFloat3(int numElements, FloatArray array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -72,21 +75,21 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Creates a vector using the provided backing array.
      */
-    public VectorFloat3(float[] array) {
-        this(array.length / ELEMENT_SIZE, array);
+    public VectorFloat3(FloatArray array) {
+        this(array.getSize() / ELEMENT_SIZE, array);
     }
 
     /**
      * Creates an empty vector with.
      *
      * @param numElements
-     *            Number of elements
+     *     Number of elements
      */
     public VectorFloat3(int numElements) {
-        this(numElements, new float[numElements * ELEMENT_SIZE]);
+        this(numElements, new FloatArray(numElements * ELEMENT_SIZE));
     }
 
-    public float[] getArray() {
+    public FloatArray getArray() {
         return storage;
     }
 
@@ -98,20 +101,20 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
      * Returns the float at the given index of this vector.
      *
      * @param index
-     *            Position
+     *     Position
      * @return {@link Float3}
      */
     public Float3 get(int index) {
-        return Float3.loadFromArray(storage, toIndex(index));
+        return loadFromArray(storage, toIndex(index));
     }
 
     /**
      * Sets the float at the given index of this vector.
      *
      * @param index
-     *            Position
+     *     Position
      * @param value
-     *            Value to be set
+     *     Value to be set
      */
     public void set(int index, Float3 value) {
         value.storeToArray(storage, toIndex(index));
@@ -121,7 +124,7 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
      * Sets the elements of this vector to that of the provided vector.
      *
      * @param values
-     *            set an input array into the internal array
+     *     set an input array into the internal array
      */
     public void set(VectorFloat3 values) {
         for (int i = 0; i < numElements; i++) {
@@ -133,9 +136,9 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
      * Sets the elements of this vector to that of the provided array.
      *
      * @param values
-     *            set an input array into the internal array
+     *     set an input array into the internal array
      */
-    public void set(float[] values) {
+    public void set(FloatArray values) {
         VectorFloat3 vector = new VectorFloat3(values);
         for (int i = 0; i < numElements; i++) {
             set(i, vector.get(i));
@@ -143,7 +146,9 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void fill(float value) {
-        Arrays.fill(storage, value);
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, value);
+        }
     }
 
     /**
@@ -199,16 +204,20 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
+        return storage.getSegment().asByteBuffer().asFloatBuffer();
     }
 
     @Override
     public int size() {
-        return storage.length;
+        return storage.getSize();
     }
 
     public int getLength() {
         return numElements;
+    }
+
+    public void clear() {
+        storage.clear();
     }
 
 }

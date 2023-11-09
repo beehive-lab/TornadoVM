@@ -82,7 +82,7 @@ public interface ObjectBuffer {
 
     void setSizeSubRegion(long batchSize);
 
-    long getSizeSubRegion();
+    long getSizeSubRegionSize();
 
     default int[] getIntBuffer() {
         return null;

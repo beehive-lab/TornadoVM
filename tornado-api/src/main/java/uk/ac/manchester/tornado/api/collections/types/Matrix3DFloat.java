@@ -13,16 +13,16 @@
  *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * along with GNU Classpath; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  *
  * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
+ * making a combined work based on this library. Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
  *
@@ -32,24 +32,25 @@
  * modules, and to copy and distribute the resulting executable under
  * terms of your choice, provided that you also meet, for each linked
  * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
+ * module. An independent module is a module which is not derived from
+ * or based on this library. If you modify this library, you may extend
  * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
+ * obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  *
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.FloatBuffer;
-import java.util.Arrays;
+
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 
 public class Matrix3DFloat extends Matrix3DType implements PrimitiveStorage<FloatBuffer> {
 
     /**
      * backing array.
      */
-    protected final float[] storage;
+    protected final FloatArray storage;
 
     /**
      * number of elements in the storage.
@@ -60,13 +61,13 @@ public class Matrix3DFloat extends Matrix3DType implements PrimitiveStorage<Floa
      * Storage format for matrix.
      *
      * @param rows
-     *            number of rows
+     *     number of rows
      * @param columns
-     *            number of columns
+     *     number of columns
      * @param array
-     *            array reference which contains data
+     *     array reference which contains data
      */
-    public Matrix3DFloat(int rows, int columns, int depth, float[] array) {
+    public Matrix3DFloat(int rows, int columns, int depth, FloatArray array) {
         super(rows, columns, depth);
         storage = array;
         numElements = rows * columns * depth;
@@ -76,12 +77,17 @@ public class Matrix3DFloat extends Matrix3DType implements PrimitiveStorage<Floa
      * Storage format for matrix.
      *
      * @param rows
-     *            number of columns
+     *     number of columns
      * @param columns
-     *            number of columns
+     *     number of columns
      */
     public Matrix3DFloat(int rows, int columns, int depth) {
-        this(rows, columns, depth, new float[rows * columns * depth]);
+        this(rows, columns, depth, new FloatArray(rows * columns * depth));
+    }
+
+    @Override
+    public void clear() {
+        storage.clear();
     }
 
     public Matrix3DFloat(float[][][] matrix) {
@@ -89,21 +95,21 @@ public class Matrix3DFloat extends Matrix3DType implements PrimitiveStorage<Floa
     }
 
     public static void scale(Matrix3DFloat matrix, float value) {
-        for (int i = 0; i < matrix.storage.length; i++) {
-            matrix.storage[i] *= value;
+        for (int i = 0; i < matrix.storage.getSize(); i++) {
+            matrix.storage.set(i, matrix.storage.get(i) * value);
         }
     }
 
     public float get(int i, int j, int k) {
-        return storage[StorageFormats.toRowMajor3D(i, j, k, DEPTH, COLUMNS)];
+        return storage.get(StorageFormats.toRowMajor3D(i, j, k, DEPTH, COLUMNS));
     }
 
     public void set(int i, int j, int k, float value) {
-        storage[StorageFormats.toRowMajor3D(i, j, k, DEPTH, COLUMNS)] = value;
+        storage.set(StorageFormats.toRowMajor3D(i, j, k, DEPTH, COLUMNS), value);
     }
 
     public void fill(float value) {
-        Arrays.fill(storage, value);
+        storage.init(value);
     }
 
     public Matrix3DFloat duplicate() {
@@ -113,8 +119,8 @@ public class Matrix3DFloat extends Matrix3DType implements PrimitiveStorage<Floa
     }
 
     public void set(Matrix3DFloat m) {
-        for (int i = 0; i < m.storage.length; i++) {
-            storage[i] = m.storage[i];
+        for (int i = 0; i < m.storage.getSize(); i++) {
+            storage.set(i, m.storage.get(i));
         }
     }
 
@@ -147,7 +153,8 @@ public class Matrix3DFloat extends Matrix3DType implements PrimitiveStorage<Floa
 
     @Override
     public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
+        //TODO: Check if this is correct
+        return storage.getSegment().asByteBuffer().asFloatBuffer();
     }
 
     @Override

@@ -25,11 +25,11 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
-import java.nio.ByteBuffer;
-
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+
+import java.nio.ByteBuffer;
 
 /**
  * A buffer for inspecting data within an OpenCL device. It is not backed by any
@@ -44,7 +44,7 @@ public class OCLByteBuffer {
     private final long offset;
     protected ByteBuffer buffer;
 
-    public OCLByteBuffer(final OCLDeviceContext deviceContext, final long oclBufferId, final long offset, final long numBytes) {
+    public OCLByteBuffer(OCLDeviceContext deviceContext, final long oclBufferId, final long offset, final long numBytes) {
         this.deviceContext = deviceContext;
         this.oclBufferId = oclBufferId;
         this.bytes = numBytes;

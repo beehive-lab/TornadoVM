@@ -151,7 +151,7 @@ public interface TornadoDevice {
     int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events);
 
     /**
-     * It resolves an pending event.
+     * It resolves a pending event.
      *
      * @param event
      *            ID
@@ -223,4 +223,5 @@ public interface TornadoDevice {
     TornadoVMBackendType getTornadoVMBackend();
 
     boolean isSPIRVSupported();
+
 }

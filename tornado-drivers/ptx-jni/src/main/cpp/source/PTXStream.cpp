@@ -673,3 +673,82 @@ JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStre
 
     return wrapper_from_events(env, &beforeEvent, &afterEvent);
 }
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    writeArrayDtoH
+ * Signature: (JJJJ[B)[[B
+ */
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoH__JJJJ_3B
+        (JNIEnv * env, jclass klass, jlong device_ptr, jlong length, jlong hostPointer, jlong host_offset, jbyteArray stream_wrapper) {
+    CUevent beforeEvent, afterEvent;
+    CUstream stream;
+    stream_from_array(env, &stream, stream_wrapper);
+    record_events_create(&beforeEvent, &afterEvent);
+    record_event(&beforeEvent, &stream);
+    CUresult result = cuMemcpyDtoHAsync((void*) (hostPointer + host_offset), device_ptr, (size_t) length, stream);
+    LOG_PTX_AND_VALIDATE("cuMemcpyDtoHMemSeg", result);
+    record_event(&afterEvent, &stream);
+    if (cuEventQuery(afterEvent) != CUDA_SUCCESS) {
+        cuEventSynchronize(afterEvent);
+    }
+    return wrapper_from_events(env, &beforeEvent, &afterEvent);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    writeArrayDtoHAsync
+ * Signature: (JJJJ[B)[[B
+ */
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoHAsync__JJJJ_3B
+        (JNIEnv * env, jclass klass, jlong devicePtr, jlong length, jlong hostPointer, jlong hostOffset, jbyteArray stream_wrapper) {
+    CUstream stream;
+    stream_from_array(env, &stream, stream_wrapper);
+    CUevent beforeEvent;
+    CUevent afterEvent;
+    record_events_create(&beforeEvent, &afterEvent);
+    record_event(&beforeEvent, &stream);
+    CUresult result = cuMemcpyDtoHAsync((void *) (hostPointer + hostOffset), devicePtr, (size_t) length, stream);
+    LOG_PTX_AND_VALIDATE("cuMemcpyDtoHAsyncMemSeg", result);
+    record_event(&afterEvent, &stream);
+    return wrapper_from_events(env, &beforeEvent, &afterEvent);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    writeArrayHtoD
+ * Signature: (JJJJ[B)[[B
+ */
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoD__JJJJ_3B
+        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jlong hostPointer, jlong host_offset, jbyteArray stream_wrapper) {
+    CUevent beforeEvent, afterEvent;
+    CUstream stream;
+    stream_from_array(env, &stream, stream_wrapper);
+    record_events_create(&beforeEvent, &afterEvent);
+    record_event(&beforeEvent, &stream);
+    CUresult result = cuMemcpyHtoDAsync(device_ptr, (void *) (hostPointer + host_offset), (size_t) length, stream);
+    LOG_PTX_AND_VALIDATE("cuMemcpyHtoDMemSeg", result);
+    record_event(&afterEvent, &stream);
+    if (cuEventQuery(afterEvent) != CUDA_SUCCESS) {
+        cuEventSynchronize(afterEvent);
+    }
+    return wrapper_from_events(env, &beforeEvent, &afterEvent);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    writeArrayHtoDAsync
+ * Signature: (JJJJ[I)[[B
+ */
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJJJ_3B
+        (JNIEnv *env, jclass klass, jlong device_ptr, jlong length, jlong hostPointer, jlong host_offset, jbyteArray stream_wrapper) {
+    CUevent beforeEvent, afterEvent;
+    CUstream stream;
+    stream_from_array(env, &stream, stream_wrapper);
+    record_events_create(&beforeEvent, &afterEvent);
+    record_event(&beforeEvent, &stream);
+    CUresult result = cuMemcpyHtoDAsync(device_ptr, (void *) (hostPointer + host_offset), (size_t) length, stream);
+    LOG_PTX_AND_VALIDATE("cuMemcpyHtoDAsyncMemSeg", result);
+    record_event(&afterEvent, &stream);
+    return wrapper_from_events(env, &beforeEvent, &afterEvent);
+}

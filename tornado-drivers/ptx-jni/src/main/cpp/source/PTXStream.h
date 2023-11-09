@@ -296,6 +296,40 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuSt
 JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_cuEventCreateAndRecord
   (JNIEnv *, jclass, jboolean, jbyteArray);
 
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    writeArrayDtoH
+ * Signature: (JJJJ[B)[[B
+ */
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoH__JJJJ_3B
+  (JNIEnv *, jclass, jlong, jlong, jlong, jlong, jbyteArray);
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+ * Method:    writeArrayDtoHAsync
+ * Signature: (JJ[DJ[B)[[B
+ */
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayDtoHAsync__JJJJ_3B
+  (JNIEnv *, jclass, jlong, jlong, jlong, jlong, jbyteArray);
+
+/*
+* Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+* Method:    writeArrayHtoD
+* Signature: (JJJJ[B)[[B
+*/
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoD__JJJJ_3B
+(JNIEnv *, jclass, jlong, jlong, jlong, jlong, jbyteArray);
+
+/*
+* Class:     uk_ac_manchester_tornado_drivers_ptx_PTXStream
+* Method:    writeArrayHtoDAsync
+* Signature: (JJ[DJ[I)[[B
+*/
+JNIEXPORT jobjectArray JNICALL Java_uk_ac_manchester_tornado_drivers_ptx_PTXStream_writeArrayHtoDAsync__JJJJ_3B
+(JNIEnv *, jclass, jlong, jlong, jlong, jlong, jbyteArray);
+
+
 #ifdef __cplusplus
 }
 #endif

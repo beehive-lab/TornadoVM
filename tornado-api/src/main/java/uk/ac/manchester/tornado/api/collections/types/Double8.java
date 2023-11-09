@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -10,32 +10,32 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
- * 
+ *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * along with GNU Classpath; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  *
  * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
+ * making a combined work based on this library. Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
- * 
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent
  * modules, and to copy and distribute the resulting executable under
  * terms of your choice, provided that you also meet, for each linked
  * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
+ * module. An independent module is a module which is not derived from
+ * or based on this library. If you modify this library, you may extend
  * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
+ * obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  *
  */
@@ -44,6 +44,7 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.DoubleBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
@@ -81,10 +82,10 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
         setS7(s7);
     }
 
-    static Double8 loadFromArray(final double[] array, int index) {
+    static Double8 loadFromArray(final DoubleArray array, int index) {
         final Double8 result = new Double8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
-            result.set(i, array[index + i]);
+            result.set(i, array.get(index + i));
         }
         return result;
     }
@@ -197,7 +198,7 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public static boolean isEqual(Double8 a, Double8 b) {
-        return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+        return TornadoMath.isEqual(a.toArray(), b.toArray());
     }
 
     public static double findULPDistance(Double8 value, Double8 expected) {
@@ -314,9 +315,9 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
         return toString(DoubleOps.FMT_8);
     }
 
-    void storeToArray(final double[] array, int index) {
+    void storeToArray(final DoubleArray array, int index) {
         for (int i = 0; i < NUM_ELEMENTS; i++) {
-            array[index + i] = get(i);
+            array.set(index + i, get(i));
         }
     }
 
@@ -333,5 +334,9 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
     @Override
     public int size() {
         return NUM_ELEMENTS;
+    }
+
+    public double[] toArray() {
+        return storage;
     }
 }

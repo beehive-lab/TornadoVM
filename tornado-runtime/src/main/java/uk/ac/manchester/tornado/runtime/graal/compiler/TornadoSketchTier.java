@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -43,7 +43,9 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoAutoParalleliser;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoDataflowAnalysis;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFullInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoKernelContextReplacement;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoNativeTypeElimination;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoNumericPromotionPhase;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoPanamaPrivateMemory;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoPartialInliningPolicy;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoReduceReplacement;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
@@ -52,10 +54,6 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoStampResolver;
 public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
 
     protected final CanonicalizerPhase.CustomSimplification customSimplification;
-
-    private CanonicalizerPhase createCanonicalizerPhase(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer) {
-        return CanonicalizerPhase.create();
-    }
 
     public TornadoSketchTier(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer) {
         this.customSimplification = customCanonicalizer;
@@ -78,10 +76,16 @@ public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
         }
 
         appendPhase(new TornadoStampResolver());
+        appendPhase(new TornadoNativeTypeElimination());
         appendPhase(new TornadoReduceReplacement());
         appendPhase(new TornadoApiReplacement());
         appendPhase(new TornadoKernelContextReplacement());
         appendPhase(new TornadoAutoParalleliser());
         appendPhase(new TornadoDataflowAnalysis());
+        appendPhase(new TornadoPanamaPrivateMemory());
+    }
+
+    private CanonicalizerPhase createCanonicalizerPhase(OptionValues options, CanonicalizerPhase.CustomSimplification customCanonicalizer) {
+        return CanonicalizerPhase.create();
     }
 }

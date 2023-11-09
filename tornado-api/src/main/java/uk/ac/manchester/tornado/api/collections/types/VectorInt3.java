@@ -7,32 +7,32 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
- * 
+ *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * along with GNU Classpath; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  *
  * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
+ * making a combined work based on this library. Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
- * 
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent
  * modules, and to copy and distribute the resulting executable under
  * terms of your choice, provided that you also meet, for each linked
  * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
+ * module. An independent module is a module which is not derived from
+ * or based on this library. If you modify this library, you may extend
  * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
+ * obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  *
  */
@@ -41,16 +41,17 @@ package uk.ac.manchester.tornado.api.collections.types;
 import static uk.ac.manchester.tornado.api.collections.types.Int3.add;
 import static uk.ac.manchester.tornado.api.collections.types.Int3.loadFromArray;
 
-import java.nio.DoubleBuffer;
-import java.util.Arrays;
+import java.nio.IntBuffer;
 
-public class VectorInt3 implements PrimitiveStorage<DoubleBuffer> {
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
+
+public class VectorInt3 implements PrimitiveStorage<IntBuffer> {
 
     private static final int ELEMENT_SIZE = 3;
     /**
      * backing array.
      */
-    protected final int[] storage;
+    protected final IntArray storage;
     /**
      * number of elements in the storage.
      */
@@ -58,11 +59,11 @@ public class VectorInt3 implements PrimitiveStorage<DoubleBuffer> {
 
     /**
      * Creates a vector using the provided backing arrayR R.
-     * 
+     *
      * @param numElements
      * @param array
      */
-    protected VectorInt3(int numElements, int[] array) {
+    protected VectorInt3(int numElements, IntArray array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -70,8 +71,8 @@ public class VectorInt3 implements PrimitiveStorage<DoubleBuffer> {
     /**
      * Creates a vector using the provided backing array.
      */
-    public VectorInt3(int[] array) {
-        this(array.length / ELEMENT_SIZE, array);
+    public VectorInt3(IntArray array) {
+        this(array.getSize() / ELEMENT_SIZE, array);
     }
 
     /**
@@ -80,7 +81,7 @@ public class VectorInt3 implements PrimitiveStorage<DoubleBuffer> {
      * @param numElements
      */
     public VectorInt3(int numElements) {
-        this(numElements, new int[numElements * ELEMENT_SIZE]);
+        this(numElements, new IntArray(numElements * ELEMENT_SIZE));
     }
 
     private int toIndex(int index) {
@@ -124,7 +125,7 @@ public class VectorInt3 implements PrimitiveStorage<DoubleBuffer> {
      *
      * @param values
      */
-    public void set(int[] values) {
+    public void set(IntArray values) {
         VectorInt3 vector = new VectorInt3(values);
         for (int i = 0; i < numElements; i++) {
             set(i, vector.get(i));
@@ -132,7 +133,9 @@ public class VectorInt3 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public void fill(int value) {
-        Arrays.fill(storage, value);
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, value);
+        }
     }
 
     /**
@@ -182,30 +185,30 @@ public class VectorInt3 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     @Override
-    public void loadFromBuffer(DoubleBuffer buffer) {
+    public void loadFromBuffer(IntBuffer buffer) {
         asBuffer().put(buffer);
     }
 
     @Override
-    public DoubleBuffer asBuffer() {
-        return null;
-    }
-
-    public DoubleBuffer asBuffer(DoubleBuffer buffer) {
-        return asBuffer().put(buffer);
+    public IntBuffer asBuffer() {
+        return storage.getSegment().asByteBuffer().asIntBuffer();
     }
 
     @Override
     public int size() {
-        return storage.length;
+        return storage.getSize();
     }
 
     public int getLength() {
         return numElements;
     }
 
-    public int[] getArray() {
+    public IntArray getArray() {
         return storage;
+    }
+
+    public void clear() {
+        storage.clear();
     }
 
 }

@@ -14,7 +14,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -44,6 +44,12 @@ import java.util.List;
 
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
+import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
@@ -55,23 +61,17 @@ import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
 public class OCLObjectWrapper implements ObjectBuffer {
 
-    private static final int OPENCL_OBJECT_ALIGNMENT = 64;
-
-    private long bufferId;
-    private long bufferOffset;
-    private ByteBuffer buffer;
+    private static final long BYTES_OBJECT_REFERENCE = 8;
     private final HotSpotResolvedJavaType resolvedType;
     private final HotSpotResolvedJavaField[] fields;
     private final FieldBuffer[] wrappedFields;
-
     private final Class<?> objectType;
-
     private final int hubOffset;
     private final int fieldsOffset;
-
     private final OCLDeviceContext deviceContext;
-
-    private static final int BYTES_OBJECT_REFERENCE = 8;
+    private long bufferId;
+    private long bufferOffset;
+    private ByteBuffer buffer;
     private long setSubRegionSize;
 
     public OCLObjectWrapper(final OCLDeviceContext device, Object object) {
@@ -116,6 +116,30 @@ public class OCLObjectWrapper implements ObjectBuffer {
                 } else {
                     warn("cannot wrap field: array type=%s", type.getName());
                 }
+            } else if (type == FloatArray.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                long size = ((FloatArray) objectFromField).getSegment().byteSize();
+                wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
+            } else if (type == ByteArray.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                long size = ((ByteArray) objectFromField).getSegment().byteSize();
+                wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
+            } else if (type == DoubleArray.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                long size = ((DoubleArray) objectFromField).getSegment().byteSize();
+                wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
+            } else if (type == IntArray.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                long size = ((IntArray) objectFromField).getSegment().byteSize();
+                wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
+            } else if (type == ShortArray.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                long size = ((ShortArray) objectFromField).getSegment().byteSize();
+                wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
+            } else if (type == LongArray.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                long size = ((LongArray) objectFromField).getSegment().byteSize();
+                wrappedField = new OCLMemorySegmentWrapper(size, device, 0);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 wrappedField = new OCLVectorWrapper(device, object, 0);
             } else if (field.getJavaKind().isObject()) {
@@ -336,8 +360,8 @@ public class OCLObjectWrapper implements ObjectBuffer {
     }
 
     protected void dump(int width) {
-        System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities.humanReadableByteCount(getObjectSize(), true),
-                RuntimeUtilities.humanReadableByteCount(buffer.position(), true), deviceContext.getDevice().getDeviceName());
+        System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities.humanReadableByteCount(getObjectSize(), true), RuntimeUtilities.humanReadableByteCount(buffer
+                .position(), true), deviceContext.getDevice().getDeviceName());
         for (int i = 0; i < buffer.position(); i += width) {
             System.out.printf("[0x%04x]: ", i);
             for (int j = 0; j < Math.min(buffer.capacity() - i, width); j++) {
@@ -426,7 +450,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
     }
 
     @Override
-    public long getSizeSubRegion() {
+    public long getSizeSubRegionSize() {
         return setSubRegionSize;
     }
 

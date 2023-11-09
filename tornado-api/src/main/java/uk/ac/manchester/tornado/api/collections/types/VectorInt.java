@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
@@ -10,93 +10,93 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
- * 
+ *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * along with GNU Classpath; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  *
  * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
+ * making a combined work based on this library. Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
- * 
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent
  * modules, and to copy and distribute the resulting executable under
  * terms of your choice, provided that you also meet, for each linked
  * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
+ * module. An independent module is a module which is not derived from
+ * or based on this library. If you modify this library, you may extend
  * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
+ * obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  *
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.IntBuffer;
-import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 
 public class VectorInt implements PrimitiveStorage<IntBuffer> {
 
     private static final int ELEMENT_SIZE = 1;
     private final int numElements;
-    private final int[] storage;
+    private final IntArray storage;
 
     /**
      * Creates a vector using the provided backing array.
-     * 
+     *
      * @param numElements
-     *            number of elements
+     *     number of elements
      * @param array
-     *            reference to the input array
+     *     reference to the input array
      */
-    protected VectorInt(int numElements, int[] array) {
+    protected VectorInt(int numElements, IntArray array) {
         this.numElements = numElements;
         this.storage = array;
     }
 
     /**
      * Creates an empty vector with.
-     * 
+     *
      * @param numElements
-     *            number of elements
+     *     number of elements
      */
     public VectorInt(int numElements) {
-        this(numElements, new int[numElements]);
+        this(numElements, new IntArray(numElements));
     }
 
     /**
      * Creates an new vector from the provided storage.
-     * 
+     *
      * @param storage
-     *            vector int array
+     *     vector int array
      */
-    public VectorInt(int[] storage) {
-        this(storage.length / ELEMENT_SIZE, storage);
+    public VectorInt(IntArray storage) {
+        this(storage.getSize() / ELEMENT_SIZE, storage);
     }
 
     public static int min(VectorInt v) {
         int result = Integer.MAX_VALUE;
-        for (int i = 0; i < v.storage.length; i++) {
-            result = Math.min(v.storage[i], result);
+        for (int i = 0; i < v.storage.getSize(); i++) {
+            result = Math.min(v.storage.get(i), result);
         }
         return result;
     }
 
     public static int max(VectorInt v) {
         int result = Integer.MIN_VALUE;
-        for (int i = 0; i < v.storage.length; i++) {
-            result = Math.max(v.storage[i], result);
+        for (int i = 0; i < v.storage.getSize(); i++) {
+            result = Math.max(v.storage.get(i), result);
         }
         return result;
     }
@@ -114,7 +114,7 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
         return sum;
     }
 
-    public int[] getArray() {
+    public IntArray getArray() {
         return storage;
     }
 
@@ -122,34 +122,34 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
      * Returns the int at the given index of this vector.
      *
      * @param index
-     *            index value
+     *     index value
      * @return int
      */
     public int get(int index) {
-        return storage[index];
+        return storage.get(index);
     }
 
     /**
      * Sets the int at the given index of this vector.
      *
      * @param index
-     *            index value
+     *     index value
      * @param value
-     *            value to be set in position index
+     *     value to be set in position index
      */
     public void set(int index, int value) {
-        storage[index] = value;
+        storage.set(index, value);
     }
 
     /**
      * Sets the elements of this vector to that of the provided vector.
      *
      * @param values
-     *            assign an input vector int to the internal array
+     *     assign an input vector int to the internal array
      */
     public void set(VectorInt values) {
-        for (int i = 0; i < values.storage.length; i++) {
-            storage[i] = values.storage[i];
+        for (int i = 0; i < values.storage.getSize(); i++) {
+            storage.set(i, values.storage.get(i));
         }
     }
 
@@ -157,11 +157,11 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
      * Sets the elements of this vector to that of the provided array.
      *
      * @param values
-     *            assign an input vector int to the internal array
+     *     assign an input vector int to the internal array
      */
     public void set(int[] values) {
         for (int i = 0; i < values.length; i++) {
-            storage[i] = values[i];
+            storage.set(i, values[i]);
         }
     }
 
@@ -169,25 +169,27 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
      * Sets all elements to value.
      *
      * @param value
-     *            Fill input vector with value
+     *     Fill input vector with value
      */
     public void fill(int value) {
-        Arrays.fill(storage, value);
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, value);
+        }
     }
 
     /**
      * Returns slice of this vector.
      *
      * @param start
-     *            starting index
+     *     starting index
      * @param length
-     *            number of elements
+     *     number of elements
      * @return {@link VectorInt}
      */
     public VectorInt subVector(int start, int length) {
         final VectorInt v = new VectorInt(length);
         for (int i = 0; i < length; i++) {
-            v.storage[i] = storage[i + start];
+            v.storage.set(i, storage.get(i + start));
         }
 
         return v;
@@ -199,14 +201,18 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
      * @return {@link VectorInt}
      */
     public VectorInt duplicate() {
-        return new VectorInt(Arrays.copyOf(storage, storage.length));
+        IntArray cp = new IntArray(storage.getSize());
+        for (int i = 0; i < cp.getSize(); i++) {
+            cp.set(i, storage.get(i));
+        }
+        return new VectorInt(cp);
     }
 
     /**
      * Vector equality test.
      *
      * @param vector
-     *            Input vector to compare
+     *     Input vector to compare
      * @return true if vectors match
      */
     public boolean isEqual(VectorInt vector) {
@@ -215,9 +221,9 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
 
     /**
      * Prints the vector using the specified format string.
-     * 
+     *
      * @param fmt
-     *            String Format
+     *     String Format
      * @return String
      */
     public String toString(String fmt) {
@@ -245,7 +251,7 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public IntBuffer asBuffer() {
-        return IntBuffer.wrap(storage);
+        return storage.getSegment().asByteBuffer().asIntBuffer();
     }
 
     @Override
@@ -255,5 +261,9 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
 
     public int getLength() {
         return numElements;
+    }
+
+    public void clear() {
+        storage.clear();
     }
 }

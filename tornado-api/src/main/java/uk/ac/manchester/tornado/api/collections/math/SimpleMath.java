@@ -42,24 +42,26 @@
 package uk.ac.manchester.tornado.api.collections.math;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 
 public class SimpleMath {
 
-    public static void vectorAdd(final float[] a, final float[] b, final float[] c) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            c[i] = a[i] + b[i];
+    public static void vectorAdd(final FloatArray a, final FloatArray b, final FloatArray c) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            c.set(i, a.get(i) + b.get(i));
         }
     }
 
-    public static void vectorAdd(final int[] a, final int[] b, final int[] c) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            c[i] = a[i] + b[i];
+    public static void vectorAdd(final IntArray a, final IntArray b, final IntArray c) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            c.set(i, a.get(i) + b.get(i));
         }
     }
 
-    public static void vectorMultiply(final float[] a, final float[] b, final float[] c) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            c[i] = a[i] * b[i];
+    public static void vectorMultiply(final FloatArray a, final FloatArray b, final FloatArray c) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            c.set(i, a.get(i) * b.get(i));
         }
     }
 }

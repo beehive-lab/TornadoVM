@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -10,39 +10,40 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
- * 
+ *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * along with GNU Classpath; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  *
  * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
+ * making a combined work based on this library. Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
- * 
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent
  * modules, and to copy and distribute the resulting executable under
  * terms of your choice, provided that you also meet, for each linked
  * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
+ * module. An independent module is a module which is not derived from
+ * or based on this library. If you modify this library, you may extend
  * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
+ * obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  *
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.ShortBuffer;
-import java.util.Arrays;
+
+import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
 
 public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
 
@@ -50,7 +51,7 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
     /**
      * backing array.
      */
-    protected final short[] storage;
+    protected final ShortArray storage;
     /**
      * Size in Y dimension.
      */
@@ -68,7 +69,7 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
      */
     private final int numElements;
 
-    public VolumeShort2(int width, int height, int depth, short[] array) {
+    public VolumeShort2(int width, int height, int depth, ShortArray array) {
         storage = array;
         X = width;
         Y = height;
@@ -78,17 +79,17 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
 
     /**
      * Storage format for matrix.
-     * 
+     *
      * @param width
-     *            number of columns
+     *     number of columns
      * @param depth
-     *            number of rows
+     *     number of rows
      */
     public VolumeShort2(int width, int height, int depth) {
-        this(width, height, depth, new short[width * height * depth * ELEMENT_SIZE]);
+        this(width, height, depth, new ShortArray(width * height * depth * ELEMENT_SIZE));
     }
 
-    public short[] getArray() {
+    public ShortArray getArray() {
         return storage;
     }
 
@@ -119,7 +120,7 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
     }
 
     public void fill(short value) {
-        Arrays.fill(storage, value);
+        storage.init(value);
     }
 
     public VolumeShort2 duplicate() {
@@ -129,8 +130,8 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
     }
 
     public void set(VolumeShort2 other) {
-        for (int i = 0; i < storage.length; i++) {
-            storage[i] = other.storage[i];
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, other.storage.get(i));
         }
     }
 
@@ -160,12 +161,16 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
 
     @Override
     public ShortBuffer asBuffer() {
-        return ShortBuffer.wrap(storage);
+        return storage.getSegment().asByteBuffer().asShortBuffer();
     }
 
     @Override
     public int size() {
         return numElements;
+    }
+
+    public void clear() {
+        storage.clear();
     }
 
 }

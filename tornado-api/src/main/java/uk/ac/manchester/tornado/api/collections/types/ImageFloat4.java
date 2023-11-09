@@ -13,16 +13,16 @@
  *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * along with GNU Classpath; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  *
  * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
+ * making a combined work based on this library. Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
  *
@@ -32,17 +32,18 @@
  * modules, and to copy and distribute the resulting executable under
  * terms of your choice, provided that you also meet, for each linked
  * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
+ * module. An independent module is a module which is not derived from
+ * or based on this library. If you modify this library, you may extend
  * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
+ * obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  *
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.FloatBuffer;
-import java.util.Arrays;
+
+import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 
 public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
 
@@ -50,7 +51,7 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array.
      */
-    protected final float[] storage;
+    protected final FloatArray storage;
     /**
      * Number of rows.
      */
@@ -68,13 +69,13 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
      * Storage format for matrix.
      *
      * @param width
-     *            number of rows
+     *     number of rows
      * @param height
-     *            number of columns
+     *     number of columns
      * @param array
-     *            array reference which contains data
+     *     array reference which contains data
      */
-    public ImageFloat4(int width, int height, float[] array) {
+    public ImageFloat4(int width, int height, FloatArray array) {
         storage = array;
         X = width;
         Y = height;
@@ -85,19 +86,19 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
      * Storage format for matrix.
      *
      * @param width
-     *            number of rows
+     *     number of rows
      * @param height
-     *            number of column
+     *     number of column
      */
     public ImageFloat4(int width, int height) {
-        this(width, height, new float[width * height * ELEMENT_SIZE]);
+        this(width, height, new FloatArray(width * height * ELEMENT_SIZE));
     }
 
     public ImageFloat4(float[][] matrix) {
         this(matrix.length / ELEMENT_SIZE, matrix[0].length / ELEMENT_SIZE, StorageFormats.toRowMajor(matrix));
     }
 
-    public float[] getArray() {
+    public FloatArray getArray() {
         return storage;
     }
 
@@ -132,7 +133,7 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void fill(float value) {
-        Arrays.fill(storage, value);
+        storage.init(value);
     }
 
     public ImageFloat4 duplicate() {
@@ -142,7 +143,9 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void set(ImageFloat4 m) {
-        System.arraycopy(storage, 0, m.storage, 0, storage.length);
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, m.storage.get(i));
+        }
     }
 
     public String toString(String fmt) {
@@ -221,7 +224,7 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
+        return storage.getSegment().asByteBuffer().asFloatBuffer();
     }
 
     @Override
@@ -229,36 +232,8 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
         return numElements;
     }
 
-    public FloatingPointError calculateULP(ImageFloat4 ref) {
-        float maxULP = Float.MIN_VALUE;
-        float minULP = Float.MAX_VALUE;
-        float averageULP = 0f;
-
-        /*
-         * check to make sure dimensions match
-         */
-        if (ref.X != X && ref.Y != Y) {
-            return new FloatingPointError(-1f, 0f, 0f, 0f);
-        }
-
-        int errors = 0;
-        for (int j = 0; j < Y; j++) {
-            for (int i = 0; i < X; i++) {
-                final Float4 v = get(i, j);
-                final Float4 r = ref.get(i, j);
-
-                final float ulpFactor = Float4.findULPDistance(v, r);
-                averageULP += ulpFactor;
-                minULP = Math.min(ulpFactor, minULP);
-                maxULP = Math.max(ulpFactor, maxULP);
-
-                if (ulpFactor > 5f) {
-                    errors++;
-                }
-            }
-        }
-        averageULP /= (float) X * Y;
-        return new FloatingPointError(averageULP, minULP, maxULP, -1f, errors);
+    public void clear() {
+        storage.clear();
     }
 
 }

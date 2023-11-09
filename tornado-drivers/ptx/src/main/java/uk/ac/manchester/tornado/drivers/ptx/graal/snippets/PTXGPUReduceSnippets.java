@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -42,6 +42,7 @@ import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.PTXIntBinaryIntrinsicNod
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceMulNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNode;
 
 /**
  * Tornado-Graal snippets for GPUs reductions using OpenCL semantics.
@@ -1013,6 +1014,30 @@ public class PTXGPUReduceSnippets implements Snippets {
             }
 
             template(tool, storeAtomicIndexed, args).instantiate(tool.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
+        }
+
+        public void lower(WriteAtomicNode writeAtomicNode, ValueNode globalId, LoweringTool tool) {
+
+            JavaKind elementKind = writeAtomicNode.getElementKind();
+            ValueNode value = writeAtomicNode.value();
+            ValueNode extra = writeAtomicNode.getExtraOperation();
+
+            SnippetInfo snippet = getSnippetInstance(elementKind, value, extra);
+
+            // Sets the guard stage to AFTER_FSA because we want to avoid any frame state
+            // assignment for the snippet (see SnippetTemplate::assignNecessaryFrameStates)
+            // This is needed because we have nodes in the snippet which have multiple side
+            // effects and this is not allowed (see
+            // SnippetFrameStateAssignment.NodeStateAssignment.INVALID)
+            Arguments args = new Arguments(snippet, GraphState.GuardsStage.AFTER_FSA, tool.getLoweringStage());
+            args.add("inputData", writeAtomicNode.getInputArray());
+            args.add("outputArray", writeAtomicNode.getOutArray());
+            args.add("gidx", globalId);
+            if (extra != null) {
+                args.add("value", extra);
+            }
+
+            template(tool, writeAtomicNode, args).instantiate(tool.getMetaAccess(), writeAtomicNode, SnippetTemplate.DEFAULT_REPLACER, args);
         }
     }
 }

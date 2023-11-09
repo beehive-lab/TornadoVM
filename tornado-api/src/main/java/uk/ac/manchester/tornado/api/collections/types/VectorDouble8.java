@@ -10,16 +10,16 @@
  *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * along with GNU Classpath; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  *
  * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
+ * making a combined work based on this library. Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
  *
@@ -29,10 +29,10 @@
  * modules, and to copy and distribute the resulting executable under
  * terms of your choice, provided that you also meet, for each linked
  * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
+ * module. An independent module is a module which is not derived from
+ * or based on this library. If you modify this library, you may extend
  * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
+ * obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  *
  */
@@ -42,7 +42,8 @@ import static uk.ac.manchester.tornado.api.collections.types.Double8.add;
 import static uk.ac.manchester.tornado.api.collections.types.Double8.loadFromArray;
 
 import java.nio.DoubleBuffer;
-import java.util.Arrays;
+
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 
 public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
 
@@ -50,7 +51,7 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
     /**
      * backing array.
      */
-    protected final double[] storage;
+    protected final DoubleArray storage;
     /**
      * number of elements in the storage.
      */
@@ -62,7 +63,7 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
      * @param numElements
      * @param array
      */
-    protected VectorDouble8(int numElements, double[] array) {
+    protected VectorDouble8(int numElements, DoubleArray array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -70,8 +71,8 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
     /**
      * Creates a vector using the provided backing array.
      */
-    public VectorDouble8(double[] array) {
-        this(array.length / ELEMENT_SIZE, array);
+    public VectorDouble8(DoubleArray array) {
+        this(array.getSize() / ELEMENT_SIZE, array);
     }
 
     /**
@@ -80,7 +81,7 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
      * @param numElements
      */
     public VectorDouble8(int numElements) {
-        this(numElements, new double[numElements * ELEMENT_SIZE]);
+        this(numElements, new DoubleArray(numElements * ELEMENT_SIZE));
     }
 
     private int toIndex(int index) {
@@ -123,15 +124,17 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
      *
      * @param values
      */
-    public void set(double[] values) {
+    public void set(DoubleArray values) {
         VectorDouble8 vector = new VectorDouble8(values);
         for (int i = 0; i < numElements; i++) {
             set(i, vector.get(i));
         }
     }
 
-    public void fill(float value) {
-        Arrays.fill(storage, value);
+    public void fill(double value) {
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, value);
+        }
     }
 
     /**
@@ -196,15 +199,19 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public int size() {
-        return storage.length;
+        return storage.getSize();
     }
 
     public int getLength() {
         return numElements;
     }
 
-    public double[] getArray() {
+    public DoubleArray getArray() {
         return storage;
+    }
+
+    public void clear() {
+        storage.clear();
     }
 
 }

@@ -13,16 +13,16 @@
  *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * along with GNU Classpath; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  *
  * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
+ * making a combined work based on this library. Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
  *
@@ -32,23 +32,26 @@
  * modules, and to copy and distribute the resulting executable under
  * terms of your choice, provided that you also meet, for each linked
  * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
+ * module. An independent module is a module which is not derived from
+ * or based on this library. If you modify this library, you may extend
  * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
+ * obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  *
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import static uk.ac.manchester.tornado.api.collections.types.StorageFormats.toRowMajor;
+
 import java.nio.DoubleBuffer;
-import java.util.Arrays;
+
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 
 public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<DoubleBuffer> {
     /**
      * backing array.
      */
-    protected final double[] storage;
+    protected final DoubleArray storage;
 
     /**
      * number of elements in the storage.
@@ -59,13 +62,13 @@ public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<Dou
      * Storage format for matrix.
      *
      * @param rows
-     *            number of rows
+     *     number of rows
      * @param columns
-     *            number of columns
+     *     number of columns
      * @param array
-     *            array reference which contains data
+     *     array reference which contains data
      */
-    public Matrix2DDouble(int rows, int columns, double[] array) {
+    public Matrix2DDouble(int rows, int columns, DoubleArray array) {
         super(rows, columns);
         storage = array;
         numElements = columns * rows;
@@ -75,13 +78,18 @@ public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<Dou
      * Storage format for matrix.
      *
      * @param rows
-     *            number of rows
+     *     number of rows
      * @param columns
-     *            number of columns
+     *     number of columns
      *
      */
     public Matrix2DDouble(int rows, int columns) {
-        this(rows, columns, new double[rows * columns]);
+        this(rows, columns, new DoubleArray(rows * columns));
+    }
+
+    @Override
+    public void clear() {
+        storage.clear();
     }
 
     public Matrix2DDouble(double[][] matrix) {
@@ -92,7 +100,7 @@ public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<Dou
      * Transposes the matrix in-place.
      *
      * @param matrix
-     *            matrix to transpose
+     *     matrix to transpose
      */
     public static void transpose(Matrix2DDouble matrix) {
         if (matrix.COLUMNS == matrix.ROWS) {
@@ -107,30 +115,32 @@ public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<Dou
         }
     }
 
-    public static void scale(Matrix2DDouble matrix, double value) {
-        for (int i = 0; i < matrix.storage.length; i++) {
-            matrix.storage[i] *= value;
-        }
-    }
-
     public double get(int i, int j) {
-        return storage[StorageFormats.toRowMajor(i, j, COLUMNS)];
+        return storage.get(toRowMajor(i, j, COLUMNS));
     }
 
     public void set(int i, int j, double value) {
-        storage[StorageFormats.toRowMajor(i, j, COLUMNS)] = value;
+        storage.set(StorageFormats.toRowMajor(i, j, COLUMNS), value);
     }
 
     public VectorDouble row(int row) {
-        int index = StorageFormats.toRowMajor(row, 0, COLUMNS);
-        return new VectorDouble(COLUMNS, Arrays.copyOfRange(storage, index, getFinalIndexOfRange(index)));
+        int index = toRowMajor(row, 0, COLUMNS);
+        int from = index;
+        int to = getFinalIndexOfRange(index);
+        int size = to - from;
+        DoubleArray f = new DoubleArray(size);
+        int j = 0;
+        for (int i = from; i < to; i++, j++) {
+            f.set(j, storage.get(i));
+        }
+        return new VectorDouble(COLUMNS, f);
     }
 
     public VectorDouble column(int col) {
         int index = StorageFormats.toRowMajor(0, col, COLUMNS);
         final VectorDouble v = new VectorDouble(ROWS);
         for (int i = 0; i < ROWS; i++) {
-            v.set(i, storage[index + (i * COLUMNS)]);
+            v.set(i, storage.get(index + (i * COLUMNS)));
         }
         return v;
     }
@@ -138,13 +148,15 @@ public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<Dou
     public VectorDouble diag() {
         final VectorDouble v = new VectorDouble(Math.min(ROWS, COLUMNS));
         for (int i = 0; i < ROWS; i++) {
-            v.set(i, storage[i * (COLUMNS + 1)]);
+            v.set(i, storage.get(i * (COLUMNS + 1)));
         }
         return v;
     }
 
     public void fill(double value) {
-        Arrays.fill(storage, value);
+        for (int i = 0; i < storage.getSize(); i++) {
+            storage.set(i, value);
+        }
     }
 
     public void multiply(Matrix2DDouble a, Matrix2DDouble b) {
@@ -166,8 +178,8 @@ public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<Dou
     }
 
     public void set(Matrix2DDouble m) {
-        for (int i = 0; i < m.storage.length; i++) {
-            storage[i] = m.storage[i];
+        for (int i = 0; i < m.storage.getSize(); i++) {
+            this.storage.set(i, m.storage.get(i));
         }
     }
 
@@ -198,7 +210,7 @@ public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<Dou
 
     @Override
     public DoubleBuffer asBuffer() {
-        return DoubleBuffer.wrap(storage);
+        return storage.getSegment().asByteBuffer().asDoubleBuffer();
     }
 
     @Override

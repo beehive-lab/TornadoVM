@@ -13,16 +13,16 @@
  *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * along with GNU Classpath; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  *
  * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
+ * making a combined work based on this library. Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
  *
@@ -32,10 +32,10 @@
  * modules, and to copy and distribute the resulting executable under
  * terms of your choice, provided that you also meet, for each linked
  * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
+ * module. An independent module is a module which is not derived from
+ * or based on this library. If you modify this library, you may extend
  * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
+ * obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  *
  */
@@ -44,6 +44,7 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.IntBuffer;
 
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
@@ -63,7 +64,7 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
     @Payload
     private final int[] storage;
 
-    public Int4(int[] storage) {
+    private Int4(int[] storage) {
         this.storage = storage;
     }
 
@@ -77,15 +78,6 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
         setY(y);
         setZ(z);
         setW(w);
-    }
-
-    static Int4 loadFromArray(final int[] array, int index) {
-        final Int4 result = new Int4();
-        result.setX(array[index]);
-        result.setY(array[index + 1]);
-        result.setZ(array[index + 2]);
-        result.setW(array[index + 3]);
-        return result;
     }
 
     /*
@@ -165,11 +157,20 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
     }
 
     public static boolean isEqual(Int4 a, Int4 b) {
-        return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
+        return TornadoMath.isEqual(a.toArray(), b.toArray());
     }
 
-    public int[] getArray() {
+    public int[] toArray() {
         return storage;
+    }
+
+    static Int4 loadFromArray(final IntArray array, int index) {
+        final Int4 result = new Int4();
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        result.setZ(array.get(index + 2));
+        result.setW(array.get(index + 3));
+        return result;
     }
 
     public int get(int index) {
@@ -247,13 +248,6 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
         return toString(NUMBER_FORMAT);
     }
 
-    void storeToArray(final int[] array, int index) {
-        array[index] = getX();
-        array[index + 1] = getY();
-        array[index + 2] = getZ();
-        array[index + 3] = getW();
-    }
-
     @Override
     public void loadFromBuffer(IntBuffer buffer) {
         asBuffer().put(buffer);
@@ -267,5 +261,12 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
     @Override
     public int size() {
         return NUM_ELEMENTS;
+    }
+
+    void storeToArray(final IntArray array, int index) {
+        array.set(index, getX());
+        array.set(index + 1, getY());
+        array.set(index + 2, getZ());
+        array.set(index + 3, getW());
     }
 }

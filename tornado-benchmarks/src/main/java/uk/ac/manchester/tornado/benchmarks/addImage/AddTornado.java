@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,6 @@
 package uk.ac.manchester.tornado.benchmarks.addImage;
 
 import java.util.Random;
-import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -36,7 +35,7 @@ import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner addImage
+ * tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner addImage
  * </code>
  */
 public class AddTornado extends BenchmarkDriver {
@@ -62,12 +61,8 @@ public class AddTornado extends BenchmarkDriver {
         Random r = new Random();
         for (int j = 0; j < numElementsY; j++) {
             for (int i = 0; i < numElementsX; i++) {
-                float[] ra = new float[4];
-                IntStream.range(0, ra.length).forEach(x -> ra[x] = r.nextFloat());
-                float[] rb = new float[4];
-                IntStream.range(0, rb.length).forEach(x -> rb[x] = r.nextFloat());
-                a.set(i, j, new Float4(ra));
-                b.set(i, j, new Float4(rb));
+                a.set(i, j, new Float4(r.nextFloat(), r.nextFloat(), r.nextFloat(), r.nextFloat()));
+                b.set(i, j, new Float4(r.nextFloat(), r.nextFloat(), r.nextFloat(), r.nextFloat()));
             }
         }
     }

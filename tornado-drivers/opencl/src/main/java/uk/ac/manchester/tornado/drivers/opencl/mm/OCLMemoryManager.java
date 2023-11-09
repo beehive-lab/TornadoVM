@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -35,26 +35,24 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProvider {
 
-    private final OCLDeviceContext deviceContext;
-    private long constantPointer;
-    private long atomicsRegion = -1;
-
     private static final int MAX_NUMBER_OF_ATOMICS_PER_KERNEL = 128;
     private static final int INTEGER_BYTES_SIZE = 4;
-
+    private final OCLDeviceContext deviceContext;
     public OCLKernelArgs oclKernelCallWrapper = null;
+    private long constantPointer;
+    private long atomicsRegion = -1;
 
     public OCLMemoryManager(final OCLDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
     }
 
+    private static long align(final long address, final long alignment) {
+        return (address % alignment == 0) ? address : address + (alignment - address % alignment);
+    }
+
     @Override
     public long getHeapSize() {
         return DEVICE_AVAILABLE_MEMORY;
-    }
-
-    private static long align(final long address, final long alignment) {
-        return (address % alignment == 0) ? address : address + (alignment - address % alignment);
     }
 
     public OCLKernelArgs createCallWrapper(final int maxArgs) {
@@ -95,8 +93,8 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
 
     void allocateAtomicRegion() {
         if (this.atomicsRegion == -1) {
-            this.atomicsRegion = deviceContext.getPlatformContext()
-                    .createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, INTEGER_BYTES_SIZE * MAX_NUMBER_OF_ATOMICS_PER_KERNEL).getBuffer();
+            this.atomicsRegion = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR,
+                    INTEGER_BYTES_SIZE * MAX_NUMBER_OF_ATOMICS_PER_KERNEL).getBuffer();
         }
     }
 
@@ -106,4 +104,5 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
             this.atomicsRegion = -1;
         }
     }
+
 }

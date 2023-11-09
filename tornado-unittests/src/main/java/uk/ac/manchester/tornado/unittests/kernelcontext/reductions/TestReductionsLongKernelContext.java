@@ -17,12 +17,7 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.reductions;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.stream.IntStream;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -31,33 +26,35 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
+
 /**
- * The unit-tests in this class implement some Reduction operations (add, max,
- * min) for {@link Long} type. These unit-tests check the functional operation
- * of some {@link KernelContext} features, such as global thread identifiers,
- * local thread identifiers, the local group size of the associated WorkerGrid,
- * barriers and allocation of local memory.
+ * The unit-tests in this class implement some Reduction operations (add, max, min) for {@link Long} type. These unit-tests check the functional operation of some {@link KernelContext} features, such
+ * as global thread identifiers, local thread identifiers, the local group size of the associated WorkerGrid, barriers and allocation of local memory.
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsIntegersKernelContext
+ * tornado-test -V uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsLongKernelContext
  * </code>
  */
 public class TestReductionsLongKernelContext extends TornadoTestBase {
 
-    public static long computeAddSequential(long[] input) {
+    public static long computeAddSequential(LongArray input) {
         long acc = 0;
-        for (long v : input) {
-            acc += v;
+        for (int i = 0; i < input.getSize(); i++) {
+            acc += input.get(i);
         }
         return acc;
     }
 
-    public static void longReductionAddGlobalMemory(KernelContext context, long[] a, long[] b) {
+    public static void longReductionAddGlobalMemory(KernelContext context, LongArray a, LongArray b) {
         int localIdx = context.localIdx;
         int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx; // Expose Group ID
@@ -66,11 +63,11 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             context.localBarrier();
             if (localIdx < stride) {
-                a[id] += a[id + stride];
+                a.set(id, a.get(id) + a.get(id + stride));
             }
         }
         if (localIdx == 0) {
-            b[groupID] = a[id];
+            b.set(groupID, a.get(id));
         }
     }
 
@@ -181,13 +178,120 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
         }
     }
 
+    public static void longReductionAddLocalMemory(KernelContext context, LongArray a, LongArray b) {
+        int globalIdx = context.globalIdx;
+        int localIdx = context.localIdx;
+        int localGroupSize = context.localGroupSizeX;
+        int groupID = context.groupIdx; // Expose Group ID
+
+        long[] localA = context.allocateLongLocalArray(256);
+        localA[localIdx] = a.get(globalIdx);
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            context.localBarrier();
+            if (localIdx < stride) {
+                localA[localIdx] += localA[localIdx + stride];
+            }
+        }
+        if (localIdx == 0) {
+            b.set(groupID, localA[0]);
+        }
+    }
+
+    public static long computeMaxSequential(LongArray input) {
+        long acc = 0;
+        for (int i = 0; i < input.getSize(); i++) {
+            acc = TornadoMath.max(acc, input.get(i));
+        }
+        return acc;
+    }
+
+    private static void longReductionMaxGlobalMemory(KernelContext context, LongArray a, LongArray b) {
+        int localIdx = context.localIdx;
+        int localGroupSize = context.localGroupSizeX;
+        int groupID = context.groupIdx; // Expose Group ID
+        int id = localGroupSize * groupID + localIdx;
+
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            context.localBarrier();
+            if (localIdx < stride) {
+                a.set(id, TornadoMath.max(a.get(id), a.get(id + stride)));
+            }
+        }
+        if (localIdx == 0) {
+            b.set(groupID, a.get(id));
+        }
+    }
+
+    public static void longReductionMaxLocalMemory(KernelContext context, LongArray a, LongArray b) {
+        int globalIdx = context.globalIdx;
+        int localIdx = context.localIdx;
+        int localGroupSize = context.localGroupSizeX;
+        int groupID = context.groupIdx; // Expose Group ID
+
+        long[] localA = context.allocateLongLocalArray(256);
+        localA[localIdx] = a.get(globalIdx);
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            context.localBarrier();
+            if (localIdx < stride) {
+                localA[localIdx] = TornadoMath.max(localA[localIdx], localA[localIdx + stride]);
+            }
+        }
+        if (localIdx == 0) {
+            b.set(groupID, localA[0]);
+        }
+    }
+
+    public static long computeMinSequential(LongArray input) {
+        long acc = 0;
+        for (int i = 0; i < input.getSize(); i++) {
+            acc = TornadoMath.min(acc, input.get(i));
+        }
+        return acc;
+    }
+
+    private static void longReductionMinGlobalMemory(KernelContext context, LongArray a, LongArray b) {
+        int localIdx = context.localIdx;
+        int localGroupSize = context.localGroupSizeX;
+        int groupID = context.groupIdx; // Expose Group ID
+        int id = localGroupSize * groupID + localIdx;
+
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            context.localBarrier();
+            if (localIdx < stride) {
+                a.set(id, TornadoMath.min(a.get(id), a.get(id + stride)));
+            }
+        }
+        if (localIdx == 0) {
+            b.set(groupID, a.get(id));
+        }
+    }
+
+    public static void longReductionMinLocalMemory(KernelContext context, LongArray a, LongArray b) {
+        int globalIdx = context.globalIdx;
+        int localIdx = context.localIdx;
+        int localGroupSize = context.localGroupSizeX;
+        int groupID = context.groupIdx; // Expose Group ID
+
+        long[] localA = context.allocateLongLocalArray(256);
+        localA[localIdx] = a.get(globalIdx);
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            context.localBarrier();
+            if (localIdx < stride) {
+                localA[localIdx] = TornadoMath.min(localA[localIdx], localA[localIdx + stride]);
+            }
+        }
+        if (localIdx == 0) {
+            b.set(groupID, localA[0]);
+        }
+    }
+
     @Test
     public void testLongReductionsAddGlobalMemory() {
         final int size = 1024;
         final int localSize = 256;
-        long[] input = new long[size];
-        long[] reduce = new long[size / localSize];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
+        LongArray input = new LongArray(size);
+        LongArray reduce = new LongArray(size / localSize);
+        IntStream.range(0, input.getSize()).sequential().forEach(i -> input.set(i, i));
         long sequential = computeAddSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -209,8 +313,8 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
 
         // Final SUM
         long finalSum = 0;
-        for (long v : reduce) {
-            finalSum += v;
+        for (int i = 0; i < reduce.getSize(); i++) {
+            finalSum += reduce.get(i);
         }
 
         assertEquals(sequential, finalSum, 0);
@@ -220,9 +324,9 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
     public void testLongReductionsAddLocalMemory() {
         final int size = 1024;
         final int localSize = 256;
-        long[] input = new long[size];
-        long[] reduce = new long[size / localSize];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
+        LongArray input = new LongArray(size);
+        LongArray reduce = new LongArray(size / localSize);
+        IntStream.range(0, input.getSize()).sequential().forEach(i -> input.set(i, i));
         long sequential = computeAddSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -245,8 +349,8 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
 
         // Final SUM
         long finalSum = 0;
-        for (long v : reduce) {
-            finalSum += v;
+        for (int i = 0; i < reduce.getSize(); i++) {
+            finalSum += reduce.get(i);
         }
 
         assertEquals(sequential, finalSum, 0);
@@ -256,9 +360,9 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
     public void testLongReductionsMaxGlobalMemory() {
         final int size = 1024;
         final int localSize = 256;
-        long[] input = new long[size];
-        long[] reduce = new long[size / localSize];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
+        LongArray input = new LongArray(size);
+        LongArray reduce = new LongArray(size / localSize);
+        IntStream.range(0, input.getSize()).sequential().forEach(i -> input.set(i, i));
         long sequential = computeMaxSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -280,8 +384,8 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
 
         // Final SUM
         long finalSum = 0;
-        for (long v : reduce) {
-            finalSum = TornadoMath.max(finalSum, v);
+        for (int i = 0; i < reduce.getSize(); i++) {
+            finalSum = TornadoMath.max(finalSum, reduce.get(i));
         }
 
         assertEquals(sequential, finalSum, 0);
@@ -291,9 +395,9 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
     public void testLongReductionsMaxLocalMemory() {
         final int size = 1024;
         final int localSize = 256;
-        long[] input = new long[size];
-        long[] reduce = new long[size / localSize];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
+        LongArray input = new LongArray(size);
+        LongArray reduce = new LongArray(size / localSize);
+        IntStream.range(0, input.getSize()).sequential().forEach(i -> input.set(i, i));
         long sequential = computeMaxSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -315,8 +419,8 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
 
         // Final SUM
         long finalSum = 0;
-        for (long v : reduce) {
-            finalSum = TornadoMath.max(finalSum, v);
+        for (int i = 0; i < reduce.getSize(); i++) {
+            finalSum = TornadoMath.max(finalSum, reduce.get(i));
         }
 
         assertEquals(sequential, finalSum, 0);
@@ -326,9 +430,9 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
     public void testLongReductionsMinGlobalMemory() {
         final int size = 1024;
         final int localSize = 256;
-        long[] input = new long[size];
-        long[] reduce = new long[size / localSize];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
+        LongArray input = new LongArray(size);
+        LongArray reduce = new LongArray(size / localSize);
+        IntStream.range(0, input.getSize()).sequential().forEach(i -> input.set(i, i));
         long sequential = computeMinSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -350,8 +454,8 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
 
         // Final SUM
         long finalSum = 0;
-        for (long v : reduce) {
-            finalSum = TornadoMath.min(finalSum, v);
+        for (int i = 0; i < reduce.getSize(); i++) {
+            finalSum = TornadoMath.min(finalSum, reduce.get(i));
         }
 
         assertEquals(sequential, finalSum, 0);
@@ -361,9 +465,9 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
     public void testLongReductionsMinLocalMemory() {
         final int size = 1024;
         final int localSize = 256;
-        long[] input = new long[size];
-        long[] reduce = new long[size / localSize];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
+        LongArray input = new LongArray(size);
+        LongArray reduce = new LongArray(size / localSize);
+        IntStream.range(0, input.getSize()).sequential().forEach(i -> input.set(i, i));
         long sequential = computeMinSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -385,8 +489,8 @@ public class TestReductionsLongKernelContext extends TornadoTestBase {
 
         // Final SUM
         long finalSum = 0;
-        for (long v : reduce) {
-            finalSum = TornadoMath.min(finalSum, v);
+        for (int i = 0; i < reduce.getSize(); i++) {
+            finalSum = TornadoMath.min(finalSum, reduce.get(i));
         }
 
         assertEquals(sequential, finalSum, 0);

@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -25,7 +25,6 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.snippets;
 
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.nodes.GraphState;
-import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
@@ -44,6 +43,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsic
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceMulNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNode;
 
 /**
  * Graal-Snippets for CPU OpenCL reductions.
@@ -508,12 +508,9 @@ public class ReduceCPUSnippets implements Snippets {
         }
 
         public void lower(StoreAtomicIndexedNode storeAtomicIndexed, ValueNode threadId, ValueNode globalID, ValueNode startIndexNode, LoweringTool tool) {
-
-            StructuredGraph graph = storeAtomicIndexed.graph();
             JavaKind elementKind = storeAtomicIndexed.elementKind();
             ValueNode value = storeAtomicIndexed.value();
             ValueNode extra = storeAtomicIndexed.getExtraOperation();
-
             SnippetInfo snippet = getSnippetInstance(elementKind, value, extra);
 
             // Sets the guard stage to AFTER_FSA because we want to avoid any frame state
@@ -530,8 +527,30 @@ public class ReduceCPUSnippets implements Snippets {
             if (extra != null) {
                 args.add("value", extra);
             }
-
             template(tool, storeAtomicIndexed, args).instantiate(tool.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
+        }
+
+        public void lower(WriteAtomicNode writeAtomic, ValueNode threadId, ValueNode globalID, ValueNode startIndexNode, LoweringTool tool) {
+            JavaKind elementKind = writeAtomic.getElementKind();
+            ValueNode value = writeAtomic.value();
+            ValueNode extra = writeAtomic.getExtraOperation();
+            SnippetInfo snippet = getSnippetInstance(elementKind, value, extra);
+
+            // Sets the guard stage to AFTER_FSA because we want to avoid any frame state
+            // assignment for the snippet (see SnippetTemplate::assignNecessaryFrameStates)
+            // This is needed because we have nodes in the snippet which have multiple side
+            // effects and this is not allowed (see
+            // SnippetFrameStateAssignment.NodeStateAssignment.INVALID)
+            Arguments args = new Arguments(snippet, GraphState.GuardsStage.AFTER_FSA, tool.getLoweringStage());
+            args.add("inputData", writeAtomic.getInputArray());
+            args.add("outputArray", writeAtomic.getOutArray());
+            args.add("gidx", threadId);
+            args.add("start", startIndexNode);
+            args.add("globalID", globalID);
+            if (extra != null) {
+                args.add("value", extra);
+            }
+            template(tool, writeAtomic, args).instantiate(tool.getMetaAccess(), writeAtomic, SnippetTemplate.DEFAULT_REPLACER, args);
         }
     }
 }

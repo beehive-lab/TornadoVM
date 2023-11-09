@@ -172,4 +172,5 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
      *            The {@link ObjectBuffer} representing the atomic region.
      */
     void setAtomicRegion(ObjectBuffer bufferAtomics);
+
 }

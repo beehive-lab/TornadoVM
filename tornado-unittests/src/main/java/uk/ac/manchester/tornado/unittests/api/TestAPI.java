@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
+import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.arrays.TestArrays;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -49,10 +50,10 @@ public class TestAPI extends TornadoTestBase {
     public void testLazyCopyOut() {
         final int N = 1024;
         int size = 20;
-        int[] data = new int[N];
+        IntArray data = new IntArray(N);
 
         IntStream.range(0, N).parallel().forEach(idx -> {
-            data[idx] = size;
+            data.set(idx, size);
         });
 
         TaskGraph taskGraph = new TaskGraph("s0");
@@ -74,7 +75,7 @@ public class TestAPI extends TornadoTestBase {
         executionPlan.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
-            assertEquals(21, data[i]);
+            assertEquals(21, data.get(i));
         }
     }
 
@@ -83,10 +84,10 @@ public class TestAPI extends TornadoTestBase {
         final int N = 128;
         int size = 20;
 
-        int[] data = new int[N];
+        IntArray data = new IntArray(N);
 
         IntStream.range(0, N).parallel().forEach(idx -> {
-            data[idx] = size;
+            data.set(idx, size);
         });
 
         TaskGraph taskGraph = new TaskGraph("s0");
@@ -106,7 +107,7 @@ public class TestAPI extends TornadoTestBase {
         executionPlanPlan.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
-            assertEquals(21, data[i]);
+            assertEquals(21, data.get(i));
         }
     }
 
@@ -115,10 +116,10 @@ public class TestAPI extends TornadoTestBase {
         final int N = 128;
         int size = 20;
 
-        int[] data = new int[N];
+        IntArray data = new IntArray(N);
 
         IntStream.range(0, N).parallel().forEach(idx -> {
-            data[idx] = size;
+            data.set(idx, size);
         });
 
         TaskGraph taskGraph = new TaskGraph("s0");
@@ -136,7 +137,7 @@ public class TestAPI extends TornadoTestBase {
         executionPlan.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
-            assertEquals(21, data[i]);
+            assertEquals(21, data.get(i));
         }
     }
     // CHECKSTYLE:ON

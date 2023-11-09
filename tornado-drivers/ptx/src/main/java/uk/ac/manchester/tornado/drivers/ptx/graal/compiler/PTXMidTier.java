@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -38,6 +38,7 @@ import org.graalvm.compiler.phases.common.ReassociationPhase;
 
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.BoundCheckEliminationPhase;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoFloatingReadReplacement;
+import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoPanamaSegmentsHeaderPhase;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoMidTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionCheckingElimination;
 
@@ -61,6 +62,7 @@ public class PTXMidTier extends TornadoMidTier {
         if (ConditionalElimination.getValue(options)) {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, true));
         }
+        appendPhase(new TornadoPanamaSegmentsHeaderPhase());
 
         appendPhase(new GuardLoweringPhase());
 

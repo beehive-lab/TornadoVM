@@ -17,12 +17,7 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.reductions;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.stream.IntStream;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -31,34 +26,35 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
+
 /**
- * The unit-tests in this class implement reduce-operations such as add, max,
- * and min., using the {@link Double} data type. These unit-tests check the
- * functional operation of some {@link KernelContext} features, such as global
- * thread identifiers, local thread identifiers, the local group size of the
- * associated WorkerGrid, barriers and allocation of local memory.
+ * The unit-tests in this class implement reduce-operations such as add, max, and min., using the {@link Double} data type. These unit-tests check the functional operation of some
+ * {@link KernelContext} features, such as global thread identifiers, local thread identifiers, the local group size of the associated WorkerGrid, barriers and allocation of local memory.
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsDoublesKernelContext
+ * tornado-test -V uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsDoublesKernelContext
  * </code>
- *
  */
 public class TestReductionsDoublesKernelContext extends TornadoTestBase {
 
-    public static double computeAddSequential(double[] input) {
+    public static double computeAddSequential(DoubleArray input) {
         double acc = 0;
-        for (double v : input) {
-            acc += v;
+        for (int i = 0; i < input.getSize(); i++) {
+            acc += input.get(i);
         }
         return acc;
     }
 
-    public static void doubleReductionAddGlobalMemory(KernelContext context, double[] a, double[] b) {
+    public static void doubleReductionAddGlobalMemory(KernelContext context, DoubleArray a, DoubleArray b) {
         // Access the Local Thread ID via the KernelContext
         int localIdx = context.localIdx;
 
@@ -75,13 +71,14 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
             // Insert a local barrier to guarantee order in local-memory (OpenCL)
             context.localBarrier();
             if (localIdx < stride) {
-                a[id] += a[id + stride];
+                a.set(id, a.get(id) + a.get(id + stride));
+                //a[id] += a[id + stride];
             }
         }
 
         if (localIdx == 0) {
             // Copy the result of the reduction
-            b[groupID] = a[id];
+            b.set(groupID, a.get(id));
         }
     }
 
@@ -89,13 +86,13 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
      * Parallel reduction in TornadoVM using Local Memory.
      *
      * @param context
-     *            {@link KernelContext}
+     *         {@link KernelContext}
      * @param a
-     *            input array
+     *         input array
      * @param b
-     *            output array
+     *         output array
      */
-    private static void doubleReductionAddLocalMemory(KernelContext context, double[] a, double[] b) {
+    private static void doubleReductionAddLocalMemory(KernelContext context, DoubleArray a, DoubleArray b) {
 
         // Access to the global thread-id
         int globalIdx = context.globalIdx;
@@ -114,7 +111,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         double[] localA = context.allocateDoubleLocalArray(256);
 
         // Copy data from global memory to local memory.
-        localA[localIdx] = a[globalIdx];
+        localA[localIdx] = a.get(globalIdx);
 
         // Compute the reduction in local memory
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
@@ -126,19 +123,19 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
 
         // Copy result of the full reduction within the work-group into global memory.
         if (localIdx == 0) {
-            b[groupID] = localA[0];
+            b.set(groupID, localA[0]);
         }
     }
 
-    public static double computeMaxSequential(double[] input) {
+    public static double computeMaxSequential(DoubleArray input) {
         double acc = 0;
-        for (double v : input) {
-            acc = TornadoMath.max(acc, v);
+        for (int i = 0; i < input.getSize(); i++) {
+            acc = TornadoMath.max(acc, input.get(i));
         }
         return acc;
     }
 
-    private static void doubleReductionMaxGlobalMemory(KernelContext context, double[] a, double[] b) {
+    private static void doubleReductionMaxGlobalMemory(KernelContext context, DoubleArray a, DoubleArray b) {
         int localIdx = context.localIdx;
         int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx; // Expose Group ID
@@ -147,22 +144,22 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             context.localBarrier();
             if (localIdx < stride) {
-                a[id] = TornadoMath.max(a[id], a[id + stride]);
+                a.set(id, TornadoMath.max(a.get(id), a.get(id + stride)));
             }
         }
         if (localIdx == 0) {
-            b[groupID] = a[id];
+            b.set(groupID, a.get(id));
         }
     }
 
-    public static void doubleReductionMaxLocalMemory(KernelContext context, double[] a, double[] b) {
+    public static void doubleReductionMaxLocalMemory(KernelContext context, DoubleArray a, DoubleArray b) {
         int globalIdx = context.globalIdx;
         int localIdx = context.localIdx;
         int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx; // Expose Group ID
 
         double[] localA = context.allocateDoubleLocalArray(256);
-        localA[localIdx] = a[globalIdx];
+        localA[localIdx] = a.get(globalIdx);
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             context.localBarrier();
             if (localIdx < stride) {
@@ -170,19 +167,19 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
             }
         }
         if (localIdx == 0) {
-            b[groupID] = localA[0];
+            b.set(groupID, localA[0]);
         }
     }
 
-    public static double computeMinSequential(double[] input) {
+    public static double computeMinSequential(DoubleArray input) {
         double acc = 0;
-        for (double v : input) {
-            acc = TornadoMath.min(acc, v);
+        for (int i = 0; i < input.getSize(); i++) {
+            acc = TornadoMath.min(acc, input.get(i));
         }
         return acc;
     }
 
-    private static void doubleReductionMinGlobalMemory(KernelContext context, double[] a, double[] b) {
+    private static void doubleReductionMinGlobalMemory(KernelContext context, DoubleArray a, DoubleArray b) {
         int localIdx = context.localIdx;
         int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx; // Expose Group ID
@@ -191,22 +188,22 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             context.localBarrier();
             if (localIdx < stride) {
-                a[id] = TornadoMath.min(a[id], a[id + stride]);
+                a.set(id, TornadoMath.min(a.get(id), a.get(id + stride)));
             }
         }
         if (localIdx == 0) {
-            b[groupID] = a[id];
+            b.set(groupID, a.get(id));
         }
     }
 
-    public static void doubleReductionMinLocalMemory(KernelContext context, double[] a, double[] b) {
+    public static void doubleReductionMinLocalMemory(KernelContext context, DoubleArray a, DoubleArray b) {
         int globalIdx = context.globalIdx;
         int localIdx = context.localIdx;
         int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx; // Expose Group ID
 
         double[] localA = context.allocateDoubleLocalArray(256);
-        localA[localIdx] = a[globalIdx];
+        localA[localIdx] = a.get(globalIdx);
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             context.localBarrier();
             if (localIdx < stride) {
@@ -214,7 +211,7 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
             }
         }
         if (localIdx == 0) {
-            b[groupID] = localA[0];
+            b.set(groupID, localA[0]);
         }
     }
 
@@ -222,9 +219,9 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
     public void testDoubleReductionsAddGlobalMemory() {
         final int size = 1024;
         final int localSize = 256;
-        double[] input = new double[size];
-        double[] reduce = new double[size / localSize];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
+        DoubleArray input = new DoubleArray(size);
+        DoubleArray reduce = new DoubleArray(size / localSize);
+        IntStream.range(0, input.getSize()).sequential().forEach(i -> input.set(i, i));
         double sequential = computeAddSequential(input);
 
         // Create a 1D worker
@@ -250,8 +247,8 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
 
         // Final Reduction
         double finalSum = 0;
-        for (double v : reduce) {
-            finalSum += v;
+        for (int i = 0; i < reduce.getSize(); i++) {
+            finalSum += reduce.get(i);
         }
         assertEquals(sequential, finalSum, 0);
     }
@@ -260,9 +257,9 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
     public void testDoubleReductionsAddLocalMemory() {
         final int size = 1024;
         final int localSize = 256;
-        double[] input = new double[size];
-        double[] reduce = new double[size / localSize];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
+        DoubleArray input = new DoubleArray(size);
+        DoubleArray reduce = new DoubleArray(size / localSize);
+        IntStream.range(0, input.getSize()).sequential().forEach(i -> input.set(i, i));
         double sequential = computeAddSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -284,8 +281,8 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
 
         // Final SUM
         double finalSum = 0;
-        for (double v : reduce) {
-            finalSum += v;
+        for (int i = 0; i < reduce.getSize(); i++) {
+            finalSum += reduce.get(i);
         }
 
         assertEquals(sequential, finalSum, 0);
@@ -295,9 +292,9 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
     public void testDoubleReductionsMaxGlobalMemory() {
         final int size = 1024;
         final int localSize = 256;
-        double[] input = new double[size];
-        double[] reduce = new double[size / localSize];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
+        DoubleArray input = new DoubleArray(size);
+        DoubleArray reduce = new DoubleArray(size / localSize);
+        IntStream.range(0, input.getSize()).sequential().forEach(i -> input.set(i, i));
         double sequential = computeMaxSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -319,8 +316,8 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
 
         // Final SUM
         double finalSum = 0;
-        for (double v : reduce) {
-            finalSum = TornadoMath.max(finalSum, v);
+        for (int i = 0; i < reduce.getSize(); i++) {
+            finalSum = TornadoMath.max(finalSum, reduce.get(i));
         }
 
         assertEquals(sequential, finalSum, 0);
@@ -330,9 +327,9 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
     public void testDoubleReductionsMaxLocalMemory() {
         final int size = 1024;
         final int localSize = 256;
-        double[] input = new double[size];
-        double[] reduce = new double[size / localSize];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
+        DoubleArray input = new DoubleArray(size);
+        DoubleArray reduce = new DoubleArray(size / localSize);
+        IntStream.range(0, input.getSize()).sequential().forEach(i -> input.set(i, i));
         double sequential = computeMaxSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -354,8 +351,8 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
 
         // Final SUM
         double finalSum = 0;
-        for (double v : reduce) {
-            finalSum = TornadoMath.max(finalSum, v);
+        for (int i = 0; i < reduce.getSize(); i++) {
+            finalSum = TornadoMath.max(finalSum, reduce.get(i));
         }
 
         assertEquals(sequential, finalSum, 0);
@@ -365,9 +362,9 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
     public void testDoubleReductionsMinGlobalMemory() {
         final int size = 1024;
         final int localSize = 256;
-        double[] input = new double[size];
-        double[] reduce = new double[size / localSize];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
+        DoubleArray input = new DoubleArray(size);
+        DoubleArray reduce = new DoubleArray(size / localSize);
+        IntStream.range(0, input.getSize()).sequential().forEach(i -> input.set(i, i));
         double sequential = computeMinSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -389,8 +386,8 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
 
         // Final SUM
         double finalSum = 0;
-        for (double v : reduce) {
-            finalSum = TornadoMath.min(finalSum, v);
+        for (int i = 0; i < reduce.getSize(); i++) {
+            finalSum = TornadoMath.min(finalSum, reduce.get(i));
         }
 
         assertEquals(sequential, finalSum, 0);
@@ -400,9 +397,9 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
     public void testDoubleReductionsMinLocalMemory() {
         final int size = 1024;
         final int localSize = 256;
-        double[] input = new double[size];
-        double[] reduce = new double[size / localSize];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
+        DoubleArray input = new DoubleArray(size);
+        DoubleArray reduce = new DoubleArray(size / localSize);
+        IntStream.range(0, input.getSize()).sequential().forEach(i -> input.set(i, i));
         double sequential = computeMinSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -424,8 +421,8 @@ public class TestReductionsDoublesKernelContext extends TornadoTestBase {
 
         // Final SUM
         double finalSum = 0;
-        for (double v : reduce) {
-            finalSum = TornadoMath.min(finalSum, v);
+        for (int i = 0; i < reduce.getSize(); i++) {
+            finalSum = TornadoMath.min(finalSum, reduce.get(i));
         }
 
         assertEquals(sequential, finalSum, 0);

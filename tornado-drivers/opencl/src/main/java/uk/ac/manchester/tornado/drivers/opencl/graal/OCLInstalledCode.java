@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -144,9 +144,9 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
      * Set arguments into the OpenCL device Kernel.
      *
      * @param kernelArgs
-     *            OpenCL kernel parameters {@link OCLByteBuffer}
+     *     OpenCL kernel parameters {@link OCLByteBuffer}
      * @param meta
-     *            task metadata {@link TaskMetaData}
+     *     task metadata {@link TaskMetaData}
      */
     private void setKernelArgs(final OCLKernelArgs kernelArgs, final ObjectBuffer atomicSpace, TaskMetaData meta) {
         int index = 0;
