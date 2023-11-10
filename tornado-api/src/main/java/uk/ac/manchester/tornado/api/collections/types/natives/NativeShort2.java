@@ -44,10 +44,10 @@ package uk.ac.manchester.tornado.api.collections.types.natives;
 import java.lang.foreign.ValueLayout;
 import java.nio.ShortBuffer;
 
-import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.collections.types.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.collections.types.ShortOps;
 import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 

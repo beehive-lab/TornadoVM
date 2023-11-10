@@ -39,7 +39,7 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.collections.math;
+package uk.ac.manchester.tornado.api.math;
 
 import static java.lang.Float.floatToIntBits;
 import static java.lang.Integer.toBinaryString;

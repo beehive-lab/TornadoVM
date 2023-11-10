@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.benchmarks.saxpy;
 
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPDistance;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.findULPDistance;
 import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.saxpy;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner saxpy
+ * tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner saxpy
  * </code>
  */
 public class SaxpyTornado extends BenchmarkDriver {

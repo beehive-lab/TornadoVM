@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,10 +18,10 @@
 package uk.ac.manchester.tornado.benchmarks;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.collections.types.Byte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
 
 public class ComputeKernels {
     // CHECKSTYLE:OFF
@@ -110,9 +110,9 @@ public class ComputeKernels {
 
     /**
      * @param X
-     *            input value
+     *     input value
      * @brief Abromowitz Stegun approxmimation for PHI (Cumulative Normal
-     *        Distribution Function)
+     *     Distribution Function)
      */
     static float phi(final float X) {
         final float c1 = 0.319381530f;

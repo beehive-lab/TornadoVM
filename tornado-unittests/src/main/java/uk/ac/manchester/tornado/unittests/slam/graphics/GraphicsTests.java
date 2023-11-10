@@ -20,12 +20,12 @@ package uk.ac.manchester.tornado.unittests.slam.graphics;
 
 import static org.junit.Assert.assertEquals;
 import static uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath.rigidTransform;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.min;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.sqrt;
 import static uk.ac.manchester.tornado.api.collections.types.Float2.mult;
 import static uk.ac.manchester.tornado.api.collections.types.Float3.add;
 import static uk.ac.manchester.tornado.api.collections.types.Float3.length;
 import static uk.ac.manchester.tornado.api.collections.types.Float3.normalise;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.min;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.sqrt;
 
 import java.util.Random;
 import java.util.stream.IntStream;
@@ -41,7 +41,6 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath;
 import uk.ac.manchester.tornado.api.collections.graphics.ImagingOps;
 import uk.ac.manchester.tornado.api.collections.graphics.Renderer;
-import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.collections.types.Byte3;
 import uk.ac.manchester.tornado.api.collections.types.Byte4;
 import uk.ac.manchester.tornado.api.collections.types.Float2;
@@ -66,6 +65,7 @@ import uk.ac.manchester.tornado.api.collections.types.VolumeOps;
 import uk.ac.manchester.tornado.api.collections.types.VolumeShort2;
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**

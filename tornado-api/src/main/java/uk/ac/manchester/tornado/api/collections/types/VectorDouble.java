@@ -43,8 +43,8 @@ package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.DoubleBuffer;
 
-import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
 
 public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
 

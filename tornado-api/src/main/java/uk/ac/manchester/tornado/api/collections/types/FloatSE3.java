@@ -43,11 +43,11 @@ package uk.ac.manchester.tornado.api.collections.types;
 
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.sqrt;
 import static uk.ac.manchester.tornado.api.collections.types.Float3.add;
 import static uk.ac.manchester.tornado.api.collections.types.Float3.cross;
 import static uk.ac.manchester.tornado.api.collections.types.Float3.dot;
 import static uk.ac.manchester.tornado.api.collections.types.Float3.mult;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.sqrt;
 
 import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;

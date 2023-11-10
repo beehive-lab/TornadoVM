@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.benchmarks.dotvector;
 
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPDistance;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.findULPDistance;
 
 import java.util.Random;
 

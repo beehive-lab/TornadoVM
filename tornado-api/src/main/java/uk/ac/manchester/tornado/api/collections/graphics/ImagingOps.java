@@ -42,9 +42,9 @@
 package uk.ac.manchester.tornado.api.collections.graphics;
 
 import static java.lang.Math.abs;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.clamp;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.exp;
 import static uk.ac.manchester.tornado.api.collections.types.FloatOps.sq;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.clamp;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.exp;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Byte3;
