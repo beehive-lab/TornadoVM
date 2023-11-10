@@ -47,9 +47,9 @@ import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
-import uk.ac.manchester.tornado.api.type.annotations.PanamaElementSize;
+import uk.ac.manchester.tornado.api.type.annotations.SegmentElementSize;
 
-@PanamaElementSize(size = 2)
+@SegmentElementSize(size = 2)
 public class ShortArray extends TornadoNativeArray {
     private final int SHORT_BYTES = 2;
     private MemorySegment segment;

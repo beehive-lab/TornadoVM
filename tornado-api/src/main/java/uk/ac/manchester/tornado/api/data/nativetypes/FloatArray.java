@@ -47,9 +47,9 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
-import uk.ac.manchester.tornado.api.type.annotations.PanamaElementSize;
+import uk.ac.manchester.tornado.api.type.annotations.SegmentElementSize;
 
-@PanamaElementSize(size = 4)
+@SegmentElementSize(size = 4)
 public class FloatArray extends TornadoNativeArray {
     private final int FLOAT_BYTES = 4;
     private MemorySegment segment;
