@@ -43,7 +43,6 @@ module tornado.api {
     exports uk.ac.manchester.tornado.api;
     exports uk.ac.manchester.tornado.api.annotations;
     exports uk.ac.manchester.tornado.api.collections.graphics;
-    exports uk.ac.manchester.tornado.api.collections.math;
     exports uk.ac.manchester.tornado.api.collections.types;
     exports uk.ac.manchester.tornado.api.common;
     exports uk.ac.manchester.tornado.api.enums;
