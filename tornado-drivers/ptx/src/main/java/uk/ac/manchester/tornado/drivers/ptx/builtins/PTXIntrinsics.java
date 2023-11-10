@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2020, APT Group, Department of Computer Science,
@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -24,7 +24,6 @@
 package uk.ac.manchester.tornado.drivers.ptx.builtins;
 
 import org.graalvm.compiler.api.replacements.Fold;
-import uk.ac.manchester.tornado.api.annotations.ReductionOp;
 
 public class PTXIntrinsics {
 
@@ -42,8 +41,8 @@ public class PTXIntrinsics {
 
     /**
      * <p>
-     * <code> 
-     *  barrier.sync 0;
+     * <code>
+     * barrier.sync 0;
      * </code>
      * </p>
      */
@@ -51,8 +50,8 @@ public class PTXIntrinsics {
 
     /**
      * <p>
-     * <code> 
-     *  barrier.sync 1;
+     * <code>
+     * barrier.sync 1;
      * </code>
      * </p>
      */
@@ -72,10 +71,6 @@ public class PTXIntrinsics {
     @Fold
     public static int fmax() {
         return 0;
-    }
-
-    public static <T1, T2, R> R op(ReductionOp op, T1 x, T2 y) {
-        return null;
     }
 
 }
