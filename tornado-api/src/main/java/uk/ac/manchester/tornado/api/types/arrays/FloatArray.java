@@ -39,7 +39,7 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.data.nativetypes;
+package uk.ac.manchester.tornado.api.types.arrays;
 
 import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
@@ -47,7 +47,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
-import uk.ac.manchester.tornado.api.type.annotations.SegmentElementSize;
+import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
 @SegmentElementSize(size = 4)
 public class FloatArray extends TornadoNativeArray {

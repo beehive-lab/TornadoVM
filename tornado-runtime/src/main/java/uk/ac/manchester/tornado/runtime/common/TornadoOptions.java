@@ -25,7 +25,7 @@ package uk.ac.manchester.tornado.runtime.common;
 
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
-import uk.ac.manchester.tornado.api.data.nativetypes.TornadoNativeArray;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 public class TornadoOptions {
 

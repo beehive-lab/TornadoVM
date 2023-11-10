@@ -39,72 +39,65 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.data.nativetypes;
+package uk.ac.manchester.tornado.api.types.arrays;
 
 import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
-import uk.ac.manchester.tornado.api.type.annotations.SegmentElementSize;
+import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
-@SegmentElementSize(size = 2)
-public class ShortArray extends TornadoNativeArray {
-    private final int SHORT_BYTES = 2;
-    private MemorySegment segment;
+@SegmentElementSize(size = 4)
+public class IntArray extends TornadoNativeArray {
+    private final int INT_BYTES = 4;
     private int numberOfElements;
+    private MemorySegment segment;
     private int arrayHeaderSize;
 
     private int baseIndex;
 
     private long segmentByteSize;
 
-    public ShortArray(int numberOfElements) {
+    public IntArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
-        assert arrayHeaderSize >= 4;
-        baseIndex = arrayHeaderSize / SHORT_BYTES;
-        segmentByteSize = numberOfElements * SHORT_BYTES + arrayHeaderSize;
+        baseIndex = arrayHeaderSize / INT_BYTES;
+        segmentByteSize = numberOfElements * INT_BYTES + arrayHeaderSize;
 
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
-    public ShortArray(short... values) {
+    public IntArray(int... values) {
         this(values.length);
         for (int i = 0; i < values.length; i++) {
             set(i, values[i]);
         }
     }
 
-    public void set(int index, short value) {
-        segment.setAtIndex(JAVA_SHORT, baseIndex + index, value);
+    public void set(int index, int value) {
+        segment.setAtIndex(JAVA_INT, baseIndex + index, value);
     }
 
-    public short get(int index) {
-        return segment.getAtIndex(JAVA_SHORT, baseIndex + index);
+    public int get(int index) {
+        return segment.getAtIndex(JAVA_INT, baseIndex + index);
     }
 
     @Override
     public void clear() {
-        init((short) 0);
+        init(0);
     }
 
-    public void init(short value) {
+    public void init(int value) {
         for (int i = 0; i < getSize(); i++) {
-            segment.setAtIndex(JAVA_SHORT, baseIndex + i, value);
+            segment.setAtIndex(JAVA_INT, baseIndex + i, value);
         }
     }
 
     @Override
     public int getSize() {
         return numberOfElements;
-    }
-
-    @Override
-    public MemorySegment getSegment() {
-        return segment;
     }
 
     @Override
@@ -116,4 +109,10 @@ public class ShortArray extends TornadoNativeArray {
     public long getNumBytesWithoutHeader() {
         return segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
     }
+
+    @Override
+    public MemorySegment getSegment() {
+        return segment;
+    }
+
 }

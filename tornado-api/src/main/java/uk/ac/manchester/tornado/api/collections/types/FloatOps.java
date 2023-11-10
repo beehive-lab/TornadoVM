@@ -41,7 +41,7 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
 
 public class FloatOps {

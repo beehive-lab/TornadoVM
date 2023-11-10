@@ -45,10 +45,10 @@ import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 
 import uk.ac.manchester.tornado.api.collections.types.PrimitiveStorage;
-import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
+import uk.ac.manchester.tornado.api.internal.annotations.Payload;
+import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.type.annotations.Payload;
-import uk.ac.manchester.tornado.api.type.annotations.Vector;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 
 @Vector
 public final class NativeByte3 implements PrimitiveStorage<ByteBuffer> {

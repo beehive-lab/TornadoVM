@@ -45,7 +45,7 @@ import static uk.ac.manchester.tornado.api.collections.types.Float3.loadFromArra
 
 import java.nio.FloatBuffer;
 
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
 

@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.api.collections.types.VectorInt2;
 import uk.ac.manchester.tornado.api.collections.types.VectorInt3;
 import uk.ac.manchester.tornado.api.collections.types.VectorInt4;
 import uk.ac.manchester.tornado.api.collections.types.VectorInt8;
-import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 

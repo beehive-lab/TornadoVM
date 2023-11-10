@@ -49,7 +49,7 @@ import static uk.ac.manchester.tornado.api.collections.types.Float3.dot;
 import static uk.ac.manchester.tornado.api.collections.types.Float3.mult;
 import static uk.ac.manchester.tornado.api.math.TornadoMath.sqrt;
 
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 
 public class FloatSE3 {

@@ -45,7 +45,7 @@ import static uk.ac.manchester.tornado.api.collections.types.StorageFormats.toRo
 
 import java.nio.DoubleBuffer;
 
-import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 
 public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<DoubleBuffer> {
     /**

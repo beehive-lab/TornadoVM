@@ -46,7 +46,7 @@ import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
-import uk.ac.manchester.tornado.api.data.nativetypes.TornadoNativeArray;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 public class NativeVectorFloat extends TornadoNativeArray {
     private final int FLOAT_BYTES = 4;

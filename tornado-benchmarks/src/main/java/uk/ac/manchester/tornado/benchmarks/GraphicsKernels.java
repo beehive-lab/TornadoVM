@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,8 +17,8 @@
  */
 package uk.ac.manchester.tornado.benchmarks;
 
-import static uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath.rotate;
 import static uk.ac.manchester.tornado.api.collections.types.Float4.add;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.rotate;
 
 import java.util.stream.IntStream;
 
@@ -31,7 +31,7 @@ import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 public final class GraphicsKernels {
     // CHECKSTYLE:OFF

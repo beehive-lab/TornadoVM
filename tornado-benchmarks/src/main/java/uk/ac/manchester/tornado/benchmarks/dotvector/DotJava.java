@@ -24,7 +24,7 @@ import java.util.Random;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class DotJava extends BenchmarkDriver {

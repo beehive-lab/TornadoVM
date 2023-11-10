@@ -46,7 +46,7 @@ import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
-import uk.ac.manchester.tornado.api.data.nativetypes.TornadoNativeArray;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 public class NativeVectorDouble extends TornadoNativeArray {
     private final int DOUBLE_BYTES = 8;

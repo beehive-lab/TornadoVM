@@ -39,15 +39,22 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.type.annotations;
+package uk.ac.manchester.tornado.api.types.arrays;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.foreign.MemorySegment;
 
-@Target({ ElementType.TYPE })
-@Retention(RetentionPolicy.RUNTIME)
-public @interface SegmentElementSize {
-    int size() default 4;
+public abstract class TornadoNativeArray {
+    public static final long ARRAY_HEADER = Long.parseLong(System.getProperty("tornado.panama.objectHeader", "24"));
+
+    public abstract int getSize();
+
+    public abstract MemorySegment getSegment();
+
+    public abstract long getNumBytesOfSegment();
+
+    public abstract long getNumBytesWithoutHeader();
+
+
+    protected abstract void clear();
+
 }

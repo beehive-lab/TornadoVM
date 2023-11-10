@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.api.collections.types.VectorFloat2;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat8;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.examples.utils.Utils;
 

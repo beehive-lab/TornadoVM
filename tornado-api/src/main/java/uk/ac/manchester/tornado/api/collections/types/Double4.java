@@ -44,10 +44,10 @@ package uk.ac.manchester.tornado.api.collections.types;
 import java.nio.DoubleBuffer;
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
+import uk.ac.manchester.tornado.api.internal.annotations.Payload;
+import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.type.annotations.Payload;
-import uk.ac.manchester.tornado.api.type.annotations.Vector;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 
 @Vector
 public final class Double4 implements PrimitiveStorage<DoubleBuffer> {

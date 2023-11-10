@@ -43,7 +43,7 @@ import static uk.ac.manchester.tornado.api.collections.types.Int3.loadFromArray;
 
 import java.nio.IntBuffer;
 
-import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 public class VectorInt3 implements PrimitiveStorage<IntBuffer> {
 

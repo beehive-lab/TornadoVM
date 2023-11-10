@@ -45,7 +45,7 @@ import static uk.ac.manchester.tornado.api.collections.types.StorageFormats.toRo
 
 import java.nio.IntBuffer;
 
-import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 public class Matrix2DInt extends Matrix2DType implements PrimitiveStorage<IntBuffer> {
     /**

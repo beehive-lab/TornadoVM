@@ -42,7 +42,6 @@
 module tornado.api {
     exports uk.ac.manchester.tornado.api;
     exports uk.ac.manchester.tornado.api.annotations;
-    exports uk.ac.manchester.tornado.api.collections.graphics;
     exports uk.ac.manchester.tornado.api.collections.types;
     exports uk.ac.manchester.tornado.api.common;
     exports uk.ac.manchester.tornado.api.enums;
@@ -50,14 +49,14 @@ module tornado.api {
     exports uk.ac.manchester.tornado.api.memory;
     exports uk.ac.manchester.tornado.api.profiler;
     exports uk.ac.manchester.tornado.api.runtime;
-    exports uk.ac.manchester.tornado.api.type.annotations;
+    exports uk.ac.manchester.tornado.api.internal.annotations;
     exports uk.ac.manchester.tornado.api.utils;
 
     opens uk.ac.manchester.tornado.api;
     opens uk.ac.manchester.tornado.api.collections.types;
-    opens uk.ac.manchester.tornado.api.data.nativetypes;
-    exports uk.ac.manchester.tornado.api.data.nativetypes;
     exports uk.ac.manchester.tornado.api.collections.types.natives;
     opens uk.ac.manchester.tornado.api.collections.types.natives;
     exports uk.ac.manchester.tornado.api.math;
+    exports uk.ac.manchester.tornado.api.types.arrays;
+    opens uk.ac.manchester.tornado.api.types.arrays;
 }

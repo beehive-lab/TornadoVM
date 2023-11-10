@@ -39,7 +39,7 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.collections.graphics;
+package uk.ac.manchester.tornado.unittests.slam;
 
 import static java.lang.Math.abs;
 import static uk.ac.manchester.tornado.api.collections.types.FloatOps.sq;
@@ -50,7 +50,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Byte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 public class ImagingOps {
 

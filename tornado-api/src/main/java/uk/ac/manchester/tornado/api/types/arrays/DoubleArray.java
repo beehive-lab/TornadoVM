@@ -39,62 +39,62 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.data.nativetypes;
+package uk.ac.manchester.tornado.api.types.arrays;
 
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
-import uk.ac.manchester.tornado.api.type.annotations.SegmentElementSize;
+import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
-@SegmentElementSize(size = 1)
-public class ByteArray extends TornadoNativeArray {
-    private final int BYTE_BYTES = 1;
+@SegmentElementSize(size = 8)
+public class DoubleArray extends TornadoNativeArray {
+    private final int DOUBLE_BYTES = 8;
     private MemorySegment segment;
     private int numberOfElements;
+
     private int arrayHeaderSize;
 
     private int baseIndex;
-    private int arraySizeHeaderPosition;
 
     private long segmentByteSize;
 
-    public ByteArray(int numberOfElements) {
+    public DoubleArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
-        baseIndex = arrayHeaderSize / BYTE_BYTES;
-        arraySizeHeaderPosition = baseIndex - 4;
-        segmentByteSize = numberOfElements * BYTE_BYTES + arrayHeaderSize;
+        assert arrayHeaderSize >= 8;
+        baseIndex = arrayHeaderSize / DOUBLE_BYTES;
+        segmentByteSize = numberOfElements * DOUBLE_BYTES + arrayHeaderSize;
 
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
-    public ByteArray(byte... values) {
+    public DoubleArray(double... values) {
         this(values.length);
         for (int i = 0; i < values.length; i++) {
             set(i, values[i]);
         }
     }
 
-    public void set(int index, byte value) {
-        segment.setAtIndex(JAVA_BYTE, baseIndex + index, value);
+    public void set(int index, double value) {
+        segment.setAtIndex(JAVA_DOUBLE, baseIndex + index, value);
     }
 
-    public byte get(int index) {
-        return segment.getAtIndex(JAVA_BYTE, baseIndex + index);
+    public double get(int index) {
+        return segment.getAtIndex(JAVA_DOUBLE, baseIndex + index);
     }
 
     @Override
     public void clear() {
-        init((byte) 0);
+        init(0.0);
     }
 
-    public void init(byte value) {
+    public void init(double value) {
         for (int i = 0; i < getSize(); i++) {
-            segment.setAtIndex(JAVA_BYTE, baseIndex + i, value);
+            segment.setAtIndex(JAVA_DOUBLE, baseIndex + i, value);
         }
     }
 
@@ -117,4 +117,5 @@ public class ByteArray extends TornadoNativeArray {
     public long getNumBytesWithoutHeader() {
         return segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
     }
+
 }

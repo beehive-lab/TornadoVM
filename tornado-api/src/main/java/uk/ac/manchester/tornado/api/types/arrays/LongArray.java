@@ -39,19 +39,19 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.data.nativetypes;
+package uk.ac.manchester.tornado.api.types.arrays;
 
-import static java.lang.foreign.ValueLayout.JAVA_CHAR;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
-import uk.ac.manchester.tornado.api.type.annotations.SegmentElementSize;
+import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
-@SegmentElementSize(size = 2)
-public class CharArray extends TornadoNativeArray {
-    private final int CHAR_BYTES = 2;
+@SegmentElementSize(size = 8)
+public class LongArray extends TornadoNativeArray {
+    private final int LONG_BYTES = 8;
     private MemorySegment segment;
     private int numberOfElements;
     private int arrayHeaderSize;
@@ -60,39 +60,39 @@ public class CharArray extends TornadoNativeArray {
 
     private long segmentByteSize;
 
-    public CharArray(int numberOfElements) {
+    public LongArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
-        baseIndex = arrayHeaderSize / CHAR_BYTES;
-        segmentByteSize = numberOfElements * CHAR_BYTES + arrayHeaderSize;
+        baseIndex = arrayHeaderSize / LONG_BYTES;
 
+        segmentByteSize = numberOfElements * LONG_BYTES + arrayHeaderSize;
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
-    @Override
-    public void clear() {
-        init('\u0000');
-    }
-
-    public CharArray(char... values) {
+    public LongArray(long... values) {
         this(values.length);
         for (int i = 0; i < values.length; i++) {
             set(i, values[i]);
         }
     }
 
-    public void set(int index, char value) {
-        segment.setAtIndex(JAVA_CHAR, baseIndex + index, value);
+    public void set(int index, long value) {
+        segment.setAtIndex(JAVA_LONG, baseIndex + index, value);
     }
 
-    public char get(int index) {
-        return segment.getAtIndex(JAVA_CHAR, baseIndex + index);
+    public long get(int index) {
+        return segment.getAtIndex(JAVA_LONG, baseIndex + index);
     }
 
-    public void init(char value) {
+    @Override
+    public void clear() {
+        init(0);
+    }
+
+    public void init(long value) {
         for (int i = 0; i < getSize(); i++) {
-            segment.setAtIndex(JAVA_CHAR, baseIndex + i, value);
+            segment.setAtIndex(JAVA_LONG, baseIndex + i, value);
         }
     }
 

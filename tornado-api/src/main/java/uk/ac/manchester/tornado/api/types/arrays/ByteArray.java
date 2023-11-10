@@ -39,60 +39,62 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.data.nativetypes;
+package uk.ac.manchester.tornado.api.types.arrays;
 
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
-import uk.ac.manchester.tornado.api.type.annotations.SegmentElementSize;
+import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
-@SegmentElementSize(size = 8)
-public class LongArray extends TornadoNativeArray {
-    private final int LONG_BYTES = 8;
+@SegmentElementSize(size = 1)
+public class ByteArray extends TornadoNativeArray {
+    private final int BYTE_BYTES = 1;
     private MemorySegment segment;
     private int numberOfElements;
     private int arrayHeaderSize;
 
     private int baseIndex;
+    private int arraySizeHeaderPosition;
 
     private long segmentByteSize;
 
-    public LongArray(int numberOfElements) {
+    public ByteArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
-        baseIndex = arrayHeaderSize / LONG_BYTES;
+        baseIndex = arrayHeaderSize / BYTE_BYTES;
+        arraySizeHeaderPosition = baseIndex - 4;
+        segmentByteSize = numberOfElements * BYTE_BYTES + arrayHeaderSize;
 
-        segmentByteSize = numberOfElements * LONG_BYTES + arrayHeaderSize;
         segment = Arena.ofAuto().allocate(segmentByteSize, 1);
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
-    public LongArray(long... values) {
+    public ByteArray(byte... values) {
         this(values.length);
         for (int i = 0; i < values.length; i++) {
             set(i, values[i]);
         }
     }
 
-    public void set(int index, long value) {
-        segment.setAtIndex(JAVA_LONG, baseIndex + index, value);
+    public void set(int index, byte value) {
+        segment.setAtIndex(JAVA_BYTE, baseIndex + index, value);
     }
 
-    public long get(int index) {
-        return segment.getAtIndex(JAVA_LONG, baseIndex + index);
+    public byte get(int index) {
+        return segment.getAtIndex(JAVA_BYTE, baseIndex + index);
     }
 
     @Override
     public void clear() {
-        init(0);
+        init((byte) 0);
     }
 
-    public void init(long value) {
+    public void init(byte value) {
         for (int i = 0; i < getSize(); i++) {
-            segment.setAtIndex(JAVA_LONG, baseIndex + i, value);
+            segment.setAtIndex(JAVA_BYTE, baseIndex + i, value);
         }
     }
 

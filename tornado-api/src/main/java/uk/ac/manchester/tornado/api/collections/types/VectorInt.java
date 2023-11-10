@@ -43,7 +43,7 @@ package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.IntBuffer;
 
-import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
 
 public class VectorInt implements PrimitiveStorage<IntBuffer> {

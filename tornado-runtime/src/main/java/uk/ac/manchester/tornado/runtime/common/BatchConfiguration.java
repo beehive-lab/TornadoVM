@@ -28,13 +28,13 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
-import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.CharArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
+import uk.ac.manchester.tornado.api.types.arrays.CharArray;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 

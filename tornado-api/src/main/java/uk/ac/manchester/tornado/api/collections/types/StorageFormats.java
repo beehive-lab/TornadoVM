@@ -41,10 +41,10 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 public final class StorageFormats {
 

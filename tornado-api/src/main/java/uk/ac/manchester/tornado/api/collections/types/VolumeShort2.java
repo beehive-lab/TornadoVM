@@ -43,7 +43,7 @@ package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.ShortBuffer;
 
-import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 
 public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
 

@@ -39,7 +39,7 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.collections.graphics;
+package uk.ac.manchester.tornado.unittests.slam;
 
 import static uk.ac.manchester.tornado.api.collections.types.Float3.add;
 import static uk.ac.manchester.tornado.api.collections.types.Float3.cross;

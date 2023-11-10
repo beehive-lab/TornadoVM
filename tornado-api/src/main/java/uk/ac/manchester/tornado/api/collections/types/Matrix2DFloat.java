@@ -47,7 +47,7 @@ import static uk.ac.manchester.tornado.api.collections.types.StorageFormats.toRo
 
 import java.nio.FloatBuffer;
 
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 public class Matrix2DFloat extends Matrix2DType implements PrimitiveStorage<FloatBuffer> {
 

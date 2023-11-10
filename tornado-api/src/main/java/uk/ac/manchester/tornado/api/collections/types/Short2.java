@@ -43,10 +43,10 @@ package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.ShortBuffer;
 
-import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
+import uk.ac.manchester.tornado.api.internal.annotations.Payload;
+import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.type.annotations.Payload;
-import uk.ac.manchester.tornado.api.type.annotations.Vector;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 
 @Vector
 public final class Short2 implements PrimitiveStorage<ShortBuffer> {

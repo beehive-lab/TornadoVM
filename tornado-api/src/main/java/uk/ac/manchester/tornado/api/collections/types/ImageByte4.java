@@ -43,7 +43,7 @@ package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.ByteBuffer;
 
-import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 
 public class ImageByte4 implements PrimitiveStorage<ByteBuffer> {
 

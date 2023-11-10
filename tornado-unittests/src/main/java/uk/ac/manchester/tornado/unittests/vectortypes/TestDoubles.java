@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.api.collections.types.VectorDouble2;
 import uk.ac.manchester.tornado.api.collections.types.VectorDouble3;
 import uk.ac.manchester.tornado.api.collections.types.VectorDouble4;
 import uk.ac.manchester.tornado.api.collections.types.VectorDouble8;
-import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 

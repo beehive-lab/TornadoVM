@@ -18,11 +18,11 @@
 package uk.ac.manchester.tornado.unittests.foundation;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 
 public class TestKernels {
     public static void copyTest(IntArray a) {

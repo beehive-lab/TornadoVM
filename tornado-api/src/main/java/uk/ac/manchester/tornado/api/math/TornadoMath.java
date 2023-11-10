@@ -45,13 +45,16 @@ import static java.lang.Float.floatToIntBits;
 import static java.lang.Integer.toBinaryString;
 import static uk.ac.manchester.tornado.api.collections.types.DoubleOps.compareBits;
 import static uk.ac.manchester.tornado.api.collections.types.DoubleOps.compareULP;
+import static uk.ac.manchester.tornado.api.collections.types.Float3.dot;
 import static uk.ac.manchester.tornado.api.collections.types.FloatOps.compare;
 
 import uk.ac.manchester.tornado.api.collections.types.DoubleOps;
+import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
-import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 public class TornadoMath {
 
@@ -412,4 +415,9 @@ public class TornadoMath {
     public static double cospi(double angle) {
         return Math.cos(angle * Math.PI);
     }
+
+    public static Float3 rotate(Matrix4x4Float m, Float3 x) {
+        return new Float3(dot(m.row(0).asFloat3(), x), dot(m.row(1).asFloat3(), x), dot(m.row(2).asFloat3(), x));
+    }
+
 }

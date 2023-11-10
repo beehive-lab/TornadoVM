@@ -24,10 +24,10 @@
 package uk.ac.manchester.tornado.runtime.tasks;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
 class ReduceFactory {
@@ -304,16 +304,16 @@ class ReduceFactory {
             case "double[]":
                 task.task(taskName, ReduceFactory::rAdd, (double[]) newArray, sizeReduceArray);
                 break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.IntArray":
+            case "uk.ac.manchester.tornado.api.types.arrays.IntArray":
                 task.task(taskName, ReduceFactory::rAdd, (IntArray) newArray, sizeReduceArray);
                 break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.FloatArray":
+            case "uk.ac.manchester.tornado.api.types.arrays.FloatArray":
                 task.task(taskName, ReduceFactory::rAdd, (FloatArray) newArray, sizeReduceArray);
                 break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray":
+            case "uk.ac.manchester.tornado.api.types.arrays.DoubleArray":
                 task.task(taskName, ReduceFactory::rAdd, (DoubleArray) newArray, sizeReduceArray);
                 break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.LongArray":
+            case "uk.ac.manchester.tornado.api.types.arrays.LongArray":
                 task.task(taskName, ReduceFactory::rAdd, (LongArray) newArray, sizeReduceArray);
                 break;
             default:
@@ -335,16 +335,16 @@ class ReduceFactory {
             case "double[]":
                 task.task(taskName, ReduceFactory::rMul, (double[]) newArray, sizeReduceArray);
                 break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.IntArray":
+            case "uk.ac.manchester.tornado.api.types.arrays.IntArray":
                 task.task(taskName, ReduceFactory::rMul, (IntArray) newArray, sizeReduceArray);
                 break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.FloatArray":
+            case "uk.ac.manchester.tornado.api.types.arrays.FloatArray":
                 task.task(taskName, ReduceFactory::rMul, (FloatArray) newArray, sizeReduceArray);
                 break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray":
+            case "uk.ac.manchester.tornado.api.types.arrays.DoubleArray":
                 task.task(taskName, ReduceFactory::rMul, (DoubleArray) newArray, sizeReduceArray);
                 break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.LongArray":
+            case "uk.ac.manchester.tornado.api.types.arrays.LongArray":
                 task.task(taskName, ReduceFactory::rMul, (LongArray) newArray, sizeReduceArray);
                 break;
             default:
@@ -366,16 +366,16 @@ class ReduceFactory {
             case "double[]":
                 task.task(taskName, ReduceFactory::rMax, (double[]) newArray, sizeReduceArray);
                 break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.IntArray":
+            case "uk.ac.manchester.tornado.api.types.arrays.IntArray":
                 task.task(taskName, ReduceFactory::rMax, (IntArray) newArray, sizeReduceArray);
                 break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.FloatArray":
+            case "uk.ac.manchester.tornado.api.types.arrays.FloatArray":
                 task.task(taskName, ReduceFactory::rMax, (FloatArray) newArray, sizeReduceArray);
                 break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray":
+            case "uk.ac.manchester.tornado.api.types.arrays.DoubleArray":
                 task.task(taskName, ReduceFactory::rMax, (DoubleArray) newArray, sizeReduceArray);
                 break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.LongArray":
+            case "uk.ac.manchester.tornado.api.types.arrays.LongArray":
                 task.task(taskName, ReduceFactory::rMax, (LongArray) newArray, sizeReduceArray);
                 break;
             default:
@@ -397,16 +397,16 @@ class ReduceFactory {
             case "double[]":
                 task.task(taskName, ReduceFactory::rMin, (double[]) newArray, sizeReduceArray);
                 break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.IntArray":
+            case "uk.ac.manchester.tornado.api.types.arrays.IntArray":
                 task.task(taskName, ReduceFactory::rMin, (IntArray) newArray, sizeReduceArray);
                 break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.FloatArray":
+            case "uk.ac.manchester.tornado.api.types.arrays.FloatArray":
                 task.task(taskName, ReduceFactory::rMin, (FloatArray) newArray, sizeReduceArray);
                 break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray":
+            case "uk.ac.manchester.tornado.api.types.arrays.DoubleArray":
                 task.task(taskName, ReduceFactory::rMin, (DoubleArray) newArray, sizeReduceArray);
                 break;
-            case "uk.ac.manchester.tornado.api.data.nativetypes.LongArray":
+            case "uk.ac.manchester.tornado.api.types.arrays.LongArray":
                 task.task(taskName, ReduceFactory::rMin, (LongArray) newArray, sizeReduceArray);
                 break;
             default:

@@ -27,7 +27,7 @@ import uk.ac.manchester.tornado.api.collections.types.Matrix2DDouble;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 public final class MatrixMath {
 
