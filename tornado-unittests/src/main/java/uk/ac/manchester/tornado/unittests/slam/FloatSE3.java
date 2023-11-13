@@ -50,18 +50,14 @@ import static uk.ac.manchester.tornado.api.types.vectors.Float3.dot;
 import static uk.ac.manchester.tornado.api.types.vectors.Float3.mult;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
 
 public class FloatSE3 {
 
     final Matrix4x4Float matrix = new Matrix4x4Float();
     Float3 translation = new Float3();
-
-    public FloatSE3() {
-
-    }
 
     public FloatSE3(FloatArray v) {
         assert (v.getSize() == 6);
@@ -76,29 +72,22 @@ public class FloatSE3 {
 
     public static Matrix4x4Float toMatrix4(float[] v) {
         Matrix4x4Float result = new Matrix4x4Float();
-
         result.identity();
-
         result.set(0, 1, -v[5]);
         result.set(0, 2, v[4]);
         result.set(1, 2, -v[3]);
-
         result.set(1, 0, v[5]);
         result.set(2, 0, -v[4]);
         result.set(2, 1, v[3]);
-
         result.set(0, 3, v[0]);
         result.set(1, 3, v[1]);
         result.set(2, 3, v[2]);
-
         return result;
     }
 
     public static Matrix4x4Float toMatrix4(FloatArray v) {
         Matrix4x4Float result = new Matrix4x4Float();
-
         result.identity();
-
         result.set(0, 1, -v.get(5));
         result.set(0, 2, v.get(4));
         result.set(1, 2, -v.get(3));
