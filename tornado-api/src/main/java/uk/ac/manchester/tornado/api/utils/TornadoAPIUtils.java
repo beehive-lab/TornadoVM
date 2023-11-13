@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2020, APT Group, Department of Computer Science,
@@ -12,32 +12,32 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
- * 
+ *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * along with GNU Classpath; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301 USA.
  *
  * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
+ * making a combined work based on this library. Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
- * 
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent
  * modules, and to copy and distribute the resulting executable under
  * terms of your choice, provided that you also meet, for each linked
  * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
+ * module. An independent module is a module which is not derived from
+ * or based on this library. If you modify this library, you may extend
  * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
+ * obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  *
  */
@@ -46,14 +46,13 @@ package uk.ac.manchester.tornado.api.utils;
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 
-public final class TornadoUtilities {
+public final class TornadoAPIUtils {
 
-    public static final int ONE_GIGABYTE = 1 * 1024 * 1024 * 1024;
-    public static final int ONE_MEGABYTE = 1 * 1024 * 1024;
-    public static final int ONE_KILOBYTE = 1 * 1024;
+    public static final int ONE_GIGABYTE = 1024 * 1024 * 1024;
+    public static final int ONE_MEGABYTE = 1024 * 1024;
+    public static final int ONE_KILOBYTE = 1024;
 
-    private TornadoUtilities() {
-
+    private TornadoAPIUtils() {
     }
 
     public static long parseSize(String size) {
@@ -81,9 +80,9 @@ public final class TornadoUtilities {
      * <p>
      *
      * @param bytes
-     *            number of bytes
+     *     number of bytes
      * @param si
-     *            units (true if 1000, false if 1024).
+     *     units (true if 1000, false if 1024).
      *
      * @return humanReadableByteCount
      */
@@ -142,13 +141,12 @@ public final class TornadoUtilities {
      * Returns true if object is a boxed type.
      *
      * @param obj
-     *            Object
+     *     Object
      *
      * @return boolean
      */
     public static boolean isBoxedPrimitive(final Object obj) {
         boolean isBox = false;
-
         if (obj instanceof Boolean) {
             isBox = true;
         } else if (obj instanceof Byte) {
@@ -166,7 +164,6 @@ public final class TornadoUtilities {
         } else if (obj instanceof Double) {
             isBox = true;
         }
-
         return isBox;
     }
 
@@ -174,7 +171,7 @@ public final class TornadoUtilities {
      * Returns true if object is a boxed type.
      *
      * @param clazz
-     *            Class
+     *     Class
      *
      * @return boolean
      */
@@ -206,13 +203,12 @@ public final class TornadoUtilities {
      * Returns true if object is a boxed type.
      *
      * @param clazz
-     *            Class
+     *     Class
      *
      * @return {@link Class<?>}
      */
     public static Class<?> toUnboxedPrimitiveClass(final Class<?> clazz) {
         Class<?> result = null;
-
         if (clazz == Boolean.class) {
             result = boolean.class;
         } else if (clazz == Byte.class) {
@@ -238,7 +234,7 @@ public final class TornadoUtilities {
      * determines whether a given array is composed of primitives or objects.
      *
      * @param type
-     *            type to check
+     *     type to check
      *
      * @return true if the array is composed of a primitive type
      */

@@ -24,7 +24,7 @@
 package uk.ac.manchester.tornado.drivers.ptx;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.utils.TornadoUtilities.isBoxedPrimitive;
+import static uk.ac.manchester.tornado.api.utils.TornadoAPIUtils.isBoxedPrimitive;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
 
 import java.nio.ByteBuffer;
