@@ -131,7 +131,7 @@ public enum SPIRVKind implements PlatformKind {
 
     // @formatter:on
 
-    public static final String VECTOR_COLLECTION_PATH = "uk.ac.manchester.tornado.api.collections.types";
+    public static final String VECTOR_COLLECTION_PATH = "uk.ac.manchester.tornado.api.types";
     private static Map<String, SPIRVKind> vectorTable;
 
     static {
