@@ -47,7 +47,7 @@ import static uk.ac.manchester.tornado.api.math.TornadoMath.exp;
 import static uk.ac.manchester.tornado.api.types.utils.FloatOps.sq;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.Byte3;
+import uk.ac.manchester.tornado.api.types.vectors.Byte3;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.images.ImageByte3;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat;

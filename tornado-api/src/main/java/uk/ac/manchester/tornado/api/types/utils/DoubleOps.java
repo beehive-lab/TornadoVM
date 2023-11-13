@@ -42,10 +42,10 @@
 package uk.ac.manchester.tornado.api.types.utils;
 
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.types.Double2;
-import uk.ac.manchester.tornado.api.types.Double3;
-import uk.ac.manchester.tornado.api.types.Double4;
-import uk.ac.manchester.tornado.api.types.Double8;
+import uk.ac.manchester.tornado.api.types.vectors.Double2;
+import uk.ac.manchester.tornado.api.types.vectors.Double3;
+import uk.ac.manchester.tornado.api.types.vectors.Double4;
+import uk.ac.manchester.tornado.api.types.vectors.Double8;
 
 public class DoubleOps {
 

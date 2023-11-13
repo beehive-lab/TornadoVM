@@ -39,30 +39,22 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.types.vectors;
+package uk.ac.manchester.tornado.api.types.collections;
 
-import java.nio.IntBuffer;
+import java.nio.DoubleBuffer;
 
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
-import uk.ac.manchester.tornado.api.types.utils.IntOps;
+import uk.ac.manchester.tornado.api.types.utils.DoubleOps;
 
-public class VectorInt implements PrimitiveStorage<IntBuffer> {
+public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
 
     private static final int ELEMENT_SIZE = 1;
     private final int numElements;
-    private final IntArray storage;
+    private final DoubleArray storage;
 
-    /**
-     * Creates a vector using the provided backing array.
-     *
-     * @param numElements
-     *     number of elements
-     * @param array
-     *     reference to the input array
-     */
-    public VectorInt(int numElements, IntArray array) {
+    public VectorDouble(int numElements, DoubleArray array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -71,75 +63,77 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
      * Creates an empty vector with.
      *
      * @param numElements
-     *     number of elements
+     *     Number of elements
      */
-    public VectorInt(int numElements) {
-        this(numElements, new IntArray(numElements));
+    public VectorDouble(int numElements) {
+        this(numElements, new DoubleArray(numElements));
     }
 
     /**
      * Creates an new vector from the provided storage.
      *
      * @param storage
-     *     vector int array
+     *     vector to be stored
      */
-    public VectorInt(IntArray storage) {
+    public VectorDouble(DoubleArray storage) {
         this(storage.getSize() / ELEMENT_SIZE, storage);
     }
 
-    public static int min(VectorInt v) {
-        int result = Integer.MAX_VALUE;
+    public static double min(VectorDouble v) {
+        double result = Double.MAX_VALUE;
         for (int i = 0; i < v.storage.getSize(); i++) {
             result = Math.min(v.storage.get(i), result);
         }
+
         return result;
     }
 
-    public static int max(VectorInt v) {
-        int result = Integer.MIN_VALUE;
+    public static double max(VectorDouble v) {
+        double result = Double.MIN_VALUE;
         for (int i = 0; i < v.storage.getSize(); i++) {
             result = Math.max(v.storage.get(i), result);
         }
+
         return result;
     }
 
     /**
-     * Perform dot-product.
+     * Perform dot product.
      *
-     * @return int value
+     * @return dot-product value
      */
-    public static int dot(VectorInt a, VectorInt b) {
-        int sum = 0;
+    public static double dot(VectorDouble a, VectorDouble b) {
+        double sum = 0;
         for (int i = 0; i < a.size(); i++) {
             sum += a.get(i) * b.get(i);
         }
         return sum;
     }
 
-    public IntArray getArray() {
+    public DoubleArray getArray() {
         return storage;
     }
 
     /**
-     * Returns the int at the given index of this vector.
+     * Returns the double at the given index of this vector.
      *
      * @param index
-     *     index value
-     * @return int
+     *     Position
+     * @return value
      */
-    public int get(int index) {
+    public double get(int index) {
         return storage.get(index);
     }
 
     /**
-     * Sets the int at the given index of this vector.
+     * Sets the double at the given index of this vector.
      *
      * @param index
-     *     index value
+     *     Position
      * @param value
-     *     value to be set in position index
+     *     value to be stored
      */
-    public void set(int index, int value) {
+    public void set(int index, double value) {
         storage.set(index, value);
     }
 
@@ -147,9 +141,8 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
      * Sets the elements of this vector to that of the provided vector.
      *
      * @param values
-     *     assign an input vector int to the internal array
      */
-    public void set(VectorInt values) {
+    public void set(VectorDouble values) {
         for (int i = 0; i < values.storage.getSize(); i++) {
             storage.set(i, values.storage.get(i));
         }
@@ -159,9 +152,9 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
      * Sets the elements of this vector to that of the provided array.
      *
      * @param values
-     *     assign an input vector int to the internal array
+     *     input vector to be stored
      */
-    public void set(int[] values) {
+    public void set(double[] values) {
         for (int i = 0; i < values.length; i++) {
             storage.set(i, values[i]);
         }
@@ -171,9 +164,9 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
      * Sets all elements to value.
      *
      * @param value
-     *     Fill input vector with value
+     *     input vector to be stored
      */
-    public void fill(int value) {
+    public void fill(double value) {
         for (int i = 0; i < storage.getSize(); i++) {
             storage.set(i, value);
         }
@@ -186,10 +179,11 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
      *     starting index
      * @param length
      *     number of elements
-     * @return {@link VectorInt}
+     *
+     * @return vector with elements updated
      */
-    public VectorInt subVector(int start, int length) {
-        final VectorInt v = new VectorInt(length);
+    public VectorDouble subVector(int start, int length) {
+        final VectorDouble v = new VectorDouble(length);
         for (int i = 0; i < length; i++) {
             v.storage.set(i, storage.get(i + start));
         }
@@ -200,24 +194,24 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
     /**
      * Duplicates this vector.
      *
-     * @return {@link VectorInt}
      */
-    public VectorInt duplicate() {
-        IntArray cp = new IntArray(storage.getSize());
+    public VectorDouble duplicate() {
+        DoubleArray cp = new DoubleArray(storage.getSize());
         for (int i = 0; i < cp.getSize(); i++) {
             cp.set(i, storage.get(i));
         }
-        return new VectorInt(cp);
+        return new VectorDouble(cp);
     }
 
     /**
      * Vector equality test.
      *
      * @param vector
-     *     Input vector to compare
+     *     input Vector
+     *
      * @return true if vectors match
      */
-    public boolean isEqual(VectorInt vector) {
+    public boolean isEqual(VectorDouble vector) {
         return TornadoMath.isEqual(storage, vector.storage);
     }
 
@@ -239,21 +233,22 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
     }
 
     public String toString() {
-        String str = String.format("VectorInt <%d>", numElements);
+        String str = String.format("VectorDouble <%d>", numElements);
         if (numElements < 32) {
-            str += toString(IntOps.FMT);
+            str += toString(DoubleOps.FMT);
         }
         return str;
     }
 
     @Override
-    public void loadFromBuffer(IntBuffer buffer) {
+    public void loadFromBuffer(DoubleBuffer buffer) {
         asBuffer().put(buffer);
+
     }
 
     @Override
-    public IntBuffer asBuffer() {
-        return storage.getSegment().asByteBuffer().asIntBuffer();
+    public DoubleBuffer asBuffer() {
+        return storage.getSegment().asByteBuffer().asDoubleBuffer();
     }
 
     @Override

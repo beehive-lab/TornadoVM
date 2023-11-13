@@ -36,14 +36,14 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.types.vectors;
+package uk.ac.manchester.tornado.api.types.collections;
 
-import static uk.ac.manchester.tornado.api.types.Double2.add;
-import static uk.ac.manchester.tornado.api.types.Double2.loadFromArray;
+import static uk.ac.manchester.tornado.api.types.vectors.Double2.add;
+import static uk.ac.manchester.tornado.api.types.vectors.Double2.loadFromArray;
 
 import java.nio.DoubleBuffer;
 
-import uk.ac.manchester.tornado.api.types.Double2;
+import uk.ac.manchester.tornado.api.types.vectors.Double2;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 

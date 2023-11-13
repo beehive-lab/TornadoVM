@@ -36,20 +36,20 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.types.vectors;
+package uk.ac.manchester.tornado.api.types.collections;
 
-import static uk.ac.manchester.tornado.api.types.Int2.add;
-import static uk.ac.manchester.tornado.api.types.Int2.loadFromArray;
+import static uk.ac.manchester.tornado.api.types.vectors.Int3.add;
+import static uk.ac.manchester.tornado.api.types.vectors.Int3.loadFromArray;
 
 import java.nio.IntBuffer;
 
-import uk.ac.manchester.tornado.api.types.Int2;
+import uk.ac.manchester.tornado.api.types.vectors.Int3;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 
-public class VectorInt2 implements PrimitiveStorage<IntBuffer> {
+public class VectorInt3 implements PrimitiveStorage<IntBuffer> {
 
-    private static final int ELEMENT_SIZE = 2;
+    private static final int ELEMENT_SIZE = 3;
     /**
      * backing array.
      */
@@ -60,12 +60,12 @@ public class VectorInt2 implements PrimitiveStorage<IntBuffer> {
     private final int numElements;
 
     /**
-     * Creates a vector using the provided backing array.
+     * Creates a vector using the provided backing arrayR R.
      *
      * @param numElements
      * @param array
      */
-    protected VectorInt2(int numElements, IntArray array) {
+    protected VectorInt3(int numElements, IntArray array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -73,7 +73,7 @@ public class VectorInt2 implements PrimitiveStorage<IntBuffer> {
     /**
      * Creates a vector using the provided backing array.
      */
-    public VectorInt2(IntArray array) {
+    public VectorInt3(IntArray array) {
         this(array.getSize() / ELEMENT_SIZE, array);
     }
 
@@ -82,7 +82,7 @@ public class VectorInt2 implements PrimitiveStorage<IntBuffer> {
      *
      * @param numElements
      */
-    public VectorInt2(int numElements) {
+    public VectorInt3(int numElements) {
         this(numElements, new IntArray(numElements * ELEMENT_SIZE));
     }
 
@@ -97,7 +97,7 @@ public class VectorInt2 implements PrimitiveStorage<IntBuffer> {
      *
      * @return value
      */
-    public Int2 get(int index) {
+    public Int3 get(int index) {
         return loadFromArray(storage, toIndex(index));
     }
 
@@ -107,7 +107,7 @@ public class VectorInt2 implements PrimitiveStorage<IntBuffer> {
      * @param index
      * @param value
      */
-    public void set(int index, Int2 value) {
+    public void set(int index, Int3 value) {
         value.storeToArray(storage, toIndex(index));
     }
 
@@ -116,7 +116,7 @@ public class VectorInt2 implements PrimitiveStorage<IntBuffer> {
      *
      * @param values
      */
-    public void set(VectorInt2 values) {
+    public void set(VectorInt3 values) {
         for (int i = 0; i < numElements; i++) {
             set(i, values.get(i));
         }
@@ -128,7 +128,7 @@ public class VectorInt2 implements PrimitiveStorage<IntBuffer> {
      * @param values
      */
     public void set(IntArray values) {
-        VectorInt2 vector = new VectorInt2(values);
+        VectorInt3 vector = new VectorInt3(values);
         for (int i = 0; i < numElements; i++) {
             set(i, vector.get(i));
         }
@@ -145,15 +145,15 @@ public class VectorInt2 implements PrimitiveStorage<IntBuffer> {
      *
      * @return
      */
-    public VectorInt2 duplicate() {
-        VectorInt2 vector = new VectorInt2(numElements);
+    public VectorInt3 duplicate() {
+        VectorInt3 vector = new VectorInt3(numElements);
         vector.set(this);
         return vector;
     }
 
     public String toString() {
         if (this.numElements > ELEMENT_SIZE) {
-            return String.format("VectorInt2 <%d>", this.numElements);
+            return String.format("VectorInt3 <%d>", this.numElements);
         }
         StringBuilder tempString = new StringBuilder();
         for (int i = 0; i < numElements; i++) {
@@ -162,26 +162,26 @@ public class VectorInt2 implements PrimitiveStorage<IntBuffer> {
         return tempString.toString();
     }
 
-    public Int2 sum() {
-        Int2 result = new Int2();
+    public Int3 sum() {
+        Int3 result = new Int3();
         for (int i = 0; i < numElements; i++) {
             result = add(result, get(i));
         }
         return result;
     }
 
-    public Int2 min() {
-        Int2 result = new Int2();
+    public Int3 min() {
+        Int3 result = new Int3();
         for (int i = 0; i < numElements; i++) {
-            result = Int2.min(result, get(i));
+            result = Int3.min(result, get(i));
         }
         return result;
     }
 
-    public Int2 max() {
-        Int2 result = new Int2();
+    public Int3 max() {
+        Int3 result = new Int3();
         for (int i = 0; i < numElements; i++) {
-            result = Int2.max(result, get(i));
+            result = Int3.max(result, get(i));
         }
         return result;
     }

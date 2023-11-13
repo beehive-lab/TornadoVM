@@ -36,24 +36,24 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.types.vectors;
+package uk.ac.manchester.tornado.api.types.collections;
 
-import static uk.ac.manchester.tornado.api.types.Double8.add;
-import static uk.ac.manchester.tornado.api.types.Double8.loadFromArray;
+import static uk.ac.manchester.tornado.api.types.vectors.Int8.add;
+import static uk.ac.manchester.tornado.api.types.vectors.Int8.loadFromArray;
 
-import java.nio.DoubleBuffer;
+import java.nio.IntBuffer;
 
-import uk.ac.manchester.tornado.api.types.Double8;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.vectors.Int8;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 
-public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
+public class VectorInt8 implements PrimitiveStorage<IntBuffer> {
 
-    private static final int ELEMENT_SIZE = 8;
+    private static final int elementSizELEMENT_SIZE = 8;
     /**
      * backing array.
      */
-    protected final DoubleArray storage;
+    protected final IntArray storage;
     /**
      * number of elements in the storage.
      */
@@ -65,7 +65,7 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
      * @param numElements
      * @param array
      */
-    protected VectorDouble8(int numElements, DoubleArray array) {
+    protected VectorInt8(int numElements, IntArray array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -73,8 +73,8 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
     /**
      * Creates a vector using the provided backing array.
      */
-    public VectorDouble8(DoubleArray array) {
-        this(array.getSize() / ELEMENT_SIZE, array);
+    public VectorInt8(IntArray array) {
+        this(array.getSize() / elementSizELEMENT_SIZE, array);
     }
 
     /**
@@ -82,21 +82,22 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
      *
      * @param numElements
      */
-    public VectorDouble8(int numElements) {
-        this(numElements, new DoubleArray(numElements * ELEMENT_SIZE));
+    public VectorInt8(int numElements) {
+        this(numElements, new IntArray(numElements * elementSizELEMENT_SIZE));
     }
 
     private int toIndex(int index) {
-        return (index * ELEMENT_SIZE);
+        return (index * elementSizELEMENT_SIZE);
     }
 
     /**
      * Returns the float at the given index of this vector.
      *
      * @param index
+     *
      * @return value
      */
-    public Double8 get(int index) {
+    public Int8 get(int index) {
         return loadFromArray(storage, toIndex(index));
     }
 
@@ -106,7 +107,7 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
      * @param index
      * @param value
      */
-    public void set(int index, Double8 value) {
+    public void set(int index, Int8 value) {
         value.storeToArray(storage, toIndex(index));
     }
 
@@ -115,7 +116,7 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
      *
      * @param values
      */
-    public void set(VectorDouble8 values) {
+    public void set(VectorInt8 values) {
         for (int i = 0; i < numElements; i++) {
             set(i, values.get(i));
         }
@@ -126,14 +127,14 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
      *
      * @param values
      */
-    public void set(DoubleArray values) {
-        VectorDouble8 vector = new VectorDouble8(values);
+    public void set(IntArray values) {
+        VectorInt8 vector = new VectorInt8(values);
         for (int i = 0; i < numElements; i++) {
             set(i, vector.get(i));
         }
     }
 
-    public void fill(double value) {
+    public void fill(int value) {
         for (int i = 0; i < storage.getSize(); i++) {
             storage.set(i, value);
         }
@@ -144,15 +145,15 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
      *
      * @return
      */
-    public VectorDouble8 duplicate() {
-        VectorDouble8 vector = new VectorDouble8(numElements);
+    public VectorInt8 duplicate() {
+        VectorInt8 vector = new VectorInt8(numElements);
         vector.set(this);
         return vector;
     }
 
     public String toString() {
-        if (this.numElements > ELEMENT_SIZE) {
-            return String.format("VectorDouble8 <%d>", this.numElements);
+        if (this.numElements > elementSizELEMENT_SIZE) {
+            return String.format("VectorInt8 <%d>", this.numElements);
         }
         StringBuilder tempString = new StringBuilder();
         for (int i = 0; i < numElements; i++) {
@@ -161,42 +162,38 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
         return tempString.toString();
     }
 
-    public Double8 sum() {
-        Double8 result = new Double8();
+    public Int8 sum() {
+        Int8 result = new Int8();
         for (int i = 0; i < numElements; i++) {
             result = add(result, get(i));
         }
         return result;
     }
 
-    public Double8 min() {
-        Double8 result = new Double8();
+    public Int8 min() {
+        Int8 result = new Int8();
         for (int i = 0; i < numElements; i++) {
-            result = Double8.min(result, get(i));
+            result = Int8.min(result, get(i));
         }
         return result;
     }
 
-    public Double8 max() {
-        Double8 result = new Double8();
+    public Int8 max() {
+        Int8 result = new Int8();
         for (int i = 0; i < numElements; i++) {
-            result = Double8.max(result, get(i));
+            result = Int8.max(result, get(i));
         }
         return result;
     }
 
     @Override
-    public void loadFromBuffer(DoubleBuffer buffer) {
+    public void loadFromBuffer(IntBuffer buffer) {
         asBuffer().put(buffer);
     }
 
     @Override
-    public DoubleBuffer asBuffer() {
-        return null;
-    }
-
-    public DoubleBuffer asBuffer(DoubleBuffer buffer) {
-        return asBuffer().put(buffer);
+    public IntBuffer asBuffer() {
+        return storage.getSegment().asByteBuffer().asIntBuffer();
     }
 
     @Override
@@ -208,7 +205,7 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
         return numElements;
     }
 
-    public DoubleArray getArray() {
+    public IntArray getArray() {
         return storage;
     }
 

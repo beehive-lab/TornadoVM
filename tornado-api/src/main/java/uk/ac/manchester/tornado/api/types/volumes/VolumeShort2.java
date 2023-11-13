@@ -43,7 +43,7 @@ package uk.ac.manchester.tornado.api.types.volumes;
 
 import java.nio.ShortBuffer;
 
-import uk.ac.manchester.tornado.api.types.Short2;
+import uk.ac.manchester.tornado.api.types.vectors.Short2;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 

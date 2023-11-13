@@ -43,18 +43,18 @@ package uk.ac.manchester.tornado.unittests.slam;
 
 import static uk.ac.manchester.tornado.api.math.TornadoMath.max;
 import static uk.ac.manchester.tornado.api.math.TornadoMath.min;
-import static uk.ac.manchester.tornado.api.types.Float3.add;
-import static uk.ac.manchester.tornado.api.types.Float3.cross;
-import static uk.ac.manchester.tornado.api.types.Float3.div;
-import static uk.ac.manchester.tornado.api.types.Float3.dot;
-import static uk.ac.manchester.tornado.api.types.Float3.mult;
-import static uk.ac.manchester.tornado.api.types.Float3.normalise;
-import static uk.ac.manchester.tornado.api.types.Float3.sub;
+import static uk.ac.manchester.tornado.api.types.vectors.Float3.add;
+import static uk.ac.manchester.tornado.api.types.vectors.Float3.cross;
+import static uk.ac.manchester.tornado.api.types.vectors.Float3.div;
+import static uk.ac.manchester.tornado.api.types.vectors.Float3.dot;
+import static uk.ac.manchester.tornado.api.types.vectors.Float3.mult;
+import static uk.ac.manchester.tornado.api.types.vectors.Float3.normalise;
+import static uk.ac.manchester.tornado.api.types.vectors.Float3.sub;
 import static uk.ac.manchester.tornado.api.types.utils.VolumeOps.interp;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.Float3;
-import uk.ac.manchester.tornado.api.types.Float4;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;

@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, 2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,11 +39,10 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.types;
+package uk.ac.manchester.tornado.api.types.vectors;
 
 import java.nio.IntBuffer;
 
-import uk.ac.manchester.tornado.api.types.arrays.natives.NativeVectorInt;
 import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
@@ -51,134 +50,127 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 
 @Vector
-public final class Int2 implements PrimitiveStorage<IntBuffer> {
+public final class Int4 implements PrimitiveStorage<IntBuffer> {
 
-    public static final Class<Int2> TYPE = Int2.class;
+    public static final Class<Int4> TYPE = Int4.class;
 
-    public static final Class<NativeVectorInt> FIELD_CLASS = NativeVectorInt.class;
-
-    private static final String NUMBER_FORMAT = "{ x=%-7d, y=%-7d }";
+    private static final String NUMBER_FORMAT = "{ x=%-7d, y=%-7d, z=%-7d, w=%-7d }";
     /**
      * number of elements in the storage.
      */
-    private static final int NUM_ELEMENTS = 2;
+    private static final int NUM_ELEMENTS = 4;
     /**
      * backing array.
      */
     @Payload
     private final int[] storage;
 
-    private Int2(int[] storage) {
+    private Int4(int[] storage) {
         this.storage = storage;
     }
 
-    public Int2() {
+    public Int4() {
         this(new int[NUM_ELEMENTS]);
     }
 
-    public Int2(int x, int y) {
+    public Int4(int x, int y, int z, int w) {
         this();
         setX(x);
         setY(y);
+        setZ(z);
+        setW(w);
     }
 
-    /**
-     * * Operations on Int2 vectors.
-     */
     /*
      * vector = op( vector, vector )
      */
-    public static Int2 add(Int2 a, Int2 b) {
-        return new Int2(a.getX() + b.getX(), a.getY() + b.getY());
+    public static Int4 add(Int4 a, Int4 b) {
+        return new Int4(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ(), a.getW() + b.getW());
     }
 
-    public static Int2 sub(Int2 a, Int2 b) {
-        return new Int2(a.getX() - b.getX(), a.getY() - b.getY());
+    public static Int4 sub(Int4 a, Int4 b) {
+        return new Int4(a.getX() - b.getX(), a.getY() - b.getY(), a.getZ() - b.getZ(), a.getW() - b.getW());
     }
 
-    public static Int2 div(Int2 a, Int2 b) {
-        return new Int2(a.getX() / b.getX(), a.getY() / b.getY());
+    public static Int4 div(Int4 a, Int4 b) {
+        return new Int4(a.getX() / b.getX(), a.getY() / b.getY(), a.getZ() / b.getZ(), a.getW() / b.getW());
     }
 
-    public static Int2 mult(Int2 a, Int2 b) {
-        return new Int2(a.getX() * b.getX(), a.getY() * b.getY());
+    public static Int4 mult(Int4 a, Int4 b) {
+        return new Int4(a.getX() * b.getX(), a.getY() * b.getY(), a.getZ() * b.getZ(), a.getW() * b.getW());
     }
 
-    public static Int2 min(Int2 a, Int2 b) {
-        return new Int2(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()));
+    public static Int4 min(Int4 a, Int4 b) {
+        return new Int4(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()), Math.min(a.getW(), b.getW()));
     }
 
-    public static Int2 max(Int2 a, Int2 b) {
-        return new Int2(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()));
+    public static Int4 max(Int4 a, Int4 b) {
+        return new Int4(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(a.getZ(), b.getZ()), Math.max(a.getW(), b.getW()));
     }
 
     /*
      * vector = op (vector, scalar)
      */
-    public static Int2 add(Int2 a, int b) {
-        return new Int2(a.getX() + b, a.getY() + b);
+    public static Int4 add(Int4 a, int b) {
+        return new Int4(a.getX() + b, a.getY() + b, a.getZ() + b, a.getW() + b);
     }
 
-    public static Int2 sub(Int2 a, int b) {
-        return new Int2(a.getX() - b, a.getY() - b);
+    public static Int4 sub(Int4 a, int b) {
+        return new Int4(a.getX() - b, a.getY() - b, a.getZ() - b, a.getW() - b);
     }
 
-    public static Int2 mult(Int2 a, int b) {
-        return new Int2(a.getX() * b, a.getY() * b);
+    public static Int4 mult(Int4 a, int b) {
+        return new Int4(a.getX() * b, a.getY() * b, a.getZ() * b, a.getW() * b);
     }
 
-    public static Int2 div(Int2 a, int b) {
-        return new Int2(a.getX() / b, a.getY() / b);
+    public static Int4 div(Int4 a, int b) {
+        return new Int4(a.getX() / b, a.getY() / b, a.getZ() / b, a.getW() / b);
     }
 
-    public static Int2 inc(Int2 a, int value) {
+    public static Int4 inc(Int4 a, int value) {
         return add(a, value);
     }
 
-    public static Int2 dec(Int2 a, int value) {
+    public static Int4 dec(Int4 a, int value) {
         return sub(a, value);
     }
 
-    public static Int2 scaleByInverse(Int2 a, int value) {
-        return mult(a, 1 / value);
-    }
-
-    public static Int2 scale(Int2 a, int value) {
+    public static Int4 scale(Int4 a, int value) {
         return mult(a, value);
     }
 
-    public static Int2 clamp(Int2 x, int min, int max) {
-        return new Int2(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max));
+    /*
+     * misc inplace vector ops
+     */
+    public static Int4 clamp(Int4 x, int min, int max) {
+        return new Int4(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max), TornadoMath.clamp(x.getW(), min, max));
     }
 
     /*
      * vector wide operations
      */
-    public static int min(Int2 value) {
-        return Math.min(value.getX(), value.getY());
+    public static int min(Int4 value) {
+        return Math.min(value.getX(), Math.min(value.getY(), Math.min(value.getZ(), value.getW())));
     }
 
-    public static int max(Int2 value) {
-        return Math.max(value.getX(), value.getY());
+    public static int max(Int4 value) {
+        return Math.max(value.getX(), Math.max(value.getY(), Math.max(value.getZ(), value.getW())));
     }
 
-    public static int dot(Int2 a, Int2 b) {
-        final Int2 m = mult(a, b);
-        return m.getX() + m.getY();
-    }
-
-    public static boolean isEqual(Int2 a, Int2 b) {
+    public static boolean isEqual(Int4 a, Int4 b) {
         return TornadoMath.isEqual(a.toArray(), b.toArray());
     }
 
-    private int[] toArray() {
+    public int[] toArray() {
         return storage;
     }
 
-    public static Int2 loadFromArray(final IntArray array, int index) {
-        final Int2 result = new Int2();
+    public static Int4 loadFromArray(final IntArray array, int index) {
+        final Int4 result = new Int4();
         result.setX(array.get(index));
         result.setY(array.get(index + 1));
+        result.setZ(array.get(index + 2));
+        result.setW(array.get(index + 3));
         return result;
     }
 
@@ -190,9 +182,11 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
         storage[index] = value;
     }
 
-    public void set(Int2 value) {
+    public void set(Int4 value) {
         setX(value.getX());
         setY(value.getY());
+        setZ(value.getZ());
+        setW(value.getW());
     }
 
     public int getX() {
@@ -211,27 +205,43 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
         set(1, value);
     }
 
-    public int getS0() {
-        return get(0);
+    public int getZ() {
+        return get(2);
     }
 
-    public int getS1() {
-        return get(1);
+    public void setZ(int value) {
+        set(2, value);
+    }
+
+    public int getW() {
+        return get(3);
+    }
+
+    public void setW(int value) {
+        set(3, value);
     }
 
     /**
      * Duplicates this vector.
      *
-     * @return {@link Int2}
+     * @return {@link Int4}
      */
-    public Int2 duplicate() {
-        Int2 vector = new Int2();
+    public Int4 duplicate() {
+        Int4 vector = new Int4();
         vector.set(this);
         return vector;
     }
 
+    public Int2 asInt2() {
+        return new Int2(getX(), getY());
+    }
+
+    public Int3 asInt3() {
+        return new Int3(getX(), getY(), getZ());
+    }
+
     public String toString(String fmt) {
-        return String.format(fmt, getX(), getY());
+        return String.format(fmt, getX(), getY(), getZ(), getW());
     }
 
     @Override
@@ -257,5 +267,7 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
     public void storeToArray(final IntArray array, int index) {
         array.set(index, getX());
         array.set(index + 1, getY());
+        array.set(index + 2, getZ());
+        array.set(index + 3, getW());
     }
 }

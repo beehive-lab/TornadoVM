@@ -42,10 +42,10 @@
 package uk.ac.manchester.tornado.api.types.utils;
 
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.types.Float2;
-import uk.ac.manchester.tornado.api.types.Float3;
-import uk.ac.manchester.tornado.api.types.Float4;
-import uk.ac.manchester.tornado.api.types.Float8;
+import uk.ac.manchester.tornado.api.types.vectors.Float2;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
+import uk.ac.manchester.tornado.api.types.vectors.Float8;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 public class FloatOps {

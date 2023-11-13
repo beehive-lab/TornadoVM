@@ -36,20 +36,20 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.types.vectors;
+package uk.ac.manchester.tornado.api.types.collections;
 
-import static uk.ac.manchester.tornado.api.types.Double3.add;
-import static uk.ac.manchester.tornado.api.types.Double3.loadFromArray;
+import static uk.ac.manchester.tornado.api.types.vectors.Double4.add;
+import static uk.ac.manchester.tornado.api.types.vectors.Double4.loadFromArray;
 
 import java.nio.DoubleBuffer;
 
-import uk.ac.manchester.tornado.api.types.Double3;
+import uk.ac.manchester.tornado.api.types.vectors.Double4;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 
-public class VectorDouble3 implements PrimitiveStorage<DoubleBuffer> {
+public class VectorDouble4 implements PrimitiveStorage<DoubleBuffer> {
 
-    private static final int ELEMENT_SIZE = 3;
+    private static final int ELEMENT_SIZE = 4;
     /**
      * backing array.
      */
@@ -65,7 +65,7 @@ public class VectorDouble3 implements PrimitiveStorage<DoubleBuffer> {
      * @param numElements
      * @param array
      */
-    protected VectorDouble3(int numElements, DoubleArray array) {
+    protected VectorDouble4(int numElements, DoubleArray array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -73,7 +73,7 @@ public class VectorDouble3 implements PrimitiveStorage<DoubleBuffer> {
     /**
      * Creates a vector using the provided backing array.
      */
-    public VectorDouble3(DoubleArray array) {
+    public VectorDouble4(DoubleArray array) {
         this(array.getSize() / ELEMENT_SIZE, array);
     }
 
@@ -82,7 +82,7 @@ public class VectorDouble3 implements PrimitiveStorage<DoubleBuffer> {
      *
      * @param numElements
      */
-    public VectorDouble3(int numElements) {
+    public VectorDouble4(int numElements) {
         this(numElements, new DoubleArray(numElements * ELEMENT_SIZE));
     }
 
@@ -96,7 +96,7 @@ public class VectorDouble3 implements PrimitiveStorage<DoubleBuffer> {
      * @param index
      * @return value
      */
-    public Double3 get(int index) {
+    public Double4 get(int index) {
         return loadFromArray(storage, toIndex(index));
     }
 
@@ -106,7 +106,7 @@ public class VectorDouble3 implements PrimitiveStorage<DoubleBuffer> {
      * @param index
      * @param value
      */
-    public void set(int index, Double3 value) {
+    public void set(int index, Double4 value) {
         value.storeToArray(storage, toIndex(index));
     }
 
@@ -115,7 +115,7 @@ public class VectorDouble3 implements PrimitiveStorage<DoubleBuffer> {
      *
      * @param values
      */
-    public void set(VectorDouble3 values) {
+    public void set(VectorDouble4 values) {
         for (int i = 0; i < numElements; i++) {
             set(i, values.get(i));
         }
@@ -127,13 +127,13 @@ public class VectorDouble3 implements PrimitiveStorage<DoubleBuffer> {
      * @param values
      */
     public void set(DoubleArray values) {
-        VectorDouble3 vector = new VectorDouble3(values);
+        VectorDouble4 vector = new VectorDouble4(values);
         for (int i = 0; i < numElements; i++) {
             set(i, vector.get(i));
         }
     }
 
-    public void fill(double value) {
+    public void fill(float value) {
         for (int i = 0; i < storage.getSize(); i++) {
             storage.set(i, value);
         }
@@ -144,15 +144,15 @@ public class VectorDouble3 implements PrimitiveStorage<DoubleBuffer> {
      *
      * @return
      */
-    public VectorDouble3 duplicate() {
-        VectorDouble3 vector = new VectorDouble3(numElements);
+    public VectorDouble4 duplicate() {
+        VectorDouble4 vector = new VectorDouble4(numElements);
         vector.set(this);
         return vector;
     }
 
     public String toString() {
         if (this.numElements > ELEMENT_SIZE) {
-            return String.format("VectorDouble3 <%d>", this.numElements);
+            return String.format("VectorDouble4 <%d>", this.numElements);
         }
         StringBuilder tempString = new StringBuilder();
         for (int i = 0; i < numElements; i++) {
@@ -161,26 +161,26 @@ public class VectorDouble3 implements PrimitiveStorage<DoubleBuffer> {
         return tempString.toString();
     }
 
-    public Double3 sum() {
-        Double3 result = new Double3();
+    public Double4 sum() {
+        Double4 result = new Double4();
         for (int i = 0; i < numElements; i++) {
             result = add(result, get(i));
         }
         return result;
     }
 
-    public Double3 min() {
-        Double3 result = new Double3();
+    public Double4 min() {
+        Double4 result = new Double4();
         for (int i = 0; i < numElements; i++) {
-            result = Double3.min(result, get(i));
+            result = Double4.min(result, get(i));
         }
         return result;
     }
 
-    public Double3 max() {
-        Double3 result = new Double3();
+    public Double4 max() {
+        Double4 result = new Double4();
         for (int i = 0; i < numElements; i++) {
-            result = Double3.max(result, get(i));
+            result = Double4.max(result, get(i));
         }
         return result;
     }

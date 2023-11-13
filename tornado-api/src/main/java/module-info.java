@@ -55,10 +55,8 @@ module tornado.api {
     exports uk.ac.manchester.tornado.api.math;
     exports uk.ac.manchester.tornado.api.types.arrays;
     opens uk.ac.manchester.tornado.api.types.arrays;
-    exports uk.ac.manchester.tornado.api.types;
-    opens uk.ac.manchester.tornado.api.types;
-    exports uk.ac.manchester.tornado.api.types.vectors;
-    opens uk.ac.manchester.tornado.api.types.vectors;
+    exports uk.ac.manchester.tornado.api.types.collections;
+    opens uk.ac.manchester.tornado.api.types.collections;
     exports uk.ac.manchester.tornado.api.types.matrix;
     opens uk.ac.manchester.tornado.api.types.matrix;
     opens uk.ac.manchester.tornado.api.types.images;
@@ -71,4 +69,6 @@ module tornado.api {
     opens uk.ac.manchester.tornado.api.types.volumes;
     opens uk.ac.manchester.tornado.api.types.arrays.natives;
     exports uk.ac.manchester.tornado.api.types.arrays.natives;
+    exports uk.ac.manchester.tornado.api.types.vectors;
+    opens uk.ac.manchester.tornado.api.types.vectors;
 }

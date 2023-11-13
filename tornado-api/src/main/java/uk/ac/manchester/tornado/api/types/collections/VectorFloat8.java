@@ -39,13 +39,13 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.types.vectors;
+package uk.ac.manchester.tornado.api.types.collections;
 
-import static uk.ac.manchester.tornado.api.types.Float8.add;
+import static uk.ac.manchester.tornado.api.types.vectors.Float8.add;
 
 import java.nio.FloatBuffer;
 
-import uk.ac.manchester.tornado.api.types.Float8;
+import uk.ac.manchester.tornado.api.types.vectors.Float8;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 

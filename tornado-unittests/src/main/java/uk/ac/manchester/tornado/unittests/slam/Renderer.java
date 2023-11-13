@@ -41,17 +41,17 @@
  */
 package uk.ac.manchester.tornado.unittests.slam;
 
-import static uk.ac.manchester.tornado.api.types.Float3.add;
-import static uk.ac.manchester.tornado.api.types.Float3.mult;
+import static uk.ac.manchester.tornado.api.types.vectors.Float3.add;
+import static uk.ac.manchester.tornado.api.types.vectors.Float3.mult;
 import static uk.ac.manchester.tornado.api.types.utils.VolumeOps.grad;
 import static uk.ac.manchester.tornado.unittests.slam.GraphicsMath.raycastPoint;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.Byte3;
-import uk.ac.manchester.tornado.api.types.Byte4;
-import uk.ac.manchester.tornado.api.types.Float3;
-import uk.ac.manchester.tornado.api.types.Float4;
-import uk.ac.manchester.tornado.api.types.Short3;
+import uk.ac.manchester.tornado.api.types.vectors.Byte3;
+import uk.ac.manchester.tornado.api.types.vectors.Byte4;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
+import uk.ac.manchester.tornado.api.types.vectors.Short3;
 import uk.ac.manchester.tornado.api.types.images.ImageByte3;
 import uk.ac.manchester.tornado.api.types.images.ImageByte4;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat;

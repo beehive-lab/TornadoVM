@@ -43,7 +43,7 @@ package uk.ac.manchester.tornado.api.types.images;
 
 import java.nio.FloatBuffer;
 
-import uk.ac.manchester.tornado.api.types.Float4;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.utils.FloatOps;

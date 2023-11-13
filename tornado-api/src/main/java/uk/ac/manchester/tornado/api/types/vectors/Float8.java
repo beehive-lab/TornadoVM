@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2023, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,21 +39,21 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.types;
+package uk.ac.manchester.tornado.api.types.vectors;
 
-import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
-import uk.ac.manchester.tornado.api.types.utils.DoubleOps;
+import uk.ac.manchester.tornado.api.types.utils.FloatOps;
 
 @Vector
-public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
+public final class Float8 implements PrimitiveStorage<FloatBuffer> {
 
-    public static final Class<Double8> TYPE = Double8.class;
+    public static final Class<Float8> TYPE = Float8.class;
     /**
      * number of elements in the storage.
      */
@@ -62,17 +62,17 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
      * backing array.
      */
     @Payload
-    final double[] storage;
+    final float[] storage;
 
-    private Double8(double[] storage) {
+    private Float8(float[] storage) {
         this.storage = storage;
     }
 
-    public Double8() {
-        this(new double[NUM_ELEMENTS]);
+    public Float8() {
+        this(new float[NUM_ELEMENTS]);
     }
 
-    public Double8(double s0, double s1, double s2, double s3, double s4, double s5, double s6, double s7) {
+    public Float8(float s0, float s1, float s2, float s3, float s4, float s5, float s6, float s7) {
         this();
         setS0(s0);
         setS1(s1);
@@ -84,226 +84,223 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
         setS7(s7);
     }
 
-    public static Double8 loadFromArray(final DoubleArray array, int index) {
-        final Double8 result = new Double8();
-        for (int i = 0; i < NUM_ELEMENTS; i++) {
-            result.set(i, array.get(index + i));
-        }
-        return result;
-    }
-
     /**
-     * * Operations on Double8 vectors.
+     * * Operations on Float8 vectors.
      */
-    public static Double8 add(Double8 a, Double8 b) {
-        final Double8 result = new Double8();
+    public static Float8 add(Float8 a, Float8 b) {
+        final Float8 result = new Float8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) + b.get(i));
         }
         return result;
     }
 
-    public static Double8 add(Double8 a, double b) {
-        final Double8 result = new Double8();
+    public static Float8 add(Float8 a, float b) {
+        final Float8 result = new Float8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) + b);
         }
         return result;
     }
 
-    public static Double8 sub(Double8 a, Double8 b) {
-        final Double8 result = new Double8();
+    public static Float8 sub(Float8 a, Float8 b) {
+        final Float8 result = new Float8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) - b.get(i));
         }
         return result;
     }
 
-    public static Double8 sub(Double8 a, double b) {
-        final Double8 result = new Double8();
+    public static Float8 sub(Float8 a, float b) {
+        final Float8 result = new Float8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) - b);
         }
         return result;
     }
 
-    public static Double8 div(Double8 a, Double8 b) {
-        final Double8 result = new Double8();
+    public static Float8 div(Float8 a, Float8 b) {
+        final Float8 result = new Float8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) / b.get(i));
         }
         return result;
     }
 
-    public static Double8 div(Double8 a, double value) {
-        final Double8 result = new Double8();
+    public static Float8 div(Float8 a, float value) {
+        final Float8 result = new Float8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) / value);
         }
         return result;
     }
 
-    public static Double8 mult(Double8 a, Double8 b) {
-        final Double8 result = new Double8();
+    public static Float8 mult(Float8 a, Float8 b) {
+        final Float8 result = new Float8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) * b.get(i));
         }
         return result;
     }
 
-    public static Double8 mult(Double8 a, double value) {
-        final Double8 result = new Double8();
+    public static Float8 mult(Float8 a, float value) {
+        final Float8 result = new Float8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, a.get(i) * value);
         }
         return result;
     }
 
-    public static Double8 min(Double8 a, Double8 b) {
-        final Double8 result = new Double8();
+    public static Float8 min(Float8 a, Float8 b) {
+        final Float8 result = new Float8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, Math.min(a.get(i), b.get(i)));
         }
         return result;
     }
 
-    public static double min(Double8 value) {
-        double result = Double.MAX_VALUE;
+    public static float min(Float8 value) {
+        float result = Float.MAX_VALUE;
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result = Math.min(result, value.get(i));
         }
         return result;
     }
 
-    public static Double8 max(Double8 a, Double8 b) {
-        final Double8 result = new Double8();
+    public static Float8 max(Float8 a, Float8 b) {
+        final Float8 result = new Float8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result.set(i, Math.max(a.get(i), b.get(i)));
         }
         return result;
     }
 
-    public static double max(Double8 value) {
-        double result = Double.MIN_VALUE;
+    public static float max(Float8 value) {
+        float result = Float.MIN_VALUE;
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             result = Math.max(result, value.get(i));
         }
         return result;
     }
 
-    public static Double8 sqrt(Double8 a) {
-        final Double8 result = new Double8();
+    public static Float8 sqrt(Float8 a) {
+        final Float8 result = new Float8();
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             a.set(i, TornadoMath.sqrt(a.get(i)));
         }
         return result;
     }
 
-    public static boolean isEqual(Double8 a, Double8 b) {
+    public static float dot(Float8 a, Float8 b) {
+        final Float8 m = mult(a, b);
+        return m.getS0() + m.getS1() + m.getS2() + m.getS3() + m.getS4() + m.getS5() + m.getS6() + m.getS7();
+    }
+
+    public static boolean isEqual(Float8 a, Float8 b) {
         return TornadoMath.isEqual(a.toArray(), b.toArray());
     }
 
-    public static double findULPDistance(Double8 value, Double8 expected) {
+    public static float findULPDistance(Float8 value, Float8 expected) {
         return TornadoMath.findULPDistance(value.asBuffer().array(), expected.asBuffer().array());
     }
 
-    public double[] getArray() {
+    public float[] getArray() {
         return storage;
     }
 
-    public double get(int index) {
+    public float get(int index) {
         return storage[index];
     }
 
-    public void set(int index, double value) {
+    public void set(int index, float value) {
         storage[index] = value;
     }
 
-    public void set(Double8 value) {
+    public void set(Float8 value) {
         for (int i = 0; i < 8; i++) {
             set(i, value.get(i));
         }
     }
 
-    public double getS0() {
+    public float getS0() {
         return get(0);
     }
 
-    public void setS0(double value) {
+    public void setS0(float value) {
         set(0, value);
     }
 
-    public double getS1() {
+    public float getS1() {
         return get(1);
     }
 
-    public void setS1(double value) {
+    public void setS1(float value) {
         set(1, value);
     }
 
-    public double getS2() {
+    public float getS2() {
         return get(2);
     }
 
-    public void setS2(double value) {
+    public void setS2(float value) {
         set(2, value);
     }
 
-    public double getS3() {
+    public float getS3() {
         return get(3);
     }
 
-    public void setS3(double value) {
+    public void setS3(float value) {
         set(3, value);
     }
 
-    public double getS4() {
+    public float getS4() {
         return get(4);
     }
 
-    public void setS4(double value) {
+    public void setS4(float value) {
         set(4, value);
     }
 
-    public double getS5() {
+    public float getS5() {
         return get(5);
     }
 
-    public void setS5(double value) {
+    public void setS5(float value) {
         set(5, value);
     }
 
-    public double getS6() {
+    public float getS6() {
         return get(6);
     }
 
-    public void setS6(double value) {
+    public void setS6(float value) {
         set(6, value);
     }
 
-    public double getS7() {
+    public float getS7() {
         return get(7);
     }
 
-    public void setS7(double value) {
+    public void setS7(float value) {
         set(7, value);
     }
 
-    public Double4 getHigh() {
-        return new Double4(getS4(), getS5(), getS6(), getS7());
+    public Float4 getHigh() {
+        return new Float4(getS4(), getS5(), getS6(), getS7());
     }
 
-    public Double4 getLow() {
-        return new Double4(getS0(), getS1(), getS2(), getS3());
+    public Float4 getLow() {
+        return new Float4(getS0(), getS1(), getS2(), getS3());
     }
 
     /**
      * Duplicates this vector.
      *
-     * @return {@link Double8}
+     * @return {@link Float8}
      */
-    public Double8 duplicate() {
-        Double8 vector = new Double8();
+    public Float8 duplicate() {
+        Float8 vector = new Float8();
         vector.set(this);
         return vector;
     }
@@ -314,23 +311,17 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public String toString() {
-        return toString(DoubleOps.FMT_8);
-    }
-
-    public void storeToArray(final DoubleArray array, int index) {
-        for (int i = 0; i < NUM_ELEMENTS; i++) {
-            array.set(index + i, get(i));
-        }
+        return toString(FloatOps.FMT_8);
     }
 
     @Override
-    public void loadFromBuffer(DoubleBuffer buffer) {
+    public void loadFromBuffer(FloatBuffer buffer) {
         asBuffer().put(buffer);
     }
 
     @Override
-    public DoubleBuffer asBuffer() {
-        return DoubleBuffer.wrap(storage);
+    public FloatBuffer asBuffer() {
+        return FloatBuffer.wrap(storage);
     }
 
     @Override
@@ -338,7 +329,26 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
         return NUM_ELEMENTS;
     }
 
-    public double[] toArray() {
+    public float[] toArray() {
         return storage;
+    }
+
+    public static Float8 loadFromArray(final FloatArray array, int index) {
+        final Float8 result = new Float8();
+        result.setS0(array.get(index));
+        result.setS1(array.get(index + 1));
+        result.setS2(array.get(index + 2));
+        result.setS3(array.get(index + 3));
+        result.setS4(array.get(index + 4));
+        result.setS5(array.get(index + 5));
+        result.setS6(array.get(index + 6));
+        result.setS7(array.get(index + 7));
+        return result;
+    }
+
+    public void storeToArray(final FloatArray array, int index) {
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            array.set(index + i, get(i));
+        }
     }
 }

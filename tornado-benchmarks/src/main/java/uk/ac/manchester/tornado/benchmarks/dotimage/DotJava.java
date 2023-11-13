@@ -21,7 +21,7 @@ import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.dotImage;
 
 import java.util.Random;
 
-import uk.ac.manchester.tornado.api.types.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;

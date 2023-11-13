@@ -1,5 +1,8 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,24 +39,23 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.types.vectors;
+package uk.ac.manchester.tornado.api.types.collections;
 
-import static uk.ac.manchester.tornado.api.types.Int8.add;
-import static uk.ac.manchester.tornado.api.types.Int8.loadFromArray;
+import static uk.ac.manchester.tornado.api.types.vectors.Float3.loadFromArray;
 
-import java.nio.IntBuffer;
+import java.nio.FloatBuffer;
 
-import uk.ac.manchester.tornado.api.types.Int8;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 
-public class VectorInt8 implements PrimitiveStorage<IntBuffer> {
+public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
 
-    private static final int elementSizELEMENT_SIZE = 8;
+    private static final int ELEMENT_SIZE = 3;
     /**
      * backing array.
      */
-    protected final IntArray storage;
+    protected final FloatArray storage;
     /**
      * number of elements in the storage.
      */
@@ -63,9 +65,11 @@ public class VectorInt8 implements PrimitiveStorage<IntBuffer> {
      * Creates a vector using the provided backing array.
      *
      * @param numElements
+     *     Number of elements
      * @param array
+     *     array to be copied
      */
-    protected VectorInt8(int numElements, IntArray array) {
+    protected VectorFloat3(int numElements, FloatArray array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -73,31 +77,36 @@ public class VectorInt8 implements PrimitiveStorage<IntBuffer> {
     /**
      * Creates a vector using the provided backing array.
      */
-    public VectorInt8(IntArray array) {
-        this(array.getSize() / elementSizELEMENT_SIZE, array);
+    public VectorFloat3(FloatArray array) {
+        this(array.getSize() / ELEMENT_SIZE, array);
     }
 
     /**
      * Creates an empty vector with.
      *
      * @param numElements
+     *     Number of elements
      */
-    public VectorInt8(int numElements) {
-        this(numElements, new IntArray(numElements * elementSizELEMENT_SIZE));
+    public VectorFloat3(int numElements) {
+        this(numElements, new FloatArray(numElements * ELEMENT_SIZE));
+    }
+
+    public FloatArray getArray() {
+        return storage;
     }
 
     private int toIndex(int index) {
-        return (index * elementSizELEMENT_SIZE);
+        return (index * ELEMENT_SIZE);
     }
 
     /**
      * Returns the float at the given index of this vector.
      *
      * @param index
-     *
-     * @return value
+     *     Position
+     * @return {@link Float3}
      */
-    public Int8 get(int index) {
+    public Float3 get(int index) {
         return loadFromArray(storage, toIndex(index));
     }
 
@@ -105,9 +114,11 @@ public class VectorInt8 implements PrimitiveStorage<IntBuffer> {
      * Sets the float at the given index of this vector.
      *
      * @param index
+     *     Position
      * @param value
+     *     Value to be set
      */
-    public void set(int index, Int8 value) {
+    public void set(int index, Float3 value) {
         value.storeToArray(storage, toIndex(index));
     }
 
@@ -115,8 +126,9 @@ public class VectorInt8 implements PrimitiveStorage<IntBuffer> {
      * Sets the elements of this vector to that of the provided vector.
      *
      * @param values
+     *     set an input array into the internal array
      */
-    public void set(VectorInt8 values) {
+    public void set(VectorFloat3 values) {
         for (int i = 0; i < numElements; i++) {
             set(i, values.get(i));
         }
@@ -126,15 +138,16 @@ public class VectorInt8 implements PrimitiveStorage<IntBuffer> {
      * Sets the elements of this vector to that of the provided array.
      *
      * @param values
+     *     set an input array into the internal array
      */
-    public void set(IntArray values) {
-        VectorInt8 vector = new VectorInt8(values);
+    public void set(FloatArray values) {
+        VectorFloat3 vector = new VectorFloat3(values);
         for (int i = 0; i < numElements; i++) {
             set(i, vector.get(i));
         }
     }
 
-    public void fill(int value) {
+    public void fill(float value) {
         for (int i = 0; i < storage.getSize(); i++) {
             storage.set(i, value);
         }
@@ -143,17 +156,17 @@ public class VectorInt8 implements PrimitiveStorage<IntBuffer> {
     /**
      * Duplicates this vector.
      *
-     * @return
+     * @return A new vector
      */
-    public VectorInt8 duplicate() {
-        VectorInt8 vector = new VectorInt8(numElements);
+    public VectorFloat3 duplicate() {
+        VectorFloat3 vector = new VectorFloat3(numElements);
         vector.set(this);
         return vector;
     }
 
     public String toString() {
-        if (this.numElements > elementSizELEMENT_SIZE) {
-            return String.format("VectorInt8 <%d>", this.numElements);
+        if (this.numElements > ELEMENT_SIZE) {
+            return String.format("VectorFloat3 <%d>", this.numElements);
         }
         StringBuilder tempString = new StringBuilder();
         for (int i = 0; i < numElements; i++) {
@@ -162,38 +175,38 @@ public class VectorInt8 implements PrimitiveStorage<IntBuffer> {
         return tempString.toString();
     }
 
-    public Int8 sum() {
-        Int8 result = new Int8();
+    public Float3 sum() {
+        Float3 result = new Float3();
         for (int i = 0; i < numElements; i++) {
-            result = add(result, get(i));
+            result = Float3.add(result, get(i));
         }
         return result;
     }
 
-    public Int8 min() {
-        Int8 result = new Int8();
+    public Float3 min() {
+        Float3 result = new Float3();
         for (int i = 0; i < numElements; i++) {
-            result = Int8.min(result, get(i));
+            result = Float3.min(result, get(i));
         }
         return result;
     }
 
-    public Int8 max() {
-        Int8 result = new Int8();
+    public Float3 max() {
+        Float3 result = new Float3();
         for (int i = 0; i < numElements; i++) {
-            result = Int8.max(result, get(i));
+            result = Float3.max(result, get(i));
         }
         return result;
     }
 
     @Override
-    public void loadFromBuffer(IntBuffer buffer) {
+    public void loadFromBuffer(FloatBuffer buffer) {
         asBuffer().put(buffer);
     }
 
     @Override
-    public IntBuffer asBuffer() {
-        return storage.getSegment().asByteBuffer().asIntBuffer();
+    public FloatBuffer asBuffer() {
+        return storage.getSegment().asByteBuffer().asFloatBuffer();
     }
 
     @Override
@@ -203,10 +216,6 @@ public class VectorInt8 implements PrimitiveStorage<IntBuffer> {
 
     public int getLength() {
         return numElements;
-    }
-
-    public IntArray getArray() {
-        return storage;
     }
 
     public void clear() {

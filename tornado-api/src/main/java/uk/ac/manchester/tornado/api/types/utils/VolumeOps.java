@@ -41,8 +41,8 @@
  */
 package uk.ac.manchester.tornado.api.types.utils;
 
-import uk.ac.manchester.tornado.api.types.Float3;
-import uk.ac.manchester.tornado.api.types.Int3;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Int3;
 import uk.ac.manchester.tornado.api.types.volumes.VolumeShort2;
 
 public class VolumeOps {

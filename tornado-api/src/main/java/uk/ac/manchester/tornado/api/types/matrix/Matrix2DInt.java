@@ -46,10 +46,10 @@ import static uk.ac.manchester.tornado.api.types.utils.StorageFormats.toRowMajor
 import java.nio.IntBuffer;
 
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.utils.IntOps;
 import uk.ac.manchester.tornado.api.types.utils.StorageFormats;
-import uk.ac.manchester.tornado.api.types.vectors.VectorInt;
 
 public class Matrix2DInt extends Matrix2DType implements PrimitiveStorage<IntBuffer> {
     /**

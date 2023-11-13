@@ -44,13 +44,13 @@ package uk.ac.manchester.tornado.unittests.slam;
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 import static uk.ac.manchester.tornado.api.math.TornadoMath.sqrt;
-import static uk.ac.manchester.tornado.api.types.Float3.add;
-import static uk.ac.manchester.tornado.api.types.Float3.cross;
-import static uk.ac.manchester.tornado.api.types.Float3.dot;
-import static uk.ac.manchester.tornado.api.types.Float3.mult;
+import static uk.ac.manchester.tornado.api.types.vectors.Float3.add;
+import static uk.ac.manchester.tornado.api.types.vectors.Float3.cross;
+import static uk.ac.manchester.tornado.api.types.vectors.Float3.dot;
+import static uk.ac.manchester.tornado.api.types.vectors.Float3.mult;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.api.types.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
 

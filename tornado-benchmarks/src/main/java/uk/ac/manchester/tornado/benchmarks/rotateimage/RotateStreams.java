@@ -19,7 +19,7 @@ package uk.ac.manchester.tornado.benchmarks.rotateimage;
 
 import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.rotateImageStreams;
 
-import uk.ac.manchester.tornado.api.types.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;

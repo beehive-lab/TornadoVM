@@ -36,19 +36,20 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.types.vectors;
+package uk.ac.manchester.tornado.api.types.collections;
 
-import static uk.ac.manchester.tornado.api.types.Int4.add;
+import static uk.ac.manchester.tornado.api.types.vectors.Int2.add;
+import static uk.ac.manchester.tornado.api.types.vectors.Int2.loadFromArray;
 
 import java.nio.IntBuffer;
 
-import uk.ac.manchester.tornado.api.types.Int4;
+import uk.ac.manchester.tornado.api.types.vectors.Int2;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 
-public class VectorInt4 implements PrimitiveStorage<IntBuffer> {
+public class VectorInt2 implements PrimitiveStorage<IntBuffer> {
 
-    private static final int ELEMENT_SIZE = 4;
+    private static final int ELEMENT_SIZE = 2;
     /**
      * backing array.
      */
@@ -59,12 +60,12 @@ public class VectorInt4 implements PrimitiveStorage<IntBuffer> {
     private final int numElements;
 
     /**
-     * Creates a vector using the provided backing arrayR R.
+     * Creates a vector using the provided backing array.
      *
      * @param numElements
      * @param array
      */
-    protected VectorInt4(int numElements, IntArray array) {
+    protected VectorInt2(int numElements, IntArray array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -72,7 +73,7 @@ public class VectorInt4 implements PrimitiveStorage<IntBuffer> {
     /**
      * Creates a vector using the provided backing array.
      */
-    public VectorInt4(IntArray array) {
+    public VectorInt2(IntArray array) {
         this(array.getSize() / ELEMENT_SIZE, array);
     }
 
@@ -81,7 +82,7 @@ public class VectorInt4 implements PrimitiveStorage<IntBuffer> {
      *
      * @param numElements
      */
-    public VectorInt4(int numElements) {
+    public VectorInt2(int numElements) {
         this(numElements, new IntArray(numElements * ELEMENT_SIZE));
     }
 
@@ -90,14 +91,14 @@ public class VectorInt4 implements PrimitiveStorage<IntBuffer> {
     }
 
     /**
-     * Returns the float at the given index of this vector.
+     * Returns the floatr at the given index of this vector.
      *
      * @param index
      *
      * @return value
      */
-    public Int4 get(int index) {
-        return Int4.loadFromArray(storage, toIndex(index));
+    public Int2 get(int index) {
+        return loadFromArray(storage, toIndex(index));
     }
 
     /**
@@ -106,7 +107,7 @@ public class VectorInt4 implements PrimitiveStorage<IntBuffer> {
      * @param index
      * @param value
      */
-    public void set(int index, Int4 value) {
+    public void set(int index, Int2 value) {
         value.storeToArray(storage, toIndex(index));
     }
 
@@ -115,7 +116,7 @@ public class VectorInt4 implements PrimitiveStorage<IntBuffer> {
      *
      * @param values
      */
-    public void set(VectorInt4 values) {
+    public void set(VectorInt2 values) {
         for (int i = 0; i < numElements; i++) {
             set(i, values.get(i));
         }
@@ -127,7 +128,7 @@ public class VectorInt4 implements PrimitiveStorage<IntBuffer> {
      * @param values
      */
     public void set(IntArray values) {
-        VectorInt4 vector = new VectorInt4(values);
+        VectorInt2 vector = new VectorInt2(values);
         for (int i = 0; i < numElements; i++) {
             set(i, vector.get(i));
         }
@@ -144,15 +145,15 @@ public class VectorInt4 implements PrimitiveStorage<IntBuffer> {
      *
      * @return
      */
-    public VectorInt4 duplicate() {
-        VectorInt4 vector = new VectorInt4(numElements);
+    public VectorInt2 duplicate() {
+        VectorInt2 vector = new VectorInt2(numElements);
         vector.set(this);
         return vector;
     }
 
     public String toString() {
         if (this.numElements > ELEMENT_SIZE) {
-            return String.format("VectorInt4 <%d>", this.numElements);
+            return String.format("VectorInt2 <%d>", this.numElements);
         }
         StringBuilder tempString = new StringBuilder();
         for (int i = 0; i < numElements; i++) {
@@ -161,42 +162,38 @@ public class VectorInt4 implements PrimitiveStorage<IntBuffer> {
         return tempString.toString();
     }
 
-    public Int4 sum() {
-        Int4 result = new Int4();
+    public Int2 sum() {
+        Int2 result = new Int2();
         for (int i = 0; i < numElements; i++) {
             result = add(result, get(i));
         }
         return result;
     }
 
-    public Int4 min() {
-        Int4 result = new Int4();
+    public Int2 min() {
+        Int2 result = new Int2();
         for (int i = 0; i < numElements; i++) {
-            result = Int4.min(result, get(i));
+            result = Int2.min(result, get(i));
         }
         return result;
     }
 
-    public Int4 max() {
-        Int4 result = new Int4();
+    public Int2 max() {
+        Int2 result = new Int2();
         for (int i = 0; i < numElements; i++) {
-            result = Int4.max(result, get(i));
+            result = Int2.max(result, get(i));
         }
         return result;
-    }
-
-    public IntBuffer asBuffer(IntArray buffer) {
-        return storage.getSegment().asByteBuffer().asIntBuffer();
     }
 
     @Override
     public void loadFromBuffer(IntBuffer buffer) {
-
+        asBuffer().put(buffer);
     }
 
     @Override
     public IntBuffer asBuffer() {
-        return null;
+        return storage.getSegment().asByteBuffer().asIntBuffer();
     }
 
     @Override

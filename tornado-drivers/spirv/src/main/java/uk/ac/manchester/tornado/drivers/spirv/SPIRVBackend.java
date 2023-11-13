@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -486,8 +486,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
         }
 
         // Look for other builtins
-        if (cfg.graph.getNodes().filter(SPIRVThreadBuiltIn.LOCAL_THREAD_ID.getNodeClass()).isNotEmpty()
-                || cfg.graph.getNodes().filter(SPIRVThreadBuiltIn.LOCAL_THREAD_ID.getOptionalNodeClass()).isNotEmpty()) {
+        if (cfg.graph.getNodes().filter(SPIRVThreadBuiltIn.LOCAL_THREAD_ID.getNodeClass()).isNotEmpty() || cfg.graph.getNodes().filter(SPIRVThreadBuiltIn.LOCAL_THREAD_ID.getOptionalNodeClass())
+                .isNotEmpty()) {
             SPIRVId id = asm.emitDecorateOpenCLBuiltin(module, SPIRVThreadBuiltIn.LOCAL_THREAD_ID);
             SPIRVSymbolTable.put(SPIRVThreadBuiltIn.LOCAL_THREAD_ID.name, id);
             asm.builtinTable.put(SPIRVThreadBuiltIn.LOCAL_THREAD_ID, id);
@@ -499,8 +499,8 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             asm.builtinTable.put(SPIRVThreadBuiltIn.GROUP_ID, id);
         }
 
-        if (cfg.graph.getNodes().filter(SPIRVThreadBuiltIn.WORKGROUP_SIZE.getNodeClass()).isNotEmpty()
-                || cfg.graph.getNodes().filter(SPIRVThreadBuiltIn.WORKGROUP_SIZE.getOptionalNodeClass()).isNotEmpty()) {
+        if (cfg.graph.getNodes().filter(SPIRVThreadBuiltIn.WORKGROUP_SIZE.getNodeClass()).isNotEmpty() || cfg.graph.getNodes().filter(SPIRVThreadBuiltIn.WORKGROUP_SIZE.getOptionalNodeClass())
+                .isNotEmpty()) {
             SPIRVId id = asm.emitDecorateOpenCLBuiltin(module, SPIRVThreadBuiltIn.WORKGROUP_SIZE);
             SPIRVSymbolTable.put(SPIRVThreadBuiltIn.WORKGROUP_SIZE.name, id);
             asm.builtinTable.put(SPIRVThreadBuiltIn.WORKGROUP_SIZE, id);
@@ -668,7 +668,7 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
             if (l.getType().getJavaKind() == JavaKind.Object) {
                 // Check here if it is a vector Component Type
                 String javaName = l.getType().toJavaName();
-                if (javaName.startsWith(SPIRVKind.VECTOR_COLLECTION_PATH)) {
+                if (javaName.startsWith(SPIRVKind.COLLECTION_PATH) || javaName.startsWith(SPIRVKind.VECTOR_COLLECTION_PATH)) {
                     String[] vectorTypeNames = javaName.split("\\.");
                     int nameIndex = vectorTypeNames.length - 1;
                     kind = SPIRVKind.getKindFromStringClassVector(vectorTypeNames[nameIndex]);
@@ -749,11 +749,11 @@ public class SPIRVBackend extends TornadoBackend<SPIRVProviders> implements Fram
      * Example:
      *
      * <code>
-     *     %spirv_BuiltinGlobalSize = OpVariable %ptr_Input_v3long Input
+     * %spirv_BuiltinGlobalSize = OpVariable %ptr_Input_v3long Input
      * </code>
      *
      * @param asm
-     *            {@link SPIRVAssembler}
+     *     {@link SPIRVAssembler}
      */
     public void emitBuiltinVariables(SPIRVAssembler asm) {
         SPIRVId ptrV3ulong = asm.primitives.getPtrOpTypePointerWithStorage(SPIRVKind.OP_TYPE_VECTOR3_INT_64, SPIRVStorageClass.Input());

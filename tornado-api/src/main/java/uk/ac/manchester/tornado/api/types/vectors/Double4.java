@@ -39,9 +39,10 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.types;
+package uk.ac.manchester.tornado.api.types.vectors;
 
 import java.nio.DoubleBuffer;
+import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
@@ -51,149 +52,151 @@ import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.utils.DoubleOps;
 
 @Vector
-public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
+public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
 
-    public static final Class<Double3> TYPE = Double3.class;
+    public static final Class<Double4> TYPE = Double4.class;
     /**
      * number of elements in the storage.
      */
-    private static final int NUM_ELEMENTS = 3;
+    private static final int NUM_ELEMENTS = 4;
     /**
      * backing array.
      */
     @Payload
     final double[] storage;
 
-    private Double3(double[] storage) {
+    private Double4(double[] storage) {
         this.storage = storage;
     }
 
-    public Double3() {
+    public Double4() {
         this(new double[NUM_ELEMENTS]);
     }
 
-    public Double3(double x, double y, double z) {
+    public Double4(double x, double y, double z, double w) {
         this();
         setX(x);
         setY(y);
         setZ(z);
+        setW(w);
     }
 
-    public static Double3 loadFromArray(final DoubleArray array, int index) {
-        final Double3 result = new Double3();
+    public static Double4 loadFromArray(final DoubleArray array, int index) {
+        final Double4 result = new Double4();
         result.setX(array.get(index));
         result.setY(array.get(index + 1));
         result.setZ(array.get(index + 2));
+        result.setW(array.get(index + 3));
         return result;
     }
 
     /**
-     * * Operations on Double3 vectors.
+     * * Operations on Double4 vectors.
      */
-    public static Double3 add(Double3 a, Double3 b) {
-        return new Double3(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ());
+
+    /*
+     * vector = op( vector, vector )
+     */
+    public static Double4 add(Double4 a, Double4 b) {
+        return new Double4(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ(), a.getW() + b.getW());
     }
 
-    public static Double3 sub(Double3 a, Double3 b) {
-        return new Double3(a.getX() - b.getX(), a.getY() - b.getY(), a.getZ() - b.getZ());
+    public static Double4 sub(Double4 a, Double4 b) {
+        return new Double4(a.getX() - b.getX(), a.getY() - b.getY(), a.getZ() - b.getZ(), a.getW() - b.getW());
     }
 
-    public static Double3 div(Double3 a, Double3 b) {
-        return new Double3(a.getX() / b.getX(), a.getY() / b.getY(), a.getZ() / b.getZ());
+    public static Double4 div(Double4 a, Double4 b) {
+        return new Double4(a.getX() / b.getX(), a.getY() / b.getY(), a.getZ() / b.getZ(), a.getW() / b.getW());
     }
 
-    public static Double3 mult(Double3 a, Double3 b) {
-        return new Double3(a.getX() * b.getX(), a.getY() * b.getY(), a.getZ() * b.getZ());
+    public static Double4 mult(Double4 a, Double4 b) {
+        return new Double4(a.getX() * b.getX(), a.getY() * b.getY(), a.getZ() * b.getZ(), a.getW() * b.getW());
     }
 
-    public static Double3 min(Double3 a, Double3 b) {
-        return new Double3(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()));
+    public static Double4 min(Double4 a, Double4 b) {
+        return new Double4(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()), Math.min(a.getW(), b.getW()));
     }
 
-    public static Double3 max(Double3 a, Double3 b) {
-        return new Double3(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(a.getZ(), b.getZ()));
-    }
-
-    public static Double3 cross(Double3 a, Double3 b) {
-        return new Double3(a.getY() * b.getZ() - a.getZ() * b.getY(), a.getZ() * b.getX() - a.getX() * b.getZ(), a.getX() * b.getY() - a.getY() * b.getX());
+    public static Double4 max(Double4 a, Double4 b) {
+        return new Double4(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(a.getZ(), b.getZ()), Math.max(a.getW(), b.getW()));
     }
 
     /*
      * vector = op (vector, scalar)
      */
-    public static Double3 add(Double3 a, double b) {
-        return new Double3(a.getX() + b, a.getY() + b, a.getZ() + b);
+    public static Double4 add(Double4 a, double b) {
+        return new Double4(a.getX() + b, a.getY() + b, a.getZ() + b, a.getW() + b);
     }
 
-    public static Double3 sub(Double3 a, double b) {
-        return new Double3(a.getX() - b, a.getY() - b, a.getZ() - b);
+    public static Double4 sub(Double4 a, double b) {
+        return new Double4(a.getX() - b, a.getY() - b, a.getZ() - b, a.getW() - b);
     }
 
-    public static Double3 mult(Double3 a, double b) {
-        return new Double3(a.getX() * b, a.getY() * b, a.getZ() * b);
+    public static Double4 mult(Double4 a, double b) {
+        return new Double4(a.getX() * b, a.getY() * b, a.getZ() * b, a.getW() * b);
     }
 
-    public static Double3 div(Double3 a, double b) {
-        return new Double3(a.getX() / b, a.getY() / b, a.getZ() / b);
+    public static Double4 div(Double4 a, double b) {
+        return new Double4(a.getX() / b, a.getY() / b, a.getZ() / b, a.getW() / b);
     }
 
-    public static Double3 inc(Double3 a, double value) {
-        return new Double3(a.getX() + value, a.getY() + value, a.getZ() + value);
+    public static Double4 inc(Double4 a, double value) {
+        return add(a, value);
     }
 
-    public static Double3 dec(Double3 a, double value) {
-        return new Double3(a.getX() - value, a.getY() - value, a.getZ() - value);
+    public static Double4 dec(Double4 a, double value) {
+        return sub(a, value);
     }
 
-    public static Double3 scaleByInverse(Double3 a, double value) {
+    public static Double4 scaleByInverse(Double4 a, double value) {
         return mult(a, 1f / value);
     }
 
-    public static Double3 scale(Double3 a, double value) {
+    public static Double4 scale(Double4 a, double value) {
         return mult(a, value);
     }
 
     /*
      * vector = op(vector)
      */
-    public static Double3 sqrt(Double3 a) {
-        return new Double3(TornadoMath.sqrt(a.getX()), TornadoMath.sqrt(a.getY()), TornadoMath.sqrt(a.getZ()));
+    public static Double4 sqrt(Double4 a) {
+        return new Double4(TornadoMath.sqrt(a.getX()), TornadoMath.sqrt(a.getY()), TornadoMath.sqrt(a.getZ()), TornadoMath.sqrt(a.getW()));
     }
 
-    public static Double3 floor(Double3 a) {
-        return new Double3(TornadoMath.floor(a.getX()), TornadoMath.floor(a.getY()), TornadoMath.floor(a.getZ()));
+    public static Double4 floor(Double4 a) {
+        return new Double4(TornadoMath.floor(a.getX()), TornadoMath.floor(a.getY()), TornadoMath.floor(a.getZ()), TornadoMath.floor(a.getW()));
     }
 
-    public static Double3 fract(Double3 a) {
-        return new Double3(TornadoMath.fract(a.getX()), TornadoMath.fract(a.getY()), TornadoMath.fract(a.getZ()));
+    public static Double4 fract(Double4 a) {
+        return new Double4(TornadoMath.fract(a.getX()), TornadoMath.fract(a.getY()), TornadoMath.fract(a.getZ()), TornadoMath.fract(a.getW()));
     }
 
     /*
      * misc inplace vector ops
      */
-    public static Double3 clamp(Double3 x, double min, double max) {
-        return new Double3(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max));
+    public static Double4 clamp(Double4 x, double min, double max) {
+        return new Double4(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max), TornadoMath.clamp(x.getW(), min, max));
     }
 
-    public static Double3 normalise(Double3 value) {
-        final double len = 1f / length(value);
-        return mult(value, len);
+    public static void normalise(Double4 value) {
+        final double len = length(value);
+        scaleByInverse(value, len);
     }
 
     /*
      * vector wide operations
      */
-    public static double min(Double3 value) {
-        return Math.min(value.getX(), Math.min(value.getY(), value.getZ()));
+    public static double min(Double4 value) {
+        return Math.min(value.getX(), Math.min(value.getY(), Math.min(value.getZ(), value.getW())));
     }
 
-    public static double max(Double3 value) {
-        return Math.max(value.getX(), Math.max(value.getY(), value.getZ()));
+    public static double max(Double4 value) {
+        return Math.max(value.getX(), Math.max(value.getY(), Math.max(value.getZ(), value.getW())));
     }
 
-    public static double dot(Double3 a, Double3 b) {
-        final Double3 m = mult(a, b);
-        return m.getX() + m.getY() + m.getZ();
+    public static double dot(Double4 a, Double4 b) {
+        final Double4 m = mult(a, b);
+        return m.getX() + m.getY() + m.getZ() + m.getW();
     }
 
     /**
@@ -201,24 +204,12 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
      *
      * @return {@link double}
      */
-    public static double length(Double3 value) {
+    public static double length(Double4 value) {
         return TornadoMath.sqrt(dot(value, value));
     }
 
-    public static boolean isEqual(Double3 a, Double3 b) {
+    public static boolean isEqual(Double4 a, Double4 b) {
         return TornadoMath.isEqual(a.toArray(), b.toArray());
-    }
-
-    public static boolean isEqualULP(Double3 a, Double3 b, double numULP) {
-        return TornadoMath.isEqualULP(a.asBuffer().array(), b.asBuffer().array(), numULP);
-    }
-
-    public static double findULPDistance(Double3 a, Double3 b) {
-        return TornadoMath.findULPDistance(a.asBuffer().array(), b.asBuffer().array());
-    }
-
-    public double[] getArray() {
-        return storage;
     }
 
     public double get(int index) {
@@ -229,10 +220,15 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
         storage[index] = value;
     }
 
-    public void set(Double3 value) {
+    public double[] getArray() {
+        return storage;
+    }
+
+    public void set(Double4 value) {
         setX(value.getX());
         setY(value.getY());
         setZ(value.getZ());
+        setW(value.getW());
     }
 
     public double getX() {
@@ -259,36 +255,32 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
         set(2, value);
     }
 
-    public void setS0(double value) {
-        set(0, value);
+    public double getW() {
+        return get(3);
     }
 
-    public void setS1(double value) {
-        set(1, value);
-    }
-
-    public void setS2(double value) {
-        set(2, value);
+    public void setW(double value) {
+        set(3, value);
     }
 
     /**
      * Duplicates this vector.
      *
-     * @return {@link Double3}
+     * @return {@link Double4}
      */
-    public Double3 duplicate() {
-        final Double3 vector = new Double3();
+    public Double4 duplicate() {
+        final Double4 vector = new Double4();
         vector.set(this);
         return vector;
     }
 
     public String toString(String fmt) {
-        return String.format(fmt, getX(), getY(), getZ());
+        return String.format(fmt, getX(), getY(), getZ(), getW());
     }
 
     @Override
     public String toString() {
-        return toString(DoubleOps.FMT_3);
+        return toString(DoubleOps.FMT_4);
     }
 
     /**
@@ -300,10 +292,23 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
         return new Double2(getX(), getY());
     }
 
+    public Double3 asDouble3() {
+        return new Double3(getX(), getY(), getZ());
+    }
+
+    public Double2 getLow() {
+        return asDouble2();
+    }
+
+    public Double2 getHigh() {
+        return new Double2(getZ(), getW());
+    }
+
     public void storeToArray(final DoubleArray array, int index) {
         array.set(index, getX());
         array.set(index + 1, getY());
         array.set(index + 2, getZ());
+        array.set(index + 3, getW());
     }
 
     @Override
@@ -321,8 +326,11 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
         return NUM_ELEMENTS;
     }
 
+    public void fill(double value) {
+        Arrays.fill(storage, value);
+    }
+
     public double[] toArray() {
         return storage;
     }
-
 }

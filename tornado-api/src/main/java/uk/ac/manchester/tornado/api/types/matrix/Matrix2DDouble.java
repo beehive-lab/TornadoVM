@@ -49,7 +49,7 @@ import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.utils.DoubleOps;
 import uk.ac.manchester.tornado.api.types.utils.StorageFormats;
-import uk.ac.manchester.tornado.api.types.vectors.VectorDouble;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble;
 
 public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<DoubleBuffer> {
     /**

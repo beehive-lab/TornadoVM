@@ -39,19 +39,17 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.types.vectors;
-
-import static uk.ac.manchester.tornado.api.types.Float3.loadFromArray;
+package uk.ac.manchester.tornado.api.types.collections;
 
 import java.nio.FloatBuffer;
 
-import uk.ac.manchester.tornado.api.types.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 
-public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
+public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
 
-    private static final int ELEMENT_SIZE = 3;
+    private static final int ELEMENT_SIZE = 4;
     /**
      * backing array.
      */
@@ -67,9 +65,9 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
      * @param numElements
      *     Number of elements
      * @param array
-     *     array to be copied
+     *     Array to be stored
      */
-    protected VectorFloat3(int numElements, FloatArray array) {
+    protected VectorFloat4(int numElements, FloatArray array) {
         this.numElements = numElements;
         this.storage = array;
     }
@@ -77,7 +75,7 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Creates a vector using the provided backing array.
      */
-    public VectorFloat3(FloatArray array) {
+    public VectorFloat4(FloatArray array) {
         this(array.getSize() / ELEMENT_SIZE, array);
     }
 
@@ -87,7 +85,7 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
      * @param numElements
      *     Number of elements
      */
-    public VectorFloat3(int numElements) {
+    public VectorFloat4(int numElements) {
         this(numElements, new FloatArray(numElements * ELEMENT_SIZE));
     }
 
@@ -104,21 +102,21 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
      *
      * @param index
      *     Position
-     * @return {@link Float3}
+     * @return value
      */
-    public Float3 get(int index) {
-        return loadFromArray(storage, toIndex(index));
+    public Float4 get(int index) {
+        return Float4.loadFromArray(storage, toIndex(index));
     }
 
     /**
      * Sets the float at the given index of this vector.
      *
      * @param index
-     *     Position
+     *     position
      * @param value
-     *     Value to be set
+     *     value to be stored
      */
-    public void set(int index, Float3 value) {
+    public void set(int index, Float4 value) {
         value.storeToArray(storage, toIndex(index));
     }
 
@@ -126,9 +124,9 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
      * Sets the elements of this vector to that of the provided vector.
      *
      * @param values
-     *     set an input array into the internal array
+     *     set a {@link VectorFloat4} into the internal array
      */
-    public void set(VectorFloat3 values) {
+    public void set(VectorFloat4 values) {
         for (int i = 0; i < numElements; i++) {
             set(i, values.get(i));
         }
@@ -141,32 +139,30 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
      *     set an input array into the internal array
      */
     public void set(FloatArray values) {
-        VectorFloat3 vector = new VectorFloat3(values);
+        VectorFloat4 vector = new VectorFloat4(values);
         for (int i = 0; i < numElements; i++) {
             set(i, vector.get(i));
         }
     }
 
     public void fill(float value) {
-        for (int i = 0; i < storage.getSize(); i++) {
-            storage.set(i, value);
-        }
+        storage.init(value);
     }
 
     /**
      * Duplicates this vector.
      *
-     * @return A new vector
+     * @return {@link VectorFloat4}
      */
-    public VectorFloat3 duplicate() {
-        VectorFloat3 vector = new VectorFloat3(numElements);
+    public VectorFloat4 duplicate() {
+        VectorFloat4 vector = new VectorFloat4(numElements);
         vector.set(this);
         return vector;
     }
 
     public String toString() {
         if (this.numElements > ELEMENT_SIZE) {
-            return String.format("VectorFloat3 <%d>", this.numElements);
+            return String.format("VectorFloat4 <%d>", this.numElements);
         }
         StringBuilder tempString = new StringBuilder();
         for (int i = 0; i < numElements; i++) {
@@ -175,26 +171,26 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
         return tempString.toString();
     }
 
-    public Float3 sum() {
-        Float3 result = new Float3();
+    public Float4 sum() {
+        Float4 result = new Float4();
         for (int i = 0; i < numElements; i++) {
-            result = Float3.add(result, get(i));
+            result = Float4.add(result, get(i));
         }
         return result;
     }
 
-    public Float3 min() {
-        Float3 result = new Float3();
+    public Float4 min() {
+        Float4 result = new Float4();
         for (int i = 0; i < numElements; i++) {
-            result = Float3.min(result, get(i));
+            result = Float4.min(result, get(i));
         }
         return result;
     }
 
-    public Float3 max() {
-        Float3 result = new Float3();
+    public Float4 max() {
+        Float4 result = new Float4();
         for (int i = 0; i < numElements; i++) {
-            result = Float3.max(result, get(i));
+            result = Float4.max(result, get(i));
         }
         return result;
     }

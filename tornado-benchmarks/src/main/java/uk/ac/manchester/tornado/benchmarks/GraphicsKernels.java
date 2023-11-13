@@ -17,20 +17,20 @@
  */
 package uk.ac.manchester.tornado.benchmarks;
 
-import static uk.ac.manchester.tornado.api.types.Float4.add;
+import static uk.ac.manchester.tornado.api.types.vectors.Float4.add;
 import static uk.ac.manchester.tornado.api.math.TornadoMath.rotate;
 
 import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.Float3;
-import uk.ac.manchester.tornado.api.types.Float4;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat4;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
-import uk.ac.manchester.tornado.api.types.vectors.VectorFloat3;
-import uk.ac.manchester.tornado.api.types.vectors.VectorFloat4;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 public final class GraphicsKernels {

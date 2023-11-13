@@ -39,7 +39,7 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.types;
+package uk.ac.manchester.tornado.api.types.vectors;
 
 import java.nio.ShortBuffer;
 
