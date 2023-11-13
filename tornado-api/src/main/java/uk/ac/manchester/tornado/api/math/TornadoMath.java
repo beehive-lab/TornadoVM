@@ -43,18 +43,18 @@ package uk.ac.manchester.tornado.api.math;
 
 import static java.lang.Float.floatToIntBits;
 import static java.lang.Integer.toBinaryString;
-import static uk.ac.manchester.tornado.api.collections.types.DoubleOps.compareBits;
-import static uk.ac.manchester.tornado.api.collections.types.DoubleOps.compareULP;
-import static uk.ac.manchester.tornado.api.collections.types.Float3.dot;
-import static uk.ac.manchester.tornado.api.collections.types.FloatOps.compare;
+import static uk.ac.manchester.tornado.api.types.Float3.dot;
+import static uk.ac.manchester.tornado.api.types.utils.DoubleOps.compareBits;
+import static uk.ac.manchester.tornado.api.types.utils.DoubleOps.compareULP;
+import static uk.ac.manchester.tornado.api.types.utils.FloatOps.compare;
 
-import uk.ac.manchester.tornado.api.collections.types.DoubleOps;
-import uk.ac.manchester.tornado.api.collections.types.Float3;
-import uk.ac.manchester.tornado.api.collections.types.FloatOps;
-import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.types.Float3;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.types.utils.DoubleOps;
+import uk.ac.manchester.tornado.api.types.utils.FloatOps;
 
 public class TornadoMath {
 

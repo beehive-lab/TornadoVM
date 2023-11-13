@@ -20,8 +20,8 @@ package uk.ac.manchester.tornado.matrix;
 
 import org.ejml.simple.SimpleMatrix;
 
-import uk.ac.manchester.tornado.api.collections.types.Matrix2DDouble;
-import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DDouble;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
 
 public class EjmlUtil {
 

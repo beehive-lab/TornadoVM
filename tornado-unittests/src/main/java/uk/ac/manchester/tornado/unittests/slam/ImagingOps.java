@@ -42,15 +42,15 @@
 package uk.ac.manchester.tornado.unittests.slam;
 
 import static java.lang.Math.abs;
-import static uk.ac.manchester.tornado.api.collections.types.FloatOps.sq;
 import static uk.ac.manchester.tornado.api.math.TornadoMath.clamp;
 import static uk.ac.manchester.tornado.api.math.TornadoMath.exp;
+import static uk.ac.manchester.tornado.api.types.utils.FloatOps.sq;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.types.Byte3;
-import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.api.types.Byte3;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.images.ImageByte3;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat;
 
 public class ImagingOps {
 

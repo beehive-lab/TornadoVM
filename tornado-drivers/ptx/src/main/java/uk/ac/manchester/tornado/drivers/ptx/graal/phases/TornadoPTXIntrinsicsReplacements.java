@@ -174,7 +174,6 @@ public class TornadoPTXIntrinsicsReplacements extends BasePhase<TornadoHighTierC
     }
 
     private JavaKind getJavaKindFromConstantNode(ConstantNode signatureNode) {
-        JavaKind kind = null;
         switch (signatureNode.getValue().toValueString()) {
             case "Class:int":
             case "Class:uk.ac.manchester.tornado.api.types.arrays.IntArray":

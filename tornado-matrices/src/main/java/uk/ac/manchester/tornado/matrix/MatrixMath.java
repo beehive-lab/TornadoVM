@@ -19,14 +19,14 @@
 package uk.ac.manchester.tornado.matrix;
 
 import static java.lang.Math.abs;
-import static uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat.scale;
-import static uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat.transpose;
+import static uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat.scale;
+import static uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat.transpose;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.types.Matrix2DDouble;
-import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
-import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DDouble;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.types.vectors.VectorFloat;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 public final class MatrixMath {
