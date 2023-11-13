@@ -34,6 +34,7 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.Byte3;
 import uk.ac.manchester.tornado.api.types.Byte4;
 import uk.ac.manchester.tornado.api.types.Double2;
@@ -240,42 +241,23 @@ public enum SPIRVKind implements PlatformKind {
     }
 
     public static SPIRVKind getKindFromStringClassVector(String vectorType) {
-        switch (vectorType) {
-            case "Float2":
-                return SPIRVKind.OP_TYPE_VECTOR2_FLOAT_32;
-            case "Float3":
-                return SPIRVKind.OP_TYPE_VECTOR3_FLOAT_32;
-            case "Float4":
-                return SPIRVKind.OP_TYPE_VECTOR4_FLOAT_32;
-            case "Int2":
-                return SPIRVKind.OP_TYPE_VECTOR2_INT_32;
-            case "Int3":
-                return SPIRVKind.OP_TYPE_VECTOR3_INT_32;
-            case "Int4":
-                return SPIRVKind.OP_TYPE_VECTOR4_INT_32;
-            case "Int8":
-                return SPIRVKind.OP_TYPE_VECTOR8_INT_32;
-            case "Double2":
-                return SPIRVKind.OP_TYPE_VECTOR2_FLOAT_64;
-            case "Double3":
-                return SPIRVKind.OP_TYPE_VECTOR3_FLOAT_64;
-            case "Double4":
-                return SPIRVKind.OP_TYPE_VECTOR4_FLOAT_64;
-            case "Double8":
-                return SPIRVKind.OP_TYPE_VECTOR8_FLOAT_64;
-            case "Short2":
-                return SPIRVKind.OP_TYPE_VECTOR2_INT_16;
-            case "Short3":
-                return SPIRVKind.OP_TYPE_VECTOR3_INT_16;
-            case "VectorFloat2":
-            case "VectorFloat3":
-            case "VectorFloat4":
-            case "VectorFloat8":
-            case "VectorFloat":
-                return SPIRVKind.OP_TYPE_INT_64;
-            default:
-                throw new RuntimeException("Vector type not supported: " + vectorType);
-        }
+        return switch (vectorType) {
+            case "Float2" -> SPIRVKind.OP_TYPE_VECTOR2_FLOAT_32;
+            case "Float3" -> SPIRVKind.OP_TYPE_VECTOR3_FLOAT_32;
+            case "Float4" -> SPIRVKind.OP_TYPE_VECTOR4_FLOAT_32;
+            case "Int2" -> SPIRVKind.OP_TYPE_VECTOR2_INT_32;
+            case "Int3" -> SPIRVKind.OP_TYPE_VECTOR3_INT_32;
+            case "Int4" -> SPIRVKind.OP_TYPE_VECTOR4_INT_32;
+            case "Int8" -> SPIRVKind.OP_TYPE_VECTOR8_INT_32;
+            case "Double2" -> SPIRVKind.OP_TYPE_VECTOR2_FLOAT_64;
+            case "Double3" -> SPIRVKind.OP_TYPE_VECTOR3_FLOAT_64;
+            case "Double4" -> SPIRVKind.OP_TYPE_VECTOR4_FLOAT_64;
+            case "Double8" -> SPIRVKind.OP_TYPE_VECTOR8_FLOAT_64;
+            case "Short2" -> SPIRVKind.OP_TYPE_VECTOR2_INT_16;
+            case "Short3" -> SPIRVKind.OP_TYPE_VECTOR3_INT_16;
+            case "VectorFloat2", "VectorFloat3", "VectorFloat4", "VectorFloat8", "VectorFloat" -> SPIRVKind.OP_TYPE_INT_64;
+            default -> throw new TornadoRuntimeException("Vector type not supported: " + vectorType);
+        };
     }
 
     @Override
