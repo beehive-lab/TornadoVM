@@ -2,29 +2,19 @@ Transitioning from v0.15 to v0.16
 ==================================
 Starting from v0.16, TornadoVM is providing its custom off-heap data types. Below is a list of the new types, with an arrow pointing to their on-heap primitive array equivalent.
 
-* IntArray -> int[]
-* FloatArray -> float[]
-* DoubleArray -> double[]
-* LongArray -> long[]
-* CharArray -> char[]
-* ShortArray -> short[]
-* ByteArray -> byte[]
+* ``IntArray`` -> ``int[]``
+* ``FloatArray`` -> ``float[]``
+* ``DoubleArray`` -> ``double[]``
+* ``LongArray`` -> ``long[]``
+* ``CharArray`` -> ``char[]``
+* ``ShortArray`` -> ``short[]``
+* ``ByteArray`` -> ``byte[]``
 
 The existing Matrix and Vector collection types that TornadoVM offers (e.g., ``VectorFloat``, ``Matrix2DDouble``, etc.)  have been refactored to use internally these off-heap data types instead of primitive arrays.
 
 1. Off-heap types API
 -------------------------
-The new off-heap types encapsulate a `Memory Segment <https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/foreign/MemorySegment.html>`_. The main methods that are exposed to manage the Memory Segment of each type are the following (in each signature, ``X`` is the equivalent primitive type, e.g., for the methods of the IntArray class, ``X`` is ``int``):
-
-* ``public void set(int index, X value) // sets a value at a specific index``
-* ``public X get(int index) // returns the value of a specific index``
-* ``public void clear() // sets the values of the segment to 0``
-* ``public void init() // initializes the segment with a specific value``
-* ``public int getSize() // returns the number of elements in the segment``
-
-**NOTE:** The methods ``init()`` and ``clear()`` are essential because, contrary to their counterpart primitive arrays which are initialized by default with 0, the new types contain garbage values when first created.
-
-Furthermore, each type offers two contructors. In the first, the only argument is the number of elements that the Memory Segment will contain. In the second, a set of values can be passed for direct initialization of the segment.
+The new off-heap types encapsulate a `Memory Segment <https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/foreign/MemorySegment.html>`_, a contiguous region of memory outside the Java heap. To allocate off-heap memory, each type offers two constructors. The first has only one argument, the number of elements that the Memory Segment will contain. Through the second constructor, the values of a primitive array can be provided for the initialization of the segment.
 
 E.g.:
 
@@ -34,7 +24,37 @@ E.g.:
    IntArray intArray = new IntArray(16);
 
    // allocate an off-heap memory segment that is initialized with the four float values in the constructor
-   FloatArray floatArray = new FloatArray(0.0f, 0.1f, 0.2.f, 0.3f);
+   FloatArray floatArray = new FloatArray(new float[] {0.0f, 0.1f, 0.2.f, 0.3f});
+
+The main methods that the off-heap types expose to manage the Memory Segment of each type are presented in the list below. In each signature, ``X`` is the equivalent primitive type, e.g., for the methods of the ``IntArray`` class, ``X`` is ``int``.
+
+.. code:: java
+
+   * public void set(int index, X value) // sets a value at a specific index
+      E.g.:
+          FloatArray floatArray = new FloatArray(16);
+          floatArray.set(0, 10.0f); // at index 0 the value is 10.0f
+   * public X get(int index) // returns the value of a specific index
+      E.g.:
+          DoubleArray doubleArray = new DoubleArray(new double[] {2.4, 1.4, 2.5, 5.1});
+          double doubleValue = doubleArray.get(3); // returns 5.1
+   * public void clear() // sets the values of the segment to 0
+      E.g.:
+          IntArray intArray = new IntArray(1024);
+          intArray.clear(); // the intArray contains 1024 zeros
+   * public void init(X value) // initializes the segment with a specific value
+      E.g.:
+   	  IntArray intArray = new IntArray(1024);
+          intArray.init(1); // // the intArray contains 1024 ones
+   * public int getSize() // returns the number of elements in the segment
+      E.g.:
+          FloatArray floatArray = new FloatArray(16);
+          int size = floatArray.getSize(); // returns 16
+   * public static XArray fromElements(X... values); // creates a new instance of the type and initializes it with a set of values
+      E.g.:
+          IntArray intArray = IntArray.fromElements(1,2,3,4,5,6,7,8);  // new IntArray initialized with the values in the parameter list
+
+**NOTE:** The methods ``init()`` and ``clear()`` are essential because, contrary to their counterpart primitive arrays which are initialized by default with 0, the new types contain garbage values when first created.
 
 2. Example: Transforming an existing TornadoVM program
 -------------------------------------------------------
