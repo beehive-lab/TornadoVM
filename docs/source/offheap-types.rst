@@ -1,14 +1,14 @@
 Transitioning from v0.15 to v0.16
 ==================================
-Starting from v0.16, TornadoVM is providing its custom off-heap data types. Below is a list of the new types, with an arrow pointing to their on-heap primitive array equivalent.
+Starting from v0.16, TornadoVM is providing its custom off-heap data types. Below is a list of the new types, with an arrow pointing from the on-heap primitive array types to their off-heap equivalent.
 
-* ``IntArray`` -> ``int[]``
-* ``FloatArray`` -> ``float[]``
-* ``DoubleArray`` -> ``double[]``
-* ``LongArray`` -> ``long[]``
-* ``CharArray`` -> ``char[]``
-* ``ShortArray`` -> ``short[]``
-* ``ByteArray`` -> ``byte[]``
+* ``int[]`` -> ``IntArray``
+* ``float[]`` -> ``FloatArray``
+* ``double[]`` -> ``DoubleArray``
+* ``long[]`` -> ``LongArray``
+* ``char[]`` -> ``CharArray``
+* ``short[]`` -> ``ShortArray``
+* ``byte[]`` -> ``ByteArray``
 
 The existing Matrix and Vector collection types that TornadoVM offers (e.g., ``VectorFloat``, ``Matrix2DDouble``, etc.)  have been refactored to use internally these off-heap data types instead of primitive arrays.
 
