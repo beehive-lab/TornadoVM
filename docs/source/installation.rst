@@ -310,6 +310,7 @@ JDKs. Below are listed the Java 21 JDK distributions against which TornadoVM has
   ./bin/tornadovm-installer --listJDKs
   jdk21            : Install TornadoVM with OpenJDK 21 (Oracle OpenJDK)
   graalvm-jdk-21   : Install TornadoVM with GraalVM and JDK 21 (GraalVM 23.1.0)
+  mandrel-jdk-21   : Install TornadoVM with Mandrel and JDK 21 (GraalVM 23.1.0)
   corretto-jdk-21  : Install TornadoVM with Corretto JDK 21
   zulu-jdk-jdk-21  : Install TornadoVM with Azul Zulu JDK 21
 
@@ -681,7 +682,7 @@ directory, and build TornadoVM as follows:
 
    cd D:/MyProjects/TornadoVM
    source etc/sources.env
-   make graalvm-jdk-21 BACKEND=ptx,opencl
+   make graal-jdk-21 BACKEND=ptx,opencl
 
 The ``BACKEND`` parameter has to be a comma-separated list of ``ptx`` and ``opencl`` options. You may build ``ptx`` only when NVIDIA GPU
 Computing Toolkit (CUDA) is installed.

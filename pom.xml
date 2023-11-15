@@ -292,7 +292,7 @@
         </profile>
 
         <profile>
-            <id>jdk-17-plus</id>
+            <id>jdk21</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
@@ -1084,7 +1084,7 @@
         </profile>
 
         <profile>
-            <id>graal-jdk-17-plus</id>
+            <id>graal-jdk-21</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>

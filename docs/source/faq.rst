@@ -27,7 +27,7 @@ List of compatible JDKs
 TornadoVM can be currently executed with the following configurations:
 
 -  TornadoVM with GraalVM (JDK 21): see the installation guide: :ref:`installation_graalvm`.
--  TornadoVM with JDK21 (e.g. OpenJDK 21, Amazon Corretto 21, Azul Zulu JDK 21): see the installation guide: :ref:`installation_jdk17plus`.
+-  TornadoVM with JDK21 (e.g. OpenJDK 21, Red Hat Mandrel 21, Amazon Corretto 21, Azul Zulu JDK 21): see the installation guide: :ref:`installation_jdk17plus`.
 
 Windows
 ~~~~~~~~~~

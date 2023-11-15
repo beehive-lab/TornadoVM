@@ -32,16 +32,11 @@ else:
 __LINUX__ = "linux"
 __APPLE__ = "darwin"
 
-__JDK17__ = "jdk17"
 __JDK21__ = "jdk21"
-__GRAALVM17__ = "graalvm-jdk-17"
 __GRAALVM21__ = "graalvm-jdk-21"
 __MANDREL21__ = "mandrel-jdk-21"
-__CORRETTO17__ = "corretto-jdk-17"
 __CORRETTO21__ = "corretto-jdk-21"
-__MICROSOFT17__ = "microsoft-jdk-17"
 __MICROSOFT20__ = "microsoft-jdk-20"
-__ZULU17__ = "zulu-jdk-17"
 __ZULU21__ = "zulu-jdk-21"
 
 ## cmake
@@ -70,16 +65,6 @@ MAVEN = {
 
 ## JDK
 JDK = {
-    __JDK17__: {
-        __LINUX__: {
-            __X86_64__: "https://download.oracle.com/java/17/latest/jdk-17_linux-x64_bin.tar.gz",
-            __ARM__: "https://download.oracle.com/java/17/latest/jdk-17_linux-aarch64_bin.tar.gz",
-        },
-        __APPLE__: {
-            __X86_64__: "https://download.oracle.com/java/17/latest/jdk-17_macos-x64_bin.tar.gz",
-            __ARM__: "https://download.oracle.com/java/17/latest/jdk-17_macos-aarch64_bin.tar.gz",
-        },
-    },
     __JDK21__: {
         __LINUX__: {
             __X86_64__: "https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.tar.gz",
@@ -90,34 +75,14 @@ JDK = {
             __ARM__: "https://download.oracle.com/java/21/latest/jdk-21_macos-aarch64_bin.tar.gz",
         },
     },
-    __GRAALVM17__: {
-        __LINUX__: {
-            __X86_64__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.8/graalvm-community-jdk-17.0.8_linux-x64_bin.tar.gz",
-            __ARM__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.8/graalvm-community-jdk-17.0.8_linux-aarch64_bin.tar.gz",
-        },
-        __APPLE__: {
-            __X86_64__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.8/graalvm-community-jdk-17.0.8_macos-x64_bin.tar.gz",
-            __ARM__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.8/graalvm-community-jdk-17.0.8_macos-aarch64_bin.tar.gz",
-        },
-    },
     __GRAALVM21__: {
         __LINUX__: {
-            __X86_64__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.0/graalvm-community-jdk-21.0.0_linux-x64_bin.tar.gz",
-            __ARM__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.0/graalvm-community-jdk-21.0.0_linux-aarch64_bin.tar.gz",
+            __X86_64__: "https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-21.0.1/graalvm-community-jdk-21.0.1_linux-x64_bin.tar.gz",
+            __ARM__: "https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-21.0.1/graalvm-community-jdk-21.0.1_linux-aarch64_bin.tar.gz",
         },
         __APPLE__: {
-            __X86_64__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.0/graalvm-community-jdk-21.0.0_macos-x64_bin.tar.gz",
-            __ARM__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.0/graalvm-community-jdk-21.0.0_macos-aarch64_bin.tar.gz",
-        },
-    },
-    __CORRETTO17__: {
-        __LINUX__: {
-            __X86_64__: "https://corretto.aws/downloads/latest/amazon-corretto-17-x64-linux-jdk.tar.gz",
-            __ARM__: "https://corretto.aws/downloads/latest/amazon-corretto-17-aarch64-linux-jdk.tar.gz",
-        },
-        __APPLE__: {
-            __X86_64__: "https://corretto.aws/downloads/latest/amazon-corretto-17-x64-macos-jdk.tar.gz",
-            __ARM__: "https://corretto.aws/downloads/latest/amazon-corretto-17-aarch64-macos-jdk.tar.gz",
+            __X86_64__: "https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-21.0.1/graalvm-community-jdk-21.0.1_macos-x64_bin.tar.gz",
+            __ARM__: "https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-21.0.1/graalvm-community-jdk-21.0.1_macos-aarch64_bin.tar.gz",
         },
     },
     __CORRETTO21__: {
@@ -139,16 +104,6 @@ JDK = {
             __ARM__: None,
         },
     },
-    __MICROSOFT17__: {
-        __LINUX__: {
-            __X86_64__: "https://aka.ms/download-jdk/microsoft-jdk-17.0.8.1-linux-x64.tar.gz",
-            __ARM__: "https://aka.ms/download-jdk/microsoft-jdk-17.0.8.1-linux-aarch64.tar.gz",
-        },
-        __APPLE__: {
-            __X86_64__: "https://aka.ms/download-jdk/microsoft-jdk-17.0.8.1-macOS-x64.tar.gz",
-            __ARM__: "https://aka.ms/download-jdk/microsoft-jdk-17.0.8.1-macOS-aarch64.tar.gz",
-        },
-    },
     __MICROSOFT20__: {
         __LINUX__: {
             __X86_64__: None,
@@ -157,16 +112,6 @@ JDK = {
         __APPLE__: {
             __X86_64__: None,
             __ARM__: None,
-        },
-    },
-    __ZULU17__: {
-        __LINUX__: {
-            __X86_64__: "https://cdn.azul.com/zulu/bin/zulu17.34.19-ca-jdk17.0.3-linux_x64.tar.gz",
-            __ARM__: "https://cdn.azul.com/zulu/bin/zulu17.40.19-ca-jdk17.0.6-linux_aarch64.tar.gz",
-        },
-        __APPLE__: {
-            __X86_64__: "https://cdn.azul.com/zulu/bin/zulu17.34.19-ca-jdk17.0.3-macosx_x64.tar.gz",
-            __ARM__: "https://cdn.azul.com/zulu/bin/zulu17.34.19-ca-jdk17.0.3-macosx_aarch64.tar.gz",
         },
     },
     __ZULU21__: {
