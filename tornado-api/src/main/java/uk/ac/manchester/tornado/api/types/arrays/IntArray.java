@@ -69,11 +69,28 @@ public class IntArray extends TornadoNativeArray {
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
-    public IntArray(int... values) {
-        this(values.length);
+    private static IntArray createSegment(int[] values) {
+        IntArray array = new IntArray(values.length);
         for (int i = 0; i < values.length; i++) {
-            set(i, values[i]);
+            array.set(i, values[i]);
         }
+        return array;
+    }
+
+    public static IntArray fromArray(int[] values) {
+        return createSegment(values);
+    }
+
+    public static IntArray fromElements(int... values) {
+        return createSegment(values);
+    }
+
+    public int[] toHeapArray() {
+        int[] outputArray = new int[getSize()];
+        for (int i = 0; i < getSize(); i++) {
+            outputArray[i] = get(i);
+        }
+        return outputArray;
     }
 
     public void set(int index, int value) {

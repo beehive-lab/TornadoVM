@@ -70,11 +70,28 @@ public class LongArray extends TornadoNativeArray {
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
-    public LongArray(long... values) {
-        this(values.length);
+    private static LongArray createSegment(long[] values) {
+        LongArray array = new LongArray(values.length);
         for (int i = 0; i < values.length; i++) {
-            set(i, values[i]);
+            array.set(i, values[i]);
         }
+        return array;
+    }
+
+    public static LongArray fromArray(long[] values) {
+        return createSegment(values);
+    }
+
+    public static LongArray fromElements(long... values) {
+        return createSegment(values);
+    }
+
+    public long[] toHeapArray() {
+        long[] outputArray = new long[getSize()];
+        for (int i = 0; i < getSize(); i++) {
+            outputArray[i] = get(i);
+        }
+        return outputArray;
     }
 
     public void set(int index, long value) {

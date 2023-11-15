@@ -72,11 +72,28 @@ public class ByteArray extends TornadoNativeArray {
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
-    public ByteArray(byte... values) {
-        this(values.length);
+    private static ByteArray createSegment(byte[] values) {
+        ByteArray array = new ByteArray(values.length);
         for (int i = 0; i < values.length; i++) {
-            set(i, values[i]);
+            array.set(i, values[i]);
         }
+        return array;
+    }
+
+    public static ByteArray fromArray(byte[] values) {
+        return createSegment(values);
+    }
+
+    public static ByteArray fromElements(byte... values) {
+        return createSegment(values);
+    }
+
+    public byte[] toHeapArray() {
+        byte[] outputArray = new byte[getSize()];
+        for (int i = 0; i < getSize(); i++) {
+            outputArray[i] = get(i);
+        }
+        return outputArray;
     }
 
     public void set(int index, byte value) {

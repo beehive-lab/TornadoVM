@@ -27,8 +27,8 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
  * <p>
@@ -50,7 +50,7 @@ public class ReductionIrregular {
     private void run(final int inputSize) {
 
         FloatArray input = new FloatArray(inputSize);
-        FloatArray result = new FloatArray(0.0f);
+        FloatArray result = FloatArray.fromElements(0.0f);
         Random r = new Random(101);
 
         TaskGraph taskGraph = new TaskGraph("s0") //

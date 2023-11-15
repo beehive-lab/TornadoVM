@@ -27,9 +27,9 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -98,7 +98,7 @@ public class Inlining extends TornadoTestBase {
         ByteArray elements = new ByteArray(1);
         elements.init((byte) 4);
         ByteArray result = new ByteArray(4);
-        ByteArray input = new ByteArray((byte) 127, (byte) 127, (byte) 127, (byte) 127, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
+        ByteArray input = ByteArray.fromElements((byte) 127, (byte) 127, (byte) 127, (byte) 127, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements) //
