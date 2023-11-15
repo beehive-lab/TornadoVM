@@ -682,7 +682,7 @@ directory, and build TornadoVM as follows:
 
    cd D:/MyProjects/TornadoVM
    source etc/sources.env
-   make graalvm-jdk-21 BACKEND=ptx,opencl
+   make graal-jdk-21 BACKEND=ptx,opencl
 
 The ``BACKEND`` parameter has to be a comma-separated list of ``ptx`` and ``opencl`` options. You may build ``ptx`` only when NVIDIA GPU
 Computing Toolkit (CUDA) is installed.
