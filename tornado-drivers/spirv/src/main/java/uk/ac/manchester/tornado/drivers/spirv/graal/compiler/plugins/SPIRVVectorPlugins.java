@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,13 +45,13 @@ import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
-import uk.ac.manchester.tornado.api.type.annotations.Vector;
+import uk.ac.manchester.tornado.api.internal.annotations.Vector;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.GetArrayNode;
@@ -287,8 +287,7 @@ public class SPIRVVectorPlugins {
      */
     public static void registerParameterPlugins(Plugins plugins) {
         plugins.appendParameterPlugin((GraphBuilderTool tool, int index, StampPair stampPair) -> {
-            if (stampPair.getTrustedStamp() instanceof ObjectStamp) {
-                ObjectStamp objectStamp = (ObjectStamp) stampPair.getTrustedStamp();
+            if (stampPair.getTrustedStamp() instanceof ObjectStamp objectStamp) {
                 if (objectStamp.type().getAnnotation(Vector.class) != null) {
                     SPIRVKind kind = SPIRVKind.fromResolvedJavaTypeToVectorKind(objectStamp.type());
                     return new ParameterNode(index, StampPair.createSingle(SPIRVStampFactory.getStampFor(kind)));

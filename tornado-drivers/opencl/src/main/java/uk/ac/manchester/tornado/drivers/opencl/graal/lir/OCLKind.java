@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -33,13 +33,29 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import uk.ac.manchester.tornado.api.type.annotations.Vector;
+import uk.ac.manchester.tornado.api.internal.annotations.Vector;
+import uk.ac.manchester.tornado.api.types.vectors.Byte3;
+import uk.ac.manchester.tornado.api.types.vectors.Byte4;
+import uk.ac.manchester.tornado.api.types.vectors.Double2;
+import uk.ac.manchester.tornado.api.types.vectors.Double3;
+import uk.ac.manchester.tornado.api.types.vectors.Double4;
+import uk.ac.manchester.tornado.api.types.vectors.Double8;
+import uk.ac.manchester.tornado.api.types.vectors.Float2;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
+import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.vectors.Int2;
+import uk.ac.manchester.tornado.api.types.vectors.Int3;
+import uk.ac.manchester.tornado.api.types.vectors.Int4;
+import uk.ac.manchester.tornado.api.types.vectors.Int8;
+import uk.ac.manchester.tornado.api.types.vectors.Short2;
+import uk.ac.manchester.tornado.api.types.vectors.Short3;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 
 public enum OCLKind implements PlatformKind {
 
     // @formatter:off
-    ATOMIC_ADD_INT(4, java.lang.Integer.TYPE),  
+    ATOMIC_ADD_INT(4, java.lang.Integer.TYPE),
     ATOMIC_ADD_FLOAT(4, java.lang.Float.TYPE),
     ATOMIC_SUB_INT(4, java.lang.Integer.TYPE),
     ATOMIC_MUL_INT(4, java.lang.Integer.TYPE),
@@ -58,44 +74,44 @@ public enum OCLKind implements PlatformKind {
     DOUBLE(8, java.lang.Double.TYPE),
     CHAR2(2, null, CHAR),
     UCHAR2(2, null, UCHAR),
-    SHORT2(2, uk.ac.manchester.tornado.api.collections.types.Short2.TYPE, SHORT),
+    SHORT2(2, Short2.TYPE, SHORT),
     USHORT2(2, null, USHORT),
-    INT2(2, uk.ac.manchester.tornado.api.collections.types.Int2.TYPE, INT),
+    INT2(2, Int2.TYPE, INT),
     UINT2(2, null, UINT),
     LONG2(2, null, LONG),
     ULONG2(2, null, ULONG),
-    FLOAT2(2, uk.ac.manchester.tornado.api.collections.types.Float2.TYPE, FLOAT),
-    DOUBLE2(2, uk.ac.manchester.tornado.api.collections.types.Double2.TYPE, DOUBLE),
-    CHAR3(3, uk.ac.manchester.tornado.api.collections.types.Byte3.TYPE, CHAR),
+    FLOAT2(2, Float2.TYPE, FLOAT),
+    DOUBLE2(2, Double2.TYPE, DOUBLE),
+    CHAR3(3, Byte3.TYPE, CHAR),
     UCHAR3(3, null, UCHAR),
-    SHORT3(3, uk.ac.manchester.tornado.api.collections.types.Short3.TYPE, SHORT),
+    SHORT3(3, Short3.TYPE, SHORT),
     USHORT3(3, null, USHORT),
-    INT3(3, uk.ac.manchester.tornado.api.collections.types.Int3.TYPE, INT),
+    INT3(3, Int3.TYPE, INT),
     UINT3(3, null, UINT),
     LONG3(3, null, LONG),
     ULONG3(3, null, ULONG),
-    FLOAT3(3, uk.ac.manchester.tornado.api.collections.types.Float3.TYPE, FLOAT),
-    DOUBLE3(3, uk.ac.manchester.tornado.api.collections.types.Double3.TYPE, DOUBLE),
-    CHAR4(4, uk.ac.manchester.tornado.api.collections.types.Byte4.TYPE, CHAR),
+    FLOAT3(3, Float3.TYPE, FLOAT),
+    DOUBLE3(3, Double3.TYPE, DOUBLE),
+    CHAR4(4, Byte4.TYPE, CHAR),
     UCHAR4(4, null, UCHAR),
     SHORT4(4, null, SHORT),
     USHORT4(4, null, USHORT),
-    INT4(4, uk.ac.manchester.tornado.api.collections.types.Int4.TYPE, INT),
+    INT4(4, Int4.TYPE, INT),
     UINT4(4, null, UINT),
     LONG4(4, null, LONG),
     ULONG4(4, null, ULONG),
-    FLOAT4(4, uk.ac.manchester.tornado.api.collections.types.Float4.TYPE, FLOAT),
-    DOUBLE4(4, uk.ac.manchester.tornado.api.collections.types.Double4.TYPE, DOUBLE),
+    FLOAT4(4, Float4.TYPE, FLOAT),
+    DOUBLE4(4, Double4.TYPE, DOUBLE),
     CHAR8(8, null, CHAR),
     UCHAR8(8, null, UCHAR),
     SHORT8(8, null, SHORT),
     USHORT8(8, null, USHORT),
-    INT8(8, uk.ac.manchester.tornado.api.collections.types.Int8.TYPE, INT),
+    INT8(8, Int8.TYPE, INT),
     UINT8(8, null, UINT),
     LONG8(8, null, LONG),
     ULONG8(8, null, ULONG),
-    FLOAT8(8, uk.ac.manchester.tornado.api.collections.types.Float8.TYPE, FLOAT),
-    DOUBLE8(8, uk.ac.manchester.tornado.api.collections.types.Double8.TYPE, DOUBLE),        
+    FLOAT8(8, Float8.TYPE, FLOAT),
+    DOUBLE8(8, Double8.TYPE, DOUBLE),
     CHAR16(16, null, CHAR),
     UCHAR16(16, null, UCHAR),
     SHORT16(16, null, SHORT),
@@ -107,7 +123,7 @@ public enum OCLKind implements PlatformKind {
     FLOAT16(16, null, FLOAT),
     DOUBLE16(16, null, DOUBLE),
     ILLEGAL(0, null),
-    
+
     INTEGER_ATOMIC_JAVA(4, java.util.concurrent.atomic.AtomicInteger.class);
     // @formatter:on
 

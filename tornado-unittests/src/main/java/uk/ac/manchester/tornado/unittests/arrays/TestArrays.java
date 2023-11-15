@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,14 +30,14 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.data.nativetypes.ByteArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.CharArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.FloatArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.LongArray;
-import uk.ac.manchester.tornado.api.data.nativetypes.ShortArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
+import uk.ac.manchester.tornado.api.types.arrays.CharArray;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -45,7 +45,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  *
  * <p>
  * <code>
- *     tornado-test -V --fast uk.ac.manchester.tornado.unittests.arrays.TestArrays
+ * tornado-test -V --fast uk.ac.manchester.tornado.unittests.arrays.TestArrays
  * </code>
  * </p>
  */
@@ -132,9 +132,7 @@ public class TestArrays extends TornadoTestBase {
 
         IntArray data = new IntArray(N);
 
-        IntStream.range(0, N).parallel().forEach(idx -> {
-            data.set(idx, idx);
-        });
+        IntStream.range(0, N).parallel().forEach(idx -> data.set(idx, idx));
 
         TaskGraph taskGraph = new TaskGraph("s0");
         assertNotNull(taskGraph);
@@ -441,14 +439,14 @@ public class TestArrays extends TornadoTestBase {
      *
      *
      * @see <a href=
-     *      "http://computer-graphics.se/hello-world-for-cuda.html">http://computer-graphics.se/hello-world-for-cuda.html
-     *      </a>
+     *     "http://computer-graphics.se/hello-world-for-cuda.html">http://computer-graphics.se/hello-world-for-cuda.html
+     *     </a>
      *
-     *      How to run?
+     *     How to run?
      *
-     *      <code>
-     *      $ tornado-test -V --fast --debug --threadInfo uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorCharsMessage
-     *      </code>
+     *     <code>
+     *     $ tornado-test -V --fast --debug --threadInfo uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorCharsMessage
+     *     </code>
      */
     @Test
     public void testVectorCharsMessage() {

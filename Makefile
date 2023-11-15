@@ -32,7 +32,7 @@ xilinx_emulation:
 checkstyle:
 	mvn checkstyle:check
 
-clean: 
+clean:
 	mvn -Popencl-backend,ptx-backend clean
 
 example:
@@ -47,13 +47,12 @@ tests:
 
 tests-opt:
 	tornado --devices
-	tornado-test -V --fast --ea --verbose -J"-Dtornado.spirv.loadstore=True" --printKernel  
+	tornado-test -V --fast --ea --verbose -J"-Dtornado.spirv.loadstore=True" --printKernel
 
 test-slam:
-	tornado-test -V --fast uk.ac.manchester.tornado.unittests.slam.graphics.GraphicsTests 
+	tornado-test -V --fast uk.ac.manchester.tornado.unittests.slam.GraphicsTests
 
 docs:
 	cd docs && make html
 
 .PHONY: docs
-

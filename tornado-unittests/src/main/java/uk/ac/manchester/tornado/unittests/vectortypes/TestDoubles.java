@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,16 +28,16 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.types.Double2;
-import uk.ac.manchester.tornado.api.collections.types.Double3;
-import uk.ac.manchester.tornado.api.collections.types.Double4;
-import uk.ac.manchester.tornado.api.collections.types.Double8;
-import uk.ac.manchester.tornado.api.collections.types.VectorDouble;
-import uk.ac.manchester.tornado.api.collections.types.VectorDouble2;
-import uk.ac.manchester.tornado.api.collections.types.VectorDouble3;
-import uk.ac.manchester.tornado.api.collections.types.VectorDouble4;
-import uk.ac.manchester.tornado.api.collections.types.VectorDouble8;
-import uk.ac.manchester.tornado.api.data.nativetypes.DoubleArray;
+import uk.ac.manchester.tornado.api.types.vectors.Double2;
+import uk.ac.manchester.tornado.api.types.vectors.Double3;
+import uk.ac.manchester.tornado.api.types.vectors.Double4;
+import uk.ac.manchester.tornado.api.types.vectors.Double8;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble2;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble3;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble4;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble8;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -46,7 +46,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.vectortypes.TestDoubles
+ * tornado-test -V uk.ac.manchester.tornado.unittests.vectortypes.TestDoubles
  * </code>
  */
 public class TestDoubles extends TornadoTestBase {

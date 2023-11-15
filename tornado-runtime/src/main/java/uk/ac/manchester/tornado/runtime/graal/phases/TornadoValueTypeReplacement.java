@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -23,6 +23,11 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.debug;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodePredicate;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -32,12 +37,8 @@ import org.graalvm.compiler.nodes.java.NewInstanceNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
 import org.graalvm.compiler.phases.BasePhase;
 
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.debug;
-
-import java.util.HashMap;
-import java.util.Map;
 import jdk.vm.ci.meta.ResolvedJavaField;
-import uk.ac.manchester.tornado.api.type.annotations.Vector;
+import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 
 public class TornadoValueTypeReplacement extends BasePhase<TornadoHighTierContext> {
 

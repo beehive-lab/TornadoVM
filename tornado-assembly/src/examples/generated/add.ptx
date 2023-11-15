@@ -1,4 +1,4 @@
- .visible .entry s0_t0_add_intarray_intarray_intarray(.param .u64 .ptr .global .align 8 kernel_context, .param .u64 .ptr .global .align 8 a, .param .u64 .ptr .global .align 8 b, .param .u64 .ptr .global .align 8 c) {
+ .visible .entry s0_t0_add_arrays_intarray_arrays_intarray_arrays_intarray(.param .u64 .ptr .global .align 8 kernel_context, .param .u64 .ptr .global .align 8 a, .param .u64 .ptr .global .align 8 b, .param .u64 .ptr .global .align 8 c) {
     .reg .s64 rsd<3>;
     .reg .pred rpb<2>;
     .reg .u32 rui<5>;
@@ -42,4 +42,3 @@
  BLOCK_3:
     ret;
  }
-
