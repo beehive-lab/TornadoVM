@@ -39,16 +39,11 @@ __DIRECTORY_DEPENDENCIES__ = "etc/dependencies"
 __VERSION__ = "v0.16-dev"
 
 __SUPPORTED_JDKS__ = [
-    config.__JDK17__,
     config.__JDK21__,
-    config.__GRAALVM17__,
     config.__GRAALVM21__,
-    config.__CORRETTO17__,
     config.__CORRETTO21__,
-    config.__MANDREL21__,
-    config.__MICROSOFT17__,
     config.__MICROSOFT20__,
-    config.__ZULU17__,
+    config.__MANDREL21__,
     config.__ZULU21__,
 ]
 
@@ -308,11 +303,11 @@ class TornadoInstaller:
 
         backend = self.composeBackendOption(args)
 
-        makeJDK = "jdk-17-plus"
+        makeJDK = "jdk21"
         if (args.javaHome != None and "graal" in args.javaHome) or (
             "graal" in args.jdk
         ):
-            makeJDK = "graal-jdk-17-plus"
+            makeJDK = "graal-jdk-21"
 
         if args.javaHome != None:
             directoryPostfix = args.javaHome.split("/")[-1]
@@ -337,23 +332,19 @@ class TornadoInstaller:
 def listSupportedJDKs():
     print(
         """
-    TornadoVM Installer - Select a JDK implementation to install with TornadoVM: 
+    TornadoVM Installer - Select a JDK implementation to install with TornadoVM:
 
-    jdk17            : Install TornadoVM with OpenJDK 17 (Oracle OpenJDK)"
     jdk21            : Install TornadoVM with OpenJDK 21 (Oracle OpenJDK)"
     graalvm-jdk-21   : Install TornadoVM with GraalVM and JDK 21 (GraalVM 23.1.0)"
     mandrel-jdk-21   : Install TornadoVM with Mandrel and JDK 21 (GraalVM 23.1.0)"
-    corretto-jdk-17  : Install TornadoVM with Corretto JDK 11"
     corretto-jdk-21  : Install TornadoVM with Corretto JDK 21"
-    microsoft-jdk-17 : Install TornadoVM with Microsoft JDK 17"
-    zulu-jdk-17      : Install TornadoVM with Azul Zulu JDK 17"
     zulu-jdk-21     : Install TornadoVM with Azul Zulu JDK 21"
 
-    Usage: 
+    Usage:
      $ ./scripts/tornadovm-installer  --jdk <JDK_VERSION> --backend <BACKEND>
 
     If you want to select another version of OpenJDK, you can use --javaHome="<pathToJavaHome>" and install as follows:
-      $ ./scripts/tornadovm-installer --backend <BACKEND> --javaHome=<pathToJavaHome> 
+      $ ./scripts/tornadovm-installer --backend <BACKEND> --javaHome=<pathToJavaHome>
     """
     )
 

@@ -6,20 +6,20 @@ all: build
 BACKEND?=opencl
 BACKENDS := --backends $(BACKEND)
 
-build jdk-17-plus:
-	bin/compile --jdk jdk-17-plus $(BACKENDS)
+build jdk21:
+	bin/compile --jdk jdk21 $(BACKENDS)
 
-graal-jdk-17-plus:
-	bin/compile --jdk graal-jdk-17-plus $(BACKENDS)
+graal-jdk-21:
+	bin/compile --jdk graal-jdk-21 $(BACKENDS)
 
 ptx:
-	bin/compile --jdk jdk-17-plus --backends ptx,opencl
+	bin/compile --jdk jdk21 --backends ptx,opencl
 
 spirv:
-	bin/compile --jdk jdk-17-plus --backends spirv,ptx,opencl
+	bin/compile --jdk jdk21 --backends spirv,ptx,opencl
 
 offline:
-	bin/compile --jdk jdk-17-plus $(BACKENDS) --offline
+	bin/compile --jdk jdk21 $(BACKENDS) --offline
 
 # Variable passed for the preparation of the Xilinx FPGA emulated target device. The default device is `xilinx_u50_gen3x16_xdma_201920_3`.
 # make xilinx_emulation FPGA_PLATFORM=<platform_name> NUM_OF_FPGA_DEVICES=<number_of_devices>
