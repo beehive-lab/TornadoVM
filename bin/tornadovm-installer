@@ -42,6 +42,7 @@ __SUPPORTED_JDKS__ = [
     config.__JDK21__,
     config.__GRAALVM21__,
     config.__CORRETTO21__,
+    config.__MICROSOFT20__,
     config.__MANDREL21__,
     config.__ZULU21__,
 ]
