@@ -17,21 +17,19 @@
  */
 package uk.ac.manchester.tornado.benchmarks;
 
-import static uk.ac.manchester.tornado.api.types.vectors.Float4.add;
 import static uk.ac.manchester.tornado.api.math.TornadoMath.rotate;
+import static uk.ac.manchester.tornado.api.types.vectors.Float4.add;
 
 import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.vectors.Float3;
-import uk.ac.manchester.tornado.api.types.vectors.Float4;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat4;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
 
 public final class GraphicsKernels {
     // CHECKSTYLE:OFF
@@ -57,12 +55,6 @@ public final class GraphicsKernels {
             final Float3 a = A.get(i);
             final Float3 b = B.get(i);
             c.set(i, Float3.dot(a, b));
-        }
-    }
-
-    public static void addVector(VectorFloat4 a, VectorFloat4 b, VectorFloat4 c) {
-        for (@Parallel int i = 0; i < c.getLength(); i++) {
-            c.set(i, Float4.add(a.get(i), b.get(i)));
         }
     }
 
@@ -121,7 +113,6 @@ public final class GraphicsKernels {
                         }
                     }
                 }
-                // int outIndex = y * outputImageWidth + x;
                 output[(y * iW) + x] = sum;
             }
         }

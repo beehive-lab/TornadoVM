@@ -16,7 +16,7 @@
  *
  */
 
-package uk.ac.manchester.tornado.unittests.slam.graphics;
+package uk.ac.manchester.tornado.unittests.slam;
 
 import static org.junit.Assert.assertEquals;
 import static uk.ac.manchester.tornado.api.math.TornadoMath.min;
@@ -25,7 +25,7 @@ import static uk.ac.manchester.tornado.api.types.vectors.Float2.mult;
 import static uk.ac.manchester.tornado.api.types.vectors.Float3.add;
 import static uk.ac.manchester.tornado.api.types.vectors.Float3.length;
 import static uk.ac.manchester.tornado.api.types.vectors.Float3.normalise;
-import static uk.ac.manchester.tornado.unittests.slam.GraphicsMath.rigidTransform;
+import static uk.ac.manchester.tornado.unittests.slam.utils.GraphicsMath.rigidTransform;
 
 import java.util.Random;
 import java.util.stream.IntStream;
@@ -40,16 +40,9 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.types.vectors.Byte3;
-import uk.ac.manchester.tornado.api.types.vectors.Byte4;
-import uk.ac.manchester.tornado.api.types.vectors.Float2;
-import uk.ac.manchester.tornado.api.types.vectors.Float3;
-import uk.ac.manchester.tornado.api.types.vectors.Float4;
-import uk.ac.manchester.tornado.api.types.vectors.Float8;
-import uk.ac.manchester.tornado.api.types.vectors.Int2;
-import uk.ac.manchester.tornado.api.types.vectors.Int3;
-import uk.ac.manchester.tornado.api.types.vectors.Short2;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
 import uk.ac.manchester.tornado.api.types.images.ImageByte3;
 import uk.ac.manchester.tornado.api.types.images.ImageByte4;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat;
@@ -59,21 +52,28 @@ import uk.ac.manchester.tornado.api.types.images.ImageFloat8;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.types.utils.FloatOps;
 import uk.ac.manchester.tornado.api.types.utils.VolumeOps;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
+import uk.ac.manchester.tornado.api.types.vectors.Byte3;
+import uk.ac.manchester.tornado.api.types.vectors.Byte4;
+import uk.ac.manchester.tornado.api.types.vectors.Float2;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
+import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.vectors.Int2;
+import uk.ac.manchester.tornado.api.types.vectors.Int3;
+import uk.ac.manchester.tornado.api.types.vectors.Short2;
 import uk.ac.manchester.tornado.api.types.volumes.VolumeShort2;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-import uk.ac.manchester.tornado.unittests.slam.FloatSE3;
-import uk.ac.manchester.tornado.unittests.slam.GraphicsMath;
-import uk.ac.manchester.tornado.unittests.slam.ImagingOps;
-import uk.ac.manchester.tornado.unittests.slam.Renderer;
+import uk.ac.manchester.tornado.unittests.slam.utils.FloatSE3;
+import uk.ac.manchester.tornado.unittests.slam.utils.GraphicsMath;
+import uk.ac.manchester.tornado.unittests.slam.utils.ImagingOps;
+import uk.ac.manchester.tornado.unittests.slam.utils.Renderer;
 
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- * tornado-test -V uk.ac.manchester.tornado.unittests.slam.graphics.GraphicsTests
+ * tornado-test -V uk.ac.manchester.tornado.unittests.GraphicsTests
  * </code>
  */
 public class GraphicsTests extends TornadoTestBase {
