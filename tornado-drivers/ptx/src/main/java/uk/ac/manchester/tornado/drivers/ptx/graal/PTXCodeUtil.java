@@ -39,8 +39,8 @@ import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Signature;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDevice;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
@@ -49,9 +49,9 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 
 public class PTXCodeUtil {
 
-    private static final String PACKAGE_PANAMA_TYPES = "uk_ac_manchester_tornado_api_data_nativetypes_";
+    private static final String PACKAGE_PANAMA_TYPES = "uk_ac_manchester_tornado_api_types_";
 
-    private static final String PACKAGE_PANAMA_COLLECTION = "uk_ac_manchester_tornado_api_collections_types_";
+    private static final String PACKAGE_PANAMA_COLLECTION = "uk_ac_manchester_tornado_api_types_collections_";
     private static final String PTX_HEADER_FORMAT = PTXAssemblerConstants.COMPUTE_VERSION + " %s \n" + PTXAssemblerConstants.TARGET_ARCH + " %s \n" + PTXAssemblerConstants.ADDRESS_HEADER + " %s \n";
 
     /**
