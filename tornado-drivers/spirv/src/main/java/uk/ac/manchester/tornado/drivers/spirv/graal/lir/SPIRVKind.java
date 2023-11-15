@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021, APT Group, Department of Computer Science,
+ * Copyright (c) 2021, 2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -34,6 +34,7 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
 /**
  * SPIR-V Types:
@@ -64,44 +65,44 @@ public enum SPIRVKind implements PlatformKind {
     // Vector types
 
     // OP_TYPE_VECTOR2
-    OP_TYPE_VECTOR2_INT_16(2, uk.ac.manchester.tornado.api.collections.types.Short2.TYPE, OP_TYPE_INT_16),
-    OP_TYPE_VECTOR2_INT_32(2, uk.ac.manchester.tornado.api.collections.types.Int2.TYPE, OP_TYPE_INT_32),
-    OP_TYPE_VECTOR2_INT_64(2, uk.ac.manchester.tornado.api.collections.types.Int2.TYPE, OP_TYPE_INT_64),
+    OP_TYPE_VECTOR2_INT_16(2, uk.ac.manchester.tornado.api.types.vectors.Short2.TYPE, OP_TYPE_INT_16),
+    OP_TYPE_VECTOR2_INT_32(2, uk.ac.manchester.tornado.api.types.vectors.Int2.TYPE, OP_TYPE_INT_32),
+    OP_TYPE_VECTOR2_INT_64(2, uk.ac.manchester.tornado.api.types.vectors.Int2.TYPE, OP_TYPE_INT_64),
 
     // OP_TYPE_VECTOR 3
-    OP_TYPE_VECTOR3_INT_8(3, uk.ac.manchester.tornado.api.collections.types.Byte3.TYPE, OP_TYPE_INT_8),
-    OP_TYPE_VECTOR3_INT_16(3, uk.ac.manchester.tornado.api.collections.types.Short3.TYPE, OP_TYPE_INT_16),
-    OP_TYPE_VECTOR3_INT_32(3, uk.ac.manchester.tornado.api.collections.types.Int3.TYPE, OP_TYPE_INT_32),
-    OP_TYPE_VECTOR3_INT_64(3, uk.ac.manchester.tornado.api.collections.types.Int3.TYPE, OP_TYPE_INT_64),
+    OP_TYPE_VECTOR3_INT_8(3, uk.ac.manchester.tornado.api.types.vectors.Byte3.TYPE, OP_TYPE_INT_8),
+    OP_TYPE_VECTOR3_INT_16(3, uk.ac.manchester.tornado.api.types.vectors.Short3.TYPE, OP_TYPE_INT_16),
+    OP_TYPE_VECTOR3_INT_32(3, uk.ac.manchester.tornado.api.types.vectors.Int3.TYPE, OP_TYPE_INT_32),
+    OP_TYPE_VECTOR3_INT_64(3, uk.ac.manchester.tornado.api.types.vectors.Int3.TYPE, OP_TYPE_INT_64),
 
     // OP_TYPE_VECTOR 4
-    OP_TYPE_VECTOR4_INT_8(4, uk.ac.manchester.tornado.api.collections.types.Byte4.TYPE, OP_TYPE_INT_8),
-    OP_TYPE_VECTOR4_INT_32(4, uk.ac.manchester.tornado.api.collections.types.Int4.TYPE, OP_TYPE_INT_32),
-    OP_TYPE_VECTOR4_INT_64(4, uk.ac.manchester.tornado.api.collections.types.Int4.TYPE, OP_TYPE_INT_64),
+    OP_TYPE_VECTOR4_INT_8(4, uk.ac.manchester.tornado.api.types.vectors.Byte4.TYPE, OP_TYPE_INT_8),
+    OP_TYPE_VECTOR4_INT_32(4, uk.ac.manchester.tornado.api.types.vectors.Int4.TYPE, OP_TYPE_INT_32),
+    OP_TYPE_VECTOR4_INT_64(4, uk.ac.manchester.tornado.api.types.vectors.Int4.TYPE, OP_TYPE_INT_64),
 
     // OP_TYPE_VECTOR 8
-    OP_TYPE_VECTOR8_INT_32(8, uk.ac.manchester.tornado.api.collections.types.Int8.TYPE, OP_TYPE_INT_32),
-    OP_TYPE_VECTOR8_INT_64(8, uk.ac.manchester.tornado.api.collections.types.Int8.TYPE, OP_TYPE_INT_64),
+    OP_TYPE_VECTOR8_INT_32(8, uk.ac.manchester.tornado.api.types.vectors.Int8.TYPE, OP_TYPE_INT_32),
+    OP_TYPE_VECTOR8_INT_64(8, uk.ac.manchester.tornado.api.types.vectors.Int8.TYPE, OP_TYPE_INT_64),
 
     // OP_TYPE_VECTOR2 Float
-    OP_TYPE_VECTOR2_FLOAT_16(2, uk.ac.manchester.tornado.api.collections.types.Float2.TYPE, OP_TYPE_FLOAT_16),  // Half float
-    OP_TYPE_VECTOR2_FLOAT_32(2, uk.ac.manchester.tornado.api.collections.types.Float2.TYPE, OP_TYPE_FLOAT_32),
-    OP_TYPE_VECTOR2_FLOAT_64(2, uk.ac.manchester.tornado.api.collections.types.Double2.TYPE, OP_TYPE_FLOAT_64),
+    OP_TYPE_VECTOR2_FLOAT_16(2, uk.ac.manchester.tornado.api.types.vectors.Float2.TYPE, OP_TYPE_FLOAT_16),  // Half float
+    OP_TYPE_VECTOR2_FLOAT_32(2, uk.ac.manchester.tornado.api.types.vectors.Float2.TYPE, OP_TYPE_FLOAT_32),
+    OP_TYPE_VECTOR2_FLOAT_64(2, uk.ac.manchester.tornado.api.types.vectors.Double2.TYPE, OP_TYPE_FLOAT_64),
 
     // OP_TYPE_VECTOR3 Float
-    OP_TYPE_VECTOR3_FLOAT_16(3, uk.ac.manchester.tornado.api.collections.types.Float3.TYPE, OP_TYPE_FLOAT_16),  // Half float
-    OP_TYPE_VECTOR3_FLOAT_32(3, uk.ac.manchester.tornado.api.collections.types.Float3.TYPE, OP_TYPE_FLOAT_32),
-    OP_TYPE_VECTOR3_FLOAT_64(3, uk.ac.manchester.tornado.api.collections.types.Double3.TYPE, OP_TYPE_FLOAT_64),
+    OP_TYPE_VECTOR3_FLOAT_16(3, uk.ac.manchester.tornado.api.types.vectors.Float3.TYPE, OP_TYPE_FLOAT_16),  // Half float
+    OP_TYPE_VECTOR3_FLOAT_32(3, uk.ac.manchester.tornado.api.types.vectors.Float3.TYPE, OP_TYPE_FLOAT_32),
+    OP_TYPE_VECTOR3_FLOAT_64(3, uk.ac.manchester.tornado.api.types.vectors.Double3.TYPE, OP_TYPE_FLOAT_64),
 
     // OP_TYPE_VECTOR4 Float
-    OP_TYPE_VECTOR4_FLOAT_16(4, uk.ac.manchester.tornado.api.collections.types.Float4.TYPE, OP_TYPE_FLOAT_16),  // Half float
-    OP_TYPE_VECTOR4_FLOAT_32(4, uk.ac.manchester.tornado.api.collections.types.Float4.TYPE, OP_TYPE_FLOAT_32),
-    OP_TYPE_VECTOR4_FLOAT_64(4, uk.ac.manchester.tornado.api.collections.types.Double4.TYPE, OP_TYPE_FLOAT_64),
+    OP_TYPE_VECTOR4_FLOAT_16(4, uk.ac.manchester.tornado.api.types.vectors.Float4.TYPE, OP_TYPE_FLOAT_16),  // Half float
+    OP_TYPE_VECTOR4_FLOAT_32(4, uk.ac.manchester.tornado.api.types.vectors.Float4.TYPE, OP_TYPE_FLOAT_32),
+    OP_TYPE_VECTOR4_FLOAT_64(4, uk.ac.manchester.tornado.api.types.vectors.Double4.TYPE, OP_TYPE_FLOAT_64),
 
     // OP_TYPE_VECTOR8 Float
-    OP_TYPE_VECTOR8_FLOAT_16(8, uk.ac.manchester.tornado.api.collections.types.Float8.TYPE, OP_TYPE_FLOAT_16),  // Half float
-    OP_TYPE_VECTOR8_FLOAT_32(8, uk.ac.manchester.tornado.api.collections.types.Float8.TYPE, OP_TYPE_FLOAT_32),
-    OP_TYPE_VECTOR8_FLOAT_64(8, uk.ac.manchester.tornado.api.collections.types.Double8.TYPE, OP_TYPE_FLOAT_64),
+    OP_TYPE_VECTOR8_FLOAT_16(8, uk.ac.manchester.tornado.api.types.vectors.Float8.TYPE, OP_TYPE_FLOAT_16),  // Half float
+    OP_TYPE_VECTOR8_FLOAT_32(8, uk.ac.manchester.tornado.api.types.vectors.Float8.TYPE, OP_TYPE_FLOAT_32),
+    OP_TYPE_VECTOR8_FLOAT_64(8, uk.ac.manchester.tornado.api.types.vectors.Double8.TYPE, OP_TYPE_FLOAT_64),
 
     OP_TYPE_VOID(0, java.lang.Void.TYPE),
 
@@ -115,33 +116,34 @@ public enum SPIRVKind implements PlatformKind {
 
     // @formatter:on
 
-    public static final String VECTOR_COLLECTION_PATH = "uk.ac.manchester.tornado.api.collections.types";
+    public static final String VECTOR_COLLECTION_PATH = "uk.ac.manchester.tornado.api.types.vectors";
+    public static final String COLLECTION_PATH = "uk.ac.manchester.tornado.api.types.collections";
     private static Map<String, SPIRVKind> vectorTable;
 
     static {
         vectorTable = new HashMap<>();
 
         // Bytes
-        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Byte3;", SPIRVKind.OP_TYPE_VECTOR3_INT_8);
-        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Byte4;", SPIRVKind.OP_TYPE_VECTOR4_INT_8);
+        vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Byte3;", SPIRVKind.OP_TYPE_VECTOR3_INT_8);
+        vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Byte4;", SPIRVKind.OP_TYPE_VECTOR4_INT_8);
 
         // Integers
-        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Int2;", SPIRVKind.OP_TYPE_VECTOR2_INT_32);
-        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Int3;", SPIRVKind.OP_TYPE_VECTOR3_INT_32);
-        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Int4;", SPIRVKind.OP_TYPE_VECTOR4_INT_32);
-        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Int8;", SPIRVKind.OP_TYPE_VECTOR8_INT_32);
+        vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Int2;", SPIRVKind.OP_TYPE_VECTOR2_INT_32);
+        vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Int3;", SPIRVKind.OP_TYPE_VECTOR3_INT_32);
+        vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Int4;", SPIRVKind.OP_TYPE_VECTOR4_INT_32);
+        vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Int8;", SPIRVKind.OP_TYPE_VECTOR8_INT_32);
 
         // Floats
-        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Float2;", SPIRVKind.OP_TYPE_VECTOR2_FLOAT_32);
-        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Float3;", SPIRVKind.OP_TYPE_VECTOR3_FLOAT_32);
-        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Float4;", SPIRVKind.OP_TYPE_VECTOR4_FLOAT_32);
-        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Float8;", SPIRVKind.OP_TYPE_VECTOR8_FLOAT_32);
+        vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Float2;", SPIRVKind.OP_TYPE_VECTOR2_FLOAT_32);
+        vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Float3;", SPIRVKind.OP_TYPE_VECTOR3_FLOAT_32);
+        vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Float4;", SPIRVKind.OP_TYPE_VECTOR4_FLOAT_32);
+        vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Float8;", SPIRVKind.OP_TYPE_VECTOR8_FLOAT_32);
 
         // Double
-        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Double2;", SPIRVKind.OP_TYPE_VECTOR2_FLOAT_64);
-        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Double3;", SPIRVKind.OP_TYPE_VECTOR3_FLOAT_64);
-        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Double4;", SPIRVKind.OP_TYPE_VECTOR4_FLOAT_64);
-        vectorTable.put("Luk/ac/manchester/tornado/api/collections/types/Double8;", SPIRVKind.OP_TYPE_VECTOR8_FLOAT_64);
+        vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Double2;", SPIRVKind.OP_TYPE_VECTOR2_FLOAT_64);
+        vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Double3;", SPIRVKind.OP_TYPE_VECTOR3_FLOAT_64);
+        vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Double4;", SPIRVKind.OP_TYPE_VECTOR4_FLOAT_64);
+        vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Double8;", SPIRVKind.OP_TYPE_VECTOR8_FLOAT_64);
 
     }
 
@@ -184,7 +186,7 @@ public enum SPIRVKind implements PlatformKind {
             case Double:
                 return SPIRVKind.OP_TYPE_FLOAT_64;
             default:
-                throw new RuntimeException("Java type not supported: " + stackKind);
+                throw new TornadoRuntimeException("Java type not supported: " + stackKind);
         }
     }
 
@@ -212,7 +214,7 @@ public enum SPIRVKind implements PlatformKind {
                 // we return a 64-bit long value
                 return SPIRVKind.OP_TYPE_INT_64;
             default:
-                throw new RuntimeException("Java type not supported: " + stackKind);
+                throw new TornadoRuntimeException("Java type not supported: " + stackKind);
         }
     }
 
@@ -258,7 +260,7 @@ public enum SPIRVKind implements PlatformKind {
             case "VectorFloat":
                 return SPIRVKind.OP_TYPE_INT_64;
             default:
-                throw new RuntimeException("Vector type not supported: " + vectorType);
+                throw new TornadoRuntimeException("Vector type not supported: " + vectorType);
         }
     }
 

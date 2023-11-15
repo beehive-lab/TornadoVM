@@ -43,7 +43,7 @@ import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.type.annotations.PanamaElementSize;
+import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNode;
 
@@ -61,7 +61,7 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
             throw new TornadoRuntimeException("Annotation is missing");
         } else {
             for (Annotation annotation : declaredAnnotations) {
-                if (annotation instanceof PanamaElementSize panamaElementSize) {
+                if (annotation instanceof SegmentElementSize panamaElementSize) {
                     kindElement = panamaElementSize.size();
                 }
             }

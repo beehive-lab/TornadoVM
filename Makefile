@@ -50,7 +50,7 @@ tests-opt:
 	tornado-test -V --fast --ea --verbose -J"-Dtornado.spirv.loadstore=True" --printKernel
 
 test-slam:
-	tornado-test -V --fast uk.ac.manchester.tornado.unittests.slam.graphics.GraphicsTests
+	tornado-test -V --fast uk.ac.manchester.tornado.unittests.slam.GraphicsTests
 
 docs:
 	cd docs && make html

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,15 @@
 
 package uk.ac.manchester.tornado.unittests.atomics;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
+
 import org.junit.Test;
+
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -27,19 +35,12 @@ import uk.ac.manchester.tornado.api.TornadoVMIntrinsics;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.data.nativetypes.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-
-import java.util.HashSet;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.IntStream;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * How to test?
@@ -54,7 +55,7 @@ public class TestAtomics extends TornadoTestBase {
      * Approach using a compiler-intrinsic in TornadoVM.
      *
      * @param a
-     *         Input array. It stores the addition with an atomic variable.
+     *     Input array. It stores the addition with an atomic variable.
      */
     public static void atomic03(IntArray a) {
         final int size = 100;
@@ -69,7 +70,7 @@ public class TestAtomics extends TornadoTestBase {
      * memory.
      *
      * @param input
-     *         input array
+     *     input array
      */
     public static void atomic04(IntArray input) {
         AtomicInteger tai = new AtomicInteger(200);
@@ -145,9 +146,9 @@ public class TestAtomics extends TornadoTestBase {
      * This example combines an atomic created inside the compute kernel with an atomic passed as an argument.
      *
      * @param input
-     *         Input array
+     *     Input array
      * @param ai
-     *         Atomic Integer stored in Global Memory (atomic-region)
+     *     Atomic Integer stored in Global Memory (atomic-region)
      */
     public static void atomic15(IntArray input, AtomicInteger ai) {
         AtomicInteger bi = new AtomicInteger(500);
@@ -271,11 +272,11 @@ public class TestAtomics extends TornadoTestBase {
                 .prebuiltTask("t0", //
                         "add", //
                         tornadoSDK + "/examples/generated/atomics.cl", //
-                        new Object[] {a, b}, //
-                        new Access[] {Access.WRITE_ONLY, Access.WRITE_ONLY}, //
+                        new Object[] { a, b }, //
+                        new Access[] { Access.WRITE_ONLY, Access.WRITE_ONLY }, //
                         defaultDevice, //
-                        new int[] {32}, //
-                        new int[] {155} // Atomics - Initial Value
+                        new int[] { 32 }, //
+                        new int[] { 155 } // Atomics - Initial Value
                 )//
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();

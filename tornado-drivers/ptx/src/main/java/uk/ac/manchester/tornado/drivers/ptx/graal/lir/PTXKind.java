@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -30,7 +30,22 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import uk.ac.manchester.tornado.api.type.annotations.Vector;
+import uk.ac.manchester.tornado.api.internal.annotations.Vector;
+import uk.ac.manchester.tornado.api.types.vectors.Byte3;
+import uk.ac.manchester.tornado.api.types.vectors.Byte4;
+import uk.ac.manchester.tornado.api.types.vectors.Double2;
+import uk.ac.manchester.tornado.api.types.vectors.Double3;
+import uk.ac.manchester.tornado.api.types.vectors.Double4;
+import uk.ac.manchester.tornado.api.types.vectors.Double8;
+import uk.ac.manchester.tornado.api.types.vectors.Float2;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
+import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.vectors.Int2;
+import uk.ac.manchester.tornado.api.types.vectors.Int3;
+import uk.ac.manchester.tornado.api.types.vectors.Int4;
+import uk.ac.manchester.tornado.api.types.vectors.Int8;
+import uk.ac.manchester.tornado.api.types.vectors.Short2;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 
 public enum PTXKind implements PlatformKind {
@@ -57,25 +72,25 @@ public enum PTXKind implements PlatformKind {
     B64(8, null),
 
     CHAR2(2, null, U8),
-    CHAR3(3, uk.ac.manchester.tornado.api.collections.types.Byte3.TYPE, U8),
-    CHAR4(4, uk.ac.manchester.tornado.api.collections.types.Byte4.TYPE, U8),
+    CHAR3(3, Byte3.TYPE, U8),
+    CHAR4(4, Byte4.TYPE, U8),
 
-    SHORT2(2, uk.ac.manchester.tornado.api.collections.types.Short2.TYPE, S16),
+    SHORT2(2, Short2.TYPE, S16),
 
-    INT2(2, uk.ac.manchester.tornado.api.collections.types.Int2.TYPE, S32),
-    INT3(3, uk.ac.manchester.tornado.api.collections.types.Int3.TYPE, S32),
-    INT4(4, uk.ac.manchester.tornado.api.collections.types.Int4.TYPE, S32),
-    INT8(8, uk.ac.manchester.tornado.api.collections.types.Int8.TYPE, S32),
+    INT2(2, Int2.TYPE, S32),
+    INT3(3, Int3.TYPE, S32),
+    INT4(4, Int4.TYPE, S32),
+    INT8(8, Int8.TYPE, S32),
 
-    FLOAT2(2, uk.ac.manchester.tornado.api.collections.types.Float2.TYPE, F32),
-    FLOAT3(3, uk.ac.manchester.tornado.api.collections.types.Float3.TYPE, F32),
-    FLOAT4(4, uk.ac.manchester.tornado.api.collections.types.Float4.TYPE, F32),
-    FLOAT8(8, uk.ac.manchester.tornado.api.collections.types.Float8.TYPE, F32),
+    FLOAT2(2, Float2.TYPE, F32),
+    FLOAT3(3, Float3.TYPE, F32),
+    FLOAT4(4, Float4.TYPE, F32),
+    FLOAT8(8, Float8.TYPE, F32),
 
-    DOUBLE2(2, uk.ac.manchester.tornado.api.collections.types.Double2.TYPE, F64),
-    DOUBLE3(3, uk.ac.manchester.tornado.api.collections.types.Double3.TYPE, F64),
-    DOUBLE4(4, uk.ac.manchester.tornado.api.collections.types.Double4.TYPE, F64),
-    DOUBLE8(8, uk.ac.manchester.tornado.api.collections.types.Double8.TYPE, F64),
+    DOUBLE2(2, Double2.TYPE, F64),
+    DOUBLE3(3, Double3.TYPE, F64),
+    DOUBLE4(4, Double4.TYPE, F64),
+    DOUBLE8(8, Double8.TYPE, F64),
 
     ILLEGAL(0, null);
     // @formatter:on

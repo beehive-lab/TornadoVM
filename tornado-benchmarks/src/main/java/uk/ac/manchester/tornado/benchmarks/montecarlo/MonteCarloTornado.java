@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
 
 package uk.ac.manchester.tornado.benchmarks.montecarlo;
 
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.abs;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner montecarlo
+ * tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner montecarlo
  * </code>
  */
 public class MonteCarloTornado extends BenchmarkDriver {

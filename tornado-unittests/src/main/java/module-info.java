@@ -29,7 +29,7 @@ open module tornado.unittests {
     exports uk.ac.manchester.tornado.unittests.prebuilt;
     exports uk.ac.manchester.tornado.unittests.profiler;
     exports uk.ac.manchester.tornado.unittests.reductions;
-    exports uk.ac.manchester.tornado.unittests.slam.graphics;
+    exports uk.ac.manchester.tornado.unittests.slam;
     exports uk.ac.manchester.tornado.unittests.tasks;
     exports uk.ac.manchester.tornado.unittests.temporary.values;
     exports uk.ac.manchester.tornado.unittests.tools;

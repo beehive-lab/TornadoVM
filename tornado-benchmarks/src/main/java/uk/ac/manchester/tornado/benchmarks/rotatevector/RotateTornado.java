@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,17 +17,17 @@
  */
 package uk.ac.manchester.tornado.benchmarks.rotatevector;
 
-import static uk.ac.manchester.tornado.api.collections.types.FloatOps.findMaxULP;
+import static uk.ac.manchester.tornado.api.types.utils.FloatOps.findMaxULP;
 import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.rotateVector;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.collections.types.Float3;
-import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
@@ -36,7 +36,7 @@ import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner rotatevector
+ * tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner rotatevector
  * </code>
  */
 public class RotateTornado extends BenchmarkDriver {
