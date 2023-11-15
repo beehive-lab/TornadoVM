@@ -1,5 +1,6 @@
 all: build
 
+
 # Variable passed for the build process:
 # BACKENDS=<ptx|opencl|spirv>. It specifies which backend/s to use { opencl, ptx, spirv }. The default one is `opencl`.
 BACKEND?=opencl
@@ -49,4 +50,9 @@ tests-opt:
 	tornado-test -V --fast --ea --verbose -J"-Dtornado.spirv.loadstore=True" --printKernel
 
 test-slam:
-	tornado-test -V --fast uk.ac.manchester.tornado.unittests.slam.GraphicsTests
+  tornado-test -V --fast uk.ac.manchester.tornado.unittests.slam.GraphicsTests
+
+docs:
+	cd docs && make html
+
+.PHONY: docs
