@@ -1,0 +1,111 @@
+Transitioning from v0.15 to v0.16
+==================================
+Starting from v0.16, TornadoVM is providing its custom off-heap data types. Below is a list of the new types, with an arrow pointing from the on-heap primitive array types to their off-heap equivalent.
+
+* ``int[]`` -> ``IntArray``
+* ``float[]`` -> ``FloatArray``
+* ``double[]`` -> ``DoubleArray``
+* ``long[]`` -> ``LongArray``
+* ``char[]`` -> ``CharArray``
+* ``short[]`` -> ``ShortArray``
+* ``byte[]`` -> ``ByteArray``
+
+The existing Matrix and Vector collection types that TornadoVM offers (e.g., ``VectorFloat``, ``Matrix2DDouble``, etc.)  have been refactored to use internally these off-heap data types instead of primitive arrays.
+
+1. Off-heap types API
+-------------------------
+The new off-heap types encapsulate a `Memory Segment <https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/foreign/MemorySegment.html>`_, a contiguous region of memory outside the Java heap. To allocate off-heap memory, each type offers two constructors. The first has only one argument, the number of elements that the Memory Segment will contain. Through the second constructor, the values of a primitive array can be provided for the initialization of the segment.
+
+E.g.:
+
+.. code:: java
+
+   // allocate an off-heap memory segment that will contain 16 int values
+   IntArray intArray = new IntArray(16);
+
+   // allocate an off-heap memory segment that is initialized with the four float values in the constructor
+   FloatArray floatArray = new FloatArray(new float[] {0.0f, 0.1f, 0.2.f, 0.3f});
+
+The main methods that the off-heap types expose to manage the Memory Segment of each type are presented in the list below. In each signature, ``X`` is the equivalent primitive type, e.g., for the methods of the ``IntArray`` class, ``X`` is ``int``.
+
+.. code:: java
+
+   * public void set(int index, X value) // sets a value at a specific index
+      E.g.:
+          FloatArray floatArray = new FloatArray(16);
+          floatArray.set(0, 10.0f); // at index 0 the value is 10.0f
+   * public X get(int index) // returns the value of a specific index
+      E.g.:
+          DoubleArray doubleArray = new DoubleArray(new double[] {2.4, 1.4, 2.5, 5.1});
+          double doubleValue = doubleArray.get(3); // returns 5.1
+   * public void clear() // sets the values of the segment to 0
+      E.g.:
+          IntArray intArray = new IntArray(1024);
+          intArray.clear(); // the intArray contains 1024 zeros
+   * public void init(X value) // initializes the segment with a specific value
+      E.g.:
+   	  IntArray intArray = new IntArray(1024);
+          intArray.init(1); // // the intArray contains 1024 ones
+   * public int getSize() // returns the number of elements in the segment
+      E.g.:
+          FloatArray floatArray = new FloatArray(16);
+          int size = floatArray.getSize(); // returns 16
+   * public static XArray fromElements(X... values); // creates a new instance of the type and initializes it with a set of values
+      E.g.:
+          IntArray intArray = IntArray.fromElements(1,2,3,4,5,6,7,8);  // new IntArray initialized with the values in the parameter list
+
+**NOTE:** The methods ``init()`` and ``clear()`` are essential because, contrary to their counterpart primitive arrays which are initialized by default with 0, the new types contain garbage values when first created.
+
+2. Example: Transforming an existing TornadoVM program
+-------------------------------------------------------
+
+Below is an example of a TornadoVM program that uses primitive arrays:
+
+.. code:: java
+
+    public static void main(String[] args) {
+        int[] input = new int[numElements];
+
+        Arrays.fill(input, 10);
+
+        TaskGraph taskGraph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input)
+                .task("t", Example::add, input, 1)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, input);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph);
+        executor.execute();
+    }
+
+    public static void add(int[] input, int value) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            input[i] = input[i] + value;
+        }
+    }
+
+Here is how the code above would need to be transformed to use the new data types (the changes are highlighted):
+
+.. code-block:: java
+   :emphasize-lines: 2,4,16,18
+
+    public static void main(String[] args) {
+        IntArray input = new IntArray(numElements); // create a new off heap segment of int values
+
+        input.init(10); // initialize all the values of the input to be 10
+
+        TaskGraph taskGraph = new TaskGraph("s0")
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input)
+                .task("t", Example::add, input, 1)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, input);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executor = new TornadoExecutor(immutableTaskGraph);
+        executor.execute();
+    }
+
+    public static void acc(IntArray input, int value) { // Pass the IntArray as a parameter
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            input.set(i, input.get(i) + value);  // Use the set and get functions access data
+        }
+    }
