@@ -310,6 +310,7 @@ JDKs. Below are listed the Java 21 JDK distributions against which TornadoVM has
   ./bin/tornadovm-installer --listJDKs
   jdk21            : Install TornadoVM with OpenJDK 21 (Oracle OpenJDK)
   graalvm-jdk-21   : Install TornadoVM with GraalVM and JDK 21 (GraalVM 23.1.0)
+  mandrel-jdk-21   : Install TornadoVM with Mandrel and JDK 21 (GraalVM 23.1.0)
   corretto-jdk-21  : Install TornadoVM with Corretto JDK 21
   zulu-jdk-jdk-21  : Install TornadoVM with Azul Zulu JDK 21
 
