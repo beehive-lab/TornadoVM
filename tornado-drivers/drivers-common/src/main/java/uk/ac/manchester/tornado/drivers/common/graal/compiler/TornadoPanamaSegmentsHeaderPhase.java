@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2023, APT Group, Department of Computer Science,
- * School of Engineering, The University of Manchester. All rights reserved.
+ * The University of Manchester. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -18,7 +19,7 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.ptx.graal.phases;
+package uk.ac.manchester.tornado.drivers.common.graal.compiler;
 
 import java.util.Optional;
 
@@ -29,13 +30,16 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.Phase;
 
+/**
+ * Compiler phase to set the position in the Panama Object header in which the Array Size will be located.
+ * By default, we set the size in position 0 of the input array. The array header size is determined by the TornadoVM API.
+ */
 public class TornadoPanamaSegmentsHeaderPhase extends Phase {
 
     @Override
-    public Optional<BasePhase.NotApplicable> notApplicableTo(GraphState graphState) {
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
         return ALWAYS_APPLICABLE;
     }
 

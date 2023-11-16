@@ -45,7 +45,7 @@ import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
-import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPrivateArrayPiRemoval;
+import uk.ac.manchester.tornado.drivers.common.graal.compiler.TornadoPrivateArrayPiRemoval;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoNewArrayDevirtualizationReplacement;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoParallelScheduler;
 import uk.ac.manchester.tornado.drivers.spirv.graal.phases.TornadoSPIRVIntrinsicsReplacements;

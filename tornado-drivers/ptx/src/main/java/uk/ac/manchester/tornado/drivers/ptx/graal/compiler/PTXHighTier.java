@@ -45,10 +45,10 @@ import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
+import uk.ac.manchester.tornado.drivers.common.graal.compiler.TornadoPrivateArrayPiRemoval;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoNewArrayDevirtualizationReplacement;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoPTXIntrinsicsReplacements;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoParallelScheduler;
-import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoPrivateArrayPiRemoval;
 import uk.ac.manchester.tornado.drivers.ptx.graal.phases.TornadoTaskSpecialisation;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
