@@ -29,40 +29,6 @@
 
     <profiles>
         <profile>
-            <id>list-profiles</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-antrun-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <phase>validate</phase>
-                                <goals>
-                                    <goal>run</goal>
-                                </goals>
-                                <configuration>
-                                    <tasks>
-                                        <echo>Please pick one of the following profiles:</echo>
-                                        <echo>* windows-i386-release</echo>
-                                        <echo>* windows-amd64-release</echo>
-                                        <echo>* linux-i386-release</echo>
-                                        <echo>* linux-amd64-release</echo>
-                                        <echo>* mac-amd64-release</echo>
-                                        <echo/>
-                                        <echo>For instance: mvn -Pwindows-i386 install</echo>
-                                        <fail/>
-                                    </tasks>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
             <id>windows-i386-release</id>
             <activation>
                 <property>
