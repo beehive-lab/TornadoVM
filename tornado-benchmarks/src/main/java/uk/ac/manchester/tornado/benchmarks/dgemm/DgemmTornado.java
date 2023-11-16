@@ -28,6 +28,7 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
@@ -44,9 +45,9 @@ public class DgemmTornado extends BenchmarkDriver {
     private final int m;
     private final int n;
     private final boolean USE_PREBUILT = Boolean.parseBoolean(TornadoRuntime.getProperty("usePrebuilt", "False"));
-    private double[] a;
-    private double[] b;
-    private double[] c;
+    private DoubleArray a;
+    private DoubleArray b;
+    private DoubleArray c;
 
     public DgemmTornado(int iterations, int m, int n) {
         super(iterations);
@@ -56,18 +57,18 @@ public class DgemmTornado extends BenchmarkDriver {
 
     @Override
     public void setUp() {
-        a = new double[m * n];
-        b = new double[m * n];
-        c = new double[m * n];
+        a = new DoubleArray(m * n);
+        b = new DoubleArray(m * n);
+        c = new DoubleArray(m * n);
 
         final Random random = new Random();
 
         for (int i = 0; i < m; i++) {
-            a[i * (m + 1)] = 1;
+            a.set(i * (m + 1), 1);
         }
 
         for (int i = 0; i < m * n; i++) {
-            b[i] = random.nextFloat();
+            b.set(i, random.nextFloat());
         }
 
         taskGraph = new TaskGraph("benchmark");
@@ -126,7 +127,7 @@ public class DgemmTornado extends BenchmarkDriver {
     @Override
     public boolean validate(TornadoDevice device) {
 
-        final double[] result = new double[m * n];
+        final DoubleArray result = new DoubleArray(m * n);
 
         benchmarkMethod(device);
         executionPlan.clearProfiles();

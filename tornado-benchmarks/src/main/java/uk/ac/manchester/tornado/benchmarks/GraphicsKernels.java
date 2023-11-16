@@ -96,7 +96,7 @@ public final class GraphicsKernels {
         }
     }
 
-    public static void convolveImageArray(final float[] input, final float[] filter, final float[] output, final int iW, final int iH, final int fW, final int fH) {
+    public static void convolveImageArray(final FloatArray input, final FloatArray filter, final FloatArray output, final int iW, final int iH, final int fW, final int fH) {
         int u;
         int v;
         final int filterX2 = fW / 2;
@@ -108,12 +108,12 @@ public final class GraphicsKernels {
                     for (u = 0; u < fW; u++) {
                         if ((((y - filterY2) + v) >= 0) && ((y + v) < iH)) {
                             if ((((x - filterX2) + u) >= 0) && ((x + u) < iW)) {
-                                sum += filter[(v * fW) + u] * input[(((y - filterY2) + v) * iW) + ((x - filterX2) + u)];
+                                sum += filter.get((v * fW) + u) * input.get((((y - filterY2) + v) * iW) + ((x - filterX2) + u));
                             }
                         }
                     }
                 }
-                output[(y * iW) + x] = sum;
+                output.set((y * iW) + x, sum);
             }
         }
     }
@@ -160,7 +160,7 @@ public final class GraphicsKernels {
         });
     }
 
-    public static void juliaSetTornado(int size, float[] hue, float[] brightness) {
+    public static void juliaSetTornado(int size, FloatArray hue, FloatArray brightness) {
         for (@Parallel int ix = 0; ix < size; ix++) {
             for (@Parallel int jx = 0; jx < size; jx++) {
                 float zx = 1.5f * (ix - size / 2) / (0.5f * ZOOM * size) + MOVE_X;
@@ -172,8 +172,8 @@ public final class GraphicsKernels {
                     zx = tmp;
                     k--;
                 }
-                hue[ix * size + jx] = (MAX_ITERATIONS / k);
-                brightness[ix * size + jx] = k > 0 ? 1 : 0;
+                hue.set(ix * size + jx, (MAX_ITERATIONS / k));
+                brightness.set(ix * size + jx, k > 0 ? 1 : 0);
             }
         }
     }

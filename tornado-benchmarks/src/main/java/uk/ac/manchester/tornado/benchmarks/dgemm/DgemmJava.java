@@ -1,19 +1,19 @@
 /*
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
- *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 package uk.ac.manchester.tornado.benchmarks.dgemm;
 
@@ -22,6 +22,7 @@ import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.dgemm;
 import java.util.Random;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class DgemmJava extends BenchmarkDriver {
@@ -29,9 +30,9 @@ public class DgemmJava extends BenchmarkDriver {
     private final int m;
     private final int n;
 
-    private double[] a;
-    private double[] b;
-    private double[] c;
+    private DoubleArray a;
+    private DoubleArray b;
+    private DoubleArray c;
 
     public DgemmJava(int iterations, int m, int n) {
         super(iterations);
@@ -41,18 +42,18 @@ public class DgemmJava extends BenchmarkDriver {
 
     @Override
     public void setUp() {
-        a = new double[m * n];
-        b = new double[m * n];
-        c = new double[m * n];
+        a = new DoubleArray(m * n);
+        b = new DoubleArray(m * n);
+        c = new DoubleArray(m * n);
 
         final Random random = new Random();
 
         for (int i = 0; i < m; i++) {
-            a[i * (m + 1)] = 1;
+            a.set(i * (m + 1), 1);
         }
 
         for (int i = 0; i < m * n; i++) {
-            b[i] = random.nextFloat();
+            b.set(i, random.nextFloat());
         }
 
     }

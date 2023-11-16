@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,6 +22,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -30,13 +31,13 @@ import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner hilbert
+ * tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner hilbert
  * </code>
  */
 public class HilbertTornado extends BenchmarkDriver {
 
     private int size;
-    private float[] hilbertMatrix;
+    private FloatArray hilbertMatrix;
 
     public HilbertTornado(int size, int iterations) {
         super(iterations);
@@ -45,7 +46,7 @@ public class HilbertTornado extends BenchmarkDriver {
 
     @Override
     public void setUp() {
-        hilbertMatrix = new float[size * size];
+        hilbertMatrix = new FloatArray(size * size);
         taskGraph = new TaskGraph("benchmark") //
                 .task("t0", ComputeKernels::hilbertComputation, hilbertMatrix, size, size) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, hilbertMatrix);
@@ -66,7 +67,7 @@ public class HilbertTornado extends BenchmarkDriver {
     @Override
     public boolean validate(TornadoDevice device) {
         boolean val = true;
-        float[] testData = new float[size * size];
+        FloatArray testData = new FloatArray(size * size);
         TaskGraph taskGraph1 = new TaskGraph("s0") //
                 .task("t0", ComputeKernels::hilbertComputation, testData, size, size) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, testData); //
@@ -75,11 +76,11 @@ public class HilbertTornado extends BenchmarkDriver {
         TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
         executor.withDevice(device).execute();
 
-        float[] seq = new float[size * size];
+        FloatArray seq = new FloatArray(size * size);
         ComputeKernels.hilbertComputation(seq, size, size);
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
-                if (Math.abs(testData[i * size + j] - seq[i * size + j]) > 0.01f) {
+                if (Math.abs(testData.get(i * size + j) - seq.get(i * size + j)) > 0.01f) {
                     val = false;
                     break;
                 }

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,6 +21,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
@@ -29,7 +30,7 @@ import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner juliaset
+ * tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner juliaset
  * </code>
  */
 public class JuliaSetTornado extends BenchmarkDriver {
@@ -37,8 +38,8 @@ public class JuliaSetTornado extends BenchmarkDriver {
     private final int size;
     private final int iterations;
 
-    private static float[] hue;
-    private static float[] brightness;
+    private static FloatArray hue;
+    private static FloatArray brightness;
 
     public JuliaSetTornado(int iterations, int size) {
         super(iterations);
@@ -48,8 +49,8 @@ public class JuliaSetTornado extends BenchmarkDriver {
 
     @Override
     public void setUp() {
-        hue = new float[size * size];
-        brightness = new float[size * size];
+        hue = new FloatArray(size * size);
+        brightness = new FloatArray(size * size);
 
         taskGraph = new TaskGraph("benchmark") //
                 .task("juliaSet", GraphicsKernels::juliaSetTornado, size, hue, brightness) //
@@ -70,8 +71,8 @@ public class JuliaSetTornado extends BenchmarkDriver {
 
     @Override
     public boolean validate(TornadoDevice device) {
-        final float[] hueSeq = new float[size * size];
-        final float[] brightnessSeq = new float[size * size];
+        final FloatArray hueSeq = new FloatArray(size * size);
+        final FloatArray brightnessSeq = new FloatArray(size * size);
 
         benchmarkMethod(device);
         executionPlan.clearProfiles();
@@ -80,12 +81,12 @@ public class JuliaSetTornado extends BenchmarkDriver {
 
         boolean isCorrect = true;
         float delta = 0.01f;
-        for (int i = 0; i < hueSeq.length; i++) {
-            if (Math.abs(hueSeq[i] - hue[i]) > delta) {
+        for (int i = 0; i < hueSeq.getSize(); i++) {
+            if (Math.abs(hueSeq.get(i) - hue.get(i)) > delta) {
                 isCorrect = false;
                 break;
             }
-            if (Math.abs(brightnessSeq[i] - brightness[i]) > delta) {
+            if (Math.abs(brightnessSeq.get(i) - brightness.get(i)) > delta) {
                 isCorrect = false;
                 break;
             }
