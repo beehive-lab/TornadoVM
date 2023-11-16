@@ -75,11 +75,28 @@ public class CharArray extends TornadoNativeArray {
         init('\u0000');
     }
 
-    public CharArray(char... values) {
-        this(values.length);
+    private static CharArray createSegment(char[] values) {
+        CharArray array = new CharArray(values.length);
         for (int i = 0; i < values.length; i++) {
-            set(i, values[i]);
+            array.set(i, values[i]);
         }
+        return array;
+    }
+
+    public static CharArray fromArray(char[] values) {
+        return createSegment(values);
+    }
+
+    public static CharArray fromElements(char... values) {
+        return createSegment(values);
+    }
+
+    public char[] toHeapArray() {
+        char[] outputArray = new char[getSize()];
+        for (int i = 0; i < getSize(); i++) {
+            outputArray[i] = get(i);
+        }
+        return outputArray;
     }
 
     public void set(int index, char value) {

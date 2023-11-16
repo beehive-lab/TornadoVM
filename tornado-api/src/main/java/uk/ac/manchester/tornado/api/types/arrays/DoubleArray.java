@@ -72,11 +72,28 @@ public class DoubleArray extends TornadoNativeArray {
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
-    public DoubleArray(double... values) {
-        this(values.length);
+    private static DoubleArray createSegment(double[] values) {
+        DoubleArray array = new DoubleArray(values.length);
         for (int i = 0; i < values.length; i++) {
-            set(i, values[i]);
+            array.set(i, values[i]);
         }
+        return array;
+    }
+
+    public static DoubleArray fromArray(double[] values) {
+        return createSegment(values);
+    }
+
+    public static DoubleArray fromElements(double... values) {
+        return createSegment(values);
+    }
+
+    public double[] toHeapArray() {
+        double[] outputArray = new double[getSize()];
+        for (int i = 0; i < getSize(); i++) {
+            outputArray[i] = get(i);
+        }
+        return outputArray;
     }
 
     public void set(int index, double value) {

@@ -72,11 +72,28 @@ public class FloatArray extends TornadoNativeArray {
         segment.setAtIndex(JAVA_INT, 0, numberOfElements);
     }
 
-    public FloatArray(float... values) {
-        this(values.length);
+    private static FloatArray createSegment(float[] values) {
+        FloatArray array = new FloatArray(values.length);
         for (int i = 0; i < values.length; i++) {
-            set(i, values[i]);
+            array.set(i, values[i]);
         }
+        return array;
+    }
+
+    public static FloatArray fromArray(float[] values) {
+        return createSegment(values);
+    }
+
+    public static FloatArray fromElements(float... values) {
+        return createSegment(values);
+    }
+
+    public float[] toHeapArray() {
+        float[] outputArray = new float[getSize()];
+        for (int i = 0; i < getSize(); i++) {
+            outputArray[i] = get(i);
+        }
+        return outputArray;
     }
 
     public void set(int index, float value) {

@@ -25,9 +25,9 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -149,7 +149,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         ByteArray elements = new ByteArray(1);
         elements.init((byte) 4);
         ByteArray result = new ByteArray(4);
-        ByteArray input = new ByteArray((byte) 127, (byte) 127, (byte) 127, (byte) 127, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
+        ByteArray input = ByteArray.fromElements((byte) 127, (byte) 127, (byte) 127, (byte) 127, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements) //
@@ -173,7 +173,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         ByteArray elements = new ByteArray(1);
         elements.init((byte) 4);
         ByteArray result = new ByteArray(4);
-        ByteArray input = new ByteArray((byte) 127, (byte) 127, (byte) 127, (byte) 127, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
+        ByteArray input = ByteArray.fromElements((byte) 127, (byte) 127, (byte) 127, (byte) 127, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
 
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
@@ -197,7 +197,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         ByteArray elements = new ByteArray(1);
         elements.init((byte) 4);
         ByteArray result = new ByteArray(4);
-        ByteArray input = new ByteArray((byte) 127, (byte) 127, (byte) 127, (byte) 127, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
+        ByteArray input = ByteArray.fromElements((byte) 127, (byte) 127, (byte) 127, (byte) 127, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
 
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
@@ -221,7 +221,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         ByteArray result = new ByteArray(8);
-        ByteArray input = new ByteArray((byte) 0, (byte) 0, (byte) 127, (byte) -127, (byte) 1, (byte) -1, (byte) 1, (byte) 1);
+        ByteArray input = ByteArray.fromElements((byte) 0, (byte) 0, (byte) 127, (byte) -127, (byte) 1, (byte) -1, (byte) 1, (byte) 1);
 
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//
@@ -245,7 +245,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         ByteArray elements = new ByteArray(1);
         elements.init((byte) 4);
         ByteArray result = new ByteArray(4);
-        ByteArray input = new ByteArray((byte) 127, (byte) 127, (byte) 127, (byte) 127, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
+        ByteArray input = ByteArray.fromElements((byte) 127, (byte) 127, (byte) 127, (byte) 127, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
 
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
@@ -269,7 +269,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         ByteArray elements = new ByteArray(1);
         elements.init((byte) 4);
         ByteArray result = new ByteArray(4);
-        ByteArray input = new ByteArray((byte) 125, (byte) 125, (byte) 125, (byte) 125, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
+        ByteArray input = ByteArray.fromElements((byte) 125, (byte) 125, (byte) 125, (byte) 125, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
 
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
@@ -294,7 +294,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         elements.init((byte) 4);
         ByteArray result = new ByteArray(4);
         result.init((byte) 1);
-        ByteArray input = new ByteArray((byte) 125, (byte) 125, (byte) 125, (byte) 125, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
+        ByteArray input = ByteArray.fromElements((byte) 125, (byte) 125, (byte) 125, (byte) 125, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
 
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
@@ -320,7 +320,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         elements.init((byte) 4);
         ByteArray result = new ByteArray(4);
         result.init((byte) 8);
-        ByteArray input = new ByteArray((byte) 2, (byte) 2, (byte) 2, (byte) 2, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
+        ByteArray input = ByteArray.fromElements((byte) 2, (byte) 2, (byte) 2, (byte) 2, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
 
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
@@ -346,7 +346,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         elements.init((byte) 4);
         ByteArray result = new ByteArray(4);
         result.init((byte) 8);
-        ByteArray input = new ByteArray((byte) 2, (byte) 2, (byte) 2, (byte) 2, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
+        ByteArray input = ByteArray.fromElements((byte) 2, (byte) 2, (byte) 2, (byte) 2, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
 
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
@@ -372,7 +372,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         elements.init((byte) 4);
         ByteArray result = new ByteArray(4);
         result.init((byte) 8);
-        ByteArray input = new ByteArray((byte) 2, (byte) 2, (byte) 2, (byte) 2, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
+        ByteArray input = ByteArray.fromElements((byte) 2, (byte) 2, (byte) 2, (byte) 2, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
 
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
@@ -398,7 +398,7 @@ public class TestNumericPromotion extends TornadoTestBase {
         elements.init((byte) 4);
         ByteArray result = new ByteArray(4);
         result.init((byte) 8);
-        ByteArray input = new ByteArray((byte) 2, (byte) 2, (byte) 2, (byte) 2, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
+        ByteArray input = ByteArray.fromElements((byte) 2, (byte) 2, (byte) 2, (byte) 2, (byte) 1, (byte) 1, (byte) 1, (byte) 1);
 
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, result, input, elements)//
