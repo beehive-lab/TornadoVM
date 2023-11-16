@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>tornado</groupId>
@@ -11,34 +12,11 @@
     <name>tornado-runtime</name>
 
     <dependencies>
-	     <dependency>
+        <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>tornado-api</artifactId>
-        	<version>${project.version}</version>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
-    <profiles>
-<!--        We are forced to duplicate this for the two different profiles -->
-        <profile>
-            <id>jdk-8</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.graalvm.compiler</groupId>
-                    <artifactId>compiler</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>jvmci</groupId>
-                    <artifactId>api</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>jvmci</groupId>
-                    <artifactId>hotspot</artifactId>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
 </project>

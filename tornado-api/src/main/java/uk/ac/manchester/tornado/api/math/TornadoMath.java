@@ -43,18 +43,18 @@ package uk.ac.manchester.tornado.api.math;
 
 import static java.lang.Float.floatToIntBits;
 import static java.lang.Integer.toBinaryString;
-import static uk.ac.manchester.tornado.api.types.vectors.Float3.dot;
 import static uk.ac.manchester.tornado.api.types.utils.DoubleOps.compareBits;
 import static uk.ac.manchester.tornado.api.types.utils.DoubleOps.compareULP;
 import static uk.ac.manchester.tornado.api.types.utils.FloatOps.compare;
+import static uk.ac.manchester.tornado.api.types.vectors.Float3.dot;
 
-import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.types.utils.DoubleOps;
 import uk.ac.manchester.tornado.api.types.utils.FloatOps;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
 
 public class TornadoMath {
 
@@ -246,6 +246,14 @@ public class TornadoMath {
         float maxULP = Float.MIN_VALUE;
         for (int i = 0; i < value.getSize(); i++) {
             maxULP = Math.max(maxULP, FloatOps.findMaxULP(value.get(i), expected.get(i)));
+        }
+        return maxULP;
+    }
+
+    public static double findULPDistance(DoubleArray value, DoubleArray expected) {
+        double maxULP = Double.MIN_VALUE;
+        for (int i = 0; i < value.getSize(); i++) {
+            maxULP = Math.max(maxULP, DoubleOps.findMaxULP(value.get(i), expected.get(i)));
         }
         return maxULP;
     }

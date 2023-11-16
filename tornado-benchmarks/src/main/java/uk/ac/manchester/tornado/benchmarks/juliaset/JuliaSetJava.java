@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@
 package uk.ac.manchester.tornado.benchmarks.juliaset;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
@@ -26,8 +27,8 @@ public class JuliaSetJava extends BenchmarkDriver {
     private final int size;
     private final int iterations;
 
-    private static float[] hue;
-    private static float[] brightness;
+    private static FloatArray hue;
+    private static FloatArray brightness;
 
     /**
      * It generates a square image with the fractal.
@@ -40,8 +41,8 @@ public class JuliaSetJava extends BenchmarkDriver {
 
     @Override
     public void setUp() {
-        hue = new float[size * size];
-        brightness = new float[size * size];
+        hue = new FloatArray(size * size);
+        brightness = new FloatArray(size * size);
     }
 
     @Override
