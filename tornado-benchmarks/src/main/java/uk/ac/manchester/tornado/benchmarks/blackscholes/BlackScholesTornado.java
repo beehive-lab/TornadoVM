@@ -24,6 +24,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -38,9 +39,9 @@ import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 public class BlackScholesTornado extends BenchmarkDriver {
 
     private final int size;
-    private float[] randArray;
-    private float[] call;
-    private float[] put;
+    private FloatArray randArray;
+    private FloatArray call;
+    private FloatArray put;
 
     public BlackScholesTornado(int iterations, int size) {
         super(iterations);
@@ -49,12 +50,12 @@ public class BlackScholesTornado extends BenchmarkDriver {
 
     @Override
     public void setUp() {
-        randArray = new float[size];
-        call = new float[size];
-        put = new float[size];
+        randArray = new FloatArray(size);
+        call = new FloatArray(size);
+        put = new FloatArray(size);
 
         for (int i = 0; i < size; i++) {
-            randArray[i] = (i * 1.0f) / size;
+            randArray.set(i, (i * 1.0f) / size);
         }
 
         taskGraph = new TaskGraph("benchmark") //
@@ -79,23 +80,23 @@ public class BlackScholesTornado extends BenchmarkDriver {
 
     @Override
     public boolean validate(TornadoDevice device) {
-        float[] randArrayTor;
-        float[] callTor;
-        float[] putTor;
-        float[] calSeq;
-        float[] putSeq;
+        FloatArray randArrayTor;
+        FloatArray callTor;
+        FloatArray putTor;
+        FloatArray calSeq;
+        FloatArray putSeq;
         boolean val;
 
         val = true;
 
-        randArrayTor = new float[size];
-        callTor = new float[size];
-        putTor = new float[size];
-        calSeq = new float[size];
-        putSeq = new float[size];
+        randArrayTor = new FloatArray(size);
+        callTor = new FloatArray(size);
+        putTor = new FloatArray(size);
+        calSeq = new FloatArray(size);
+        putSeq = new FloatArray(size);
 
         for (int i = 0; i < size; i++) {
-            randArrayTor[i] = (float) Math.random();
+            randArrayTor.set(i, (float) Math.random());
         }
 
         taskGraph = new TaskGraph("benchmark");
@@ -112,11 +113,11 @@ public class BlackScholesTornado extends BenchmarkDriver {
         blackscholes(randArrayTor, putSeq, calSeq);
 
         for (int i = 0; i < size; i++) {
-            if (abs(putTor[i] - putSeq[i]) > 0.01) {
+            if (abs(putTor.get(i) - putSeq.get(i)) > 0.01) {
                 val = false;
                 break;
             }
-            if (abs(callTor[i] - calSeq[i]) > 0.01) {
+            if (abs(callTor.get(i) - calSeq.get(i)) > 0.01) {
                 val = false;
                 break;
             }

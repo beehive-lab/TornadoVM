@@ -25,6 +25,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
@@ -40,8 +41,8 @@ public class SaxpyTornado extends BenchmarkDriver {
 
     private final int numElements;
 
-    private float[] x;
-    private float[] y;
+    private FloatArray x;
+    private FloatArray y;
     private final float alpha = 2f;
 
     public SaxpyTornado(int iterations, int numElements) {
@@ -51,11 +52,11 @@ public class SaxpyTornado extends BenchmarkDriver {
 
     @Override
     public void setUp() {
-        x = new float[numElements];
-        y = new float[numElements];
+        x = new FloatArray(numElements);
+        y = new FloatArray(numElements);
 
         for (int i = 0; i < numElements; i++) {
-            x[i] = i;
+            x.set(i, i);
         }
 
         taskGraph = new TaskGraph("benchmark");
@@ -87,7 +88,7 @@ public class SaxpyTornado extends BenchmarkDriver {
     @Override
     public boolean validate(TornadoDevice device) {
 
-        final float[] result = new float[numElements];
+        final FloatArray result = new FloatArray(numElements);
 
         benchmarkMethod(device);
         executionResult.transferToHost(y);

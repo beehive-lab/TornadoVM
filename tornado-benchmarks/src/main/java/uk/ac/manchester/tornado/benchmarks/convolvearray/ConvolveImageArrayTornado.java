@@ -25,6 +25,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.utils.FloatOps;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
@@ -42,9 +43,9 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
     private final int imageSizeX;
     private final int imageSizeY;
     private final int filterSize;
-    private float[] input;
-    private float[] output;
-    private float[] filter;
+    private FloatArray input;
+    private FloatArray output;
+    private FloatArray filter;
 
     public ConvolveImageArrayTornado(int iterations, int imageSizeX, int imageSizeY, int filterSize) {
         super(iterations);
@@ -55,9 +56,9 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
 
     @Override
     public void setUp() {
-        input = new float[imageSizeX * imageSizeY];
-        output = new float[imageSizeX * imageSizeY];
-        filter = new float[filterSize * filterSize];
+        input = new FloatArray(imageSizeX * imageSizeY);
+        output = new FloatArray(imageSizeX * imageSizeY);
+        filter = new FloatArray(filterSize * filterSize);
 
         createImage(input, imageSizeX, imageSizeY);
         createFilter(filter, filterSize, filterSize);
@@ -92,7 +93,7 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
     @Override
     public boolean validate(TornadoDevice device) {
 
-        final float[] result = new float[imageSizeX * imageSizeY];
+        final FloatArray result = new FloatArray(imageSizeX * imageSizeY);
 
         benchmarkMethod(device);
         executionResult.transferToHost(output);
@@ -101,8 +102,8 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
         GraphicsKernels.convolveImageArray(input, filter, result, imageSizeX, imageSizeY, filterSize, filterSize);
 
         float maxULP = 0f;
-        for (int i = 0; i < output.length; i++) {
-            final float ulp = FloatOps.findMaxULP(result[i], output[i]);
+        for (int i = 0; i < output.getSize(); i++) {
+            final float ulp = FloatOps.findMaxULP(result.get(i), output.get(i));
 
             if (ulp > maxULP) {
                 maxULP = ulp;

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,6 +25,8 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
@@ -33,21 +35,21 @@ import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner blurFilter
+ * tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner blurFilter
  * </code>
  */
 public class BlurFilterTornado extends BenchmarkDriver {
 
     private int size;
     public static final int FILTER_WIDTH = 31;
-    int[] redChannel;
-    int[] greenChannel;
-    int[] blueChannel;
-    int[] alphaChannel;
-    int[] redFilter;
-    int[] greenFilter;
-    int[] blueFilter;
-    float[] filter;
+    IntArray redChannel;
+    IntArray greenChannel;
+    IntArray blueChannel;
+    IntArray alphaChannel;
+    IntArray redFilter;
+    IntArray greenFilter;
+    IntArray blueFilter;
+    FloatArray filter;
 
     public BlurFilterTornado(int iterations, int size) {
         super(iterations);
@@ -59,19 +61,19 @@ public class BlurFilterTornado extends BenchmarkDriver {
         int w = size;
         int h = size;
 
-        redChannel = new int[w * h];
-        greenChannel = new int[w * h];
-        blueChannel = new int[w * h];
-        alphaChannel = new int[w * h];
+        redChannel = new IntArray(w * h);
+        greenChannel = new IntArray(w * h);
+        blueChannel = new IntArray(w * h);
+        alphaChannel = new IntArray(w * h);
 
-        greenFilter = new int[w * h];
-        redFilter = new int[w * h];
-        blueFilter = new int[w * h];
+        greenFilter = new IntArray(w * h);
+        redFilter = new IntArray(w * h);
+        blueFilter = new IntArray(w * h);
 
-        filter = new float[w * h];
+        filter = new FloatArray(w * h);
         for (int i = 0; i < w; i++) {
             for (int j = 0; j < h; j++) {
-                filter[i * h + j] = 1.f / (FILTER_WIDTH * FILTER_WIDTH);
+                filter.set(i * h + j, 1.f / (FILTER_WIDTH * FILTER_WIDTH));
             }
         }
 
@@ -79,10 +81,10 @@ public class BlurFilterTornado extends BenchmarkDriver {
         for (int i = 0; i < w; i++) {
             for (int j = 0; j < h; j++) {
                 int rgb = r.nextInt(255);
-                alphaChannel[i * h + j] = (rgb >> 24) & 0xFF;
-                redChannel[i * h + j] = (rgb >> 16) & 0xFF;
-                greenChannel[i * h + j] = (rgb >> 8) & 0xFF;
-                blueChannel[i * h + j] = (rgb & 0xFF);
+                alphaChannel.set(i * h + j, (rgb >> 24) & 0xFF);
+                redChannel.set(i * h + j, (rgb >> 16) & 0xFF);
+                greenChannel.set(i * h + j, (rgb >> 8) & 0xFF);
+                blueChannel.set(i * h + j, (rgb & 0xFF));
             }
         }
 
@@ -118,23 +120,23 @@ public class BlurFilterTornado extends BenchmarkDriver {
         int w = size;
         int h = size;
 
-        int[] redChannel = new int[w * h];
-        int[] greenChannel = new int[w * h];
-        int[] blueChannel = new int[w * h];
-        int[] alphaChannel = new int[w * h];
+        IntArray redChannel = new IntArray(w * h);
+        IntArray greenChannel = new IntArray(w * h);
+        IntArray blueChannel = new IntArray(w * h);
+        IntArray alphaChannel = new IntArray(w * h);
 
-        int[] greenFilter = new int[w * h];
-        int[] redFilter = new int[w * h];
-        int[] blueFilter = new int[w * h];
+        IntArray greenFilter = new IntArray(w * h);
+        IntArray redFilter = new IntArray(w * h);
+        IntArray blueFilter = new IntArray(w * h);
 
-        int[] greenFilterSeq = new int[w * h];
-        int[] redFilterSeq = new int[w * h];
-        int[] blueFilterSeq = new int[w * h];
+        IntArray greenFilterSeq = new IntArray(w * h);
+        IntArray redFilterSeq = new IntArray(w * h);
+        IntArray blueFilterSeq = new IntArray(w * h);
 
-        float[] filter = new float[w * h];
+        FloatArray filter = new FloatArray(w * h);
         for (int i = 0; i < w; i++) {
             for (int j = 0; j < h; j++) {
-                filter[i * h + j] = 1.f / (FILTER_WIDTH * FILTER_WIDTH);
+                filter.set(i * h + j, 1.f / (FILTER_WIDTH * FILTER_WIDTH));
             }
         }
 
@@ -142,10 +144,10 @@ public class BlurFilterTornado extends BenchmarkDriver {
         for (int i = 0; i < w; i++) {
             for (int j = 0; j < h; j++) {
                 int rgb = r.nextInt(255);
-                alphaChannel[i * h + j] = (rgb >> 24) & 0xFF;
-                redChannel[i * h + j] = (rgb >> 16) & 0xFF;
-                greenChannel[i * h + j] = (rgb >> 8) & 0xFF;
-                blueChannel[i * h + j] = (rgb & 0xFF);
+                alphaChannel.set(i * h + j, (rgb >> 24) & 0xFF);
+                redChannel.set(i * h + j, (rgb >> 16) & 0xFF);
+                greenChannel.set(i * h + j, (rgb >> 8) & 0xFF);
+                blueChannel.set(i * h + j, (rgb & 0xFF));
             }
         }
 
@@ -165,16 +167,16 @@ public class BlurFilterTornado extends BenchmarkDriver {
         ComputeKernels.channelConvolution(greenChannel, greenFilterSeq, size, size, filter, FILTER_WIDTH);
         ComputeKernels.channelConvolution(blueChannel, blueFilterSeq, size, size, filter, FILTER_WIDTH);
 
-        for (int i = 0; i < redFilter.length; i++) {
-            if (redFilter[i] != redFilterSeq[i]) {
+        for (int i = 0; i < redFilter.getSize(); i++) {
+            if (redFilter.get(i) != redFilterSeq.get(i)) {
                 valid = false;
                 break;
             }
-            if (greenFilter[i] != greenFilterSeq[i]) {
+            if (greenFilter.get(i) != greenFilterSeq.get(i)) {
                 valid = false;
                 break;
             }
-            if (blueFilter[i] != blueFilterSeq[i]) {
+            if (blueFilter.get(i) != blueFilterSeq.get(i)) {
                 valid = false;
                 break;
             }

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,28 +18,29 @@
 package uk.ac.manchester.tornado.benchmarks.euler;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 public class EulerJava extends BenchmarkDriver {
 
     private int size;
-    long[] input;
-    long[] outputA;
-    long[] outputB;
-    long[] outputC;
-    long[] outputD;
-    long[] outputE;
+    LongArray input;
+    LongArray outputA;
+    LongArray outputB;
+    LongArray outputC;
+    LongArray outputD;
+    LongArray outputE;
 
     public EulerJava(int iterations, int size) {
         super(iterations);
         this.size = size;
     }
 
-    private long[] init(int size) {
-        long[] input = new long[size];
+    private LongArray init(int size) {
+        LongArray input = new LongArray(size);
         for (int i = 0; i < size; i++) {
-            input[i] = (long) i * i * i * i * i;
+            input.set(i, ((long) i * i * i * i * i));
         }
         return input;
     }
@@ -47,11 +48,11 @@ public class EulerJava extends BenchmarkDriver {
     @Override
     public void setUp() {
         input = init(size);
-        outputA = new long[size];
-        outputB = new long[size];
-        outputC = new long[size];
-        outputD = new long[size];
-        outputE = new long[size];
+        outputA = new LongArray(size);
+        outputB = new LongArray(size);
+        outputC = new LongArray(size);
+        outputD = new LongArray(size);
+        outputE = new LongArray(size);
     }
 
     @Override

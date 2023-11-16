@@ -25,6 +25,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 import uk.ac.manchester.tornado.matrix.SparseMatrixUtils.CSRMatrix;
@@ -39,20 +40,20 @@ import uk.ac.manchester.tornado.matrix.SparseMatrixUtils.CSRMatrix;
  */
 public class SpmvTornado extends BenchmarkDriver {
 
-    private final CSRMatrix<float[]> matrix;
+    private final CSRMatrix<FloatArray> matrix;
 
-    private float[] v;
-    private float[] y;
+    private FloatArray v;
+    private FloatArray y;
 
-    public SpmvTornado(int iterations, CSRMatrix<float[]> matrix) {
+    public SpmvTornado(int iterations, CSRMatrix<FloatArray> matrix) {
         super(iterations);
         this.matrix = matrix;
     }
 
     @Override
     public void setUp() {
-        v = new float[matrix.size];
-        y = new float[matrix.size];
+        v = new FloatArray(matrix.size);
+        y = new FloatArray(matrix.size);
         initData(v);
         taskGraph = new TaskGraph("benchmark") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrix.vals, matrix.cols, matrix.rows, v, y) //
@@ -83,7 +84,7 @@ public class SpmvTornado extends BenchmarkDriver {
     @Override
     public boolean validate(TornadoDevice device) {
 
-        final float[] ref = new float[matrix.size];
+        final FloatArray ref = new FloatArray(matrix.size);
 
         benchmarkMethod(device);
         executionPlan.clearProfiles();
