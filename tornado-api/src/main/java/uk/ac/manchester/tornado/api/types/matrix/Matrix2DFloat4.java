@@ -225,7 +225,7 @@ public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<Flo
 
     @Override
     public FloatBuffer asBuffer() {
-        return storage.getSegment().asByteBuffer().asFloatBuffer();
+        return FloatBuffer.wrap(storage.toHeapArray());
     }
 
     @Override

@@ -186,7 +186,7 @@ public class VectorInt4 implements PrimitiveStorage<IntBuffer> {
     }
 
     public IntBuffer asBuffer(IntArray buffer) {
-        return storage.getSegment().asByteBuffer().asIntBuffer();
+        return IntBuffer.wrap(buffer.toHeapArray());
     }
 
     @Override
@@ -196,7 +196,7 @@ public class VectorInt4 implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public IntBuffer asBuffer() {
-        return null;
+        return IntBuffer.wrap(storage.toHeapArray());
     }
 
     @Override

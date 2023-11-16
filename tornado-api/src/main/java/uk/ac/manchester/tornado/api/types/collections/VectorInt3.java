@@ -43,9 +43,9 @@ import static uk.ac.manchester.tornado.api.types.vectors.Int3.loadFromArray;
 
 import java.nio.IntBuffer;
 
-import uk.ac.manchester.tornado.api.types.vectors.Int3;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
+import uk.ac.manchester.tornado.api.types.vectors.Int3;
 
 public class VectorInt3 implements PrimitiveStorage<IntBuffer> {
 
@@ -193,7 +193,7 @@ public class VectorInt3 implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public IntBuffer asBuffer() {
-        return storage.getSegment().asByteBuffer().asIntBuffer();
+        return IntBuffer.wrap(storage.toHeapArray());
     }
 
     @Override

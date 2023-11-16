@@ -43,9 +43,9 @@ package uk.ac.manchester.tornado.api.types.volumes;
 
 import java.nio.ShortBuffer;
 
-import uk.ac.manchester.tornado.api.types.vectors.Short2;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
+import uk.ac.manchester.tornado.api.types.vectors.Short2;
 
 public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
 
@@ -163,7 +163,7 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
 
     @Override
     public ShortBuffer asBuffer() {
-        return storage.getSegment().asByteBuffer().asShortBuffer();
+        return ShortBuffer.wrap(storage.toHeapArray());
     }
 
     @Override
