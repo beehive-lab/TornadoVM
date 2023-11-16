@@ -353,12 +353,10 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         }
 
         graph.getNodes().filter(ParallelRangeNode.class).forEach(range -> {
-            if (range.value() instanceof PhiNode) {
-                PhiNode phiNode = (PhiNode) range.value();
+            if (range.value() instanceof PhiNode phiNode) {
                 NodeIterable<Node> usages = range.usages();
                 for (Node usage : usages) {
-                    if (usage instanceof IntegerLessThanNode) {
-                        IntegerLessThanNode less = (IntegerLessThanNode) usage;
+                    if (usage instanceof IntegerLessThanNode less) {
                         ConstantNode constant = null;
                         if (less.getX() instanceof ConstantNode) {
                             constant = (ConstantNode) less.getX();
