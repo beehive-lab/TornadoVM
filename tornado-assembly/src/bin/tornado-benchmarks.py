@@ -188,7 +188,7 @@ def composeAllOptions(args):
     if args.skip_devices != None:
         jvm_options = jvm_options + __SKIP_DEVICES__ + args.skip_devices + " "
     if args.profiler:
-        tornado_options = tornado_options + __ENABLE_PROFILER__ + args.profiler
+        tornado_options = tornado_options + __ENABLE_PROFILER__ + args.profiler + " "
     if args.jvmFlags != None:
         jvm_options = jvm_options + args.jvmFlags
     if args.tornadoThreadScheduler == True:
