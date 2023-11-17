@@ -269,7 +269,8 @@ def runWithJMH(args):
 def runDefaultSizePerBenchmark(args):
     printBenchmarks()
     jvm_options, tornado_options = composeAllOptions(args)
-    print(Colors.CYAN + "[INFO] TornadoVM options: " + options + Colors.RESET)
+    print(Colors.CYAN + "[INFO] TornadoVM options: " + tornado_options +
+          jvm_options + Colors.RESET)
     for b in __BENCHMARKS__:
         command = (
             __TORNADO_COMMAND__
