@@ -236,7 +236,7 @@ public class Matrix2DInt extends Matrix2DType implements PrimitiveStorage<IntBuf
 
     @Override
     public IntBuffer asBuffer() {
-        return storage.getSegment().asByteBuffer().asIntBuffer();
+        return IntBuffer.wrap(storage.toHeapArray());
     }
 
     @Override

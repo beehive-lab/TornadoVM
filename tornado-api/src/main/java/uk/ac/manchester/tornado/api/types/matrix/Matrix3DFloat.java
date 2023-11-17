@@ -156,8 +156,7 @@ public class Matrix3DFloat extends Matrix3DType implements PrimitiveStorage<Floa
 
     @Override
     public FloatBuffer asBuffer() {
-        //TODO: Check if this is correct
-        return storage.getSegment().asByteBuffer().asFloatBuffer();
+        return FloatBuffer.wrap(storage.toHeapArray());
     }
 
     @Override

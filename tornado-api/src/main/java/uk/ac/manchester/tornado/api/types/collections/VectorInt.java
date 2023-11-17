@@ -253,7 +253,7 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public IntBuffer asBuffer() {
-        return storage.getSegment().asByteBuffer().asIntBuffer();
+        return IntBuffer.wrap(storage.toHeapArray());
     }
 
     @Override
