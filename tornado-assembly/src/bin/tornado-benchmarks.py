@@ -231,7 +231,7 @@ def runBenchmarksFullCoverage(args):
 
 def runMediumConfiguration(args):
     jvm_options, tornado_options = composeAllOptions(args)
-    print(options)
+    print(tornado_options, jvm_options)
     for key in mediumSizes.keys():
         for size in mediumSizes[key][0]:
             numIterations = eval(mediumSizes[key][1][0])
