@@ -77,12 +77,12 @@ JDK = {
     },
     __GRAALVM21__: {
         __LINUX__: {
-            __X86_64__: "https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-21.0.1/graalvm-community-jdk-21.0.1_linux-x64_bin.tar.gz",
-            __ARM__: "https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-21.0.1/graalvm-community-jdk-21.0.1_linux-aarch64_bin.tar.gz",
+            __X86_64__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.1/graalvm-community-jdk-21.0.1_linux-x64_bin.tar.gz",
+            __ARM__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.1/graalvm-community-jdk-21.0.1_linux-aarch64_bin.tar.gz",
         },
         __APPLE__: {
-            __X86_64__: "https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-21.0.1/graalvm-community-jdk-21.0.1_macos-x64_bin.tar.gz",
-            __ARM__: "https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-21.0.1/graalvm-community-jdk-21.0.1_macos-aarch64_bin.tar.gz",
+            __X86_64__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.1/graalvm-community-jdk-21.0.1_macos-x64_bin.tar.gz",
+            __ARM__: "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.1/graalvm-community-jdk-21.0.1_macos-aarch64_bin.tar.gz",
         },
     },
     __CORRETTO21__: {
