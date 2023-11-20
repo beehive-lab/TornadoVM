@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
@@ -71,14 +72,14 @@ public class MatrixMul2DLocalMemory {
     private static final boolean CHECK_RESULT = true;
     private static final float DELTA = 0.01f;
 
-    private static void matrixMultiplication(final float[] A, final float[] B, final float[] C, final int size) {
+    private static void matrixMultiplication(final FloatArray A, final FloatArray B, final FloatArray C, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
             for (@Parallel int j = 0; j < size; j++) {
                 float sum = 0.0f;
                 for (int k = 0; k < size; k++) {
-                    sum += A[(i * size) + k] * B[(k * size) + j];
+                    sum += A.get((i * size) + k) * B.get((k * size) + j);
                 }
-                C[(i * size) + j] = sum;
+                C.set((i * size) + j, sum);
             }
         }
     }
@@ -91,7 +92,7 @@ public class MatrixMul2DLocalMemory {
      * https://github.com/cnugteren/myGEMM.
      *
      */
-    public static void matrixMultiplicationLocalMemory(KernelContext context, final float[] A, final float[] B, final float[] C, final int size) {
+    public static void matrixMultiplicationLocalMemory(KernelContext context, final FloatArray A, final FloatArray B, final FloatArray C, final int size) {
         // Thread identifiers
         int row = context.localIdx; // Local row ID (max: TS)
         int col = context.localIdy; // Local col ID (max: TS)
@@ -110,8 +111,8 @@ public class MatrixMul2DLocalMemory {
             // Load one tile of A and B into local memory
             int tiledRow = TS * t + row;
             int tiledCol = TS * t + col;
-            aSub[col * TS + row] = A[tiledCol * size + globalRow];
-            bSub[col * TS + row] = B[globalCol * size + tiledRow];
+            aSub[col * TS + row] = A.get(tiledCol * size + globalRow);
+            bSub[col * TS + row] = B.get(globalCol * size + tiledRow);
 
             // Synchronise to make sure the tile is loaded
             context.localBarrier();
@@ -125,7 +126,7 @@ public class MatrixMul2DLocalMemory {
         }
 
         // Store the final result in C
-        C[(globalCol * size) + globalRow] = sum;
+        C.set((globalCol * size) + globalRow, sum);
     }
 
     public static void main(String[] args) throws Exception {
@@ -141,17 +142,17 @@ public class MatrixMul2DLocalMemory {
             local_y = Long.parseLong(args[2]);
         }
 
-        float[] matrixA = new float[N * N];
-        float[] matrixB = new float[N * N];
-        float[] matrixCSeq = new float[N * N];
-        float[] matrixCCUDA = new float[N * N];
-        float[] matrixCOCL = new float[N * N];
-        float[] matrixCOCLNewApi = new float[N * N];
-        float[] matrixCCUDANewApi = new float[N * N];
+        FloatArray matrixA = new FloatArray(N * N);
+        FloatArray matrixB = new FloatArray(N * N);
+        FloatArray matrixCSeq = new FloatArray(N * N);
+        FloatArray matrixCCUDA = new FloatArray(N * N);
+        FloatArray matrixCOCL = new FloatArray(N * N);
+        FloatArray matrixCOCLNewApi = new FloatArray(N * N);
+        FloatArray matrixCCUDANewApi = new FloatArray(N * N);
 
         IntStream.range(0, N * N).parallel().forEach(idx -> {
-            matrixA[idx] = 2.5f;
-            matrixB[idx] = 3.5f;
+            matrixA.set(idx, 2.5f);
+            matrixB.set(idx, 3.5f);
         });
 
         WorkerGrid workerCUDAOld = new WorkerGrid2D(N, N);
@@ -356,23 +357,23 @@ public class MatrixMul2DLocalMemory {
 
         if (CHECK_RESULT) {
             for (int i = 0; i < N * N; i++) {
-                if (Math.abs(matrixCCUDA[i] - matrixCSeq[i]) > DELTA) {
+                if (Math.abs(matrixCCUDA.get(i) - matrixCSeq.get(i)) > DELTA) {
                     validationCUDA = false;
                     System.out.println("CUDA validation failed");
                 }
-                if (Math.abs(matrixCOCL[i] - matrixCSeq[i]) > DELTA) {
+                if (Math.abs(matrixCOCL.get(i) - matrixCSeq.get(i)) > DELTA) {
                     validationOCL = false;
                     System.out.println("OpenCL validation failed");
                 }
-                if (Math.abs(matrixCOCLNewApi[i] - matrixCSeq[i]) > DELTA) {
+                if (Math.abs(matrixCOCLNewApi.get(i) - matrixCSeq.get(i)) > DELTA) {
                     validationOCLNewApi = false;
                     System.out.println("OpenCL new api validation failed");
-                    System.out.println("Result is (" + matrixCOCLNewApi[i] + ") - while should be (" + matrixCSeq[i] + ")");
+                    System.out.println("Result is (" + matrixCOCLNewApi.get(i) + ") - while should be (" + matrixCSeq.get(i) + ")");
                 }
-                if (Math.abs(matrixCCUDANewApi[i] - matrixCSeq[i]) > DELTA) {
+                if (Math.abs(matrixCCUDANewApi.get(i) - matrixCSeq.get(i)) > DELTA) {
                     validationCUDANewApi = false;
                     System.out.println("CUDA new api validation failed");
-                    System.out.println("Result is (" + matrixCCUDANewApi[i] + ") - while should be (" + matrixCSeq[i] + ")");
+                    System.out.println("Result is (" + matrixCCUDANewApi.get(i) + ") - while should be (" + matrixCSeq.get(i) + ")");
                 }
                 correctResult = validationCUDA && validationOCL && validationOCLNewApi && validationCUDANewApi;
 

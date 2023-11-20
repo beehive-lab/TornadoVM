@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.benchmarks.saxpy;
 
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPDistance;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.findULPDistance;
 import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.saxpy;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -25,6 +25,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
@@ -33,15 +34,15 @@ import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner saxpy
+ * tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner saxpy
  * </code>
  */
 public class SaxpyTornado extends BenchmarkDriver {
 
     private final int numElements;
 
-    private float[] x;
-    private float[] y;
+    private FloatArray x;
+    private FloatArray y;
     private final float alpha = 2f;
 
     public SaxpyTornado(int iterations, int numElements) {
@@ -51,11 +52,11 @@ public class SaxpyTornado extends BenchmarkDriver {
 
     @Override
     public void setUp() {
-        x = new float[numElements];
-        y = new float[numElements];
+        x = new FloatArray(numElements);
+        y = new FloatArray(numElements);
 
         for (int i = 0; i < numElements; i++) {
-            x[i] = i;
+            x.set(i, i);
         }
 
         taskGraph = new TaskGraph("benchmark");
@@ -87,7 +88,7 @@ public class SaxpyTornado extends BenchmarkDriver {
     @Override
     public boolean validate(TornadoDevice device) {
 
-        final float[] result = new float[numElements];
+        final FloatArray result = new FloatArray(numElements);
 
         benchmarkMethod(device);
         executionResult.transferToHost(y);

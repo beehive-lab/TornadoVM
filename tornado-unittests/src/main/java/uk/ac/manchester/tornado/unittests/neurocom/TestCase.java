@@ -23,6 +23,9 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -39,29 +42,29 @@ public class TestCase extends TornadoTestBase {
 
     private static final int N = 512;
 
-    private static void KMeansCalculateCentroids(short[] cache_dqsize, int[] cache_dstart, int[] cache_dqid, float[] cache_dqtfidf, float[] cache_kmeans, int[] doc_group, int[] sizes) {
-        int N = sizes[0];
-        int V = sizes[1];
-        int K = sizes[5];
+    private static void KMeansCalculateCentroids(ShortArray cache_dqsize, IntArray cache_dstart, IntArray cache_dqid, FloatArray cache_dqtfidf, FloatArray cache_kmeans, IntArray doc_group, IntArray sizes) {
+        int N = sizes.get(0);
+        int V = sizes.get(1);
+        int K = sizes.get(5);
         for (@Parallel int j = 0; j < K; j++) {
             int kj_len = 1;
             for (int k = 0; k < V; k++) {
-                cache_kmeans[V * j + k] = 0;
+                cache_kmeans.set(V * j + k, 0);
             }
             for (int i = 0; i < N; i++) {
-                if (doc_group[i] == j) {
+                if (doc_group.get(i) == j) {
                     kj_len++;
-                    int di_start = cache_dstart[i];
-                    int di_end = cache_dqsize[i] + di_start;
+                    int di_start = cache_dstart.get(i);
+                    int di_end = cache_dqsize.get(i) + di_start;
                     for (int di_idx = di_start; di_idx < di_end; di_idx++) {
-                        int qi = cache_dqid[di_idx];
-                        cache_kmeans[V * j + qi] += cache_dqtfidf[di_idx];
+                        int qi = cache_dqid.get(di_idx);
+                        cache_kmeans.set(V * j + qi, cache_kmeans.get(V * j + qi) + cache_dqtfidf.get(di_idx));
                     }
                 }
             }
 
             for (int k = 0; k < V; k++) {
-                cache_kmeans[V * j + k] /= kj_len;
+                cache_kmeans.set(V * j + k, cache_kmeans.get(V * j + k) / kj_len);
             }
         }
     }
@@ -71,14 +74,14 @@ public class TestCase extends TornadoTestBase {
      */
     @Test
     public void test() {
-        short[] cache_dqsize = new short[N];
-        int[] cache_dstart = new int[N];
-        float[] cache_kmeans = new float[N * N];
-        int[] doc_group = new int[N];
+        ShortArray cache_dqsize = new ShortArray(N);
+        IntArray cache_dstart = new IntArray(N);
+        FloatArray cache_kmeans = new FloatArray(N * N);
+        IntArray doc_group = new IntArray(N);
         int total_len = 10;
-        int[] cache_dqid = new int[total_len];
-        float[] cache_dqtfidf = new float[total_len];
-        int[] sizes = new int[6];
+        IntArray cache_dqid = new IntArray(total_len);
+        FloatArray cache_dqtfidf = new FloatArray(total_len);
+        IntArray sizes = new IntArray(6);
 
         TaskGraph taskGraph = new TaskGraph("foo") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, cache_dqsize, cache_dqid, cache_dqtfidf, cache_kmeans, doc_group) //

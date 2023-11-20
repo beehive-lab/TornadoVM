@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,16 +19,15 @@
 package uk.ac.manchester.tornado.matrix;
 
 import static java.lang.Math.abs;
-import static uk.ac.manchester.tornado.api.collections.types.Float6.dot;
-import static uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat.scale;
-import static uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat.transpose;
+import static uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat.scale;
+import static uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat.transpose;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.types.Float6;
-import uk.ac.manchester.tornado.api.collections.types.Matrix2DDouble;
-import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
-import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DDouble;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 public final class MatrixMath {
 
@@ -217,11 +216,11 @@ public final class MatrixMath {
      * Matrix-vector multiplication.
      *
      * @param y
-     *            result
+     *     result
      * @param m
-     *            matrix
+     *     matrix
      * @param x
-     *            vector
+     *     vector
      */
     public static void multiply(VectorFloat y, Matrix2DFloat m, VectorFloat x) {
         for (int i = 0; i < m.getNumColumns(); i++) {
@@ -229,10 +228,27 @@ public final class MatrixMath {
         }
     }
 
-    public static void multiply(Float6 y, Matrix2DFloat m, Float6 x) {
-        final Float6 row = new Float6();
-        for (int i = 0; i < 6; i++) {
-            for (int j = 0; j < 6; j++) {
+    public static FloatArray mult(FloatArray a, FloatArray b) {
+        final FloatArray result = new FloatArray(6);
+        for (int i = 0; i < a.getSize(); i++) {
+            result.set(i, a.get(i) * b.get(i));
+        }
+        return result;
+    }
+
+    public static float dot(FloatArray a, FloatArray b) {
+        float result = 0f;
+        final FloatArray m = mult(a, b);
+        for (int i = 0; i < a.getSize(); i++) {
+            result += m.get(i);
+        }
+        return result;
+    }
+
+    public static void multiply(FloatArray y, Matrix2DFloat m, FloatArray x) {
+        final FloatArray row = new FloatArray(6);
+        for (int i = 0; i < row.getSize(); i++) {
+            for (int j = 0; j < row.getSize(); j++) {
                 row.set(j, m.get(i, j));
             }
             y.set(i, dot(row, x));

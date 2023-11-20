@@ -23,7 +23,6 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 import java.io.File;
-import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -38,16 +37,20 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
-import uk.ac.manchester.tornado.api.collections.types.Byte3;
-import uk.ac.manchester.tornado.api.collections.types.Float3;
-import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
-import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
-import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
-import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
+import uk.ac.manchester.tornado.api.types.vectors.Byte3;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
+import uk.ac.manchester.tornado.api.types.images.ImageByte3;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -78,7 +81,7 @@ public class ComputeTests extends TornadoTestBase {
     private static int NROWS = 1024;
     private static int NCOLS = 1024;
 
-    private static void nBody(int numBodies, float[] refPos, float[] refVel) {
+    private static void nBody(int numBodies, FloatArray refPos, FloatArray refVel) {
         for (@Parallel int i = 0; i < numBodies; i++) {
             int body = 4 * i;
 
@@ -89,45 +92,60 @@ public class ComputeTests extends TornadoTestBase {
 
                 float distSqr = 0.0f;
                 for (int k = 0; k < 3; k++) {
-                    r[k] = refPos[index + k] - refPos[body + k];
+                    r[k] = refPos.get(index + k) - refPos.get(body + k);
                     distSqr += r[k] * r[k];
                 }
 
                 float invDist = (float) (1.0f / Math.sqrt(distSqr + ESP_SQR));
 
                 float invDistCube = invDist * invDist * invDist;
-                float s = refPos[index + 3] * invDistCube;
+                float s = refPos.get(index + 3) * invDistCube;
 
                 for (int k = 0; k < 3; k++) {
                     acc[k] += s * r[k];
                 }
             }
             for (int k = 0; k < 3; k++) {
-                refPos[body + k] += refVel[body + k] * DELTA + 0.5f * acc[k] * DELTA * DELTA;
-                refVel[body + k] += acc[k] * DELTA;
+                refPos.set(body + k, refPos.get(body + k) + refPos.get(body + k) * DELTA + 0.5f * acc[k] * DELTA * DELTA);
+                refVel.set(body + k, refPos.get(body + k) + acc[k] * DELTA);
             }
         }
     }
 
-    public static void validate(int numBodies, float[] posTornadoVM, float[] velTornadoVM, float[] posSequential, float[] velSequential) {
+    public static void validate(int numBodies, FloatArray posTornadoVM, FloatArray velTornadoVM, FloatArray posSequential, FloatArray velSequential) {
         for (int i = 0; i < numBodies * 4; i++) {
-            assertEquals(posSequential[i], posTornadoVM[i], 0.1f);
-            assertEquals(velSequential[i], velTornadoVM[i], 0.1f);
+            assertEquals(posSequential.get(i), posTornadoVM.get(i), 0.1f);
+            assertEquals(velSequential.get(i), velTornadoVM.get(i), 0.1f);
         }
     }
 
-    public static void computeDFT(float[] inreal, float[] inimag, float[] outreal, float[] outimag) {
-        int n = inreal.length;
+    public static void computeDFT(FloatArray inreal, FloatArray inimag, FloatArray outreal, FloatArray outimag) {
+        int n = inreal.getSize();
+        for (@Parallel int k = 0; k < n; k++) { // For each output element
+            float sumReal = 0;
+            float simImag = 0;
+            for (int t = 0; t < n; t++) { // For each input element
+                float angle = (float) ((2 * Math.PI * t * k) / n);
+                sumReal += inreal.get(t) * Math.cos(angle) + inimag.get(t) * Math.sin(angle);
+                simImag += -inreal.get(t) * Math.sin(angle) + inimag.get(t) * Math.cos(angle);
+            }
+            outreal.set(k, sumReal);
+            outimag.set(k, simImag);
+        }
+    }
+
+    public static void computeDFTFloat(FloatArray inreal, FloatArray inimag, FloatArray outreal, FloatArray outimag) {
+        int n = inreal.getSize();
         for (@Parallel int k = 0; k < n; k++) { // For each output element
             float sumReal = 0;
             float simImag = 0;
             for (int t = 0; t < n; t++) { // For each input element
                 float angle = (2 * TornadoMath.floatPI() * t * k) / n;
-                sumReal += inreal[t] * Math.cos(angle) + inimag[t] * Math.sin(angle);
-                simImag += -inreal[t] * Math.sin(angle) + inimag[t] * Math.cos(angle);
+                sumReal += inreal.get(t) * TornadoMath.cos(angle) + inimag.get(t) * TornadoMath.sin(angle);
+                simImag += -inreal.get(t) * TornadoMath.sin(angle) + inimag.get(t) * TornadoMath.cos(angle);
             }
-            outreal[k] = sumReal;
-            outimag[k] = simImag;
+            outreal.set(k, sumReal);
+            outimag.set(k, simImag);
         }
     }
 
@@ -156,25 +174,10 @@ public class ComputeTests extends TornadoTestBase {
         }
     }
 
-    public static void computeDFTFloat(float[] inreal, float[] inimag, float[] outreal, float[] outimag) {
-        int n = inreal.length;
-        for (@Parallel int k = 0; k < n; k++) { // For each output element
-            float sumReal = 0;
-            float simImag = 0;
-            for (int t = 0; t < n; t++) { // For each input element
-                float angle = (2 * TornadoMath.floatPI() * t * k) / n;
-                sumReal += inreal[t] * TornadoMath.cos(angle) + inimag[t] * TornadoMath.sin(angle);
-                simImag += -inreal[t] * TornadoMath.sin(angle) + inimag[t] * TornadoMath.cos(angle);
-            }
-            outreal[k] = sumReal;
-            outimag[k] = simImag;
-        }
-    }
-
-    public static void hilbertComputation(float[] output, int rows, int cols) {
+    public static void hilbertComputation(FloatArray output, int rows, int cols) {
         for (@Parallel int i = 0; i < rows; i++) {
             for (@Parallel int j = 0; j < cols; j++) {
-                output[i * rows + j] = (float) 1 / ((i + 1) + (j + 1) - 1);
+                output.set(i * rows + j, (float) 1 / ((i + 1) + (j + 1) - 1));
             }
         }
     }
@@ -196,9 +199,9 @@ public class ComputeTests extends TornadoTestBase {
         return (X < zero) ? (one - y) : y;
     }
 
-    private static void blackScholesKernel(float[] input, float[] callResult, float[] putResult) {
-        for (@Parallel int idx = 0; idx < callResult.length; idx++) {
-            float rand = input[idx];
+    private static void blackScholesKernel(FloatArray input, FloatArray callResult, FloatArray putResult) {
+        for (@Parallel int idx = 0; idx < callResult.getSize(); idx++) {
+            float rand = input.get(idx);
             final float S_LOWER_LIMIT = 10.0f;
             final float S_UPPER_LIMIT = 100.0f;
             final float K_LOWER_LIMIT = 10.0f;
@@ -217,20 +220,20 @@ public class ComputeTests extends TornadoTestBase {
 
             float d1 = (TornadoMath.log(S / K) + ((r + (v * v / 2)) * T)) / v * TornadoMath.sqrt(T);
             float d2 = d1 - (v * TornadoMath.sqrt(T));
-            callResult[idx] = S * cnd(d1) - K * TornadoMath.exp(T * (-1) * r) * cnd(d2);
-            putResult[idx] = K * TornadoMath.exp(T * -r) * cnd(-d2) - S * cnd(-d1);
+            callResult.set(idx, S * cnd(d1) - K * TornadoMath.exp(T * (-1) * r) * cnd(d2));
+            putResult.set(idx, K * TornadoMath.exp(T * -r) * cnd(-d2) - S * cnd(-d1));
         }
     }
 
-    private static void checkBlackScholes(float[] call, float[] put, float[] callPrice, float[] putPrice) {
+    private static void checkBlackScholes(FloatArray call, FloatArray put, FloatArray callPrice, FloatArray putPrice) {
         double delta = 1.8;
-        for (int i = 0; i < call.length; i++) {
-            assertEquals(call[i], callPrice[i], delta);
-            assertEquals(put[i], putPrice[i], delta);
+        for (int i = 0; i < call.getSize(); i++) {
+            assertEquals(call.get(i), callPrice.get(i), delta);
+            assertEquals(put.get(i), putPrice.get(i), delta);
         }
     }
 
-    private static void computeMontecarlo(float[] output, final int iterations) {
+    private static void computeMontecarlo(FloatArray output, final int iterations) {
         for (@Parallel int j = 0; j < iterations; j++) {
             long seed = j;
             // generate a pseudo random number (you do need it twice)
@@ -247,14 +250,14 @@ public class ComputeTests extends TornadoTestBase {
 
             float dist = (float) Math.sqrt(x * x + y * y);
             if (dist <= 1.0f) {
-                output[j] = 1.0f;
+                output.set(j, 1.0f);
             } else {
-                output[j] = 0.0f;
+                output.set(j, 0.0f);
             }
         }
     }
 
-    public static void mandelbrotFractal(int size, short[] output) {
+    public static void mandelbrotFractal(int size, ShortArray output) {
         final int iterations = 10000;
         float space = 2.0f / size;
 
@@ -280,28 +283,28 @@ public class ComputeTests extends TornadoTestBase {
                 }
                 float temp = (y * 255) / (float) iterations;
                 short r = (short) temp;
-                output[i * size + j] = r;
+                output.set(i * size + j, r);
             }
         }
     }
 
-    private static void euler(int size, long[] five, long[] outputA, long[] outputB, long[] outputC, long[] outputD, long[] outputE) {
-        for (@Parallel int e = 1; e < five.length; e++) {
-            long e5 = five[e];
-            for (@Parallel int a = 1; a < five.length; a++) {
-                long a5 = five[a];
+    private static void euler(int size, LongArray five, LongArray outputA, LongArray outputB, LongArray outputC, LongArray outputD, LongArray outputE) {
+        for (@Parallel int e = 1; e < five.getSize(); e++) {
+            long e5 = five.get(e);
+            for (@Parallel int a = 1; a < five.getSize(); a++) {
+                long a5 = five.get(a);
                 for (int b = a; b < size; b++) {
-                    long b5 = five[b];
+                    long b5 = five.get(b);
                     for (int c = b; c < size; c++) {
-                        long c5 = five[c];
+                        long c5 = five.get(c);
                         for (int d = c; d < size; d++) {
-                            long d5 = five[d];
+                            long d5 = five.get(d);
                             if (a5 + b5 + c5 + d5 == e5) {
-                                outputA[e] = a;
-                                outputB[e] = b;
-                                outputC[e] = c;
-                                outputD[e] = d;
-                                outputE[e] = e;
+                                outputA.set(e, a);
+                                outputB.set(e, b);
+                                outputC.set(e, c);
+                                outputD.set(e, d);
+                                outputE.set(e, e);
                             }
                         }
                     }
@@ -349,7 +352,7 @@ public class ComputeTests extends TornadoTestBase {
         }
     }
 
-    public static void juliaSetTornado(int size, float[] hue, float[] brightness) {
+    public static void juliaSetTornado(int size, FloatArray hue, FloatArray brightness) {
         for (@Parallel int ix = 0; ix < size; ix++) {
             for (@Parallel int jx = 0; jx < size; jx++) {
                 float zx = 1.5f * (ix - size / 2) / (0.5f * ZOOM * size) + MOVE_X;
@@ -364,13 +367,13 @@ public class ComputeTests extends TornadoTestBase {
                     zx = tmp;
                     k--;
                 }
-                hue[ix * size + jx] = (MAX_ITERATIONS / k);
-                brightness[ix * size + jx] = k > 0 ? 1 : 0;
+                hue.set(ix * size + jx, (MAX_ITERATIONS / k));
+                brightness.set(ix * size + jx, k > 0 ? 1 : 0);
             }
         }
     }
 
-    private static BufferedImage writeFile(int[] output, int size) {
+    private static BufferedImage writeFile(IntArray output, int size) {
         BufferedImage img = null;
         try {
             img = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
@@ -381,7 +384,7 @@ public class ComputeTests extends TornadoTestBase {
 
             for (int i = 0; i < size; i++) {
                 for (int j = 0; j < size; j++) {
-                    int colour = output[(i * size + j)];
+                    int colour = output.get((i * size + j));
                     write.setSample(i, j, 1, colour);
                 }
             }
@@ -406,20 +409,22 @@ public class ComputeTests extends TornadoTestBase {
     public void testNBody() {
 
         final int numBodies = 16384;
-        float[] posSeq = new float[numBodies * 4];
-        float[] velSeq = new float[numBodies * 4];
+        FloatArray posSeq = new FloatArray(numBodies * 4);
+        FloatArray velSeq = new FloatArray(numBodies * 4);
 
-        for (int i = 0; i < posSeq.length; i++) {
-            posSeq[i] = (float) Math.random();
+        for (int i = 0; i < posSeq.getSize(); i++) {
+            posSeq.set(i, (float) Math.random());
         }
 
-        Arrays.fill(velSeq, 0.0f);
+        velSeq.init(0.0f);
 
-        float[] posTornadoVM = new float[numBodies * 4];
-        float[] velTornadoVM = new float[numBodies * 4];
+        FloatArray posTornadoVM = new FloatArray(numBodies * 4);
+        FloatArray velTornadoVM = new FloatArray(numBodies * 4);
 
-        System.arraycopy(posSeq, 0, posTornadoVM, 0, posSeq.length);
-        System.arraycopy(velSeq, 0, velTornadoVM, 0, velSeq.length);
+        for (int i = 0; i < numBodies * 4; i++) {
+            posTornadoVM.set(i, posSeq.get(i));
+            velTornadoVM.set(i, velSeq.get(i));
+        }
 
         // Run Sequential
         nBody(numBodies, posSeq, velSeq);
@@ -446,20 +451,22 @@ public class ComputeTests extends TornadoTestBase {
     public void testNBodySmall() {
 
         final int numBodies = 2048;
-        float[] posSeq = new float[numBodies * 4];
-        float[] velSeq = new float[numBodies * 4];
+        FloatArray posSeq = new FloatArray(numBodies * 4);
+        FloatArray velSeq = new FloatArray(numBodies * 4);
 
-        for (int i = 0; i < posSeq.length; i++) {
-            posSeq[i] = (float) Math.random();
+        for (int i = 0; i < posSeq.getSize(); i++) {
+            posSeq.set(i, (float) Math.random());
         }
 
-        Arrays.fill(velSeq, 0.0f);
+        velSeq.init(0.0f);
 
-        float[] posTornadoVM = new float[numBodies * 4];
-        float[] velTornadoVM = new float[numBodies * 4];
+        FloatArray posTornadoVM = new FloatArray(numBodies * 4);
+        FloatArray velTornadoVM = new FloatArray(numBodies * 4);
 
-        System.arraycopy(posSeq, 0, posTornadoVM, 0, posSeq.length);
-        System.arraycopy(velSeq, 0, velTornadoVM, 0, velSeq.length);
+        for (int i = 0; i < numBodies * 4; i++) {
+            posTornadoVM.set(i, posSeq.get(i));
+            velTornadoVM.set(i, velSeq.get(i));
+        }
 
         // Run Sequential
         nBody(numBodies, posSeq, velSeq);
@@ -486,20 +493,22 @@ public class ComputeTests extends TornadoTestBase {
     public void testNBodyBigNoWorker() {
 
         final int numBodies = 8192;
-        float[] posSeq = new float[numBodies * 4];
-        float[] velSeq = new float[numBodies * 4];
+        FloatArray posSeq = new FloatArray(numBodies * 4);
+        FloatArray velSeq = new FloatArray(numBodies * 4);
 
-        for (int i = 0; i < posSeq.length; i++) {
-            posSeq[i] = (float) Math.random();
+        for (int i = 0; i < posSeq.getSize(); i++) {
+            posSeq.set(i, (float) Math.random());
         }
 
-        Arrays.fill(velSeq, 0.0f);
+        velSeq.init(0.0f);
 
-        float[] posTornadoVM = new float[numBodies * 4];
-        float[] velTornadoVM = new float[numBodies * 4];
+        FloatArray posTornadoVM = new FloatArray(numBodies * 4);
+        FloatArray velTornadoVM = new FloatArray(numBodies * 4);
 
-        System.arraycopy(posSeq, 0, posTornadoVM, 0, posSeq.length);
-        System.arraycopy(velSeq, 0, velTornadoVM, 0, velSeq.length);
+        for (int i = 0; i < numBodies * 4; i++) {
+            posTornadoVM.set(i, posSeq.get(i));
+            velTornadoVM.set(i, velSeq.get(i));
+        }
 
         // Run Sequential
         nBody(numBodies, posSeq, velSeq);
@@ -516,13 +525,13 @@ public class ComputeTests extends TornadoTestBase {
         validate(numBodies, posTornadoVM, velTornadoVM, posSeq, velSeq);
     }
 
-    private void validateDFT(int size, float[] inReal, float[] inImag, float[] outReal, float[] outImag) {
-        float[] outRealSeq = new float[size];
-        float[] outImagSeq = new float[size];
+    private void validateDFT(int size, FloatArray inReal, FloatArray inImag, FloatArray outReal, FloatArray outImag) {
+        FloatArray outRealSeq = new FloatArray(size);
+        FloatArray outImagSeq = new FloatArray(size);
         computeDFT(inReal, inImag, outRealSeq, outImagSeq);
         for (int i = 0; i < size; i++) {
-            assertEquals(outImagSeq[i], outImag[i], 0.1f);
-            assertEquals(outRealSeq[i], outReal[i], 0.1f);
+            assertEquals(outImagSeq.get(i), outImag.get(i), 0.1f);
+            assertEquals(outRealSeq.get(i), outReal.get(i), 0.1f);
         }
     }
 
@@ -540,14 +549,14 @@ public class ComputeTests extends TornadoTestBase {
     public void testDFTDouble() {
         final int size = 4096;
         TaskGraph taskGraph;
-        float[] inReal = new float[size];
-        float[] inImag = new float[size];
-        float[] outReal = new float[size];
-        float[] outImag = new float[size];
+        FloatArray inReal = new FloatArray(size);
+        FloatArray inImag = new FloatArray(size);
+        FloatArray outReal = new FloatArray(size);
+        FloatArray outImag = new FloatArray(size);
 
         for (int i = 0; i < size; i++) {
-            inReal[i] = 1 / (float) (i + 2);
-            inImag[i] = 1 / (float) (i + 2);
+            inReal.set(i, 1 / (float) (i + 2));
+            inImag.set(i, 1 / (float) (i + 2));
         }
 
         taskGraph = new TaskGraph("s0") //
@@ -593,14 +602,14 @@ public class ComputeTests extends TornadoTestBase {
     public void testDFTFloat() {
         final int size = 4096;
         TaskGraph taskGraph;
-        float[] inReal = new float[size];
-        float[] inImag = new float[size];
-        float[] outReal = new float[size];
-        float[] outImag = new float[size];
+        FloatArray inReal = new FloatArray(size);
+        FloatArray inImag = new FloatArray(size);
+        FloatArray outReal = new FloatArray(size);
+        FloatArray outImag = new FloatArray(size);
 
         for (int i = 0; i < size; i++) {
-            inReal[i] = 1 / (float) (i + 2);
-            inImag[i] = 1 / (float) (i + 2);
+            inReal.set(i, 1 / (float) (i + 2));
+            inImag.set(i, 1 / (float) (i + 2));
         }
 
         taskGraph = new TaskGraph("s0") //
@@ -617,7 +626,7 @@ public class ComputeTests extends TornadoTestBase {
 
     @Test
     public void testHilbert() {
-        float[] output = new float[NROWS * NCOLS];
+        FloatArray output = new FloatArray(NROWS * NCOLS);
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", ComputeTests::hilbertComputation, output, NROWS, NCOLS) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
@@ -626,11 +635,11 @@ public class ComputeTests extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        float[] seq = new float[NROWS * NCOLS];
+        FloatArray seq = new FloatArray(NROWS * NCOLS);
         hilbertComputation(seq, NROWS, NCOLS);
         for (int i = 0; i < NROWS; i++) {
             for (int j = 0; j < NCOLS; j++) {
-                assertEquals(seq[i * NROWS + j], output[i * NROWS + j], 0.1f);
+                assertEquals(seq.get(i * NROWS + j), output.get(i * NROWS + j), 0.1f);
             }
         }
     }
@@ -639,13 +648,13 @@ public class ComputeTests extends TornadoTestBase {
     public void testBlackScholes() {
         Random random = new Random();
         final int size = 8192;
-        float[] input = new float[size];
-        float[] callPrice = new float[size];
-        float[] putPrice = new float[size];
-        float[] seqCall = new float[size];
-        float[] seqPut = new float[size];
+        FloatArray input = new FloatArray(size);
+        FloatArray callPrice = new FloatArray(size);
+        FloatArray putPrice = new FloatArray(size);
+        FloatArray seqCall = new FloatArray(size);
+        FloatArray seqPut = new FloatArray(size);
 
-        IntStream.range(0, size).forEach(i -> input[i] = random.nextFloat());
+        IntStream.range(0, size).forEach(i -> input.set(i, random.nextFloat()));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
@@ -666,8 +675,8 @@ public class ComputeTests extends TornadoTestBase {
     @Test
     public void testMontecarlo() {
         final int size = 8192;
-        float[] output = new float[size];
-        float[] seq = new float[size];
+        FloatArray output = new FloatArray(size);
+        FloatArray seq = new FloatArray(size);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", ComputeTests::computeMontecarlo, output, size) //
@@ -679,7 +688,7 @@ public class ComputeTests extends TornadoTestBase {
 
         float sumTornado = 0;
         for (int j = 0; j < size; j++) {
-            sumTornado += output[j];
+            sumTornado += output.get(j);
         }
         sumTornado *= 4;
 
@@ -687,28 +696,28 @@ public class ComputeTests extends TornadoTestBase {
 
         float sumSeq = 0;
         for (int j = 0; j < size; j++) {
-            sumSeq += seq[j];
+            sumSeq += seq.get(j);
         }
         sumSeq *= 4;
 
         assertEquals(sumSeq, sumTornado, 0.1);
     }
 
-    private void validateMandelbrot(int size, short[] output) {
-        short[] result = new short[size * size];
+    private void validateMandelbrot(int size, ShortArray output) {
+        ShortArray result = new ShortArray(size * size);
 
         // Run sequential
         mandelbrotFractal(size, result);
 
         for (int i = 0; i < size; i++)
             for (int j = 0; j < size; j++)
-                assertEquals(result[i * size + j], output[i * size + j]);
+                assertEquals(result.get(i * size + j), output.get(i * size + j));
     }
 
     @Test
     public void testMandelbrot() {
         final int size = 512;
-        short[] output = new short[size * size];
+        ShortArray output = new ShortArray(size * size);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", ComputeTests::mandelbrotFractal, size, output) //
@@ -721,10 +730,10 @@ public class ComputeTests extends TornadoTestBase {
         validateMandelbrot(size, output);
     }
 
-    private long[] init(int size) {
-        long[] input = new long[size];
+    private LongArray init(int size) {
+        LongArray input = new LongArray(size);
         for (int i = 0; i < size; i++) {
-            input[i] = (long) i * i * i * i * i;
+            input.set(i, (long) i * i * i * i * i);
         }
         return input;
     }
@@ -732,12 +741,12 @@ public class ComputeTests extends TornadoTestBase {
     @Test
     public void testEuler() {
         final int size = 128;
-        long[] input = init(128);
-        long[] outputA = new long[size];
-        long[] outputB = new long[size];
-        long[] outputC = new long[size];
-        long[] outputD = new long[size];
-        long[] outputE = new long[size];
+        LongArray input = init(128);
+        LongArray outputA = new LongArray(size);
+        LongArray outputB = new LongArray(size);
+        LongArray outputC = new LongArray(size);
+        LongArray outputD = new LongArray(size);
+        LongArray outputE = new LongArray(size);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
@@ -748,19 +757,19 @@ public class ComputeTests extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        long[] outputAT = new long[size];
-        long[] outputBT = new long[size];
-        long[] outputCT = new long[size];
-        long[] outputDT = new long[size];
-        long[] outputET = new long[size];
+        LongArray outputAT = new LongArray(size);
+        LongArray outputBT = new LongArray(size);
+        LongArray outputCT = new LongArray(size);
+        LongArray outputDT = new LongArray(size);
+        LongArray outputET = new LongArray(size);
         euler(size, input, outputAT, outputBT, outputCT, outputDT, outputET);
 
         for (int i = 0; i < size; i++) {
-            assertEquals(outputAT[i], outputA[i]);
-            assertEquals(outputBT[i], outputB[i]);
-            assertEquals(outputCT[i], outputC[i]);
-            assertEquals(outputDT[i], outputD[i]);
-            assertEquals(outputET[i], outputE[i]);
+            assertEquals(outputAT.get(i), outputA.get(i));
+            assertEquals(outputBT.get(i), outputB.get(i));
+            assertEquals(outputCT.get(i), outputC.get(i));
+            assertEquals(outputDT.get(i), outputD.get(i));
+            assertEquals(outputET.get(i), outputE.get(i));
         }
     }
 
@@ -803,9 +812,9 @@ public class ComputeTests extends TornadoTestBase {
     @Test
     public void testJuliaSets() {
         final int size = 1024;
-        float[] hue = new float[size * size];
-        float[] brightness = new float[size * size];
-        int[] result = new int[size * size];
+        FloatArray hue = new FloatArray(size * size);
+        FloatArray brightness = new FloatArray(size * size);
+        IntArray result = new IntArray(size * size);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", ComputeTests::juliaSetTornado, size, hue, brightness) //
@@ -817,21 +826,21 @@ public class ComputeTests extends TornadoTestBase {
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
-                result[i * size + j] = Color.HSBtoRGB(hue[i * size + j] % 1, 1, brightness[i * size + j]);
+                result.set(i * size + j, Color.HSBtoRGB(hue.get(i * size + j) % 1, 1, brightness.get(i * size + j)));
             }
         }
 
         writeFile(result, size);
 
         // Run Sequential Code
-        float[] hueSeq = new float[size * size];
-        float[] brightnessSeq = new float[size * size];
+        FloatArray hueSeq = new FloatArray(size * size);
+        FloatArray brightnessSeq = new FloatArray(size * size);
         juliaSetTornado(size, hueSeq, brightnessSeq);
 
         float delta = 0.01f;
-        for (int i = 0; i < hueSeq.length; i++) {
-            assertEquals(hueSeq[i], hue[i], delta);
-            assertEquals(brightnessSeq[i], brightness[i], delta);
+        for (int i = 0; i < hueSeq.getSize(); i++) {
+            assertEquals(hueSeq.get(i), hue.get(i), delta);
+            assertEquals(brightnessSeq.get(i), brightness.get(i), delta);
         }
     }
 

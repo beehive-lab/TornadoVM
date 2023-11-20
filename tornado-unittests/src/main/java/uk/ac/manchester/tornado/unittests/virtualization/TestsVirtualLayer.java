@@ -18,58 +18,59 @@
 
 package uk.ac.manchester.tornado.unittests.virtualization;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-
-import java.util.Arrays;
-import java.util.stream.IntStream;
-
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
+
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer
+ * tornado-test -V uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer
  * </code>
  */
 public class TestsVirtualLayer extends TornadoTestBase {
     // CHECKSTYLE:OFF
-    public static void accumulator(int[] a, int value) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] += value;
+
+    public static void accumulator(IntArray a, int value) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            a.set(i, a.get(i) + value);
         }
     }
 
-    public static void saxpy(float alpha, float[] x, float[] y) {
-        for (@Parallel int i = 0; i < y.length; i++) {
-            y[i] = alpha * x[i];
+    public static void saxpy(float alpha, FloatArray x, FloatArray y) {
+        for (@Parallel int i = 0; i < y.getSize(); i++) {
+            y.set(i, alpha * x.get(i));
         }
     }
 
-    public static void testA(int[] a, int value) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = a[i] + value;
+    public static void testA(IntArray a, int value) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            a.set(i, a.get(i) + value);
         }
     }
 
-    public static void testB(int[] a, int value) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = a[i] * value;
+    public static void testB(IntArray a, int value) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            a.set(i, a.get(i) * value);
         }
     }
 
@@ -117,7 +118,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         final int numElements = 8;
         final int numKernels = 1;
 
-        int[] data = new int[numElements];
+        IntArray data = new IntArray(numElements);
 
         int initValue = 0;
 
@@ -136,7 +137,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < numElements; i++) {
-            assertEquals((initValue + numKernels), data[i]);
+            assertEquals((initValue + numKernels), data.get(i));
         }
 
         initValue += numKernels;
@@ -148,7 +149,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < numElements; i++) {
-            assertEquals((initValue + numKernels), data[i]);
+            assertEquals((initValue + numKernels), data.get(i));
         }
     }
 
@@ -160,10 +161,10 @@ public class TestsVirtualLayer extends TornadoTestBase {
         final int numElements = 512;
         final float alpha = 2f;
 
-        final float[] x = new float[numElements];
-        final float[] y = new float[numElements];
+        final FloatArray x = new FloatArray(numElements);
+        final FloatArray y = new FloatArray(numElements);
 
-        IntStream.range(0, numElements).parallel().forEach(i -> x[i] = 450);
+        IntStream.range(0, numElements).parallel().forEach(i -> x.set(i, 450));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, x) //
@@ -176,14 +177,14 @@ public class TestsVirtualLayer extends TornadoTestBase {
                 .execute(); //
 
         for (int i = 0; i < numElements; i++) {
-            assertEquals((alpha * 450), y[i], 0.001f);
+            assertEquals((alpha * 450), y.get(i), 0.001f);
         }
 
         executionPlan.withDevice(driver.getDevice(1)) //
                 .execute(); //
 
         for (int i = 0; i < numElements; i++) {
-            assertEquals((alpha * 450), y[i], 0.001f);
+            assertEquals((alpha * 450), y.get(i), 0.001f);
         }
     }
 
@@ -196,8 +197,8 @@ public class TestsVirtualLayer extends TornadoTestBase {
          * devices.
          */
         final int N = 128;
-        int[] data = new int[N];
-        Arrays.fill(data, 100);
+        IntArray data = new IntArray(N);
+        data.init(100);
 
         // This test only is executed once (the first task)
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -225,9 +226,8 @@ public class TestsVirtualLayer extends TornadoTestBase {
     }
 
     /**
-     * This test is not legal in Tornado. This test executes everything on the same
-     * device, even if the user forces to change. A task schedule is always executed
-     * on the same device. Device can change once the task is executed.
+     * This test is not legal in Tornado. This test executes everything on the same device, even if the user forces to change. A task schedule is always executed on the same device. Device can change
+     * once the task is executed.
      */
     @Ignore
     public void testVirtualLayer02() {
@@ -235,8 +235,8 @@ public class TestsVirtualLayer extends TornadoTestBase {
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
 
         final int N = 128;
-        int[] data = new int[N];
-        Arrays.fill(data, 100);
+        IntArray data = new IntArray(N);
+        data.init(100);
 
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
@@ -259,25 +259,22 @@ public class TestsVirtualLayer extends TornadoTestBase {
                 .execute();
 
         for (int i = 0; i < N; i++) {
-            assertEquals(111, data[i]);
+            assertEquals(111, data.get(i));
         }
     }
 
     /**
-     * Tasks within the same task schedules are always executed on the same device.
-     * Currently, it is not possible to change device for a single tasks in a group
-     * of tasks.
-     *
+     * Tasks within the same task schedules are always executed on the same device. Currently, it is not possible to change device for a single tasks in a group of tasks.
      */
     @Test
     public void testVirtualLayer03() {
 
         final int N = 128;
-        int[] dataA = new int[N];
-        int[] dataB = new int[N];
+        IntArray dataA = new IntArray(N);
+        IntArray dataB = new IntArray(N);
 
-        Arrays.fill(dataA, 100);
-        Arrays.fill(dataB, 200);
+        dataA.init(100);
+        dataB.init(200);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, dataA, dataB)//
@@ -291,27 +288,25 @@ public class TestsVirtualLayer extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < N; i++) {
-            assertEquals(101, dataA[i]);
-            assertEquals(210, dataB[i]);
+            assertEquals(101, dataA.get(i));
+            assertEquals(210, dataB.get(i));
         }
     }
 
     /**
-     * It creates one task graph with one task. Then, it executes the same task
-     * graph via an executionPlan on different devices.
+     * It creates one task graph with one task. Then, it executes the same task graph via an executionPlan on different devices.
      *
      * <p>
-     * The task is just one instance for all the devices. The loop iterates over the
-     * devices under the same Tornado Driver and executes the task.
+     * The task is just one instance for all the devices. The loop iterates over the devices under the same Tornado Driver and executes the task.
      * </p>
      */
     @Test
     public void testDynamicDeviceSwitch() {
 
         final int N = 128;
-        int[] data = new int[N];
+        IntArray data = new IntArray(N);
 
-        Arrays.fill(data, 100);
+        data.init(100);
 
         int totalNumDevices = 0;
 
@@ -345,24 +340,23 @@ public class TestsVirtualLayer extends TornadoTestBase {
         }
 
         for (int i = 0; i < N; i++) {
-            assertEquals(100 + totalNumDevices, data[i]);
+            assertEquals(100 + totalNumDevices, data.get(i));
         }
     }
 
     /**
-     * It creates two task graphs and two tasks and executes them on different
-     * devices using different executionPlans.
+     * It creates two task graphs and two tasks and executes them on different devices using different executionPlans.
      */
     @Test
     public void testSchedulerDevices() {
         TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(0);
 
         final int N = 128;
-        int[] dataA = new int[N];
-        int[] dataB = new int[N];
+        IntArray dataA = new IntArray(N);
+        IntArray dataB = new IntArray(N);
 
-        Arrays.fill(dataA, 100);
-        Arrays.fill(dataB, 100);
+        dataA.init(100);
+        dataB.init(100);
 
         if (tornadoDriver.getDeviceCount() < 2) {
             assertFalse("The current driver has less than 2 devices", true);
@@ -393,7 +387,7 @@ public class TestsVirtualLayer extends TornadoTestBase {
         executionPlan2.execute();
 
         for (int i = 0; i < N; i++) {
-            assertEquals(dataA[i], dataB[i]);
+            assertEquals(dataA.get(i), dataB.get(i));
         }
     }
     // CHECKSTYLE:ON

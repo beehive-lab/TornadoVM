@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,6 +25,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.examples.common.Messages;
@@ -34,7 +35,7 @@ import uk.ac.manchester.tornado.examples.common.Messages;
  * Run with.
  * </p>
  * <code>
- *      tornado -m tornado.examples/uk.ac.manchester.tornado.examples.Init <size>
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.Init <size>
  * </code>
  *
  */
@@ -42,9 +43,9 @@ public class Init {
 
     private static final boolean CHECK = true;
 
-    public static void compute(float[] array) {
-        for (@Parallel int i = 0; i < array.length; i++) {
-            array[i] = array[i] + 100;
+    public static void compute(FloatArray array) {
+        for (@Parallel int i = 0; i < array.getSize(); i++) {
+            array.set(i, array.get(i) + 100);
         }
     }
 
@@ -58,7 +59,7 @@ public class Init {
         BigDecimal bytesToAllocate = new BigDecimal(((float) ((long) (size) * 4) * (float) 1E-6));
         System.out.println("Running with size: " + size);
         System.out.println("Input size: " + bytesToAllocate + " (MB)");
-        float[] array = new float[size];
+        FloatArray array = new FloatArray(size);
 
         TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
         long maxDeviceMemory = device.getMaxAllocMemory();
@@ -75,8 +76,8 @@ public class Init {
 
         if (CHECK) {
             boolean check = true;
-            for (float v : array) {
-                if (v != 100) {
+            for (int i = 0; i < array.getSize(); i++) {
+                if (array.get(i) != 100) {
                     check = false;
                     break;
                 }

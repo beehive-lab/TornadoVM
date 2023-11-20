@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,7 +20,6 @@ package uk.ac.manchester.tornado.unittests.reductions;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -31,8 +30,9 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
-import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -41,7 +41,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles
+ * tornado-test -V uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles
  * </code>
  */
 public class TestReductionsDoubles extends TornadoTestBase {
@@ -50,21 +50,21 @@ public class TestReductionsDoubles extends TornadoTestBase {
     private static final int SIZE = 8192;
     private static final int SIZE2 = 32;
 
-    private static void reductionAddDoubles(double[] input, @Reduce double[] result) {
-        result[0] = 0.0f;
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] += input[i];
+    private static void reductionAddDoubles(DoubleArray input, @Reduce DoubleArray result) {
+        result.set(0, 0.0f);
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            result.set(0, result.get(0) + input.get(i));
         }
     }
 
     @Test
     public void testSumDoubles() {
-        double[] input = new double[SIZE];
-        double[] result = new double[1];
+        DoubleArray input = new DoubleArray(SIZE);
+        DoubleArray result = new DoubleArray(1);
 
         Random r = new Random();
         IntStream.range(0, SIZE).parallel().forEach(i -> {
-            input[i] = r.nextDouble();
+            input.set(i, r.nextDouble());
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -76,31 +76,31 @@ public class TestReductionsDoubles extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        double[] sequential = new double[1];
+        DoubleArray sequential = new DoubleArray(1);
         reductionAddDoubles(input, sequential);
 
-        assertEquals(sequential[0], result[0], 0.01f);
+        assertEquals(sequential.get(0), result.get(0), 0.01f);
     }
 
     private static double myFunction(double a, double b) {
         return a + b;
     }
 
-    private static void reductionWithFunctionCall(double[] input, @Reduce double[] result) {
-        result[0] = 0.0f;
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] = myFunction(input[i], result[0]);
+    private static void reductionWithFunctionCall(DoubleArray input, @Reduce DoubleArray result) {
+        result.set(0, 0.0f);
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            result.set(0, myFunction(input.get(i), result.get(0)));
         }
     }
 
     @Test
     public void testSumWithFunctionCall() {
-        double[] input = new double[SIZE];
-        double[] result = new double[1];
+        DoubleArray input = new DoubleArray(SIZE);
+        DoubleArray result = new DoubleArray(1);
 
         Random r = new Random();
         IntStream.range(0, SIZE).parallel().forEach(i -> {
-            input[i] = r.nextDouble();
+            input.set(i, r.nextDouble());
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -112,26 +112,27 @@ public class TestReductionsDoubles extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        double[] sequential = new double[1];
+        DoubleArray sequential = new DoubleArray(1);
         reductionWithFunctionCall(input, sequential);
 
-        assertEquals(sequential[0], result[0], 0.01f);
+        assertEquals(sequential.get(0), result.get(0), 0.01f);
     }
 
-    private static void reductionAddDoublesLarge(double[] input, @Reduce double[] result) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] += input[i];
+    private static void reductionAddDoublesLarge(DoubleArray input, @Reduce DoubleArray result) {
+        result.set(0, 0.0f);
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            result.set(0, result.get(0) + input.get(i));
         }
     }
 
     @Test
     public void testSumDoublesLarge() {
-        double[] input = new double[SIZE_LARGE];
-        double[] result = new double[257];
+        DoubleArray input = new DoubleArray(SIZE_LARGE);
+        DoubleArray result = new DoubleArray(257);
 
         Random r = new Random();
         IntStream.range(0, SIZE_LARGE).parallel().forEach(i -> {
-            input[i] = r.nextDouble();
+            input.set(i, r.nextDouble());
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -143,43 +144,46 @@ public class TestReductionsDoubles extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        double[] sequential = new double[1];
+        DoubleArray sequential = new DoubleArray(1);
         reductionAddDoubles(input, sequential);
 
-        assertEquals(sequential[0], result[0], 0.01f);
+        assertEquals(sequential.get(0), result.get(0), 0.01f);
     }
 
-    private static void reductionAddDoubles2(double[] input, @Reduce double[] result) {
+    private static void reductionAddDoubles2(DoubleArray input, @Reduce DoubleArray result) {
         double error = 2f;
-        for (@Parallel int i = 0; i < input.length; i++) {
-            double v = (error * input[i]);
-            result[0] += v;
+        result.set(0, 0.0f);
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            double v = (error * input.get(i));
+            result.set(0, result.get(0) + v);
         }
     }
 
-    private static void reductionAddDoubles3(double[] input, @Reduce double[] result) {
+    private static void reductionAddDoubles3(DoubleArray input, @Reduce DoubleArray result) {
         double error = 2f;
-        for (@Parallel int i = 0; i < input.length; i++) {
-            double v = (error * input[i]);
-            result[0] += v;
+        result.set(0, 0.0f);
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            double v = (error * input.get(i));
+            result.set(0, result.get(0) + v);
         }
     }
 
-    private static void reductionAddDoubles4(double[] inputA, double[] inputB, @Reduce double[] result) {
+    private static void reductionAddDoubles4(DoubleArray inputA, DoubleArray inputB, @Reduce DoubleArray result) {
         double error = 2f;
-        for (@Parallel int i = 0; i < inputA.length; i++) {
-            result[0] += (error * (inputA[i] + inputB[i]));
+        result.set(0, 0.0f);
+        for (@Parallel int i = 0; i < inputA.getSize(); i++) {
+            result.set(0, result.get(0) + (error * (inputA.get(i) + inputB.get(i))));
         }
     }
 
     @Test
     public void testSumDoubles2() {
-        double[] input = new double[SIZE2];
-        double[] result = new double[1];
+        DoubleArray input = new DoubleArray(SIZE2);
+        DoubleArray result = new DoubleArray(1);
 
         Random r = new Random();
         IntStream.range(0, SIZE2).sequential().forEach(i -> {
-            input[i] = r.nextDouble();
+            input.set(i, r.nextDouble());
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -191,19 +195,19 @@ public class TestReductionsDoubles extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        double[] sequential = new double[1];
+        DoubleArray sequential = new DoubleArray(1);
         reductionAddDoubles2(input, sequential);
-        assertEquals(sequential[0], result[0], 0.01f);
+        assertEquals(sequential.get(0), result.get(0), 0.01f);
     }
 
     @Test
     public void testSumDoubles3() {
-        double[] input = new double[SIZE];
-        double[] result = new double[1];
+        DoubleArray input = new DoubleArray(SIZE);
+        DoubleArray result = new DoubleArray(1);
 
         Random r = new Random();
         IntStream.range(0, SIZE).sequential().forEach(i -> {
-            input[i] = r.nextDouble();
+            input.set(i, r.nextDouble());
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -215,22 +219,22 @@ public class TestReductionsDoubles extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        double[] sequential = new double[1];
-        reductionAddDoubles2(input, sequential);
+        DoubleArray sequential = new DoubleArray(1);
+        reductionAddDoubles3(input, sequential);
 
-        assertEquals(sequential[0], result[0], 0.1f);
+        assertEquals(sequential.get(0), result.get(0), 0.1f);
     }
 
     @Test
     public void testSumDoubles4() {
-        double[] inputA = new double[SIZE];
-        double[] inputB = new double[SIZE];
-        double[] result = new double[1];
+        DoubleArray inputA = new DoubleArray(SIZE);
+        DoubleArray inputB = new DoubleArray(SIZE);
+        DoubleArray result = new DoubleArray(1);
 
         Random r = new Random();
         IntStream.range(0, SIZE).sequential().forEach(i -> {
-            inputA[i] = r.nextDouble();
-            inputB[i] = r.nextDouble();
+            inputA.set(i, r.nextDouble());
+            inputB.set(i, r.nextDouble());
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -241,32 +245,33 @@ public class TestReductionsDoubles extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        double[] sequential = new double[1];
+        DoubleArray sequential = new DoubleArray(1);
         reductionAddDoubles4(inputA, inputB, sequential);
-        assertEquals(sequential[0], result[0], 0.1f);
+
+        assertEquals(sequential.get(0), result.get(0), 0.1f);
     }
 
-    private static void multiplyDoubles(double[] input, @Reduce double[] result) {
-        result[0] = 1.0f;
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] *= input[i];
+    private static void multiplyDoubles(DoubleArray input, @Reduce DoubleArray result) {
+        result.set(0, 1.0f);
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            result.set(0, result.get(0) * input.get(i));
         }
     }
 
     @Test
     public void testMultDoubles() {
-        double[] input = new double[SIZE];
-        double[] result = new double[1];
+        DoubleArray input = new DoubleArray(SIZE);
+        DoubleArray result = new DoubleArray(1);
 
-        Arrays.fill(result, 1.0);
+        result.init(1.0);
 
         Random r = new Random();
         IntStream.range(0, SIZE).sequential().forEach(i -> {
-            input[i] = 1.0;
+            input.set(i, 1.0);
         });
 
-        input[10] = r.nextDouble();
-        input[12] = r.nextDouble();
+        input.set(10, r.nextDouble());
+        input.set(12, r.nextDouble());
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
@@ -277,29 +282,30 @@ public class TestReductionsDoubles extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        double[] sequential = new double[1];
+        DoubleArray sequential = new DoubleArray(1);
         multiplyDoubles(input, sequential);
-        assertEquals(sequential[0], result[0], 0.1f);
+        assertEquals(sequential.get(0), result.get(0), 0.1f);
     }
 
-    private static void maxReductionAnnotation(double[] input, @Reduce double[] result) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] = TornadoMath.max(result[0], input[i]);
+    private static void maxReductionAnnotation(DoubleArray input, @Reduce DoubleArray result) {
+        result.set(0, 0.0f);
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            result.set(0, TornadoMath.max(result.get(0), input.get(i)));
         }
     }
 
     @Test
     public void testMaxReduction() {
-        double[] input = new double[SIZE];
+        DoubleArray input = new DoubleArray(SIZE);
 
         Random r = new Random();
         IntStream.range(0, SIZE).forEach(idx -> {
-            input[idx] = r.nextDouble();
+            input.set(idx, r.nextDouble());
         });
 
-        double[] result = new double[1];
+        DoubleArray result = new DoubleArray(1);
 
-        Arrays.fill(result, Double.MIN_VALUE);
+        result.init(Double.MIN_VALUE);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
@@ -309,30 +315,33 @@ public class TestReductionsDoubles extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        double[] sequential = new double[] { Double.MIN_VALUE };
+        DoubleArray sequential = new DoubleArray(1);
+        sequential.init(Double.MIN_VALUE);
+
         maxReductionAnnotation(input, sequential);
 
-        assertEquals(sequential[0], result[0], 0.01);
+        assertEquals(sequential.get(0), result.get(0), 0.01);
     }
 
-    private static void minReductionAnnotation(double[] input, @Reduce double[] result) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] = TornadoMath.min(result[0], input[i]);
+    private static void minReductionAnnotation(DoubleArray input, @Reduce DoubleArray result) {
+        result.set(0, 0.0f);
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            result.set(0, TornadoMath.min(result.get(0), input.get(i)));
         }
     }
 
     @Test
     public void testMinReduction() {
-        double[] input = new double[SIZE];
+        DoubleArray input = new DoubleArray(SIZE);
 
         Random r = new Random();
         IntStream.range(0, SIZE).forEach(idx -> {
-            input[idx] = r.nextDouble();
+            input.set(idx, r.nextDouble());
         });
 
-        double[] result = new double[1];
+        DoubleArray result = new DoubleArray(1);
 
-        Arrays.fill(result, Double.MAX_VALUE);
+        result.init(Double.MAX_VALUE);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
@@ -342,34 +351,36 @@ public class TestReductionsDoubles extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        double[] sequential = new double[] { Double.MAX_VALUE };
+        DoubleArray sequential = new DoubleArray(1);
+        sequential.init(Double.MAX_VALUE);
+
         minReductionAnnotation(input, sequential);
 
-        assertEquals(sequential[0], result[0], 0.01);
+        assertEquals(sequential.get(0), result.get(0), 0.01);
     }
 
-    private static void tornadoRemoveOutliers(final double[] values, @Reduce double[] result) {
-        final double sqrt = TornadoMath.sqrt(12.2321 / values.length);
-        final double min = result[0] - (2 * sqrt);
-        final double max = result[0] + (2 * sqrt);
+    private static void tornadoRemoveOutliers(final DoubleArray values, @Reduce DoubleArray result) {
+        final double sqrt = TornadoMath.sqrt(12.2321 / values.getSize());
+        final double min = result.get(0) - (2 * sqrt);
+        final double max = result.get(0) + (2 * sqrt);
 
         // Reduce with filter
-        for (@Parallel int i = 0; i < values.length; i++) {
-            if (values[i] > max || values[i] < min) {
-                result[0]++;
+        for (@Parallel int i = 0; i < values.getSize(); i++) {
+            if (values.get(i) > max || values.get(i) < min) {
+                result.set(0, result.get(0) + 1);
             }
         }
     }
 
     @TornadoNotSupported
     public void testRemoveOutliers() {
-        double[] input = new double[SIZE];
+        DoubleArray input = new DoubleArray(SIZE);
 
         IntStream.range(0, SIZE).forEach(idx -> {
-            input[idx] = 2.0;
+            input.set(idx, 2.0);
         });
 
-        double[] result = new double[1];
+        DoubleArray result = new DoubleArray(1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
@@ -380,42 +391,43 @@ public class TestReductionsDoubles extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        double[] sequential = new double[1];
+        DoubleArray sequential = new DoubleArray(1);
         tornadoRemoveOutliers(input, sequential);
 
-        assertEquals(sequential[0], result[0], 0.01);
+        assertEquals(sequential.get(0), result.get(0), 0.01);
     }
 
-    private static void prepareTornadoSumForMeanComputation(final double[] values, @Reduce double[] result) {
-        for (@Parallel int i = 0; i < values.length; i++) {
-            result[0] += values[i];
+    private static void prepareTornadoSumForMeanComputation(final DoubleArray values, @Reduce DoubleArray result) {
+        result.set(0, 0.0f);
+        for (@Parallel int i = 0; i < values.getSize(); i++) {
+            result.set(0, result.get(0) + values.get(i));
         }
     }
 
-    private static void computeMapWithReduceValue(final double[] values, @Reduce double[] result) {
-        for (@Parallel int i = 0; i < values.length; i++) {
-            values[i] = result[0] + i;
+    private static void computeMapWithReduceValue(final DoubleArray values, @Reduce DoubleArray result) {
+        for (@Parallel int i = 0; i < values.getSize(); i++) {
+            values.set(i, result.get(0) + i);
         }
     }
 
     @Test
     public void testMultipleReductions() {
-        double[] data = new double[SIZE];
-        double[] sequentialReduce = new double[1];
-        double[] sequentialResult = new double[data.length];
+        DoubleArray data = new DoubleArray(SIZE);
+        DoubleArray sequentialReduce = new DoubleArray(1);
+        DoubleArray sequentialResult = new DoubleArray(data.getSize());
 
-        IntStream.range(0, data.length).forEach(idx -> {
-            data[idx] = Math.random();
-            sequentialResult[idx] = data[idx];
+        IntStream.range(0, data.getSize()).forEach(idx -> {
+            data.set(idx, Math.random());
+            sequentialResult.set(idx, data.get(idx));
         });
 
-        double[] reduceResult = new double[1];
+        DoubleArray reduceResult = new DoubleArray(1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, data) //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
                 .task("t0", TestReductionsDoubles::prepareTornadoSumForMeanComputation, data, reduceResult) //
                 .task("t1", TestReductionsDoubles::computeMapWithReduceValue, data, reduceResult) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, reduceResult, data);
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data, reduceResult);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
@@ -424,35 +436,36 @@ public class TestReductionsDoubles extends TornadoTestBase {
         prepareTornadoSumForMeanComputation(sequentialResult, sequentialReduce);
         computeMapWithReduceValue(sequentialResult, sequentialReduce);
 
-        for (int i = 0; i < data.length; i++) {
-            assertEquals(sequentialResult[i], data[i], 0.01f);
+        for (int i = 0; i < data.getSize(); i++) {
+            assertEquals(sequentialResult.get(i), data.get(i), 0.01f);
         }
     }
 
-    private static void computeStandardDeviation(final double[] values, final double[] sum, @Reduce final double[] std) {
-        final double s = sum[0] / values.length;
-        for (@Parallel int i = 0; i < values.length; i++) {
-            std[0] += TornadoMath.pow(values[i] - s, 2);
+    private static void computeStandardDeviation(final DoubleArray values, final DoubleArray sum, @Reduce final DoubleArray std) {
+        final double s = sum.get(0) / values.getSize();
+        std.set(0, 0.0f);
+        for (@Parallel int i = 0; i < values.getSize(); i++) {
+            std.set(0, std.get(0) + TornadoMath.pow(values.get(i) - s, 2));
         }
     }
 
     @Test
     public void testMultipleReductions2() {
 
-        double[] data = new double[32];
-        double[] data2 = new double[32];
+        DoubleArray data = new DoubleArray(32);
+        DoubleArray data2 = new DoubleArray(32);
 
-        double[] resultSum = new double[1];
-        double[] resultStd = new double[1];
+        DoubleArray resultSum = new DoubleArray(1);
+        DoubleArray resultStd = new DoubleArray(1);
 
-        double[] sequentialSum = new double[1];
-        double[] sequentialStd = new double[1];
-        double[] sequentialData = new double[data.length];
+        DoubleArray sequentialSum = new DoubleArray(1);
+        DoubleArray sequentialStd = new DoubleArray(1);
+        DoubleArray sequentialData = new DoubleArray(data.getSize());
 
-        IntStream.range(0, data.length).forEach(idx -> {
-            data[idx] = Math.random();
-            data2[idx] = data[idx];
-            sequentialData[idx] = data[idx];
+        IntStream.range(0, data.getSize()).forEach(idx -> {
+            data.set(idx, Math.random());
+            data2.set(idx, data.get(idx));
+            sequentialData.set(idx, data.get(idx));
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -468,21 +481,21 @@ public class TestReductionsDoubles extends TornadoTestBase {
         prepareTornadoSumForMeanComputation(sequentialData, sequentialSum);
         computeStandardDeviation(sequentialData, sequentialSum, sequentialStd);
 
-        assertEquals(sequentialStd[0], resultStd[0], 0.01);
+        assertEquals(sequentialStd.get(0), resultStd.get(0), 0.01);
 
     }
 
-    private static void prepareTornadoSum(final double[] values, @Reduce double[] result) {
-        result[0] = 0;
-        for (@Parallel int i = 0; i < values.length; i++) {
-            result[0] += values[i];
+    private static void prepareTornadoSum(final DoubleArray values, @Reduce DoubleArray result) {
+        result.set(0, 0.0f);
+        for (@Parallel int i = 0; i < values.getSize(); i++) {
+            result.set(0, result.get(0) + values.get(i));
         }
     }
 
-    private static void compute2(final double[] values, @Reduce final double[] std) {
-        std[0] = 0;
-        for (@Parallel int i = 0; i < values.length; i++) {
-            std[0] += values[i];
+    private static void compute2(final DoubleArray values, @Reduce final DoubleArray std) {
+        std.set(0, 0);
+        for (@Parallel int i = 0; i < values.getSize(); i++) {
+            std.set(0, std.get(0) + values.get(i));
         }
     }
 
@@ -490,19 +503,19 @@ public class TestReductionsDoubles extends TornadoTestBase {
     public void testMultipleReductions3() {
 
         final int size = 8;
-        double[] data = new double[size];
+        DoubleArray data = new DoubleArray(size);
 
-        double[] resultSum = new double[1];
-        double[] resultStd = new double[1];
+        DoubleArray resultSum = new DoubleArray(1);
+        DoubleArray resultStd = new DoubleArray(1);
 
-        double[] sequentialSum = new double[1];
-        double[] sequentialStd = new double[1];
-        double[] sequentialData = new double[data.length];
+        DoubleArray sequentialSum = new DoubleArray(1);
+        DoubleArray sequentialStd = new DoubleArray(1);
+        DoubleArray sequentialData = new DoubleArray(data.getSize());
 
         Random r = new Random();
-        IntStream.range(0, data.length).forEach(idx -> {
-            data[idx] = r.nextDouble();
-            sequentialData[idx] = data[idx];
+        IntStream.range(0, data.getSize()).forEach(idx -> {
+            data.set(idx, r.nextDouble());
+            sequentialData.set(idx, data.get(idx));
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -518,14 +531,14 @@ public class TestReductionsDoubles extends TornadoTestBase {
         prepareTornadoSum(sequentialData, sequentialSum);
         compute2(sequentialData, sequentialStd);
 
-        assertEquals(sequentialSum[0], resultSum[0], 0.01);
-        assertEquals(sequentialStd[0], resultStd[0], 0.01);
+        assertEquals(sequentialSum.get(0), resultSum.get(0), 0.01);
+        assertEquals(sequentialStd.get(0), resultStd.get(0), 0.01);
     }
 
-    private static void maxReductionAnnotation2(double[] input, @Reduce double[] result, double neutral) {
-        result[0] = neutral;
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] = TornadoMath.max(result[0], input[i] * 100);
+    private static void maxReductionAnnotation2(DoubleArray input, @Reduce DoubleArray result, double neutral) {
+        result.set(0, neutral);
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            result.set(0, TornadoMath.max(result.get(0), input.get(i) * 100));
         }
     }
 
@@ -533,26 +546,26 @@ public class TestReductionsDoubles extends TornadoTestBase {
     public void testMultipleReductions4() {
 
         final int size = 8;
-        double[] data1 = new double[size];
-        double[] data2 = new double[size];
+        DoubleArray data1 = new DoubleArray(size);
+        DoubleArray data2 = new DoubleArray(size);
 
-        double[] resultStd1 = new double[1];
-        double[] resultStd2 = new double[1];
+        DoubleArray resultStd1 = new DoubleArray(1);
+        DoubleArray resultStd2 = new DoubleArray(1);
 
-        double[] sequentialStd1 = new double[1];
-        double[] sequentialStd2 = new double[1];
-        double[] sequentialData1 = new double[data1.length];
-        double[] sequentialData2 = new double[data2.length];
+        DoubleArray sequentialStd1 = new DoubleArray(1);
+        DoubleArray sequentialStd2 = new DoubleArray(1);
+        DoubleArray sequentialData1 = new DoubleArray(data1.getSize());
+        DoubleArray sequentialData2 = new DoubleArray(data2.getSize());
 
         Random r = new Random();
-        IntStream.range(0, data1.length).forEach(idx -> {
-            data1[idx] = r.nextDouble();
-            sequentialData1[idx] = data1[idx];
+        IntStream.range(0, data1.getSize()).forEach(idx -> {
+            data1.set(idx, r.nextDouble());
+            sequentialData1.set(idx, data1.get(idx));
         });
 
-        IntStream.range(0, data2.length).forEach(idx -> {
-            data2[idx] = r.nextDouble();
-            sequentialData2[idx] = data2[idx];
+        IntStream.range(0, data2.getSize()).forEach(idx -> {
+            data2.set(idx, r.nextDouble());
+            sequentialData2.set(idx, data2.get(idx));
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -568,43 +581,43 @@ public class TestReductionsDoubles extends TornadoTestBase {
         compute2(sequentialData1, sequentialStd1);
         compute2(sequentialData2, sequentialStd2);
 
-        assertEquals(sequentialStd1[0], resultStd1[0], 0.01);
-        assertEquals(sequentialStd2[0], resultStd2[0], 0.01);
+        assertEquals(sequentialStd1.get(0), resultStd1.get(0), 0.01);
+        assertEquals(sequentialStd2.get(0), resultStd2.get(0), 0.01);
     }
 
     @Test
     public void testMultipleReductions5() {
 
         final int size = 8;
-        double[] data1 = new double[size];
-        double[] data2 = new double[size];
-        double[] data3 = new double[size];
+        DoubleArray data1 = new DoubleArray(size);
+        DoubleArray data2 = new DoubleArray(size);
+        DoubleArray data3 = new DoubleArray(size);
 
-        double[] resultStd1 = new double[1];
-        double[] resultStd2 = new double[1];
-        double[] resultStd3 = new double[1];
+        DoubleArray resultStd1 = new DoubleArray(1);
+        DoubleArray resultStd2 = new DoubleArray(1);
+        DoubleArray resultStd3 = new DoubleArray(1);
 
-        double[] sequentialStd1 = new double[1];
-        double[] sequentialStd2 = new double[1];
-        double[] sequentialStd3 = new double[1];
-        double[] sequentialData1 = new double[data1.length];
-        double[] sequentialData2 = new double[data2.length];
-        double[] sequentialData3 = new double[data3.length];
+        DoubleArray sequentialStd1 = new DoubleArray(1);
+        DoubleArray sequentialStd2 = new DoubleArray(1);
+        DoubleArray sequentialStd3 = new DoubleArray(1);
+        DoubleArray sequentialData1 = new DoubleArray(data1.getSize());
+        DoubleArray sequentialData2 = new DoubleArray(data2.getSize());
+        DoubleArray sequentialData3 = new DoubleArray(data3.getSize());
 
         Random r = new Random();
-        IntStream.range(0, data1.length).forEach(idx -> {
-            data1[idx] = r.nextDouble();
-            sequentialData1[idx] = data1[idx];
+        IntStream.range(0, data1.getSize()).forEach(idx -> {
+            data1.set(idx, r.nextDouble());
+            sequentialData1.set(idx, data1.get(idx));
         });
 
-        IntStream.range(0, data2.length).forEach(idx -> {
-            data2[idx] = r.nextDouble();
-            sequentialData2[idx] = data2[idx];
+        IntStream.range(0, data2.getSize()).forEach(idx -> {
+            data2.set(idx, r.nextDouble());
+            sequentialData2.set(idx, data2.get(idx));
         });
 
-        IntStream.range(0, data3.length).forEach(idx -> {
-            data3[idx] = r.nextDouble();
-            sequentialData3[idx] = data3[idx];
+        IntStream.range(0, data3.getSize()).forEach(idx -> {
+            data3.set(idx, r.nextDouble());
+            sequentialData3.set(idx, data3.get(idx));
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -622,21 +635,21 @@ public class TestReductionsDoubles extends TornadoTestBase {
         compute2(sequentialData2, sequentialStd2);
         compute2(sequentialData3, sequentialStd3);
 
-        assertEquals(sequentialStd1[0], resultStd1[0], 0.01);
-        assertEquals(sequentialStd2[0], resultStd2[0], 0.01);
-        assertEquals(sequentialStd3[0], resultStd3[0], 0.01);
+        assertEquals(sequentialStd1.get(0), resultStd1.get(0), 0.01);
+        assertEquals(sequentialStd2.get(0), resultStd2.get(0), 0.01);
+        assertEquals(sequentialStd3.get(0), resultStd3.get(0), 0.01);
     }
 
     @Test
     public void testMaxReduction2() {
-        double[] input = new double[SIZE];
-        double[] result = new double[1];
+        DoubleArray input = new DoubleArray(SIZE);
+        DoubleArray result = new DoubleArray(1);
         IntStream.range(0, SIZE).forEach(idx -> {
-            input[idx] = idx;
+            input.set(idx, idx);
         });
 
         double neutral = Double.MIN_VALUE + 1;
-        Arrays.fill(result, neutral);
+        result.init(neutral);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
@@ -646,29 +659,31 @@ public class TestReductionsDoubles extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        double[] sequential = new double[] { neutral };
+        DoubleArray sequential = new DoubleArray(1);
+        sequential.init(neutral);
+
         maxReductionAnnotation2(input, sequential, neutral);
 
-        assertEquals(sequential[0], result[0], 0.01f);
+        assertEquals(sequential.get(0), result.get(0), 0.01f);
     }
 
-    private static void minReductionAnnotation2(double[] input, @Reduce double[] result, double neutral) {
-        result[0] = neutral;
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] = TornadoMath.min(result[0], input[i] * 50);
+    private static void minReductionAnnotation2(DoubleArray input, @Reduce DoubleArray result, double neutral) {
+        result.set(0, neutral);
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            result.set(0, TornadoMath.min(result.get(0), input.get(i) * 50));
         }
     }
 
     @Test
     public void testMinReduction2() {
-        double[] input = new double[SIZE];
-        double[] result = new double[1];
+        DoubleArray input = new DoubleArray(SIZE);
+        DoubleArray result = new DoubleArray(1);
 
         IntStream.range(0, SIZE).parallel().forEach(idx -> {
-            input[idx] = 100;
+            input.set(idx, 100);
         });
 
-        Arrays.fill(result, Double.MAX_VALUE);
+        result.init(Double.MAX_VALUE);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
@@ -678,10 +693,10 @@ public class TestReductionsDoubles extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        double[] sequential = new double[1];
+        DoubleArray sequential = new DoubleArray(1);
         minReductionAnnotation2(input, sequential, Double.MAX_VALUE);
 
-        assertEquals(sequential[0], result[0], 0.01f);
+        assertEquals(sequential.get(0), result.get(0), 0.01f);
     }
 
 }

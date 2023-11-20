@@ -17,15 +17,14 @@
  */
 package uk.ac.manchester.tornado.unittests.foundation;
 
-import static org.junit.Assert.assertArrayEquals;
-
-import java.util.Arrays;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -42,15 +41,15 @@ public class TestShorts extends TornadoTestBase {
     @Test
     public void testShortAdd() {
         final int numElements = 256;
-        short[] a = new short[numElements];
-        short[] b = new short[numElements];
-        short[] c = new short[numElements];
+        ShortArray a = new ShortArray(numElements);
+        ShortArray b = new ShortArray(numElements);
+        ShortArray c = new ShortArray(numElements);
 
-        Arrays.fill(b, (short) 1);
-        Arrays.fill(c, (short) 3);
+        b.init((short) 1);
+        c.init((short) 3);
 
-        short[] expectedResult = new short[numElements];
-        Arrays.fill(expectedResult, (short) 4);
+        ShortArray expectedResult = new ShortArray(numElements);
+        expectedResult.init((short) 4);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, b, c) //
@@ -61,7 +60,9 @@ public class TestShorts extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        assertArrayEquals(expectedResult, a);
+        for (int i = 0; i < numElements; i++) {
+            assertEquals(expectedResult.get(i), a.get(i));
+        }
     }
 
 }

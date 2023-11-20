@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,9 +22,9 @@ import java.util.Random;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.collections.types.Float3;
-import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.images.ImageByte3;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
@@ -35,7 +35,7 @@ import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner renderTrack
+ * tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner renderTrack
  * </code>
  */
 public class RenderTrackTornado extends BenchmarkDriver {
@@ -84,8 +84,8 @@ public class RenderTrackTornado extends BenchmarkDriver {
         ComputeKernels.renderTrack(validationOutput, input);
         for (int i = 0; i < validationOutput.Y(); i++) {
             for (int j = 0; j < validationOutput.X(); j++) {
-                if ((validationOutput.get(i, j).getX() != outputTornado.get(i, j).getX()) || (validationOutput.get(i, j).getY() != outputTornado.get(i, j).getY())
-                        || (validationOutput.get(i, j).getZ() != outputTornado.get(i, j).getZ())) {
+                if ((validationOutput.get(i, j).getX() != outputTornado.get(i, j).getX()) || (validationOutput.get(i, j).getY() != outputTornado.get(i, j).getY()) || (validationOutput.get(i, j)
+                        .getZ() != outputTornado.get(i, j).getZ())) {
                     return false;
                 }
             }

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,6 +31,13 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
+import uk.ac.manchester.tornado.api.types.arrays.CharArray;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -38,82 +45,82 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  *
  * <p>
  * <code>
- *     tornado-test -V --fast uk.ac.manchester.tornado.unittests.arrays.TestArrays
+ * tornado-test -V --fast uk.ac.manchester.tornado.unittests.arrays.TestArrays
  * </code>
  * </p>
  */
 public class TestArrays extends TornadoTestBase {
     // CHECKSTYLE:OFF
 
-    public static void addAccumulator(int[] a, int value) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] += value;
+    public static void addAccumulator(IntArray a, int value) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            a.set(i, a.get(i) + value);
         }
     }
 
-    public static void vectorAddDouble(double[] a, double[] b, double[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = a[i] + b[i];
+    public static void vectorAddDouble(DoubleArray a, DoubleArray b, DoubleArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, a.get(i) + b.get(i));
         }
     }
 
-    public static void vectorAddFloat(float[] a, float[] b, float[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = a[i] + b[i];
+    public static void vectorAddFloat(FloatArray a, FloatArray b, FloatArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, a.get(i) + b.get(i));
         }
     }
 
-    public static void vectorAddInteger(int[] a, int[] b, int[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = a[i] + b[i];
+    public static void vectorAddInteger(IntArray a, IntArray b, IntArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, a.get(i) + b.get(i));
         }
     }
 
-    public static void vectorAddLong(long[] a, long[] b, long[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = a[i] + b[i];
+    public static void vectorAddLong(LongArray a, LongArray b, LongArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, a.get(i) + b.get(i));
         }
     }
 
-    public static void vectorAddShort(short[] a, short[] b, short[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = (short) (a[i] + b[i]);
+    public static void vectorAddShort(ShortArray a, ShortArray b, ShortArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, (short) (a.get(i) + b.get(i)));
         }
     }
 
-    public static void vectorChars(char[] a, char[] b, char[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = 'f';
+    public static void vectorChars(CharArray a, CharArray b, CharArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, 'f');
         }
     }
 
-    public static void vectorAddByte(byte[] a, byte[] b, byte[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = (byte) (a[i] + b[i]);
+    public static void vectorAddByte(ByteArray a, ByteArray b, ByteArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, (byte) (a.get(i) + b.get(i)));
         }
     }
 
-    public static void addChars(char[] a, int[] b) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] += b[i];
+    public static void addChars(CharArray a, IntArray b) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            a.set(i, (char) (a.get(i) + b.get(i)));
         }
     }
 
-    public static void initializeSequentialByte(byte[] a) {
-        for (int i = 0; i < a.length; i++) {
-            a[i] = (byte) 21;
+    public static void initializeSequentialByte(ByteArray a) {
+        for (int i = 0; i < a.getSize(); i++) {
+            a.set(i, (byte) 21);
         }
     }
 
-    public static void initializeSequential(int[] a) {
-        for (int i = 0; i < a.length; i++) {
-            a[i] = 1;
+    public static void initializeSequential(IntArray a) {
+        for (int i = 0; i < a.getSize(); i++) {
+            a.set(i, 1);
         }
     }
 
-    public static void initializeToOneParallel(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = 1;
+    public static void initializeToOneParallel(IntArray a) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            a.set(i, 1);
         }
     }
 
@@ -123,11 +130,9 @@ public class TestArrays extends TornadoTestBase {
         final int N = 128;
         int numKernels = 16;
 
-        int[] data = new int[N];
+        IntArray data = new IntArray(N);
 
-        IntStream.range(0, N).parallel().forEach(idx -> {
-            data[idx] = idx;
-        });
+        IntStream.range(0, N).parallel().forEach(idx -> data.set(idx, idx));
 
         TaskGraph taskGraph = new TaskGraph("s0");
         assertNotNull(taskGraph);
@@ -144,7 +149,7 @@ public class TestArrays extends TornadoTestBase {
                 .execute();
 
         for (int i = 0; i < N; i++) {
-            assertEquals(i + numKernels, data[i]);
+            assertEquals(i + numKernels, data.get(i));
         }
     }
 
@@ -152,7 +157,7 @@ public class TestArrays extends TornadoTestBase {
     public void testInitByteArray() {
         // Initialization: there is no copy-in.
         final int N = 128;
-        byte[] data = new byte[N];
+        ByteArray data = new ByteArray(N);
 
         TaskGraph taskGraph = new TaskGraph("s0");
         assertNotNull(taskGraph);
@@ -166,7 +171,7 @@ public class TestArrays extends TornadoTestBase {
                 .execute();
 
         for (int i = 0; i < N; i++) {
-            assertEquals((byte) 21, data[i]);
+            assertEquals((byte) 21, data.get(i));
         }
     }
 
@@ -175,7 +180,7 @@ public class TestArrays extends TornadoTestBase {
         // Initialization: there is no copy-in.
 
         final int N = 128;
-        int[] data = new int[N];
+        IntArray data = new IntArray(N);
 
         TaskGraph taskGraph = new TaskGraph("s0");
         assertNotNull(taskGraph);
@@ -189,7 +194,7 @@ public class TestArrays extends TornadoTestBase {
                 .execute();
 
         for (int i = 0; i < N; i++) {
-            assertEquals(1, data[i], 0.0001);
+            assertEquals(1, data.get(i), 0.0001);
         }
     }
 
@@ -198,7 +203,7 @@ public class TestArrays extends TornadoTestBase {
         // Initialization: there is no copy-in.
 
         final int N = 128;
-        int[] data = new int[N];
+        IntArray data = new IntArray(N);
 
         TaskGraph taskGraph = new TaskGraph("s0");
         assertNotNull(taskGraph);
@@ -212,7 +217,7 @@ public class TestArrays extends TornadoTestBase {
                 .execute();
 
         for (int i = 0; i < N; i++) {
-            assertEquals(1, data[i], 0.0001);
+            assertEquals(1, data.get(i), 0.0001);
         }
     }
 
@@ -222,10 +227,10 @@ public class TestArrays extends TornadoTestBase {
         final int N = 128;
         int numKernels = 8;
 
-        int[] data = new int[N];
+        IntArray data = new IntArray(N);
 
         IntStream.range(0, N).parallel().forEach(idx -> {
-            data[idx] = idx;
+            data.set(idx, idx);
         });
 
         TaskGraph taskGraph = new TaskGraph("s0");
@@ -242,20 +247,20 @@ public class TestArrays extends TornadoTestBase {
         executionPlanPlan.execute();
 
         for (int i = 0; i < N; i++) {
-            assertEquals(i + numKernels, data[i], 0.0001);
+            assertEquals(i + numKernels, data.get(i), 0.0001);
         }
     }
 
     @Test
     public void testVectorAdditionDouble() {
         final int numElements = 4096;
-        double[] a = new double[numElements];
-        double[] b = new double[numElements];
-        double[] c = new double[numElements];
+        DoubleArray a = new DoubleArray(numElements);
+        DoubleArray b = new DoubleArray(numElements);
+        DoubleArray c = new DoubleArray(numElements);
 
         IntStream.range(0, numElements).sequential().forEach(i -> {
-            a[i] = (float) Math.random();
-            b[i] = (float) Math.random();
+            a.set(i, (float) Math.random());
+            b.set(i, (float) Math.random());
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -267,21 +272,21 @@ public class TestArrays extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.01);
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(a.get(i) + b.get(i), c.get(i), 0.01);
         }
     }
 
     @Test
     public void testVectorAdditionFloat() {
         final int numElements = 4096;
-        float[] a = new float[numElements];
-        float[] b = new float[numElements];
-        float[] c = new float[numElements];
+        FloatArray a = new FloatArray(numElements);
+        FloatArray b = new FloatArray(numElements);
+        FloatArray c = new FloatArray(numElements);
 
         IntStream.range(0, numElements).sequential().forEach(i -> {
-            a[i] = (float) Math.random();
-            b[i] = (float) Math.random();
+            a.set(i, (float) Math.random());
+            b.set(i, (float) Math.random());
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -293,22 +298,22 @@ public class TestArrays extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.01f);
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(a.get(i) + b.get(i), c.get(i), 0.01f);
         }
     }
 
     @Test
     public void testVectorAdditionInteger() {
         final int numElements = 4096;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
 
         Random r = new Random();
         IntStream.range(0, numElements).sequential().forEach(i -> {
-            a[i] = r.nextInt();
-            b[i] = r.nextInt();
+            a.set(i, r.nextInt());
+            b.set(i, r.nextInt());
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -320,21 +325,21 @@ public class TestArrays extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i]);
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(a.get(i) + b.get(i), c.get(i));
         }
     }
 
     @Test
     public void testVectorAdditionLong() {
         final int numElements = 4096;
-        long[] a = new long[numElements];
-        long[] b = new long[numElements];
-        long[] c = new long[numElements];
+        LongArray a = new LongArray(numElements);
+        LongArray b = new LongArray(numElements);
+        LongArray c = new LongArray(numElements);
 
         IntStream.range(0, numElements).parallel().forEach(i -> {
-            a[i] = i;
-            b[i] = i;
+            a.set(i, i);
+            b.set(i, i);
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -346,21 +351,21 @@ public class TestArrays extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i]);
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(a.get(i) + b.get(i), c.get(i));
         }
     }
 
     @Test
     public void testVectorAdditionShort() {
         final int numElements = 4096;
-        short[] a = new short[numElements];
-        short[] b = new short[numElements];
-        short[] c = new short[numElements];
+        ShortArray a = new ShortArray(numElements);
+        ShortArray b = new ShortArray(numElements);
+        ShortArray c = new ShortArray(numElements);
 
         IntStream.range(0, numElements).parallel().forEach(idx -> {
-            a[idx] = 20;
-            b[idx] = 34;
+            a.set(idx, (short) 20);
+            b.set(idx, (short) 34);
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -372,21 +377,21 @@ public class TestArrays extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i]);
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(a.get(i) + b.get(i), c.get(i));
         }
     }
 
     @Test
     public void testVectorChars() {
         final int numElements = 4096;
-        char[] a = new char[numElements];
-        char[] b = new char[numElements];
-        char[] c = new char[numElements];
+        CharArray a = new CharArray(numElements);
+        CharArray b = new CharArray(numElements);
+        CharArray c = new CharArray(numElements);
 
         IntStream.range(0, numElements).parallel().forEach(idx -> {
-            a[idx] = 'a';
-            b[idx] = '0';
+            a.set(idx, 'a');
+            b.set(idx, '0');
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -398,21 +403,21 @@ public class TestArrays extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (char value : c) {
-            assertEquals('f', value);
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals('f', c.get(i));
         }
     }
 
     @Test
     public void testVectorBytes() {
         final int numElements = 4096;
-        byte[] a = new byte[numElements];
-        byte[] b = new byte[numElements];
-        byte[] c = new byte[numElements];
+        ByteArray a = new ByteArray(numElements);
+        ByteArray b = new ByteArray(numElements);
+        ByteArray c = new ByteArray(numElements);
 
         IntStream.range(0, numElements).parallel().forEach(idx -> {
-            a[idx] = 10;
-            b[idx] = 11;
+            a.set(idx, (byte) 10);
+            b.set(idx, (byte) 11);
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -424,8 +429,8 @@ public class TestArrays extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (byte value : c) {
-            assertEquals(21, value);
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(21, c.get(i));
         }
     }
 
@@ -434,19 +439,49 @@ public class TestArrays extends TornadoTestBase {
      *
      *
      * @see <a href=
-     *      "http://computer-graphics.se/hello-world-for-cuda.html">http://computer-graphics.se/hello-world-for-cuda.html
-     *      </a>
+     *     "http://computer-graphics.se/hello-world-for-cuda.html">http://computer-graphics.se/hello-world-for-cuda.html
+     *     </a>
      *
-     *      How to run?
+     *     How to run?
      *
-     *      <code>
-     *      $ tornado-test -V --fast --debug --threadInfo uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorCharsMessage
-     *      </code>
+     *     <code>
+     *     $ tornado-test -V --fast --debug --threadInfo uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorCharsMessage
+     *     </code>
      */
     @Test
     public void testVectorCharsMessage() {
-        char[] a = new char[] { 'h', 'e', 'l', 'l', 'o', ' ', '\0', '\0', '\0', '\0', '\0', '\0' };
-        int[] b = new int[] { 15, 10, 6, 0, -11, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+        CharArray a = new CharArray(12);
+        a.set(0, 'h');
+        a.set(1, 'e');
+        a.set(2, 'l');
+        a.set(3, 'l');
+        a.set(4, 'o');
+        a.set(5, ' ');
+        a.set(6, '\0');
+        a.set(7, '\0');
+        a.set(8, '\0');
+        a.set(9, '\0');
+        a.set(10, '\0');
+        a.set(11, '\0');
+
+        IntArray b = new IntArray(16);
+        b.set(0, 15);
+        b.set(1, 10);
+        b.set(2, 6);
+        b.set(3, 0);
+        b.set(4, -11);
+        b.set(5, 1);
+        b.set(6, 0);
+        b.set(7, 0);
+        b.set(8, 0);
+        b.set(9, 0);
+        b.set(10, 0);
+        b.set(11, 0);
+        b.set(12, 0);
+        b.set(13, 0);
+        b.set(14, 0);
+        b.set(15, 0);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
@@ -457,12 +492,12 @@ public class TestArrays extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        assertEquals('w', a[0]);
-        assertEquals('o', a[1]);
-        assertEquals('r', a[2]);
-        assertEquals('l', a[3]);
-        assertEquals('d', a[4]);
-        assertEquals('!', a[5]);
+        assertEquals('w', a.get(0));
+        assertEquals('o', a.get(1));
+        assertEquals('r', a.get(2));
+        assertEquals('l', a.get(3));
+        assertEquals('d', a.get(4));
+        assertEquals('!', a.get(5));
     }
     // CHECKSTYLE:ON
 

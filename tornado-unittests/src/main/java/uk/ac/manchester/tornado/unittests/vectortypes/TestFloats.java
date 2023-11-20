@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,16 +28,16 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.types.Float2;
-import uk.ac.manchester.tornado.api.collections.types.Float3;
-import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.Float6;
-import uk.ac.manchester.tornado.api.collections.types.Float8;
-import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
-import uk.ac.manchester.tornado.api.collections.types.VectorFloat2;
-import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
-import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
-import uk.ac.manchester.tornado.api.collections.types.VectorFloat8;
+import uk.ac.manchester.tornado.api.types.vectors.Float2;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
+import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat2;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat8;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -47,7 +47,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run.
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.vectortypes.TestFloats
+ * tornado-test -V uk.ac.manchester.tornado.unittests.vectortypes.TestFloats
  * </code>
  */
 public class TestFloats extends TornadoTestBase {
@@ -66,11 +66,6 @@ public class TestFloats extends TornadoTestBase {
 
     private static void dotMethodFloat4(Float4 a, Float4 b, VectorFloat result) {
         float dot = Float4.dot(a, b);
-        result.set(0, dot);
-    }
-
-    private static void dotMethodFloat6(Float6 a, Float6 b, VectorFloat result) {
-        float dot = Float6.dot(a, b);
         result.set(0, dot);
     }
 
@@ -154,25 +149,24 @@ public class TestFloats extends TornadoTestBase {
         }
     }
 
-    public static void addVectorFloat8Storage(VectorFloat8 a, VectorFloat8 results) {
+    public static void testVectorFloat8Storage(VectorFloat8 a, VectorFloat8 results) {
         for (@Parallel int i = 0; i < a.getLength(); i++) {
-            Float8 float8 = a.get(i);
-            results.set(i, new Float8(float8.getArray()));
+            results.set(i, a.get(i));
         }
     }
 
-    public static void dotProductFunctionMap(float[] a, float[] b, float[] results) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            results[i] = a[i] * b[i];
+    public static void dotProductFunctionMap(FloatArray a, FloatArray b, FloatArray results) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            results.set(i, a.get(i) * b.get(i));
         }
     }
 
-    public static void dotProductFunctionReduce(float[] input, float[] results) {
+    public static void dotProductFunctionReduce(FloatArray input, FloatArray results) {
         float sum = 0.0f;
-        for (int i = 0; i < input.length; i++) {
-            sum += input[i];
+        for (int i = 0; i < input.getSize(); i++) {
+            sum += input.get(i);
         }
-        results[0] = sum;
+        results.set(0, sum);
     }
 
     private static void vectorPhiTest(VectorFloat3 input, VectorFloat3 output) {
@@ -335,24 +329,6 @@ public class TestFloats extends TornadoTestBase {
         executionPlan.execute();
 
         assertEquals(20, output.get(0), DELTA);
-    }
-
-    @Test
-    public void testSimpleDotProductFloat6() {
-        Float6 a = new Float6(1f, 2f, 3f, 4f, 5f, 6f);
-        Float6 b = new Float6(6f, 5f, 4f, 3f, 2f, 1f);
-        VectorFloat output = new VectorFloat(1);
-
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
-                .task("t0", TestFloats::dotMethodFloat6, a, b, output) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
-
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
-
-        assertEquals(56, output.get(0), DELTA);
     }
 
     @Test
@@ -614,7 +590,7 @@ public class TestFloats extends TornadoTestBase {
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
-                .task("t0", TestFloats::addVectorFloat8Storage, a, output) //
+                .task("t0", TestFloats::testVectorFloat8Storage, a, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -639,18 +615,18 @@ public class TestFloats extends TornadoTestBase {
 
         int size = 8;
 
-        float[] a = new float[size];
-        float[] b = new float[size];
-        float[] outputMap = new float[size];
-        float[] outputReduce = new float[1];
+        FloatArray a = new FloatArray(size);
+        FloatArray b = new FloatArray(size);
+        FloatArray outputMap = new FloatArray(size);
+        FloatArray outputReduce = new FloatArray(1);
 
-        float[] seqMap = new float[size];
-        float[] seqReduce = new float[1];
+        FloatArray seqMap = new FloatArray(size);
+        FloatArray seqReduce = new FloatArray(1);
 
         Random r = new Random();
         for (int i = 0; i < size; i++) {
-            a[i] = r.nextFloat();
-            b[i] = r.nextFloat();
+            a.set(i, r.nextFloat());
+            b.set(i, r.nextFloat());
         }
 
         // Sequential computation
@@ -667,7 +643,7 @@ public class TestFloats extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        assertEquals(seqReduce[0], outputReduce[0], DELTA);
+        assertEquals(seqReduce.get(0), outputReduce.get(0), DELTA);
     }
 
     @Test
@@ -922,6 +898,16 @@ public class TestFloats extends TornadoTestBase {
         for (int i = 0; i < size; i++) {
             assertEquals(sequentialOutput.get(i).getX(), tornadoOutput.get(i).getX(), DELTA);
             assertEquals(sequentialOutput.get(i).getY(), tornadoOutput.get(i).getY(), DELTA);
+        }
+    }
+
+    @Test(timeout = 1000) //timeout of 1sec
+    public void testAllocationIssue() {
+        int size = 8192 * 4096;
+
+        VectorFloat4 buffer = new VectorFloat4(size);
+        for (int x = 0; x < size; x++) {
+            buffer.set(x, new Float4(x, x, x, x));
         }
     }
 

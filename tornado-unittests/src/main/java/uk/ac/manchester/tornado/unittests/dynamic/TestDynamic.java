@@ -19,8 +19,6 @@ package uk.ac.manchester.tornado.unittests.dynamic;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Arrays;
-
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.DRMode;
@@ -29,6 +27,8 @@ import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -42,31 +42,31 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 public class TestDynamic extends TornadoTestBase {
 
-    public static void compute(int[] a, int[] b) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            b[i] = a[i] * 2;
+    public static void compute(IntArray a, IntArray b) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            b.set(i, a.get(i) * 2);
         }
     }
 
-    public static void compute2(int[] a, int[] b) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            b[i] = a[i] * 10;
+    public static void compute2(IntArray a, IntArray b) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            b.set(i, a.get(i) * 10);
         }
     }
 
-    public static void saxpy(float alpha, float[] x, float[] y) {
-        for (@Parallel int i = 0; i < y.length; i++) {
-            y[i] = alpha * x[i];
+    public static void saxpy(float alpha, FloatArray x, FloatArray y) {
+        for (@Parallel int i = 0; i < y.getSize(); i++) {
+            y.set(i, alpha * x.get(i));
         }
     }
 
     @Test
     public void testDynamicWithProfiler() {
         int numElements = 256;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
 
-        Arrays.fill(a, 10);
+        a.init(10);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -85,18 +85,18 @@ public class TestDynamic extends TornadoTestBase {
             executionPlan.execute();
         }
 
-        for (int i = 0; i < b.length; i++) {
-            assertEquals(a[i] * 2, b[i]);
+        for (int i = 0; i < b.getSize(); i++) {
+            assertEquals(a.get(i) * 2, b.get(i));
         }
     }
 
     @Test
     public void testDynamicWithProfilerE2E() {
         int numElements = 16000;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
 
-        Arrays.fill(a, 10);
+        a.init(10);
 
         TaskGraph taskGraph = new TaskGraph("ss0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -115,19 +115,19 @@ public class TestDynamic extends TornadoTestBase {
             executionPlan.execute();
         }
 
-        for (int i = 0; i < b.length; i++) {
-            assertEquals(a[i] * 2, b[i]);
+        for (int i = 0; i < b.getSize(); i++) {
+            assertEquals(a.get(i) * 2, b.get(i));
         }
     }
 
     @Test
     public void testDynamicWithProfiler2() {
         int numElements = 4194304;
-        float[] a = new float[numElements];
-        float[] b = new float[numElements];
+        FloatArray a = new FloatArray(numElements);
+        FloatArray b = new FloatArray(numElements);
 
-        Arrays.fill(a, 10);
-        Arrays.fill(b, 0);
+        a.init(10);
+        b.init(0);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
@@ -141,19 +141,19 @@ public class TestDynamic extends TornadoTestBase {
         executionPlan.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.SERIAL) //
                 .execute();
 
-        for (int i = 0; i < b.length; i++) {
-            assertEquals(a[i] * 2.0f, b[i], 0.01f);
+        for (int i = 0; i < b.getSize(); i++) {
+            assertEquals(a.get(i) * 2.0f, b.get(i), 0.01f);
         }
     }
 
     @Test
     public void testDynamicWithProfiler3() {
         int numElements = 4096;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] seq = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray seq = new IntArray(numElements);
 
-        Arrays.fill(a, 10);
+        a.init(10);
 
         compute2(a, seq);
 
@@ -174,19 +174,19 @@ public class TestDynamic extends TornadoTestBase {
             executionPlan.execute();
         }
 
-        for (int i = 0; i < b.length; i++) {
-            assertEquals(seq[i], b[i]);
+        for (int i = 0; i < b.getSize(); i++) {
+            assertEquals(seq.get(i), b.get(i));
         }
     }
 
     @Test
     public void testDynamicWithProfiler4() {
         int numElements = 256;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] seq = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray seq = new IntArray(numElements);
 
-        Arrays.fill(a, 10);
+        a.init(10);
 
         compute(a, seq);
         compute2(seq, seq);
@@ -209,18 +209,18 @@ public class TestDynamic extends TornadoTestBase {
             executionPlan.execute();
         }
 
-        for (int i = 0; i < b.length; i++) {
-            assertEquals(seq[i], b[i]);
+        for (int i = 0; i < b.getSize(); i++) {
+            assertEquals(seq.get(i), b.get(i));
         }
     }
 
     @Test
     public void testDynamicWinner() {
         int numElements = 16000;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
 
-        Arrays.fill(a, 10);
+        a.init(10);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -238,8 +238,8 @@ public class TestDynamic extends TornadoTestBase {
             executionPlan.execute();
         }
 
-        for (int i = 0; i < b.length; i++) {
-            assertEquals(a[i] * 2, b[i]);
+        for (int i = 0; i < b.getSize(); i++) {
+            assertEquals(a.get(i) * 2, b.get(i));
         }
     }
 }

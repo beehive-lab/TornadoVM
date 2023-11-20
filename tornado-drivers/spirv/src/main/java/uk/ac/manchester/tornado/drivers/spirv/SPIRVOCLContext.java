@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.drivers.spirv;
 import java.util.ArrayList;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.OCLExecutionEnvironment;
 
 public class SPIRVOCLContext extends SPIRVContext {
@@ -148,6 +149,11 @@ public class SPIRVOCLContext extends SPIRVContext {
     }
 
     @Override
+    public int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, long value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
+        throw new RuntimeException("Unimplemented");
+    }
+
+    @Override
     public void enqueueBarrier(int deviceIndex) {
         throw new RuntimeException("Unimplemented");
     }
@@ -155,5 +161,10 @@ public class SPIRVOCLContext extends SPIRVContext {
     @Override
     public void flush(int deviceIndex) {
         throw new RuntimeException("Unimplemented");
+    }
+
+    @Override
+    public void readBuffer(int deviceIndex, long bufferId, long offset, long bytes, long offHeapSegmentAddress, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer) {
+        throw new TornadoRuntimeException("Unimplemented");
     }
 }

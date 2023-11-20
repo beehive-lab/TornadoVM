@@ -17,38 +17,37 @@
  */
 package uk.ac.manchester.tornado.unittests.codegen;
 
-import static org.junit.Assert.assertArrayEquals;
-
-import java.util.Arrays;
-import java.util.stream.IntStream;
-
 import org.junit.Ignore;
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
+
 /**
  * How to test?
  *
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.codegen.CodeGen
+ * tornado-test -V uk.ac.manchester.tornado.unittests.codegen.CodeGen
  * </code>
  */
 public class CodeGen extends TornadoTestBase {
 
-    public static void cascadeKernel(int[] grayIntegralImage, int imageWidth, int imageHeight, int[] resultsXY) {
+    public static void cascadeKernel(IntArray grayIntegralImage, int imageWidth, int imageHeight, IntArray resultsXY) {
         for (@Parallel int y = 0; y < imageHeight; y++) {
             for (@Parallel int x = 0; x < imageWidth; x++) {
-                int gradient = grayIntegralImage[(y * imageWidth) + x];
+                int gradient = grayIntegralImage.get((y * imageWidth) + x);
             }
         }
     }
@@ -92,14 +91,14 @@ public class CodeGen extends TornadoTestBase {
      * merge to represent the break in the first if-condition.
      *
      */
-    private static void breakStatement(int[] a) {
-        for (int i = 0; i < a.length; i++) {
-            if (a[i] == 5) {
+    private static void breakStatement(IntArray a) {
+        for (int i = 0; i < a.getSize(); i++) {
+            if (a.get(i) == 5) {
                 break;
             }
-            a[i] += 5;
+            a.set(i, a.get(i) + 5);
         }
-        a[0] = 0;
+        a.set(0, 0);
     }
 
     @Test
@@ -109,10 +108,10 @@ public class CodeGen extends TornadoTestBase {
 
         int imageWidth = 512;
         int imageHeight = 512;
-        int[] grayIntegralImage = new int[imageHeight * imageWidth];
-        int[] resultsXY = new int[imageHeight * imageWidth];
+        IntArray grayIntegralImage = new IntArray(imageHeight * imageWidth);
+        IntArray resultsXY = new IntArray(imageHeight * imageWidth);
 
-        IntStream.range(0, imageHeight * imageHeight).forEach(x -> grayIntegralImage[x] = x);
+        IntStream.range(0, imageHeight * imageHeight).forEach(x -> grayIntegralImage.set(x, x));
 
         taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, grayIntegralImage) //
                 .task("bar", CodeGen::cascadeKernel, grayIntegralImage, imageWidth, imageHeight, resultsXY) //
@@ -170,10 +169,13 @@ public class CodeGen extends TornadoTestBase {
     @Test
     public void test05() {
         final int size = 8192;
-        int[] a = new int[size];
-        Arrays.fill(a, 10);
-        a[12] = 5;
-        int[] serial = Arrays.copyOf(a, a.length);
+        IntArray a = new IntArray(size);
+        a.init(10);
+        a.set(12, 5);
+        IntArray serial = new IntArray(size);
+        serial.init(10);
+        serial.set(12, 5);
+
         breakStatement(serial);
 
         TaskGraph taskGraph = new TaskGraph("break") //
@@ -185,7 +187,9 @@ public class CodeGen extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        assertArrayEquals(serial, a);
+        for (int i = 0; i < size; i++) {
+            assertEquals(serial.get(i), a.get(i));
+        }
     }
 
 }

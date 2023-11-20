@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.benchmarks.sgemv;
 
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPDistance;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.findULPDistance;
 import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.sgemv;
 
 import java.util.Random;
@@ -26,6 +26,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
@@ -34,16 +35,16 @@ import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner sgemv
+ * tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner sgemv
  * </code>
  */
 public class SgemvTornado extends BenchmarkDriver {
 
     private final int m;
     private final int n;
-    private float[] a;
-    private float[] x;
-    private float[] y;
+    private FloatArray a;
+    private FloatArray x;
+    private FloatArray y;
 
     public SgemvTornado(int iterations, int m, int n) {
         super(iterations);
@@ -53,18 +54,18 @@ public class SgemvTornado extends BenchmarkDriver {
 
     @Override
     public void setUp() {
-        a = new float[m * n];
-        x = new float[n];
-        y = new float[n];
+        a = new FloatArray(m * n);
+        x = new FloatArray(n);
+        y = new FloatArray(n);
 
         final Random random = new Random();
 
         for (int i = 0; i < m; i++) {
-            a[i * (m + 1)] = 1;
+            a.set(i * (m + 1), 1);
         }
 
         for (int i = 0; i < n; i++) {
-            x[i] = random.nextFloat();
+            x.set(i, random.nextFloat());
         }
 
         taskGraph = new TaskGraph("benchmark") //
@@ -96,7 +97,7 @@ public class SgemvTornado extends BenchmarkDriver {
     @Override
     public boolean validate(TornadoDevice device) {
 
-        final float[] result = new float[n];
+        final FloatArray result = new FloatArray(n);
 
         benchmarkMethod(device);
         executionResult.transferToHost(y);

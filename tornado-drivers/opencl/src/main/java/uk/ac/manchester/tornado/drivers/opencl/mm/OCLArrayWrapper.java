@@ -183,12 +183,11 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     @Override
     public List<Integer> enqueueWrite(final Object value, long batchSize, long hostOffset, final int[] events, boolean useDeps) {
         final T array = cast(value);
-        ArrayList<Integer> listEvents = new ArrayList<>();
-
         if (array == null) {
             throw new TornadoRuntimeException("ERROR] Data to be copied is NULL");
         }
-        final int returnEvent;
+
+        ArrayList<Integer> listEvents = new ArrayList<>();
         // We first write the header for the object, and then we write actual buffer
         final int headerEvent;
         if (batchSize <= 0) {
@@ -196,7 +195,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         } else {
             headerEvent = buildArrayHeaderBatch(batchSize).enqueueWrite((useDeps) ? events : null);
         }
-        returnEvent = enqueueWriteArrayData(toBuffer(), arrayHeaderSize + bufferOffset, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+        final int returnEvent = enqueueWriteArrayData(toBuffer(), arrayHeaderSize + bufferOffset, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
 
         listEvents.add(headerEvent);
         listEvents.add(returnEvent);
@@ -271,7 +270,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
                 shouldNotReachHere("Array header is invalid");
             }
         } else {
-            final long numBytes = getSizeSubRegion() > 0 ? getSizeSubRegion() : (bufferSize - arrayHeaderSize);
+            final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : (bufferSize - arrayHeaderSize);
             return readArrayData(toBuffer(), arrayHeaderSize + bufferOffset, numBytes, array, hostOffset, (useDeps) ? events : null);
         }
         return -1;
@@ -340,7 +339,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     protected abstract void writeArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
     @Override
-    public long getSizeSubRegion() {
+    public long getSizeSubRegionSize() {
         return setSubRegionSize;
     }
 

@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -21,7 +21,6 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.nodes.calc;
 
-import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -33,6 +32,7 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.Value;
 
 @NodeInfo
 public class TornadoAddressArithmeticNode extends FloatingNode implements LIRLowerable {
@@ -44,7 +44,6 @@ public class TornadoAddressArithmeticNode extends FloatingNode implements LIRLow
 
     @Node.Input
     protected ValueNode offset;
-
 
     public TornadoAddressArithmeticNode(ValueNode base, ValueNode offset) {
         super(TYPE, StampFactory.forKind(JavaKind.Long));

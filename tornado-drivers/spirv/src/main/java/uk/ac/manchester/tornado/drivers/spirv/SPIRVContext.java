@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -24,8 +24,6 @@
 package uk.ac.manchester.tornado.drivers.spirv;
 
 import java.util.List;
-
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public abstract class SPIRVContext {
 
@@ -75,8 +73,11 @@ public abstract class SPIRVContext {
 
     public abstract int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, long[] value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
 
+    public abstract int enqueueWriteBuffer(int deviceIndex, long bufferId, long offset, long bytes, long value, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
+
     public abstract void enqueueBarrier(int deviceIndex);
 
     public abstract void flush(int deviceIndex);
 
+    public abstract void readBuffer(int deviceIndex, long bufferId, long offset, long bytes, long offHeapSegmentAddress, long hostOffset, int[] waitEvents, ProfilerTransfer profilerTransfer);
 }

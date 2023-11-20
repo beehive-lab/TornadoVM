@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -41,33 +42,33 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </code>
  */
 public class TestTemporaryValues extends TornadoTestBase {
-    private static void computeWithTemporaryValues(float[] a, float[] b, float[] c) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            float valueA = a[i];
-            float valueB = b[i];
+    private static void computeWithTemporaryValues(FloatArray a, FloatArray b, FloatArray c) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            float valueA = a.get(i);
+            float valueB = b.get(i);
 
-            a[i] = valueA + b[i];
-            b[i] = valueA * 2;
-            c[i] = valueA + valueB;
+            a.set(i, valueA + b.get(i));
+            b.set(i, valueA * 2);
+            c.set(i, valueA + valueB);
         }
     }
 
     @Test
     public void testTemporaryValues01() {
         final int numElements = 8;
-        float[] aTornado = new float[numElements];
-        float[] bTornado = new float[numElements];
-        float[] cTornado = new float[numElements];
-        float[] aJava = new float[numElements];
-        float[] bJava = new float[numElements];
-        float[] cJava = new float[numElements];
+        FloatArray aTornado = new FloatArray(numElements);
+        FloatArray bTornado = new FloatArray(numElements);
+        FloatArray cTornado = new FloatArray(numElements);
+        FloatArray aJava = new FloatArray(numElements);
+        FloatArray bJava = new FloatArray(numElements);
+        FloatArray cJava = new FloatArray(numElements);
 
         Random r = new Random();
-        IntStream.range(0, aJava.length).forEach(idx -> {
-            aTornado[idx] = r.nextFloat();
-            aJava[idx] = aTornado[idx];
-            bTornado[idx] = r.nextFloat();
-            bJava[idx] = bTornado[idx];
+        IntStream.range(0, aJava.getSize()).forEach(idx -> {
+            aTornado.set(idx, r.nextFloat());
+            aJava.set(idx, aTornado.get(idx));
+            bTornado.set(idx, r.nextFloat());
+            bJava.set(idx, bTornado.get(idx));
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -81,10 +82,10 @@ public class TestTemporaryValues extends TornadoTestBase {
 
         computeWithTemporaryValues(aJava, bJava, cJava);
 
-        for (int i = 0; i < aJava.length; i++) {
-            assertEquals(aJava[i], aTornado[i], 0.001f);
-            assertEquals(bJava[i], bTornado[i], 0.001f);
-            assertEquals(cJava[i], cTornado[i], 0.001f);
+        for (int i = 0; i < aJava.getSize(); i++) {
+            assertEquals(aJava.get(i), aTornado.get(i), 0.001f);
+            assertEquals(bJava.get(i), bTornado.get(i), 0.001f);
+            assertEquals(cJava.get(i), cTornado.get(i), 0.001f);
         }
     }
 }

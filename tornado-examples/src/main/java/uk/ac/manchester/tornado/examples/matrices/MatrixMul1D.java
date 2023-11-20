@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,6 +27,7 @@ import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
@@ -35,7 +36,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.matrices.MatrixMul1D
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.matrices.MatrixMul1D
  * </code>
  *
  */
@@ -44,14 +45,14 @@ public class MatrixMul1D {
     public static final int WARMUP_ITERATIONS = 15;
     public static final int EXECUTE_ITERATIONS = 100;
 
-    private static void matrixMultiplication(final float[] A, final float[] B, final float[] C, final int size) {
+    private static void matrixMultiplication(final FloatArray A, final FloatArray B, final FloatArray C, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
             for (@Parallel int j = 0; j < size; j++) {
                 float sum = 0.0f;
                 for (int k = 0; k < size; k++) {
-                    sum += A[(i * size) + k] * B[(k * size) + j];
+                    sum += A.get((i * size) + k) * B.get((k * size) + j);
                 }
-                C[(i * size) + j] = sum;
+                C.set((i * size) + j, sum);
             }
         }
     }
@@ -62,15 +63,15 @@ public class MatrixMul1D {
             N = Integer.parseInt(args[0]);
         }
 
-        float[] matrixA = new float[N * N];
-        float[] matrixB = new float[N * N];
-        float[] matrixCSeq = new float[N * N];
-        float[] matrixCCUDA = new float[N * N];
-        float[] matrixCOCL = new float[N * N];
+        FloatArray matrixA = new FloatArray(N * N);
+        FloatArray matrixB = new FloatArray(N * N);
+        FloatArray matrixCSeq = new FloatArray(N * N);
+        FloatArray matrixCCUDA = new FloatArray(N * N);
+        FloatArray matrixCOCL = new FloatArray(N * N);
 
         IntStream.range(0, N * N).parallel().forEach(idx -> {
-            matrixA[idx] = 2.5f;
-            matrixB[idx] = 3.5f;
+            matrixA.set(idx, 2.5f);
+            matrixB.set(idx, 3.5f);
         });
 
         TaskGraph cudaTaskGraph = new TaskGraph("cuda_old_api") //
@@ -91,7 +92,7 @@ public class MatrixMul1D {
         }
 
         // Time CUDA
-        long start,stop;
+        long start, stop;
         long[] execTimesCUDA = new long[EXECUTE_ITERATIONS];
         for (int i = 0; i < execTimesCUDA.length; i++) {
             start = System.currentTimeMillis();

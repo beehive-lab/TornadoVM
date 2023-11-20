@@ -17,8 +17,6 @@
  */
 package uk.ac.manchester.tornado.examples.kernelcontext.reductions;
 
-import java.util.stream.IntStream;
-
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -26,20 +24,23 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+
+import java.util.stream.IntStream;
 
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- *      $ tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.reductions.ReductionsGlobalMemory
+ * $ tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.reductions.ReductionsGlobalMemory
  * </code>
  */
 public class ReductionsGlobalMemory {
 
     // Reduction in Global memory using KernelContext
-    public static void reduction(float[] a, float[] b, KernelContext context) {
+    public static void reduction(FloatArray a, FloatArray b, KernelContext context) {
         int localIdx = context.localIdx;
         int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx; // Expose Group ID
@@ -48,35 +49,36 @@ public class ReductionsGlobalMemory {
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             context.localBarrier();
             if (localIdx < stride) {
-                a[id] += a[id + stride];
+                a.set(id, a.get(id) + a.get(id + stride));
             }
         }
         if (localIdx == 0) {
-            b[groupID] = a[id];
+            b.set(groupID, a.get(id));
         }
     }
 
-    public static float computeSequential(float[] input) {
+    public static float computeSequential(FloatArray input) {
         float acc = 0;
-        for (float v : input) {
-            acc += v;
+        for (int i = 0; i < input.getSize(); i++) {
+            acc += input.get(i);
         }
         return acc;
     }
 
-    public static void rAdd(final float[] array, int size) {
-        float acc = array[0];
-        for (int i = 1; i < array.length; i++) {
-            acc += array[i];
+    public static void rAdd(final FloatArray array, int size) {
+        float acc = array.get(0);
+        for (int i = 1; i < array.getSize(); i++) {
+            acc += array.get(i);
         }
-        array[0] = acc;
+        array.set(0, acc);
     }
 
     public static void main(String[] args) {
         final int size = 1024;
-        float[] input = new float[size];
-        float[] reduce = new float[size];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
+        FloatArray input = new FloatArray(size);
+        FloatArray reduce = new FloatArray(size);
+
+        IntStream.range(0, input.getSize()).sequential().forEach(i -> input.set(i, i));
         float sequential = computeSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -94,7 +96,7 @@ public class ReductionsGlobalMemory {
         executor.withGridScheduler(gridScheduler).execute();
 
         // Final SUM
-        float finalSum = reduce[0];
+        float finalSum = reduce.get(0);
 
         System.out.println("Final SUM = " + finalSum + " vs seq= " + sequential);
         if ((sequential - finalSum) == 0) {

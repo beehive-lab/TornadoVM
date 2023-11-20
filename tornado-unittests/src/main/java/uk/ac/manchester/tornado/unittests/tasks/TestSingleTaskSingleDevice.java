@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -47,22 +48,22 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 public class TestSingleTaskSingleDevice extends TornadoTestBase {
 
-    public static void simpleTask(float[] a, float[] b, float[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = a[i] + b[i];
+    public static void simpleTask(FloatArray a, FloatArray b, FloatArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, a.get(i) + b.get(i));
         }
     }
 
     @Test
     public void testSimpleTask() {
         final int numElements = 4096;
-        float[] a = new float[numElements];
-        float[] b = new float[numElements];
-        float[] c = new float[numElements];
+        FloatArray a = new FloatArray(numElements);
+        FloatArray b = new FloatArray(numElements);
+        FloatArray c = new FloatArray(numElements);
 
         IntStream.range(0, numElements).sequential().forEach(i -> {
-            a[i] = (float) Math.random();
-            b[i] = (float) Math.random();
+            a.set(i, (float) Math.random());
+            b.set(i, (float) Math.random());
         });
 
         TaskGraph taskGraph = new TaskGraph("s0")//
@@ -74,21 +75,21 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.001);
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(a.get(i) + b.get(i), c.get(i), 0.001);
         }
     }
 
     @Test
     public void testSimpleTaskOnDevice0() {
         final int numElements = 4096;
-        float[] a = new float[numElements];
-        float[] b = new float[numElements];
-        float[] c = new float[numElements];
+        FloatArray a = new FloatArray(numElements);
+        FloatArray b = new FloatArray(numElements);
+        FloatArray c = new FloatArray(numElements);
 
         IntStream.range(0, numElements).sequential().forEach(i -> {
-            a[i] = (float) Math.random();
-            b[i] = (float) Math.random();
+            a.set(i, (float) Math.random());
+            b.set(i, (float) Math.random());
         });
 
         TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
@@ -104,21 +105,21 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
         executionPlan.withDevice(driver.getDevice(deviceNumber)) //
                 .execute();
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.001);
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(a.get(i) + b.get(i), c.get(i), 0.001);
         }
     }
 
     @Test
     public void testSimpleTaskOnDevice1() {
         final int numElements = 4096;
-        float[] a = new float[numElements];
-        float[] b = new float[numElements];
-        float[] c = new float[numElements];
+        FloatArray a = new FloatArray(numElements);
+        FloatArray b = new FloatArray(numElements);
+        FloatArray c = new FloatArray(numElements);
 
         IntStream.range(0, numElements).sequential().forEach(i -> {
-            a[i] = (float) Math.random();
-            b[i] = (float) Math.random();
+            a.set(i, (float) Math.random());
+            b.set(i, (float) Math.random());
         });
 
         TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
@@ -139,8 +140,8 @@ public class TestSingleTaskSingleDevice extends TornadoTestBase {
         executionPlan.withDevice(driver.getDevice(deviceNumber)) //
                 .execute();
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.001);
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(a.get(i) + b.get(i), c.get(i), 0.001);
         }
     }
 

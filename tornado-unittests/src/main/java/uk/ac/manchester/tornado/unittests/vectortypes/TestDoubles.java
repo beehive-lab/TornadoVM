@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,15 +28,16 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.types.Double2;
-import uk.ac.manchester.tornado.api.collections.types.Double3;
-import uk.ac.manchester.tornado.api.collections.types.Double4;
-import uk.ac.manchester.tornado.api.collections.types.Double8;
-import uk.ac.manchester.tornado.api.collections.types.VectorDouble;
-import uk.ac.manchester.tornado.api.collections.types.VectorDouble2;
-import uk.ac.manchester.tornado.api.collections.types.VectorDouble3;
-import uk.ac.manchester.tornado.api.collections.types.VectorDouble4;
-import uk.ac.manchester.tornado.api.collections.types.VectorDouble8;
+import uk.ac.manchester.tornado.api.types.vectors.Double2;
+import uk.ac.manchester.tornado.api.types.vectors.Double3;
+import uk.ac.manchester.tornado.api.types.vectors.Double4;
+import uk.ac.manchester.tornado.api.types.vectors.Double8;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble2;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble3;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble4;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble8;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -45,7 +46,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.vectortypes.TestDoubles
+ * tornado-test -V uk.ac.manchester.tornado.unittests.vectortypes.TestDoubles
  * </code>
  */
 public class TestDoubles extends TornadoTestBase {
@@ -76,24 +77,24 @@ public class TestDoubles extends TornadoTestBase {
         results.set(0, r);
     }
 
-    private static void addDouble(double[] a, double[] b, double[] result) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            result[i] = a[i] + b[i];
+    private static void addDouble(DoubleArray a, DoubleArray b, DoubleArray result) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            result.set(i, a.get(i) + b.get(i));
         }
     }
 
-    public static void dotProductFunctionMap(double[] a, double[] b, double[] results) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            results[i] = a[i] * b[i];
+    public static void dotProductFunctionMap(DoubleArray a, DoubleArray b, DoubleArray results) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            results.set(i, a.get(i) * b.get(i));
         }
     }
 
-    public static void dotProductFunctionReduce(double[] input, double[] results) {
+    public static void dotProductFunctionReduce(DoubleArray input, DoubleArray results) {
         double sum = 0.0f;
-        for (int i = 0; i < input.length; i++) {
-            sum += input[i];
+        for (int i = 0; i < input.getSize(); i++) {
+            sum += input.get(i);
         }
-        results[0] = sum;
+        results.set(0, sum);
     }
 
     public static void addVectorDouble2(VectorDouble2 a, VectorDouble2 b, VectorDouble2 results) {
@@ -294,13 +295,13 @@ public class TestDoubles extends TornadoTestBase {
     public void testDoubleAdd() {
         int size = 8;
 
-        double[] a = new double[size];
-        double[] b = new double[size];
-        double[] output = new double[size];
+        DoubleArray a = new DoubleArray(size);
+        DoubleArray b = new DoubleArray(size);
+        DoubleArray output = new DoubleArray(size);
 
         for (int i = 0; i < size; i++) {
-            a[i] = i;
-            b[i] = i;
+            a.set(i, i);
+            b.set(i, i);
         }
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -313,7 +314,7 @@ public class TestDoubles extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
-            assertEquals(i + i, output[i], DELTA);
+            assertEquals(i + i, output.get(i), DELTA);
         }
     }
 
@@ -322,18 +323,18 @@ public class TestDoubles extends TornadoTestBase {
 
         int size = 8;
 
-        double[] a = new double[size];
-        double[] b = new double[size];
-        double[] outputMap = new double[size];
-        double[] outputReduce = new double[1];
+        DoubleArray a = new DoubleArray(size);
+        DoubleArray b = new DoubleArray(size);
+        DoubleArray outputMap = new DoubleArray(size);
+        DoubleArray outputReduce = new DoubleArray(1);
 
-        double[] seqMap = new double[size];
-        double[] seqReduce = new double[1];
+        DoubleArray seqMap = new DoubleArray(size);
+        DoubleArray seqReduce = new DoubleArray(1);
 
         Random r = new Random();
         for (int i = 0; i < size; i++) {
-            a[i] = r.nextDouble();
-            b[i] = r.nextDouble();
+            a.set(i, r.nextDouble());
+            b.set(i, r.nextDouble());
         }
 
         dotProductFunctionMap(a, b, seqMap);
@@ -349,7 +350,7 @@ public class TestDoubles extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        assertEquals(seqReduce[0], outputReduce[0], DELTA);
+        assertEquals(seqReduce.get(0), outputReduce.get(0), DELTA);
     }
 
     @Test

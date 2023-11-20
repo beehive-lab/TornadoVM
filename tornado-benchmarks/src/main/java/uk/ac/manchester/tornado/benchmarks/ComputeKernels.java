@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,10 +18,15 @@
 package uk.ac.manchester.tornado.benchmarks;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
-import uk.ac.manchester.tornado.api.collections.types.Byte3;
-import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.api.types.vectors.Byte3;
+import uk.ac.manchester.tornado.api.types.images.ImageByte3;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
 
 public class ComputeKernels {
     // CHECKSTYLE:OFF
@@ -52,7 +57,7 @@ public class ComputeKernels {
      *
      * @author Juan Fumero
      */
-    public static void monteCarlo(float[] result, int size) {
+    public static void monteCarlo(FloatArray result, int size) {
         final int iter = 25000;
         for (@Parallel int idx = 0; idx < size; idx++) {
             long seed = idx;
@@ -74,11 +79,11 @@ public class ComputeKernels {
                 }
             }
             sum = sum * 4;
-            result[idx] = sum / iter;
+            result.set(idx, sum / iter);
         }
     }
 
-    public static void nBody(int numBodies, float[] refPos, float[] refVel, float delT, float espSqr) {
+    public static void nBody(int numBodies, FloatArray refPos, FloatArray refVel, float delT, float espSqr) {
         for (@Parallel int i = 0; i < numBodies; i++) {
             int body = 4 * i;
             float[] acc = new float[] { 0.0f, 0.0f, 0.0f };
@@ -88,31 +93,31 @@ public class ComputeKernels {
 
                 float distSqr = 0.0f;
                 for (int k = 0; k < 3; k++) {
-                    r[k] = refPos[index + k] - refPos[body + k];
+                    r[k] = refPos.get(index + k) - refPos.get(body + k);
                     distSqr += r[k] * r[k];
                 }
 
                 float invDist = 1.0f / TornadoMath.sqrt(distSqr + espSqr);
 
                 float invDistCube = invDist * invDist * invDist;
-                float s = refPos[index + 3] * invDistCube;
+                float s = refPos.get(index + 3) * invDistCube;
 
                 for (int k = 0; k < 3; k++) {
                     acc[k] += s * r[k];
                 }
             }
             for (int k = 0; k < 3; k++) {
-                refPos[body + k] += refVel[body + k] * delT + 0.5f * acc[k] * delT * delT;
-                refVel[body + k] += acc[k] * delT;
+                refPos.set(body + k, refPos.get(body + k) + refPos.get(body + k) * delT + 0.5f * acc[k] * delT * delT);
+                refVel.set(body + k, refPos.get(body + k) + acc[k] * delT);
             }
         }
     }
 
     /**
      * @param X
-     *            input value
+     *     input value
      * @brief Abromowitz Stegun approxmimation for PHI (Cumulative Normal
-     *        Distribution Function)
+     *     Distribution Function)
      */
     static float phi(final float X) {
         final float c1 = 0.319381530f;
@@ -145,10 +150,10 @@ public class ComputeKernels {
      *
      * @param call output array of calculated call price values
      */
-    public static void blackscholes(final float[] randArray, final float[] put, final float[] call) {
-        for (@Parallel int gid = 0; gid < call.length; gid++) {
+    public static void blackscholes(final FloatArray randArray, final FloatArray put, final FloatArray call) {
+        for (@Parallel int gid = 0; gid < call.getSize(); gid++) {
             final float two = 2.0f;
-            final float inRand = randArray[gid];
+            final float inRand = randArray.get(gid);
             final float S = (S_LOWER_LIMIT * inRand) + (S_UPPER_LIMIT * (1.0f - inRand));
             final float K = (K_LOWER_LIMIT * inRand) + (K_UPPER_LIMIT * (1.0f - inRand));
             final float T = (T_LOWER_LIMIT * inRand) + (T_UPPER_LIMIT * (1.0f - inRand));
@@ -165,26 +170,26 @@ public class ComputeKernels {
             float phiD1 = phi(d1);
             float phiD2 = phi(d2);
 
-            call[gid] = (S * phiD1) - (KexpMinusRT * phiD2);
+            call.set(gid, (S * phiD1) - (KexpMinusRT * phiD2));
             phiD1 = phi(-d1);
             phiD2 = phi(-d2);
 
-            put[gid] = (KexpMinusRT * phiD2) - (S * phiD1);
+            put.set(gid, (KexpMinusRT * phiD2) - (S * phiD1));
         }
     }
 
-    public static void computeDFT(double[] inreal, double[] inimag, double[] outreal, double[] outimag) {
-        int n = inreal.length;
+    public static void computeDFT(DoubleArray inreal, DoubleArray inimag, DoubleArray outreal, DoubleArray outimag) {
+        int n = inreal.getSize();
         for (@Parallel int k = 0; k < n; k++) { // For each output element
             double sumReal = 0;
             double simImag = 0;
             for (int t = 0; t < n; t++) { // For each input element
                 double angle = (2 * Math.PI * t * k) / n;
-                sumReal += inreal[t] * Math.cos(angle) + inimag[t] * Math.sin(angle);
-                simImag += -inreal[t] * Math.sin(angle) + inimag[t] * Math.cos(angle);
+                sumReal += inreal.get(t) * Math.cos(angle) + inimag.get(t) * Math.sin(angle);
+                simImag += -inreal.get(t) * Math.sin(angle) + inimag.get(t) * Math.cos(angle);
             }
-            outreal[k] = sumReal;
-            outimag[k] = simImag;
+            outreal.set(k, sumReal);
+            outimag.set(k, simImag);
         }
     }
 
@@ -194,7 +199,7 @@ public class ComputeKernels {
      *
      * @author Juan Fumero
      */
-    public static void mandelbrot(int size, short[] output) {
+    public static void mandelbrot(int size, ShortArray output) {
         final int iterations = 10000;
         float space = 2.0f / size;
         for (@Parallel int i = 0; i < size; i++) {
@@ -218,20 +223,20 @@ public class ComputeKernels {
                     }
                 }
                 short r = (short) ((y * 255) / iterations);
-                output[i * size + j] = r;
+                output.set(i * size + j, r);
             }
         }
     }
 
-    public static void hilbertComputation(float[] output, int rows, int cols) {
+    public static void hilbertComputation(FloatArray output, int rows, int cols) {
         for (@Parallel int i = 0; i < rows; i++) {
             for (@Parallel int j = 0; j < cols; j++) {
-                output[i * rows + j] = (float) 1 / (float) ((i + 1) + (j + 1) - 1);
+                output.set(i * rows + j, ((float) 1 / (float) ((i + 1) + (j + 1) - 1)));
             }
         }
     }
 
-    public static void channelConvolution(int[] rgbChannel, int[] channelBlurred, final int numRows, final int numCols, float[] filter, final int filterWidth) {
+    public static void channelConvolution(IntArray rgbChannel, IntArray channelBlurred, final int numRows, final int numCols, FloatArray filter, final int filterWidth) {
         // Dealing with an even width filter is trickier
         assert (filterWidth % 2 == 1);
         // For every pixel in the image
@@ -247,13 +252,13 @@ public class ComputeKernels {
                         int image_r = Math.min(Math.max(r + filter_r, 0), (numRows - 1));
                         int image_c = Math.min(Math.max(c + filter_c, 0), (numCols - 1));
 
-                        float image_value = (rgbChannel[image_r * numCols + image_c]);
-                        float filter_value = filter[(filter_r + filterWidth / 2) * filterWidth + filter_c + filterWidth / 2];
+                        float image_value = (rgbChannel.get(image_r * numCols + image_c));
+                        float filter_value = filter.get((filter_r + filterWidth / 2) * filterWidth + filter_c + filterWidth / 2);
 
                         result += image_value * filter_value;
                     }
                 }
-                channelBlurred[r * numCols + c] = result > 255 ? 255 : (int) result;
+                channelBlurred.set(r * numCols + c, result > 255 ? 255 : (int) result);
             }
         }
     }
@@ -291,23 +296,23 @@ public class ComputeKernels {
         }
     }
 
-    public static void euler(int size, long[] five, long[] outputA, long[] outputB, long[] outputC, long[] outputD, long[] outputE) {
-        for (@Parallel int e = 1; e < five.length; e++) {
-            long e5 = five[e];
-            for (@Parallel int a = 1; a < five.length; a++) {
-                long a5 = five[a];
+    public static void euler(int size, LongArray five, LongArray outputA, LongArray outputB, LongArray outputC, LongArray outputD, LongArray outputE) {
+        for (@Parallel int e = 1; e < five.getSize(); e++) {
+            long e5 = five.get(e);
+            for (@Parallel int a = 1; a < five.getSize(); a++) {
+                long a5 = five.get(a);
                 for (int b = a; b < size; b++) {
-                    long b5 = five[b];
+                    long b5 = five.get(b);
                     for (int c = b; c < size; c++) {
-                        long c5 = five[c];
+                        long c5 = five.get(c);
                         for (int d = c; d < size; d++) {
-                            long d5 = five[d];
+                            long d5 = five.get(d);
                             if (a5 + b5 + c5 + d5 == e5) {
-                                outputA[e] = a;
-                                outputB[e] = b;
-                                outputC[e] = c;
-                                outputD[e] = d;
-                                outputE[e] = e;
+                                outputA.set(e, a);
+                                outputB.set(e, b);
+                                outputC.set(e, c);
+                                outputD.set(e, d);
+                                outputE.set(e, e);
                             }
                         }
                     }

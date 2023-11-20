@@ -22,6 +22,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
@@ -37,7 +38,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  */
 public class MonteCarlo {
 
-    private static void computeMontecarlo(float[] output, final int iterations) {
+    private static void computeMontecarlo(FloatArray output, final int iterations) {
         for (@Parallel int j = 0; j < iterations; j++) {
             long seed = j;
             // generate a pseudo random number (you do need it twice)
@@ -54,16 +55,16 @@ public class MonteCarlo {
 
             float dist = (float) Math.sqrt(x * x + y * y);
             if (dist <= 1.0f) {
-                output[j] = 1.0f;
+                output.set(j, 1.0f);
             } else {
-                output[j] = 0.0f;
+                output.set(j, 0.0f);
             }
         }
     }
 
     public static void montecarlo(final int size) {
-        float[] output = new float[size];
-        float[] seq = new float[size];
+        FloatArray output = new FloatArray(size);
+        FloatArray seq = new FloatArray(size);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("taskGraph", MonteCarlo::computeMontecarlo, output, size) //
@@ -79,7 +80,7 @@ public class MonteCarlo {
 
         float sum = 0;
         for (int j = 0; j < size; j++) {
-            sum += output[j];
+            sum += output.get(j);
         }
         sum *= 4;
         System.out.println("Total time (Tornado)   : " + (tornadoTime));
@@ -92,7 +93,7 @@ public class MonteCarlo {
 
         sum = 0;
         for (int j = 0; j < size; j++) {
-            sum += seq[j];
+            sum += seq.get(j);
         }
         sum *= 4;
 

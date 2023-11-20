@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -81,6 +81,7 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.replacements.DefaultJavaLoweringProvider;
 import org.graalvm.compiler.replacements.SnippetCounter;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
@@ -95,8 +96,6 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode.ATOMIC_OPERATION;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.CastNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
@@ -107,6 +106,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.calc.DivNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceCPUSnippets;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
@@ -118,9 +118,7 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadLocalIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceMulNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceSubNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
 /**
@@ -184,7 +182,9 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         } else if (node instanceof StoreIndexedNode) {
             lowerStoreIndexedNode((StoreIndexedNode) node, tool);
         } else if (node instanceof StoreAtomicIndexedNode) {
-            lowerStoreAtomicsReduction(node, tool);
+            lowerReduceSnippets(node, tool);
+        } else if (node instanceof WriteAtomicNode) {
+            lowerReduceSnippets(node, tool);
         } else if (node instanceof LoadFieldNode) {
             lowerLoadFieldNode((LoadFieldNode) node, tool);
         } else if (node instanceof StoreFieldNode) {
@@ -246,9 +246,16 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         return false;
     }
 
-    private void lowerReduceSnippets(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
-        StructuredGraph graph = storeIndexed.graph();
-        ValueNode startIndexNode = storeIndexed.getStartNode();
+    private void lowerReduceSnippets(Node node, LoweringTool tool) {
+        StructuredGraph graph = null;
+        ValueNode startIndexNode = null;
+        if (node instanceof StoreAtomicIndexedNode) {
+            graph = ((StoreAtomicIndexedNode) node).graph();
+            startIndexNode = ((StoreAtomicIndexedNode) node).getStartNode();
+        } else if (node instanceof WriteAtomicNode) {
+            graph = ((WriteAtomicNode) node).graph();
+            startIndexNode = ((WriteAtomicNode) node).getStartNode();
+        }
 
         // Find Get Global ID node and Global Size;
         GlobalThreadIdNode oclIdNode = graph.getNodes().filter(GlobalThreadIdNode.class).first();
@@ -282,18 +289,17 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         }
         // Depending on the Scheduler, call the proper snippet factory
         if (cpuScheduler) {
-            cpuReduceSnippets.lower(storeIndexed, threadID, oclIdNode, startIndexNode, tool);
+            if (node instanceof StoreAtomicIndexedNode storeAtomicIndexedNode) {
+                cpuReduceSnippets.lower(storeAtomicIndexedNode, threadID, oclIdNode, startIndexNode, tool);
+            } else if (node instanceof WriteAtomicNode writeAtomicNode) {
+                cpuReduceSnippets.lower(writeAtomicNode, threadID, oclIdNode, startIndexNode, tool);
+            }
         } else {
-            gpuReduceSnippets.lower(storeIndexed, threadID, oclGlobalSize, tool);
-        }
-    }
-
-    private void lowerStoreAtomicsReduction(Node node, LoweringTool tool) {
-        StoreAtomicIndexedNode storeAtomicNode = (StoreAtomicIndexedNode) node;
-        if (USE_ATOMICS) {
-            lowerAtomicStoreIndexedNode(storeAtomicNode);
-        } else {
-            lowerReduceSnippets(storeAtomicNode, tool);
+            if (node instanceof StoreAtomicIndexedNode storeAtomicIndexedNode) {
+                gpuReduceSnippets.lower(storeAtomicIndexedNode, threadID, oclGlobalSize, tool);
+            } else if (node instanceof WriteAtomicNode writeAtomicNode) {
+                gpuReduceSnippets.lower(writeAtomicNode, threadID, oclGlobalSize, tool);
+            }
         }
     }
 
@@ -363,34 +369,14 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             loadStamp = loadStamp(loadIndexed.stamp(NodeView.DEFAULT), elementKind, false);
         }
         address = createArrayAccess(graph, loadIndexed, elementKind);
-        ReadNode memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+        ReadNode memoryRead;
+        if (loadIndexed instanceof LoadIndexedVectorNode) {
+            memoryRead = graph.add(new ReadNode(address, LocationIdentity.any(), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+        } else {
+            memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+        }
         loadIndexed.replaceAtUsages(memoryRead);
         graph.replaceFixed(loadIndexed, memoryRead);
-    }
-
-    private void lowerAtomicStoreIndexedNode(StoreAtomicIndexedNode storeIndexed) {
-
-        StructuredGraph graph = storeIndexed.graph();
-        JavaKind elementKind = storeIndexed.elementKind();
-
-        ValueNode value = storeIndexed.value();
-        ValueNode array = storeIndexed.array();
-        ValueNode accumulator = storeIndexed.getAccumulator();
-
-        ATOMIC_OPERATION operation = ATOMIC_OPERATION.CUSTOM;
-        if (value instanceof TornadoReduceAddNode) {
-            operation = ATOMIC_OPERATION.ADD;
-        } else if (value instanceof TornadoReduceSubNode) {
-            operation = ATOMIC_OPERATION.SUB;
-        } else if (value instanceof TornadoReduceMulNode) {
-            operation = ATOMIC_OPERATION.MUL;
-        }
-
-        AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
-        OCLWriteAtomicNode memoryWrite = graph.add(new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, BarrierType.NONE, accumulator,
-                accumulator.stamp(NodeView.DEFAULT), storeIndexed.elementKind(), operation));
-        memoryWrite.setStateAfter(storeIndexed.stateAfter());
-        graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
     }
 
     @Override

@@ -29,59 +29,6 @@
 
     <profiles>
         <profile>
-            <id>list-profiles</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-antrun-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <phase>validate</phase>
-                                <goals>
-                                    <goal>run</goal>
-                                </goals>
-                                <configuration>
-                                    <tasks>
-                                        <echo>Please pick one of the following profiles:</echo>
-                                        <echo>* windows-i386-debug</echo>
-                                        <echo>* windows-i386-release</echo>
-                                        <echo>* windows-amd64-debug</echo>
-                                        <echo>* windows-amd64-release</echo>
-                                        <echo>* linux-i386-debug</echo>
-                                        <echo>* linux-i386-release</echo>
-                                        <echo>* linux-amd64-debug</echo>
-                                        <echo>* linux-amd64-release</echo>
-                                        <echo>* mac-amd64-debug</echo>
-                                        <echo>* mac-amd64-release</echo>
-                                        <echo/>
-                                        <echo>For instance: mvn -Pwindows-i386-debug install</echo>
-                                        <fail/>
-                                    </tasks>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>windows-i386-debug</id>
-            <properties>
-                <platform>windows-i386</platform>
-                <build.type>debug</build.type>
-                <cmake.classifier>windows-i386</cmake.classifier>
-                <cmake.generator>Unix Makefiles</cmake.generator>
-                <cmake.config>${build.type}</cmake.config>
-                <!--
-                        CMake interprets the lack of a generator architecture ("-A<platform>") as x86. There doesn't
-                        seem to be any other way to specify it.
-                        -->
-            </properties>
-        </profile>
-        <profile>
             <id>windows-i386-release</id>
             <activation>
                 <property>
@@ -106,17 +53,6 @@
             </properties>
         </profile>
         <profile>
-            <id>windows-amd64-debug</id>
-            <properties>
-                <platform>windows-amd64</platform>
-                <build.type>debug</build.type>
-                <cmake.classifier>windows-amd64</cmake.classifier>
-                <cmake.generator>Unix Makefiles</cmake.generator>
-                <!--<cmake.options>-Ax64</cmake.options>-->
-                <cmake.config>${build.type}</cmake.config>
-            </properties>
-        </profile>
-        <profile>
             <id>windows-amd64-release</id>
             <activation>
                 <property>
@@ -133,18 +69,7 @@
                 <build.type>release</build.type>
                 <cmake.classifier>windows-amd64</cmake.classifier>
                 <cmake.generator>Unix Makefiles</cmake.generator>
-                <!--<cmake.options>-Ax64</cmake.options>-->
                 <cmake.config>${build.type}</cmake.config>
-            </properties>
-        </profile>
-        <profile>
-            <id>linux-i386-debug</id>
-            <properties>
-                <platform>linux-i386</platform>
-                <build.type>debug</build.type>
-                <cmake.classifier>linux-i386</cmake.classifier>
-                <cmake.generator>Unix Makefiles</cmake.generator>
-                <download.cmake>false</download.cmake>
             </properties>
         </profile>
         <profile>
@@ -165,13 +90,6 @@
                 <cmake.classifier>linux-i386</cmake.classifier>
                 <cmake.generator>Unix Makefiles</cmake.generator>
                 <download.cmake>false</download.cmake>
-            </properties>
-        </profile>
-        <profile>
-            <id>linux-amd64-debug</id>
-            <properties>
-                <platform>linux-amd64</platform>
-                <build.type>debug</build.type>
             </properties>
         </profile>
         <profile>
@@ -209,15 +127,6 @@
                 <platform>linux-aarch64</platform>
                 <build.type>release</build.type>
                 <cmake.classifier>linux-arm</cmake.classifier>
-                <cmake.generator>Unix Makefiles</cmake.generator>
-            </properties>
-        </profile>
-        <profile>
-            <id>mac-amd64-debug</id>
-            <properties>
-                <platform>mac-amd64</platform>
-                <build.type>debug</build.type>
-                <cmake.classifier>mac-amd64</cmake.classifier>
                 <cmake.generator>Unix Makefiles</cmake.generator>
             </properties>
         </profile>
@@ -292,7 +201,7 @@
         </profile>
 
         <profile>
-            <id>jdk-17-plus</id>
+            <id>jdk21</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
@@ -317,8 +226,8 @@
                         <version>3.11.0</version>
                         <configuration>
                             <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                            <source>17</source>
-                            <target>17</target>
+                            <source>21</source>
+                            <target>21</target>
                             <showDeprecation>true</showDeprecation>
                             <annotationProcessorPaths>
                                 <path>
@@ -328,6 +237,7 @@
                                 </path>
                             </annotationProcessorPaths>
                             <compilerArgs>
+                                <arg>--enable-preview</arg>
                                 <arg>--add-modules</arg>
                                 <arg>ALL-SYSTEM</arg>
                                 <arg>--upgrade-module-path</arg>
@@ -355,9 +265,17 @@
                                     jdk.internal.vm.ci/jdk.vm.ci.code=tornado.runtime,tornado.drivers.common,jdk.internal.vm.compiler
                                 </arg>
                                 <arg>--add-exports</arg>
-                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.graph=tornado.runtime</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.graph=tornado.runtime,tornado.drivers.common
+                                </arg>
                                 <arg>--add-exports</arg>
-                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.graph.spi=tornado.runtime</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.graph.spi=tornado.runtime,tornado.drivers.common
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.graph.iterators=tornado.drivers.common
+                                </arg>
                                 <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.gen=tornado.runtime</arg>
                                 <arg>--add-exports</arg>
@@ -463,7 +381,9 @@
                                 <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.debug=tornado.runtime</arg>
                                 <arg>--add-exports</arg>
-                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory=tornado.runtime</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory=tornado.runtime,tornado.drivers.common
+                                </arg>
                                 <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.util=tornado.runtime</arg>
                                 <arg>--add-exports</arg>
@@ -480,7 +400,7 @@
                                 </arg>
                                 <arg>--add-exports</arg>
                                 <arg>
-                                    jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory.address=tornado.runtime
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory.address=tornado.runtime,tornado.drivers.common
                                 </arg>
                                 <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.replacements.nodes=tornado.runtime
@@ -1073,7 +993,7 @@
         </profile>
 
         <profile>
-            <id>graal-jdk-17-plus</id>
+            <id>graal-jdk-21</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
@@ -1085,8 +1005,8 @@
                         <version>3.11.0</version>
                         <configuration>
                             <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                            <source>17</source>
-                            <target>17</target>
+                            <source>21</source>
+                            <target>21</target>
                             <showDeprecation>true</showDeprecation>
                             <annotationProcessorPaths>
                                 <path>
@@ -1096,6 +1016,7 @@
                                 </path>
                             </annotationProcessorPaths>
                             <compilerArgs>
+                                <arg>--enable-preview</arg>
                                 <arg>--add-modules</arg>
                                 <arg>ALL-SYSTEM</arg>
                                 <!-- Common exports-->
@@ -1121,9 +1042,17 @@
                                     jdk.internal.vm.ci/jdk.vm.ci.code=tornado.runtime,tornado.drivers.common,jdk.internal.vm.compiler
                                 </arg>
                                 <arg>--add-exports</arg>
-                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.graph=tornado.runtime</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.graph=tornado.runtime,tornado.drivers.common
+                                </arg>
                                 <arg>--add-exports</arg>
-                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.graph.spi=tornado.runtime</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.graph.spi=tornado.runtime,tornado.drivers.common
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.graph.iterators=tornado.drivers.common
+                                </arg>
                                 <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.gen=tornado.runtime</arg>
                                 <arg>--add-exports</arg>
@@ -1229,7 +1158,9 @@
                                 <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.debug=tornado.runtime</arg>
                                 <arg>--add-exports</arg>
-                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory=tornado.runtime</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory=tornado.runtime,tornado.drivers.common
+                                </arg>
                                 <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.util=tornado.runtime</arg>
                                 <arg>--add-exports</arg>
@@ -1246,7 +1177,7 @@
                                 </arg>
                                 <arg>--add-exports</arg>
                                 <arg>
-                                    jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory.address=tornado.runtime
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory.address=tornado.runtime,tornado.drivers.common
                                 </arg>
                                 <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.replacements.nodes=tornado.runtime

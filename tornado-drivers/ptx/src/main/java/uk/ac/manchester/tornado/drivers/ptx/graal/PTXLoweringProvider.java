@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -24,6 +24,7 @@ package uk.ac.manchester.tornado.drivers.ptx.graal;
 import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.drivers.graal.TornadoMemoryOrder.GPU_MEMORY_MODE;
 
 import org.graalvm.compiler.core.common.memory.BarrierType;
 import org.graalvm.compiler.core.common.memory.MemoryExtendKind;
@@ -73,6 +74,7 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.replacements.DefaultJavaLoweringProvider;
 import org.graalvm.compiler.replacements.SnippetCounter;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
@@ -106,6 +108,7 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ThreadLocalIdFixedWithNextNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
 /**
@@ -242,7 +245,9 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         } else if (node instanceof StoreIndexedNode) {
             lowerStoreIndexedNode((StoreIndexedNode) node, tool);
         } else if (node instanceof StoreAtomicIndexedNode) {
-            lowerStoreAtomicsReduction(node, tool);
+            lowerReduceSnippets(node, tool);
+        } else if (node instanceof WriteAtomicNode) {
+            lowerReduceSnippets(node, tool);
         } else if (node instanceof LoadFieldNode) {
             lowerLoadFieldNode((LoadFieldNode) node, tool);
         } else if (node instanceof StoreFieldNode) {
@@ -291,8 +296,8 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
                 }
             }
 
-            LoweredCallTargetNode loweredCallTarget = graph.add(new TornadoDirectCallTargetNode(parameters.toArray(new ValueNode[parameters.size()]), returnStampPair, signature,
-                    callTarget.targetMethod(), HotSpotCallingConventionType.JavaCall, callTarget.invokeKind()));
+            LoweredCallTargetNode loweredCallTarget = graph.add(new TornadoDirectCallTargetNode(parameters.toArray(new ValueNode[parameters.size()]), returnStampPair, signature, callTarget
+                    .targetMethod(), HotSpotCallingConventionType.JavaCall, callTarget.invokeKind()));
 
             callTarget.replaceAndDelete(loweredCallTarget);
         }
@@ -340,17 +345,14 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
         newArray.replaceAtUsages(fixedArrayNode);
     }
 
-    private void lowerStoreAtomicsReduction(Node node, LoweringTool tool) {
-        StoreAtomicIndexedNode storeAtomicNode = (StoreAtomicIndexedNode) node;
-        if (USE_ATOMICS) {
-            lowerAtomicStoreIndexedNode(storeAtomicNode);
-        } else {
-            lowerReduceSnippets(storeAtomicNode, tool);
-        }
-    }
+    private void lowerReduceSnippets(Node node, LoweringTool tool) {
 
-    private void lowerReduceSnippets(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
-        StructuredGraph graph = storeIndexed.graph();
+        StructuredGraph graph = null;
+        if (node instanceof StoreAtomicIndexedNode) {
+            graph = ((StoreAtomicIndexedNode) node).graph();
+        } else if (node instanceof WriteAtomicNode) {
+            graph = ((WriteAtomicNode) node).graph();
+        }
         GlobalThreadIdNode threadIdNode = graph.getNodes().filter(GlobalThreadIdNode.class).first();
         ValueNode threadID = null;
 
@@ -362,11 +364,11 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
                 break;
             }
         }
-        gpuReduceSnippets.lower(storeIndexed, threadID, tool);
-    }
-
-    private void lowerAtomicStoreIndexedNode(StoreAtomicIndexedNode storeIndexed) {
-        unimplemented();
+        if (node instanceof StoreAtomicIndexedNode storeAtomicIndexedNode) {
+            gpuReduceSnippets.lower(storeAtomicIndexedNode, threadID, tool);
+        } else if (node instanceof WriteAtomicNode writeAtomicNode) {
+            gpuReduceSnippets.lower(writeAtomicNode, threadID, tool);
+        }
     }
 
     private void lowerIntegerDivRemNode(IntegerDivRemNode integerDivRemNode) {
@@ -435,8 +437,13 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
             loadStamp = loadStamp(loadIndexed.stamp(NodeView.DEFAULT), elementKind, false);
         }
         address = createArrayAccess(graph, loadIndexed, elementKind);
-        ReadNode memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, BarrierType.NONE, TornadoMemoryOrder.GPU_MEMORY_MODE));
+        ReadNode memoryRead;
 
+        if (loadIndexed instanceof LoadIndexedVectorNode) {
+            memoryRead = graph.add(new ReadNode(address, LocationIdentity.any(), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+        } else {
+            memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, BarrierType.NONE, GPU_MEMORY_MODE));
+        }
         ValueNode readValue = memoryRead;
         if (!(loadIndexed instanceof LoadIndexedVectorNode)) {
             readValue = implicitLoadConvert(graph, elementKind, memoryRead);

@@ -28,6 +28,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -41,29 +42,29 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 public class Resize extends TornadoTestBase {
 
-    public static void resize01(float[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = 1.0f;
+    public static void resize01(FloatArray a) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            a.set(i, 1.0f);
         }
     }
 
-    public static void resize02(float[] a, float[] b) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            b[i] = a[i] + 10;
+    public static void resize02(FloatArray a, FloatArray b) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            b.set(i, a.get(i) + 10);
         }
     }
 
-    public float[] createArray(int numElements) {
-        float[] a = new float[numElements];
+    public FloatArray createArray(int numElements) {
+        FloatArray a = new FloatArray(numElements);
         IntStream.range(0, numElements).sequential().forEach(i -> {
-            a[i] = 10.0f;
+            a.set(i, 10.0f);
         });
         return a;
     }
 
     @Test
     public void testDynamicSize01() {
-        float[] a = createArray(256);
+        FloatArray a = createArray(256);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
@@ -75,7 +76,7 @@ public class Resize extends TornadoTestBase {
         executionPlanPlan.execute();
 
         // Resize data
-        float[] b = createArray(512);
+        FloatArray b = createArray(512);
 
         // We create a second task-graph with the parameter b instead
         TaskGraph taskGraph2 = new TaskGraph("graph2") //
@@ -87,14 +88,14 @@ public class Resize extends TornadoTestBase {
         TornadoExecutionPlan executionPlanPlan2 = new TornadoExecutionPlan(immutableTaskGraph2);
         executionPlanPlan2.execute();
 
-        for (float v : b) {
-            assertEquals(1.0f, v, 0.001f);
+        for (int i = 0; i < b.getSize(); i++) {
+            assertEquals(1.0f, b.get(i), 0.001f);
         }
     }
 
     @Test
     public void testDynamicSize02() {
-        float[] a = createArray(256);
+        FloatArray a = createArray(256);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
@@ -106,7 +107,7 @@ public class Resize extends TornadoTestBase {
         executionPlanPlan.execute();
 
         // Resize data
-        float[] b = createArray(512);
+        FloatArray b = createArray(512);
 
         // We create a second task-graph with the parameter b instead
         TaskGraph taskGraph2 = new TaskGraph("graph2") //
@@ -119,7 +120,7 @@ public class Resize extends TornadoTestBase {
         executionPlanPlan2.execute();
 
         // Update old reference for a new reference
-        float[] c = createArray(2048);
+        FloatArray c = createArray(2048);
         // We create a second task-graph with the parameter b instead
         TaskGraph taskGraph3 = new TaskGraph("graph3") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, c) //
@@ -130,8 +131,8 @@ public class Resize extends TornadoTestBase {
         TornadoExecutionPlan executionPlanPlan3 = new TornadoExecutionPlan(immutableTaskGraph3);
         executionPlanPlan3.execute();
 
-        for (float v : c) {
-            assertEquals(1.0f, v, 0.001f);
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(1.0f, c.get(i), 0.001f);
         }
     }
 

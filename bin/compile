@@ -68,7 +68,7 @@ def pull_graal_jars_if_needed(graal_jars_status):
 
 def should_handle_graal_jars(jdk):
     java_version_output = check_java_version()
-    return jdk == "jdk-17-plus" and "GraalVM" not in java_version_output
+    return jdk == "jdk21" and "GraalVM" not in java_version_output
 
 
 def maven_cleanup():
@@ -229,7 +229,7 @@ def post_installation_actions(
         ) as backend_file:
             backend_file.write(f"tornado.backends={backend_profiles}")
 
-        # Place the Graal jars in the TornadoVM distribution only if the JDK 17+ rule is used
+        # Place the Graal jars in the TornadoVM distribution only if the JDK 21 rule is used
         if graal_jars_status:
             graal_jars_dir = os.path.join(os.getcwd(), "graalJars")
             os.makedirs(
@@ -244,7 +244,7 @@ def parse_args():
     """Parse command line arguments"""
     parser = argparse.ArgumentParser(description="Tool to compile TornadoVM")
     parser.add_argument(
-        "--jdk", help="JDK version (e.g., jdk-17-plus, graal-jdk-17-plus)"
+        "--jdk", help="JDK version (e.g., jdk21, graal-jdk-21)"
     )
     parser.add_argument("--backends", help="e.g., opencl,ptx,spirv")
     parser.add_argument(

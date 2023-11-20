@@ -16,7 +16,7 @@ Pre-requisites
 For Mac OS X users: the OpenCL support for your Apple model can be confirmed `here <https://support.apple.com/en-gb/HT202823>`_.
 
 Supported Platforms
-###############
+#####################
 
 The following table includes the platforms that TornadoVM can be executed.
 
@@ -45,15 +45,15 @@ The following table includes the platforms that TornadoVM can be executed.
 +---------------------------+-----------------------------------------------------------+-----------------+----------------------+
 
 Note: The SPIR-V backend of TornadoVM is only supported for Linux OS.
-Besides, the SPIR-V backend with Level Zero runs on Intel HD Graphics (integrated GPUs), and Intel ARC GPUs. 
+Besides, the SPIR-V backend with Level Zero runs on Intel HD Graphics (integrated GPUs), and Intel ARC GPUs.
 
 .. _installation:
 
 Installation
 ###############
 
-TornadoVM can be built with three compiler backends and is able to generate OpenCL, PTX and SPIR-V code. 
-There are two ways to install TornadoVM: 
+TornadoVM can be built with three compiler backends and is able to generate OpenCL, PTX and SPIR-V code.
+There are two ways to install TornadoVM:
 
 A) Automatic Installation
 --------------------------
@@ -63,8 +63,8 @@ This installation script has been tested on Linux and OSx.
 Additionally, this installation type will automatically trigger all dependencies, therefore it is recommended if users only need to invoke TornadoVM as a library.
 
 .. code-block:: bash
-   
-    $ ./bin/tornadovm-installer 
+
+    $ ./bin/tornadovm-installer
       usage: tornadovm-installer [-h] [--version] [--jdk JDK] [--backend BACKEND] [--listJDKs] [--javaHome JAVAHOME]
 
       TornadoVM Installer Tool. It will install all software dependencies except the GPU/FPGA drivers
@@ -86,23 +86,23 @@ Additionally, this installation type will automatically trigger all dependencies
 
 For example, to build TornadoVM with GraalVM and JDK 21:
 
-.. code-block:: bash 
+.. code-block:: bash
 
   ## Install with Graal for JDK 21 using PTX, OpenCL and SPIRV backends
   ./bin/tornadovm-installer --jdk graalvm-jdk-21  --backend opencl,ptx,spirv
 
 
-Another example: to build TornadoVM with OpenJDK 17 for the OpenCL and PTX backends:
+Another example: to build TornadoVM with OpenJDK 21 for the OpenCL and PTX backends:
 
-.. code-block:: bash 
+.. code-block:: bash
 
-  ./bin/tornadovm-installer --jdk jdk17 --backend opencl,ptx
+  ./bin/tornadovm-installer --jdk jdk21 --backend opencl,ptx
 
 
-After the installation, the scripts create a directory with the TornadoVM SDK. The directory also includes a source file with all variables needed to start using TornadoVM. 
+After the installation, the scripts create a directory with the TornadoVM SDK. The directory also includes a source file with all variables needed to start using TornadoVM.
 After the script finished the installation, set the ``env`` variables needed by using:
 
-.. code-block:: bash  
+.. code-block:: bash
 
   $ source source.sh
 
@@ -118,7 +118,7 @@ Linux
 ~~~~~~~~
 
 - TornadoVM with GraalVM for Linux and OSx (JDK 21): see the installation guide here: :ref:`installation_graalvm`.
-- TornadoVM with JDK17+ (e.g. OpenJDK [17-21], Red Hat Mandrel, Amazon Corretto): see the installation guide: :ref:`installation_jdk17plus`.
+- TornadoVM with JDK21 (e.g. OpenJDK 21, Red Hat Mandrel, Amazon Corretto): see the installation guide: :ref:`installation_jdk17plus`.
 
 Windows
 ~~~~~~~~~~
@@ -127,17 +127,17 @@ To run TornadoVM on **Windows 10/11 OS**, install TornadoVM with GraalVM. More i
 
 
 ARM Mali GPUs and Linux
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 17+. More information here: :ref:`installation_mali`.
+To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 21. More information here: :ref:`installation_mali`.
 
 
-Compilation with Maven 
-~~~~~~~~~~~~~~~~~~~
+Compilation with Maven
+~~~~~~~~~~~~~~~~~~~~~~~~
 This installation type requires users to manually install all the dependencies, therefore it is recommended for developing TornadoVM.
 At least one backend must be specified at build time to the ``make`` command:
 
-.. code-block:: bash 
+.. code-block:: bash
 
   ## Choose the desired backend
   $ make BACKENDS=opencl,ptx,spirv
@@ -145,25 +145,25 @@ At least one backend must be specified at build time to the ``make`` command:
 
 .. _installation_graalvm:
 
-Installation for GraalVM for JDK 21.0.0 on Linux and OSx
+Installation for GraalVM for JDK 21.0.1 on Linux and OSx
 -----------------------------------------------------------------------------------
 
-1. Download GraalVM JDK 21.0.0
+1. Download GraalVM JDK 21.0.1
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 GraalVM **Community Edition** builds are available to download at:
 
-`https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-21.0.0 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-21.0.0>`_.
+`https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-21.0.1 <https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-21.0.1>`_.
 
 The examples below show how to download and extract GraalVM for JDK 21.0.0
 
 
--  Example for GraalVM for JDK 21 Community 21.0.0:
+-  Example for GraalVM for JDK 21 Community 21.0.1:
 
 .. code:: bash
 
-   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.0/graalvm-community-jdk-21.0.0_linux-x64_bin.tar.gz
-   $ tar -xf graalvm-community-jdk-21.0.0_linux-x64_bin.tar.gz
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-21.0.1/graalvm-community-jdk-21.0.1_linux-x64_bin.tar.gz
+   $ tar -xf graalvm-community-jdk-21.0.1_linux-x64_bin.tar.gz
 
 with SDKMAN:
 
@@ -173,16 +173,17 @@ with SDKMAN:
   $ sdk use java 21-graalce
 
 
-The Java binary will be found in the `graalvm-jdk-{JDK_VERSION}-23.0.1`` directory. This directory is used as the JAVA_HOME (See step 2).
+The Java binary will be found in the `graalvm-jdk-{JDK_VERSION}-23.1.0`` directory. This directory is used as the JAVA_HOME (See step 2).
 
 **Note** if installed with SDKMAN there is no need to manually set your JAVA_HOME.
 
 For OSX:
 
--  Example for GraalVM for JDK 21 Community 21.0.0:
+-  Example for GraalVM for JDK 21 Community 21.0.1:
 
 .. code:: bash
-   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.0/graalvm-community-jdk-21.0.0.0.2_macos-x64_bin.tar.gz
+
+   $ wget https://github.com/graalvm/graalvm-ce-builds/releases/tag/jdk-21.0.1/graalvm-community-jdk-21.0.1_macos-x64_bin.tar.gz
 
 then ``untar`` it to the OSX standard JDK location
 ``/Library/Java/JavaVirtualMachines/`` or to a folder of your choice.
@@ -229,7 +230,7 @@ For OSX: the exports above may be added to ``~/.profile``
 For Linux:
 ^^^^^^^^^^
 
-.. code::bash 
+.. code::bash
 
    $ cmake -version
 
@@ -275,7 +276,7 @@ then
 
 which can be added to ``~/.profile``
 
-4. Compile TornadoVM with GraalVM 
+4. Compile TornadoVM with GraalVM
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
@@ -287,42 +288,39 @@ To build with GraalVM and JDK 21:
 
 .. code:: bash
 
-   $ make graalvm-jdk-17-plus BACKEND={ptx,opencl}
+   $ make graalvm-jdk-21 BACKEND={ptx,opencl}
 
 and done!!
 
 
 .. _installation_jdk17plus:
 
-TornadoVM for JDK 17+ on Linux and OSx
+TornadoVM for JDK 21 on Linux and OSx
 --------------------------------------
 
 
 **DISCLAIMER:**
-           
+
 TornadoVM is based on the Graal compiler that depends on JVMCI (Java Virtual Machine Compiler Interface). Different JDKs come with different
 versions of JVMCI. Therefore, the version of the Graal compiler that TornadoVM uses might not be compatible with the JVMCI version of some
-JDKs. Below are listed the Java 17 JDK distributions against which TornadoVM has been tested, but compatibility is not guaranteed.
+JDKs. Below are listed the Java 21 JDK distributions against which TornadoVM has been tested, but compatibility is not guaranteed.
 
 .. code:: bash
 
   ./bin/tornadovm-installer --listJDKs
-  jdk17            : Install TornadoVM with OpenJDK 17 (Oracle OpenJDK)  
   jdk21            : Install TornadoVM with OpenJDK 21 (Oracle OpenJDK)
   graalvm-jdk-21   : Install TornadoVM with GraalVM and JDK 21 (GraalVM 23.1.0)
-  corretto-jdk-17  : Install TornadoVM with Corretto JDK 17
+  mandrel-jdk-21   : Install TornadoVM with Mandrel and JDK 21 (GraalVM 23.1.0)
   corretto-jdk-21  : Install TornadoVM with Corretto JDK 21
-  microsoft-jdk-17 : Install TornadoVM with Microsoft JDK 17
-  zulu-jdk-jdk-17  : Install TornadoVM with Azul Zulu JDK 17
   zulu-jdk-jdk-21  : Install TornadoVM with Azul Zulu JDK 21
 
 
-1. Download a JDK 17+ distribution
+1. Download a JDK 21 distribution
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- OpenJDK distributions are available to download at https://adoptium.net/. 
-- Red Hat Mandrel releases are available at https://github.com/graalvm/mandrel/releases. 
-- Amazon Coretto releases are available at https://aws.amazon.com/corretto/. 
+- OpenJDK distributions are available to download at https://adoptium.net/.
+- Red Hat Mandrel releases are available at https://github.com/graalvm/mandrel/releases.
+- Amazon Coretto releases are available at https://aws.amazon.com/corretto/.
 - Microsoft OpenJDK releases are available at https://docs.microsoft.com/en-us/java/openjdk/download. Azul Zulu
 - OpenJDK releases are available at `https://www.azul.com/downloads <https://www.azul.com/downloads/?package=jdk#download-openjdk>`__.
 
@@ -376,7 +374,7 @@ ones)**:
 .. code:: bash
 
    #!/bin/bash
-   export JAVA_HOME=<path to JDK17+> ## This path is produced in Step 1
+   export JAVA_HOME=<path to JDK21> ## This path is produced in Step 1
    export PATH=$PWD/bin/bin:$PATH    ## This directory will be automatically generated during Tornado compilation
    export TORNADO_SDK=$PWD/bin/sdk   ## This directory will be automatically generated during Tornado compilation
    export CMAKE_ROOT=/usr            ## or <path/to/cmake/cmake-3.10.2> (see step 4)
@@ -444,23 +442,23 @@ then
 
 which can be added to ``~/.profile``
 
-4. Compile TornadoVM for JDK 17+
-~~~~~~~~~~~~~~~~~~~~
+4. Compile TornadoVM for JDK 21
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
 
    $ cd ~/tornadovm
    $ . etc/sources.env
 
-To build with a distribution of JDK 17+
+To build with a distribution of JDK 21
 
 .. code:: bash
 
-   $ make jdk-17-plus BACKEND={ptx,opencl}
+   $ make jdk21 BACKEND={ptx,opencl}
 
 and done!!
 
-Running with JDK 17+
+Running with JDK 21
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 TornadoVM uses modules:
@@ -486,23 +484,23 @@ To run individual tests:
 
 .. _installation_windows:
 
-TornadoVM for Windows 10/11 using GraalVM 
+TornadoVM for Windows 10/11 using GraalVM
 ---------------------------------------------------------------
 
 **[DISCLAIMER] Please, notice that, although TornadoVM can run on Windows10 via MSys2, it is still experimental.**
 
 1. Install prerequisites
-~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 Maven
-'''''
+^^^^^^
 
 Download Apache Maven (at least 3.9.0) from the `official site <https://maven.apache.org/download.cgi>`__, and extract it to any
-location on your computer. Below it's assumed that Maven's home is ``C:/bin/``, but you can use any other directory. 
+location on your computer. Below it's assumed that Maven's home is ``C:/bin/``, but you can use any other directory.
 
 MSys2
-'''''
+^^^^^^
 
 1. Download the `MSys2 <https://www.msys2.org/>`__ installer from the official website and run it. You may choose any installation
    directory, below it will be referred as ``<MSYS2>``.
@@ -539,7 +537,7 @@ found.
    mingw-w64-x86_64-gcc            \
    mingw-w64-x86_64-opencl-headers \
    mingw-w64-x86_64-opencl-icd \
-   python python3-pip make git 
+   python python3-pip make git
 
 
 5. Create default Maven repository for MSys2 user:
@@ -588,7 +586,7 @@ Example:
 You only need to change the path to your maven installation in Windows.
 
 2. Download TornadoVM
-~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 Clone the latest TornadoVM source code from the GitHub `repository <https://github.com/beehive-lab/TornadoVM>`__ using ``<MSYS2>/mingw64.exe``:
@@ -602,31 +600,30 @@ Clone the latest TornadoVM source code from the GitHub `repository <https://gith
 We will refer hereafter the directory with TornadoVM sources as
 ``<TornadoVM>``.
 
-3. Download GraalVM for JDK 21 Community 21.0.0
-~~~~~~~~~~~~
+3. Download GraalVM for JDK 21 Community 21.0.1
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-TornadoVM can run with JDK 17 and 21. Visit `GraalVM for JDK17 and JDK21 <https://www.graalvm.org/downloads/>`__
-and download either of the following builds:
+TornadoVM can run with JDK 21. Visit `GraalVM for JDK21 <https://www.graalvm.org/downloads/>`__
+and download the following build:
 
--  `Download for JDK 17 <https://download.oracle.com/graalvm/17/latest/graalvm-jdk-17_windows-x64_bin.zip>`__
 -  `Download for JDK 21 <https://download.oracle.com/graalvm/21/latest/graalvm-jdk-21_windows-x64_bin.zip>`__
 
 Extract the downloaded file to any directory.
 
 4. Install the NVIDIA drivers and CUDA SDK
-~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 A) CUDA Driver
-              
+
 Most Windows systems come with the NVIDIA drivers pre-installed. You can check your installation and the latest drivers available by using
 `NVIDIA GEFORCE Experience <https://www.nvidia.com/it-it/geforce/geforce-experience/download/>`__ tool.
 
 Alternatively, all NVIDIA drivers can be found here: `NVIDIA Driver Downloads <https://www.nvidia.com/Download/index.aspx>`__.
 
 B) OpenCL and NVIDIA PTX
-''''''''''''''''''''''''
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you plan to only use the OpenCL backend from TornadoVM, then you only
 need the NVIDIA driver from the previous step.
@@ -637,13 +634,13 @@ NVIDIA CUDA Toolkit.
 -  Complete CUDA Toolkit from `CUDA Toolkit
    Downloads <https://developer.nvidia.com/cuda-downloads?target_os=Windows&target_arch=x86_64>`__.
 
-It is important to make sure that the GPU drivers are included with the CUDA Toolkit, so you may avoid downloading drivers separately. 
-The only thing to note is that the GPU driver you are currently using should be of the same or higher version than the one shipped with CUDA Toolkit. 
-Thus, if you have the driver already installed, make sure that the version required by the CUDA SDK is same or higher, otherwise update the GPU driver during toolkit installation. 
+It is important to make sure that the GPU drivers are included with the CUDA Toolkit, so you may avoid downloading drivers separately.
+The only thing to note is that the GPU driver you are currently using should be of the same or higher version than the one shipped with CUDA Toolkit.
+Thus, if you have the driver already installed, make sure that the version required by the CUDA SDK is same or higher, otherwise update the GPU driver during toolkit installation.
 Note, that NSight, BLAST libs and Visual Studio integration are irrelevant for TornadoVM builds, you just need the CUDA SDK - so you may skip installing them.
 
 5. Configure the TornadoVM build: setting ENV variables
-~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 Using any text editor create file ``<TornadoVM>/etc/sources.env`` with
@@ -653,7 +650,7 @@ the following content:
 
    #!/bin/bash
 
-   # UPDATE PATH TO ACTUAL LOCATION OF THE JDK OR GRAAL 
+   # UPDATE PATH TO ACTUAL LOCATION OF THE JDK OR GRAAL
    export JAVA_HOME="C:\Users\jjfum\Documents\bin\jvms\graalvm-jdk-21_windows-x64_bin\graalvm-jdk-21+35.1"
 
    ## NEXT TWO LINES NECESSARY TO BUILD PTX (NVIDIA CUDA) BACKEND
@@ -676,7 +673,7 @@ There are only 2 places you should adjust:
    this one is necessary only for builds with PTX backend.
 
 3. Compile TornadoVM
-~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Start ``<MSYS2>/mingw64.exe`` terminal, navigate to the ``<TornadoVM>``
 directory, and build TornadoVM as follows:
@@ -685,13 +682,13 @@ directory, and build TornadoVM as follows:
 
    cd D:/MyProjects/TornadoVM
    source etc/sources.env
-   make graal-jdk-17-plus BACKEND=ptx,opencl
+   make graal-jdk-21 BACKEND=ptx,opencl
 
 The ``BACKEND`` parameter has to be a comma-separated list of ``ptx`` and ``opencl`` options. You may build ``ptx`` only when NVIDIA GPU
 Computing Toolkit (CUDA) is installed.
 
 7. Check the installation
-~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Don't close ``<MSYS2>/mingw64.exe`` after the build. Run the following command to see that TornadoVM is working:
 
@@ -726,9 +723,9 @@ TornadoVM on ARM Mali GPUs
 ---------------------------------------
 
 Installation
-^^^^^^^^^^^^
+~~~~~~~~~~~~~
 
-The installation of TornadoVM to run on ARM Mali GPUs requires JDK17+ with GraalVM. 
+The installation of TornadoVM to run on ARM Mali GPUs requires JDK21 with GraalVM.
 See the :ref:`installation_graalvm` for details about the installation.
 
 The OpenCL driver for Mali GPUs on Linux that has been tested is:
@@ -737,14 +734,14 @@ The OpenCL driver for Mali GPUs on Linux that has been tested is:
    `link <https://developer.arm.com/tools-and-software/graphics-and-gaming/mali-drivers/bifrost-kernel>`__
 
 Testing on ARM MALI GPUs
-^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We have tested TornadoVM on the following ARM Mali GPUs:
 
 -  Mali-G71, which implements the Bifrost architecture:
    `link <https://developer.arm.com/ip-products/graphics-and-multimedia/mali-gpus/mali-g71-gpu>`__
 
-Some of the unittests in TornadoVM run with ``double`` data types. 
+Some of the unittests in TornadoVM run with ``double`` data types.
 To enable double support, TornadoVM includes the following extension in the generated OpenCL code:
 
 .. code:: c
@@ -760,9 +757,9 @@ Known issues on Linux
 ---------------------------
 
 For Ubuntu >= 16.04, install the package ``ocl-icd-opencl-dev``
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In Ubuntu >= 16.04 CMake can cause the following error: 
+In Ubuntu >= 16.04 CMake can cause the following error:
 
 ``Could NOT find OpenCL (missing: OpenCL_LIBRARY) (found version "2.2").``
 
@@ -808,12 +805,12 @@ Using Eclipse and Netbeans
 
 The code formatter in Eclipse is automatically applied after generating the setting files.
 
-.. code-block:: bash 
+.. code-block:: bash
 
   $ mvn eclipse:eclipse
   $ python scripts/eclipseSetup.py
 
-  
+
 For Netbeans, the Eclipse Formatter Plugin is needed.
 
 Using IntelliJ
@@ -847,7 +844,7 @@ To use the TornadoVM API in your projects, you can checkout our maven repository
      </repository>
    </repositories>
 
-   <dependencies>   
+   <dependencies>
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-api</artifactId>
@@ -884,5 +881,5 @@ Versions available
 * 0.5
 * 0.4
 * 0.3
-* 0.2   
+* 0.2
 * 0.1.0

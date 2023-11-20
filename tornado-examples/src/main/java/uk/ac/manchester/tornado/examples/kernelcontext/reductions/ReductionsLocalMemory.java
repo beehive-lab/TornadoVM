@@ -26,6 +26,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
@@ -39,14 +40,14 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 public class ReductionsLocalMemory {
 
     // Reduction in Local memory using KernelContext
-    public static void reductionLocal(float[] a, float[] b, int localSize, KernelContext context) {
+    public static void reductionLocal(FloatArray a, FloatArray b, int localSize, KernelContext context) {
         int globalIdx = context.globalIdx;
         int localIdx = context.localIdx;
         int localGroupSize = context.localGroupSizeX;
         int groupID = context.groupIdx; // Expose Group ID
 
         float[] localA = context.allocateFloatLocalArray(256);
-        localA[localIdx] = a[globalIdx];
+        localA[localIdx] = a.get(globalIdx);
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             context.localBarrier();
             if (localIdx < stride) {
@@ -54,32 +55,32 @@ public class ReductionsLocalMemory {
             }
         }
         if (localIdx == 0) {
-            b[groupID] = localA[0];
+            b.set(groupID, localA[0]);
         }
     }
 
-    public static float computeSequential(float[] input) {
+    public static float computeSequential(FloatArray input) {
         float acc = 0;
-        for (float v : input) {
-            acc += v;
+        for (int i = 0; i < input.getSize(); i++) {
+            acc += input.get(i);
         }
         return acc;
     }
 
-    public static void rAdd(final float[] array, int size) {
-        float acc = array[0];
-        for (int i = 1; i < array.length; i++) {
-            acc += array[i];
+    public static void rAdd(final FloatArray array, int size) {
+        float acc = array.get(0);
+        for (int i = 1; i < array.getSize(); i++) {
+            acc += array.get(i);
         }
-        array[0] = acc;
+        array.set(0, acc);
     }
 
     public static void main(String[] args) {
         final int size = 1024;
         final int localSize = 256;
-        float[] input = new float[size];
-        float[] reduce = new float[size / localSize];
-        IntStream.range(0, input.length).sequential().forEach(i -> input[i] = i);
+        FloatArray input = new FloatArray(size);
+        FloatArray reduce = new FloatArray(size / localSize);
+        IntStream.range(0, input.getSize()).sequential().forEach(i -> input.set(i, i));
         float sequential = computeSequential(input);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -101,7 +102,7 @@ public class ReductionsLocalMemory {
         executor.withGridScheduler(gridScheduler).execute();
 
         // Final SUM
-        float finalSum = reduce[0];
+        float finalSum = reduce.get(0);
 
         System.out.println("Final SUM = " + finalSum + " vs seq= " + sequential);
         if ((sequential - finalSum) == 0) {

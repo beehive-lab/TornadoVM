@@ -26,13 +26,14 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.types.Float2;
-import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.Float8;
-import uk.ac.manchester.tornado.api.collections.types.VectorFloat2;
-import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
-import uk.ac.manchester.tornado.api.collections.types.VectorFloat8;
+import uk.ac.manchester.tornado.api.types.vectors.Float2;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
+import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat2;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat8;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.examples.utils.Utils;
 
@@ -62,9 +63,9 @@ public class VectorAddTest {
     public static final int WARMUP = 100;
     public static final int ITERATIONS = 100;
 
-    private static void computeAdd(float[] a, float[] b, float[] results) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            results[i] = a[i] + b[i];
+    private static void computeAdd(FloatArray a, FloatArray b, FloatArray results) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            results.set(i, a.get(i) + b.get(i));
         }
     }
 
@@ -200,13 +201,13 @@ public class VectorAddTest {
     }
 
     private static void runWithoutVectorTypes(int size, TornadoDevice device) {
-        float[] af = new float[size * 4];
-        float[] bf = new float[size * 4];
-        float[] rf = new float[size * 4];
+        FloatArray af = new FloatArray(size * 4);
+        FloatArray bf = new FloatArray(size * 4);
+        FloatArray rf = new FloatArray(size * 4);
 
-        for (int i = 0; i < af.length; i++) {
-            af[i] = i;
-            bf[i] = 2.0f * i;
+        for (int i = 0; i < af.getSize(); i++) {
+            af.set(i, i);
+            bf.set(i, 2.0f * i);
         }
 
         TaskGraph taskGraphNonVector = new TaskGraph("nonVector") //
@@ -241,21 +242,21 @@ public class VectorAddTest {
         Utils.computeStatistics(totalTimersLong);
     }
 
-    private static void computeWithStreams(final int size, float[] a, float[] b, float[] results) {
+    private static void computeWithStreams(final int size, FloatArray a, FloatArray b, FloatArray results) {
         IntStream.range(0, size).parallel().forEach(i -> {
-            results[i] = a[i] + b[i];
+            results.set(i, a.get(i) + b.get(i));
         });
     }
 
     private static void runWithJavaStreams(int size) {
         size = size * 4;
-        float[] a = new float[size];
-        float[] b = new float[size];
-        float[] results = new float[size];
+        FloatArray a = new FloatArray(size);
+        FloatArray b = new FloatArray(size);
+        FloatArray results = new FloatArray(size);
 
-        for (int i = 0; i < a.length; i++) {
-            a[i] = i;
-            b[i] = 2.0f * i;
+        for (int i = 0; i < a.getSize(); i++) {
+            a.set(i, i);
+            b.set(i, 2.0f * i);
         }
 
         for (int i = 0; i < WARMUP; i++) {

@@ -18,12 +18,11 @@
 
 package uk.ac.manchester.tornado.examples.arrays;
 
-import java.util.Arrays;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
@@ -36,22 +35,22 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  */
 public class ArrayAddInt {
 
-    public static void add(int[] a, int[] b, int[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = a[i] + b[i];
+    public static void add(IntArray a, IntArray b, IntArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, a.get(i) + b.get(i));
         }
     }
 
     public static void main(String[] args) {
 
         final int numElements = 8;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
 
-        Arrays.fill(a, 1);
-        Arrays.fill(b, 2);
-        Arrays.fill(c, 0);
+        a.init(1);
+        b.init(2);
+        c.init(0);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
@@ -62,9 +61,9 @@ public class ArrayAddInt {
         TornadoExecutionPlan executor = new TornadoExecutionPlan(immutableTaskGraph);
         executor.execute();
 
-        System.out.println("a: " + Arrays.toString(a));
-        System.out.println("b: " + Arrays.toString(b));
-        System.out.println("c: " + Arrays.toString(c));
+        System.out.println("a: " + a);
+        System.out.println("b: " + b);
+        System.out.println("c: " + c);
     }
 
 }

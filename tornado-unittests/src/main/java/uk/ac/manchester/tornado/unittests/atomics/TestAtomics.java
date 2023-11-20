@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,7 +21,6 @@ package uk.ac.manchester.tornado.unittests.atomics;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
@@ -39,6 +38,7 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -46,7 +46,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to test?
  *
  * <code>
- *     tornado-test -V --fast uk.ac.manchester.tornado.unittests.atomics.TestAtomics
+ * tornado-test -V --fast uk.ac.manchester.tornado.unittests.atomics.TestAtomics
  * </code>
  */
 public class TestAtomics extends TornadoTestBase {
@@ -55,125 +55,123 @@ public class TestAtomics extends TornadoTestBase {
      * Approach using a compiler-intrinsic in TornadoVM.
      *
      * @param a
-     *            Input array. It stores the addition with an atomic variable.
+     *     Input array. It stores the addition with an atomic variable.
      */
-    public static void atomic03(int[] a) {
+    public static void atomic03(IntArray a) {
         final int size = 100;
-        for (@Parallel int i = 0; i < a.length; i++) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
             int j = i % size;
-            a[j] = TornadoVMIntrinsics.atomic_add(a, j, 1);
+            a.set(j, TornadoVMIntrinsics.atomic_add(a, j, 1));
         }
     }
 
     /**
-     * Approach using an API for Atomics. This provides atomics using the Java
-     * semantics (block a single elements). Note that, in OpenCL, this single
-     * elements has to be present in the device's global memory.
+     * Approach using an API for Atomics. This provides atomics using the Java semantics (block a single elements). Note that, in OpenCL, this single elements has to be present in the device's global
+     * memory.
      *
      * @param input
-     *            input array
+     *     input array
      */
-    public static void atomic04(int[] input) {
+    public static void atomic04(IntArray input) {
         AtomicInteger tai = new AtomicInteger(200);
-        for (@Parallel int i = 0; i < input.length; i++) {
-            input[i] = tai.incrementAndGet();
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            input.set(i, tai.incrementAndGet());
         }
     }
 
-    public static void atomic04Get(int[] input) {
+    public static void atomic04Get(IntArray input) {
         AtomicInteger tai = new AtomicInteger(200);
-        for (@Parallel int i = 0; i < input.length; i++) {
-            input[i] = tai.incrementAndGet();
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            input.set(i, tai.incrementAndGet());
             int a = tai.get();
             if (a == 201) {
-                input[i] = 0;
+                input.set(i, 0);
             }
         }
     }
 
-    public static void atomic06(int[] a, int[] b) {
+    public static void atomic06(IntArray a, IntArray b) {
         AtomicInteger taiA = new AtomicInteger(200);
         AtomicInteger taiB = new AtomicInteger(100);
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = taiA.incrementAndGet();
-            b[i] = taiB.incrementAndGet();
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            a.set(i, taiA.incrementAndGet());
+            b.set(i, taiB.incrementAndGet());
         }
     }
 
-    public static void atomic07(int[] input) {
+    public static void atomic07(IntArray input) {
         AtomicInteger ai = new AtomicInteger(200);
-        for (@Parallel int i = 0; i < input.length; i++) {
-            input[i] = ai.incrementAndGet();
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            input.set(i, ai.incrementAndGet());
         }
     }
 
-    public static void atomic08(int[] input) {
+    public static void atomic08(IntArray input) {
         AtomicInteger ai = new AtomicInteger(200);
-        for (@Parallel int i = 0; i < input.length; i++) {
-            input[i] = ai.decrementAndGet();
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            input.set(i, ai.decrementAndGet());
         }
     }
 
-    public static int callAtomic(int[] input, int i, AtomicInteger ai) {
-        return input[i] + ai.incrementAndGet();
+    public static int callAtomic(IntArray input, int i, AtomicInteger ai) {
+        return input.get(i) + ai.incrementAndGet();
     }
 
-    public static void atomic09(int[] input, AtomicInteger ai) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            input[i] = callAtomic(input, i, ai);
+    public static void atomic09(IntArray input, AtomicInteger ai) {
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            input.set(i, callAtomic(input, i, ai));
         }
     }
 
-    public static void atomic10(int[] input, AtomicInteger ai, AtomicInteger bi) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            input[i] = input[i] + ai.incrementAndGet() + bi.incrementAndGet();
+    public static void atomic10(IntArray input, AtomicInteger ai, AtomicInteger bi) {
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            input.set(i, input.get(i) + ai.incrementAndGet() + bi.incrementAndGet());
         }
     }
 
-    public static void atomic13(int[] input, AtomicInteger ai) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            input[i] = input[i] + ai.decrementAndGet();
+    public static void atomic13(IntArray input, AtomicInteger ai) {
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            input.set(i, input.get(i) + ai.decrementAndGet());
         }
     }
 
-    public static void atomic14(int[] input, AtomicInteger ai, AtomicInteger bi) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            input[i] = input[i] + ai.incrementAndGet();
-            input[i] = input[i] + bi.decrementAndGet();
+    public static void atomic14(IntArray input, AtomicInteger ai, AtomicInteger bi) {
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            input.set(i, input.get(i) + ai.incrementAndGet());
+            input.set(i, input.get(i) + bi.decrementAndGet());
         }
     }
 
     /**
-     * This example combines an atomic created inside the compute kernel with an
-     * atomic passed as an argument.
+     * This example combines an atomic created inside the compute kernel with an atomic passed as an argument.
      *
      * @param input
-     *            Input array
+     *     Input array
      * @param ai
-     *            Atomic Integer stored in Global Memory (atomic-region)
+     *     Atomic Integer stored in Global Memory (atomic-region)
      */
-    public static void atomic15(int[] input, AtomicInteger ai) {
+    public static void atomic15(IntArray input, AtomicInteger ai) {
         AtomicInteger bi = new AtomicInteger(500);
-        for (@Parallel int i = 0; i < input.length; i++) {
-            input[i] = input[i] + ai.incrementAndGet();
-            input[i] = input[i] + bi.incrementAndGet();
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            input.set(i, input.get(i) + ai.incrementAndGet());
+            input.set(i, input.get(i) + bi.incrementAndGet());
         }
     }
 
-    public static void atomic16(int[] input, AtomicInteger ai) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            input[i] = input[i] + ai.incrementAndGet();
+    public static void atomic16(IntArray input, AtomicInteger ai) {
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            input.set(i, input.get(i) + ai.incrementAndGet());
         }
     }
 
     @TornadoNotSupported
     public void testAtomic03() {
         final int size = 1024;
-        int[] a = new int[size];
-        int[] b = new int[size];
+        IntArray a = new IntArray(size);
+        IntArray b = new IntArray(size);
 
-        Arrays.fill(a, 1);
-        Arrays.fill(b, 1);
+        a.init(1);
+        b.init(1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -184,8 +182,8 @@ public class TestAtomics extends TornadoTestBase {
         executionPlan.execute();
 
         atomic03(b);
-        for (int i = 0; i < a.length; i++) {
-            assertEquals(b[i], a[i]);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(b.get(i), a.get(i));
         }
     }
 
@@ -195,8 +193,8 @@ public class TestAtomics extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 32;
-        int[] a = new int[size];
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size);
+        a.init(1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic04, a) //
@@ -224,8 +222,8 @@ public class TestAtomics extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 32;
-        int[] a = new int[size];
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size);
+        a.init(1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestAtomics::atomic04Get, a) //
@@ -260,9 +258,9 @@ public class TestAtomics extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 32;
-        int[] a = new int[size];
-        int[] b = new int[1];
-        Arrays.fill(a, 0);
+        IntArray a = new IntArray(size);
+        IntArray b = new IntArray(1);
+        a.init(0);
 
         String deviceToRun = System.getProperties().getProperty("device", "0");
         int deviceNumber = Integer.parseInt(deviceToRun);
@@ -295,10 +293,11 @@ public class TestAtomics extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 2048;
-        int[] a = new int[size];
-        int[] b = new int[size];
-        Arrays.fill(a, 1);
-        Arrays.fill(b, 1);
+        IntArray a = new IntArray(size);
+        IntArray b = new IntArray(size);
+
+        a.init(1);
+        b.init(1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
@@ -325,8 +324,8 @@ public class TestAtomics extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 32;
-        int[] a = new int[size];
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size);
+        a.init(1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
@@ -350,8 +349,8 @@ public class TestAtomics extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 32;
-        int[] a = new int[size];
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size);
+        a.init(1);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
@@ -369,12 +368,12 @@ public class TestAtomics extends TornadoTestBase {
         assertTrue(!repeated);
     }
 
-    private boolean isValueRepeated(int[] array) {
+    private boolean isValueRepeated(IntArray array) {
         HashSet<Integer> set = new HashSet<>();
         boolean repeated = false;
-        for (int j : array) {
-            if (!set.contains(j)) {
-                set.add(j);
+        for (int i = 0; i < array.getSize(); i++) {
+            if (!set.contains(array.get(i))) {
+                set.add(array.get(i));
             } else {
                 repeated = true;
                 break;
@@ -389,8 +388,8 @@ public class TestAtomics extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 32;
-        int[] a = new int[size];
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size);
+        a.init(1);
 
         final int initialValue = 311;
 
@@ -418,8 +417,8 @@ public class TestAtomics extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 32;
-        int[] a = new int[size];
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size);
+        a.init(1);
 
         final int initialValue = 311;
 
@@ -447,8 +446,8 @@ public class TestAtomics extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 32;
-        int[] a = new int[size];
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size);
+        a.init(1);
 
         final int initialValue = 311;
 
@@ -477,8 +476,8 @@ public class TestAtomics extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 32;
-        int[] a = new int[size];
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size);
+        a.init(1);
 
         final int initialValueA = 311;
         final int initialValueB = 500;
@@ -512,8 +511,8 @@ public class TestAtomics extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 32;
-        int[] a = new int[size];
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size);
+        a.init(1);
 
         final int initialValueA = 311;
         AtomicInteger ai = new AtomicInteger(initialValueA);
@@ -540,8 +539,8 @@ public class TestAtomics extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 32;
-        int[] a = new int[size];
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size);
+        a.init(1);
 
         final int initialValueA = 311;
         final int initialValueB = 50;
@@ -571,8 +570,8 @@ public class TestAtomics extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 32;
-        int[] a = new int[size];
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size);
+        a.init(1);
 
         final int initialValueA = 311;
         AtomicInteger ai = new AtomicInteger(initialValueA);
@@ -599,8 +598,8 @@ public class TestAtomics extends TornadoTestBase {
         assertNotBackend(TornadoVMBackendType.SPIRV);
 
         final int size = 32;
-        int[] a = new int[size];
-        Arrays.fill(a, 1);
+        IntArray a = new IntArray(size);
+        a.init(1);
 
         final int initialValueA = 311;
         AtomicInteger ai = new AtomicInteger(initialValueA);

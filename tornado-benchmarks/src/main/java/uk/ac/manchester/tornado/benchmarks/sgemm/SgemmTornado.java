@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.benchmarks.sgemm;
 
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.abs;
 import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.sgemm;
 
 import java.util.Random;
@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
@@ -39,7 +40,7 @@ import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner sgemm
+ * tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner sgemm
  * </code>
  */
 public class SgemmTornado extends BenchmarkDriver {
@@ -48,9 +49,9 @@ public class SgemmTornado extends BenchmarkDriver {
     private final int n;
     private final boolean USE_PREBUILT = Boolean.parseBoolean(TornadoRuntime.getProperty("usePrebuilt", "False"));
     private WorkerGrid worker;
-    private float[] a;
-    private float[] b;
-    private float[] c;
+    private FloatArray a;
+    private FloatArray b;
+    private FloatArray c;
     private GridScheduler grid;
     private boolean USE_GRID = Boolean.parseBoolean(TornadoRuntime.getProperty("usegrid", "False"));
 
@@ -62,18 +63,18 @@ public class SgemmTornado extends BenchmarkDriver {
 
     @Override
     public void setUp() {
-        a = new float[m * n];
-        b = new float[m * n];
-        c = new float[m * n];
+        a = new FloatArray(m * n);
+        b = new FloatArray(m * n);
+        c = new FloatArray(m * n);
 
         final Random random = new Random();
 
         for (int i = 0; i < m; i++) {
-            a[i * (m + 1)] = 1;
+            a.set(i * (m + 1), 1);
         }
 
         for (int i = 0; i < m * n; i++) {
-            b[i] = random.nextFloat();
+            b.set(i, random.nextFloat());
         }
 
         if (USE_GRID) {
@@ -144,7 +145,7 @@ public class SgemmTornado extends BenchmarkDriver {
     @Override
     public boolean validate(TornadoDevice device) {
 
-        final float[] result = new float[m * n];
+        final FloatArray result = new FloatArray(m * n);
         boolean val = true;
 
         benchmarkMethod(device);
@@ -156,7 +157,7 @@ public class SgemmTornado extends BenchmarkDriver {
 
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                if (abs(result[(i * n) + j] - c[(i * n) + j]) > 0.01) {
+                if (abs(result.get((i * n) + j) - c.get((i * n) + j)) > 0.01) {
                     val = false;
                     break;
                 }

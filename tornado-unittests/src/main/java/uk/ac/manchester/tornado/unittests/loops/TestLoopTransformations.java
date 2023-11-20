@@ -18,40 +18,40 @@
 
 package uk.ac.manchester.tornado.unittests.loops;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.Random;
-import java.util.stream.IntStream;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+
+import java.util.Random;
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations
+ * tornado-test -V uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations
  * </code>
  */
 public class TestLoopTransformations extends TornadoTestBase {
     // CHECKSTYLE:OFF
 
-    private static void matrixVectorMultiplication(final float[] A, final float[] B, final float[] C, final int size) {
+    private static void matrixVectorMultiplication(final FloatArray A, final FloatArray B, final FloatArray C, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
             float sum = 0.0f;
             for (int j = 0; j < size; j++) {
-                sum += A[(i * size) + j] * B[j];
+                sum += A.get((i * size) + j) * B.get(j);
             }
-            C[i] = sum;
+            C.set(i, sum);
         }
     }
 
@@ -63,23 +63,31 @@ public class TestLoopTransformations extends TornadoTestBase {
         }
     }
 
+    private static void matrixTranspose(final FloatArray A, FloatArray B, final int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (@Parallel int j = 0; j < size; j++) {
+                B.set((i * size) + j, A.get((j * size) + i));
+            }
+        }
+    }
+
     @Test
     public void testPartialUnrollDefault() {
         int size = 512;
 
-        float[] matrixA = new float[size * size];
-        float[] matrixB = new float[size * size];
-        float[] matrixC = new float[size * size];
-        float[] resultSeq = new float[size * size];
+        FloatArray matrixA = new FloatArray(size * size);
+        FloatArray matrixB = new FloatArray(size * size);
+        FloatArray matrixC = new FloatArray(size * size);
+        FloatArray resultSeq = new FloatArray(size * size);
 
         Random r = new Random();
 
         IntStream.range(0, size * size).parallel().forEach(idx -> {
-            matrixA[idx] = r.nextFloat();
+            matrixA.set(idx, r.nextFloat());
         });
 
         IntStream.range(0, size).parallel().forEach(idx -> {
-            matrixB[idx] = r.nextFloat();
+            matrixB.set(idx, r.nextFloat());
         });
 
         TornadoRuntime.setProperty("tornado.experimental.partial.unroll", "True");
@@ -96,7 +104,7 @@ public class TestLoopTransformations extends TornadoTestBase {
         matrixVectorMultiplication(matrixA, matrixB, resultSeq, size);
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
-                assertEquals(matrixC[i * size + j], resultSeq[i * size + j], 0.01f);
+                assertEquals(matrixC.get(i * size + j), resultSeq.get(i * size + j), 0.01f);
             }
         }
     }
@@ -105,19 +113,19 @@ public class TestLoopTransformations extends TornadoTestBase {
     public void testPartialUnrollNvidia32() {
         int size = 512;
 
-        float[] matrixA = new float[size * size];
-        float[] matrixB = new float[size * size];
-        float[] matrixC = new float[size * size];
-        float[] resultSeq = new float[size * size];
+        FloatArray matrixA = new FloatArray(size * size);
+        FloatArray matrixB = new FloatArray(size * size);
+        FloatArray matrixC = new FloatArray(size * size);
+        FloatArray resultSeq = new FloatArray(size * size);
 
         Random r = new Random();
 
         IntStream.range(0, size * size).parallel().forEach(idx -> {
-            matrixA[idx] = r.nextFloat();
+            matrixA.set(idx, r.nextFloat());
         });
 
         IntStream.range(0, size).parallel().forEach(idx -> {
-            matrixB[idx] = r.nextFloat();
+            matrixB.set(idx, r.nextFloat());
         });
 
         TornadoRuntime.setProperty("tornado.experimental.partial.unroll", "True");
@@ -143,7 +151,7 @@ public class TestLoopTransformations extends TornadoTestBase {
         matrixVectorMultiplication(matrixA, matrixB, resultSeq, size);
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
-                assertEquals(matrixC[i * size + j], resultSeq[i * size + j], 0.01f);
+                assertEquals(matrixC.get(i * size + j), resultSeq.get(i * size + j), 0.01f);
             }
         }
     }
@@ -151,16 +159,16 @@ public class TestLoopTransformations extends TornadoTestBase {
     @Test
     public void testPartialUnrollParallelLoops() {
         final int N = 256;
-        float[] matrixA = new float[N * N];
-        float[] matrixB = new float[N * N];
-        float[] resultSeq = new float[N * N];
+        FloatArray matrixA = new FloatArray(N * N);
+        FloatArray matrixB = new FloatArray(N * N);
+        FloatArray resultSeq = new FloatArray(N * N);
 
         TornadoRuntime.setProperty("tornado.experimental.partial.unroll", "True");
 
         Random r = new Random();
         IntStream.range(0, N * N).parallel().forEach(idx -> {
-            matrixA[idx] = r.nextFloat();
-            matrixB[idx] = r.nextFloat();
+            matrixA.set(idx, r.nextFloat());
+            matrixB.set(idx, r.nextFloat());
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -174,13 +182,13 @@ public class TestLoopTransformations extends TornadoTestBase {
 
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {
-                resultSeq[(i * N) + j] = matrixA[(j * N) + i];
+                resultSeq.set((i * N) + j, matrixA.get((j * N) + i));
             }
         }
 
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {
-                assertEquals(resultSeq[i * N + j], matrixB[i * N + j], 0.1);
+                assertEquals(resultSeq.get(i * N + j), matrixB.get(i * N + j), 0.1);
             }
         }
     }

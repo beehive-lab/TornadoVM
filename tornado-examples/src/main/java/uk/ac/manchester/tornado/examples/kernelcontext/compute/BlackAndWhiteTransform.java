@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
@@ -96,11 +97,11 @@ public class BlackAndWhiteTransform {
             }
         }
 
-        private static void compute2D(KernelContext context, int[] image, final int w, final int s) {
+        private static void compute2D(KernelContext context, IntArray image, final int w, final int s) {
             int idx = context.globalIdy;
             int jdx = context.globalIdx;
 
-            int rgb = image[idx * s + jdx];
+            int rgb = image.get(idx * s + jdx);
             int alpha = (rgb >> 24) & 0xff;
             int red = (rgb >> 16) & 0xFF;
             int green = (rgb >> 8) & 0xFF;
@@ -109,14 +110,14 @@ public class BlackAndWhiteTransform {
             int grayLevel = (red + green + blue) / 3;
             int gray = (alpha << 24) | (grayLevel << 16) | (grayLevel << 8) | grayLevel;
 
-            image[idx * s + jdx] = gray;
+            image.set(idx * s + jdx,  gray);
 
         }
 
-        private static void compute1D(KernelContext context, int[] image, final int w, final int s) {
+        private static void compute1D(KernelContext context, IntArray image, final int w, final int s) {
             int idx = context.globalIdx;
 
-            int rgb = image[idx];
+            int rgb = image.get(idx);
             int alpha = (rgb >> 24) & 0xff;
             int red = (rgb >> 16) & 0xFF;
             int green = (rgb >> 8) & 0xFF;
@@ -125,7 +126,7 @@ public class BlackAndWhiteTransform {
             int grayLevel = (red + green + blue) / 3;
             int gray = (alpha << 24) | (grayLevel << 16) | (grayLevel << 8) | grayLevel;
 
-            image[idx] = gray;
+            image.set(idx, gray);
 
         }
 
@@ -142,7 +143,7 @@ public class BlackAndWhiteTransform {
             int s = image.getHeight();
             int size = w * s;
 
-            int[] imageRGB = new int[w * s];
+            IntArray imageRGB = new IntArray(w * s);
 
             long start = 0,end = 0;
             long taskStart = 0,taskEnd = 0;
@@ -151,7 +152,7 @@ public class BlackAndWhiteTransform {
                 for (int i = 0; i < w; i++) {
                     for (int j = 0; j < s; j++) {
                         int rgb = image.getRGB(i, j);
-                        imageRGB[i * s + j] = rgb;
+                        imageRGB.set(i * s + j, rgb);
                     }
                 }
 
@@ -180,7 +181,7 @@ public class BlackAndWhiteTransform {
                 // unmarshall
                 for (int i = 0; i < w; i++) {
                     for (int j = 0; j < s; j++) {
-                        image.setRGB(i, j, imageRGB[i * s + j]);
+                        image.setRGB(i, j, imageRGB.get(i * s + j));
                     }
                 }
 

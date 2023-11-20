@@ -17,23 +17,23 @@
  */
 package uk.ac.manchester.tornado.unittests.executor;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
-import java.util.Arrays;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.TornadoProfilerResult;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.unittests.TestHello;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+
+import java.util.Arrays;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * How to run?
@@ -48,12 +48,12 @@ public class TestExecutor extends TornadoTestBase {
     @Test
     public void test01() {
         int numElements = 16;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
 
-        Arrays.fill(a, 1);
-        Arrays.fill(b, 2);
+        a.init(1);
+        b.init(2);
 
         // 1. Task Graph Definition
         TaskGraph tg = new TaskGraph("s0") //
@@ -90,8 +90,8 @@ public class TestExecutor extends TornadoTestBase {
 
         assertNotNull(profilerResult);
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i]);
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(a.get(i) + b.get(i), c.get(i));
         }
 
     }
@@ -102,12 +102,12 @@ public class TestExecutor extends TornadoTestBase {
     @Test
     public void test02() {
         int numElements = 16;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
 
-        Arrays.fill(a, 1);
-        Arrays.fill(b, 2);
+        a.init(1);
+        b.init(2);
 
         // 1. Task Graph Definition
         TaskGraph tg = new TaskGraph("s0") //
@@ -126,8 +126,8 @@ public class TestExecutor extends TornadoTestBase {
             executorPlan.execute();
         }
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i]);
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(a.get(i) + b.get(i), c.get(i));
         }
 
     }
@@ -138,15 +138,15 @@ public class TestExecutor extends TornadoTestBase {
     @Test
     public void test03() {
         int numElements = 16;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
 
         final int INIT_A = 1;
         final int INIT_B = 2;
 
-        Arrays.fill(a, INIT_A);
-        Arrays.fill(b, INIT_B);
+        a.init(INIT_A);
+        b.init(INIT_B);
 
         // 1. Task Graph Definition
         TaskGraph tg = new TaskGraph("s0") //
@@ -164,8 +164,8 @@ public class TestExecutor extends TornadoTestBase {
         executorPlan.execute();
 
         // 5. We check for the result
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i]);
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(a.get(i) + b.get(i), c.get(i));
         }
 
         // 6. We try to modify the mutable task-graph before execution
@@ -178,24 +178,23 @@ public class TestExecutor extends TornadoTestBase {
         executorPlan.execute();
 
         // 8. We check for the result. It should be the same as in step 6.
-        for (int j : c) {
-            assertEquals(INIT_A + INIT_B, j);
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(INIT_A + INIT_B, c.get(i));
         }
     }
 
     /**
-     * Test to show how to program states of data movement across different
-     * executors. A -> B -> A
+     * Test to show how to program states of data movement across different executors. A -> B -> A
      */
     @Test
     public void test04() {
         int numElements = 16;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
 
         final int INIT_A = 0;
 
-        Arrays.fill(a, INIT_A);
+        a.init(INIT_A);
 
         // 1. Task Graph Definition with A -> B
         TaskGraph tg = new TaskGraph("s0") //
@@ -228,8 +227,8 @@ public class TestExecutor extends TornadoTestBase {
         }
 
         // 8. We check for the result. It should be the same as in step 6.
-        for (int j : a) {
-            assertEquals(INIT_A + 2 * ITERATIONS, j);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(INIT_A + 2 * ITERATIONS, a.get(i));
         }
 
     }

@@ -26,6 +26,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -42,29 +43,29 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 public class TestMultipleTasksSingleDevice extends TornadoTestBase {
 
-    public static void task0Initialization(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = 10;
+    public static void task0Initialization(IntArray a) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            a.set(i, 10);
         }
     }
 
-    public static void task1Multiplication(int[] a, int alpha) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = a[i] * alpha;
+    public static void task1Multiplication(IntArray a, int alpha) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            a.set(i, a.get(i) * alpha);
         }
     }
 
-    public static void task2Saxpy(int[] a, int[] b, int[] c, int alpha) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            c[i] = alpha * a[i] + b[i];
+    public static void task2Saxpy(IntArray a, IntArray b, IntArray c, int alpha) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            c.set(i, alpha * a.get(i) + b.get(i));
         }
     }
 
     @Test
     public void testTwoTasks() {
         final int numElements = 1024;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
 
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
@@ -76,16 +77,16 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int j : a) {
-            assertEquals(120, j);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(120, a.get(i));
         }
     }
 
     @Test
     public void testThreeTasks() {
         final int numElements = 1024;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
 
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
@@ -99,17 +100,17 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
         executionPlan.execute();
 
         int val = (12 * 120) + 120;
-        for (int i = 0; i < a.length; i++) {
-            assertEquals(val, b[i]);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(val, b.get(i));
         }
     }
 
     @Test
     public void testFourTasks() {
         final int numElements = 1024;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
 
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
@@ -124,17 +125,17 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
         executionPlan.execute();
 
         int val = (12 * 120) + 10;
-        for (int i = 0; i < a.length; i++) {
-            assertEquals(val, c[i]);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(val, c.get(i));
         }
     }
 
     @Test
     public void testFiveTasks() {
         final int numElements = 1024;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
 
         TaskGraph taskGraph = new TaskGraph("s0")//
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)//
@@ -151,8 +152,8 @@ public class TestMultipleTasksSingleDevice extends TornadoTestBase {
 
         int val = (12 * 120) + 10;
         val = (12 * val) + (120);
-        for (int i = 0; i < a.length; i++) {
-            assertEquals(val, c[i]);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(val, c.get(i));
         }
     }
 

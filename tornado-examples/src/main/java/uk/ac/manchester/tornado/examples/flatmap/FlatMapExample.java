@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,6 +25,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
@@ -36,11 +37,11 @@ public class FlatMapExample {
 
     private static final int SIZE = 16;
 
-    private static void computeFlatMap(float[] input, float[] output, final int size) {
+    private static void computeFlatMap(FloatArray input, FloatArray output, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
-            if (input[i] > 100) {
+            if (input.get(i) > 100) {
                 for (int j = 0; j < size; j++) {
-                    output[i * size + j] = input[i] + j;
+                    output.set(i * size + j, input.get(i) + j);
                 }
             }
         }
@@ -48,12 +49,12 @@ public class FlatMapExample {
 
     public static void main(String[] args) {
 
-        float[] input = new float[SIZE * SIZE];
-        float[] output = new float[SIZE * SIZE];
+        FloatArray input = new FloatArray(SIZE * SIZE);
+        FloatArray output = new FloatArray(SIZE * SIZE);
 
         Random r = new Random();
-        IntStream.range(0, input.length).forEach(i -> {
-            input[i] = 50 + r.nextInt(100);
+        IntStream.range(0, input.getSize()).forEach(i -> {
+            input.set(i, 50 + r.nextInt(100));
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -67,7 +68,7 @@ public class FlatMapExample {
 
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
-                System.out.print(output[i * SIZE + j] + " ");
+                System.out.print(output.get(i * SIZE + j) + " ");
             }
             System.out.println();
         }

@@ -24,12 +24,10 @@ Alternatively, TornadoVM can be configured either manually (:ref:`installation`)
 List of compatible JDKs
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-TornadoVM can be currently executed with the following three
-configurations:
+TornadoVM can be currently executed with the following configurations:
 
--  TornadoVM with GraalVM (JDK 11, JDK 17): see the installation guide: :ref:`installation_graalvm`.
--  TornadoVM with JDK11+ (e.g. OpenJDK 11, OpenJDK 17, Red Hat Mandrel 11, Amazon Corretto 11, Amazon Corretto 17, Windows JDK 11, Windows
-   JDK 17): see the installation guide: :ref:`installation_jdk11plus`.
+-  TornadoVM with GraalVM (JDK 21): see the installation guide: :ref:`installation_graalvm`.
+-  TornadoVM with JDK21 (e.g. OpenJDK 21, Red Hat Mandrel 21, Amazon Corretto 21, Azul Zulu JDK 21): see the installation guide: :ref:`installation_jdk17plus`.
 
 Windows
 ~~~~~~~~~~
@@ -38,7 +36,7 @@ To run TornadoVM on **Windows 10/11 OS**, install TornadoVM with GraalVM. More i
 
 
 ARM Mali GPUs and Linux
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To run TornadoVM on ARM Mali, install TornadoVM with GraalVM and JDK 11. More information here: :ref:`installation_mali`.
 
@@ -57,13 +55,13 @@ programming languages supported by GraalVM's polyglot runtime (e.g., Python, R, 
 you can find examples of how to use TornadoVM with GraalVM Polyglot.
 
 5. Is TornadoVM a Domain Specific Language (DSL)?
-----------------------
+--------------------------------------------------------------
 
 No, TornadoVM is not a DSL. It compiles a subset of Java code to OpenCL C, NVIDIA PTX, and SPIR-V binary.
 
 The TornadoVM API only provides two Java annotations (``@Parallel`` and ``@Reduce``) plus an APIs to:
 a) Create and define task-graphs (groups of Java methods to be accelerated by TornadoVM), and the data needed to execute those task-graphs.
-b) Define execution plans. 
+b) Define execution plans.
 
 6. Does it support the whole Java Language?
 -------------------------------------------
@@ -97,9 +95,9 @@ hardware configuration.
 10. Why is it called a VM?
 --------------------------
 
-The VM name is used because TornadoVM implements its own set of bytecodes for handling heterogeneous execution. 
-These bytecodes are used for handling JIT compilation, device exploration, data management and live task-migration 
-for heterogeneous devices (multi-core CPUs, GPUs, and FPGAs). We sometimes refer to a VM inside a VM (nested VM). 
+The VM name is used because TornadoVM implements its own set of bytecodes for handling heterogeneous execution.
+These bytecodes are used for handling JIT compilation, device exploration, data management and live task-migration
+for heterogeneous devices (multi-core CPUs, GPUs, and FPGAs). We sometimes refer to a VM inside a VM (nested VM).
 The main VM is the Java Virtual Machine, and TornadoVM sits on top of that.
 
 You can find more information here: `https://dl.acm.org/doi/10.1145/3313808.3313819 <https://dl.acm.org/doi/10.1145/3313808.3313819>`_.
@@ -107,13 +105,13 @@ You can find more information here: `https://dl.acm.org/doi/10.1145/3313808.3313
 11. How does it interact with OpenJDK?
 --------------------------------------
 
-TornadoVM makes use of the Java Virtual Machine Common Interface (JVMCI) that is included from Java 9 to compile Java bytecode to OpenCL C/PTX/SPIR-V at runtime. 
+TornadoVM makes use of the Java Virtual Machine Common Interface (JVMCI) that is included from Java 9 to compile Java bytecode to OpenCL C/PTX/SPIR-V at runtime.
 As a JVMCI implementation, TornadoVM uses Graal (it extends the Graal IR and includes new backends for OpenCL C, PTX and SPIR-V code generation).
 
 12.  How do I know which parts of my application are suitable for acceleration?
-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
-Workloads with for-loops that do not have dependencies between iterations are very good candidates to offload on accelerators. 
+Workloads with for-loops that do not have dependencies between iterations are very good candidates to offload on accelerators.
 Examples of this pattern are NBody computation, Black-scholes, DFT, KMeans, etc.
 
 Besides, matrix-type applications are good candidates, such as matrix-multiplication widely used in machine and deep learning.
@@ -138,13 +136,13 @@ and tasks.
 
 Partially yes. TornadoVM currently supports calls to the Math library.
 However, invocations that imply I/O are not supported.
-Note that this restriction also applies to low-level parallel programming models such as OpenCL, SYCL, oneAPI and CUDA. 
+Note that this restriction also applies to low-level parallel programming models such as OpenCL, SYCL, oneAPI and CUDA.
 
 
-15. Do I need a GPU to run TornadoVM? 
+15. Do I need a GPU to run TornadoVM?
 ------------------------------------------------------------
 
-No. TornadoVM can also run on multi-core CPUs and/or FPGAs. What TornadoVM needs is a compatible driver/runtime installed in the machine. 
+No. TornadoVM can also run on multi-core CPUs and/or FPGAs. What TornadoVM needs is a compatible driver/runtime installed in the machine.
 For example, to enable TornadoVM getting access to an Intel CPU, developers can use the Intel OpenCL runtime (e.g., from the `Intel oneAPI base Toolkit <https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit.html>`__).
 
-To enable TornadoVM accessing FPGAs, developers can use the Intel and AMD OpenCL implementations for the Intel and Xilinx FPGAs, respectively. 
+To enable TornadoVM accessing FPGAs, developers can use the Intel and AMD OpenCL implementations for the Intel and Xilinx FPGAs, respectively.

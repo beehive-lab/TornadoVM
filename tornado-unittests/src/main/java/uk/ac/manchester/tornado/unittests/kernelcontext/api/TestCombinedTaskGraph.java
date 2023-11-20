@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -66,9 +67,9 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
      * @param c
      *            output array
      */
-    public static void vectorAddV1(int[] a, int[] b, int[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = a[i] + b[i];
+    public static void vectorAddV1(IntArray a, IntArray b, IntArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, a.get(i) + b.get(i));
         }
     }
 
@@ -84,8 +85,8 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
      * @param c
      *            output array
      */
-    public static void vectorAddV2(KernelContext context, int[] a, int[] b, int[] c) {
-        c[context.globalIdx] = a[context.globalIdx] + b[context.globalIdx];
+    public static void vectorAddV2(KernelContext context, IntArray a, IntArray b, IntArray c) {
+        c.set(context.globalIdx, a.get(context.globalIdx) + b.get(context.globalIdx));
     }
 
     /**
@@ -100,9 +101,9 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
      * @param c
      *            output array
      */
-    public static void vectorMulV1(int[] a, int[] b, int[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = a[i] * b[i];
+    public static void vectorMulV1(IntArray a, IntArray b, IntArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, a.get(i) * b.get(i));
         }
     }
 
@@ -118,8 +119,8 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
      * @param c
      *            output array
      */
-    public static void vectorMulV2(KernelContext context, int[] a, int[] b, int[] c) {
-        c[context.globalIdx] = a[context.globalIdx] * b[context.globalIdx];
+    public static void vectorMulV2(KernelContext context, IntArray a, IntArray b, IntArray c) {
+        c.set(context.globalIdx, a.get(context.globalIdx) * b.get(context.globalIdx));
     }
 
     /**
@@ -134,9 +135,9 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
      * @param c
      *            output array
      */
-    public static void vectorSubV1(int[] a, int[] b, int[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = a[i] - b[i];
+    public static void vectorSubV1(IntArray a, IntArray b, IntArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, a.get(i) - b.get(i));
         }
     }
 
@@ -152,8 +153,8 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
      * @param c
      *            output array
      */
-    public static void vectorSubV2(KernelContext context, int[] a, int[] b, int[] c) {
-        c[context.globalIdx] = a[context.globalIdx] - b[context.globalIdx];
+    public static void vectorSubV2(KernelContext context, IntArray a, IntArray b, IntArray c) {
+        c.set(context.globalIdx, a.get(context.globalIdx) - b.get(context.globalIdx));
     }
 
     /**
@@ -164,13 +165,13 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
     @Test
     public void combinedAPI01() {
         final int size = 16;
-        int[] a = new int[size];
-        int[] b = new int[size];
-        int[] cTornado = new int[size];
-        int[] cJava = new int[size];
+        IntArray a = new IntArray(size);
+        IntArray b = new IntArray(size);
+        IntArray cTornado = new IntArray(size);
+        IntArray cJava = new IntArray(size);
 
-        IntStream.range(0, a.length).sequential().forEach(i -> a[i] = i);
-        IntStream.range(0, b.length).sequential().forEach(i -> b[i] = i);
+        IntStream.range(0, a.getSize()).sequential().forEach(i -> a.set(i, i));
+        IntStream.range(0, b.getSize()).sequential().forEach(i -> b.set(i, i));
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler("s01.t0", worker);
@@ -195,7 +196,7 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
         vectorSubV1(cJava, b, cJava);
 
         for (int i = 0; i < size; i++) {
-            assertEquals(cJava[i], cTornado[i]);
+            assertEquals(cJava.get(i), cTornado.get(i));
         }
     }
 
@@ -207,13 +208,13 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
     @Test
     public void combinedAPI02() {
         final int size = 16;
-        int[] a = new int[size];
-        int[] b = new int[size];
-        int[] cTornado = new int[size];
-        int[] cJava = new int[size];
+        IntArray a = new IntArray(size);
+        IntArray b = new IntArray(size);
+        IntArray cTornado = new IntArray(size);
+        IntArray cJava = new IntArray(size);
 
-        IntStream.range(0, a.length).sequential().forEach(i -> a[i] = i);
-        IntStream.range(0, b.length).sequential().forEach(i -> b[i] = i);
+        IntStream.range(0, a.getSize()).sequential().forEach(i -> a.set(i, i));
+        IntStream.range(0, b.getSize()).sequential().forEach(i -> b.set(i, i));
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler();
@@ -239,7 +240,7 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
         vectorSubV1(cJava, b, cJava);
 
         for (int i = 0; i < size; i++) {
-            assertEquals(cJava[i], cTornado[i]);
+            assertEquals(cJava.get(i), cTornado.get(i));
         }
     }
 
@@ -251,13 +252,13 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
     @Test
     public void combinedAPI03() {
         final int size = 16;
-        int[] a = new int[size];
-        int[] b = new int[size];
-        int[] cTornado = new int[size];
-        int[] cJava = new int[size];
+        IntArray a = new IntArray(size);
+        IntArray b = new IntArray(size);
+        IntArray cTornado = new IntArray(size);
+        IntArray cJava = new IntArray(size);
 
-        IntStream.range(0, a.length).sequential().forEach(i -> a[i] = i);
-        IntStream.range(0, b.length).sequential().forEach(i -> b[i] = i);
+        IntStream.range(0, a.getSize()).sequential().forEach(i -> a.set(i, i));
+        IntStream.range(0, b.getSize()).sequential().forEach(i -> b.set(i, i));
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler();
@@ -282,7 +283,7 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
         vectorSubV1(cJava, b, cJava);
 
         for (int i = 0; i < size; i++) {
-            assertEquals(cJava[i], cTornado[i]);
+            assertEquals(cJava.get(i), cTornado.get(i));
         }
     }
 
@@ -294,13 +295,13 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
     @Test
     public void combinedAPI04() {
         final int size = 16;
-        int[] a = new int[size];
-        int[] b = new int[size];
-        int[] cTornado = new int[size];
-        int[] cJava = new int[size];
+        IntArray a = new IntArray(size);
+        IntArray b = new IntArray(size);
+        IntArray cTornado = new IntArray(size);
+        IntArray cJava = new IntArray(size);
 
-        IntStream.range(0, a.length).sequential().forEach(i -> a[i] = i);
-        IntStream.range(0, b.length).sequential().forEach(i -> b[i] = i);
+        IntStream.range(0, a.getSize()).sequential().forEach(i -> a.set(i, i));
+        IntStream.range(0, b.getSize()).sequential().forEach(i -> b.set(i, i));
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler();
@@ -325,7 +326,7 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
         vectorSubV1(cJava, b, cJava);
 
         for (int i = 0; i < size; i++) {
-            assertEquals(cJava[i], cTornado[i]);
+            assertEquals(cJava.get(i), cTornado.get(i));
         }
     }
 
@@ -337,13 +338,13 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
     @Test
     public void combinedAPI05() {
         final int size = 16;
-        int[] a = new int[size];
-        int[] b = new int[size];
-        int[] cTornado = new int[size];
-        int[] cJava = new int[size];
+        IntArray a = new IntArray(size);
+        IntArray b = new IntArray(size);
+        IntArray cTornado = new IntArray(size);
+        IntArray cJava = new IntArray(size);
 
-        IntStream.range(0, a.length).sequential().forEach(i -> a[i] = i);
-        IntStream.range(0, b.length).sequential().forEach(i -> b[i] = i);
+        IntStream.range(0, a.getSize()).sequential().forEach(i -> a.set(i, i));
+        IntStream.range(0, b.getSize()).sequential().forEach(i -> b.set(i, i));
 
         WorkerGrid workerT0 = new WorkerGrid1D(size);
         WorkerGrid workerT1 = new WorkerGrid1D(size);
@@ -375,7 +376,7 @@ public class TestCombinedTaskGraph extends TornadoTestBase {
         vectorSubV1(cJava, b, cJava);
 
         for (int i = 0; i < size; i++) {
-            assertEquals(cJava[i], cTornado[i]);
+            assertEquals(cJava.get(i), cTornado.get(i));
         }
     }
 }

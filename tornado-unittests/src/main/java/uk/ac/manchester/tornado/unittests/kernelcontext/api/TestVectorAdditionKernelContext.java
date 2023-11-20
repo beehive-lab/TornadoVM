@@ -19,8 +19,6 @@ package uk.ac.manchester.tornado.unittests.kernelcontext.api;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Arrays;
-
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
@@ -30,6 +28,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -44,38 +43,38 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </code>
  */
 public class TestVectorAdditionKernelContext extends TornadoTestBase {
-    public static void vectorAddJava(int[] a, int[] b, int[] c) {
-        for (int i = 0; i < c.length; i++) {
-            c[i] = a[i] + b[i];
+    public static void vectorAddJava(IntArray a, IntArray b, IntArray c) {
+        for (int i = 0; i < c.getSize(); i++) {
+            c.set(i, a.get(i) + b.get(i));
         }
     }
 
-    public static void vectorAdd(KernelContext context, int[] a, int[] b, int[] c) {
-        c[context.globalIdx] = a[context.globalIdx] + b[context.globalIdx];
+    public static void vectorAdd(KernelContext context, IntArray a, IntArray b, IntArray c) {
+        c.set(context.globalIdx, a.get(context.globalIdx) + b.get(context.globalIdx));
     }
 
-    public static void vectorAdd(int[] a, KernelContext context, int[] b, int[] c) {
-        c[context.globalIdx] = a[context.globalIdx] + b[context.globalIdx];
+    public static void vectorAdd(IntArray a, KernelContext context, IntArray b, IntArray c) {
+        c.set(context.globalIdx, a.get(context.globalIdx) + b.get(context.globalIdx));
     }
 
-    public static void vectorAdd(int[] a, int[] b, KernelContext context, int[] c) {
-        c[context.globalIdx] = a[context.globalIdx] + b[context.globalIdx];
+    public static void vectorAdd(IntArray a, IntArray b, KernelContext context, IntArray c) {
+        c.set(context.globalIdx, a.get(context.globalIdx) + b.get(context.globalIdx));
     }
 
-    public static void vectorAdd(int[] a, int[] b, int[] c, KernelContext context) {
-        c[context.globalIdx] = a[context.globalIdx] + b[context.globalIdx];
+    public static void vectorAdd(IntArray a, IntArray b, IntArray c, KernelContext context) {
+        c.set(context.globalIdx, a.get(context.globalIdx) + b.get(context.globalIdx));
     }
 
     @Test
     public void vectorAddKernelContext01() {
         final int size = 16;
-        int[] a = new int[size];
-        int[] b = new int[size];
-        int[] cJava = new int[size];
-        int[] cTornado = new int[size];
+        IntArray a = new IntArray(size);
+        IntArray b = new IntArray(size);
+        IntArray cJava = new IntArray(size);
+        IntArray cTornado = new IntArray(size);
 
-        Arrays.fill(a, 10);
-        Arrays.fill(b, 20);
+        a.init(10);
+        b.init(20);
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
@@ -99,20 +98,20 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         vectorAddJava(a, b, cJava);
 
         for (int i = 0; i < size; i++) {
-            assertEquals(cJava[i], cTornado[i]);
+            assertEquals(cJava.get(i), cTornado.get(i));
         }
     }
 
     @Test
     public void vectorAddKernelContext02() {
         final int size = 16;
-        int[] a = new int[size];
-        int[] b = new int[size];
-        int[] cJava = new int[size];
-        int[] cTornado = new int[size];
+        IntArray a = new IntArray(size);
+        IntArray b = new IntArray(size);
+        IntArray cJava = new IntArray(size);
+        IntArray cTornado = new IntArray(size);
 
-        Arrays.fill(a, 10);
-        Arrays.fill(b, 20);
+        a.init(10);
+        b.init(20);
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler();
@@ -132,20 +131,20 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         vectorAddJava(a, b, cJava);
 
         for (int i = 0; i < size; i++) {
-            assertEquals(cJava[i], cTornado[i]);
+            assertEquals(cJava.get(i), cTornado.get(i));
         }
     }
 
     @Test
     public void vectorAddKernelContext03() {
         final int size = 16;
-        int[] a = new int[size];
-        int[] b = new int[size];
-        int[] cJava = new int[size];
-        int[] cTornado = new int[size];
+        IntArray a = new IntArray(size);
+        IntArray b = new IntArray(size);
+        IntArray cJava = new IntArray(size);
+        IntArray cTornado = new IntArray(size);
 
-        Arrays.fill(a, 10);
-        Arrays.fill(b, 20);
+        a.init(10);
+        b.init(20);
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler();
@@ -165,20 +164,20 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         vectorAddJava(a, b, cJava);
 
         for (int i = 0; i < size; i++) {
-            assertEquals(cJava[i], cTornado[i]);
+            assertEquals(cJava.get(i), cTornado.get(i));
         }
     }
 
     @Test
     public void vectorAddKernelContext04() {
         final int size = 16;
-        int[] a = new int[size];
-        int[] b = new int[size];
-        int[] cJava = new int[size];
-        int[] cTornado = new int[size];
+        IntArray a = new IntArray(size);
+        IntArray b = new IntArray(size);
+        IntArray cJava = new IntArray(size);
+        IntArray cTornado = new IntArray(size);
 
-        Arrays.fill(a, 10);
-        Arrays.fill(b, 20);
+        a.init(10);
+        b.init(20);
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler();
@@ -198,20 +197,20 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         vectorAddJava(a, b, cJava);
 
         for (int i = 0; i < size; i++) {
-            assertEquals(cJava[i], cTornado[i]);
+            assertEquals(cJava.get(i), cTornado.get(i));
         }
     }
 
     @Test
     public void vectorAddKernelContext05() {
         final int size = 16;
-        int[] a = new int[size];
-        int[] b = new int[size];
-        int[] cJava = new int[size];
-        int[] cTornado = new int[size];
+        IntArray a = new IntArray(size);
+        IntArray b = new IntArray(size);
+        IntArray cJava = new IntArray(size);
+        IntArray cTornado = new IntArray(size);
 
-        Arrays.fill(a, 10);
-        Arrays.fill(b, 20);
+        a.init(10);
+        b.init(20);
 
         WorkerGrid worker = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", worker);
@@ -235,7 +234,7 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         vectorAddJava(a, b, cJava);
 
         for (int i = 0; i < size; i++) {
-            assertEquals(cJava[i], cTornado[i]);
+            assertEquals(cJava.get(i), cTornado.get(i));
         }
     }
 }

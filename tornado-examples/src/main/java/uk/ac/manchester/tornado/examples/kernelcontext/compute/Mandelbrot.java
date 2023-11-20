@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
@@ -75,11 +76,11 @@ public class Mandelbrot {
         public MandelbrotImage() {
         }
 
-        private static short[] mandelbrotSequential(int size) {
+        private static ShortArray mandelbrotSequential(int size) {
             final int iterations = 10000;
             float space = 2.0f / size;
 
-            short[] result = new short[size * size];
+            ShortArray result = new ShortArray(size * size);
 
             for (int i = 0; i < size; i++) {
                 int indexIDX = i;
@@ -103,13 +104,13 @@ public class Mandelbrot {
                         ZrN = Zr * Zr;
                     }
                     short r = (short) ((y * 255) / iterations);
-                    result[i * size + j] = r;
+                    result.set(i * size + j, r);
                 }
             }
             return result;
         }
 
-        private static void mandelbrotTornado(KernelContext context, int size, short[] output) {
+        private static void mandelbrotTornado(KernelContext context, int size, ShortArray output) {
             final int iterations = 10000;
             float space = 2.0f / size;
 
@@ -135,19 +136,19 @@ public class Mandelbrot {
                 }
             }
             short r = (short) ((y * 255) / iterations);
-            output[i * size + j] = r;
+            output.set(i * size + j, r);
         }
 
-        private static BufferedImage writeFile(short[] output, int size) {
+        private static BufferedImage writeFile(ShortArray output, int size) {
             BufferedImage img = null;
             try {
                 img = new BufferedImage(size, size, BufferedImage.TYPE_INT_BGR);
                 WritableRaster write = img.getRaster();
-                File outputFile = new File("/tmp/mandelbrot.png");
+                File outputFile = new File("/home/mary/Pictures/Wallpapers/test.jpg");
 
                 for (int i = 0; i < size; i++) {
                     for (int j = 0; j < size; j++) {
-                        int colour = output[(i * size + j)];
+                        int colour = output.get((i * size + j));
                         write.setSample(i, j, 0, colour);
                     }
                 }
@@ -161,10 +162,10 @@ public class Mandelbrot {
         @Override
         public void paint(Graphics g) {
             if (!USE_TORNADO) {
-                short[] mandelbrotSequential = mandelbrotSequential(SIZE);
+                ShortArray mandelbrotSequential = mandelbrotSequential(SIZE);
                 this.image = writeFile(mandelbrotSequential, SIZE);
             } else {
-                short[] result = new short[SIZE * SIZE];
+                ShortArray result = new ShortArray(SIZE * SIZE);
 
                 WorkerGrid workerGrid = new WorkerGrid2D(SIZE, SIZE);
                 GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);

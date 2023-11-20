@@ -19,13 +19,12 @@ package uk.ac.manchester.tornado.unittests.foundation;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Arrays;
-
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -42,7 +41,7 @@ public class TestFloats extends TornadoTestBase {
     @Test
     public void testFloatsCopy() {
         final int numElements = 256;
-        float[] a = new float[numElements];
+        FloatArray a = new FloatArray(numElements);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestKernels::testFloatCopy, a) //
@@ -52,22 +51,23 @@ public class TestFloats extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        assertEquals(a[0], 50.0f, 0.01f);
+        assertEquals(a.get(0), 50.0f, 0.01f);
     }
 
     @Test
     public void testVectorFloatAdd() {
 
         final int numElements = 256;
-        float[] a = new float[numElements];
-        float[] b = new float[numElements];
-        float[] c = new float[numElements];
+        FloatArray a = new FloatArray(numElements);
+        FloatArray b = new FloatArray(numElements);
+        FloatArray c = new FloatArray(numElements);
 
-        Arrays.fill(b, 100);
-        Arrays.fill(c, 200);
-        float[] expected = new float[numElements];
+        b.init(100);
+        c.init(200);
+
+        FloatArray expected = new FloatArray(numElements);
         for (int i = 0; i < numElements; i++) {
-            expected[i] = b[i] + c[i];
+            expected.set(i, b.get(i) + c.get(i));
         }
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -80,7 +80,7 @@ public class TestFloats extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < numElements; i++) {
-            assertEquals(expected[i], a[i], 0.01f);
+            assertEquals(expected.get(i), a.get(i), 0.01f);
         }
     }
 
@@ -88,15 +88,16 @@ public class TestFloats extends TornadoTestBase {
     public void testVectorFloatSub() {
 
         final int numElements = 256;
-        float[] a = new float[numElements];
-        float[] b = new float[numElements];
-        float[] c = new float[numElements];
+        FloatArray a = new FloatArray(numElements);
+        FloatArray b = new FloatArray(numElements);
+        FloatArray c = new FloatArray(numElements);
 
-        Arrays.fill(b, 200);
-        Arrays.fill(c, 100);
-        float[] expected = new float[numElements];
+        b.init(200);
+        c.init(100);
+
+        FloatArray expected = new FloatArray(numElements);
         for (int i = 0; i < numElements; i++) {
-            expected[i] = b[i] - c[i];
+            expected.set(i, b.get(i) - c.get(i));
         }
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -109,7 +110,7 @@ public class TestFloats extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < numElements; i++) {
-            assertEquals(expected[i], a[i], 0.01f);
+            assertEquals(expected.get(i), a.get(i), 0.01f);
         }
 
     }
@@ -118,16 +119,16 @@ public class TestFloats extends TornadoTestBase {
     public void testVectorFloatMul() {
 
         final int numElements = 256;
-        float[] a = new float[numElements];
-        float[] b = new float[numElements];
-        float[] c = new float[numElements];
+        FloatArray a = new FloatArray(numElements);
+        FloatArray b = new FloatArray(numElements);
+        FloatArray c = new FloatArray(numElements);
 
-        Arrays.fill(b, 100.0f);
-        Arrays.fill(c, 5.0f);
+        b.init(100.0f);
+        c.init(5.0f);
 
-        float[] expected = new float[numElements];
+        FloatArray expected = new FloatArray(numElements);
         for (int i = 0; i < numElements; i++) {
-            expected[i] = b[i] * c[i];
+            expected.set(i, b.get(i) * c.get(i));
         }
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -140,7 +141,7 @@ public class TestFloats extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < numElements; i++) {
-            assertEquals(expected[i], a[i], 0.01f);
+            assertEquals(expected.get(i), a.get(i), 0.01f);
         }
     }
 
@@ -148,16 +149,16 @@ public class TestFloats extends TornadoTestBase {
     public void testVectorFloatDiv() {
 
         final int numElements = 256;
-        float[] a = new float[numElements];
-        float[] b = new float[numElements];
-        float[] c = new float[numElements];
+        FloatArray a = new FloatArray(numElements);
+        FloatArray b = new FloatArray(numElements);
+        FloatArray c = new FloatArray(numElements);
 
-        Arrays.fill(b, 100.0f);
-        Arrays.fill(c, 5.0f);
+        b.init(100.0f);
+        c.init(5.0f);
 
-        float[] expected = new float[numElements];
+        FloatArray expected = new FloatArray(numElements);
         for (int i = 0; i < numElements; i++) {
-            expected[i] = b[i] / c[i];
+            expected.set(i, b.get(i) / c.get(i));
         }
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -170,7 +171,7 @@ public class TestFloats extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < numElements; i++) {
-            assertEquals(expected[i], a[i], 0.01f);
+            assertEquals(expected.get(i), a.get(i), 0.01f);
         }
     }
 }

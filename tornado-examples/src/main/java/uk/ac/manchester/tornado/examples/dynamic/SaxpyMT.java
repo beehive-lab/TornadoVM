@@ -24,6 +24,7 @@ import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
@@ -36,25 +37,25 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  */
 public class SaxpyMT {
 
-    public static void saxpy(float alpha, float[] x, float[] y, float[] b) {
-        for (@Parallel int i = 0; i < y.length; i++) {
-            y[i] = alpha * x[i] + b[i];
+    public static void saxpy(float alpha, FloatArray x, FloatArray y, FloatArray b) {
+        for (@Parallel int i = 0; i < y.getSize(); i++) {
+            y.set(i, alpha * x.get(i) + b.get(i));
         }
     }
 
-    public static void saxpyThreads(float alpha, float[] x, float[] y, float[] b, int threads, Thread[] th) throws InterruptedException {
-        int balk = y.length / threads;
+    public static void saxpyThreads(float alpha, FloatArray x, FloatArray y, FloatArray b, int threads, Thread[] th) throws InterruptedException {
+        int balk = y.getSize() / threads;
         for (int i = 0; i < threads; i++) {
             final int current = i;
             int lowBound = current * balk;
             int upperBound = (current + 1) * balk;
             if (current == threads - 1) {
-                upperBound = y.length;
+                upperBound = y.getSize();
             }
             int finalUpperBound = upperBound;
             th[i] = new Thread(() -> {
                 for (int k = lowBound; k < finalUpperBound; k++) {
-                    y[k] = alpha * x[k] + b[k];
+                    y.set(k, alpha * x.get(k) + b.get(k));
                 }
             });
         }
@@ -81,14 +82,14 @@ public class SaxpyMT {
         long end;
         float alpha = 2f;
 
-        float[] x = new float[numElements];
-        float[] y = new float[numElements];
-        float[] b = new float[numElements];
+        FloatArray x = new FloatArray(numElements);
+        FloatArray y = new FloatArray(numElements);
+        FloatArray b = new FloatArray(numElements);
 
         for (int i = 0; i < numElements; i++) {
-            x[i] = 450;
-            y[i] = 0;
-            b[i] = 20;
+            x.set(i, 450);
+            y.set(i, 0);
+            b.set(i, 20);
         }
 
         graph = new TaskGraph("s0");
@@ -145,8 +146,8 @@ public class SaxpyMT {
             System.out.println("Total Time:" + (end - start) + " ns");
         }
         boolean wrongResult = false;
-        for (int i = 0; i < y.length; i++) {
-            if (Math.abs(y[i] - (alpha * x[i] + b[i])) > 0.01) {
+        for (int i = 0; i < y.getSize(); i++) {
+            if (Math.abs(y.get(i) - (alpha * x.get(i) + b.get(i))) > 0.01) {
                 wrongResult = true;
                 break;
             }

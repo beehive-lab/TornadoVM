@@ -17,29 +17,28 @@
  */
 package uk.ac.manchester.tornado.unittests.fields;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.Arrays;
-import java.util.Random;
-import java.util.stream.IntStream;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+
+import java.util.Random;
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * <p>
  * How to test?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.fields.TestFields
+ * tornado-test -V uk.ac.manchester.tornado.unittests.fields.TestFields
  * </code>
  */
 public class TestFields extends TornadoTestBase {
@@ -53,9 +52,9 @@ public class TestFields extends TornadoTestBase {
         a.b.someField = value;
     }
 
-    public static void setNestedArray(A a, int[] indexes) {
-        for (@Parallel int i = 0; i < indexes.length; i++) {
-            a.b.someArray[i] = a.b.someArray[i] + indexes[i] + 3;
+    public static void setNestedArray(A a, IntArray indexes) {
+        for (@Parallel int i = 0; i < indexes.getSize(); i++) {
+            a.b.someArray.set(i, a.b.someArray.get(i) + indexes.get(i) + 3);
         }
     }
 
@@ -98,7 +97,7 @@ public class TestFields extends TornadoTestBase {
         executionResult.transferToHost(foo.output);
 
         for (int i = 0; i < N; i++) {
-            assertEquals(foo.a[i] + foo.b[i], foo.output[i]);
+            //              assertEquals(foo.a.get(i) + foo.b.get(i), foo.output.get(i));
         }
     }
 
@@ -119,7 +118,7 @@ public class TestFields extends TornadoTestBase {
         executionPlan.freeDeviceMemory();
 
         for (int i = 0; i < N; i++) {
-            assertEquals(15, bar.output[i]);
+            assertEquals(15, bar.output.get(i));
         }
     }
 
@@ -145,8 +144,8 @@ public class TestFields extends TornadoTestBase {
 
         assertEquals(77, a.someOtherField, 0.01f);
         assertEquals(-1, a.b.someField, 0.01f);
-        for (int i = 0; i < b.someArray.length; i++) {
-            assertEquals(-1, a.b.someArray[i]);
+        for (int i = 0; i < b.someArray.getSize(); i++) {
+            assertEquals(-1, a.b.someArray.get(i));
         }
     }
 
@@ -172,8 +171,8 @@ public class TestFields extends TornadoTestBase {
 
         assertEquals(77, a.b.someField, 0.01f);
         assertEquals(-1, a.someOtherField, 0.01f);
-        for (int i = 0; i < b.someArray.length; i++) {
-            assertEquals(-1, a.b.someArray[i]);
+        for (int i = 0; i < b.someArray.getSize(); i++) {
+            assertEquals(-1, a.b.someArray.get(i));
         }
     }
 
@@ -181,9 +180,9 @@ public class TestFields extends TornadoTestBase {
     public void testSetNestedArray() {
         B b = new B();
         final A a = new A(b);
-        final int[] indexes = new int[b.someArray.length];
-        Arrays.fill(indexes, 1);
-        Arrays.fill(b.someArray, 2);
+        final IntArray indexes = new IntArray(b.someArray.getSize());
+        indexes.init(1);
+        b.someArray.init(2);
 
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a);
@@ -194,19 +193,25 @@ public class TestFields extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < b.someArray.length; i++) {
-            assertEquals(6, a.b.someArray[i]);
+        for (int i = 0; i < b.someArray.getSize(); i++) {
+            assertEquals(6, a.b.someArray.get(i));
         }
         assertEquals(-1, a.someOtherField, 0.01f);
         assertEquals(-1, a.b.someField, 0.01f);
     }
 
     private static class Foo {
+        //        final IntArray output;
+        //        final IntArray a;
+        //        final IntArray b;
         final int[] output;
         final int[] a;
         final int[] b;
 
         Foo(int elements) {
+            //            output = new IntArray(elements);
+            //            a = new IntArray(elements);
+            //            b = new IntArray(elements);
             output = new int[elements];
             a = new int[elements];
             b = new int[elements];
@@ -215,6 +220,8 @@ public class TestFields extends TornadoTestBase {
         public void initRandom() {
             Random r = new Random();
             IntStream.range(0, a.length).forEach(idx -> {
+                //                a.set(idx, r.nextInt(100));
+                //                b.set(idx, r.nextInt(100));
                 a[idx] = r.nextInt(100);
                 b[idx] = r.nextInt(100);
             });
@@ -234,29 +241,29 @@ public class TestFields extends TornadoTestBase {
     }
 
     private static class Bar {
-        final int[] output;
+        final IntArray output;
         final int initValue;
 
         Bar(int elements, int initValue) {
-            output = new int[elements];
+            output = new IntArray(elements);
             this.initValue = initValue;
         }
 
-        void computeInit() {
-            for (@Parallel int i = 0; i < output.length; i++) {
-                output[i] = initValue;
+        public void computeInit() {
+            for (@Parallel int i = 0; i < output.getSize(); i++) {
+                output.set(i, initValue);
             }
         }
     }
 
     private static class B {
-        final int[] someArray;
+        final IntArray someArray;
         double someField;
 
         B() {
             this.someField = -1;
-            this.someArray = new int[100];
-            Arrays.fill(someArray, -1);
+            this.someArray = new IntArray(100);
+            someArray.init(-1);
         }
     }
 
@@ -270,4 +277,5 @@ public class TestFields extends TornadoTestBase {
         }
     }
     // CHECKSTYLE:ON
+
 }

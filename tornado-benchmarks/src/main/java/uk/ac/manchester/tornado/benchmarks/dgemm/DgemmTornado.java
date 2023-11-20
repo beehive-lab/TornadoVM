@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,6 @@
  */
 package uk.ac.manchester.tornado.benchmarks.dgemm;
 
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPDistance;
 import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.dgemm;
 
 import java.util.Random;
@@ -27,7 +26,9 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
@@ -36,7 +37,7 @@ import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner dgemm
+ * tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner dgemm
  * </code>
  */
 public class DgemmTornado extends BenchmarkDriver {
@@ -44,9 +45,9 @@ public class DgemmTornado extends BenchmarkDriver {
     private final int m;
     private final int n;
     private final boolean USE_PREBUILT = Boolean.parseBoolean(TornadoRuntime.getProperty("usePrebuilt", "False"));
-    private double[] a;
-    private double[] b;
-    private double[] c;
+    private DoubleArray a;
+    private DoubleArray b;
+    private DoubleArray c;
 
     public DgemmTornado(int iterations, int m, int n) {
         super(iterations);
@@ -56,18 +57,18 @@ public class DgemmTornado extends BenchmarkDriver {
 
     @Override
     public void setUp() {
-        a = new double[m * n];
-        b = new double[m * n];
-        c = new double[m * n];
+        a = new DoubleArray(m * n);
+        b = new DoubleArray(m * n);
+        c = new DoubleArray(m * n);
 
         final Random random = new Random();
 
         for (int i = 0; i < m; i++) {
-            a[i * (m + 1)] = 1;
+            a.set(i * (m + 1), 1);
         }
 
         for (int i = 0; i < m * n; i++) {
-            b[i] = random.nextFloat();
+            b.set(i, random.nextFloat());
         }
 
         taskGraph = new TaskGraph("benchmark");
@@ -126,14 +127,14 @@ public class DgemmTornado extends BenchmarkDriver {
     @Override
     public boolean validate(TornadoDevice device) {
 
-        final double[] result = new double[m * n];
+        final DoubleArray result = new DoubleArray(m * n);
 
         benchmarkMethod(device);
         executionPlan.clearProfiles();
 
         dgemm(m, n, m, a, b, result);
 
-        final double ulp = findULPDistance(c, result);
+        final double ulp = TornadoMath.findULPDistance(c, result);
         return ulp < MAX_ULP;
     }
 

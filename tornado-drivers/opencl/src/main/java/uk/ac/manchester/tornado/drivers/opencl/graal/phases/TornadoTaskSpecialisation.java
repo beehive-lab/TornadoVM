@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -36,8 +36,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.debug.DebugContext;
-import org.graalvm.compiler.graph.Graph.Mark;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.Graph.Mark;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.GraphState;
@@ -86,6 +86,17 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         this.valueTypeReplacement = new TornadoValueTypeReplacement();
         this.deadCodeElimination = new DeadCodeEliminationPhase();
         this.loopUnroll = new TornadoLoopUnroller(canonicalizer);
+    }
+
+    private static boolean hasPanamaArraySizeNode(StructuredGraph graph) {
+        for (LoadFieldNode loadField : graph.getNodes().filter(LoadFieldNode.class)) {
+            final ResolvedJavaField field = loadField.field();
+            if (field.getType().getJavaKind().isPrimitive()) {
+                if (loadField.toString().contains("numberOfElements"))
+                    return true;
+            }
+        }
+        return false;
     }
 
     private Field lookupField(Class<?> type, String field) {
@@ -204,12 +215,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                 node.replaceAtUsages(kernelContextAccessNode);
                 index++;
             } else {
-                final ConstantNode constant;
-                if (batchThreads <= 0) {
-                    constant = ConstantNode.forInt(length);
-                } else {
-                    constant = ConstantNode.forInt((int) batchThreads);
-                }
+                final ConstantNode constant = (batchThreads <= 0) ? ConstantNode.forInt(length) : ConstantNode.forInt((int) batchThreads);
                 node.replaceAtUsages(graph.addOrUnique(constant));
             }
             arrayLength.clearInputs();
@@ -218,7 +224,16 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             final LoadFieldNode loadField = (LoadFieldNode) node;
             final ResolvedJavaField field = loadField.field();
             if (field.getType().getJavaKind().isPrimitive()) {
-                ConstantNode constant = lookupPrimField(graph, node, value, field.getName(), field.getJavaKind());
+                ConstantNode constant;
+                if (node.toString().contains("numberOfElements")) {
+                    if (batchThreads <= 0) {
+                        constant = lookupPrimField(graph, node, value, field.getName(), field.getJavaKind());
+                    } else {
+                        constant = ConstantNode.forInt((int) batchThreads);
+                    }
+                } else {
+                    constant = lookupPrimField(graph, node, value, field.getName(), field.getJavaKind());
+                }
                 constant = graph.addOrUnique(constant);
                 node.replaceAtUsages(constant);
                 loadField.clearInputs();
@@ -339,7 +354,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "After TaskSpecialisation iteration = " + iterations);
 
-            hasWork = (lastNodeCount != graph.getNodeCount() || graph.getNewNodes(mark).isNotEmpty()) && (iterations < MAX_ITERATIONS);
+            hasWork = (lastNodeCount != graph.getNodeCount() || graph.getNewNodes(mark).isNotEmpty() || hasPanamaArraySizeNode(graph)) && (iterations < MAX_ITERATIONS);
             lastNodeCount = graph.getNodeCount();
             iterations++;
         }

@@ -19,7 +19,6 @@ package uk.ac.manchester.tornado.unittests.prebuilt;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Arrays;
 import java.util.stream.IntStream;
 
 import org.junit.BeforeClass;
@@ -34,6 +33,7 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -66,12 +66,12 @@ public class PrebuiltTest extends TornadoTestBase {
     public void testPrebuilt01() {
 
         final int numElements = 8;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
 
-        Arrays.fill(a, 1);
-        Arrays.fill(b, 2);
+        a.init(1);
+        b.init(2);
 
         switch (backendType) {
             case PTX:
@@ -102,8 +102,8 @@ public class PrebuiltTest extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i]);
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(a.get(i) + b.get(i), c.get(i));
         }
     }
 

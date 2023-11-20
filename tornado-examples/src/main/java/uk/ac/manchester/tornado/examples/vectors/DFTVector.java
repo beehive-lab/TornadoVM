@@ -25,15 +25,16 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
-import uk.ac.manchester.tornado.api.collections.types.Float2;
-import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.Float8;
-import uk.ac.manchester.tornado.api.collections.types.VectorFloat2;
-import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
-import uk.ac.manchester.tornado.api.collections.types.VectorFloat8;
+import uk.ac.manchester.tornado.api.types.vectors.Float2;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
+import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat2;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat8;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.examples.utils.Utils;
 
 /**
@@ -64,18 +65,18 @@ public class DFTVector {
     public static final int WARMUP = 100;
     public static final int ITERATIONS = 100;
 
-    public static void computeDFT(float[] inreal, float[] inimag, float[] outreal, float[] outimag) {
-        int n = inreal.length;
+    public static void computeDFT(FloatArray inreal, FloatArray inimag, FloatArray outreal, FloatArray outimag) {
+        int n = inreal.getSize();
         for (@Parallel int k = 0; k < n; k++) { // For each output element
             float sumReal = 0;
             float simImag = 0;
             for (int t = 0; t < n; t++) { // For each input element
                 float angle = ((2 * TornadoMath.floatPI() * t * k) / n);
-                sumReal += inreal[t] * TornadoMath.cos(angle) + inimag[t] * TornadoMath.sin(angle);
-                simImag += -inreal[t] * TornadoMath.sin(angle) + inimag[t] * TornadoMath.cos(angle);
+                sumReal += inreal.get(t) * TornadoMath.cos(angle) + inimag.get(t) * TornadoMath.sin(angle);
+                simImag += -inreal.get(t) * TornadoMath.sin(angle) + inimag.get(t) * TornadoMath.cos(angle);
             }
-            outreal[k] = sumReal;
-            outimag[k] = simImag;
+            outreal.set(k, sumReal);
+            outimag.set(k, simImag);
         }
     }
 
@@ -288,31 +289,31 @@ public class DFTVector {
         Utils.computeStatistics(totalTimersLong);
     }
 
-    private static void computeWithStreams(final int size, float[] inreal, float[] inimag, float[] outreal, float[] outimag) {
-        int n = inreal.length;
+    private static void computeWithStreams(final int size, FloatArray inreal, FloatArray inimag, FloatArray outreal, FloatArray outimag) {
+        int n = inreal.getSize();
         IntStream.range(0, size).parallel().forEach(k -> {
             float sumReal = 0;
             float simImag = 0;
             for (int t = 0; t < n; t++) { // For each input element
                 float angle = (float) ((2 * TornadoMath.floatPI() * t * k) / n);
-                sumReal += inreal[t] * TornadoMath.cos(angle) + inimag[t] * TornadoMath.sin(angle);
-                simImag += -inreal[t] * TornadoMath.sin(angle) + inimag[t] * TornadoMath.cos(angle);
+                sumReal += inreal.get(t) * TornadoMath.cos(angle) + inimag.get(t) * TornadoMath.sin(angle);
+                simImag += -inreal.get(t) * TornadoMath.sin(angle) + inimag.get(t) * TornadoMath.cos(angle);
             }
-            outreal[k] = sumReal;
-            outimag[k] = simImag;
+            outreal.set(k, sumReal);
+            outimag.set(k, simImag);
         });
     }
 
     private static void runWithJavaStreams(int size) {
         size *= 4;
-        float[] inReal = new float[size];
-        float[] inImag = new float[size];
-        float[] outReal = new float[size];
-        float[] outImag = new float[size];
+        FloatArray inReal = new FloatArray(size);
+        FloatArray inImag = new FloatArray(size);
+        FloatArray outReal = new FloatArray(size);
+        FloatArray outImag = new FloatArray(size);
 
         for (int i = 0; i < size; i++) {
-            inReal[i] = 1 / (float) (i + 2);
-            inImag[i] = 1 / (float) (i + 2);
+            inReal.set(i, 1 / (float) (i + 2));
+            inImag.set(i, 1 / (float) (i + 2));
         }
 
         for (int i = 0; i < WARMUP; i++) {
@@ -334,14 +335,14 @@ public class DFTVector {
 
     private static void runWithoutVectorTypes(int size, TornadoDevice device) {
         size *= 4;
-        float[] inReal = new float[size];
-        float[] inImag = new float[size];
-        float[] outReal = new float[size];
-        float[] outImag = new float[size];
+        FloatArray inReal = new FloatArray(size);
+        FloatArray inImag = new FloatArray(size);
+        FloatArray outReal = new FloatArray(size);
+        FloatArray outImag = new FloatArray(size);
 
         for (int i = 0; i < size; i++) {
-            inReal[i] = 1 / (float) (i + 2);
-            inImag[i] = 1 / (float) (i + 2);
+            inReal.set(i, 1 / (float) (i + 2));
+            inImag.set(i, 1 / (float) (i + 2));
         }
 
         TaskGraph taskGraph = new TaskGraph("s0") //

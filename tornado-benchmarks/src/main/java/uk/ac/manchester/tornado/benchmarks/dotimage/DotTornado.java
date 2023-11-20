@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,19 +17,18 @@
  */
 package uk.ac.manchester.tornado.benchmarks.dotimage;
 
-import static uk.ac.manchester.tornado.api.collections.types.FloatOps.findMaxULP;
+import static uk.ac.manchester.tornado.api.types.utils.FloatOps.findMaxULP;
 
 import java.util.Random;
-import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.collections.types.Float3;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
@@ -38,7 +37,7 @@ import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner dotimage
+ * tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner dotimage
  * </code>
  */
 public class DotTornado extends BenchmarkDriver {
@@ -65,12 +64,8 @@ public class DotTornado extends BenchmarkDriver {
         Random r = new Random();
         for (int i = 0; i < numElementsX; i++) {
             for (int j = 0; j < numElementsY; j++) {
-                float[] ra = new float[3];
-                IntStream.range(0, ra.length).forEach(x -> ra[x] = r.nextFloat());
-                float[] rb = new float[3];
-                IntStream.range(0, rb.length).forEach(x -> rb[x] = r.nextFloat());
-                a.set(i, j, new Float3(ra));
-                b.set(i, j, new Float3(rb));
+                a.set(i, j, new Float3(r.nextFloat(), r.nextFloat(), r.nextFloat()));
+                b.set(i, j, new Float3(r.nextFloat(), r.nextFloat(), r.nextFloat()));
             }
         }
         taskGraph = new TaskGraph("benchmark") //

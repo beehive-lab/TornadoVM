@@ -31,7 +31,8 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.types.Matrix2DInt;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DInt;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.arrays.TestArrays;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -51,14 +52,14 @@ public class TestGrid extends TornadoTestBase {
 
     final int NUM_ELEMENTS = 4096;
 
-    private static void matrixMultiplication(final float[] A, final float[] B, final float[] C, final int size) {
+    private static void matrixMultiplication(final FloatArray A, final FloatArray B, final FloatArray C, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
             for (@Parallel int j = 0; j < size; j++) {
                 float sum = 0.0f;
                 for (int k = 0; k < size; k++) {
-                    sum += A[(i * size) + k] * B[(k * size) + j];
+                    sum += A.get((i * size) + k) * B.get((k * size) + j);
                 }
-                C[(i * size) + j] = sum;
+                C.set((i * size) + j, sum);
             }
         }
     }
@@ -95,13 +96,13 @@ public class TestGrid extends TornadoTestBase {
 
     @Test
     public void testDynamicGrid01() {
-        float[] a = new float[NUM_ELEMENTS];
-        float[] b = new float[NUM_ELEMENTS];
-        float[] c = new float[NUM_ELEMENTS];
+        FloatArray a = new FloatArray(NUM_ELEMENTS);
+        FloatArray b = new FloatArray(NUM_ELEMENTS);
+        FloatArray c = new FloatArray(NUM_ELEMENTS);
 
         IntStream.range(0, NUM_ELEMENTS).sequential().forEach(i -> {
-            a[i] = (float) Math.random();
-            b[i] = (float) Math.random();
+            a.set(i, (float) Math.random());
+            b.set(i, (float) Math.random());
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -123,21 +124,21 @@ public class TestGrid extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < 512; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.01f);
+            assertEquals(a.get(i) + b.get(i), c.get(i), 0.01f);
         }
     }
 
     @Test
     public void testDynamicGrid02() {
         final int numElements = 256;
-        float[] a = new float[numElements * numElements];
-        float[] b = new float[numElements * numElements];
-        float[] c = new float[numElements * numElements];
-        float[] seq = new float[numElements * numElements];
+        FloatArray a = new FloatArray(numElements * numElements);
+        FloatArray b = new FloatArray(numElements * numElements);
+        FloatArray c = new FloatArray(numElements * numElements);
+        FloatArray seq = new FloatArray(numElements * numElements);
 
         IntStream.range(0, numElements).sequential().forEach(i -> {
-            a[i] = (float) Math.random();
-            b[i] = (float) Math.random();
+            a.set(i, (float) Math.random());
+            b.set(i, (float) Math.random());
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -159,7 +160,7 @@ public class TestGrid extends TornadoTestBase {
 
         for (int i = 0; i < numElements; i++) {
             for (int j = 0; j < numElements; j++) {
-                assertEquals(seq[i * numElements + j], c[i * numElements + j], 0.1f);
+                assertEquals(seq.get(i * numElements + j), c.get(i * numElements + j), 0.1f);
             }
 
         }
@@ -176,13 +177,13 @@ public class TestGrid extends TornadoTestBase {
      */
     @Test
     public void testDynamicGrid04() {
-        float[] a = new float[NUM_ELEMENTS];
-        float[] b = new float[NUM_ELEMENTS];
-        float[] c = new float[NUM_ELEMENTS];
+        FloatArray a = new FloatArray(NUM_ELEMENTS);
+        FloatArray b = new FloatArray(NUM_ELEMENTS);
+        FloatArray c = new FloatArray(NUM_ELEMENTS);
 
         IntStream.range(0, NUM_ELEMENTS).sequential().forEach(i -> {
-            a[i] = (float) Math.random();
-            b[i] = (float) Math.random();
+            a.set(i, (float) Math.random());
+            b.set(i, (float) Math.random());
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -205,7 +206,7 @@ public class TestGrid extends TornadoTestBase {
         executor.execute();
 
         for (int i = 0; i < 512; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.01f);
+            assertEquals(a.get(i) + b.get(i), c.get(i), 0.01f);
         }
     }
 
@@ -213,13 +214,13 @@ public class TestGrid extends TornadoTestBase {
     public void testOutOfRangeDimensions() {
         int N = 512;
 
-        float[] matrixA = new float[N * N];
-        float[] matrixB = new float[N * N];
-        float[] matrixC = new float[N * N];
+        FloatArray matrixA = new FloatArray(N * N);
+        FloatArray matrixB = new FloatArray(N * N);
+        FloatArray matrixC = new FloatArray(N * N);
 
         IntStream.range(0, N * N).parallel().forEach(idx -> {
-            matrixA[idx] = 2.5f;
-            matrixB[idx] = 3.5f;
+            matrixA.set(idx, 2.5f);
+            matrixB.set(idx, 3.5f);
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //

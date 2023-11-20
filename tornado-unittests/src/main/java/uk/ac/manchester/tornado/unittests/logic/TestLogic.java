@@ -28,6 +28,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -42,27 +43,27 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 public class TestLogic extends TornadoTestBase {
     // CHECKSTYLE:OFF
 
-    public static void logic01(int[] data, int[] output) {
-        for (@Parallel int i = 0; i < data.length; i++) {
-            output[i] = data[i] & data[i] - 1;
+    public static void logic01(IntArray data, IntArray output) {
+        for (@Parallel int i = 0; i < data.getSize(); i++) {
+            output.set(i, data.get(i) & data.get(i) - 1);
         }
     }
 
-    public static void logic02(int[] data, int[] output) {
-        for (@Parallel int i = 0; i < data.length; i++) {
-            output[i] = data[i] | data[i] - 1;
+    public static void logic02(IntArray data, IntArray output) {
+        for (@Parallel int i = 0; i < data.getSize(); i++) {
+            output.set(i, data.get(i) | data.get(i) - 1);
         }
     }
 
-    public static void logic03(int[] data, int[] output) {
-        for (@Parallel int i = 0; i < data.length; i++) {
-            output[i] = data[i] ^ data[i] - 1;
+    public static void logic03(IntArray data, IntArray output) {
+        for (@Parallel int i = 0; i < data.getSize(); i++) {
+            output.set(i, data.get(i) ^ data.get(i) - 1);
         }
     }
 
-    public static void logic04(int[] data, int[] output) {
-        for (@Parallel int i = 0; i < data.length; i++) {
-            int value = data[i];
+    public static void logic04(IntArray data, IntArray output) {
+        for (@Parallel int i = 0; i < data.getSize(); i++) {
+            int value = data.get(i);
             if ((value & (value - 1)) != 0) {
 
                 int condition = (value & (value - 1));
@@ -71,18 +72,18 @@ public class TestLogic extends TornadoTestBase {
                     condition = (value & (value - 1));
                 }
             }
-            output[i] = value;
+            output.set(i, value);
         }
     }
 
     @Test
     public void testLogic01() {
         final int N = 1024;
-        int[] data = new int[N];
-        int[] output = new int[N];
-        int[] sequential = new int[N];
+        IntArray data = new IntArray(N);
+        IntArray output = new IntArray(N);
+        IntArray sequential = new IntArray(N);
 
-        IntStream.range(0, data.length).sequential().forEach(i -> data[i] = i);
+        IntStream.range(0, data.getSize()).sequential().forEach(i -> data.set(i, i));
 
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
@@ -95,8 +96,8 @@ public class TestLogic extends TornadoTestBase {
 
         logic01(data, sequential);
 
-        for (int i = 0; i < data.length; i++) {
-            assertEquals(sequential[i], output[i]);
+        for (int i = 0; i < data.getSize(); i++) {
+            assertEquals(sequential.get(i), output.get(i));
         }
 
     }
@@ -104,11 +105,11 @@ public class TestLogic extends TornadoTestBase {
     @Test
     public void testLogic02() {
         final int N = 1024;
-        int[] data = new int[N];
-        int[] output = new int[N];
-        int[] sequential = new int[N];
+        IntArray data = new IntArray(N);
+        IntArray output = new IntArray(N);
+        IntArray sequential = new IntArray(N);
 
-        IntStream.range(0, data.length).sequential().forEach(i -> data[i] = i);
+        IntStream.range(0, data.getSize()).sequential().forEach(i -> data.set(i, i));
 
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
@@ -121,19 +122,19 @@ public class TestLogic extends TornadoTestBase {
 
         logic02(data, sequential);
 
-        for (int i = 0; i < data.length; i++) {
-            assertEquals(sequential[i], output[i]);
+        for (int i = 0; i < data.getSize(); i++) {
+            assertEquals(sequential.get(i), output.get(i));
         }
     }
 
     @Test
     public void testLogic03() {
         final int N = 1024;
-        int[] data = new int[N];
-        int[] output = new int[N];
-        int[] sequential = new int[N];
+        IntArray data = new IntArray(N);
+        IntArray output = new IntArray(N);
+        IntArray sequential = new IntArray(N);
 
-        IntStream.range(0, data.length).sequential().forEach(i -> data[i] = i);
+        IntStream.range(0, data.getSize()).sequential().forEach(i -> data.set(i, i));
 
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
@@ -146,19 +147,19 @@ public class TestLogic extends TornadoTestBase {
 
         logic03(data, sequential);
 
-        for (int i = 0; i < data.length; i++) {
-            assertEquals(sequential[i], output[i]);
+        for (int i = 0; i < data.getSize(); i++) {
+            assertEquals(sequential.get(i), output.get(i));
         }
     }
 
     @Ignore
     public void testLogic04() {
         final int N = 1024;
-        int[] data = new int[N];
-        int[] output = new int[N];
-        int[] sequential = new int[N];
+        IntArray data = new IntArray(N);
+        IntArray output = new IntArray(N);
+        IntArray sequential = new IntArray(N);
 
-        IntStream.range(0, data.length).sequential().forEach(i -> data[i] = i);
+        IntStream.range(0, data.getSize()).sequential().forEach(i -> data.set(i, i));
 
         TaskGraph taskGraph = new TaskGraph("taskGraph") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, data) //
@@ -171,8 +172,8 @@ public class TestLogic extends TornadoTestBase {
 
         logic04(data, sequential);
 
-        for (int i = 0; i < data.length; i++) {
-            assertEquals(sequential[i], output[i]);
+        for (int i = 0; i < data.getSize(); i++) {
+            assertEquals(sequential.get(i), output.get(i));
         }
     }
     // CHECKSTYLE:ON

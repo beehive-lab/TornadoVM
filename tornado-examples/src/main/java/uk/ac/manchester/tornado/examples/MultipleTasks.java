@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,6 +25,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
@@ -32,7 +33,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  * Run with.
  * </p>
  * <code>
- *      tornado -m tornado.examples/uk.ac.manchester.tornado.examples.MultipleTasks
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.MultipleTasks
  * </code>
  *
  */
@@ -40,15 +41,15 @@ public class MultipleTasks {
 
     private static final int MAX_ITERATIONS = 100;
 
-    private static void foo(float[] x, float[] y) {
-        for (@Parallel int i = 0; i < y.length; i++) {
-            y[i] = x[i] + 100;
+    private static void foo(FloatArray x, FloatArray y) {
+        for (@Parallel int i = 0; i < y.getSize(); i++) {
+            y.set(i, x.get(i) + 100);
         }
     }
 
-    private static void bar(float[] y) {
-        for (@Parallel int i = 0; i < y.length; i++) {
-            y[i] = y[i] + 200;
+    private static void bar(FloatArray y) {
+        for (@Parallel int i = 0; i < y.getSize(); i++) {
+            y.set(i, y.get(i) + 200);
         }
     }
 
@@ -60,11 +61,11 @@ public class MultipleTasks {
             numElements = Integer.parseInt(args[0]);
         }
 
-        final float[] x = new float[numElements];
-        final float[] y = new float[numElements];
+        final FloatArray x = new FloatArray(numElements);
+        final FloatArray y = new FloatArray(numElements);
 
         Random r = new Random();
-        IntStream.range(0, numElements).parallel().forEach(i -> x[i] = r.nextFloat());
+        IntStream.range(0, numElements).parallel().forEach(i -> x.set(i, r.nextFloat()));
 
         TaskGraph taskGraph = new TaskGraph("example") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //

@@ -25,9 +25,6 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -43,6 +40,9 @@ import uk.ac.manchester.tornado.runtime.common.KernelArgs;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
+
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class JVMMapping implements TornadoAcceleratorDevice {
 

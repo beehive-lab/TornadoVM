@@ -27,6 +27,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -51,27 +52,27 @@ public class TestConcurrentBackends extends TornadoTestBase {
 
     private static final int NUM_ELEMENTS = 8192;
 
-    private static int[] a;
-    private static int[] b;
-    private static int[] c;
-    private static int[] d;
-    private static int[] e;
+    private static IntArray a;
+    private static IntArray b;
+    private static IntArray c;
+    private static IntArray d;
+    private static IntArray e;
 
     @BeforeClass
     public static void setUp() {
         setDefaultDevices();
 
-        a = new int[NUM_ELEMENTS];
-        b = new int[NUM_ELEMENTS];
-        c = new int[NUM_ELEMENTS];
-        d = new int[NUM_ELEMENTS];
-        e = new int[NUM_ELEMENTS];
+        a = new IntArray(NUM_ELEMENTS);
+        b = new IntArray(NUM_ELEMENTS);
+        c = new IntArray(NUM_ELEMENTS);
+        d = new IntArray(NUM_ELEMENTS);
+        e = new IntArray(NUM_ELEMENTS);
 
         IntStream.range(0, NUM_ELEMENTS).forEach(i -> {
-            a[i] = 30 + i;
-            b[i] = 1 + i;
-            c[i] = 120 + i;
-            e[i] = i;
+            a.set(i, 30 + i);
+            b.set(i, 1 + i);
+            c.set(i, 120 + i);
+            e.set(i, i);
         });
     }
 
@@ -103,9 +104,9 @@ public class TestConcurrentBackends extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < a.length; i++) {
-            assertEquals((30L + i) * i, a[i]);
-            assertEquals(i, b[i]);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals((30L + i) * i, a.get(i));
+            assertEquals(i, b.get(i));
         }
     }
 
@@ -125,9 +126,9 @@ public class TestConcurrentBackends extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < a.length; i++) {
-            assertEquals((30L + i) * i, a[i]);
-            assertEquals(i, b[i]);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals((30L + i) * i, a.get(i));
+            assertEquals(i, b.get(i));
         }
     }
 
@@ -148,10 +149,10 @@ public class TestConcurrentBackends extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < a.length; i++) {
-            assertEquals((30L + i) * i, a[i]);
-            assertEquals(i, b[i]);
-            assertEquals(12L * c[i] + e[i], d[i]);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals((30L + i) * i, a.get(i));
+            assertEquals(i, b.get(i));
+            assertEquals(12L * c.get(i) + e.get(i), d.get(i));
         }
     }
 
@@ -170,10 +171,10 @@ public class TestConcurrentBackends extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < a.length; i++) {
-            assertEquals((30L + i) * i, a[i]);
-            assertEquals(i, b[i]);
-            assertEquals(12L * c[i] + e[i], d[i]);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals((30L + i) * i, a.get(i));
+            assertEquals(i, b.get(i));
+            assertEquals(12L * c.get(i) + e.get(i), d.get(i));
         }
     }
 

@@ -84,7 +84,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
  * Method:    clEnqueueMapBuffer2
  * Signature: (JJZIJJ[J)Luk/ac/manchester/tornado/drivers/opencl/OCLCommandQueue/OCLMapResult;
- */
+*/
 JNIEXPORT jobject JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clEnqueueMapBuffer2
         (JNIEnv *, jclass, jlong, jlong, jboolean, jint, jlong, jlong, jlongArray);
 
@@ -155,6 +155,14 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
+ * Method:    writeArrayToDevice
+ * Signature: (JJJZJJJ[J)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_writeArrayToDevice__JJJZJJJ_3J
+        (JNIEnv *, jclass, jlong, jlong, jlong, jboolean, jlong, jlong, jlong, jlongArray);
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
  * Method:    readArrayFromDevice
  * Signature: (J[BJZJJJ[J)J
  */
@@ -209,6 +217,14 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_readArrayFromDevice__J_3DJZJJJ_3J
         (JNIEnv *, jclass, jlong, jdoubleArray, jlong, jboolean, jlong, jlong, jlong, jlongArray);
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
+ * Method:    readArrayFromDeviceOffHeap
+ * Signature: (JJJZJJJ[J)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_readArrayFromDeviceOffHeap__JJJZJJJ_3J
+        (JNIEnv *, jclass, jlong, jlong, jlong, jboolean, jlong, jlong, jlong, jlongArray);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue

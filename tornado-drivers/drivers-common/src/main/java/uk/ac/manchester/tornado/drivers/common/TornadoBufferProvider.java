@@ -22,15 +22,15 @@
  */
 package uk.ac.manchester.tornado.drivers.common;
 
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
-
-import java.util.ArrayList;
-
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+
+import java.util.ArrayList;
+
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
 
 /**
  * This class implements a cache of allocated buffers on the device and also
@@ -56,6 +56,8 @@ public abstract class TornadoBufferProvider {
         // Instead, use a flag similar to -Xmx.
         currentMemoryAvailable = TornadoOptions.DEVICE_AVAILABLE_MEMORY;
     }
+
+
 
     protected abstract long allocateBuffer(long size);
 

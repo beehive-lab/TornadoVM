@@ -1,14 +1,14 @@
-#pragma OPENCL EXTENSION cl_khr_fp64 : enable  
+#pragma OPENCL EXTENSION cl_khr_fp64 : enable
 __kernel void add(__global long *_kernel_context,
-                  __constant uchar *_constant_region, 
+                  __constant uchar *_constant_region,
                   __local uchar *_local_region,
                   __global int* atomics,
                   __global uchar *a,
                   __global uchar *b
                  )
 {
-  ulong ul_8, ul_10, ul_1, ul_0, ul_2, ul_12; 
-  long l_5, l_7, l_6; 
+  ulong ul_8, ul_10, ul_1, ul_0, ul_2, ul_12;
+  long l_5, l_7, l_6;
   int i_11, i_9, i_15, i_14, i_13, i_3, i_4;
 
   int ul_atomic = _kernel_context[0];

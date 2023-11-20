@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2021-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2023, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -45,7 +45,13 @@ import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import uk.ac.manchester.tornado.api.type.annotations.Vector;
+import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
+import uk.ac.manchester.tornado.api.internal.annotations.Vector;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.GetArrayNode;
@@ -59,13 +65,14 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorStoreElem
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorStoreGlobalMemory;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.VectorSubNode;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.graal.nodes.PanamaPrivateMemoryNode;
 
 public class SPIRVVectorPlugins {
 
-    public static void registerPlugins(final Plugins ps, final InvocationPlugins plugins) {
+    public static void registerPlugins(final Plugins plugins, final InvocationPlugins invocationPlugins) {
 
         if (Tornado.ENABLE_VECTORS) {
-            ps.appendNodePlugin(new NodePlugin() {
+            plugins.appendNodePlugin(new NodePlugin() {
                 @Override
                 public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
                     SPIRVKind vectorKind = SPIRVKind.fromResolvedJavaTypeToVectorKind(method.getDeclaringClass());
@@ -91,39 +98,64 @@ public class SPIRVVectorPlugins {
             });
 
             // Byte
-            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR3_INT_8, byte[].class, byte.class);
-            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR4_INT_8, byte[].class, byte.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR3_INT_8, ByteArray.class, byte.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR4_INT_8, ByteArray.class, byte.class);
 
             // Floats
-            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR2_FLOAT_32, float[].class, float.class);
-            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR3_FLOAT_32, float[].class, float.class);
-            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR4_FLOAT_32, float[].class, float.class);
-            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR8_FLOAT_32, float[].class, float.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR2_FLOAT_32, FloatArray.class, float.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR3_FLOAT_32, FloatArray.class, float.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR4_FLOAT_32, FloatArray.class, float.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR8_FLOAT_32, FloatArray.class, float.class);
 
             // Adding ints
-            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR2_INT_32, int[].class, int.class);
-            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR3_INT_32, int[].class, int.class);
-            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR4_INT_32, int[].class, int.class);
-            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR8_INT_32, int[].class, int.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR2_INT_32, IntArray.class, int.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR3_INT_32, IntArray.class, int.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR4_INT_32, IntArray.class, int.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR8_INT_32, IntArray.class, int.class);
 
             // Short
-            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR2_INT_16, short[].class, short.class);
-            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR3_INT_16, short[].class, short.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR2_INT_16, ShortArray.class, short.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR3_INT_16, ShortArray.class, short.class);
 
             // Doubles
-            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR2_FLOAT_64, double[].class, double.class);
-            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR3_FLOAT_64, double[].class, double.class);
-            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR4_FLOAT_64, double[].class, double.class);
-            registerVectorPlugins(plugins, SPIRVKind.OP_TYPE_VECTOR8_FLOAT_64, double[].class, double.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR2_FLOAT_64, DoubleArray.class, double.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR3_FLOAT_64, DoubleArray.class, double.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR4_FLOAT_64, DoubleArray.class, double.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR8_FLOAT_64, DoubleArray.class, double.class);
         }
     }
 
-    private static void registerVectorPlugins(final InvocationPlugins plugins, final SPIRVKind spirvVectorKind, final Class<?> storageType, final Class<?> elementType) {
+    private static Class<?> resolveJavaClass(String panamaType) throws TornadoCompilationException {
+        if (panamaType.contains("IntArray")) {
+            return int.class;
+        } else if (panamaType.contains("DoubleArray")) {
+            return double.class;
+        } else if (panamaType.contains("FloatArray")) {
+            return float.class;
+        } else {
+            throw new TornadoCompilationException("Private vectors that use " + panamaType + " for storage are not currently supported.");
+        }
+    }
+
+    private static void registerVectorPlugins(final Plugins ps, final InvocationPlugins plugins, final SPIRVKind spirvVectorKind, final Class<?> storageType, final Class<?> elementType) {
 
         final Class<?> declaringClass = spirvVectorKind.getJavaClass();
         final JavaKind javaElementKind = spirvVectorKind.getElementKind().asJavaKind();
 
         final Registration r = new Registration(plugins, declaringClass);
+
+        ps.appendNodePlugin(new NodePlugin() {
+            @Override
+            public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
+                if (method.getName().equals("<init>") && (method.toString().contains("FloatArray.<init>(int)") || method.toString().contains("DoubleArray.<init>(int)") || method.toString().contains(
+                        "IntArray.<init>(int)"))) {
+                    Class<?> javaType = resolveJavaClass(method.toString());
+                    b.append(new PanamaPrivateMemoryNode(b.getMetaAccess().lookupJavaType(javaType), args[1]));
+                    return true;
+                }
+                return false;
+            }
+        });
 
         r.register(new InvocationPlugin("get", Receiver.class, int.class) {
             @Override
@@ -251,12 +283,11 @@ public class SPIRVVectorPlugins {
      * to the parameter node.
      *
      * @param plugins
-     *            {@link Plugins}
+     *     {@link Plugins}
      */
     public static void registerParameterPlugins(Plugins plugins) {
         plugins.appendParameterPlugin((GraphBuilderTool tool, int index, StampPair stampPair) -> {
-            if (stampPair.getTrustedStamp() instanceof ObjectStamp) {
-                ObjectStamp objectStamp = (ObjectStamp) stampPair.getTrustedStamp();
+            if (stampPair.getTrustedStamp() instanceof ObjectStamp objectStamp) {
                 if (objectStamp.type().getAnnotation(Vector.class) != null) {
                     SPIRVKind kind = SPIRVKind.fromResolvedJavaTypeToVectorKind(objectStamp.type());
                     return new ParameterNode(index, StampPair.createSingle(SPIRVStampFactory.getStampFor(kind)));

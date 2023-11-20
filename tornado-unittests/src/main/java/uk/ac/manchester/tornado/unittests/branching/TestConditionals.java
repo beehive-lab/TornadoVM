@@ -18,175 +18,173 @@
 
 package uk.ac.manchester.tornado.unittests.branching;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-
-import java.util.Arrays;
-import java.util.stream.IntStream;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * How to test?
  *
  * <code>
- *     tornado-test -V --fast uk.ac.manchester.tornado.unittests.branching.TestConditionals
+ * tornado-test -V --fast uk.ac.manchester.tornado.unittests.branching.TestConditionals
  * </code>
  */
 public class TestConditionals extends TornadoTestBase {
 
-    public static void ifStatement(int[] a) {
-        if (a[0] > 1) {
-            a[0] = 10;
+    public static void ifStatement(IntArray a) {
+        if (a.get(0) > 1) {
+            a.set(0, 10);
         }
     }
 
-    public static void ifElseStatement(int[] a) {
-        if (a[0] == 1) {
-            a[0] = 5;
+    public static void ifElseStatement(IntArray a) {
+        if (a.get(0) == 1) {
+            a.set(0, 5);
         } else {
-            a[0] = 10;
+            a.set(0, 10);
         }
     }
 
-    public static void nestedIfElseStatement(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            if (a[i] > 100) {
-                if (a[i] > 200) {
-                    a[i] = 5;
+    public static void nestedIfElseStatement(IntArray a) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            if (a.get(i) > 100) {
+                if (a.get(i) > 200) {
+                    a.set(i, 5);
                 } else {
-                    a[i] = 10;
+                    a.set(i, 10);
                 }
-                a[i] += 20;
+                a.set(i, a.get(i) + 20);
             } else {
-                a[i] = 2;
+                a.set(i, 2);
             }
         }
     }
 
-    public static void switchStatement(int[] a) {
-        int value = a[0];
+    public static void switchStatement(IntArray a) {
+        int value = a.get(0);
         switch (value) {
             case 10:
-                a[0] = 5;
+                a.set(0, 5);
                 break;
             case 20:
-                a[0] = 10;
+                a.set(0, 10);
                 break;
             default:
-                a[0] = 20;
+                a.set(0, 20);
         }
     }
 
-    public static void switchStatement2(int[] a) {
-        int value = a[0];
+    public static void switchStatement2(IntArray a) {
+        int value = a.get(0);
         switch (value) {
             case 10:
-                a[0] = 5;
+                a.set(0, 5);
                 break;
             case 20:
-                a[0] = 10;
+                a.set(0, 10);
                 break;
         }
     }
 
-    public static void switchStatement3(int[] a) {
-        for (int i = 0; i < a.length; i++) {
-            int value = a[i];
+    public static void switchStatement3(IntArray a) {
+        for (int i = 0; i < a.getSize(); i++) {
+            int value = a.get(i);
             switch (value) {
                 case 10:
-                    a[i] = 5;
+                    a.set(i, 5);
                     break;
                 case 20:
-                    a[i] = 10;
+                    a.set(i, 10);
                     break;
             }
         }
     }
 
-    public static void switchStatement4(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            int value = a[i];
+    public static void switchStatement4(IntArray a) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            int value = a.get(i);
             switch (value) {
                 case 10:
-                    a[i] = 5;
+                    a.set(i, 5);
                     break;
                 case 20:
-                    a[i] = 10;
+                    a.set(i, 10);
                     break;
             }
         }
     }
 
-    public static void switchStatement5(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            int value = a[i];
+    public static void switchStatement5(IntArray a) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            int value = a.get(i);
             switch (value) {
                 case 12:
-                    a[i] = 5;
+                    a.set(i, 5);
                     break;
                 case 22:
-                    a[i] = 10;
+                    a.set(i, 10);
                     break;
                 case 42:
-                    a[i] = 30;
+                    a.set(i, 30);
                     break;
             }
-            a[i] *= 2;
+            a.set(i, a.get(i) * 2);
         }
     }
 
-    public static void switchStatement6(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            int value = a[i];
+    public static void switchStatement6(IntArray a) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            int value = a.get(i);
             switch (value) {
                 case 12:
                 case 22:
-                    a[i] = 10;
+                    a.set(i, 10);
                     break;
                 case 42:
-                    a[i] = 30;
+                    a.set(i, 30);
                     break;
             }
         }
     }
 
-    public static void ternaryCondition(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = (a[i] == 20) ? 10 : 5;
+    public static void ternaryCondition(IntArray a) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            a.set(i, (a.get(i) == 20) ? 10 : 5);
         }
     }
 
-    public static void ternaryComplexCondition(int[] a, int[] b) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            for (int x = 0; x < a.length; x++) {
-                if (i == a.length) {
-                    a[x] = (a[x] == 20) ? a[x] + b[x] : 5;
+    public static void ternaryComplexCondition(IntArray a, IntArray b) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            for (int x = 0; x < a.getSize(); x++) {
+                if (i == a.getSize()) {
+                    a.set(x, (a.get(x) == 20) ? a.get(x) + b.get(x) : 5);
                 }
             }
         }
     }
 
-    public static void ternaryComplexCondition2(int[] a, int[] b) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = (a[i] == 20) ? a[i] + b[i] : 5;
+    public static void ternaryComplexCondition2(IntArray a, IntArray b) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            a.set(i, (a.get(i) == 20) ? a.get(i) + b.get(i) : 5);
         }
     }
 
-    public static void integerTestMove(int[] output, int dimensionSize) {
+    public static void integerTestMove(IntArray output, int dimensionSize) {
         for (@Parallel int i = 0; i < dimensionSize; i++) {
             for (@Parallel int j = 0; j < dimensionSize; j++) {
                 if ((i % 2 == 0) & (j % 2 == 0)) {
-                    output[i + j * dimensionSize] = 10;
+                    output.set(i + j * dimensionSize, 10);
                 } else {
-                    output[i + j * dimensionSize] = -1;
+                    output.set(i + j * dimensionSize, -1);
                 }
             }
         }
@@ -195,8 +193,8 @@ public class TestConditionals extends TornadoTestBase {
     @Test
     public void testIfStatement() {
         final int size = 10;
-        int[] a = new int[size];
-        Arrays.fill(a, 5);
+        IntArray a = new IntArray(size);
+        a.init(5);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -207,14 +205,14 @@ public class TestConditionals extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        assertEquals(10, a[0]);
+        assertEquals(10, a.get(0));
     }
 
     @Test
     public void testIfElseStatement() {
         final int size = 10;
-        int[] a = new int[size];
-        Arrays.fill(a, 5);
+        IntArray a = new IntArray(size);
+        a.init(5);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -225,18 +223,18 @@ public class TestConditionals extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        assertEquals(10, a[0]);
+        assertEquals(10, a.get(0));
     }
 
     @Test
     public void testNestedIfElseStatement() {
         final int size = 128;
-        int[] a = new int[size];
-        int[] serial = new int[size];
+        IntArray a = new IntArray(size);
+        IntArray serial = new IntArray(size);
 
         IntStream.range(0, size).forEach(i -> {
-            a[i] = 50;
-            serial[i] = a[i];
+            a.set(i, 50);
+            serial.set(i, a.get(i));
         });
 
         nestedIfElseStatement(serial);
@@ -250,16 +248,19 @@ public class TestConditionals extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        assertArrayEquals(serial, a);
+        for (int i = 0; i < size; i++) {
+            assertEquals(serial.get(i), a.get(i));
+        }
+        //  assertArrayEquals(serial, a);
     }
 
     @Test
     public void testSwitch() {
 
         final int size = 10;
-        int[] a = new int[size];
+        IntArray a = new IntArray(size);
 
-        Arrays.fill(a, 20);
+        a.init(20);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -269,16 +270,16 @@ public class TestConditionals extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        assertEquals(10, a[0]);
+        assertEquals(10, a.get(0));
     }
 
     @Test
     public void testSwitchDefault() {
 
         final int size = 10;
-        int[] a = new int[size];
+        IntArray a = new IntArray(size);
 
-        Arrays.fill(a, 23);
+        a.init(23);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -288,16 +289,16 @@ public class TestConditionals extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        assertEquals(20, a[0]);
+        assertEquals(20, a.get(0));
     }
 
     @Test
     public void testSwitch2() {
 
         final int size = 10;
-        int[] a = new int[size];
+        IntArray a = new IntArray(size);
 
-        Arrays.fill(a, 20);
+        a.init(20);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -307,16 +308,16 @@ public class TestConditionals extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        assertEquals(10, a[0]);
+        assertEquals(10, a.get(0));
     }
 
     @Test
     public void testSwitch3() {
 
         final int size = 10;
-        int[] a = new int[size];
+        IntArray a = new IntArray(size);
 
-        Arrays.fill(a, 20);
+        a.init(20);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -327,8 +328,8 @@ public class TestConditionals extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int value : a) {
-            assertEquals(10, value);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(10, a.get(i));
         }
     }
 
@@ -336,9 +337,9 @@ public class TestConditionals extends TornadoTestBase {
     public void testSwitch4() {
 
         final int size = 10;
-        int[] a = new int[size];
+        IntArray a = new IntArray(size);
 
-        Arrays.fill(a, 20);
+        a.init(20);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -349,17 +350,17 @@ public class TestConditionals extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int value : a) {
-            assertEquals(10, value);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(10, a.get(i));
         }
     }
 
     @Test
     public void testSwitch5() {
         final int size = 10;
-        int[] a = new int[size];
+        IntArray a = new IntArray(size);
 
-        Arrays.fill(a, 12);
+        a.init(12);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -370,8 +371,8 @@ public class TestConditionals extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int value : a) {
-            assertEquals(10, value);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(10, a.get(i));
         }
     }
 
@@ -379,9 +380,9 @@ public class TestConditionals extends TornadoTestBase {
     public void testTernaryCondition() {
 
         final int size = 10;
-        int[] a = new int[size];
+        IntArray a = new IntArray(size);
 
-        Arrays.fill(a, 20);
+        a.init(20);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -392,8 +393,8 @@ public class TestConditionals extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int value : a) {
-            assertEquals(10, value);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(10, a.get(i));
         }
     }
 
@@ -401,11 +402,11 @@ public class TestConditionals extends TornadoTestBase {
     public void testComplexTernaryCondition() {
 
         final int size = 8192;
-        int[] a = new int[size];
-        int[] b = new int[size];
+        IntArray a = new IntArray(size);
+        IntArray b = new IntArray(size);
 
-        Arrays.fill(a, 20);
-        Arrays.fill(b, 30);
+        a.init(20);
+        b.init(30);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -415,19 +416,19 @@ public class TestConditionals extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int value : a) {
-            assertEquals(20, value);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(20, a.get(i));
         }
     }
 
     @Test
     public void testComplexTernaryCondition2() {
         final int size = 8192;
-        int[] a = new int[size];
-        int[] b = new int[size];
+        IntArray a = new IntArray(size);
+        IntArray b = new IntArray(size);
 
-        Arrays.fill(a, 20);
-        Arrays.fill(b, 30);
+        a.init(20);
+        b.init(30);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -438,17 +439,17 @@ public class TestConditionals extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int value : a) {
-            assertEquals(50, value);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(50, a.get(i));
         }
     }
 
     @Test
     public void testSwitch6() {
         final int size = 8192;
-        int[] a = new int[size];
+        IntArray a = new IntArray(size);
 
-        Arrays.fill(a, 42);
+        a.init(42);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -458,17 +459,17 @@ public class TestConditionals extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int value : a) {
-            assertEquals(30, value);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(30, a.get(i));
         }
     }
 
     @Test
     public void testSwitch7() {
         final int size = 8192;
-        int[] a = new int[size];
+        IntArray a = new IntArray(size);
 
-        Arrays.fill(a, 12);
+        a.init(12);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -478,17 +479,17 @@ public class TestConditionals extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int value : a) {
-            assertEquals(10, value);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(10, a.get(i));
         }
     }
 
     @Test
     public void testSwitch8() {
         final int size = 8192;
-        int[] a = new int[size];
+        IntArray a = new IntArray(size);
 
-        Arrays.fill(a, 22);
+        a.init(22);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -498,19 +499,20 @@ public class TestConditionals extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int value : a) {
-            assertEquals(10, value);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(10, a.get(i));
         }
     }
 
     @Test
     public void testIntegerTestMove() {
         final int size = 1024;
-        int[] output = new int[size * size];
-        int[] sequential = new int[size * size];
 
-        IntStream.range(0, sequential.length).sequential().forEach(i -> sequential[i] = i);
-        IntStream.range(0, output.length).sequential().forEach(i -> output[i] = i);
+        IntArray output = new IntArray(size * size);
+        IntArray sequential = new IntArray(size * size);
+
+        IntStream.range(0, sequential.getSize()).sequential().forEach(i -> sequential.set(i, i));
+        IntStream.range(0, output.getSize()).sequential().forEach(i -> output.set(i, i));
 
         TaskGraph taskGraph = new TaskGraph("s0");
 
@@ -524,7 +526,7 @@ public class TestConditionals extends TornadoTestBase {
         integerTestMove(sequential, size);
 
         for (int i = 0; i < size * size; i++) {
-            assertEquals(sequential[i], output[i]);
+            assertEquals(sequential.get(i), output.get(i));
         }
     }
 }

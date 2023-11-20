@@ -18,29 +18,27 @@
 
 package uk.ac.manchester.tornado.unittests;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.util.Arrays;
-
 import org.junit.Test;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * <p>
  * How to run.
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.TestHello
+ * tornado-test -V uk.ac.manchester.tornado.unittests.TestHello
  * </code>
  */
 public class TestHello extends TornadoTestBase {
@@ -51,21 +49,27 @@ public class TestHello extends TornadoTestBase {
         }
     }
 
-    public static void add(int[] a, int[] b, int[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = a[i] + b[i];
+    public static void add(IntArray a, IntArray b, IntArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, a.get(i) + b.get(i));
         }
     }
 
-    public static void simple(int[] a, int[] b) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            b[i] = a[i] + 1;
+    public static void simple(IntArray a, IntArray b) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            b.set(i, a.get(i) + 1);
         }
     }
 
-    public static void compute(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = a[i] * 2;
+    public static void compute(IntArray a) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            a.set(i, a.get(i) * 2);
+        }
+    }
+
+    public void compute(IntArray a, IntArray b) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            b.set(i, a.get(i) * 2);
         }
     }
 
@@ -98,12 +102,12 @@ public class TestHello extends TornadoTestBase {
     @Test
     public void testVectorAddition() {
         int numElements = 16;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
 
-        Arrays.fill(a, 1);
-        Arrays.fill(b, 2);
+        a.init(1);
+        b.init(2);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
@@ -114,8 +118,8 @@ public class TestHello extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.001);
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(a.get(i) + b.get(i), c.get(i), 0.001);
         }
     }
 
@@ -123,16 +127,16 @@ public class TestHello extends TornadoTestBase {
      * How to test.
      *
      * <code>
-     *     $  tornado-test -V -J"-Dtornado.print.bytecodes=True" uk.ac.manchester.tornado.unittests.TestHello#testSimpleCompute
+     * $  tornado-test -V -J"-Dtornado.print.bytecodes=True" uk.ac.manchester.tornado.unittests.TestHello#testSimpleCompute
      * </code>
      */
     @Test
     public void testSimpleCompute() {
         int numElements = 256;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
 
-        Arrays.fill(a, 10);
+        a.init(10);
 
         TestHello t = new TestHello();
 
@@ -145,18 +149,18 @@ public class TestHello extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < b.length; i++) {
-            assertEquals(a[i] * 2, b[i]);
+        for (int i = 0; i < b.getSize(); i++) {
+            assertEquals(a.get(i) * 2, b.get(i));
         }
     }
 
     @Test
     public void testSimpleCompute2() {
         int numElements = 256;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
 
-        Arrays.fill(a, 10);
+        a.init(10);
 
         TestHello t = new TestHello();
 
@@ -169,17 +173,17 @@ public class TestHello extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < b.length; i++) {
-            assertEquals(a[i] * 2, b[i]);
+        for (int i = 0; i < b.getSize(); i++) {
+            assertEquals(a.get(i) * 2, b.get(i));
         }
     }
 
     @Test
     public void testSimpleInOut() {
         int numElements = 256;
-        int[] a = new int[numElements];
+        IntArray a = new IntArray(numElements);
 
-        Arrays.fill(a, 10);
+        a.init(10);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestHello::compute, a) //
@@ -189,8 +193,8 @@ public class TestHello extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int j : a) {
-            assertEquals(20, j);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals(20, a.get(i));
         }
     }
 

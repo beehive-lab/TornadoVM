@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -43,11 +44,11 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 public class BitSetTests extends TornadoTestBase {
 
-    public static void intersectionCount(int numWords, LongBitSet a, LongBitSet b, long[] result) {
+    public static void intersectionCount(int numWords, LongBitSet a, LongBitSet b, LongArray result) {
         final long[] aBits = a.getBits();
         final long[] bBits = b.getBits();
         for (@Parallel int i = 0; i < numWords; i++) {
-            result[i] = Long.bitCount(aBits[i] & bBits[i]);
+            result.set(i, Long.bitCount(aBits[i] & bBits[i]));
         }
     }
 
@@ -61,8 +62,8 @@ public class BitSetTests extends TornadoTestBase {
 
         final LongBitSet a = new LongBitSet(aBits, numWords * 8);
         final LongBitSet b = new LongBitSet(bBits, numWords * 8);
-        long[] result = new long[numWords];
-        long[] seq = new long[numWords];
+        LongArray result = new LongArray(numWords);
+        LongArray seq = new LongArray(numWords);
 
         for (int i = 0; i < aBits.length; i++) {
             aBits[i] = rand.nextLong();
@@ -81,7 +82,7 @@ public class BitSetTests extends TornadoTestBase {
         intersectionCount(numWords, a, b, seq);
 
         for (int i = 0; i < numWords; i++) {
-            assertEquals(seq[i], result[i], 0.1f);
+            assertEquals(seq.get(i), result.get(i), 0.1f);
         }
     }
 

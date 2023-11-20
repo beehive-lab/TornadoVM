@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -24,7 +24,7 @@
 package uk.ac.manchester.tornado.drivers.ptx;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.utils.TornadoUtilities.isBoxedPrimitive;
+import static uk.ac.manchester.tornado.api.utils.TornadoAPIUtils.isBoxedPrimitive;
 import static uk.ac.manchester.tornado.drivers.ptx.graal.PTXCodeUtil.buildKernelName;
 
 import java.nio.ByteBuffer;
@@ -58,9 +58,8 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
     private final PTXStream stream;
     private final PTXCodeCache codeCache;
     private final PTXScheduler scheduler;
-    private boolean wasReset;
-
     private final TornadoBufferProvider bufferProvider;
+    private boolean wasReset;
 
     public PTXDeviceContext(PTXDevice device, PTXStream stream) {
         this.device = device;
@@ -305,6 +304,11 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
     /*
      * SYNC READS
      */
+
+    public int readBuffer(long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
+        return stream.enqueueRead(address, length, hostPointer, hostOffset, waitEvents);
+    }
+
     public int readBuffer(long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
         return stream.enqueueRead(address, length, array, hostOffset, waitEvents);
     }
@@ -336,6 +340,11 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
     /*
      * ASYNC READS
      */
+
+    public int enqueueReadBuffer(long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncRead(address, length, hostPointer, hostOffset, waitEvents);
+    }
+
     public int enqueueReadBuffer(long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
         return stream.enqueueAsyncRead(address, length, array, hostOffset, waitEvents);
     }
@@ -371,6 +380,10 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
         stream.enqueueWrite(address, length, array, hostOffset, waitEvents);
     }
 
+    public void writeBuffer(long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
+        stream.enqueueWrite(address, length, hostPointer, hostOffset, waitEvents);
+    }
+
     public void writeBuffer(long address, long length, short[] array, long hostOffset, int[] waitEvents) {
         stream.enqueueWrite(address, length, array, hostOffset, waitEvents);
     }
@@ -398,6 +411,11 @@ public class PTXDeviceContext extends TornadoLogger implements TornadoDeviceCont
     /*
      * ASYNC WRITES
      */
+
+    public int enqueueWriteBuffer(long address, long length, long hostPointer, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncWrite(address, length, hostPointer, hostOffset, waitEvents);
+    }
+
     public int enqueueWriteBuffer(long address, long length, byte[] array, long hostOffset, int[] waitEvents) {
         return stream.enqueueAsyncWrite(address, length, array, hostOffset, waitEvents);
     }

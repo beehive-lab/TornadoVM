@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -40,6 +40,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Signature;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDevice;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.ptx.graal.backend.PTXBackend;
@@ -48,6 +49,9 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 
 public class PTXCodeUtil {
 
+    private static final String PACKAGE_PANAMA_TYPES = "uk_ac_manchester_tornado_api_types_";
+
+    private static final String PACKAGE_PANAMA_COLLECTION = "uk_ac_manchester_tornado_api_types_collections_";
     private static final String PTX_HEADER_FORMAT = PTXAssemblerConstants.COMPUTE_VERSION + " %s \n" + PTXAssemblerConstants.TARGET_ARCH + " %s \n" + PTXAssemblerConstants.ADDRESS_HEADER + " %s \n";
 
     /**
@@ -88,37 +92,83 @@ public class PTXCodeUtil {
         return new CallingConvention(0, returnParameter, inputParameters);
     }
 
+    /**
+     * Only need to append value. If negative value, remove the minus sign in front
+     *
+     * @param sb
+     * @param parameter
+     */
+    private static void emitSignatureForPrimitiveParameter(StringBuilder sb, Object parameter) {
+        // Only need to append value. If negative value, remove the minus sign in front
+        sb.append(parameter.toString().replace('.', '_').replaceAll("-", ""));
+    }
+
+    /**
+     * Append type and length of the array
+     *
+     * @param sb
+     * @param arg
+     * @param task
+     */
+    private static void emitSignatureForArrayParameter(StringBuilder sb, Object arg, SchedulableTask task) {
+        Class<?> argClass = arg.getClass();
+        // Need to append type and length
+        sb.append(argClass.getComponentType().getName().replace('[', '_'));
+        if (task.getBatchThreads() != 0) {
+            sb.append(task.getBatchThreads());
+        } else {
+            sb.append(Array.getLength(arg));
+        }
+    }
+
+    /**
+     * Append Type and batch size
+     *
+     * @param sb
+     * @param arg
+     * @param task
+     */
+    private static void emitSignatureForOffHeapSegments(StringBuilder sb, Object arg, SchedulableTask task) {
+        Class<?> argClass = arg.getClass();
+        if (task.getBatchThreads() != 0) {
+            sb.append(task.getBatchThreads());
+        } else {
+            sb.append(argClass.getName().replace('.', '_'));
+        }
+    }
+
+    /**
+     * Since with objects there is no way to know what will be a
+     * constant differentiate using the hashcode of the object
+     *
+     * @param sb
+     * @param arg
+     */
+    private static void emitSignatureForGenericParameter(StringBuilder sb, Object arg) {
+        Class<?> argClass = arg.getClass();
+        sb.append(argClass.getName().replace('.', '_'));
+        sb.append('_');
+        sb.append(arg.hashCode());
+    }
+
     public static String buildKernelName(String methodName, SchedulableTask task) {
         StringBuilder sb = new StringBuilder(task.getId().replaceAll("[.\\-]", "_"));
         sb.append('_').append(methodName);
 
         for (Object arg : task.getArguments()) {
-            // Object is either array or primitive
             sb.append('_');
             Class<?> argClass = arg.getClass();
             if (RuntimeUtilities.isBoxedPrimitiveClass(argClass)) {
-                // Only need to append value.
-                // If negative value, remove the minus sign in front
-                sb.append(arg.toString().replace('.', '_').replaceAll("-", ""));
+                emitSignatureForPrimitiveParameter(sb, arg);
             } else if (argClass.isArray() && RuntimeUtilities.isPrimitiveArray(argClass)) {
-                // Need to append type and length
-                sb.append(argClass.getComponentType().getName().replace('[', '_'));
-                if (task.getBatchThreads() != 0) {
-                    sb.append(task.getBatchThreads());
-                } else {
-                    sb.append(Array.getLength(arg));
-                }
+                emitSignatureForArrayParameter(sb, arg, task);
+            } else if (arg instanceof TornadoNativeArray) {
+                emitSignatureForOffHeapSegments(sb, arg, task);
             } else {
-                sb.append(argClass.getName().replace('.', '_'));
-
-                // Since with objects there is no way to know what will be a
-                // constant differentiate using the hashcode of the object
-                sb.append('_');
-                sb.append(arg.hashCode());
+                emitSignatureForGenericParameter(sb, arg);
             }
         }
-
-        return sb.toString();
+        return sb.toString().replaceAll(PACKAGE_PANAMA_TYPES, "").replaceAll(PACKAGE_PANAMA_COLLECTION, "").replaceAll("&", "").toLowerCase();
     }
 
     public static byte[] getCodeWithAttachedPTXHeader(byte[] targetCode, PTXBackend backend) {

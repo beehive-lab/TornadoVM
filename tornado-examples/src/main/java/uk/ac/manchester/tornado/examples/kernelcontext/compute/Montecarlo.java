@@ -25,6 +25,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
@@ -40,7 +41,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  */
 public class Montecarlo {
 
-    private static void computeMontecarlo(KernelContext context, float[] output, final int iterations) {
+    private static void computeMontecarlo(KernelContext context, FloatArray output, final int iterations) {
         int j = context.globalIdx;
 
         long seed = j;
@@ -58,13 +59,13 @@ public class Montecarlo {
 
         float dist = (float) Math.sqrt(x * x + y * y);
         if (dist <= 1.0f) {
-            output[j] = 1.0f;
+            output.set(j, 1.0f);
         } else {
-            output[j] = 0.0f;
+            output.set(j, 0.0f);
         }
     }
 
-    private static void computeMontecarlo(float[] output, final int iterations) {
+    private static void computeMontecarlo(FloatArray output, final int iterations) {
         for (int j = 0; j < iterations; j++) {
             long seed = j;
             // generate a pseudo random number (you do need it twice)
@@ -81,16 +82,16 @@ public class Montecarlo {
 
             float dist = (float) Math.sqrt(x * x + y * y);
             if (dist <= 1.0f) {
-                output[j] = 1.0f;
+                output.set(j, 1.0f);
             } else {
-                output[j] = 0.0f;
+                output.set(j, 0.0f);
             }
         }
     }
 
     public static void montecarlo(final int size) {
-        float[] output = new float[size];
-        float[] seq = new float[size];
+        FloatArray output = new FloatArray(size);
+        FloatArray seq = new FloatArray(size);
 
         WorkerGrid workerGrid = new WorkerGrid1D(size);
         GridScheduler gridScheduler = new GridScheduler("s0.t0", workerGrid);
@@ -115,7 +116,7 @@ public class Montecarlo {
 
         float sum = 0;
         for (int j = 0; j < size; j++) {
-            sum += output[j];
+            sum += output.get(j);
         }
         sum *= 4;
         System.out.println("Total time (Tornado)   : " + (tornadoTime));
@@ -128,7 +129,7 @@ public class Montecarlo {
 
         sum = 0;
         for (int j = 0; j < size; j++) {
-            sum += seq[j];
+            sum += seq.get(j);
         }
         sum *= 4;
 

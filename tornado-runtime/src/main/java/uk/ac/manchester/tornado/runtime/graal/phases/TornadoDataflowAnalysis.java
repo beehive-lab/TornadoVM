@@ -45,11 +45,16 @@ import org.graalvm.compiler.nodes.StartNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
+import org.graalvm.compiler.nodes.extended.JavaReadNode;
+import org.graalvm.compiler.nodes.extended.JavaWriteNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
+import org.graalvm.compiler.nodes.memory.ReadNode;
+import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
+import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.phases.BasePhase;
 
 import jdk.vm.ci.meta.Constant;
@@ -186,7 +191,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 if (((ValueNode) currentNode).stamp(NodeView.DEFAULT).javaType(metaAccess).isArray()) {
                     nodesToProcess.addAll(currentNode.usages().snapshot());
                 }
-            } else if (currentNode instanceof StoreIndexedNode || currentNode instanceof StoreAtomicIndexedNode) {
+            } else if (currentNode instanceof StoreIndexedNode || currentNode instanceof StoreAtomicIndexedNode || currentNode instanceof WriteNode || currentNode instanceof JavaWriteNode) {
                 MetaControlFlow meta = analyseControlFlowForWriting(currentNode, fatherNodeStore, isWrittenTrueCondition, isWrittenFalseCondition);
                 fatherNodeStore = meta.getFatherNodeStore();
                 isWrittenTrueCondition = meta.isWrittenTrueCondition();
@@ -195,6 +200,12 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 if (currentNode instanceof StoreIndexedNode) {
                     isWritingAllPositions = analyseWritingPositions((StoreIndexedNode) currentNode);
                 }
+            } else if (currentNode instanceof ReadNode || currentNode instanceof JavaReadNode) {
+                ValueNode readNode = (ValueNode) currentNode;
+                if (readNode.stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
+                    readNode.usages().forEach(nodesToProcess::add);
+                }
+                isRead = true;
             } else if (currentNode instanceof LoadFieldNode) {
                 LoadFieldNode loadField = (LoadFieldNode) currentNode;
                 if (loadField.stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
@@ -214,7 +225,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 // All known objects are passed by reference -> R/W (e.g., Atomics)
                 isRead = true;
                 isWritten = true;
-            } else if (currentNode instanceof PiNode || currentNode instanceof AddressNode) {
+            } else if (currentNode instanceof PiNode || currentNode instanceof AddressNode || currentNode instanceof OffsetAddressNode) {
                 currentNode.usages().forEach(nodesToProcess::add);
             }
         }

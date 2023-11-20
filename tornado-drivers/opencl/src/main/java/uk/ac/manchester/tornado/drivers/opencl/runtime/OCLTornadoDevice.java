@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -26,6 +26,7 @@
 package uk.ac.manchester.tornado.drivers.opencl.runtime;
 
 import java.io.IOException;
+import java.lang.foreign.MemorySegment;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -44,16 +45,21 @@ import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.api.memory.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.memory.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
-import uk.ac.manchester.tornado.api.type.annotations.Vector;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
+import uk.ac.manchester.tornado.api.types.arrays.CharArray;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
@@ -74,6 +80,7 @@ import uk.ac.manchester.tornado.drivers.opencl.mm.OCLDoubleArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLFloatArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLIntArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLLongArrayWrapper;
+import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemorySegmentWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMultiDimArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLObjectWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLShortArrayWrapper;
@@ -95,7 +102,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
-    private static final long OBJECT_HEADER_SIZE = 24;
+    private static final long OBJECT_HEADER_SIZE = TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
     private static OCLDriver driver = null;
     private static boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
     private static Pattern namePattern = Pattern.compile("^OpenCL (\\d)\\.(\\d).*");
@@ -110,9 +117,9 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
      * Constructor used also in SLAMBench/KFusion
      *
      * @param platformIndex
-     *            OpenCL Platform index
+     *     OpenCL Platform index
      * @param deviceIndex
-     *            OpenCL Device Index
+     *     OpenCL Device Index
      */
     public OCLTornadoDevice(final int platformIndex, final int deviceIndex) {
         this.platformIndex = platformIndex;
@@ -519,6 +526,22 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
                 result = new AtomicsBuffer(new int[] {}, deviceContext);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 result = new OCLVectorWrapper(deviceContext, object, batchSize);
+            } else if (object instanceof MemorySegment) {
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+            } else if (object instanceof IntArray) {
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+            } else if (object instanceof FloatArray) {
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+            } else if (object instanceof DoubleArray) {
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+            } else if (object instanceof LongArray) {
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+            } else if (object instanceof ShortArray) {
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+            } else if (object instanceof ByteArray) {
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+            } else if (object instanceof CharArray) {
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else {
                 result = new OCLObjectWrapper(deviceContext, object);
             }
@@ -526,12 +549,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
         TornadoInternalError.guarantee(result != null, "Unable to create buffer for object: " + type);
         return result;
-    }
-
-    private void checkBatchSize(long batchSize) {
-        if (batchSize > 0) {
-            throw new TornadoRuntimeException("[ERROR] Batch computation with non-arrays not supported yet.");
-        }
     }
 
     @Override
@@ -572,9 +589,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         }
 
         final Class<?> type = object.getClass();
-        if (!type.isArray()) {
-            checkBatchSize(batchSize);
-        }
+
         return -1;
     }
 
@@ -799,4 +814,5 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         }
         return false;
     }
+
 }

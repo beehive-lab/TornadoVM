@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,13 +17,12 @@
  */
 package uk.ac.manchester.tornado.examples;
 
-import java.util.Arrays;
-
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
@@ -31,27 +30,27 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  * How to run?
  * </p>
  * <code>
- *     tornado --enableProfiler console -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt 256
+ * tornado --enableProfiler console -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt 256
  * </code>
  */
 public class VectorAddInt {
 
-    private static void vectorAdd(int[] a, int[] b, int[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = a[i] + b[i];
+    private static void vectorAdd(IntArray a, IntArray b, IntArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, a.get(i) + b.get(i));
         }
     }
 
     public static void main(String[] args) {
         int size = Integer.parseInt(args[0]);
 
-        int[] a = new int[size];
-        int[] b = new int[size];
-        int[] c = new int[size];
-        int[] result = new int[size];
+        IntArray a = new IntArray(size);
+        IntArray b = new IntArray(size);
+        IntArray c = new IntArray(size);
+        IntArray result = new IntArray(size);
 
-        Arrays.fill(a, 10);
-        Arrays.fill(b, 20);
+        a.init(10);
+        b.init(20);
 
         TaskGraph taskGraph = new TaskGraph("s0") // T
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
@@ -71,8 +70,8 @@ public class VectorAddInt {
 
             // Check Result
             wrongResult = false;
-            for (int j : c) {
-                if (j != 30) {
+            for (int i = 0; i < c.getSize(); i++) {
+                if (c.get(i) != 30) {
                     wrongResult = true;
                     break;
                 }
