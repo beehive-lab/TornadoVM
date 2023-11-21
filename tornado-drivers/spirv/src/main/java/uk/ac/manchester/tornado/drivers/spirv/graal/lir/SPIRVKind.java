@@ -96,6 +96,7 @@ public enum SPIRVKind implements PlatformKind {
     OP_TYPE_VECTOR2_FLOAT_32(2, uk.ac.manchester.tornado.api.types.vectors.Float2.TYPE, OP_TYPE_FLOAT_32),
     OP_TYPE_VECTOR2_FLOAT_64(2, uk.ac.manchester.tornado.api.types.vectors.Double2.TYPE, OP_TYPE_FLOAT_64),
     OP_TYPE_VECTORFLOAT2_FLOAT_32(2, uk.ac.manchester.tornado.api.types.collections.VectorFloat2.TYPE, OP_TYPE_FLOAT_32),
+    OP_TYPE_VECTORDOUBLE2_FLOAT_64(2, uk.ac.manchester.tornado.api.types.collections.VectorDouble2.TYPE, OP_TYPE_FLOAT_64),
 
     // OP_TYPE_VECTOR3 Float
     OP_TYPE_VECTOR3_FLOAT_16(3, uk.ac.manchester.tornado.api.types.vectors.Float3.TYPE, OP_TYPE_FLOAT_16),  // Half float
@@ -103,7 +104,6 @@ public enum SPIRVKind implements PlatformKind {
     OP_TYPE_VECTOR3_FLOAT_64(3, uk.ac.manchester.tornado.api.types.vectors.Double3.TYPE, OP_TYPE_FLOAT_64),
     OP_TYPE_VECTORFLOAT3_FLOAT_32(3, uk.ac.manchester.tornado.api.types.collections.VectorFloat3.TYPE, OP_TYPE_FLOAT_32),
     OP_TYPE_IMAGEFLOAT3_FLOAT_32(3, uk.ac.manchester.tornado.api.types.images.ImageFloat3.TYPE, OP_TYPE_FLOAT_32),
-    OP_TYPE_VECTORDOUBLE2_FLOAT_64(2, uk.ac.manchester.tornado.api.types.collections.VectorDouble2.TYPE, OP_TYPE_FLOAT_64),
     OP_TYPE_VECTORDOUBLE3_FLOAT_64(3, uk.ac.manchester.tornado.api.types.collections.VectorDouble3.TYPE, OP_TYPE_FLOAT_64),
 
     // OP_TYPE_VECTOR4 Float
