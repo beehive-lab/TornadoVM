@@ -39,15 +39,16 @@
 package uk.ac.manchester.tornado.api.types.collections;
 
 import static uk.ac.manchester.tornado.api.types.vectors.Double4.add;
-import static uk.ac.manchester.tornado.api.types.vectors.Double4.loadFromArray;
 
 import java.nio.DoubleBuffer;
 
-import uk.ac.manchester.tornado.api.types.vectors.Double4;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
+import uk.ac.manchester.tornado.api.types.vectors.Double4;
 
 public class VectorDouble4 implements PrimitiveStorage<DoubleBuffer> {
+
+    public static final Class<VectorDouble4> TYPE = VectorDouble4.class;
 
     private static final int ELEMENT_SIZE = 4;
     /**
@@ -100,6 +101,15 @@ public class VectorDouble4 implements PrimitiveStorage<DoubleBuffer> {
         return loadFromArray(storage, toIndex(index));
     }
 
+    private Double4 loadFromArray(final DoubleArray array, int index) {
+        final Double4 result = new Double4();
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        result.setZ(array.get(index + 2));
+        result.setW(array.get(index + 3));
+        return result;
+    }
+
     /**
      * Sets the float at the given index of this vector.
      *
@@ -107,7 +117,14 @@ public class VectorDouble4 implements PrimitiveStorage<DoubleBuffer> {
      * @param value
      */
     public void set(int index, Double4 value) {
-        value.storeToArray(storage, toIndex(index));
+        storeToArray(value, storage, toIndex(index));
+    }
+
+    private void storeToArray(Double4 value, DoubleArray array, int index) {
+        array.set(index, value.getX());
+        array.set(index + 1, value.getY());
+        array.set(index + 2, value.getZ());
+        array.set(index + 3, value.getW());
     }
 
     /**

@@ -43,11 +43,13 @@ package uk.ac.manchester.tornado.api.types.collections;
 
 import java.nio.FloatBuffer;
 
-import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
 
 public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
+
+    public static final Class<VectorFloat4> TYPE = VectorFloat4.class;
 
     private static final int ELEMENT_SIZE = 4;
     /**
@@ -105,7 +107,16 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
      * @return value
      */
     public Float4 get(int index) {
-        return Float4.loadFromArray(storage, toIndex(index));
+        return loadFromArray(storage, toIndex(index));
+    }
+
+    private Float4 loadFromArray(final FloatArray array, int index) {
+        final Float4 result = new Float4();
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        result.setZ(array.get(index + 2));
+        result.setW(array.get(index + 3));
+        return result;
     }
 
     /**
@@ -117,7 +128,14 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
      *     value to be stored
      */
     public void set(int index, Float4 value) {
-        value.storeToArray(storage, toIndex(index));
+        storeToArray(value, storage, toIndex(index));
+    }
+
+    private void storeToArray(Float4 value, FloatArray array, int index) {
+        array.set(index, value.getX());
+        array.set(index + 1, value.getY());
+        array.set(index + 2, value.getZ());
+        array.set(index + 3, value.getW());
     }
 
     /**

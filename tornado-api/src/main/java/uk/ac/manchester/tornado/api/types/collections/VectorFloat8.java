@@ -45,11 +45,13 @@ import static uk.ac.manchester.tornado.api.types.vectors.Float8.add;
 
 import java.nio.FloatBuffer;
 
-import uk.ac.manchester.tornado.api.types.vectors.Float8;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
+import uk.ac.manchester.tornado.api.types.vectors.Float8;
 
 public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
+
+    public static final Class<VectorFloat8> TYPE = VectorFloat8.class;
 
     private static final int ELEMENT_SIZE = 8;
     /**
@@ -101,7 +103,20 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
      * @return value
      */
     public Float8 get(int index) {
-        return Float8.loadFromArray(storage, toIndex(index));
+        return loadFromArray(storage, toIndex(index));
+    }
+
+    private Float8 loadFromArray(final FloatArray array, int index) {
+        final Float8 result = new Float8();
+        result.setS0(array.get(index));
+        result.setS1(array.get(index + 1));
+        result.setS2(array.get(index + 2));
+        result.setS3(array.get(index + 3));
+        result.setS4(array.get(index + 4));
+        result.setS5(array.get(index + 5));
+        result.setS6(array.get(index + 6));
+        result.setS7(array.get(index + 7));
+        return result;
     }
 
     /**
@@ -111,7 +126,13 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
      * @param value
      */
     public void set(int index, Float8 value) {
-        value.storeToArray(storage, toIndex(index));
+        storeToArray(value, storage, toIndex(index));
+    }
+
+    private void storeToArray(Float8 value, FloatArray array, int index) {
+        for (int i = 0; i < ELEMENT_SIZE; i++) {
+            array.set(index + i, value.get(i));
+        }
     }
 
     /**

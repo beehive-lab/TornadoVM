@@ -47,7 +47,6 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.utils.IntOps;
 
@@ -207,14 +206,6 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
         return storage;
     }
 
-    public static Int8 loadFromArray(final IntArray array, int index) {
-        final Int8 result = new Int8();
-        for (int i = 0; i < NUM_ELEMENTS; i++) {
-            result.set(i, array.get(index + i));
-        }
-        return result;
-    }
-
     public int get(int index) {
         return storage[index];
     }
@@ -337,9 +328,4 @@ public final class Int8 implements PrimitiveStorage<IntBuffer> {
         return NUM_ELEMENTS;
     }
 
-    public void storeToArray(final IntArray array, int index) {
-        for (int i = 0; i < NUM_ELEMENTS; i++) {
-            array.set(index + i, get(i));
-        }
-    }
 }

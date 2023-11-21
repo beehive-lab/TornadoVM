@@ -46,7 +46,6 @@ import java.nio.DoubleBuffer;
 import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.utils.DoubleOps;
 
@@ -77,14 +76,6 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
         setX(x);
         setY(y);
         setZ(z);
-    }
-
-    public static Double3 loadFromArray(final DoubleArray array, int index) {
-        final Double3 result = new Double3();
-        result.setX(array.get(index));
-        result.setY(array.get(index + 1));
-        result.setZ(array.get(index + 2));
-        return result;
     }
 
     /**
@@ -298,12 +289,6 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
      */
     public Double2 asDouble2() {
         return new Double2(getX(), getY());
-    }
-
-    public void storeToArray(final DoubleArray array, int index) {
-        array.set(index, getX());
-        array.set(index + 1, getY());
-        array.set(index + 2, getZ());
     }
 
     @Override

@@ -46,7 +46,6 @@ import java.nio.DoubleBuffer;
 import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.utils.DoubleOps;
 
@@ -82,14 +81,6 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
         setS5(s5);
         setS6(s6);
         setS7(s7);
-    }
-
-    public static Double8 loadFromArray(final DoubleArray array, int index) {
-        final Double8 result = new Double8();
-        for (int i = 0; i < NUM_ELEMENTS; i++) {
-            result.set(i, array.get(index + i));
-        }
-        return result;
     }
 
     /**
@@ -315,12 +306,6 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
     @Override
     public String toString() {
         return toString(DoubleOps.FMT_8);
-    }
-
-    public void storeToArray(final DoubleArray array, int index) {
-        for (int i = 0; i < NUM_ELEMENTS; i++) {
-            array.set(index + i, get(i));
-        }
     }
 
     @Override

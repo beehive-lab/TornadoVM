@@ -43,11 +43,10 @@ package uk.ac.manchester.tornado.api.types.vectors;
 
 import java.nio.IntBuffer;
 
-import uk.ac.manchester.tornado.api.types.arrays.natives.NativeVectorInt;
 import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.natives.NativeVectorInt;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 
 @Vector
@@ -175,13 +174,6 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
         return storage;
     }
 
-    public static Int2 loadFromArray(final IntArray array, int index) {
-        final Int2 result = new Int2();
-        result.setX(array.get(index));
-        result.setY(array.get(index + 1));
-        return result;
-    }
-
     public int get(int index) {
         return storage[index];
     }
@@ -254,8 +246,4 @@ public final class Int2 implements PrimitiveStorage<IntBuffer> {
         return NUM_ELEMENTS;
     }
 
-    public void storeToArray(final IntArray array, int index) {
-        array.set(index, getX());
-        array.set(index + 1, getY());
-    }
 }

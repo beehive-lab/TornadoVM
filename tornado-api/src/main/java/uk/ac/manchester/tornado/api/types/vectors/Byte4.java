@@ -46,7 +46,6 @@ import java.nio.ByteBuffer;
 import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 
 @Vector
@@ -160,15 +159,6 @@ public final class Byte4 implements PrimitiveStorage<ByteBuffer> {
         return TornadoMath.isEqual(a.toArray(), b.toArray());
     }
 
-    public static Byte4 loadFromArray(final ByteArray array, int index) {
-        final Byte4 result = new Byte4();
-        result.setX(array.get(index));
-        result.setY(array.get(index + 1));
-        result.setZ(array.get(index + 2));
-        result.setW(array.get(index + 3));
-        return result;
-    }
-
     public void set(Byte4 value) {
         setX(value.getX());
         setY(value.getY());
@@ -253,13 +243,6 @@ public final class Byte4 implements PrimitiveStorage<ByteBuffer> {
 
     public byte[] toArray() {
         return storage;
-    }
-
-    public void storeToArray(ByteArray array, int index) {
-        array.set(index, getX());
-        array.set(index + 1, getY());
-        array.set(index + 2, getZ());
-        array.set(index + 3, getW());
     }
 
 }

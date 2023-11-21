@@ -43,13 +43,15 @@ package uk.ac.manchester.tornado.api.types.images;
 
 import java.nio.FloatBuffer;
 
-import uk.ac.manchester.tornado.api.types.vectors.Float8;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.utils.FloatOps;
 import uk.ac.manchester.tornado.api.types.utils.FloatingPointError;
+import uk.ac.manchester.tornado.api.types.vectors.Float8;
 
 public class ImageFloat8 implements PrimitiveStorage<FloatBuffer> {
+
+    public static final Class<ImageFloat8> TYPE = ImageFloat8.class;
 
     private static final int ELEMENT_SIZE = 8;
     /**
@@ -114,19 +116,38 @@ public class ImageFloat8 implements PrimitiveStorage<FloatBuffer> {
         return get(x, 0);
     }
 
+    private void storeToArray(Float8 value, FloatArray array, int index) {
+        for (int i = 0; i < ELEMENT_SIZE; i++) {
+            array.set(index + i, value.get(i));
+        }
+    }
+
     public void set(int x, Float8 value) {
         final int offset = toIndex(x, 0);
-        value.storeToArray(storage, offset);
+        storeToArray(value, storage, offset);
     }
 
     public Float8 get(int x, int y) {
         final int offset = toIndex(x, y);
-        return Float8.loadFromArray(storage, offset);
+        return loadFromArray(storage, offset);
+    }
+
+    private Float8 loadFromArray(final FloatArray array, int index) {
+        final Float8 result = new Float8();
+        result.setS0(array.get(index));
+        result.setS1(array.get(index + 1));
+        result.setS2(array.get(index + 2));
+        result.setS3(array.get(index + 3));
+        result.setS4(array.get(index + 4));
+        result.setS5(array.get(index + 5));
+        result.setS6(array.get(index + 6));
+        result.setS7(array.get(index + 7));
+        return result;
     }
 
     public void set(int x, int y, Float8 value) {
         final int offset = toIndex(x, y);
-        value.storeToArray(storage, offset);
+        storeToArray(value, storage, offset);
     }
 
     public int X() {

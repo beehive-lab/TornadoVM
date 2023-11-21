@@ -44,14 +44,17 @@ package uk.ac.manchester.tornado.api.types.matrix;
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.utils.FloatOps;
 import uk.ac.manchester.tornado.api.types.utils.StorageFormats;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
 
 public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<FloatBuffer> {
+
+    public static final Class<Matrix2DFloat4> TYPE = Matrix2DFloat4.class;
+
     /**
      * Vector-width each position in the matrix.
      */
@@ -126,12 +129,28 @@ public class Matrix2DFloat4 extends Matrix2DType implements PrimitiveStorage<Flo
 
     public Float4 get(int i, int j) {
         int baseIndex = StorageFormats.toRowMajorVector(i, j, COLUMNS, VECTOR_ELEMENTS);
-        return Float4.loadFromArray(storage, baseIndex);
+        return loadFromArray(storage, baseIndex);
+    }
+
+    private Float4 loadFromArray(final FloatArray array, int index) {
+        final Float4 result = new Float4();
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        result.setZ(array.get(index + 2));
+        result.setW(array.get(index + 3));
+        return result;
     }
 
     public void set(int i, int j, Float4 value) {
         int baseIndex = StorageFormats.toRowMajorVector(i, j, COLUMNS, VECTOR_ELEMENTS);
-        value.storeToArray(storage, baseIndex);
+        storeToArray(value, storage, baseIndex);
+    }
+
+    private void storeToArray(Float4 value, FloatArray array, int index) {
+        array.set(index, value.getX());
+        array.set(index + 1, value.getY());
+        array.set(index + 2, value.getZ());
+        array.set(index + 3, value.getW());
     }
 
     public VectorFloat row(int row) {
