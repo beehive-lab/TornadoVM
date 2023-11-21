@@ -48,15 +48,15 @@ Now, that TornadoVM is built with the polyglot dependencies, you can run the ava
 
 3. Using the GraalVM Polyglot Dependencies as Standalone Toolkits
 ----------------------------------------------
-However, to interoperate from programs written in those programming languages and invoke a Java method, programmers would use the standalone distributions.
-However, an aftermath of the last change is that the dedicated builds of GraalVM implemented languages, such as GraalPy, GraalVM JavaScript and TruffleRuby, do not work out-of-the-box with TornadoVM. Instead, programmers must build those frameworks from source.
+However, to interoperate from programs written in those programming languages and invoke a Java method, users would use the standalone distributions.
+However, an aftermath of the last change is that the dedicated builds of GraalVM implemented languages, such as GraalPy, GraalVM JavaScript and TruffleRuby, do not work out-of-the-box with TornadoVM. Instead, users must build those frameworks from source.
 
 A) Build GraalVM Polyglot Dependencies from Source
 ~~~~~~~~~~~~~~~~~~~~~~
 GraalVM implementations of the programming languages that can interoperate with Java are provided as standalone distributions, e.g., `GraalPy <https://github.com/oracle/graalpython.git/>`_, `GraalVM JavaScript <https://github.com/oracle/graaljs.git/>`_, `TruffleRuby <https://github.com/oracle/truffleruby.git/>`_.
 As detailed in the `GraalVM Reference Manuals <https://www.graalvm.org/latest/reference-manual/>`_, the following dependencies must be downloaded for each of the programming languages supported:
 
-To ease programmers, we outline beneath two steps in order to build each of the programming languages supported and to interoperate with TornadoVM.
+To ease users, we outline beneath two steps in order to build each of the programming languages supported and to interoperate with TornadoVM.
 
 **Step 1: Build GraalPy, GraalVM JavaScript and TruffleRuby, from source.**
 
