@@ -14,7 +14,7 @@ Developers can choose which backends to install and run.
 
 **Website**: [tornadovm.org](https://www.tornadovm.org)
 
-**Documentation** [https://tornadovm.readthedocs.io/en/latest/](https://tornadovm.readthedocs.io/en/latest/)
+**Documentation**: [https://tornadovm.readthedocs.io/en/latest/](https://tornadovm.readthedocs.io/en/latest/)
 
 For a quick introduction please read the following [FAQ](https://tornadovm.readthedocs.io/en/latest/).
 
