@@ -50,11 +50,11 @@ optional arguments:
 Example of installation:
 
 ```bash
-# Install the OpenCL backend with OpenJDK 17
-$ ./bin/tornadovm-installer --jdk jdk17 --backend opencl
+# Install the OpenCL backend with OpenJDK 21
+$ ./bin/tornadovm-installer --jdk jdk21 --backend opencl
 
 # It is also possible to combine different backends:
-$ ./bin/tornadovm-installer -- jdk jdk17 --backend opencl,spirv,ptx
+$ ./bin/tornadovm-installer -- jdk jdk21 --backend opencl,spirv,ptx
 ```
 
 Alternatively, TornadoVM can be installed either manually [from source](https://tornadovm.readthedocs.io/en/latest/installation.html#b-manual-installation) or by [using Docker](https://tornadovm.readthedocs.io/en/latest/docker.html).
