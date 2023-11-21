@@ -248,7 +248,7 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
 
     @Override
     public DoubleBuffer asBuffer() {
-        return storage.getSegment().asByteBuffer().asDoubleBuffer();
+        return DoubleBuffer.wrap(storage.toHeapArray());
     }
 
     @Override

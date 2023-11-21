@@ -73,7 +73,7 @@ __SKIP_SERIAL__ = " -Dtornado.benchmarks.skipserial=True "
 __SKIP_PARALLEL__ = " -Dtornado.enable=False "
 __SKIP_DEVICES__ = " -Dtornado.blacklist.devices="
 __VALIDATE__ = " -Dtornado.benchmarks.validate=True "
-__ENABLE_PROFILER_SILENT_MODE__ = " --enableProfiler silent "
+__ENABLE_PROFILER__ = " --enableProfiler "
 __DISABLE_LEVEL_ZERO_DEFAULT_SCHEDULER__ = (
     " -Dtornado.spirv.levelzero.thread.dispatcher=False "
 )
@@ -177,24 +177,25 @@ mediumSizes = {
 
 ## ========================================================================================
 def composeAllOptions(args):
-    options = __JVM_FLAGS__
+    jvm_options = __JVM_FLAGS__
+    tornado_options = ""
     if args.skip_serial:
-        options = options + __SKIP_SERIAL__
+        jvm_options = jvm_options + __SKIP_SERIAL__
     if args.skip_parallel:
-        options = options + __SKIP_PARALLEL__
+        jvm_options = jvm_options + __SKIP_PARALLEL__
     if args.validate:
-        options = options + __VALIDATE__
+        jvm_options = jvm_options + __VALIDATE__
     if args.skip_devices != None:
-        options = options + __SKIP_DEVICES__ + args.skip_devices + " "
+        jvm_options = jvm_options + __SKIP_DEVICES__ + args.skip_devices + " "
     if args.profiler:
-        options = options + __ENABLE_PROFILER_SILENT_MODE__
+        tornado_options = tornado_options + __ENABLE_PROFILER__ + args.profiler + " "
     if args.jvmFlags != None:
-        options = options + args.jvmFlags
+        jvm_options = jvm_options + args.jvmFlags
     if args.tornadoThreadScheduler == True:
-        options = options + __DISABLE_LEVEL_ZERO_DEFAULT_SCHEDULER__
+        jvm_options = jvm_options + __DISABLE_LEVEL_ZERO_DEFAULT_SCHEDULER__
     if args.spirvOptimizer:
-        options = options + __ENABLE_SPIRV_OPTIMIZER__
-    return options
+        jvm_options = jvm_options + __ENABLE_SPIRV_OPTIMIZER__
+    return jvm_options, tornado_options
 
 
 def printBenchmarks(indent=""):
@@ -204,13 +205,14 @@ def printBenchmarks(indent=""):
 
 
 def runBenchmarksFullCoverage(args):
-    options = composeAllOptions(args)
+    jvm_options, tornado_options = composeAllOptions(args)
     for key in allSizes.keys():
         for size in allSizes[key][0]:
             command = (
                 __TORNADO_COMMAND__
+                + tornado_options
                 + ' --jvm="'
-                + options
+                + jvm_options
                 + '" '
                 + __RUNNER__
                 + ' --params="'
@@ -228,15 +230,16 @@ def runBenchmarksFullCoverage(args):
 
 
 def runMediumConfiguration(args):
-    options = composeAllOptions(args)
-    print(options)
+    jvm_options, tornado_options = composeAllOptions(args)
+    print(tornado_options, jvm_options)
     for key in mediumSizes.keys():
         for size in mediumSizes[key][0]:
             numIterations = eval(mediumSizes[key][1][0])
             command = (
                 __TORNADO_COMMAND__
+                + tornado_options
                 + ' --jvm="'
-                + options
+                + jvm_options
                 + '" '
                 + __RUNNER__
                 + ' --params="'
@@ -255,22 +258,25 @@ def runMediumConfiguration(args):
 
 def runWithJMH(args):
     printBenchmarks()
-    options = composeAllOptions(args)
-    print(Colors.CYAN + "[INFO] TornadoVM options: " + options + Colors.RESET)
-    command = __TORNADO_COMMAND__ + " -jar benchmarks/target/jmhbenchmarks.jar "
+    jvm_options, tornado_options = composeAllOptions(args)
+    print(Colors.CYAN + "[INFO] TornadoVM options: " + tornado_options +
+          jvm_options + Colors.RESET)
+    command = __TORNADO_COMMAND__ + tornado_options + " -jar benchmarks/target/jmhbenchmarks.jar "
     print(command)
     os.system(command)
 
 
 def runDefaultSizePerBenchmark(args):
     printBenchmarks()
-    options = composeAllOptions(args)
-    print(Colors.CYAN + "[INFO] TornadoVM options: " + options + Colors.RESET)
+    jvm_options, tornado_options = composeAllOptions(args)
+    print(Colors.CYAN + "[INFO] TornadoVM options: " + tornado_options +
+          jvm_options + Colors.RESET)
     for b in __BENCHMARKS__:
         command = (
             __TORNADO_COMMAND__
+            + tornado_options
             + '--jvm="'
-            + options
+            + jvm_options
             + '" '
             + __RUNNER__
             + '--params="'
@@ -344,9 +350,9 @@ def parseArguments():
     )
     parser.add_argument(
         "--profiler",
-        action="store_true",
+        action="store",
         dest="profiler",
-        default=False,
+        required=False,
         help="Run Benchmarks with the OpenCL|PTX|SPIRV profiler",
     )
     parser.add_argument(

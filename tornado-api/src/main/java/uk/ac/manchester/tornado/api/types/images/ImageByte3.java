@@ -193,7 +193,7 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
 
     @Override
     public ByteBuffer asBuffer() {
-        return storage.getSegment().asByteBuffer();
+        return ByteBuffer.wrap(storage.toHeapArray());
     }
 
     @Override

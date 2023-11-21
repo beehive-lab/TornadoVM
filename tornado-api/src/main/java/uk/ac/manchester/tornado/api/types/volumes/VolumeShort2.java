@@ -177,7 +177,7 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
 
     @Override
     public ShortBuffer asBuffer() {
-        return storage.getSegment().asByteBuffer().asShortBuffer();
+        return ShortBuffer.wrap(storage.toHeapArray());
     }
 
     @Override

@@ -46,10 +46,10 @@ import static uk.ac.manchester.tornado.api.types.utils.StorageFormats.toRowMajor
 import java.nio.DoubleBuffer;
 
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.utils.DoubleOps;
 import uk.ac.manchester.tornado.api.types.utils.StorageFormats;
-import uk.ac.manchester.tornado.api.types.collections.VectorDouble;
 
 public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<DoubleBuffer> {
     /**
@@ -214,7 +214,7 @@ public class Matrix2DDouble extends Matrix2DType implements PrimitiveStorage<Dou
 
     @Override
     public DoubleBuffer asBuffer() {
-        return storage.getSegment().asByteBuffer().asDoubleBuffer();
+        return DoubleBuffer.wrap(storage.toHeapArray());
     }
 
     @Override

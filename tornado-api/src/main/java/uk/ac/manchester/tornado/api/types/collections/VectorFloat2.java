@@ -206,7 +206,7 @@ public class VectorFloat2 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return storage.getSegment().asByteBuffer().asFloatBuffer();
+        return FloatBuffer.wrap(storage.toHeapArray());
     }
 
     @Override
