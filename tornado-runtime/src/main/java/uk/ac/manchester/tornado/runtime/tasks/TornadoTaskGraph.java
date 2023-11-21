@@ -496,6 +496,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         TornadoDevice oldDevice = meta().getLogicDevice();
 
+        // prevent to set again the same device as it invalidates its state
+        if (oldDevice.getDeviceContext() == device.getDeviceContext()) {
+            return;
+        }
+
         meta().setDevice(device);
 
         // Make sure that a sketch is available for the device.
@@ -589,6 +594,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         for (final Object arg : args) {
             index = executionContext.insertVariable(arg);
+            System.out.println("s " + arg.toString());
             if (arg.getClass().isPrimitive() || RuntimeUtilities.isBoxedPrimitiveClass(arg.getClass())) {
                 hlBuffer.put(TornadoGraphBitcodes.LOAD_PRIM.index());
             } else {
@@ -877,6 +883,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             // EVERY_EXECUTION
             boolean isObjectForStreaming = false;
             if (mode == DataTransferMode.EVERY_EXECUTION) {
+                System.out.println("YYY " + functionParameter.toString());
                 streamInObjects.add(functionParameter);
                 isObjectForStreaming = true;
             }
