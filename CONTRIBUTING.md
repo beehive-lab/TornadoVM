@@ -24,13 +24,13 @@ For the PR process as well as any issues and discussions we follow this [CODE_OF
 ## What happens after you open the PR?
 
 We have a few GitHub actions, such as code formatter, documentation rendering and checks for the CLA (Contributor License Agreement).
-If you haven't signed the CLA yet, you will be redirected to the TornadoVM CLA webpage, which you can read and review.
+If you haven't signed the CLA yet, you will be redirected to the TornadoVM CLA webpage, where you can read and review it.
 If you agree with the terms, then you will sign it.
 After that, the TornadoVM team can process your PR to be able to merge it into the TornadoVM's codebase.
 
 At least two researchers/engineers from the TornadoVM team will review your PR.
 Expect a few comments, questions and possible changes.
-This is totally a normal process, and it tries not to introduce untested code for specific devices, better documentation, etc.
+This is a totally normal process, and it tries not to introduce untested code for specific devices, better documentation, etc.
 Thus, we work together to improve TornadoVM.
 
 
