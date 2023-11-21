@@ -435,18 +435,18 @@ public class TornadoVMInterpreter extends TornadoLogger {
 
         final DeviceObjectState objectState = resolveObjectState(objectIndex);
 
-        if (TornadoOptions.PRINT_BYTECODES && isObjectAtomic(object)) {
-            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ONCE") + " [Object Hash Code=0x%x] %s on %s, size=%d, offset=%d [event list=%d]",
-                    object.hashCode(), object, InterpreterUtilities.debugDeviceBC(deviceForInterpreter), sizeBatch, offset, eventList);
-            tornadoVMBytecodeList.append(verbose).append("\n");
-        }
-
         // We need to stream-in when using batches, because the whole data is not copied
         List<Integer> allEvents = (sizeBatch > 0)
                 ? deviceForInterpreter.streamIn(object, sizeBatch, offset, objectState, waitList)
                 : deviceForInterpreter.ensurePresent(object, objectState, waitList, sizeBatch, offset);
 
         resetEventIndexes(eventList);
+
+        if (TornadoOptions.PRINT_BYTECODES && isObjectAtomic(object) && allEvents != null) {
+            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ONCE") + " [Object Hash Code=0x%x] %s on %s, size=%d, offset=%d [event list=%d]",
+                    object.hashCode(), object, InterpreterUtilities.debugDeviceBC(deviceForInterpreter), sizeBatch, offset, eventList);
+            tornadoVMBytecodeList.append(verbose).append("\n");
+        }
 
         if (TornadoOptions.isProfilerEnabled() && allEvents != null) {
             for (Integer e : allEvents) {
