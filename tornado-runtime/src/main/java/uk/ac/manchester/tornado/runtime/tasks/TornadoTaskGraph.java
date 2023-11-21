@@ -81,11 +81,6 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.types.arrays.LongArray;
-import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
@@ -96,6 +91,11 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
@@ -502,9 +502,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         for (int i = 0; i < executionContext.getTaskCount(); i++) {
             SchedulableTask task = executionContext.getTask(i);
             task.meta().setDevice(device);
-            if (task instanceof CompilableTask) {
-                ResolvedJavaMethod method = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(((CompilableTask) task).getMethod());
-                if (!meta().getLogicDevice().getDeviceContext().isCached(method.getName(), task)) {
+            if (task instanceof CompilableTask compilableTask) {
+                ResolvedJavaMethod method = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(compilableTask.getMethod());
+                if (!meta().getLogicDevice().getDeviceContext().isCached(method.getName(), compilableTask)) {
                     updateInner(i, executionContext.getTask(i));
                 }
             }
@@ -549,8 +549,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         executionContext.setTask(index, task);
 
-        if (task instanceof CompilableTask) {
-            CompilableTask compilableTask = (CompilableTask) task;
+        if (task instanceof CompilableTask compilableTask) {
             final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(compilableTask.getMethod());
             final TaskMetaData taskMetaData = compilableTask.meta();
             new SketchRequest(resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex()).run();
@@ -568,8 +567,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         int index = executionContext.addTask(task);
 
-        if (task instanceof CompilableTask) {
-            CompilableTask compilableTask = (CompilableTask) task;
+        if (task instanceof CompilableTask compilableTask) {
             final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(compilableTask.getMethod());
             final TaskMetaData taskMetaData = compilableTask.meta();
             new SketchRequest(resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex()).run();
