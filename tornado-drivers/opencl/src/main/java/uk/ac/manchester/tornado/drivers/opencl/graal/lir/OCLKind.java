@@ -123,7 +123,7 @@ public enum OCLKind implements PlatformKind {
     VECTORFLOAT3(3, VectorFloat3.TYPE, FLOAT),
     IMAGEFLOAT3(3, ImageFloat3.TYPE, FLOAT),
     CHAR4(4, Byte4.TYPE, CHAR),
-    IMAGEBYTE4(3, ImageByte4.TYPE, CHAR),
+    IMAGEBYTE4(4, ImageByte4.TYPE, CHAR),
     UCHAR4(4, null, UCHAR),
     SHORT4(4, null, SHORT),
     USHORT4(4, null, USHORT),
