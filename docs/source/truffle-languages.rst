@@ -100,7 +100,7 @@ Set the ``JAVA_HOME`` variable to the GraalVM JDK:
 
 .. code-block:: bash
 
-   $ export JAVA_HOME=<path-to-tornadovm>/etc/dependencies/TornadoVM-graalvm-jdk-21/graalvm-community-openjdk-21.0.1+12.1
+   $ export JAVA_HOME=<path to GraalVM jdk 21>
 
 To enable TornadoVM to employ the standalone built distribution of the GraalVM implementations, users must set the following variables:
 
