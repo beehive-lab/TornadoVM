@@ -346,7 +346,7 @@ public class SPIRVVectorPlugins {
      */
     public static void registerParameterPlugins(Plugins plugins) {
         plugins.appendParameterPlugin((GraphBuilderTool tool, int index, StampPair stampPair) -> {
-            if (stampPair.getTrustedStamp()instanceof ObjectStamp objectStamp) {
+            if (stampPair.getTrustedStamp() instanceof ObjectStamp objectStamp) {
                 if (objectStamp.type().getAnnotation(Vector.class) != null) {
                     SPIRVKind kind = SPIRVKind.fromResolvedJavaTypeToVectorKind(objectStamp.type());
                     return new ParameterNode(index, StampPair.createSingle(SPIRVStampFactory.getStampFor(kind)));
