@@ -1,7 +1,7 @@
 # How to contribute
 
 We welcome contributions!
-Please follow the instructions below for your Pull Requests.
+Please follow the instructions below for your Pull Requests (PRs).
 
 ## How to submit your changes
 
@@ -15,15 +15,29 @@ Please follow the instructions below for your Pull Requests.
 Please, ensure that your changes are merged with the latest changes in the `develop` branch, and the code follows the
 code conventions (see below).
 
-Be aware we are a very small team. 
+Be aware we are a very small team.
 Thus, depending on the PR, it might take some time for us to review it since we check on many OCL/SPIR-V/PTX platforms and different drivers.
 
 For the PR process as well as any issues and discussions we follow this [CODE_OF_CONDUCT](https://github.com/beehive-lab/TornadoVM/blob/master/CODE_OF_CONDUCT.md).
 
+
+## What happens after you open the PR?
+
+We have a few GitHub actions, such as code formatter, documentation rendering and checks for the CLA (Contributor License Agreement).
+If you haven't signed the CLA yet, you will be redirected to the TornadoVM CLA webpage, where you can read and review it.
+If you agree with the terms, then you will sign it.
+After that, the TornadoVM team can process your PR to be able to merge it into the TornadoVM's codebase.
+
+At least two researchers/engineers from the TornadoVM team will review your PR.
+Expect a few comments, questions and possible changes.
+This is a totally normal process, and it tries not to introduce untested code for specific devices, better documentation, etc.
+Thus, we work together to improve TornadoVM.
+
+
 ## Coding Conventions
 
-We use the auto-formatter for **Eclipse** and **IntelliJ**. 
-Please, ensure that your code follows the formatter rules before the pull request. 
+We use the auto-formatter for **Eclipse** and **IntelliJ**.
+Please, ensure that your code follows the formatter rules before the pull request.
 The auto-formatter is set automatically by running the following script:
 
 
@@ -31,7 +45,7 @@ The auto-formatter is set automatically by running the following script:
 ```bash
 ## For Eclipse, use the following script
 $ python3 scripts/eclipseSetup.py
-``` 
+```
 
 #### Using IntelliJ:
 
@@ -73,5 +87,4 @@ Main contacts:
 
 * Christos Kotselidis <christos (dot) kotselidis (at) manchester (dot) ac (dot) uk >
 * Athanasios Stratikopoulos <athanasios (dot) stratikopoulos (at) manchester (dot) ac (dot) uk >
-* Juan Fumero <juan (dot) fumero (at) manchester (dot) ac (dot) uk > 
-
+* Juan Fumero <juan (dot) fumero (at) manchester (dot) ac (dot) uk >
