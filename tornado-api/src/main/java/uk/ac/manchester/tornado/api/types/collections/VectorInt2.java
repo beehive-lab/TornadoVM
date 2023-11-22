@@ -39,15 +39,16 @@
 package uk.ac.manchester.tornado.api.types.collections;
 
 import static uk.ac.manchester.tornado.api.types.vectors.Int2.add;
-import static uk.ac.manchester.tornado.api.types.vectors.Int2.loadFromArray;
 
 import java.nio.IntBuffer;
 
-import uk.ac.manchester.tornado.api.types.vectors.Int2;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
+import uk.ac.manchester.tornado.api.types.vectors.Int2;
 
 public class VectorInt2 implements PrimitiveStorage<IntBuffer> {
+
+    public static final Class<VectorInt2> TYPE = VectorInt2.class;
 
     private static final int ELEMENT_SIZE = 2;
     /**
@@ -101,6 +102,13 @@ public class VectorInt2 implements PrimitiveStorage<IntBuffer> {
         return loadFromArray(storage, toIndex(index));
     }
 
+    private Int2 loadFromArray(final IntArray array, int index) {
+        final Int2 result = new Int2();
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        return result;
+    }
+
     /**
      * Sets the float at the given index of this vector.
      *
@@ -108,7 +116,12 @@ public class VectorInt2 implements PrimitiveStorage<IntBuffer> {
      * @param value
      */
     public void set(int index, Int2 value) {
-        value.storeToArray(storage, toIndex(index));
+        storeToArray(value, storage, toIndex(index));
+    }
+
+    private void storeToArray(Int2 value, IntArray array, int index) {
+        array.set(index, value.getX());
+        array.set(index + 1, value.getY());
     }
 
     /**

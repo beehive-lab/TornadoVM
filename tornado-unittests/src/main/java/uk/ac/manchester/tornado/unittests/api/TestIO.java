@@ -26,7 +26,9 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.arrays.TestArrays;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -155,6 +157,58 @@ public class TestIO extends TornadoTestBase {
         for (int i = 0; i < N; i++) {
             assertEquals(2 * i, arrayC.get(i), 0.0f);
         }
+    }
+
+    /**
+     * This test case uses the streamIn method of the
+     * {@link uk.ac.manchester.tornado.api.TornadoExecutionPlan} API to execute on specific device.
+     *
+     * <p>
+     * The following test reproduces a bug, that when the user sets an array as DataTransferMode.FIRST_EXECUTION,
+     * when using the withDevice API the runtime overrides this setting and copies all arrays on every execution.
+     * </p>
+     */
+    @Test
+    public void testCopyInWithDevice() {
+        final int N = 8096;
+        final int ITERATIONS = 10;
+
+        FloatArray arrayA = createAndInitializeArray(N);
+        FloatArray arrayB = createAndInitializeArray(N);
+        FloatArray arrayC = new FloatArray(N);
+
+        TornadoRuntime.getTornadoRuntime().getDefaultDevice().reset();
+
+        // Enable profiler
+        System.setProperty("tornado.profiler", "True");
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, arrayB) //
+                .task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, arrayC);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        long copyInSumSimpleExec = 0L;
+        for (int i = 0; i < ITERATIONS; i++) {
+            TornadoExecutionResult executionResult = executionPlan.execute();
+            copyInSumSimpleExec += executionResult.getProfilerResult().getDeviceWriteTime();
+        }
+        executionPlan.freeDeviceMemory();
+
+        executionPlan.withDevice(TornadoExecutionPlan.getDevice(0, 0));
+
+        long copyInSumSimpleExecWithDev = 0L;
+        for (int i = 0; i < ITERATIONS; i++) {
+            TornadoExecutionResult executionResult = executionPlan.execute();
+            copyInSumSimpleExecWithDev += executionResult.getProfilerResult().getDeviceWriteTime();
+        }
+
+        // Generous assertions with delta of 10%
+        assertEquals(copyInSumSimpleExec, copyInSumSimpleExecWithDev, (float) copyInSumSimpleExec / 10);
+
     }
     // CHECKSTYLE:ON
 }

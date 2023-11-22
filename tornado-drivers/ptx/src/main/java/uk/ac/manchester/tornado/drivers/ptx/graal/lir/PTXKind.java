@@ -31,6 +31,26 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble2;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble3;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble4;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble8;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat2;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat8;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt2;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt3;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt4;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt8;
+import uk.ac.manchester.tornado.api.types.images.ImageByte3;
+import uk.ac.manchester.tornado.api.types.images.ImageByte4;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat4;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat8;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat4;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix3DFloat4;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.types.vectors.Byte3;
 import uk.ac.manchester.tornado.api.types.vectors.Byte4;
 import uk.ac.manchester.tornado.api.types.vectors.Double2;
@@ -46,6 +66,7 @@ import uk.ac.manchester.tornado.api.types.vectors.Int3;
 import uk.ac.manchester.tornado.api.types.vectors.Int4;
 import uk.ac.manchester.tornado.api.types.vectors.Int8;
 import uk.ac.manchester.tornado.api.types.vectors.Short2;
+import uk.ac.manchester.tornado.api.types.volumes.VolumeShort2;
 import uk.ac.manchester.tornado.drivers.ptx.graal.asm.PTXAssembler;
 
 public enum PTXKind implements PlatformKind {
@@ -73,25 +94,43 @@ public enum PTXKind implements PlatformKind {
 
     CHAR2(2, null, U8),
     CHAR3(3, Byte3.TYPE, U8),
+    IMAGEBYTE3(3, ImageByte3.TYPE, U8),
+    IMAGEBYTE4(4, ImageByte4.TYPE, U8),
     CHAR4(4, Byte4.TYPE, U8),
 
     SHORT2(2, Short2.TYPE, S16),
+    VOLUMESHORT2(2, VolumeShort2.TYPE, S16),
 
     INT2(2, Int2.TYPE, S32),
     INT3(3, Int3.TYPE, S32),
     INT4(4, Int4.TYPE, S32),
     INT8(8, Int8.TYPE, S32),
-
+    VECTORINT2(2, VectorInt2.TYPE, S32),
+    VECTORINT3(3, VectorInt3.TYPE, S32),
+    VECTORINT4(4, VectorInt4.TYPE, S32),
+    VECTORINT8(8, VectorInt8.TYPE, S32),
     FLOAT2(2, Float2.TYPE, F32),
     FLOAT3(3, Float3.TYPE, F32),
     FLOAT4(4, Float4.TYPE, F32),
     FLOAT8(8, Float8.TYPE, F32),
-
+    VECTORFLOAT2(2, VectorFloat2.TYPE, F32),
+    VECTORFLOAT3(3, VectorFloat3.TYPE, F32),
+    VECTORFLOAT4(4, VectorFloat4.TYPE, F32),
+    VECTORFLOAT8(8, VectorFloat8.TYPE, F32),
+    MATRIX2DFLOAT4(4, Matrix2DFloat4.TYPE, F32),
+    MATRIX3DFLOAT4(4, Matrix3DFloat4.TYPE, F32),
+    MATRIX4X4FLOAT(4, Matrix4x4Float.TYPE, F32),
+    IMAGEFLOAT3(3, ImageFloat3.TYPE, F32),
+    IMAGEFLOAT4(4, ImageFloat4.TYPE, F32),
+    IMAGEFLOAT8(8, ImageFloat8.TYPE, F32),
     DOUBLE2(2, Double2.TYPE, F64),
     DOUBLE3(3, Double3.TYPE, F64),
     DOUBLE4(4, Double4.TYPE, F64),
     DOUBLE8(8, Double8.TYPE, F64),
-
+    VECTORDOUBLE2(2, VectorDouble2.TYPE, F64),
+    VECTORDOUBLE3(3, VectorDouble3.TYPE, F64),
+    VECTORDOUBLE4(4, VectorDouble4.TYPE, F64),
+    VECTORDOUBLE8(8, VectorDouble8.TYPE, F64),
     ILLEGAL(0, null);
     // @formatter:on
 

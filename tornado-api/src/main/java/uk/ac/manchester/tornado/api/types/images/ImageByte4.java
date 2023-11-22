@@ -52,6 +52,8 @@ import uk.ac.manchester.tornado.api.types.vectors.Float4;
 
 public class ImageByte4 implements PrimitiveStorage<ByteBuffer> {
 
+    public static final Class<ImageByte4> TYPE = ImageByte4.class;
+
     private static final int elementSize = 4;
     /**
      * backing array.
@@ -121,12 +123,28 @@ public class ImageByte4 implements PrimitiveStorage<ByteBuffer> {
 
     public Byte4 get(int x, int y) {
         final int offset = toIndex(x, y);
-        return Byte4.loadFromArray(storage, offset);
+        return loadFromArray(storage, offset);
+    }
+
+    private Byte4 loadFromArray(final ByteArray array, int index) {
+        final Byte4 result = new Byte4();
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        result.setZ(array.get(index + 2));
+        result.setW(array.get(index + 3));
+        return result;
     }
 
     public void set(int x, int y, Byte4 value) {
         final int offset = toIndex(x, y);
-        value.storeToArray(storage, offset);
+        storeToArray(value, storage, offset);
+    }
+
+    private void storeToArray(Byte4 value, ByteArray array, int index) {
+        array.set(index, value.getX());
+        array.set(index + 1, value.getY());
+        array.set(index + 2, value.getZ());
+        array.set(index + 3, value.getW());
     }
 
     public int X() {

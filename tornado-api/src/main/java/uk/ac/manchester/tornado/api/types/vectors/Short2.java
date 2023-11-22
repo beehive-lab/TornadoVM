@@ -46,7 +46,6 @@ import java.nio.ShortBuffer;
 import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.utils.ShortOps;
 
@@ -224,15 +223,4 @@ public final class Short2 implements PrimitiveStorage<ShortBuffer> {
         return storage;
     }
 
-    public static Short2 loadFromArray(final ShortArray array, int index) {
-        final Short2 result = new Short2();
-        result.setX(array.get(index));
-        result.setY(array.get(index + 1));
-        return result;
-    }
-
-    public void storeToArray(final ShortArray array, int index) {
-        array.set(index, getX());
-        array.set(index + 1, getY());
-    }
 }

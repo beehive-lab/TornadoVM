@@ -52,6 +52,21 @@ import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.api.types.vectors.Byte3;
+import uk.ac.manchester.tornado.api.types.vectors.Byte4;
+import uk.ac.manchester.tornado.api.types.vectors.Double2;
+import uk.ac.manchester.tornado.api.types.vectors.Double3;
+import uk.ac.manchester.tornado.api.types.vectors.Double4;
+import uk.ac.manchester.tornado.api.types.vectors.Double8;
+import uk.ac.manchester.tornado.api.types.vectors.Float2;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
+import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.vectors.Int2;
+import uk.ac.manchester.tornado.api.types.vectors.Int3;
+import uk.ac.manchester.tornado.api.types.vectors.Int4;
+import uk.ac.manchester.tornado.api.types.vectors.Int8;
+import uk.ac.manchester.tornado.api.types.vectors.Short2;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVStampFactory;
 import uk.ac.manchester.tornado.drivers.spirv.graal.lir.SPIRVKind;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.vector.GetArrayNode;
@@ -122,6 +137,42 @@ public class SPIRVVectorPlugins {
             registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR3_FLOAT_64, DoubleArray.class, double.class);
             registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR4_FLOAT_64, DoubleArray.class, double.class);
             registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR8_FLOAT_64, DoubleArray.class, double.class);
+
+            // VectorFloats
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORFLOAT2_FLOAT_32, FloatArray.class, Float2.class);
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORFLOAT3_FLOAT_32, FloatArray.class, Float3.class);
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORFLOAT4_FLOAT_32, FloatArray.class, Float4.class);
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORFLOAT8_FLOAT_32, FloatArray.class, Float8.class);
+
+            // VectorInts
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORINT2_INT_32, IntArray.class, Int2.class);
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORINT3_INT_32, IntArray.class, Int3.class);
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORINT4_INT_32, IntArray.class, Int4.class);
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORINT8_INT_32, IntArray.class, Int8.class);
+
+            // VectorDoubles
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORDOUBLE2_FLOAT_64, DoubleArray.class, Double2.class);
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORDOUBLE3_FLOAT_64, DoubleArray.class, Double3.class);
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORDOUBLE4_FLOAT_64, DoubleArray.class, Double4.class);
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORDOUBLE8_FLOAT_64, DoubleArray.class, Double8.class);
+
+            // Matrices
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_MATRIX2DFLOAT4_FLOAT_32, FloatArray.class, Float4.class);
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_MATRIX3DFLOAT4_FLOAT_32, FloatArray.class, Float4.class);
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_MATRIX4X4FLOAT_FLOAT_32, FloatArray.class, Float4.class);
+
+            // ImageFloats
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_IMAGEFLOAT3_FLOAT_32, FloatArray.class, Float3.class);
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_IMAGEFLOAT4_FLOAT_32, FloatArray.class, Float4.class);
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_IMAGEFLOAT8_FLOAT_32, FloatArray.class, Float8.class);
+
+            // VolumeShort
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTOR2_VOLUME_INT_16, ShortArray.class, Short2.class);
+
+            // ImageBytes
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_IMAGEBYTE3_INT_8, ByteArray.class, Byte3.class);
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_IMAGEBYTE4_INT_8, ByteArray.class, Byte4.class);
+
         }
     }
 
@@ -135,6 +186,37 @@ public class SPIRVVectorPlugins {
         } else {
             throw new TornadoCompilationException("Private vectors that use " + panamaType + " for storage are not currently supported.");
         }
+    }
+
+    private static void registerVectorCollectionsPlugins(final InvocationPlugins plugins, final SPIRVKind vectorKind, final Class<?> storageType, final Class<?> vectorClass) {
+
+        final Class<?> declaringClass = vectorKind.getJavaClass();
+
+        final Registration r = new Registration(plugins, declaringClass);
+        r.register(new InvocationPlugin("loadFromArray", Receiver.class, storageType, int.class) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index) {
+                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(vectorClass);
+                SPIRVKind kind = SPIRVKind.fromResolvedJavaTypeToVectorKind(resolvedType);
+                JavaKind elementKind = kind.getElementKind().asJavaKind();
+                // node needed to enforce the value of the nodes stamp
+                LoadIndexedVectorNode indexedLoad = new LoadIndexedVectorNode(kind, array, index, elementKind);
+                b.push(JavaKind.Object, b.append(indexedLoad));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("storeToArray", Receiver.class, vectorClass, storageType, int.class) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value, ValueNode array, ValueNode index) {
+                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(vectorClass);
+                SPIRVKind kind = SPIRVKind.fromResolvedJavaTypeToVectorKind(resolvedType);
+                JavaKind elementKind = kind.getElementKind().asJavaKind();
+                // No need to set stamp as it is inferred from the stamp of the incoming value
+                StoreIndexedNode indexedStore = new StoreIndexedNode(array, index, null, null, elementKind, value);
+                b.append(b.append(indexedStore));
+                return true;
+            }
+        });
+
     }
 
     private static void registerVectorPlugins(final Plugins ps, final InvocationPlugins plugins, final SPIRVKind spirvVectorKind, final Class<?> storageType, final Class<?> elementType) {
@@ -224,29 +306,6 @@ public class SPIRVVectorPlugins {
                 SPIRVKind kind = SPIRVKind.fromResolvedJavaTypeToVectorKind(resolvedType);
                 VectorDivNode addNode = new VectorDivNode(kind, input1, input2);
                 b.push(JavaKind.Illegal, b.append(addNode));
-                return true;
-            }
-        });
-
-        r.register(new InvocationPlugin("loadFromArray", storageType, int.class) {
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index) {
-                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
-                SPIRVKind kind = SPIRVKind.fromResolvedJavaTypeToVectorKind(resolvedType);
-                JavaKind elementKind = kind.getElementKind().asJavaKind();
-                LoadIndexedVectorNode indexedLoad = new LoadIndexedVectorNode(kind, array, index, elementKind);
-                b.push(JavaKind.Object, b.append(indexedLoad));
-                return true;
-            }
-        });
-
-        r.register(new InvocationPlugin("storeToArray", Receiver.class, storageType, int.class) {
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index) {
-                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
-                ValueNode value = receiver.get();
-                SPIRVKind kind = SPIRVKind.fromResolvedJavaTypeToVectorKind(resolvedType);
-                JavaKind elementKind = kind.getElementKind().asJavaKind();
-                StoreIndexedNode indexedStore = new StoreIndexedNode(array, index, null, null, elementKind, value);
-                b.append(b.append(indexedStore));
                 return true;
             }
         });

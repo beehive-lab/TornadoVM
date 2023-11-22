@@ -43,13 +43,15 @@ package uk.ac.manchester.tornado.api.types.images;
 
 import java.nio.FloatBuffer;
 
-import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.utils.FloatOps;
 import uk.ac.manchester.tornado.api.types.utils.FloatingPointError;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
 
 public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
+
+    public static final Class<ImageFloat3> TYPE = ImageFloat3.class;
 
     private static final int ELEMENT_SIZE = 3;
     /**
@@ -120,12 +122,26 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
 
     public Float3 get(int x, int y) {
         final int offset = toIndex(x, y);
-        return Float3.loadFromArray(storage, offset);
+        return loadFromArray(storage, offset);
+    }
+
+    private Float3 loadFromArray(final FloatArray array, int index) {
+        final Float3 result = new Float3();
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        result.setZ(array.get(index + 2));
+        return result;
     }
 
     public void set(int x, int y, Float3 value) {
         final int offset = toIndex(x, y);
-        value.storeToArray(storage, offset);
+        storeToArray(value, storage, offset);
+    }
+
+    private void storeToArray(Float3 value, FloatArray array, int index) {
+        array.set(index, value.getX());
+        array.set(index + 1, value.getY());
+        array.set(index + 2, value.getZ());
     }
 
     public int X() {
