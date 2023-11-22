@@ -442,9 +442,21 @@ public class TornadoVMInterpreter extends TornadoLogger {
 
         resetEventIndexes(eventList);
 
-        if (TornadoOptions.PRINT_BYTECODES && isObjectAtomic(object) && allEvents != null) {
-            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ONCE") + " [Object Hash Code=0x%x] %s on %s, size=%d, offset=%d [event list=%d]",
-                    object.hashCode(), object, InterpreterUtilities.debugDeviceBC(deviceForInterpreter), sizeBatch, offset, eventList);
+        if (TornadoOptions.PRINT_BYTECODES && isObjectAtomic(object)) {
+            // @formatter:off
+            String coloredText = allEvents != null
+                    ? InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ONCE")
+                    : InterpreterUtilities.debugHighLightNonExecBC("TRANSFER_HOST_TO_DEVICE_ONCE");
+
+            String verbose = String.format("bc: %s [Object Hash Code=0x%x] %s on %s, size=%d, offset=%d [event list=%d]",
+                    coloredText,
+                    object.hashCode(),
+                    object,
+                    InterpreterUtilities.debugDeviceBC(deviceForInterpreter),
+                    sizeBatch,
+                    offset,
+                    eventList);
+            // @formatter:on
             tornadoVMBytecodeList.append(verbose).append("\n");
         }
 
