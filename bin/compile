@@ -155,7 +155,7 @@ def build_tornadovm(args, backend_profiles):
     Builds TornadoVM with the specified JDK and backend options.
 
     Args:
-        args (object): The arguments passed by user. The JDK version as well as other options (e.g., offline (bool) and polyglot (bool) are used.
+        args (object): The arguments passed by the user. The JDK version as well as other options (e.g., offline (bool) and polyglot (bool) are used.
         backend_profiles (str): The processed backend options.
 
     Returns:
