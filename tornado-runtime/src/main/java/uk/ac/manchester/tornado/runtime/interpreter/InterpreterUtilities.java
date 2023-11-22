@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -34,6 +34,10 @@ public class InterpreterUtilities {
 
     static String debugHighLightBC(String bc) {
         return ColoursTerminal.RED + " " + bc + " " + ColoursTerminal.RESET;
+    }
+
+    static String debugHighLightNonExecBC(String bc) {
+        return ColoursTerminal.YELLOW + " " + bc + " " + ColoursTerminal.RESET;
     }
 
     static String debugHighLightHelper(String info) {

@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -105,13 +105,13 @@ public class TornadoVMInterpreter extends TornadoLogger {
      * It constructs a new TornadoVMInterpreter object.
      *
      * @param executionContext
-     *     The {@link TornadoExecutionContext}
+     *            The {@link TornadoExecutionContext}
      * @param bytecodeResult
-     *     The {@link TornadoVMBytecodeResult}.
+     *            The {@link TornadoVMBytecodeResult}.
      * @param timeProfiler
-     *     The {@link TornadoProfiler} for time measurements.
+     *            The {@link TornadoProfiler} for time measurements.
      * @param device
-     *     The {@link TornadoAcceleratorDevice} device.
+     *            The {@link TornadoAcceleratorDevice} device.
      */
     public TornadoVMInterpreter(TornadoExecutionContext executionContext, TornadoVMBytecodeResult bytecodeResult, TornadoProfiler timeProfiler, TornadoAcceleratorDevice device) {
         this.executionContext = executionContext;
@@ -219,15 +219,14 @@ public class TornadoVMInterpreter extends TornadoLogger {
                 final BitSet profiles = eventSet.getProfiles();
                 for (int i = profiles.nextSetBit(0); i != -1; i = profiles.nextSetBit(i + 1)) {
 
-                    if (!(eventSet.getDevice() instanceof TornadoAcceleratorDevice)) {
+                    if (eventSet.getDevice() instanceof TornadoAcceleratorDevice device) {
+                        final Event profile = device.resolveEvent(i);
+                        if (profile.getStatus() == COMPLETE) {
+                            System.out.printf("task: %s %s %9d %9d %9d %9d %9d%n", device.getDeviceName(), meta.getId(), profile.getElapsedTime(), profile.getQueuedTime(), profile.getSubmitTime(),
+                                    profile.getStartTime(), profile.getEndTime());
+                        }
+                    } else {
                         throw new TornadoRuntimeException("TornadoDevice not found");
-                    }
-
-                    TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) eventSet.getDevice();
-                    final Event profile = device.resolveEvent(i);
-                    if (profile.getStatus() == COMPLETE) {
-                        System.out.printf("task: %s %s %9d %9d %9d %9d %9d%n", device.getDeviceName(), meta.getId(), profile.getElapsedTime(), profile.getQueuedTime(), profile.getSubmitTime(), profile
-                                .getStartTime(), profile.getEndTime());
                     }
                 }
             }
@@ -402,6 +401,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
                 String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("ALLOC") + "%s on %s, size=%d", objects[i], InterpreterUtilities.debugDeviceBC(deviceForInterpreter),
                         sizeBatch);
                 tornadoVMBytecodeList.append(verbose).append("\n");
+
             }
         }
 
@@ -431,18 +431,30 @@ public class TornadoVMInterpreter extends TornadoLogger {
 
         final DeviceObjectState objectState = resolveObjectState(objectIndex);
 
-        if (TornadoOptions.PRINT_BYTECODES && isObjectAtomic(object)) {
-            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ONCE") + " [Object Hash Code=0x%x] %s on %s, size=%d, offset=%d [event list=%d]",
-                    object.hashCode(), object, InterpreterUtilities.debugDeviceBC(deviceForInterpreter), sizeBatch, offset, eventList);
-            tornadoVMBytecodeList.append(verbose).append("\n");
-        }
-
         // We need to stream-in when using batches, because the whole data is not copied
         List<Integer> allEvents = (sizeBatch > 0)
                 ? deviceForInterpreter.streamIn(object, sizeBatch, offset, objectState, waitList)
                 : deviceForInterpreter.ensurePresent(object, objectState, waitList, sizeBatch, offset);
 
         resetEventIndexes(eventList);
+
+        if (TornadoOptions.PRINT_BYTECODES && isObjectAtomic(object)) {
+            // @formatter:off
+            String coloredText = allEvents != null
+                    ? InterpreterUtilities.debugHighLightBC("TRANSFER_HOST_TO_DEVICE_ONCE")
+                    : InterpreterUtilities.debugHighLightNonExecBC("TRANSFER_HOST_TO_DEVICE_ONCE");
+
+            String verbose = String.format("bc: %s [Object Hash Code=0x%x] %s on %s, size=%d, offset=%d [event list=%d]",
+                    coloredText,
+                    object.hashCode(),
+                    object,
+                    InterpreterUtilities.debugDeviceBC(deviceForInterpreter),
+                    sizeBatch,
+                    offset,
+                    eventList);
+            // @formatter:on
+            tornadoVMBytecodeList.append(verbose).append("\n");
+        }
 
         if (TornadoOptions.isProfilerEnabled() && allEvents != null) {
             for (Integer e : allEvents) {
@@ -649,7 +661,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
 
         int[] atomicsArray;
 
-        atomicsArray = (task instanceof PrebuiltTask) ? ((PrebuiltTask) task).getAtomics() : deviceForInterpreter.checkAtomicsForTask(task);
+        atomicsArray = (task instanceof PrebuiltTask prebuiltTask) ? prebuiltTask.getAtomics() : deviceForInterpreter.checkAtomicsForTask(task);
 
         HashMap<Integer, Integer> map = new HashMap<>();
         if (gridScheduler != null && gridScheduler.get(task.getId()) != null) {
@@ -823,8 +835,7 @@ public class TornadoVMInterpreter extends TornadoLogger {
     }
 
     private void profilerUpdateForPreCompiledTask(SchedulableTask task) {
-        if (task instanceof PrebuiltTask && timeProfiler instanceof TimeProfiler) {
-            PrebuiltTask prebuiltTask = (PrebuiltTask) task;
+        if (task instanceof PrebuiltTask prebuiltTask && timeProfiler instanceof TimeProfiler) {
             timeProfiler.registerDeviceID(task.getId(), prebuiltTask.meta().getLogicDevice().getDriverIndex() + ":" + prebuiltTask.meta().getDeviceIndex());
             timeProfiler.registerDeviceName(task.getId(), prebuiltTask.meta().getLogicDevice().getPhysicalDevice().getDeviceName());
         }
