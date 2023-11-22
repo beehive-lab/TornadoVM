@@ -26,9 +26,13 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
@@ -74,6 +78,11 @@ public class TestArrays extends TornadoTestBase {
         for (@Parallel int i = 0; i < c.getSize(); i++) {
             c.set(i, a.get(i) + b.get(i));
         }
+    }
+
+    public static void vectorAddIntegerKernelContext(IntArray a, KernelContext context, IntArray b, IntArray c) {
+        int idx = context.globalIdx;
+        c.set(idx, a.get(idx) + b.get(idx));
     }
 
     public static void vectorAddLong(LongArray a, LongArray b, LongArray c) {
@@ -324,6 +333,47 @@ public class TestArrays extends TornadoTestBase {
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
+
+        for (int i = 0; i < 10; i++) {
+            executionPlan.execute();
+        }
+
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(a.get(i) + b.get(i), c.get(i));
+        }
+    }
+
+    /**
+     * Run multiple times an execution plan built with the Kernel Context API.
+     */
+    @Test
+    public void testVectorAdditionIntegerKernelContext() {
+        final int numElements = 4096;
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
+
+        Random r = new Random();
+        IntStream.range(0, numElements).sequential().forEach(i -> {
+            a.set(i, r.nextInt());
+            b.set(i, r.nextInt());
+        });
+
+        KernelContext context = new KernelContext();
+        WorkerGrid grid = new WorkerGrid1D(numElements);
+        GridScheduler gridScheduler = new GridScheduler("s0.t0", grid);
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, context) //
+                .task("t0", TestArrays::vectorAddIntegerKernelContext, a, context, b, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withGridScheduler(gridScheduler).execute();
+
+        for (int i = 0; i < 10; i++) {
+            executionPlan.execute();
+        }
 
         for (int i = 0; i < c.getSize(); i++) {
             assertEquals(a.get(i) + b.get(i), c.get(i));

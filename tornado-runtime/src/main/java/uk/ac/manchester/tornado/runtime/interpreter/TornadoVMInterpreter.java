@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -105,13 +105,13 @@ public class TornadoVMInterpreter extends TornadoLogger {
      * It constructs a new TornadoVMInterpreter object.
      *
      * @param executionContext
-     *            The {@link TornadoExecutionContext}
+     *     The {@link TornadoExecutionContext}
      * @param bytecodeResult
-     *            The {@link TornadoVMBytecodeResult}.
+     *     The {@link TornadoVMBytecodeResult}.
      * @param timeProfiler
-     *            The {@link TornadoProfiler} for time measurements.
+     *     The {@link TornadoProfiler} for time measurements.
      * @param device
-     *            The {@link TornadoAcceleratorDevice} device.
+     *     The {@link TornadoAcceleratorDevice} device.
      */
     public TornadoVMInterpreter(TornadoExecutionContext executionContext, TornadoVMBytecodeResult bytecodeResult, TornadoProfiler timeProfiler, TornadoAcceleratorDevice device) {
         this.executionContext = executionContext;
@@ -226,8 +226,8 @@ public class TornadoVMInterpreter extends TornadoLogger {
                     TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) eventSet.getDevice();
                     final Event profile = device.resolveEvent(i);
                     if (profile.getStatus() == COMPLETE) {
-                        System.out.printf("task: %s %s %9d %9d %9d %9d %9d%n", device.getDeviceName(), meta.getId(), profile.getElapsedTime(), profile.getQueuedTime(), profile.getSubmitTime(),
-                                profile.getStartTime(), profile.getEndTime());
+                        System.out.printf("task: %s %s %9d %9d %9d %9d %9d%n", device.getDeviceName(), meta.getId(), profile.getElapsedTime(), profile.getQueuedTime(), profile.getSubmitTime(), profile
+                                .getStartTime(), profile.getEndTime());
                     }
                 }
             }
@@ -253,8 +253,8 @@ public class TornadoVMInterpreter extends TornadoLogger {
         StringBuilder tornadoVMBytecodeList = null;
         if (TornadoOptions.PRINT_BYTECODES) {
             tornadoVMBytecodeList = new StringBuilder();
-            tornadoVMBytecodeList.append(InterpreterUtilities.debugHighLightHelper("Interpreter instance running bytecodes for: ")).append(deviceForInterpreter)
-                    .append(InterpreterUtilities.debugHighLightHelper(" Running in thread: ")).append(Thread.currentThread().getName()).append("\n");
+            tornadoVMBytecodeList.append(InterpreterUtilities.debugHighLightHelper("Interpreter instance running bytecodes for: ")).append(deviceForInterpreter).append(InterpreterUtilities
+                    .debugHighLightHelper(" Running in thread: ")).append(Thread.currentThread().getName()).append("\n");
         }
 
         while (bytecodeResult.hasRemaining()) {
@@ -402,7 +402,6 @@ public class TornadoVMInterpreter extends TornadoLogger {
                 String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("ALLOC") + "%s on %s, size=%d", objects[i], InterpreterUtilities.debugDeviceBC(deviceForInterpreter),
                         sizeBatch);
                 tornadoVMBytecodeList.append(verbose).append("\n");
-
             }
         }
 
@@ -412,13 +411,9 @@ public class TornadoVMInterpreter extends TornadoLogger {
     private int executeDeAlloc(StringBuilder tornadoVMBytecodeList, final int objectIndex) {
         Object object = objects.get(objectIndex);
 
-        if (isObjectKernelContext(object)) {
-            return 0;
-        }
-
         if (TornadoOptions.PRINT_BYTECODES && isObjectAtomic(object)) {
-            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("DEALLOC") + "[0x%x] %s on %s", object.hashCode(), object,
-                    InterpreterUtilities.debugDeviceBC(deviceForInterpreter));
+            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("DEALLOC") + "[0x%x] %s on %s", object.hashCode(), object, InterpreterUtilities.debugDeviceBC(
+                    deviceForInterpreter));
             tornadoVMBytecodeList.append(verbose).append("\n");
 
         }
@@ -443,7 +438,8 @@ public class TornadoVMInterpreter extends TornadoLogger {
         }
 
         // We need to stream-in when using batches, because the whole data is not copied
-        List<Integer> allEvents = (sizeBatch > 0) ? deviceForInterpreter.streamIn(object, sizeBatch, offset, objectState, waitList)
+        List<Integer> allEvents = (sizeBatch > 0)
+                ? deviceForInterpreter.streamIn(object, sizeBatch, offset, objectState, waitList)
                 : deviceForInterpreter.ensurePresent(object, objectState, waitList, sizeBatch, offset);
 
         resetEventIndexes(eventList);
@@ -547,8 +543,8 @@ public class TornadoVMInterpreter extends TornadoLogger {
         }
 
         if (TornadoOptions.PRINT_BYTECODES) {
-            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING") + " [0x%x] %s on %s, size=%d, offset=%d [event list=%d]",
-                    object.hashCode(), object, InterpreterUtilities.debugDeviceBC(deviceForInterpreter), sizeBatch, offset, eventList);
+            String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING") + " [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object
+                    .hashCode(), object, InterpreterUtilities.debugDeviceBC(deviceForInterpreter), sizeBatch, offset, eventList);
             tornadoVMBytecodeList.append(verbose).append("\n");
 
         }
@@ -615,8 +611,8 @@ public class TornadoVMInterpreter extends TornadoLogger {
                 profilerUpdateForPreCompiledTask(task);
                 doUpdate = false;
             } catch (TornadoBailoutRuntimeException e) {
-                throw new TornadoBailoutRuntimeException(
-                        "Unable to compile " + task.getFullName() + "\n" + "The internal error is: " + e.getMessage() + "\n" + "Stacktrace: " + Arrays.toString(e.getStackTrace()), e);
+                throw new TornadoBailoutRuntimeException("Unable to compile " + task.getFullName() + "\n" + "The internal error is: " + e.getMessage() + "\n" + "Stacktrace: " + Arrays.toString(e
+                        .getStackTrace()), e);
             } catch (TornadoDeviceFP64NotSupported e) {
                 throw e;
             } catch (InternalError e) {
@@ -736,7 +732,8 @@ public class TornadoVMInterpreter extends TornadoLogger {
         metadata.setGridScheduler(gridScheduler);
 
         try {
-            int lastEvent = useDependencies ? installedCode.launchWithDependencies(callWrapper, bufferAtomics, metadata, batchThreads, waitList)
+            int lastEvent = useDependencies
+                    ? installedCode.launchWithDependencies(callWrapper, bufferAtomics, metadata, batchThreads, waitList)
                     : installedCode.launchWithoutDependencies(callWrapper, bufferAtomics, metadata, batchThreads);
 
             resetEventIndexes(eventList);
@@ -817,9 +814,9 @@ public class TornadoVMInterpreter extends TornadoLogger {
      * local task list. This is inorder to preserve the original task list.
      *
      * @param taskIndex
-     *            The global task index to convert.
+     *     The global task index to convert.
      * @return The corresponding local task index, or 0 if the task is not found in
-     *         the local task list.
+     *     the local task list.
      */
     private int globalToLocalTaskIndex(int taskIndex) {
         return localTaskList.indexOf(tasks.get(taskIndex)) == -1 ? 0 : localTaskList.indexOf(tasks.get(taskIndex));
