@@ -497,7 +497,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         TornadoDevice oldDevice = meta().getLogicDevice();
 
         // prevent to set again the same device as it invalidates its state
-        if (oldDevice.getDeviceContext() == device.getDeviceContext()) {
+        if (oldDevice.equals(device)) {
+            reuseDeviceBuffersForSameDevice(device);
             return;
         }
 
@@ -515,7 +516,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             }
         }
 
-        // Release locked buffers from the old device and lock them on the new one.
+        //Release locked buffers from the old device and lock them on the new one.
         for (LocalObjectState localState : executionContext.getObjectStates()) {
             final GlobalObjectState globalState = localState.getGlobalState();
             final DeviceObjectState deviceState = globalState.getDeviceState(oldDevice);
@@ -523,6 +524,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 releaseObjectFromDeviceMemory(localState, oldDevice);
                 reuseDeviceBufferObject(localState, device);
             }
+        }
+    }
+
+    private void reuseDeviceBuffersForSameDevice(TornadoDevice device) {
+        for (LocalObjectState localState : executionContext.getObjectStates()) {
+            reuseDeviceBufferObject(localState, device);
         }
     }
 
@@ -594,7 +601,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         for (final Object arg : args) {
             index = executionContext.insertVariable(arg);
-            System.out.println("s " + arg.toString());
             if (arg.getClass().isPrimitive() || RuntimeUtilities.isBoxedPrimitiveClass(arg.getClass())) {
                 hlBuffer.put(TornadoGraphBitcodes.LOAD_PRIM.index());
             } else {
@@ -883,7 +889,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             // EVERY_EXECUTION
             boolean isObjectForStreaming = false;
             if (mode == DataTransferMode.EVERY_EXECUTION) {
-                System.out.println("YYY " + functionParameter.toString());
                 streamInObjects.add(functionParameter);
                 isObjectForStreaming = true;
             }
@@ -1000,8 +1005,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         if (vm == null) {
             return;
         }
-        inputModesObjects.stream().forEach(streamingObject -> freeDeviceMemoryObject(streamingObject.getObject()));
-        outputModeObjects.stream().forEach(streamingObject -> freeDeviceMemoryObject(streamingObject.getObject()));
+        inputModesObjects.forEach(streamingObject -> freeDeviceMemoryObject(streamingObject.getObject()));
+        outputModeObjects.forEach(streamingObject -> freeDeviceMemoryObject(streamingObject.getObject()));
     }
 
     private void freeDeviceMemoryObject(Object object) {
