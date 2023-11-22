@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -105,13 +105,13 @@ public class TornadoVMInterpreter extends TornadoLogger {
      * It constructs a new TornadoVMInterpreter object.
      *
      * @param executionContext
-     *            The {@link TornadoExecutionContext}
+     *     The {@link TornadoExecutionContext}
      * @param bytecodeResult
-     *            The {@link TornadoVMBytecodeResult}.
+     *     The {@link TornadoVMBytecodeResult}.
      * @param timeProfiler
-     *            The {@link TornadoProfiler} for time measurements.
+     *     The {@link TornadoProfiler} for time measurements.
      * @param device
-     *            The {@link TornadoAcceleratorDevice} device.
+     *     The {@link TornadoAcceleratorDevice} device.
      */
     public TornadoVMInterpreter(TornadoExecutionContext executionContext, TornadoVMBytecodeResult bytecodeResult, TornadoProfiler timeProfiler, TornadoAcceleratorDevice device) {
         this.executionContext = executionContext;
@@ -401,7 +401,6 @@ public class TornadoVMInterpreter extends TornadoLogger {
                 String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("ALLOC") + "%s on %s, size=%d", objects[i], InterpreterUtilities.debugDeviceBC(deviceForInterpreter),
                         sizeBatch);
                 tornadoVMBytecodeList.append(verbose).append("\n");
-
             }
         }
 
