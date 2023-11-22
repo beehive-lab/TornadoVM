@@ -105,28 +105,20 @@ class TornadoVMRunnerTool():
             print("Please ensure the JAVA_HOME environment variable is set correctly")
             sys.exit(0)
 
-        if "GRAALPY_HOME" in os.environ:
-            self.graalpy = os.environ["GRAALPY_HOME"] + "/bin/graalpy "
-        else:
-            self.graalpy = None
-        if "GRAALJS_HOME" in os.environ:
-            self.graaljs = os.environ["GRAALJS_HOME"] + "/bin/js "
-        else:
-            self.graaljs = None
-        if "GRAALNODEJS_HOME" in os.environ:
-            self.graalnodejs = os.environ["GRAALNODEJS_HOME"] + "/bin/node "
-        else:
-            self.graalnodejs = None
-        if "TRUFFLERUBY_HOME" in os.environ:
-            self.truffleruby = os.environ["TRUFFLERUBY_HOME"] + "/bin/ruby "
-        else:
-            self.truffleruby = None
+        env_vars = {
+            "GRAALPY_HOME": "graalpy",
+            "GRAALJS_HOME": "js",
+            "GRAALNODEJS_HOME": "node",
+            "TRUFFLERUBY_HOME": "truffleruby"
+        }
+
+        self.setTruffleVars(env_vars)
 
         self.commands = {
             "java": self.java_home + "/bin/java",
             "python": self.graalpy,
-            "js": self.graaljs,
-            "node": self.graalnodejs,
+            "js": self.js,
+            "node": self.node,
             "ruby": self.truffleruby
         }
 
@@ -145,6 +137,13 @@ class TornadoVMRunnerTool():
         self.checkCompatibilityWithTornadoVM()
         self.platform = sys.platform
         self.listOfBackends = self.getInstalledBackends(False)
+
+    def setTruffleVars(self, env_vars):
+        for var, attr in env_vars.items():
+            if var in os.environ:
+                setattr(self, attr, os.environ[var] + f"/bin/{attr} ")
+            else:
+                setattr(self, attr, None)
 
     def getJavaVersion(self):
         versionCommand = subprocess.Popen(shlex.split(self.commands["java"] + " -version"), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
