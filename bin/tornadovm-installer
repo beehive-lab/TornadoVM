@@ -240,8 +240,8 @@ class TornadoInstaller:
         ## 4. TORNADO_SDK
         os.environ["TORNADO_SDK"] = self.env["TORNADO_SDK"]
 
-    def compileTornadoVM(self, makeJDK, backend):
-        command = "make " + makeJDK + " " + backend
+    def compileTornadoVM(self, makeJDK, backend, polyglotOption):
+        command = "make " + makeJDK + " " + backend + " " + polyglotOption
         os.system(command)
 
     def createSourceFile(self):
@@ -292,6 +292,13 @@ class TornadoInstaller:
         backend = "BACKEND=" + backend
         return backend
 
+    def composePolyglotOption(sekf, args):
+        if args.polyglot:
+            polyglotOption = "polyglot"
+        else:
+            polyglotOption = ""
+        return polyglotOption
+
     def install(self, args):
 
         if args.javaHome == None:
@@ -308,6 +315,7 @@ class TornadoInstaller:
             "graal" in args.jdk
         ):
             makeJDK = "graal-jdk-21"
+            polyglotOption = self.composePolyglotOption(args)
 
         if args.javaHome != None:
             directoryPostfix = args.javaHome.split("/")[-1]
@@ -325,7 +333,7 @@ class TornadoInstaller:
             self.env["JAVA_HOME"] = args.javaHome
 
         self.setEnvironmentVariables()
-        self.compileTornadoVM(makeJDK, backend)
+        self.compileTornadoVM(makeJDK, backend, polyglotOption)
         self.createSourceFile()
 
 
@@ -388,6 +396,13 @@ def parseArguments():
         dest="javaHome",
         default=None,
         help="Use a JDK from a user directory",
+    )
+    parser.add_argument(
+        "--polyglot",
+        action="store_true",
+        dest="polyglot",
+        default=None,
+        help="To enable interoperability with Truffle Programming Languages.",
     )
     args = parser.parse_args()
 

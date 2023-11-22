@@ -12,6 +12,9 @@ build jdk21:
 graal-jdk-21:
 	bin/compile --jdk graal-jdk-21 $(BACKENDS)
 
+polyglot:
+	bin/compile --jdk graal-jdk-21 $(BACKENDS) --polyglot
+
 ptx:
 	bin/compile --jdk jdk21 --backends ptx,opencl
 

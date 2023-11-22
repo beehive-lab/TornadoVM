@@ -16,12 +16,13 @@
 #
 #
 
-myclass <- java.type('uk.ac.manchester.tornado.examples.polyglot.MyCompute')
+myclass = Java.type('uk.ac.manchester.tornado.examples.polyglot.MyCompute')
 
-print("Hello TornadoVM from R!")
-for (i in 1:5) {
-    start <- Sys.time()
-    myclass$compute()
-    end <- Sys.time()
-    print(paste("Total time (s): ", end - start))
-}
+puts("Hello TornadoVM from Ruby!")
+for a in 1..5 do
+    startTime = Time.now()
+    myclass.compute()
+    endTime = Time.now()
+    print("Total time (s): ", endTime - startTime)
+    puts
+end

@@ -1768,6 +1768,36 @@
                 </plugins>
             </build>
         </profile>
+
+        <profile>
+            <id>graalvm-polyglot</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.graalvm.polyglot</groupId>
+                    <artifactId>python</artifactId>
+                    <version>${graalvm.version}</version>
+                    <scope>runtime</scope>
+                    <type>pom</type>
+                </dependency>
+                <dependency>
+                    <groupId>org.graalvm.polyglot</groupId>
+                    <artifactId>js</artifactId>
+                    <version>${graalvm.version}</version>
+                    <scope>runtime</scope>
+                    <type>pom</type>
+                </dependency>
+                <dependency>
+                    <groupId>org.graalvm.polyglot</groupId>
+                    <artifactId>ruby</artifactId>
+                    <version>${graalvm.version}</version>
+                    <scope>runtime</scope>
+                    <type>pom</type>
+                </dependency>
+            </dependencies>
+        </profile>
     </profiles>
     <build>
         <finalName>${project.artifactId}-${project.version}-${buildNumber}</finalName>

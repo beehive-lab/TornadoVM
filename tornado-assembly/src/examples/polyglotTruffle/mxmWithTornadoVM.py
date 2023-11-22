@@ -18,7 +18,6 @@
 
 #!/usr/bin/python
 
-print("Running with tornadoVM")
 import java
 import time
 
