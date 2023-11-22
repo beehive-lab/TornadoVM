@@ -99,7 +99,9 @@ Set the ``JAVA_HOME`` variable to the GraalVM JDK:
 
    $ export JAVA_HOME=<path to GraalVM jdk 21>
 
-To enable TornadoVM to employ the standalone built distribution of the GraalVM implementations, users must set the following variables:
+To enable TornadoVM to employ the standalone built distribution of the GraalVM implementations, users must set the following variables.
+
+**Note:** The following examples show tentantive paths for a Linux environment. If you are using Mac OS X, you should ensure that your path includes the ``</Contents/Home>`` suffix.
 
 * For Python, set **GRAALPY_HOME**:
 
