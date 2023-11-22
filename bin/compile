@@ -150,23 +150,22 @@ def build_spirv_toolkit_and_level_zero():
     return current
 
 
-def build_tornadovm(jdk, backend_profiles, offline, polyglot):
+def build_tornadovm(args, backend_profiles):
     """
     Builds TornadoVM with the specified JDK and backend options.
 
     Args:
-        jdk (str): The JDK version.
+        args (object): The arguments passed by user. The JDK version as well as other options (e.g., offline (bool) and polyglot (bool) are used.
         backend_profiles (str): The processed backend options.
-        offline (bool): Flag indicating offline mode.
 
     Returns:
         CompletedProcess: Result of the Maven build process.
     """
-    if polyglot:
-        options = f"-T1.5C -Dcmake.root.dir=$CMAKE_ROOT -P{jdk},{backend_profiles},graalvm-polyglot "
+    if args.polyglot:
+        options = f"-T1.5C -Dcmake.root.dir=$CMAKE_ROOT -P{args.jdk},{backend_profiles},graalvm-polyglot "
     else:
-        options = f"-T1.5C -Dcmake.root.dir=$CMAKE_ROOT -P{jdk},{backend_profiles} "
-    if offline:
+        options = f"-T1.5C -Dcmake.root.dir=$CMAKE_ROOT -P{args.jdk},{backend_profiles} "
+    if args.offline:
         options = "-o " + options
 
     print(f"mvn {options} install")
@@ -280,7 +279,7 @@ def main():
     if "spirv" in args.backends:
         build_spirv_toolkit_and_level_zero()
 
-    mvn_build_result = build_tornadovm(args.jdk, backend_profiles, args.offline, args.polyglot)
+    mvn_build_result = build_tornadovm(args, backend_profiles)
 
     post_installation_actions(
         backend_profiles, mvn_build_result, args.jdk, graal_jars_status
