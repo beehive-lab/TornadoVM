@@ -401,7 +401,6 @@ public class TornadoVMInterpreter extends TornadoLogger {
                 String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("ALLOC") + "%s on %s, size=%d", objects[i], InterpreterUtilities.debugDeviceBC(deviceForInterpreter),
                         sizeBatch);
                 tornadoVMBytecodeList.append(verbose).append("\n");
-
             }
         }
 
@@ -410,10 +409,6 @@ public class TornadoVMInterpreter extends TornadoLogger {
 
     private int executeDeAlloc(StringBuilder tornadoVMBytecodeList, final int objectIndex) {
         Object object = objects.get(objectIndex);
-
-        if (isObjectKernelContext(object)) {
-            return 0;
-        }
 
         if (TornadoOptions.PRINT_BYTECODES && isObjectAtomic(object)) {
             String verbose = String.format("bc: " + InterpreterUtilities.debugHighLightBC("DEALLOC") + "[0x%x] %s on %s", object.hashCode(), object, InterpreterUtilities.debugDeviceBC(
