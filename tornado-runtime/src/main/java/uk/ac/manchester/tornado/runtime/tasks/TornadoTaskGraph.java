@@ -81,11 +81,6 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.types.arrays.LongArray;
-import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
@@ -96,6 +91,11 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
@@ -502,9 +502,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         for (int i = 0; i < executionContext.getTaskCount(); i++) {
             SchedulableTask task = executionContext.getTask(i);
             task.meta().setDevice(device);
-            if (task instanceof CompilableTask) {
-                ResolvedJavaMethod method = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(((CompilableTask) task).getMethod());
-                if (!meta().getLogicDevice().getDeviceContext().isCached(method.getName(), task)) {
+            if (task instanceof CompilableTask compilableTask) {
+                ResolvedJavaMethod method = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(compilableTask.getMethod());
+                if (!meta().getLogicDevice().getDeviceContext().isCached(method.getName(), compilableTask)) {
                     updateInner(i, executionContext.getTask(i));
                 }
             }
@@ -549,8 +549,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         executionContext.setTask(index, task);
 
-        if (task instanceof CompilableTask) {
-            CompilableTask compilableTask = (CompilableTask) task;
+        if (task instanceof CompilableTask compilableTask) {
             final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(compilableTask.getMethod());
             final TaskMetaData taskMetaData = compilableTask.meta();
             new SketchRequest(resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex()).run();
@@ -568,8 +567,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         int index = executionContext.addTask(task);
 
-        if (task instanceof CompilableTask) {
-            CompilableTask compilableTask = (CompilableTask) task;
+        if (task instanceof CompilableTask compilableTask) {
             final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(compilableTask.getMethod());
             final TaskMetaData taskMetaData = compilableTask.meta();
             new SketchRequest(resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getDriverIndex(), taskMetaData.getDeviceIndex()).run();
@@ -605,8 +603,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private void logTaskMethodHandle(SchedulableTask task) {
         if ((task.getTaskName() != null) && (task.getId() != null)) {
-            String methodName = (task instanceof PrebuiltTask)
-                    ? ((PrebuiltTask) task).getFilename()
+            String methodName = (task instanceof PrebuiltTask prebuiltTask)
+                    ? prebuiltTask.getFilename()
                     : ((CompilableTask) task).getMethod().getDeclaringClass().getSimpleName() + "." + task.getTaskName();
             timeProfiler.registerMethodHandle(ProfilerType.METHOD, task.getId(), methodName);
         }
@@ -743,9 +741,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         boolean compile = false;
         if (TornadoOptions.FPGA_EMULATION) {
             compile = true;
-        } else if (executionContext.getDeviceOfFirstTask() instanceof TornadoAcceleratorDevice) {
-            TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) executionContext.getDeviceOfFirstTask();
-            if (device.isFullJITMode(executionContext.getTask(0))) {
+        } else if (executionContext.getDeviceOfFirstTask() instanceof TornadoAcceleratorDevice tornadoAcceleratorDevice) {
+            if (tornadoAcceleratorDevice.isFullJITMode(executionContext.getTask(0))) {
                 compile = true;
             }
         }
@@ -1577,10 +1574,10 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private Object cloneObject(Object o) {
-        if (o instanceof float[]) {
-            return ((float[]) o).clone();
-        } else if (o instanceof int[]) {
-            return ((int[]) o).clone();
+        if (o instanceof float[] cloneFloat) {
+            return cloneFloat.clone();
+        } else if (o instanceof int[] cloneInt) {
+            return cloneInt.clone();
         } else {
             throw new RuntimeException("Data type cloning not supported");
         }
@@ -1842,7 +1839,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             if (EXPERIMENTAL_MULTI_HOST_HEAP) {
                 restoreVarsIntoJavaHeap(policy, numDevices);
             }
-
         } else {
             // Run with the winner device
             int deviceWinnerIndex = policyTimeTable.get(policy);
@@ -2068,16 +2064,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
 
         // compute bytes
-        switch (Objects.requireNonNull(units)) {
-            case "MB":
-                this.batchSizeBytes = value * 1000000;
-                break;
-            case "GB":
-                this.batchSizeBytes = value * 1000000000;
-                break;
-            default:
-                throw new TornadoRuntimeException("Units not supported: " + units);
-        }
+        this.batchSizeBytes = switch (Objects.requireNonNull(units)) {
+            case "MB" -> value * 1_000_000;
+            case "GB" -> value * 1_000_000_000;
+            default -> throw new TornadoRuntimeException("Units not supported: " + units);
+        };
         executionContext.setBatchSize(this.batchSizeBytes);
     }
 
@@ -2132,25 +2123,17 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private long __getTimerFromReduceTaskGraph(ProfilerType profilerType) {
-        switch (profilerType) {
-            case TOTAL_KERNEL_TIME:
-                return reduceTaskGraph.getExecutionResult().getProfilerResult().getDeviceKernelTime();
-            case TOTAL_DISPATCH_KERNEL_TIME:
-                return reduceTaskGraph.getExecutionResult().getProfilerResult().getKernelDispatchTime();
-            case TOTAL_DISPATCH_DATA_TRANSFERS_TIME:
-                return reduceTaskGraph.getExecutionResult().getProfilerResult().getDataTransferDispatchTime();
-            case COPY_OUT_TIME:
-                return reduceTaskGraph.getExecutionResult().getProfilerResult().getDeviceReadTime();
-            case COPY_IN_TIME:
-                return reduceTaskGraph.getExecutionResult().getProfilerResult().getDeviceWriteTime();
-            case TOTAL_DRIVER_COMPILE_TIME:
-                return reduceTaskGraph.getExecutionResult().getProfilerResult().getDriverInstallTime();
-            case TOTAL_GRAAL_COMPILE_TIME:
-                return reduceTaskGraph.getExecutionResult().getProfilerResult().getTornadoCompilerTime();
-            case TOTAL_TASK_GRAPH_TIME:
-                return reduceTaskGraph.getExecutionResult().getProfilerResult().getTotalTime();
-        }
-        return 0;
+        return switch (profilerType) {
+            case TOTAL_KERNEL_TIME -> reduceTaskGraph.getExecutionResult().getProfilerResult().getDeviceKernelTime();
+            case TOTAL_DISPATCH_KERNEL_TIME -> reduceTaskGraph.getExecutionResult().getProfilerResult().getKernelDispatchTime();
+            case TOTAL_DISPATCH_DATA_TRANSFERS_TIME -> reduceTaskGraph.getExecutionResult().getProfilerResult().getDataTransferDispatchTime();
+            case COPY_OUT_TIME -> reduceTaskGraph.getExecutionResult().getProfilerResult().getDeviceReadTime();
+            case COPY_IN_TIME -> reduceTaskGraph.getExecutionResult().getProfilerResult().getDeviceWriteTime();
+            case TOTAL_DRIVER_COMPILE_TIME -> reduceTaskGraph.getExecutionResult().getProfilerResult().getDriverInstallTime();
+            case TOTAL_GRAAL_COMPILE_TIME -> reduceTaskGraph.getExecutionResult().getProfilerResult().getTornadoCompilerTime();
+            case TOTAL_TASK_GRAPH_TIME -> reduceTaskGraph.getExecutionResult().getProfilerResult().getTotalTime();
+            default -> 0L;
+        };
     }
 
     private long __getProfilerTime(ProfilerType profilerType) {
