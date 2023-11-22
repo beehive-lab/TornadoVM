@@ -66,43 +66,64 @@ public enum SPIRVKind implements PlatformKind {
 
     // OP_TYPE_VECTOR2
     OP_TYPE_VECTOR2_INT_16(2, uk.ac.manchester.tornado.api.types.vectors.Short2.TYPE, OP_TYPE_INT_16),
+    OP_TYPE_VECTOR2_VOLUME_INT_16(2, uk.ac.manchester.tornado.api.types.vectors.Short2.TYPE, OP_TYPE_INT_16),
     OP_TYPE_VECTOR2_INT_32(2, uk.ac.manchester.tornado.api.types.vectors.Int2.TYPE, OP_TYPE_INT_32),
     OP_TYPE_VECTOR2_INT_64(2, uk.ac.manchester.tornado.api.types.vectors.Int2.TYPE, OP_TYPE_INT_64),
+    OP_TYPE_VECTORINT2_INT_32(2, uk.ac.manchester.tornado.api.types.collections.VectorInt2.TYPE, OP_TYPE_INT_32),
 
     // OP_TYPE_VECTOR 3
     OP_TYPE_VECTOR3_INT_8(3, uk.ac.manchester.tornado.api.types.vectors.Byte3.TYPE, OP_TYPE_INT_8),
     OP_TYPE_VECTOR3_INT_16(3, uk.ac.manchester.tornado.api.types.vectors.Short3.TYPE, OP_TYPE_INT_16),
     OP_TYPE_VECTOR3_INT_32(3, uk.ac.manchester.tornado.api.types.vectors.Int3.TYPE, OP_TYPE_INT_32),
+    OP_TYPE_VECTORINT3_INT_32(3, uk.ac.manchester.tornado.api.types.collections.VectorInt3.TYPE, OP_TYPE_INT_32),
     OP_TYPE_VECTOR3_INT_64(3, uk.ac.manchester.tornado.api.types.vectors.Int3.TYPE, OP_TYPE_INT_64),
+    OP_TYPE_IMAGEBYTE3_INT_8(3, uk.ac.manchester.tornado.api.types.images.ImageByte3.TYPE, OP_TYPE_INT_8),
 
     // OP_TYPE_VECTOR 4
     OP_TYPE_VECTOR4_INT_8(4, uk.ac.manchester.tornado.api.types.vectors.Byte4.TYPE, OP_TYPE_INT_8),
+    OP_TYPE_IMAGEBYTE4_INT_8(4, uk.ac.manchester.tornado.api.types.images.ImageByte4.TYPE, OP_TYPE_INT_8),
     OP_TYPE_VECTOR4_INT_32(4, uk.ac.manchester.tornado.api.types.vectors.Int4.TYPE, OP_TYPE_INT_32),
     OP_TYPE_VECTOR4_INT_64(4, uk.ac.manchester.tornado.api.types.vectors.Int4.TYPE, OP_TYPE_INT_64),
+    OP_TYPE_VECTORINT4_INT_32(4, uk.ac.manchester.tornado.api.types.collections.VectorInt4.TYPE, OP_TYPE_INT_32),
 
     // OP_TYPE_VECTOR 8
     OP_TYPE_VECTOR8_INT_32(8, uk.ac.manchester.tornado.api.types.vectors.Int8.TYPE, OP_TYPE_INT_32),
     OP_TYPE_VECTOR8_INT_64(8, uk.ac.manchester.tornado.api.types.vectors.Int8.TYPE, OP_TYPE_INT_64),
+    OP_TYPE_VECTORINT8_INT_32(8, uk.ac.manchester.tornado.api.types.collections.VectorInt8.TYPE, OP_TYPE_INT_32),
 
     // OP_TYPE_VECTOR2 Float
     OP_TYPE_VECTOR2_FLOAT_16(2, uk.ac.manchester.tornado.api.types.vectors.Float2.TYPE, OP_TYPE_FLOAT_16),  // Half float
     OP_TYPE_VECTOR2_FLOAT_32(2, uk.ac.manchester.tornado.api.types.vectors.Float2.TYPE, OP_TYPE_FLOAT_32),
     OP_TYPE_VECTOR2_FLOAT_64(2, uk.ac.manchester.tornado.api.types.vectors.Double2.TYPE, OP_TYPE_FLOAT_64),
+    OP_TYPE_VECTORFLOAT2_FLOAT_32(2, uk.ac.manchester.tornado.api.types.collections.VectorFloat2.TYPE, OP_TYPE_FLOAT_32),
+    OP_TYPE_VECTORDOUBLE2_FLOAT_64(2, uk.ac.manchester.tornado.api.types.collections.VectorDouble2.TYPE, OP_TYPE_FLOAT_64),
 
     // OP_TYPE_VECTOR3 Float
     OP_TYPE_VECTOR3_FLOAT_16(3, uk.ac.manchester.tornado.api.types.vectors.Float3.TYPE, OP_TYPE_FLOAT_16),  // Half float
     OP_TYPE_VECTOR3_FLOAT_32(3, uk.ac.manchester.tornado.api.types.vectors.Float3.TYPE, OP_TYPE_FLOAT_32),
     OP_TYPE_VECTOR3_FLOAT_64(3, uk.ac.manchester.tornado.api.types.vectors.Double3.TYPE, OP_TYPE_FLOAT_64),
+    OP_TYPE_VECTORFLOAT3_FLOAT_32(3, uk.ac.manchester.tornado.api.types.collections.VectorFloat3.TYPE, OP_TYPE_FLOAT_32),
+    OP_TYPE_IMAGEFLOAT3_FLOAT_32(3, uk.ac.manchester.tornado.api.types.images.ImageFloat3.TYPE, OP_TYPE_FLOAT_32),
+    OP_TYPE_VECTORDOUBLE3_FLOAT_64(3, uk.ac.manchester.tornado.api.types.collections.VectorDouble3.TYPE, OP_TYPE_FLOAT_64),
 
     // OP_TYPE_VECTOR4 Float
     OP_TYPE_VECTOR4_FLOAT_16(4, uk.ac.manchester.tornado.api.types.vectors.Float4.TYPE, OP_TYPE_FLOAT_16),  // Half float
     OP_TYPE_VECTOR4_FLOAT_32(4, uk.ac.manchester.tornado.api.types.vectors.Float4.TYPE, OP_TYPE_FLOAT_32),
     OP_TYPE_VECTOR4_FLOAT_64(4, uk.ac.manchester.tornado.api.types.vectors.Double4.TYPE, OP_TYPE_FLOAT_64),
+    OP_TYPE_VECTORDOUBLE4_FLOAT_64(4, uk.ac.manchester.tornado.api.types.collections.VectorDouble4.TYPE, OP_TYPE_FLOAT_64),
+    OP_TYPE_VECTORFLOAT4_FLOAT_32(4, uk.ac.manchester.tornado.api.types.collections.VectorFloat4.TYPE, OP_TYPE_FLOAT_32),
+    OP_TYPE_MATRIX2DFLOAT4_FLOAT_32(4, uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat4.TYPE, OP_TYPE_FLOAT_32),
+    OP_TYPE_MATRIX3DFLOAT4_FLOAT_32(4, uk.ac.manchester.tornado.api.types.matrix.Matrix3DFloat4.TYPE, OP_TYPE_FLOAT_32),
+    OP_TYPE_MATRIX4X4FLOAT_FLOAT_32(4, uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float.TYPE, OP_TYPE_FLOAT_32),
+    OP_TYPE_IMAGEFLOAT4_FLOAT_32(4, uk.ac.manchester.tornado.api.types.images.ImageFloat4.TYPE, OP_TYPE_FLOAT_32),
 
     // OP_TYPE_VECTOR8 Float
     OP_TYPE_VECTOR8_FLOAT_16(8, uk.ac.manchester.tornado.api.types.vectors.Float8.TYPE, OP_TYPE_FLOAT_16),  // Half float
     OP_TYPE_VECTOR8_FLOAT_32(8, uk.ac.manchester.tornado.api.types.vectors.Float8.TYPE, OP_TYPE_FLOAT_32),
     OP_TYPE_VECTOR8_FLOAT_64(8, uk.ac.manchester.tornado.api.types.vectors.Double8.TYPE, OP_TYPE_FLOAT_64),
+    OP_TYPE_VECTORDOUBLE8_FLOAT_64(8, uk.ac.manchester.tornado.api.types.collections.VectorDouble8.TYPE, OP_TYPE_FLOAT_64),
+    OP_TYPE_VECTORFLOAT8_FLOAT_32(8, uk.ac.manchester.tornado.api.types.collections.VectorFloat8.TYPE, OP_TYPE_FLOAT_32),
+    OP_TYPE_IMAGEFLOAT8_FLOAT_32(8, uk.ac.manchester.tornado.api.types.images.ImageFloat8.TYPE, OP_TYPE_FLOAT_32),
 
     OP_TYPE_VOID(0, java.lang.Void.TYPE),
 

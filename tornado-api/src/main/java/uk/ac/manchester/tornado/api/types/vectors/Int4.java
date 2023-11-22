@@ -46,7 +46,6 @@ import java.nio.IntBuffer;
 import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 
 @Vector
@@ -165,15 +164,6 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
         return storage;
     }
 
-    public static Int4 loadFromArray(final IntArray array, int index) {
-        final Int4 result = new Int4();
-        result.setX(array.get(index));
-        result.setY(array.get(index + 1));
-        result.setZ(array.get(index + 2));
-        result.setW(array.get(index + 3));
-        return result;
-    }
-
     public int get(int index) {
         return storage[index];
     }
@@ -264,10 +254,4 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
         return NUM_ELEMENTS;
     }
 
-    public void storeToArray(final IntArray array, int index) {
-        array.set(index, getX());
-        array.set(index + 1, getY());
-        array.set(index + 2, getZ());
-        array.set(index + 3, getW());
-    }
 }

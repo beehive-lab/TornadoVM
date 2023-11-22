@@ -43,13 +43,15 @@ package uk.ac.manchester.tornado.api.types.images;
 
 import java.nio.FloatBuffer;
 
-import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.utils.FloatOps;
 import uk.ac.manchester.tornado.api.types.utils.StorageFormats;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
 
 public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
+
+    public static final Class<ImageFloat4> TYPE = ImageFloat4.class;
 
     private static final int ELEMENT_SIZE = 4;
     /**
@@ -120,12 +122,28 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
 
     public Float4 get(int x, int y) {
         final int offset = toIndex(x, y);
-        return Float4.loadFromArray(storage, offset);
+        return loadFromArray(storage, offset);
+    }
+
+    private Float4 loadFromArray(final FloatArray array, int index) {
+        final Float4 result = new Float4();
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        result.setZ(array.get(index + 2));
+        result.setW(array.get(index + 3));
+        return result;
     }
 
     public void set(int x, int y, Float4 value) {
         final int offset = toIndex(x, y);
-        value.storeToArray(storage, offset);
+        storeToArray(value, storage, offset);
+    }
+
+    private void storeToArray(Float4 value, FloatArray array, int index) {
+        array.set(index, value.getX());
+        array.set(index + 1, value.getY());
+        array.set(index + 2, value.getZ());
+        array.set(index + 3, value.getW());
     }
 
     public int X() {

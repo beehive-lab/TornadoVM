@@ -53,6 +53,21 @@ import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.api.types.vectors.Byte3;
+import uk.ac.manchester.tornado.api.types.vectors.Byte4;
+import uk.ac.manchester.tornado.api.types.vectors.Double2;
+import uk.ac.manchester.tornado.api.types.vectors.Double3;
+import uk.ac.manchester.tornado.api.types.vectors.Double4;
+import uk.ac.manchester.tornado.api.types.vectors.Double8;
+import uk.ac.manchester.tornado.api.types.vectors.Float2;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
+import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.vectors.Int2;
+import uk.ac.manchester.tornado.api.types.vectors.Int3;
+import uk.ac.manchester.tornado.api.types.vectors.Int4;
+import uk.ac.manchester.tornado.api.types.vectors.Int8;
+import uk.ac.manchester.tornado.api.types.vectors.Short2;
 import uk.ac.manchester.tornado.drivers.ptx.graal.PTXStampFactory;
 import uk.ac.manchester.tornado.drivers.ptx.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.ptx.graal.nodes.GetArrayNode;
@@ -122,6 +137,34 @@ public final class PTXVectorPlugins {
             registerVectorPlugins(ps, plugins, PTXKind.DOUBLE3, DoubleArray.class, double.class);
             registerVectorPlugins(ps, plugins, PTXKind.DOUBLE4, DoubleArray.class, double.class);
             registerVectorPlugins(ps, plugins, PTXKind.DOUBLE8, DoubleArray.class, double.class);
+
+            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORFLOAT2, FloatArray.class, Float2.class);
+            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORFLOAT3, FloatArray.class, Float3.class);
+            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORFLOAT4, FloatArray.class, Float4.class);
+            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORFLOAT8, FloatArray.class, Float8.class);
+
+            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORINT2, IntArray.class, Int2.class);
+            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORINT3, IntArray.class, Int3.class);
+            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORINT4, IntArray.class, Int4.class);
+            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORINT8, IntArray.class, Int8.class);
+
+            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORDOUBLE2, DoubleArray.class, Double2.class);
+            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORDOUBLE3, DoubleArray.class, Double3.class);
+            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORDOUBLE4, DoubleArray.class, Double4.class);
+            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORDOUBLE8, DoubleArray.class, Double8.class);
+
+            registerVectorCollectionsPlugins(plugins, PTXKind.MATRIX2DFLOAT4, FloatArray.class, Float4.class);
+            registerVectorCollectionsPlugins(plugins, PTXKind.MATRIX3DFLOAT4, FloatArray.class, Float4.class);
+            registerVectorCollectionsPlugins(plugins, PTXKind.MATRIX4X4FLOAT, FloatArray.class, Float4.class);
+
+            registerVectorCollectionsPlugins(plugins, PTXKind.IMAGEFLOAT3, FloatArray.class, Float3.class);
+            registerVectorCollectionsPlugins(plugins, PTXKind.IMAGEFLOAT4, FloatArray.class, Float4.class);
+            registerVectorCollectionsPlugins(plugins, PTXKind.IMAGEFLOAT8, FloatArray.class, Float8.class);
+
+            registerVectorCollectionsPlugins(plugins, PTXKind.VOLUMESHORT2, ShortArray.class, Short2.class);
+
+            registerVectorCollectionsPlugins(plugins, PTXKind.IMAGEBYTE3, ByteArray.class, Byte3.class);
+            registerVectorCollectionsPlugins(plugins, PTXKind.IMAGEBYTE4, ByteArray.class, Byte4.class);
         }
 
     }
@@ -153,6 +196,37 @@ public final class PTXVectorPlugins {
         } else {
             throw new TornadoCompilationException("Private vectors that use " + panamaType + " for storage are not currently supported.");
         }
+    }
+
+    private static void registerVectorCollectionsPlugins(final InvocationPlugins plugins, final PTXKind vectorKind, final Class<?> storageType, final Class<?> vectorClass) {
+
+        final Class<?> declaringClass = vectorKind.getJavaClass();
+
+        final Registration r = new Registration(plugins, declaringClass);
+        r.register(new InvocationPlugin("loadFromArray", Receiver.class, storageType, int.class) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index) {
+                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(vectorClass);
+                PTXKind kind = PTXKind.fromResolvedJavaType(resolvedType);
+                JavaKind elementKind = kind.getElementKind().asJavaKind();
+                // node needed to enforce the value of the nodes stamp
+                LoadIndexedVectorNode indexedLoad = new LoadIndexedVectorNode(kind, array, index, elementKind);
+                b.push(JavaKind.Object, b.append(indexedLoad));
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("storeToArray", Receiver.class, vectorClass, storageType, int.class) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value, ValueNode array, ValueNode index) {
+                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(vectorClass);
+                PTXKind kind = PTXKind.fromResolvedJavaType(resolvedType);
+                JavaKind elementKind = kind.getElementKind().asJavaKind();
+                // No need to set stamp as it is inferred from the stamp of the incoming value
+                StoreIndexedNode indexedStore = new StoreIndexedNode(array, index, null, null, elementKind, value);
+                b.append(b.append(indexedStore));
+                return true;
+            }
+        });
+
     }
 
     private static void registerVectorPlugins(final Plugins ps, final InvocationPlugins plugins, final PTXKind vectorKind, final Class<?> storageType, final Class<?> elementType) {
@@ -240,31 +314,6 @@ public final class PTXVectorPlugins {
                 PTXKind kind = PTXKind.fromResolvedJavaType(resolvedType);
                 VectorDivNode divNode = new VectorDivNode(kind, input1, input2);
                 b.push(JavaKind.Illegal, b.append(divNode));
-                return true;
-            }
-        });
-
-        r.register(new InvocationPlugin("loadFromArray", storageType, int.class) {
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver reciever, ValueNode array, ValueNode index) {
-                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
-                PTXKind kind = PTXKind.fromResolvedJavaType(resolvedType);
-                JavaKind elementKind = kind.getElementKind().asJavaKind();
-                // node needed to enforce the value of the nodes stamp
-                LoadIndexedVectorNode indexedLoad = new LoadIndexedVectorNode(kind, array, index, elementKind);
-                b.push(JavaKind.Object, b.append(indexedLoad));
-                return true;
-            }
-        });
-
-        r.register(new InvocationPlugin("storeToArray", Receiver.class, storageType, int.class) {
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver reciever, ValueNode array, ValueNode index) {
-                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
-                ValueNode value = reciever.get();
-                PTXKind kind = PTXKind.fromResolvedJavaType(resolvedType);
-                JavaKind elementKind = kind.getElementKind().asJavaKind();
-                // No need to set stamp as it is inferred from the stamp of the incoming value
-                StoreIndexedNode indexedStore = new StoreIndexedNode(array, index, null, null, elementKind, value);
-                b.append(b.append(indexedStore));
                 return true;
             }
         });

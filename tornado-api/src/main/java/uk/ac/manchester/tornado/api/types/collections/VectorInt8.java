@@ -39,17 +39,18 @@
 package uk.ac.manchester.tornado.api.types.collections;
 
 import static uk.ac.manchester.tornado.api.types.vectors.Int8.add;
-import static uk.ac.manchester.tornado.api.types.vectors.Int8.loadFromArray;
 
 import java.nio.IntBuffer;
 
-import uk.ac.manchester.tornado.api.types.vectors.Int8;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
+import uk.ac.manchester.tornado.api.types.vectors.Int8;
 
 public class VectorInt8 implements PrimitiveStorage<IntBuffer> {
 
-    private static final int elementSizELEMENT_SIZE = 8;
+    public static final Class<VectorInt8> TYPE = VectorInt8.class;
+
+    private static final int ELEMENT_SIZE = 8;
     /**
      * backing array.
      */
@@ -74,7 +75,7 @@ public class VectorInt8 implements PrimitiveStorage<IntBuffer> {
      * Creates a vector using the provided backing array.
      */
     public VectorInt8(IntArray array) {
-        this(array.getSize() / elementSizELEMENT_SIZE, array);
+        this(array.getSize() / ELEMENT_SIZE, array);
     }
 
     /**
@@ -83,11 +84,11 @@ public class VectorInt8 implements PrimitiveStorage<IntBuffer> {
      * @param numElements
      */
     public VectorInt8(int numElements) {
-        this(numElements, new IntArray(numElements * elementSizELEMENT_SIZE));
+        this(numElements, new IntArray(numElements * ELEMENT_SIZE));
     }
 
     private int toIndex(int index) {
-        return (index * elementSizELEMENT_SIZE);
+        return (index * ELEMENT_SIZE);
     }
 
     /**
@@ -101,6 +102,14 @@ public class VectorInt8 implements PrimitiveStorage<IntBuffer> {
         return loadFromArray(storage, toIndex(index));
     }
 
+    private Int8 loadFromArray(final IntArray array, int index) {
+        final Int8 result = new Int8();
+        for (int i = 0; i < ELEMENT_SIZE; i++) {
+            result.set(i, array.get(index + i));
+        }
+        return result;
+    }
+
     /**
      * Sets the float at the given index of this vector.
      *
@@ -108,7 +117,13 @@ public class VectorInt8 implements PrimitiveStorage<IntBuffer> {
      * @param value
      */
     public void set(int index, Int8 value) {
-        value.storeToArray(storage, toIndex(index));
+        storeToArray(value, storage, toIndex(index));
+    }
+
+    private void storeToArray(Int8 value, IntArray array, int index) {
+        for (int i = 0; i < ELEMENT_SIZE; i++) {
+            array.set(index + i, value.get(i));
+        }
     }
 
     /**
@@ -152,7 +167,7 @@ public class VectorInt8 implements PrimitiveStorage<IntBuffer> {
     }
 
     public String toString() {
-        if (this.numElements > elementSizELEMENT_SIZE) {
+        if (this.numElements > ELEMENT_SIZE) {
             return String.format("VectorInt8 <%d>", this.numElements);
         }
         StringBuilder tempString = new StringBuilder();

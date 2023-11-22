@@ -41,15 +41,15 @@
  */
 package uk.ac.manchester.tornado.api.types.collections;
 
-import static uk.ac.manchester.tornado.api.types.vectors.Float3.loadFromArray;
-
 import java.nio.FloatBuffer;
 
-import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
 
 public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
+
+    public static final Class<VectorFloat3> TYPE = VectorFloat3.class;
 
     private static final int ELEMENT_SIZE = 3;
     /**
@@ -110,6 +110,14 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
         return loadFromArray(storage, toIndex(index));
     }
 
+    private Float3 loadFromArray(final FloatArray array, int index) {
+        final Float3 result = new Float3();
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        result.setZ(array.get(index + 2));
+        return result;
+    }
+
     /**
      * Sets the float at the given index of this vector.
      *
@@ -119,7 +127,13 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
      *     Value to be set
      */
     public void set(int index, Float3 value) {
-        value.storeToArray(storage, toIndex(index));
+        storeToArray(value, storage, toIndex(index));
+    }
+
+    private void storeToArray(Float3 value, FloatArray array, int index) {
+        array.set(index, value.getX());
+        array.set(index + 1, value.getY());
+        array.set(index + 2, value.getZ());
     }
 
     /**

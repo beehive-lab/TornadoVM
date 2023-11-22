@@ -39,15 +39,16 @@
 package uk.ac.manchester.tornado.api.types.collections;
 
 import static uk.ac.manchester.tornado.api.types.vectors.Double8.add;
-import static uk.ac.manchester.tornado.api.types.vectors.Double8.loadFromArray;
 
 import java.nio.DoubleBuffer;
 
-import uk.ac.manchester.tornado.api.types.vectors.Double8;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
+import uk.ac.manchester.tornado.api.types.vectors.Double8;
 
 public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
+
+    public static final Class<VectorDouble8> TYPE = VectorDouble8.class;
 
     private static final int ELEMENT_SIZE = 8;
     /**
@@ -100,6 +101,14 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
         return loadFromArray(storage, toIndex(index));
     }
 
+    private Double8 loadFromArray(final DoubleArray array, int index) {
+        final Double8 result = new Double8();
+        for (int i = 0; i < ELEMENT_SIZE; i++) {
+            result.set(i, array.get(index + i));
+        }
+        return result;
+    }
+
     /**
      * Sets the float at the given index of this vector.
      *
@@ -107,7 +116,13 @@ public class VectorDouble8 implements PrimitiveStorage<DoubleBuffer> {
      * @param value
      */
     public void set(int index, Double8 value) {
-        value.storeToArray(storage, toIndex(index));
+        storeToArray(value, storage, toIndex(index));
+    }
+
+    private void storeToArray(Double8 value, DoubleArray array, int index) {
+        for (int i = 0; i < ELEMENT_SIZE; i++) {
+            array.set(index + i, value.get(i));
+        }
     }
 
     /**

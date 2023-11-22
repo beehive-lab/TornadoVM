@@ -49,6 +49,8 @@ import uk.ac.manchester.tornado.api.types.vectors.Short2;
 
 public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
 
+    public static final Class<VolumeShort2> TYPE = VolumeShort2.class;
+
     private static final int ELEMENT_SIZE = 2;
     /**
      * backing array.
@@ -101,12 +103,24 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
 
     public Short2 get(int x, int y, int z) {
         final int index = toIndex(x, y, z);
-        return Short2.loadFromArray(storage, index);
+        return loadFromArray(storage, index);
+    }
+
+    private Short2 loadFromArray(final ShortArray array, int index) {
+        final Short2 result = new Short2();
+        result.setX(array.get(index));
+        result.setY(array.get(index + 1));
+        return result;
     }
 
     public void set(int x, int y, int z, Short2 value) {
         final int index = toIndex(x, y, z);
-        value.storeToArray(storage, index);
+        storeToArray(value, storage, index);
+    }
+
+    private void storeToArray(Short2 value, ShortArray array, int index) {
+        array.set(index, value.getX());
+        array.set(index + 1, value.getY());
     }
 
     public int Y() {

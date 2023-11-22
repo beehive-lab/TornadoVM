@@ -34,6 +34,26 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble2;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble3;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble4;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble8;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat2;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat8;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt2;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt3;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt4;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt8;
+import uk.ac.manchester.tornado.api.types.images.ImageByte3;
+import uk.ac.manchester.tornado.api.types.images.ImageByte4;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat4;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat8;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat4;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix3DFloat4;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.types.vectors.Byte3;
 import uk.ac.manchester.tornado.api.types.vectors.Byte4;
 import uk.ac.manchester.tornado.api.types.vectors.Double2;
@@ -50,6 +70,7 @@ import uk.ac.manchester.tornado.api.types.vectors.Int4;
 import uk.ac.manchester.tornado.api.types.vectors.Int8;
 import uk.ac.manchester.tornado.api.types.vectors.Short2;
 import uk.ac.manchester.tornado.api.types.vectors.Short3;
+import uk.ac.manchester.tornado.api.types.volumes.VolumeShort2;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 
 public enum OCLKind implements PlatformKind {
@@ -76,13 +97,18 @@ public enum OCLKind implements PlatformKind {
     UCHAR2(2, null, UCHAR),
     SHORT2(2, Short2.TYPE, SHORT),
     USHORT2(2, null, USHORT),
+    VOLUMESHORT2(2, VolumeShort2.TYPE, SHORT),
     INT2(2, Int2.TYPE, INT),
     UINT2(2, null, UINT),
     LONG2(2, null, LONG),
     ULONG2(2, null, ULONG),
     FLOAT2(2, Float2.TYPE, FLOAT),
     DOUBLE2(2, Double2.TYPE, DOUBLE),
+    VECTORDOUBLE2(2, VectorDouble2.TYPE, DOUBLE),
+    VECTORINT2(2, VectorInt2.TYPE, INT),
+    VECTORFLOAT2(2, VectorFloat2.TYPE, FLOAT),
     CHAR3(3, Byte3.TYPE, CHAR),
+    IMAGEBYTE3(3, ImageByte3.TYPE, CHAR),
     UCHAR3(3, null, UCHAR),
     SHORT3(3, Short3.TYPE, SHORT),
     USHORT3(3, null, USHORT),
@@ -92,7 +118,12 @@ public enum OCLKind implements PlatformKind {
     ULONG3(3, null, ULONG),
     FLOAT3(3, Float3.TYPE, FLOAT),
     DOUBLE3(3, Double3.TYPE, DOUBLE),
+    VECTORDOUBLE3(3, VectorDouble3.TYPE, DOUBLE),
+    VECTORINT3(3, VectorInt3.TYPE, INT),
+    VECTORFLOAT3(3, VectorFloat3.TYPE, FLOAT),
+    IMAGEFLOAT3(3, ImageFloat3.TYPE, FLOAT),
     CHAR4(4, Byte4.TYPE, CHAR),
+    IMAGEBYTE4(4, ImageByte4.TYPE, CHAR),
     UCHAR4(4, null, UCHAR),
     SHORT4(4, null, SHORT),
     USHORT4(4, null, USHORT),
@@ -101,7 +132,14 @@ public enum OCLKind implements PlatformKind {
     LONG4(4, null, LONG),
     ULONG4(4, null, ULONG),
     FLOAT4(4, Float4.TYPE, FLOAT),
+    MATRIX2DFLOAT4(4, Matrix2DFloat4.TYPE, FLOAT),
+    MATRIX3DFLOAT4(4, Matrix3DFloat4.TYPE, FLOAT),
+    MATRIX4X4FLOAT(4, Matrix4x4Float.TYPE, FLOAT),
+    IMAGEFLOAT4(4, ImageFloat4.TYPE, FLOAT),
     DOUBLE4(4, Double4.TYPE, DOUBLE),
+    VECTORDOUBLE4(4, VectorDouble4.TYPE, DOUBLE),
+    VECTORINT4(4, VectorInt4.TYPE, INT),
+    VECTORFLOAT4(4, VectorFloat4.TYPE, FLOAT),
     CHAR8(8, null, CHAR),
     UCHAR8(8, null, UCHAR),
     SHORT8(8, null, SHORT),
@@ -112,6 +150,10 @@ public enum OCLKind implements PlatformKind {
     ULONG8(8, null, ULONG),
     FLOAT8(8, Float8.TYPE, FLOAT),
     DOUBLE8(8, Double8.TYPE, DOUBLE),
+    VECTORDOUBLE8(8, VectorDouble8.TYPE, DOUBLE),
+    VECTORINT8(8, VectorInt8.TYPE, INT),
+    VECTORFLOAT8(8, VectorFloat8.TYPE, FLOAT),
+    IMAGEFLOAT8(8, ImageFloat8.TYPE, FLOAT),
     CHAR16(16, null, CHAR),
     UCHAR16(16, null, UCHAR),
     SHORT16(16, null, SHORT),
@@ -123,7 +165,6 @@ public enum OCLKind implements PlatformKind {
     FLOAT16(16, null, FLOAT),
     DOUBLE16(16, null, DOUBLE),
     ILLEGAL(0, null),
-
     INTEGER_ATOMIC_JAVA(4, java.util.concurrent.atomic.AtomicInteger.class);
     // @formatter:on
 

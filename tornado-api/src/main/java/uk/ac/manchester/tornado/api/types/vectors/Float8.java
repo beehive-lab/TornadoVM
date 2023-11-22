@@ -46,7 +46,6 @@ import java.nio.FloatBuffer;
 import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.utils.FloatOps;
 
@@ -333,22 +332,4 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
         return storage;
     }
 
-    public static Float8 loadFromArray(final FloatArray array, int index) {
-        final Float8 result = new Float8();
-        result.setS0(array.get(index));
-        result.setS1(array.get(index + 1));
-        result.setS2(array.get(index + 2));
-        result.setS3(array.get(index + 3));
-        result.setS4(array.get(index + 4));
-        result.setS5(array.get(index + 5));
-        result.setS6(array.get(index + 6));
-        result.setS7(array.get(index + 7));
-        return result;
-    }
-
-    public void storeToArray(final FloatArray array, int index) {
-        for (int i = 0; i < NUM_ELEMENTS; i++) {
-            array.set(index + i, get(i));
-        }
-    }
 }
