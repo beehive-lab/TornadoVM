@@ -1,14 +1,14 @@
 Polyglot Programming
 =============================
-TornadoVM can be used with the GraalVM Truffle Polyglot API to invoke Task-Graphs from guest programming languages such as Python, Ruby, etc. This guide will describe how to execute TornadoVM programs through code written in Python, JavaScript, and Ruby. 
+TornadoVM can be used with the GraalVM Truffle Polyglot API to invoke Task-Graphs from guest programming languages such as Python, Ruby, etc. This guide will describe how to execute TornadoVM programs through code written in Python, JavaScript, and Ruby.
 
 1. Prerequisites
 ----------------------------------------------
 
 A) Configuration of the JAVA_HOME Variable
 ~~~~~~~~~~~~~~~~~~~~~~
-To enable polyglot support, the ``JAVA_HOME`` variable must be set to the GraalVM path. 
-Instructions on how to install TornadoVM with GraalVM can be found here: :ref:`installation_graalvm`. 
+To enable polyglot support, the ``JAVA_HOME`` variable must be set to the GraalVM path.
+Instructions on how to install TornadoVM with GraalVM can be found here: :ref:`installation_graalvm`.
 
 .. code-block:: bash
 
@@ -16,25 +16,20 @@ Instructions on how to install TornadoVM with GraalVM can be found here: :ref:`i
 
 B) GraalVM Polyglot Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~
-Since GraalVM 23.1.0, there have been three important changes as described in a `dedicated GraalVM blog post <https://medium.com/graalvm/truffle-unchained-13887b77b62c/>`_:
+The implementations of the programming languages (e.g., Python, JavaScript, Ruby) that are supported by the GraalVM polyglot API are now shipped as standalone distributions. And they can either be used as any other Java library from :ref:`Maven Central <graalvm-mvn-dependencies>`, or as :ref:`standalone toolkits <build-standalone-toolkits>`.
 
-* The GraalVM Updater is removed from the distribution of GraalVM without replacement.
-
-* All polyglot language runtimes shipped by GraalVM can now be used as Java libraries from Maven Central.
-
-* More standalone distributions are shipped for languages, such as Node and LLVM, that did not have such a distribution. Additionally, dedicated builds are provided with a pre-installed GraalVM JDK called JVM-standalone for every language. **The GraalVM JDK that is pre-installed does not include the compiler modules of Graal. Instead, it is built with libGraal (i.e., the Graal compiler compiled as a native library) to reduce the disk footprint.**
-
-Thus, the implementations of the programming languages (e.g., Python, JavaScript, Ruby) that are supported by the GraalVM polyglot API are now shipped as standalone distributions. And they can either be used as any other Java library from Maven Central, or as standalone toolkits.
+.. _graalvm-mvn-dependencies:
 
 2. Using the GraalVM Polyglot Dependencies from Maven Central
 ----------------------------------------------
+
 A) Build TornadoVM with the GraalVM Polyglot Dependencies from Maven Central
 ~~~~~~~~~~~~~~~~~~~~~~
 To build TornadoVM and utilize the `maven dependencies for GraalPy, GraalVM JavaScript and TruffleRuby <https://central.sonatype.com/namespace/org.graalvm.polyglot/>`_, you can build TornadoVM and use the ``graalvm-polyglot`` profile.
 
 .. code-block:: bash
 
-   $ make graal-jdk-21 polyglot 
+   $ make graal-jdk-21 polyglot
 
 B) Run the Examples
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -45,6 +40,8 @@ Now, that TornadoVM is built with the polyglot dependencies, you can run the ava
    $ tornado --debug -m tornado.examples/uk.ac.manchester.tornado.examples.polyglot.HelloPython
    $ tornado --debug -m tornado.examples/uk.ac.manchester.tornado.examples.polyglot.HelloJS
    $ tornado --debug -m tornado.examples/uk.ac.manchester.tornado.examples.polyglot.HelloRuby
+
+.. _build-standalone-toolkits:
 
 3. Using the GraalVM Polyglot Dependencies as Standalone Toolkits
 ----------------------------------------------
@@ -124,7 +121,7 @@ To enable TornadoVM to employ the standalone built distribution of the GraalVM i
 
 B) Interoperate between a Polyglot Programming Language and TornadoVM through Graal's Polyglot API
 ~~~~~~~~~~~~~~~~~~~~~~
-In the following example, we will iterate over the necessary steps to invoke a TornadoVM computation from `Python, JavaScript and Ruby programs <https://github.com/beehive-lab/TornadoVM/tree/master/tornado-assembly/src/examples/polyglotTruffle>`_, using the ``MyCompute`` class from the `TornadoVM examples module <https://github.com/beehive-lab/TornadoVM/blob/master/tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/polyglot/MyCompute.java/>`_. However, users can create their own Java classes with the code to be accelerated following the TornadoVM API guidelines :ref:`programming`. 
+In the following example, we will iterate over the necessary steps to invoke a TornadoVM computation from `Python, JavaScript and Ruby programs <https://github.com/beehive-lab/TornadoVM/tree/master/tornado-assembly/src/examples/polyglotTruffle>`_, using the ``MyCompute`` class from the `TornadoVM examples module <https://github.com/beehive-lab/TornadoVM/blob/master/tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/polyglot/MyCompute.java/>`_. However, users can create their own Java classes with the code to be accelerated following the TornadoVM API guidelines :ref:`programming`.
 
 **Step 1: Create a variable that is of the Java class type.**
 
@@ -133,21 +130,21 @@ In the following example, we will iterate over the necessary steps to invoke a T
 .. code-block:: bash
 
    myclass = java.type('uk.ac.manchester.tornado.examples.polyglot.MyCompute')
-        
-    
+
+
 * **JavaScript**
 
 .. code-block:: bash
 
    var myclass = Java.type('uk.ac.manchester.tornado.examples.polyglot.MyCompute')
-    
+
 * **Ruby**
 
 .. code-block:: bash
 
    myclass = Java.type('uk.ac.manchester.tornado.examples.polyglot.MyCompute')
 
-**Step 2: Use this variable to invoke the Java function that contains the Task-Graph.** 
+**Step 2: Use this variable to invoke the Java function that contains the Task-Graph.**
 
 In this example, the function is named ``compute()`` and it performs a matrix multiplication.
 
@@ -156,14 +153,14 @@ In this example, the function is named ``compute()`` and it performs a matrix mu
 .. code-block:: bash
 
    myclass.compute()
-        
-    
+
+
 * **JavaScript**
 
 .. code-block:: bash
 
    myclass.compute()
-    
+
 * **Ruby**
 
 .. code-block:: bash
@@ -172,22 +169,22 @@ In this example, the function is named ``compute()`` and it performs a matrix mu
 
 **Step 3: Execute the Ruby/JavaScript/Python program through TornadoVM.**
 
-The polyglot program can be executed using the ``tornado`` command, followed by the ``--truffle`` option and the language of the program, as follows: 
-    
+The polyglot program can be executed using the ``tornado`` command, followed by the ``--truffle`` option and the language of the program, as follows:
+
 .. code-block:: bash
-    
+
    $ tornado --truffle python|ruby|js|node <path/to/polyglot/program>
 
-All of the existing TornadoVM options (e.g., ``--printKernel``, etc.) can be used as always.  
+All of the existing TornadoVM options (e.g., ``--printKernel``, etc.) can be used as always.
 
 C) Run the Examples
 ~~~~~~~~~~~~~~~~~~~~~~
-The ``tornado-assembly/src/examples/polyglotTruffle`` directory contains three examples, one for each of the supported languages.  
-These examples can be executed using the ``polyglotTests.sh`` script. 
+The ``tornado-assembly/src/examples/polyglotTruffle`` directory contains three examples, one for each of the supported languages.
+These examples can be executed using the ``polyglotTests.sh`` script.
 
 .. code-block:: bash
 
-   $ ./scripts/polyglotTests.sh 
+   $ ./scripts/polyglotTests.sh
 
 * **Python**
 
@@ -195,15 +192,14 @@ These examples can be executed using the ``polyglotTests.sh`` script.
 
    $ tornado --printKernel --truffle python $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.py
 
-* **JavaScript**    
+* **JavaScript**
 
 .. code-block:: bash
 
    $ tornado --printKernel --truffle js $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.js
 
-* **Ruby**    
+* **Ruby**
 
 .. code-block:: bash
 
    $ tornado --printKernel --truffle ruby $TORNADO_SDK/examples/polyglotTruffle/mxmWithTornadoVM.rb
-
