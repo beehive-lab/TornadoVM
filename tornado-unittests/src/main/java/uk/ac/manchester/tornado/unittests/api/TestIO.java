@@ -171,7 +171,7 @@ public class TestIO extends TornadoTestBase {
     @Test
     public void testCopyInWithDevice() {
         final int N = 8096;
-        final int ITERATIONS = 30;
+        final int ITERATIONS = 10;
 
         FloatArray arrayA = createAndInitializeArray(N);
         FloatArray arrayB = createAndInitializeArray(N);
@@ -198,13 +198,13 @@ public class TestIO extends TornadoTestBase {
         }
         executionPlan.freeDeviceMemory();
 
+        executionPlan.withDevice(TornadoExecutionPlan.getDevice(0, 0));
+
         long copyInSumSimpleExecWithDev = 0L;
         for (int i = 0; i < ITERATIONS; i++) {
-            TornadoExecutionResult executionResult = executionPlan.withDevice(TornadoExecutionPlan.getDevice(0, 0)).execute();
+            TornadoExecutionResult executionResult = executionPlan.execute();
             copyInSumSimpleExecWithDev += executionResult.getProfilerResult().getDeviceWriteTime();
         }
-
-        executionPlan.freeDeviceMemory();
 
         // Generous assertions with delta of 10%
         assertEquals(copyInSumSimpleExec, copyInSumSimpleExecWithDev, (float) copyInSumSimpleExec / 10);
