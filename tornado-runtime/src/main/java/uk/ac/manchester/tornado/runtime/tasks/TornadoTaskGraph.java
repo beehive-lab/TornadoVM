@@ -496,6 +496,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         TornadoDevice oldDevice = meta().getLogicDevice();
 
+        // prevent to set again the same device as it invalidates its state
+        if (oldDevice.equals(device)) {
+            reuseDeviceBuffersForSameDevice(device);
+            return;
+        }
+
         meta().setDevice(device);
 
         // Make sure that a sketch is available for the device.
@@ -510,7 +516,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             }
         }
 
-        // Release locked buffers from the old device and lock them on the new one.
+        //Release locked buffers from the old device and lock them on the new one.
         for (LocalObjectState localState : executionContext.getObjectStates()) {
             final GlobalObjectState globalState = localState.getGlobalState();
             final DeviceObjectState deviceState = globalState.getDeviceState(oldDevice);
@@ -518,6 +524,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 releaseObjectFromDeviceMemory(localState, oldDevice);
                 reuseDeviceBufferObject(localState, device);
             }
+        }
+    }
+
+    private void reuseDeviceBuffersForSameDevice(TornadoDevice device) {
+        for (LocalObjectState localState : executionContext.getObjectStates()) {
+            reuseDeviceBufferObject(localState, device);
         }
     }
 
@@ -993,8 +1005,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         if (vm == null) {
             return;
         }
-        inputModesObjects.stream().forEach(streamingObject -> freeDeviceMemoryObject(streamingObject.getObject()));
-        outputModeObjects.stream().forEach(streamingObject -> freeDeviceMemoryObject(streamingObject.getObject()));
+        inputModesObjects.forEach(streamingObject -> freeDeviceMemoryObject(streamingObject.getObject()));
+        outputModeObjects.forEach(streamingObject -> freeDeviceMemoryObject(streamingObject.getObject()));
     }
 
     private void freeDeviceMemoryObject(Object object) {
