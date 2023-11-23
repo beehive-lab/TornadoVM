@@ -4,8 +4,8 @@
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
     <envs>
-      <env name="BACKEND" value="opencl" />
       <env name="PYTHONUNBUFFERED" value="1" />
+      <env name="BACKEND" value="opencl" />
       <env name="TORNADO_SDK" value="$PROJECT_DIR$/bin/sdk" />
       <env name="selected_backends" value="opencl" />
     </envs>
@@ -24,7 +24,7 @@
     <option name="REDIRECT_INPUT" value="false" />
     <option name="INPUT_FILE" value="" />
     <method v="2">
-      <option name="RunConfigurationTask" enabled="true" run_configuration_name="TornadoVM Maven [clean,install]" run_configuration_type="MavenRunConfiguration" />
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="_internal_TornadoVM_Maven-cleanAndinstall" run_configuration_type="MavenRunConfiguration" />
     </method>
   </configuration>
 </component>
