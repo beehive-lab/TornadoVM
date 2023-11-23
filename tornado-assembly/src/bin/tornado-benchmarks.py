@@ -261,7 +261,7 @@ def runWithJMH(args):
     jvm_options, tornado_options = composeAllOptions(args)
     print(Colors.CYAN + "[INFO] TornadoVM options: " + tornado_options +
           jvm_options + Colors.RESET)
-    command = __TORNADO_COMMAND__ + tornado_options + " -jar benchmarks/target/jmhbenchmarks.jar "
+    command = __TORNADO_COMMAND__ + tornado_options + " -jar tornado-benchmarks/target/jmhbenchmarks.jar "
     print(command)
     os.system(command)
 
