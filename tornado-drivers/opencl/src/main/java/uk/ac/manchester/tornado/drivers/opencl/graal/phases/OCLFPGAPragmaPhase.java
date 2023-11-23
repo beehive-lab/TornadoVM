@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -28,9 +28,11 @@ import static org.graalvm.compiler.nodes.loop.DefaultLoopPolicies.Options.ExactF
 import static org.graalvm.compiler.nodes.loop.DefaultLoopPolicies.Options.FullUnrollMaxNodes;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.EndNode;
+import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -53,8 +55,8 @@ public class OCLFPGAPragmaPhase extends Phase {
      * same performance with full unrolling on an Intel Arria 10 FPGA.
      *
      * @see <a href= "https://arxiv.org/ftp/arxiv/papers/2010/2010.16304.pdf">
-     *      Transparent Compiler and Runtime Specializations for Accelerating
-     *      Managed Languages on FPGAs</a>.
+     *     Transparent Compiler and Runtime Specializations for Accelerating
+     *     Managed Languages on FPGAs</a>.
      */
     private static final int UNROLL_FACTOR_NUMBER = 4;
     /**
@@ -62,8 +64,8 @@ public class OCLFPGAPragmaPhase extends Phase {
      * number has been indicated as the default by Xilinx HLS for full pipelining.
      *
      * @see <a href=
-     *      "https://www.xilinx.com/html_docs/xilinx2020_2/vitis_doc/openclattributes.html#sgo1504034359903__ad410982"
-     *      * >Vitis 2020.2 Documentation</a>.
+     *     "https://www.xilinx.com/html_docs/xilinx2020_2/vitis_doc/openclattributes.html#sgo1504034359903__ad410982"
+     *     * >Vitis 2020.2 Documentation</a>.
      */
     private static final int XILINX_PIPELINING_II_NUMBER = 1;
     private TornadoDeviceContext deviceContext;
@@ -102,6 +104,11 @@ public class OCLFPGAPragmaPhase extends Phase {
         } else {
             return true;
         }
+    }
+
+    @Override
+    public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
+        return ALWAYS_APPLICABLE;
     }
 
     @Override
