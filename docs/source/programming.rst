@@ -40,7 +40,7 @@ a) ``@Parallel`` for annotating parallel loops; and b) ``@Reduce`` for annotatin
 The following code snippet shows a full example to accelerate Matrix-Multiplication using TornadoVM and the loop-parallel API:
 The two outermost loops can be parallelizable because there are no data dependencies across different iterations.
 Therefore, we can annotate these two loops.
-Note that, since TornadoVM maps parallel loops to Parllel ND-Range for OpenCL, CUDA and SPIR-V, developers can benefit
+Note that, since TornadoVM maps parallel loops to Parallel ND-Range for OpenCL, CUDA and SPIR-V, developers can benefit
 from 1D (annotating one parallel loop), 2D (annotating two consecutive parallel loops) and 3D (annotating 3 consecutive parallel loops) in their Java methods.
 
 
@@ -48,7 +48,7 @@ from 1D (annotating one parallel loop), 2D (annotating two consecutive parallel 
    :code: java
 
 
-The code snipet shows a complete example, using the Loop Parallel annotations, the Task Graphs and the execution plan.
+The code snippet shows a complete example, using the Loop Parallel annotations, the Task Graphs and the execution plan.
 This document explains each part.
 
 
@@ -92,45 +92,29 @@ The following table presents the available features that TornadoVM exposes in Ja
    // Note:
    kc = new KernelContext();
 
-+-------------------+----------------+--------------------------------+
-| TornadoVM         | OpenCL         | PTX                            |
-| KernelContext     |                |                                |
-+===================+================+================================+
-| kc.globalIdx      | ge             | blockIdx \* blockDim.x +       |
-|                   | t_global_id(0) | threadIdx                      |
-+-------------------+----------------+--------------------------------+
-| kc.globalIdy      | ge             | blockIdy \* blockDim.y +       |
-|                   | t_global_id(1) | threadIdy                      |
-+-------------------+----------------+--------------------------------+
-| kc.globalIdz      | ge             | blockIdz \* blockDim.z +       |
-|                   | t_global_id(2) | threadIdz                      |
-+-------------------+----------------+--------------------------------+
-| kc.ge             | ge             | blockDim                       |
-| tLocalGroupSize() | t_local_size() |                                |
-+-------------------+----------------+--------------------------------+
-| kc.localBarrier() | barrier(CLK_LO | barrier.sync                   |
-|                   | CAL_MEM_FENCE) |                                |
-+-------------------+----------------+--------------------------------+
-| k                 | b              | barrier.sync                   |
-| c.globalBarrier() | arrier(CLK_GLO |                                |
-|                   | BAL_MEM_FENCE) |                                |
-+-------------------+----------------+--------------------------------+
-| int[] array =     | \__local int   | .shared .s32 array[size]       |
-| kc.allocateIn     | array[size]    |                                |
-| tLocalArray(size) |                |                                |
-+-------------------+----------------+--------------------------------+
-| float[] array =   | \__local float | .shared .s32 array[size]       |
-| kc.allocateFloa   | array[size]    |                                |
-| tLocalArray(size) |                |                                |
-+-------------------+----------------+--------------------------------+
-| long[] array =    | \__local long  | .shared .s64 array[size]       |
-| kc.allocateLon    | array[size]    |                                |
-| gLocalArray(size) |                |                                |
-+-------------------+----------------+--------------------------------+
-| double[] array =  | \__local       | .shared .s64 array[size]       |
-| kc.allocateDoubl  | double         |                                |
-| eLocalArray(size) | array[size]    |                                |
-+-------------------+----------------+--------------------------------+
++----------------------------------------------------+-------------------------------+------------------------------------+
+| TornadoVM KernelContext                            | OpenCL                        | PTX                                |
++====================================================+===============================+====================================+
+| kc.globalIdx                                       | get_global_id(0)              | blockIdx \* blockDim.x + threadIdx |
++----------------------------------------------------+-------------------------------+------------------------------------+
+| kc.globalIdy                                       | get_global_id(1)              | blockIdy \* blockDim.y + threadIdy |
++----------------------------------------------------+-------------------------------+------------------------------------+
+| kc.globalIdz                                       | get_global_id(2)              | blockIdz \* blockDim.z + threadIdz |
++----------------------------------------------------+-------------------------------+------------------------------------+
+| kc.getLocalGroupSize()                             | get_local_size()              | blockDim                           |
++----------------------------------------------------+-------------------------------+------------------------------------+
+| kc.localBarrier()                                  | barrier(CLK_LOCAL_MEM_FENCE)  | barrier.sync                       |
++----------------------------------------------------+-------------------------------+------------------------------------+
+| kc.globalBarrier()                                 | barrier(CLK_GLOBAL_MEM_FENCE) | barrier.sync                       |
++----------------------------------------------------+-------------------------------+------------------------------------+
+| int[] array = kc.allocateIntLocalArray(size)       | \__local int array[size]      | .shared .s32 array[size]           |
++----------------------------------------------------+-------------------------------+------------------------------------+
+| float[] array = kc.allocateFloatLocalArray(size)   | \__local float array[size]    | .shared .s32 array[size]           |
++----------------------------------------------------+-------------------------------+------------------------------------+
+| long[] array = kc.allocateLongLocalArray(size)     | \__local long array[size]     | .shared .s64 array[size]           |
++----------------------------------------------------+-------------------------------+------------------------------------+
+| double[] array = kc.allocateDoubleLocalArray(size) | \__local double array[size]   | .shared .s64 array[size]           |
++----------------------------------------------------+-------------------------------+------------------------------------+
 
 Example
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -318,7 +302,7 @@ This is performed using the ``task`` API call as follows:
    taskGraph.task("sample", Class::method, param1, param2);
 
 
-- The first paramter sets an ID to the task. This is useful if developers want to change device, or other runtime parameters, from the command line.
+- The first parameter sets an ID to the task. This is useful if developers want to change device, or other runtime parameters, from the command line.
 - The second parameter is a reference (or a Java lambda expression), to an existing Java method.
 - The rest of the parameters correspond to the function call parameters, as if the method were invoked.
 
@@ -429,7 +413,7 @@ TornadoVM now supports basic reductions for ``int``, ``long``,\ ``float`` and ``
 Examples can be found in the ``examples/src/main/java/uk/ac/manchester/tornado/unittests/reductions`` directory on GitHub.
 
 TornadoVM exposes the Java annotation ``@Reduce`` to represent parallel reductions.
-Simiarly to the ``@Parallel`` annotation, the ``@Reduce`` annotation is used to identify parallel sections in Java sequential code.
+Similarly to the ``@Parallel`` annotation, the ``@Reduce`` annotation is used to identify parallel sections in Java sequential code.
 The annotations is used for method parameter in which reductions must be applied.
 This is similar to OpenMP and OpenACC.
 
@@ -551,7 +535,7 @@ Dynamic Reconfiguration
 
 
 The dynamic configuration in TornadoVM is the capability to migrate tasks at runtime from one device to another (e.g., from one GPU to another, or from one CPU to GPU, etc).
-The dynamic reconfiguration is not enabled by default, but it can be easily activated through the execition plan as follows:
+The dynamic reconfiguration is not enabled by default, but it can be easily activated through the execution plan as follows:
 
 
 .. code:: java
