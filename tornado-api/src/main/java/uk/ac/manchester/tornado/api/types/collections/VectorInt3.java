@@ -87,6 +87,10 @@ public class VectorInt3 implements PrimitiveStorage<IntBuffer> {
         this(numElements, new IntArray(numElements * ELEMENT_SIZE));
     }
 
+    public int vectorWidth() {
+        return ELEMENT_SIZE;
+    }
+
     private int toIndex(int index) {
         return (index * ELEMENT_SIZE);
     }

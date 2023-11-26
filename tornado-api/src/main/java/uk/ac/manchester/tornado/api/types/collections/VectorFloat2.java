@@ -88,6 +88,10 @@ public class VectorFloat2 implements PrimitiveStorage<FloatBuffer> {
         this(array.getSize() / ELEMENT_SIZE, array);
     }
 
+    public int vectorWidth() {
+        return ELEMENT_SIZE;
+    }
+
     private int toIndex(int index) {
         return (index * ELEMENT_SIZE);
     }

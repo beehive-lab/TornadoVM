@@ -91,6 +91,10 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
         this(numElements, new FloatArray(numElements * ELEMENT_SIZE));
     }
 
+    public int vectorWidth() {
+        return ELEMENT_SIZE;
+    }
+
     public FloatArray getArray() {
         return storage;
     }
