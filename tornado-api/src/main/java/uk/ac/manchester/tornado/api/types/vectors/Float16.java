@@ -180,8 +180,10 @@ public final class Float16 implements PrimitiveStorage<FloatBuffer> {
 
     public static float dot(Float16 a, Float16 b) {
         final Float16 m = mult(a, b);
-        return m.getS0() + m.getS1() + m.getS2() + m.getS3() + m.getS4() + m.getS5() + m.getS6() + m.getS7() + m.getS8() + m.getS9() + m.getS10() + m.getS11() + m.getS12() + m.getS13() + m
-                .getS14() + m.getS15();
+        return m.getS0() + m.getS1() + m.getS2() + m.getS3() //
+                + m.getS4() + m.getS5() + m.getS6() + m.getS7() //
+                + m.getS8() + m.getS9() + m.getS10() + m.getS11() //
+                + m.getS12() + m.getS13() + m.getS14() + m.getS15();
     }
 
     public float getS0() {

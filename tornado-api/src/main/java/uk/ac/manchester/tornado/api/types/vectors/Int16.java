@@ -199,9 +199,11 @@ public class Int16 implements PrimitiveStorage<IntBuffer> {
     }
 
     public static int dot(Int16 a, Int16 b) {
-        final Int16 m = mult(a, b);
-        return m.getS0() + m.getS1() + m.getS2() + m.getS3() + m.getS4() + m.getS5() + m.getS6() + m.getS7() + m.getS8() + m.getS9() + m.getS10() + m.getS11() + m.getS12() + m.getS13() + m
-                .getS14() + m.getS15();
+        final Int16 m = Int16.mult(a, b);
+        return m.getS0() + m.getS1() + m.getS2() + m.getS3() //
+                + m.getS4() + m.getS5() + m.getS6() + m.getS7() //
+                + m.getS8() + m.getS9() + m.getS10() + m.getS11() //
+                + m.getS12() + m.getS13() + m.getS14() + m.getS15();
     }
 
     public static boolean isEqual(Int16 a, Int16 b) {
