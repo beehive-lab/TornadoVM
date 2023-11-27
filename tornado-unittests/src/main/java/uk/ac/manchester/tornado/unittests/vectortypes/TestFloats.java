@@ -76,6 +76,11 @@ public class TestFloats extends TornadoTestBase {
         result.set(0, dot);
     }
 
+    private static void dotMethodFloat16(Float16 a, Float16 b, VectorFloat result) {
+        float dot = Float16.dot(a, b);
+        result.set(0, dot);
+    }
+
     private static void testFloat3Add(Float3 a, Float3 b, VectorFloat3 results) {
         results.set(0, Float3.add(a, b));
     }
@@ -348,6 +353,24 @@ public class TestFloats extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
                 .task("t0", TestFloats::dotMethodFloat8, a, b, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+
+        assertEquals(120, output.get(0), DELTA);
+    }
+
+    @Test
+    public void testSimpleDotProductFloat16() {
+        Float16 a = new Float16(1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f);
+        Float16 b = new Float16(8f, 7f, 6f, 5f, 4f, 3f, 2f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f);
+        VectorFloat output = new VectorFloat(1);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestFloats::dotMethodFloat16, a, b, output) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();

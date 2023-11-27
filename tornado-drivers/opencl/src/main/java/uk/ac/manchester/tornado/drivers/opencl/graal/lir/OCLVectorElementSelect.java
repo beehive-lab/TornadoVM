@@ -61,21 +61,20 @@ public class OCLVectorElementSelect extends OCLLIROp {
      *
      * 
      */
-    public static char converVectorSelectToComplyWithSpec(int value) {
+    public static char convertForWithOf16(int value) {
         if (value >= 10 && value <= 15) {
+            // Convert values 10 to 15 to letters A to F
             return (char) ('A' + value - 10);
         } else {
-            throw new IllegalArgumentException("Invalid value for vector select operation: " + value);
+            throw new IllegalArgumentException("Invalid value: " + value);
         }
     }
 
     @Override
     public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
         asm.emitValueOrOp(crb, vector);
-
-        int valueNodeIndex = Integer.parseInt(OCLAssembler.getAbsoluteIndexFromValue(selection));
-        String vectorIndex = String.valueOf(converVectorSelectToComplyWithSpec(valueNodeIndex));
-
+        int idx = Integer.parseInt(OCLAssembler.getAbsoluteIndexFromValue(selection));
+        String vectorIndex = idx > 9 ? String.valueOf(convertForWithOf16(idx)) : OCLAssembler.getAbsoluteIndexFromValue(selection);
         asm.emitSymbol(".s" + vectorIndex);
     }
 
