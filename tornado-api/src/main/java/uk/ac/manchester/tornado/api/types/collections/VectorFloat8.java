@@ -90,6 +90,10 @@ public class VectorFloat8 implements PrimitiveStorage<FloatBuffer> {
         this(numElements, new FloatArray(numElements * ELEMENT_SIZE));
     }
 
+    public int vectorWidth() {
+        return ELEMENT_SIZE;
+    }
+
     private int toIndex(int index) {
         return (index * ELEMENT_SIZE);
     }
