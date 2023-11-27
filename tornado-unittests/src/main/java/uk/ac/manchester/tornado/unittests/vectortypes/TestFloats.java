@@ -583,6 +583,14 @@ public class TestFloats extends TornadoTestBase {
             assertEquals(sequential.getS5(), output.get(i).getS5(), DELTA);
             assertEquals(sequential.getS6(), output.get(i).getS6(), DELTA);
             assertEquals(sequential.getS7(), output.get(i).getS7(), DELTA);
+            assertEquals(sequential.getS8(), output.get(i).getS8(), DELTA);
+            assertEquals(sequential.getS9(), output.get(i).getS9(), DELTA);
+            assertEquals(sequential.getS10(), output.get(i).getS10(), DELTA);
+            assertEquals(sequential.getS11(), output.get(i).getS11(), DELTA);
+            assertEquals(sequential.getS12(), output.get(i).getS12(), DELTA);
+            assertEquals(sequential.getS13(), output.get(i).getS13(), DELTA);
+            assertEquals(sequential.getS14(), output.get(i).getS14(), DELTA);
+            assertEquals(sequential.getS15(), output.get(i).getS15(), DELTA);
         }
     }
 

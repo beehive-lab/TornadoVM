@@ -44,6 +44,7 @@ import uk.ac.manchester.tornado.api.types.collections.VectorFloat2;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat8;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt16;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt2;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt3;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt4;
@@ -68,6 +69,7 @@ import uk.ac.manchester.tornado.api.types.vectors.Float2;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.vectors.Int16;
 import uk.ac.manchester.tornado.api.types.vectors.Int2;
 import uk.ac.manchester.tornado.api.types.vectors.Int3;
 import uk.ac.manchester.tornado.api.types.vectors.Int4;
@@ -157,6 +159,7 @@ public enum OCLKind implements PlatformKind {
     VECTORDOUBLE8(8, VectorDouble8.TYPE, DOUBLE),
     VECTORDOUBLE16(16, VectorDouble16.TYPE, DOUBLE),
     VECTORINT8(8, VectorInt8.TYPE, INT),
+    VECTORINT16(16, VectorInt16.TYPE, INT),
     VECTORFLOAT8(8, VectorFloat8.TYPE, FLOAT),
     VECTORFLOAT16(16, VectorFloat16.TYPE, FLOAT),
     IMAGEFLOAT8(8, ImageFloat8.TYPE, FLOAT),
@@ -164,7 +167,7 @@ public enum OCLKind implements PlatformKind {
     UCHAR16(16, null, UCHAR),
     SHORT16(16, null, SHORT),
     USHORT16(16, null, USHORT),
-    INT16(16, null, INT),
+    INT16(16, Int16.TYPE, INT),
     UINT16(16, null, UINT),
     LONG16(16, null, LONG),
     ULONG16(16, null, ULONG),
