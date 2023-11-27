@@ -3,14 +3,14 @@
 Cloud Deployments
 ========================
 
-TornadoVM can be executed on the cloud. 
+TornadoVM can be executed on the cloud.
 This document explains how to use TornadoVM for running on Amazons AWS instances that contain GPUs or FPGAs.
 
 1. Running on AWS for CPUs and GPUs
 -------------------------------------
 
 The installation and execution instructions for running on AWS CPUs and
-GPUs is identical to those for running locally. 
+GPUs is identical to those for running locally.
 See the general installation steps here: :ref:`installation`.
 
 2. Running on AWS EC2 F1 Xilinx FPGAs
@@ -18,23 +18,22 @@ See the general installation steps here: :ref:`installation`.
 
 The following toolkit configuration comes with the AWS EC2 F1 instance:
 
--  FPGA DEV AMI: 1.10.0
--  Xilinx Vitis Tool: 2020.2
+-  FPGA DEV AMI: 1.12.2
+-  Xilinx Vitis Tool: 2021.2
 
 Pre-requisites:
 ~~~~~~~~~~~~~~~
 
--  You need to have a storage bucket with: (s3_bucket, s3_dcp_key and s3_loogs_key) for Step 3.
+-  You need to install ``python3`` (tested with Python 3.9.6) and ``OpenSSL 1.1.1``.
 
--  You need to clone the `aws-fpga repository <https://github.com/aws/aws-fpga>`__ and checkout
-   ``v1.4.18``, as follows:
+-  You need to have an S3 storage bucket and permissions to access it (s3_bucket, s3_dcp_key and s3_logs_key) for Step 3.
+
+-  You need to clone the `aws-fpga repository <https://github.com/aws/aws-fpga>`__ (this is the tested `commit point <https://github.com/aws/aws-fpga/commit/863d963308231d0789a48f8840ceb1141368b34a>`_), as follows:
 
    .. code:: bash
 
       $ cd /home/centos
       $ git clone https://github.com/aws/aws-fpga.git $AWS_FPGA_REPO_DIR
-      $ cd $AWS_FPGA_REPO_DIR
-      $ git checkout v1.4.18
 
 1. Install TornadoVM as a CentOS user. The Xilinx FPGA is not exposed to simple users.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -43,8 +42,8 @@ Pre-requisites:
 
    $ git clone https://github.com/beehive-lab/TornadoVM.git
    $ cd TornadoVM
-   $ source etc/sources.env
-   $ make
+   $ ./bin/tornadovm-installer --jdk jdk21 --backend opencl
+   $ source setvars.env
 
 2. Follow these steps to get access to the Xilinx FPGA.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -63,13 +62,14 @@ b. Load the environment variables for Xilinx HLS and runtime.
 .. code:: bash
 
    $ source $AWS_FPGA_REPO_DIR/vitis_setup.sh
+   $ systemctl is-active --quiet mpd || sudo systemctl start mpd
 
 c. Load the environment variables of TornadoVM for root.
 
 .. code:: bash
 
    $ cd /home/centos/TornadoVM
-   $ source etc/sources.env
+   $ source setvars.env
 
    $ tornado --devices
 
@@ -93,7 +93,7 @@ Example of configuration file:
 .. code:: bash
 
    [device]
-   DEVICE_NAME = /home/centos/src/project_data/aws-fpga/Vitis/aws_platform/xilinx_aws-vu9p-f1_shell-v04261818_201920_2/xilinx_aws-vu9p-f1_shell-v04261818_201920_2.xpfm
+   DEVICE_NAME = /home/centos/src/project_data/aws-fpga/Vitis/aws_platform/xilinx_aws-vu9p-f1_shell-v04261818_201920_3/xilinx_aws-vu9p-f1_shell-v04261818_201920_3.xpfm
    [options]
    COMPILER=v++
    FLAGS = -O3 -j12 # Configure the compilation flags. You can also pass the HLS configuration file (e.g. --config conf.cfg).
@@ -122,7 +122,7 @@ The following example uses a custom configuration file
 
 .. code:: bash
 
-   $ tornado --jvm "-Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM/etc/aws-fpga.conf -Xmx20g -Xms20g" --printKernel --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTMT --params="256 default 1" >> output.log
+   $ tornado --jvm "-Ds0.t0.device=0:0 -Dtornado.fpga.conf.file=/home/centos/TornadoVM/bin/sdk/etc/aws-fpga.conf -Xmx20g -Xms20g" --printKernel --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTMT --params="256 default 1" >> output.log
    $ Ctrl-Z (^Z)
    $ bg
    $ disown
@@ -213,10 +213,10 @@ The result is the following:
    __attribute__((reqd_work_group_size(64, 1, 1)))
    __kernel void computeDft(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global uchar *inreal, __global uchar *inimag, __global uchar *outreal, __global uchar *outimag, __global uchar *inputSize)
    {
-     int i_8, i_29, i_35, i_5, i_4, i_36; 
-     float f_6, f_7, f_24, f_25, f_26, f_27, f_28, f_16, f_17, f_18, f_19, f_20, f_21, f_22, f_23, f_13, f_15; 
-     ulong ul_12, ul_3, ul_2, ul_34, ul_14, ul_1, ul_33, ul_0; 
-     long l_9, l_10, l_11, l_30, l_31, l_32; 
+     int i_8, i_29, i_35, i_5, i_4, i_36;
+     float f_6, f_7, f_24, f_25, f_26, f_27, f_28, f_16, f_17, f_18, f_19, f_20, f_21, f_22, f_23, f_13, f_15;
+     ulong ul_12, ul_3, ul_2, ul_34, ul_14, ul_1, ul_33, ul_0;
+     long l_9, l_10, l_11, l_30, l_31, l_32;
 
      // BLOCK 0
      ul_0  =  (ulong) inreal;
@@ -284,7 +284,7 @@ The result is the following:
        Local  work size  : [64, 1, 1]
        Number of workgroups  : [4]
 
-   Total time:  4532676526 ns 
+   Total time:  4532676526 ns
 
    Is valid?: true
 
