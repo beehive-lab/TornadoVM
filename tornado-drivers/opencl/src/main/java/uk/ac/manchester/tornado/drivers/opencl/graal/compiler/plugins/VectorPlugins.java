@@ -59,6 +59,7 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.vectors.Byte3;
 import uk.ac.manchester.tornado.api.types.vectors.Byte4;
+import uk.ac.manchester.tornado.api.types.vectors.Double16;
 import uk.ac.manchester.tornado.api.types.vectors.Double2;
 import uk.ac.manchester.tornado.api.types.vectors.Double3;
 import uk.ac.manchester.tornado.api.types.vectors.Double4;
@@ -145,6 +146,7 @@ public final class VectorPlugins {
             registerVectorPlugins(ps, plugins, OCLKind.DOUBLE3, DoubleArray.class, double.class);
             registerVectorPlugins(ps, plugins, OCLKind.DOUBLE4, DoubleArray.class, double.class);
             registerVectorPlugins(ps, plugins, OCLKind.DOUBLE8, DoubleArray.class, double.class);
+            registerVectorPlugins(ps, plugins, OCLKind.DOUBLE16, DoubleArray.class, double.class);
 
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORFLOAT2, FloatArray.class, Float2.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORFLOAT3, FloatArray.class, Float3.class);
@@ -161,6 +163,7 @@ public final class VectorPlugins {
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE3, DoubleArray.class, Double3.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE4, DoubleArray.class, Double4.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE8, DoubleArray.class, Double8.class);
+            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE16, DoubleArray.class, Double16.class);
 
             registerVectorCollectionsPlugins(plugins, OCLKind.MATRIX2DFLOAT4, FloatArray.class, Float4.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.MATRIX3DFLOAT4, FloatArray.class, Float4.class);

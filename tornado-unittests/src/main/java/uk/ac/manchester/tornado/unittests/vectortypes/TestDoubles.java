@@ -28,17 +28,19 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.vectors.Double2;
-import uk.ac.manchester.tornado.api.types.vectors.Double3;
-import uk.ac.manchester.tornado.api.types.vectors.Double4;
-import uk.ac.manchester.tornado.api.types.vectors.Double8;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.collections.VectorDouble;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble16;
 import uk.ac.manchester.tornado.api.types.collections.VectorDouble2;
 import uk.ac.manchester.tornado.api.types.collections.VectorDouble3;
 import uk.ac.manchester.tornado.api.types.collections.VectorDouble4;
 import uk.ac.manchester.tornado.api.types.collections.VectorDouble8;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
-import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.vectors.Double16;
+import uk.ac.manchester.tornado.api.types.vectors.Double2;
+import uk.ac.manchester.tornado.api.types.vectors.Double3;
+import uk.ac.manchester.tornado.api.types.vectors.Double4;
+import uk.ac.manchester.tornado.api.types.vectors.Double8;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -112,6 +114,18 @@ public class TestDoubles extends TornadoTestBase {
     public static void addVectorDouble4(VectorDouble4 a, VectorDouble4 b, VectorDouble4 results) {
         for (@Parallel int i = 0; i < a.getLength(); i++) {
             results.set(i, Double4.add(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void addVectorDouble8(VectorDouble8 a, VectorDouble8 b, VectorDouble8 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Double8.add(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void addVectorDouble16(VectorDouble16 a, VectorDouble16 b, VectorDouble16 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Double16.add(a.get(i), b.get(i)));
         }
     }
 
@@ -440,6 +454,69 @@ public class TestDoubles extends TornadoTestBase {
             assertEquals(sequential.getY(), output.get(i).getY(), DELTA);
             assertEquals(sequential.getZ(), output.get(i).getZ(), DELTA);
             assertEquals(sequential.getW(), output.get(i).getW(), DELTA);
+        }
+    }
+
+    @Test
+    public void testVectorDouble8() {
+        int size = 64;
+
+        VectorDouble8 a = new VectorDouble8(size);
+        VectorDouble8 b = new VectorDouble8(size);
+        VectorDouble8 output = new VectorDouble8(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Double8(i, i, i, i, i, i, i, i));
+            b.set(i, new Double8(size - i, size - i, size - i, size - i, size - i, size - i, size - i, size - i));
+        }
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestDoubles::addVectorDouble8, a, b, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+
+        for (int i = 0; i < size; i++) {
+            Double8 sequential = new Double8(i + (size - i), i + (size - i), i + (size - i), i + (size - i), i + (size - i), i + (size - i), i + (size - i), i + (size - i));
+
+            for (int j = 0; j < 8; j++) {
+                assertEquals(sequential.get(j), output.get(i).get(j), DELTA);
+            }
+        }
+    }
+
+    @Test
+    public void testVectorDouble16() {
+        int size = 64;
+
+        VectorDouble16 a = new VectorDouble16(size);
+        VectorDouble16 b = new VectorDouble16(size);
+        VectorDouble16 output = new VectorDouble16(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Double16(i, i, i, i, i, i, i, i, i, i, i, i, i, i, i, i));
+            b.set(i, new Double16(size - i, size - i, size - i, size - i, size - i, size - i, size - i, size - i, size - i, size - i, size - i, size - i, size - i, size - i, size - i, size - i));
+        }
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestDoubles::addVectorDouble16, a, b, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+
+        for (int i = 0; i < size; i++) {
+            Double16 sequential = new Double16(i + (size - i), i + (size - i), i + (size - i), i + (size - i), i + (size - i), i + (size - i), i + (size - i), i + (size - i), i + (size - i),
+                    i + (size - i), i + (size - i), i + (size - i), i + (size - i), i + (size - i), i + (size - i), i + (size - i));
+
+            for (int j = 0; j < 16; j++) {
+                assertEquals(sequential.get(j), output.get(i).get(j), DELTA);
+            }
         }
     }
 

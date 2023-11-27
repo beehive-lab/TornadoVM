@@ -34,6 +34,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble16;
 import uk.ac.manchester.tornado.api.types.collections.VectorDouble2;
 import uk.ac.manchester.tornado.api.types.collections.VectorDouble3;
 import uk.ac.manchester.tornado.api.types.collections.VectorDouble4;
@@ -57,6 +58,7 @@ import uk.ac.manchester.tornado.api.types.matrix.Matrix3DFloat4;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.types.vectors.Byte3;
 import uk.ac.manchester.tornado.api.types.vectors.Byte4;
+import uk.ac.manchester.tornado.api.types.vectors.Double16;
 import uk.ac.manchester.tornado.api.types.vectors.Double2;
 import uk.ac.manchester.tornado.api.types.vectors.Double3;
 import uk.ac.manchester.tornado.api.types.vectors.Double4;
@@ -153,6 +155,7 @@ public enum OCLKind implements PlatformKind {
     FLOAT8(8, Float8.TYPE, FLOAT),
     DOUBLE8(8, Double8.TYPE, DOUBLE),
     VECTORDOUBLE8(8, VectorDouble8.TYPE, DOUBLE),
+    VECTORDOUBLE16(16, VectorDouble16.TYPE, DOUBLE),
     VECTORINT8(8, VectorInt8.TYPE, INT),
     VECTORFLOAT8(8, VectorFloat8.TYPE, FLOAT),
     VECTORFLOAT16(16, VectorFloat16.TYPE, FLOAT),
@@ -165,7 +168,7 @@ public enum OCLKind implements PlatformKind {
     UINT16(16, null, UINT),
     LONG16(16, null, LONG),
     ULONG16(16, null, ULONG),
-    DOUBLE16(16, null, DOUBLE),
+    DOUBLE16(16, Double16.TYPE, DOUBLE),
     FLOAT16(16, Float16.TYPE, FLOAT),
     
     ILLEGAL(0, null),
