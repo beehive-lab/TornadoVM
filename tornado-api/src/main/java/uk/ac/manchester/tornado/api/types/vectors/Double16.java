@@ -199,6 +199,12 @@ public final class Double16 implements PrimitiveStorage<DoubleBuffer> {
         return result;
     }
 
+    public static double dot(Double16 a, Double16 b) {
+        final Double16 m = mult(a, b);
+        return m.getS0() + m.getS1() + m.getS2() + m.getS3() + m.getS4() + m.getS5() + m.getS6() + m.getS7() + m.getS8() + m.getS9() + m.getS10() + m.getS11() + m.getS12() + m.getS13() + m
+                .getS14() + m.getS15();
+    }
+
     public static boolean isEqual(Double16 a, Double16 b) {
         return TornadoMath.isEqual(a.toArray(), b.toArray());
     }
