@@ -197,8 +197,8 @@ public final class VectorPlugins {
         if (thisObject instanceof PiNode) {
             thisObject = ((PiNode) thisObject).getOriginalNode();
         }
-        if (thisObject instanceof VectorValueNode) {
-            vector = (VectorValueNode) thisObject;
+        if (thisObject instanceof VectorValueNode vectorValueNode) {
+            vector = vectorValueNode;
         }
         guarantee(vector != null, "[Vector Plugins] unable to resolve vector");
         return vector;
