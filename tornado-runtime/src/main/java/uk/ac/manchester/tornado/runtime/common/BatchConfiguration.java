@@ -89,9 +89,6 @@ public class BatchConfiguration {
                 if (classObjects.size() > 1) {
                     throw new TornadoRuntimeException("[UNSUPPORTED] Input objects with different data types not currently supported");
                 }
-                if (inputSizes.size() > 1) {
-                    throw new TornadoRuntimeException("[UNSUPPORTED] Input objects with different sizes not currently supported");
-                }
             } else if (o instanceof IntArray) {
                 totalSize = ((IntArray) o).getNumBytesWithoutHeader();
                 inputSizes.add(totalSize);
@@ -123,6 +120,10 @@ public class BatchConfiguration {
             } else {
                 throw new TornadoRuntimeException("Unsupported type: ");
             }
+        }
+
+        if (inputSizes.size() > 1) {
+            throw new TornadoRuntimeException("[UNSUPPORTED] Input objects with different sizes not currently supported");
         }
 
         assert dataTypeSize != null;
