@@ -45,9 +45,11 @@ import java.nio.IntBuffer;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.internal.annotations.Payload;
+import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 
+@Vector
 public class Int16 implements PrimitiveStorage<IntBuffer> {
 
     public static final Class<Int16> TYPE = Int16.class;

@@ -44,8 +44,10 @@ package uk.ac.manchester.tornado.api.types.vectors;
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.internal.annotations.Payload;
+import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 
+@Vector
 public final class Float16 implements PrimitiveStorage<FloatBuffer> {
 
     public static final Class<Float16> TYPE = Float16.class;
