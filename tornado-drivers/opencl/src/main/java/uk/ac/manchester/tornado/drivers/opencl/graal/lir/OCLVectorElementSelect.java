@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -44,11 +44,39 @@ public class OCLVectorElementSelect extends OCLLIROp {
         this.selection = selection;
     }
 
+    /**
+     * Converts a numeric index to comply with the specified rules for a 16-component vector.
+     * <p>
+     * The specification allows numeric indices in the range:
+     * 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, a, A, b, B, c, C, d, D, e, E, f, F
+     * <p>
+     * For values between 10 and 15 (inclusive), this method returns the corresponding uppercase letter (A to F).
+     * Otherwise, it throws an {@code IllegalArgumentException} for invalid values.
+     *
+     * @param value
+     *     The numeric index to be converted.
+     * @return The converted character complying with the specified rules.
+     * @throws IllegalArgumentException
+     *     If the value is outside the allowed range.
+     *
+     * 
+     */
+    public static char converVectorSelectToComplyWithSpec(int value) {
+        if (value >= 10 && value <= 15) {
+            return (char) ('A' + value - 10);
+        } else {
+            throw new IllegalArgumentException("Invalid value for vector select operation: " + value);
+        }
+    }
+
     @Override
     public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
         asm.emitValueOrOp(crb, vector);
-        asm.emitSymbol(".s");
-        asm.emitValue(crb, selection);
+
+        int valueNodeIndex = Integer.parseInt(OCLAssembler.getAbsoluteIndexFromValue(selection));
+        String vectorIndex = String.valueOf(converVectorSelectToComplyWithSpec(valueNodeIndex));
+
+        asm.emitSymbol(".s" + vectorIndex);
     }
 
     @Override
