@@ -23,12 +23,14 @@ import static org.junit.Assert.assertEquals;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
@@ -96,6 +98,18 @@ public class TestBatches extends TornadoTestBase {
     public static void compute(ShortArray arrayA, ShortArray arrayB, ShortArray arrayC) {
         for (@Parallel int i = 0; i < arrayA.getSize(); i++) {
             arrayC.set(i, (short) (arrayA.get(i) + arrayB.get(i)));
+        }
+    }
+
+    static void compute(IntArray in, IntArray out) {
+        for (@Parallel int i = 0; i < in.getSize(); i++) {
+            out.set(i, in.get(i));
+        }
+    }
+
+    static void compute(int[] in, int[] out) {
+        for (@Parallel int i = 0; i < in.length; i++) {
+            out[i] = in[i];
         }
     }
 
@@ -409,6 +423,40 @@ public class TestBatches extends TornadoTestBase {
         for (int i = 0; i < arrayA.getSize(); i++) {
             assertEquals(arrayA.get(i) + arrayB.get(i), arrayC.get(i));
         }
+        executionPlan.freeDeviceMemory();
+    }
+
+    @Test
+    public void testSameInputSizeRestriction() {
+        // This test checks that the BatchConfiguration restrictions for different input sizes is met
+        checkMaxHeapAllocation(5, MemSize.MB);
+        IntArray a0 = new IntArray(2 * 1_000_000);
+        IntArray a1 = new IntArray(3 * 1_000_000);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a0) //
+                .task("t0", TestBatches::compute, a0, a1) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a1);
+        ImmutableTaskGraph snapshot = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(snapshot);
+        Assert.assertThrows(TornadoRuntimeException.class, () -> executionPlan.withBatch("1MB").execute());
+        executionPlan.freeDeviceMemory();
+    }
+
+    @Test
+    public void testSameInputSizeRestrictionJavaArrays() {
+        // This test checks that the BatchConfiguration restrictions for different input sizes is met
+        checkMaxHeapAllocation(5, MemSize.MB);
+        int[] a0 = new int[2 * 1_000_000];
+        int[] a1 = new int[3 * 1_000_000];
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a0) //
+                .task("t0", TestBatches::compute, a0, a1) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a1);
+        ImmutableTaskGraph snapshot = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(snapshot);
+        Assert.assertThrows(TornadoRuntimeException.class, () -> executionPlan.withBatch("1MB").execute());
         executionPlan.freeDeviceMemory();
     }
 
