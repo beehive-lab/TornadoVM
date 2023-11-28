@@ -121,6 +121,7 @@ public class SPIRVVectorPlugins {
             registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR3_FLOAT_32, FloatArray.class, float.class);
             registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR4_FLOAT_32, FloatArray.class, float.class);
             registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR8_FLOAT_32, FloatArray.class, float.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR8_FLOAT_32, FloatArray.class, float.class);
 
             // Adding ints
             registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR2_INT_32, IntArray.class, int.class);
