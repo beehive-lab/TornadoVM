@@ -182,10 +182,10 @@ public class TestIO extends TornadoTestBase {
         // Enable profiler
         System.setProperty("tornado.profiler", "True");
 
-        TaskGraph taskGraph = new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("foo") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA) //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, arrayB) //
-                .task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC) //
+                .task("bar", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, arrayC);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
