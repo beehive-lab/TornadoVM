@@ -131,9 +131,9 @@ public class TestBatches extends TornadoTestBase {
         }
     }
 
-    static void compute(IntArray out, int[] in) {
-        for (@Parallel int i = 0; i < in.length; i++) {
-            out.set(i, in[i]);
+    static void compute(IntArray in, int[] out) {
+        for (@Parallel int i = 0; i < in.getSize(); i++) {
+            out[i] = in.get(i);
         }
     }
 
