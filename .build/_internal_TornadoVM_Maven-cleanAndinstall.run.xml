@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="TornadoVM Maven [clean,install]" type="MavenRunConfiguration" factoryName="Maven">
+  <configuration default="false" name="_internal_TornadoVM_Maven-cleanAndinstall" type="MavenRunConfiguration" factoryName="Maven">
     <MavenSettings>
       <option name="myGeneralSettings">
         <MavenGeneralSettings>
@@ -8,10 +8,9 @@
           <option name="emulateTerminal" value="true" />
           <option name="failureBehavior" value="NOT_SET" />
           <option name="localRepository" value="" />
-          <option name="mavenHome" value="$PROJECT_DIR$/etc/dependencies/apache-maven-3.9.2" />
+          <option name="mavenHome" value="$PROJECT_DIR$/etc/dependencies/apache-maven-3.9.3" />
           <option name="nonRecursive" value="false" />
           <option name="outputLevel" value="INFO" />
-          <option name="pluginUpdatePolicy" value="DEFAULT" />
           <option name="printErrorStackTraces" value="false" />
           <option name="showDialogWithAdvancedSettings" value="false" />
           <option name="threads" />
@@ -24,6 +23,7 @@
       <option name="myRunnerSettings" />
       <option name="myRunnerParameters">
         <MavenRunnerParameters>
+          <option name="cmdOptions" />
           <option name="profiles">
             <set />
           </option>
@@ -36,8 +36,12 @@
           <option name="pomFileName" />
           <option name="profilesMap">
             <map>
-              <entry key="jdk-11-plus" value="true" />
+              <entry key="graal-jdk-21" value="true" />
+              <entry key="opencl-backend" value="true" />
             </map>
+          </option>
+          <option name="projectsCmdOptionValues">
+            <list />
           </option>
           <option name="resolveToWorkspace" value="false" />
           <option name="workingDirPath" value="$PROJECT_DIR$" />
