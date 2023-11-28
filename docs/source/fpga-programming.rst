@@ -215,7 +215,7 @@ Example:
 
 .. code:: bash
 
-   tornado --jvm="-Ds0.t0.device=0:1 -Ds0.t0.global.dims=1024 -Ds0.t0.local.dims=64 \
+   tornado --jvm="-Ds0.t0.device=0:1 -Ds0.t0.global.workgroup.size=1024 -Ds0.t0.local.workgroup.size=64 \
        -Dtornado.precompiled.binary=/path/to/lookupBufferAddress,s0.t0.device=0:1 "
        -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTMT \
        --params="1024 normal 10"
