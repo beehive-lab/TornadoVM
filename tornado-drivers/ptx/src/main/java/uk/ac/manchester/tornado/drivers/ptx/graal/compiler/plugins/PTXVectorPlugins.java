@@ -55,14 +55,17 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.vectors.Byte3;
 import uk.ac.manchester.tornado.api.types.vectors.Byte4;
+import uk.ac.manchester.tornado.api.types.vectors.Double16;
 import uk.ac.manchester.tornado.api.types.vectors.Double2;
 import uk.ac.manchester.tornado.api.types.vectors.Double3;
 import uk.ac.manchester.tornado.api.types.vectors.Double4;
 import uk.ac.manchester.tornado.api.types.vectors.Double8;
+import uk.ac.manchester.tornado.api.types.vectors.Float16;
 import uk.ac.manchester.tornado.api.types.vectors.Float2;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.vectors.Int16;
 import uk.ac.manchester.tornado.api.types.vectors.Int2;
 import uk.ac.manchester.tornado.api.types.vectors.Int3;
 import uk.ac.manchester.tornado.api.types.vectors.Int4;
@@ -118,12 +121,14 @@ public final class PTXVectorPlugins {
             registerVectorPlugins(ps, plugins, PTXKind.FLOAT3, FloatArray.class, float.class);
             registerVectorPlugins(ps, plugins, PTXKind.FLOAT4, FloatArray.class, float.class);
             registerVectorPlugins(ps, plugins, PTXKind.FLOAT8, FloatArray.class, float.class);
+            registerVectorPlugins(ps, plugins, PTXKind.FLOAT16, FloatArray.class, float.class);
 
             // Adding ints
             registerVectorPlugins(ps, plugins, PTXKind.INT2, IntArray.class, int.class);
             registerVectorPlugins(ps, plugins, PTXKind.INT3, IntArray.class, int.class);
             registerVectorPlugins(ps, plugins, PTXKind.INT4, IntArray.class, int.class);
             registerVectorPlugins(ps, plugins, PTXKind.INT8, IntArray.class, int.class);
+            registerVectorPlugins(ps, plugins, PTXKind.INT16, IntArray.class, int.class);
 
             // Adding shorts
             registerVectorPlugins(ps, plugins, PTXKind.SHORT2, ShortArray.class, short.class);
@@ -137,21 +142,25 @@ public final class PTXVectorPlugins {
             registerVectorPlugins(ps, plugins, PTXKind.DOUBLE3, DoubleArray.class, double.class);
             registerVectorPlugins(ps, plugins, PTXKind.DOUBLE4, DoubleArray.class, double.class);
             registerVectorPlugins(ps, plugins, PTXKind.DOUBLE8, DoubleArray.class, double.class);
+            registerVectorPlugins(ps, plugins, PTXKind.DOUBLE16, DoubleArray.class, double.class);
 
             registerVectorCollectionsPlugins(plugins, PTXKind.VECTORFLOAT2, FloatArray.class, Float2.class);
             registerVectorCollectionsPlugins(plugins, PTXKind.VECTORFLOAT3, FloatArray.class, Float3.class);
             registerVectorCollectionsPlugins(plugins, PTXKind.VECTORFLOAT4, FloatArray.class, Float4.class);
             registerVectorCollectionsPlugins(plugins, PTXKind.VECTORFLOAT8, FloatArray.class, Float8.class);
+            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORFLOAT16, FloatArray.class, Float16.class);
 
             registerVectorCollectionsPlugins(plugins, PTXKind.VECTORINT2, IntArray.class, Int2.class);
             registerVectorCollectionsPlugins(plugins, PTXKind.VECTORINT3, IntArray.class, Int3.class);
             registerVectorCollectionsPlugins(plugins, PTXKind.VECTORINT4, IntArray.class, Int4.class);
             registerVectorCollectionsPlugins(plugins, PTXKind.VECTORINT8, IntArray.class, Int8.class);
+            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORINT16, IntArray.class, Int16.class);
 
             registerVectorCollectionsPlugins(plugins, PTXKind.VECTORDOUBLE2, DoubleArray.class, Double2.class);
             registerVectorCollectionsPlugins(plugins, PTXKind.VECTORDOUBLE3, DoubleArray.class, Double3.class);
             registerVectorCollectionsPlugins(plugins, PTXKind.VECTORDOUBLE4, DoubleArray.class, Double4.class);
             registerVectorCollectionsPlugins(plugins, PTXKind.VECTORDOUBLE8, DoubleArray.class, Double8.class);
+            registerVectorCollectionsPlugins(plugins, PTXKind.VECTORDOUBLE16, DoubleArray.class, Double16.class);
 
             registerVectorCollectionsPlugins(plugins, PTXKind.MATRIX2DFLOAT4, FloatArray.class, Float4.class);
             registerVectorCollectionsPlugins(plugins, PTXKind.MATRIX3DFLOAT4, FloatArray.class, Float4.class);
