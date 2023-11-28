@@ -40,10 +40,10 @@ List of TornadoVM Flags:
    priority. By default, the ``PTX driver`` has priority ``1`` and the
    ``OpenCL driver`` has priority ``0``.
 
--  | ``-Ds0.t0.global.dims=XXX,XXX``:
+-  | ``-Ds0.t0.global.workgroup.size=XXX,XXX,XXX``:
    | Allows to define global worksizes (problem sizes).
 
--  | ``-Ds0.t0.local.dims=XXX,XXX``:
+-  | ``-Ds0.t0.local.workgroup.size=XXX,XXX,`:
    | Allows to define custom local workgroup configuration and overwrite
      the default values provided by the TornadoScheduler.
 
