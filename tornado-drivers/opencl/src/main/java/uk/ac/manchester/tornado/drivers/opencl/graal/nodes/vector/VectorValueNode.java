@@ -251,7 +251,6 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
                 s15 = getParam(gen, tool, 15);
                 assignExpr = new OCLVectorAssign.Assign16Expr(op16, getOCLKind(), s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15);
                 break;
-
             }
             default:
                 unimplemented("new vector length = " + kind.getVectorLength());
