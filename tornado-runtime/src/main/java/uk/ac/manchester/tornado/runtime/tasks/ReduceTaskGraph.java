@@ -48,15 +48,15 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.analyzer.CodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
@@ -65,6 +65,7 @@ import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis.REDUCE_OPERATION;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 class ReduceTaskGraph {
 
@@ -81,7 +82,7 @@ class ReduceTaskGraph {
     private final List<StreamingObject> inputModeObjects;
     private final List<StreamingObject> outputModeObjects;
     private final TornadoTaskGraph originalTaskGraph;
-
+    private final Graph sketchGraph;
     private String idTaskGraph;
     private List<TaskPackage> taskPackages;
     private List<Object> streamOutObjects;
@@ -94,7 +95,6 @@ class ReduceTaskGraph {
     private Map<Object, Object> neutralElementsOriginal = new HashMap<>();
     private TaskGraph rewrittenTaskGraph;
     private Map<Object, List<Integer>> reduceOperandTable;
-    private final Graph sketchGraph;
     private boolean hybridMode;
     private Map<Object, REDUCE_OPERATION> hybridMergeTable;
     private boolean hybridInitialized;
@@ -372,10 +372,10 @@ class ReduceTaskGraph {
     }
 
     private void updateGlobalAndLocalDimensionsFPGA(final int deviceToRun, String taskScheduleReduceName, TaskPackage taskPackage, int inputSize) {
-        // Update GLOBAL and LOCAL Dims if device to run is the FPGA
+        // Update GLOBAL and LOCAL workgroup size if device to run is the FPGA
         if (isAheadOfTime() && isDeviceAnAccelerator(deviceToRun)) {
-            TornadoRuntime.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + ".global.dims", Integer.toString(inputSize));
-            TornadoRuntime.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + ".local.dims", "64");
+            TornadoRuntime.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + TaskMetaData.GLOBAL_WORKGROUP_SUFFIX, Integer.toString(inputSize));
+            TornadoRuntime.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + TaskMetaData.LOCAL_WORKGROUP_SUFFIX, "64");
         }
     }
 

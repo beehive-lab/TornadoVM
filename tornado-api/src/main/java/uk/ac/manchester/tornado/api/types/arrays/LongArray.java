@@ -51,7 +51,7 @@ import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
 @SegmentElementSize(size = 8)
 public class LongArray extends TornadoNativeArray {
-    private final int LONG_BYTES = 8;
+    private static final int LONG_BYTES = 8;
     private MemorySegment segment;
     private int numberOfElements;
     private int arrayHeaderSize;
@@ -84,6 +84,14 @@ public class LongArray extends TornadoNativeArray {
 
     public static LongArray fromElements(long... values) {
         return createSegment(values);
+    }
+
+    public static LongArray fromSegment(MemorySegment segment) {
+        long byteSize = segment.byteSize();
+        int numElements = (int) (byteSize / LONG_BYTES);
+        LongArray longArray = new LongArray(numElements);
+        MemorySegment.copy(segment, 0, longArray.segment, longArray.baseIndex * LONG_BYTES, byteSize);
+        return longArray;
     }
 
     public long[] toHeapArray() {

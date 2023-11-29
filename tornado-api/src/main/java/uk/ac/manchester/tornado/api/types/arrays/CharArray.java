@@ -51,7 +51,7 @@ import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
 @SegmentElementSize(size = 2)
 public class CharArray extends TornadoNativeArray {
-    private final int CHAR_BYTES = 2;
+    private static final int CHAR_BYTES = 2;
     private MemorySegment segment;
     private int numberOfElements;
     private int arrayHeaderSize;
@@ -89,6 +89,14 @@ public class CharArray extends TornadoNativeArray {
 
     public static CharArray fromElements(char... values) {
         return createSegment(values);
+    }
+
+    public static CharArray fromSegment(MemorySegment segment) {
+        long byteSize = segment.byteSize();
+        int numElements = (int) (byteSize / CHAR_BYTES);
+        CharArray charArray = new CharArray(numElements);
+        MemorySegment.copy(segment, 0, charArray.segment, charArray.baseIndex * CHAR_BYTES, byteSize);
+        return charArray;
     }
 
     public char[] toHeapArray() {

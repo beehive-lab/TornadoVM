@@ -138,8 +138,8 @@ The following code-snippet shows the Matrix Multiplication example using the ker
 ```java
 public class Compute {
     private static void mxmKernel(KernelContext context, Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
-        int idx = context.threadIdx;
-        int jdx = context.threadIdy;
+        int idx = context.globalIdx
+        int jdx = context.globalIdy;
         float sum = 0;
         for (int k = 0; k < size; k++) {
             sum += A.get(idx, k) * B.get(k, jdx);
@@ -161,7 +161,7 @@ public class Compute {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, C);     // Transfer data from device to host
 
         // Create an immutable task-graph
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snaphot();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Create an execution plan from an immutable task-graph
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);

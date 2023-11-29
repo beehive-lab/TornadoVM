@@ -51,7 +51,7 @@ import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
 @SegmentElementSize(size = 8)
 public class DoubleArray extends TornadoNativeArray {
-    private final int DOUBLE_BYTES = 8;
+    private static final int DOUBLE_BYTES = 8;
     private MemorySegment segment;
     private int numberOfElements;
 
@@ -86,6 +86,14 @@ public class DoubleArray extends TornadoNativeArray {
 
     public static DoubleArray fromElements(double... values) {
         return createSegment(values);
+    }
+
+    public static DoubleArray fromSegment(MemorySegment segment) {
+        long byteSize = segment.byteSize();
+        int numElements = (int) (byteSize / DOUBLE_BYTES);
+        DoubleArray doubleArray = new DoubleArray(numElements);
+        MemorySegment.copy(segment, 0, doubleArray.segment, doubleArray.baseIndex * DOUBLE_BYTES, byteSize);
+        return doubleArray;
     }
 
     public double[] toHeapArray() {
