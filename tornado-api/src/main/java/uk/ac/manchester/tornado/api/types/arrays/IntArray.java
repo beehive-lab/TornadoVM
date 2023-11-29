@@ -50,7 +50,7 @@ import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
 @SegmentElementSize(size = 4)
 public class IntArray extends TornadoNativeArray {
-    private final int INT_BYTES = 4;
+    private static final int INT_BYTES = 4;
     private int numberOfElements;
     private MemorySegment segment;
     private int arrayHeaderSize;
@@ -83,6 +83,14 @@ public class IntArray extends TornadoNativeArray {
 
     public static IntArray fromElements(int... values) {
         return createSegment(values);
+    }
+
+    public static IntArray fromSegment(MemorySegment segment) {
+        long byteSize = segment.byteSize();
+        int numElements = (int) (byteSize / INT_BYTES);
+        IntArray intArray = new IntArray(numElements);
+        MemorySegment.copy(segment, 0, intArray.segment, intArray.baseIndex * INT_BYTES, byteSize);
+        return intArray;
     }
 
     public int[] toHeapArray() {

@@ -51,7 +51,7 @@ import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
 @SegmentElementSize(size = 1)
 public class ByteArray extends TornadoNativeArray {
-    private final int BYTE_BYTES = 1;
+    private static final int BYTE_BYTES = 1;
     private MemorySegment segment;
     private int numberOfElements;
     private int arrayHeaderSize;
@@ -86,6 +86,14 @@ public class ByteArray extends TornadoNativeArray {
 
     public static ByteArray fromElements(byte... values) {
         return createSegment(values);
+    }
+
+    public static ByteArray fromSegment(MemorySegment segment) {
+        long byteSize = segment.byteSize();
+        int numElements = (int) (byteSize / BYTE_BYTES);
+        ByteArray byteArray = new ByteArray(numElements);
+        MemorySegment.copy(segment, 0, byteArray.segment, byteArray.baseIndex * BYTE_BYTES, byteSize);
+        return byteArray;
     }
 
     public byte[] toHeapArray() {

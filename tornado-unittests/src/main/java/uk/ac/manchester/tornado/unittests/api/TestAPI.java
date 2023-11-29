@@ -21,6 +21,9 @@ package uk.ac.manchester.tornado.unittests.api;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.util.stream.IntStream;
 
 import org.junit.Test;
@@ -271,6 +274,144 @@ public class TestAPI extends TornadoTestBase {
 
         for (int i = 0; i < N; i++) {
             assertEquals(21, data.get(i));
+        }
+    }
+
+    @Test
+    public void testBuildWithSegmentsFloat() {
+
+        final int n = 10;
+        // Allocate 10 elements
+        MemorySegment m = Arena.ofAuto().allocate(ValueLayout.JAVA_FLOAT.byteSize() * n);
+
+        // Set 10 elements
+        for (int i = 0; i < n; i++) {
+            m.setAtIndex(ValueLayout.JAVA_FLOAT, i, 10 + i);
+        }
+
+        // Factory method to build a float array from a segment
+        FloatArray floatArray = FloatArray.fromSegment(m);
+
+        for (int i = 0; i < n; i++) {
+            assertEquals(10 + i, floatArray.get(i), 0.001f);
+        }
+    }
+
+    @Test
+    public void testBuildWithSegmentsDouble() {
+
+        final int n = 10;
+        // Allocate 10 elements
+        MemorySegment m = Arena.ofAuto().allocate(ValueLayout.JAVA_DOUBLE.byteSize() * n);
+
+        // Set 10 elements
+        for (int i = 0; i < n; i++) {
+            m.setAtIndex(ValueLayout.JAVA_DOUBLE, i, 10 + i);
+        }
+
+        // Factory method to build a double array from a segment
+        DoubleArray doubleArray = DoubleArray.fromSegment(m);
+
+        for (int i = 0; i < n; i++) {
+            assertEquals(10 + i, doubleArray.get(i), 0.001);
+        }
+    }
+
+    @Test
+    public void testBuildWithSegmentsInt() {
+
+        final int n = 10;
+        // Allocate 10 elements
+        MemorySegment m = Arena.ofAuto().allocate(ValueLayout.JAVA_INT.byteSize() * n);
+
+        // Set 10 elements
+        for (int i = 0; i < n; i++) {
+            m.setAtIndex(ValueLayout.JAVA_INT, i, 10 + i);
+        }
+
+        // Factory method to build an integer array from a segment
+        IntArray intArray = IntArray.fromSegment(m);
+
+        for (int i = 0; i < n; i++) {
+            assertEquals(10 + i, intArray.get(i));
+        }
+    }
+
+    @Test
+    public void testBuildWithSegmentsLong() {
+
+        final int n = 10;
+        // Allocate 10 elements
+        MemorySegment m = Arena.ofAuto().allocate(ValueLayout.JAVA_LONG.byteSize() * n);
+
+        // Set 10 elements
+        for (int i = 0; i < n; i++) {
+            m.setAtIndex(ValueLayout.JAVA_LONG, i, 10 + i);
+        }
+
+        // Factory method to build a long array from a segment
+        LongArray longArray = LongArray.fromSegment(m);
+
+        for (int i = 0; i < n; i++) {
+            assertEquals(10 + i, longArray.get(i));
+        }
+    }
+
+    @Test
+    public void testBuildWithSegmentsShort() {
+
+        final int n = 10;
+        // Allocate 10 elements
+        MemorySegment m = Arena.ofAuto().allocate(ValueLayout.JAVA_SHORT.byteSize() * n);
+
+        // Set 10 elements
+        for (int i = 0; i < n; i++) {
+            m.setAtIndex(ValueLayout.JAVA_SHORT, i, (short) (10 + i));
+        }
+
+        // Factory method to build a short array from a segment
+        ShortArray shortArray = ShortArray.fromSegment(m);
+
+        for (int i = 0; i < n; i++) {
+            assertEquals((short) 10 + i, shortArray.get(i));
+        }
+    }
+
+    @Test
+    public void testBuildWithSegmentsByte() {
+
+        final int n = 10;
+        // Allocate 10 elements
+        MemorySegment m = Arena.ofAuto().allocate(ValueLayout.JAVA_BYTE.byteSize() * n);
+
+        // Set 10 elements
+        for (int i = 0; i < n; i++) {
+            m.setAtIndex(ValueLayout.JAVA_BYTE, i, (byte) (10 + i));
+        }
+
+        ByteArray array = ByteArray.fromSegment(m);
+
+        for (int i = 0; i < n; i++) {
+            assertEquals((byte) 10 + i, array.get(i));
+        }
+    }
+
+    @Test
+    public void testBuildWithSegmentsChar() {
+
+        final int n = 10;
+        // Allocate 10 elements
+        MemorySegment m = Arena.ofAuto().allocate(ValueLayout.JAVA_CHAR.byteSize() * n);
+
+        // Set 10 elements
+        for (int i = 0; i < n; i++) {
+            m.setAtIndex(ValueLayout.JAVA_CHAR, i, (char) (10 + i));
+        }
+
+        CharArray charArray = CharArray.fromSegment(m);
+
+        for (int i = 0; i < n; i++) {
+            assertEquals((char) 10 + i, charArray.get(i));
         }
     }
     // CHECKSTYLE:ON
