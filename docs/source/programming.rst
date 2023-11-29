@@ -596,7 +596,8 @@ Current Limitations of Batch Processing
 
 There is a set of limitations with the current implementation of batch processing.
 
-1. All arrays passed to the input methods to be compiled to the target device have to have the same data type and size.
+1. All arrays passed to the input methods to be compiled to the target device have to have the total size and element size
+(e.g. combining FloatArray and IntArray is possible).
 2. We only support arrays of primitives that are passed as arguments. This means that scope arrays in batches are not currently supported.
 3. All bytecodes make use of the same OpenCL command queue / CUDA stream.
 4. Matrix or non-regular batch distributions. (E.g., MxM would need to be split by rows in matrix-A and columns in matrix-B).
