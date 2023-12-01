@@ -25,16 +25,18 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.vectors.Float2;
-import uk.ac.manchester.tornado.api.types.vectors.Float4;
-import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat16;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat2;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat8;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.math.TornadoMath;
+import uk.ac.manchester.tornado.api.types.vectors.Float16;
+import uk.ac.manchester.tornado.api.types.vectors.Float2;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
+import uk.ac.manchester.tornado.api.types.vectors.Float8;
 import uk.ac.manchester.tornado.examples.utils.Utils;
 
 /**
@@ -152,6 +154,32 @@ public class DFTVector {
             }
             outreal.set(k, sumReal);
             outimag.set(k, simImag);
+        }
+    }
+
+    public static void computeDFTVector16(VectorFloat16 inreal, VectorFloat16 inimag, VectorFloat16 outreal, VectorFloat16 outimag) {
+        int n = inreal.getLength();
+        for (@Parallel int k = 0; k < n; k++) { // For each output element
+            Float16 sumReal = new Float16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            Float16 sumImag = new Float16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+            for (int t = 0; t < n; t++) { // For each input element
+                float angle = (float) ((2 * TornadoMath.floatPI() * t * k) / n);
+
+                Float16 partA = Float16.mult(inreal.get(t), TornadoMath.cos(angle));
+                Float16 partB = Float16.mult(inimag.get(t), TornadoMath.sin(angle));
+                Float16 partC = Float16.add(partA, partB);
+                sumReal = Float16.add(sumReal, partC);
+
+                Float16 neg = Float16.mult(inreal.get(t), new Float16(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1));
+                Float16 partAImag = Float16.mult(neg, TornadoMath.sin(angle));
+                Float16 partBImag = Float16.mult(inimag.get(t), TornadoMath.cos(angle));
+                Float16 partCImag = Float16.add(partAImag, partBImag);
+                sumImag = Float16.add(sumImag, partCImag);
+            }
+
+            outreal.set(k, sumReal);
+            outimag.set(k, sumImag);
         }
     }
 
@@ -289,6 +317,51 @@ public class DFTVector {
         Utils.computeStatistics(totalTimersLong);
     }
 
+    private static void runWithVectorTypes16(int size, TornadoDevice device) {
+        size = size / 2;
+        VectorFloat16 inReal = new VectorFloat16(size);
+        VectorFloat16 inImag = new VectorFloat16(size);
+        VectorFloat16 outReal = new VectorFloat16(size);
+        VectorFloat16 outImag = new VectorFloat16(size);
+
+        for (int i = 0; i < size; i++) {
+            float valA = 1 / (float) (i + 2);
+            float valB = 1 / (float) (i + 2);
+            inReal.set(i, new Float16(valA, valA, valA, valA, valA, valA, valA, valA, valA, valA, valA, valA, valA, valA, valA, valA));
+            inImag.set(i, new Float16(valB, valB, valB, valB, valB, valB, valB, valB, valB, valB, valB, valB, valB, valB, valB, valB));
+        }
+
+        TaskGraph taskGraph = new TaskGraph("compute") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, inReal, inImag) //
+                .task("withVectors16", DFTVector::computeDFTVector16, inReal, inImag, outReal, outImag) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, outReal, outImag);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.withDevice(device).withWarmUp();
+
+        for (int i = 0; i < WARMUP; i++) {
+            executionPlan.execute();
+        }
+
+        ArrayList<Long> kernelTimers = new ArrayList<>();
+        ArrayList<Long> totalTimers = new ArrayList<>();
+        for (int i = 0; i < ITERATIONS; i++) {
+            TornadoExecutionResult executionResult = executionPlan.execute();
+            kernelTimers.add(executionResult.getProfilerResult().getDeviceKernelTime());
+            totalTimers.add(executionResult.getProfilerResult().getTotalTime());
+        }
+
+        executionPlan.freeDeviceMemory();
+
+        long[] kernelTimersLong = kernelTimers.stream().mapToLong(Long::longValue).toArray();
+        long[] totalTimersLong = totalTimers.stream().mapToLong(Long::longValue).toArray();
+        System.out.println("Stats KernelTime");
+        Utils.computeStatistics(kernelTimersLong);
+        System.out.println("Stats TotalTime");
+        Utils.computeStatistics(totalTimersLong);
+    }
+
     private static void computeWithStreams(final int size, FloatArray inreal, FloatArray inimag, FloatArray outreal, FloatArray outimag) {
         int n = inreal.getSize();
         IntStream.range(0, size).parallel().forEach(k -> {
@@ -393,7 +466,7 @@ public class DFTVector {
             }
         }
 
-        TornadoDevice device = TornadoExecutionPlan.getDevice(0, 2);
+        TornadoDevice device = TornadoExecutionPlan.getDevice(0, 0);
 
         if (version.startsWith("vector4")) {
             runWithVectorTypes4(size, device);
@@ -401,6 +474,8 @@ public class DFTVector {
             runWithVectorTypes2(size, device);
         } else if (version.startsWith("vector8")) {
             runWithVectorTypes8(size, device);
+        } else if (version.startsWith("vector16")) {
+            runWithVectorTypes16(size, device);
         } else if (version.startsWith("stream")) {
             runWithJavaStreams(size);
         } else if (version.startsWith("plain")) {

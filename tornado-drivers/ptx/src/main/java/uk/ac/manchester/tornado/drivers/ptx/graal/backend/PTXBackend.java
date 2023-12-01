@@ -362,7 +362,6 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         Map<PTXKind, Set<PTXLIRGenerationResult.VariableData>> kindToVariable = lirGenRes.getVariableTable();
 
         for (PTXKind type : kindToVariable.keySet()) {
-
             Set<PTXLIRGenerationResult.VariableData> vars = kindToVariable.get(type);
             int regVarCount = 0;
             for (PTXLIRGenerationResult.VariableData varData : vars) {

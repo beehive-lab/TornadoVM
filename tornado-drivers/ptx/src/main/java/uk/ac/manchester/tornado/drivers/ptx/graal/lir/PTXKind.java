@@ -31,14 +31,17 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble16;
 import uk.ac.manchester.tornado.api.types.collections.VectorDouble2;
 import uk.ac.manchester.tornado.api.types.collections.VectorDouble3;
 import uk.ac.manchester.tornado.api.types.collections.VectorDouble4;
 import uk.ac.manchester.tornado.api.types.collections.VectorDouble8;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat16;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat2;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat8;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt16;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt2;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt3;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt4;
@@ -53,14 +56,17 @@ import uk.ac.manchester.tornado.api.types.matrix.Matrix3DFloat4;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
 import uk.ac.manchester.tornado.api.types.vectors.Byte3;
 import uk.ac.manchester.tornado.api.types.vectors.Byte4;
+import uk.ac.manchester.tornado.api.types.vectors.Double16;
 import uk.ac.manchester.tornado.api.types.vectors.Double2;
 import uk.ac.manchester.tornado.api.types.vectors.Double3;
 import uk.ac.manchester.tornado.api.types.vectors.Double4;
 import uk.ac.manchester.tornado.api.types.vectors.Double8;
+import uk.ac.manchester.tornado.api.types.vectors.Float16;
 import uk.ac.manchester.tornado.api.types.vectors.Float2;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.vectors.Int16;
 import uk.ac.manchester.tornado.api.types.vectors.Int2;
 import uk.ac.manchester.tornado.api.types.vectors.Int3;
 import uk.ac.manchester.tornado.api.types.vectors.Int4;
@@ -105,18 +111,22 @@ public enum PTXKind implements PlatformKind {
     INT3(3, Int3.TYPE, S32),
     INT4(4, Int4.TYPE, S32),
     INT8(8, Int8.TYPE, S32),
+    INT16(16, Int16.TYPE, S32),
     VECTORINT2(2, VectorInt2.TYPE, S32),
     VECTORINT3(3, VectorInt3.TYPE, S32),
     VECTORINT4(4, VectorInt4.TYPE, S32),
     VECTORINT8(8, VectorInt8.TYPE, S32),
+    VECTORINT16(16, VectorInt16.TYPE, S32),
     FLOAT2(2, Float2.TYPE, F32),
     FLOAT3(3, Float3.TYPE, F32),
     FLOAT4(4, Float4.TYPE, F32),
     FLOAT8(8, Float8.TYPE, F32),
+    FLOAT16(16, Float16.TYPE, F32),
     VECTORFLOAT2(2, VectorFloat2.TYPE, F32),
     VECTORFLOAT3(3, VectorFloat3.TYPE, F32),
     VECTORFLOAT4(4, VectorFloat4.TYPE, F32),
     VECTORFLOAT8(8, VectorFloat8.TYPE, F32),
+    VECTORFLOAT16(16, VectorFloat16.TYPE, F32),
     MATRIX2DFLOAT4(4, Matrix2DFloat4.TYPE, F32),
     MATRIX3DFLOAT4(4, Matrix3DFloat4.TYPE, F32),
     MATRIX4X4FLOAT(4, Matrix4x4Float.TYPE, F32),
@@ -127,52 +137,20 @@ public enum PTXKind implements PlatformKind {
     DOUBLE3(3, Double3.TYPE, F64),
     DOUBLE4(4, Double4.TYPE, F64),
     DOUBLE8(8, Double8.TYPE, F64),
+    DOUBLE16(16, Double16.TYPE, F64),
     VECTORDOUBLE2(2, VectorDouble2.TYPE, F64),
     VECTORDOUBLE3(3, VectorDouble3.TYPE, F64),
     VECTORDOUBLE4(4, VectorDouble4.TYPE, F64),
     VECTORDOUBLE8(8, VectorDouble8.TYPE, F64),
+    VECTORDOUBLE16(16, VectorDouble16.TYPE, F64),
     ILLEGAL(0, null);
     // @formatter:on
 
-    public JavaKind asJavaKind() {
-        if (kind == ILLEGAL || kind.isVector()) {
-            return JavaKind.Illegal;
-        } else {
-            switch (kind) {
-                case U8:
-                case S8:
-                case B8:
-                    return JavaKind.Byte;
-                case S16:
-                case U16:
-                case B16:
-                    return JavaKind.Short;
-                case S32:
-                case U32:
-                case B32:
-                    return JavaKind.Int;
-                case S64:
-                case U64:
-                case B64:
-                    return JavaKind.Long;
-                case F32:
-                    return JavaKind.Float;
-                case F64:
-                    return JavaKind.Double;
-                default:
-                    shouldNotReachHere();
-            }
-            return JavaKind.Illegal;
-        }
-    }
-
     private final int size;
     private final int vectorLength;
-
     private final PTXKind kind;
     private final PTXKind elementKind;
     private final Class<?> javaClass;
-
     PTXKind(int size, Class<?> javaClass) {
         this(size, javaClass, null);
     }
@@ -251,14 +229,6 @@ public enum PTXKind implements PlatformKind {
         return null;
     }
 
-    public JavaConstant getDefaultValue() {
-        if (!isVector()) {
-            return JavaConstant.defaultForKind(asJavaKind());
-        }
-        unimplemented();
-        return JavaConstant.NULL_POINTER;
-    }
-
     public static PTXKind resolveToVectorKind(ResolvedJavaType type) {
         if (!type.isPrimitive() && type.getAnnotation(Vector.class) != null) {
             String typeName = type.getName();
@@ -270,6 +240,63 @@ public enum PTXKind implements PlatformKind {
             return PTXKind.valueOf(simpleName);
         }
         return PTXKind.ILLEGAL;
+    }
+
+    private static int lookupTypeIndex(PTXKind kind) {
+        switch (kind) {
+            case S16:
+                return 0;
+            case S32:
+                return 1;
+            case F32:
+                return 2;
+            case U8:
+                return 3;
+            case F64:
+                return 4;
+            default:
+                return -1;
+        }
+    }
+
+    public JavaKind asJavaKind() {
+        if (kind == ILLEGAL || kind.isVector()) {
+            return JavaKind.Illegal;
+        } else {
+            switch (kind) {
+                case U8:
+                case S8:
+                case B8:
+                    return JavaKind.Byte;
+                case S16:
+                case U16:
+                case B16:
+                    return JavaKind.Short;
+                case S32:
+                case U32:
+                case B32:
+                    return JavaKind.Int;
+                case S64:
+                case U64:
+                case B64:
+                    return JavaKind.Long;
+                case F32:
+                    return JavaKind.Float;
+                case F64:
+                    return JavaKind.Double;
+                default:
+                    shouldNotReachHere();
+            }
+            return JavaKind.Illegal;
+        }
+    }
+
+    public JavaConstant getDefaultValue() {
+        if (!isVector()) {
+            return JavaConstant.defaultForKind(asJavaKind());
+        }
+        unimplemented();
+        return JavaConstant.NULL_POINTER;
     }
 
     @Override
@@ -383,23 +410,6 @@ public enum PTXKind implements PlatformKind {
 
     public final int lookupTypeIndex() {
         return lookupTypeIndex(getElementKind());
-    }
-
-    private static int lookupTypeIndex(PTXKind kind) {
-        switch (kind) {
-            case S16:
-                return 0;
-            case S32:
-                return 1;
-            case F32:
-                return 2;
-            case U8:
-                return 3;
-            case F64:
-                return 4;
-            default:
-                return -1;
-        }
     }
 
     public PTXKind getElementKind() {

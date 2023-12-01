@@ -28,17 +28,19 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.vectors.Int2;
-import uk.ac.manchester.tornado.api.types.vectors.Int3;
-import uk.ac.manchester.tornado.api.types.vectors.Int4;
-import uk.ac.manchester.tornado.api.types.vectors.Int8;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt16;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt2;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt3;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt4;
 import uk.ac.manchester.tornado.api.types.collections.VectorInt8;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.vectors.Int16;
+import uk.ac.manchester.tornado.api.types.vectors.Int2;
+import uk.ac.manchester.tornado.api.types.vectors.Int3;
+import uk.ac.manchester.tornado.api.types.vectors.Int4;
+import uk.ac.manchester.tornado.api.types.vectors.Int8;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -153,6 +155,12 @@ public class TestInts extends TornadoTestBase {
     public static void addVectorInt8(VectorInt8 a, VectorInt8 b, VectorInt8 results) {
         for (@Parallel int i = 0; i < a.getLength(); i++) {
             results.set(i, Int8.add(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void addVectorInt16(VectorInt16 a, VectorInt16 b, VectorInt16 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int16.add(a.get(i), b.get(i)));
         }
     }
 
@@ -710,6 +718,51 @@ public class TestInts extends TornadoTestBase {
             assertEquals(sequential.getS5(), output.get(i).getS5());
             assertEquals(sequential.getS6(), output.get(i).getS6());
             assertEquals(sequential.getS7(), output.get(i).getS7());
+        }
+    }
+
+    @Test
+    public void testVectorAddInt16() {
+        int size = 256;
+
+        VectorInt16 a = new VectorInt16(size);
+        VectorInt16 b = new VectorInt16(size);
+        VectorInt16 output = new VectorInt16(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Int16(i, i, i, i, i, i, i, i, i, i, i, i, i, i, i, i));
+            b.set(i, new Int16(size - i, size - i, size - i, size, size - i, size - i, size - i, size, size - i, size - i, size - i, size, size - i, size - i, size - i, size));
+        }
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestInts::addVectorInt16, a, b, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+
+        for (int i = 0; i < size; i++) {
+            Int16 sequential = new Int16(i + (size - i), i + (size - i), i + (size - i), i + size, i + (size - i), i + (size - i), i + (size - i), i + size, i + (size - i), i + (size - i),
+                    i + (size - i), i + size, i + (size - i), i + (size - i), i + (size - i), i + size);
+
+            assertEquals(sequential.getS0(), output.get(i).getS0());
+            assertEquals(sequential.getS1(), output.get(i).getS1());
+            assertEquals(sequential.getS2(), output.get(i).getS2());
+            assertEquals(sequential.getS3(), output.get(i).getS3());
+            assertEquals(sequential.getS4(), output.get(i).getS4());
+            assertEquals(sequential.getS5(), output.get(i).getS5());
+            assertEquals(sequential.getS6(), output.get(i).getS6());
+            assertEquals(sequential.getS7(), output.get(i).getS7());
+            assertEquals(sequential.getS8(), output.get(i).getS8());
+            assertEquals(sequential.getS9(), output.get(i).getS9());
+            assertEquals(sequential.getS10(), output.get(i).getS10());
+            assertEquals(sequential.getS11(), output.get(i).getS11());
+            assertEquals(sequential.getS12(), output.get(i).getS12());
+            assertEquals(sequential.getS13(), output.get(i).getS13());
+            assertEquals(sequential.getS14(), output.get(i).getS14());
+            assertEquals(sequential.getS15(), output.get(i).getS15());
         }
     }
 

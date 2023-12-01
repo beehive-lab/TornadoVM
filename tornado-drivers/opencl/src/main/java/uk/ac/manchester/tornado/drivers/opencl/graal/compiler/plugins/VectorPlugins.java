@@ -59,14 +59,17 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.vectors.Byte3;
 import uk.ac.manchester.tornado.api.types.vectors.Byte4;
+import uk.ac.manchester.tornado.api.types.vectors.Double16;
 import uk.ac.manchester.tornado.api.types.vectors.Double2;
 import uk.ac.manchester.tornado.api.types.vectors.Double3;
 import uk.ac.manchester.tornado.api.types.vectors.Double4;
 import uk.ac.manchester.tornado.api.types.vectors.Double8;
+import uk.ac.manchester.tornado.api.types.vectors.Float16;
 import uk.ac.manchester.tornado.api.types.vectors.Float2;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.vectors.Int16;
 import uk.ac.manchester.tornado.api.types.vectors.Int2;
 import uk.ac.manchester.tornado.api.types.vectors.Int3;
 import uk.ac.manchester.tornado.api.types.vectors.Int4;
@@ -124,12 +127,14 @@ public final class VectorPlugins {
             registerVectorPlugins(ps, plugins, OCLKind.FLOAT3, FloatArray.class, float.class);
             registerVectorPlugins(ps, plugins, OCLKind.FLOAT4, FloatArray.class, float.class);
             registerVectorPlugins(ps, plugins, OCLKind.FLOAT8, FloatArray.class, float.class);
+            registerVectorPlugins(ps, plugins, OCLKind.FLOAT16, FloatArray.class, float.class);
 
             // Adding ints
             registerVectorPlugins(ps, plugins, OCLKind.INT2, IntArray.class, int.class);
             registerVectorPlugins(ps, plugins, OCLKind.INT3, IntArray.class, int.class);
             registerVectorPlugins(ps, plugins, OCLKind.INT4, IntArray.class, int.class);
             registerVectorPlugins(ps, plugins, OCLKind.INT8, IntArray.class, int.class);
+            registerVectorPlugins(ps, plugins, OCLKind.INT16, IntArray.class, int.class);
 
             // Adding shorts
             registerVectorPlugins(ps, plugins, OCLKind.SHORT2, ShortArray.class, short.class);
@@ -143,21 +148,25 @@ public final class VectorPlugins {
             registerVectorPlugins(ps, plugins, OCLKind.DOUBLE3, DoubleArray.class, double.class);
             registerVectorPlugins(ps, plugins, OCLKind.DOUBLE4, DoubleArray.class, double.class);
             registerVectorPlugins(ps, plugins, OCLKind.DOUBLE8, DoubleArray.class, double.class);
+            registerVectorPlugins(ps, plugins, OCLKind.DOUBLE16, DoubleArray.class, double.class);
 
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORFLOAT2, FloatArray.class, Float2.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORFLOAT3, FloatArray.class, Float3.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORFLOAT4, FloatArray.class, Float4.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORFLOAT8, FloatArray.class, Float8.class);
+            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORFLOAT16, FloatArray.class, Float16.class);
 
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORINT2, IntArray.class, Int2.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORINT3, IntArray.class, Int3.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORINT4, IntArray.class, Int4.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORINT8, IntArray.class, Int8.class);
+            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORINT16, IntArray.class, Int16.class);
 
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE2, DoubleArray.class, Double2.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE3, DoubleArray.class, Double3.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE4, DoubleArray.class, Double4.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE8, DoubleArray.class, Double8.class);
+            registerVectorCollectionsPlugins(plugins, OCLKind.VECTORDOUBLE16, DoubleArray.class, Double16.class);
 
             registerVectorCollectionsPlugins(plugins, OCLKind.MATRIX2DFLOAT4, FloatArray.class, Float4.class);
             registerVectorCollectionsPlugins(plugins, OCLKind.MATRIX3DFLOAT4, FloatArray.class, Float4.class);
@@ -188,8 +197,8 @@ public final class VectorPlugins {
         if (thisObject instanceof PiNode) {
             thisObject = ((PiNode) thisObject).getOriginalNode();
         }
-        if (thisObject instanceof VectorValueNode) {
-            vector = (VectorValueNode) thisObject;
+        if (thisObject instanceof VectorValueNode vectorValueNode) {
+            vector = vectorValueNode;
         }
         guarantee(vector != null, "[Vector Plugins] unable to resolve vector");
         return vector;

@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -62,11 +62,11 @@ public class PTXVectorSplit {
      * It generates an array of vector names.
      *
      * @param baseName
-     *            The base name for vector names.
+     *     The base name for vector names.
      * @param actualVectorLength
-     *            The actual vector length.
+     *     The actual vector length.
      * @param newVectorLength
-     *            The new vector length.
+     *     The new vector length.
      * @return An array of generated vector names.
      */
     private String[] generateVectorNames(String baseName, int actualVectorLength, int newVectorLength) {
@@ -91,9 +91,9 @@ public class PTXVectorSplit {
      * It converts the original variable name to a formatted intermediate name.
      *
      * @param originalName
-     *            The original variable name in the format "vXX|StringXY".
+     *     The original variable name in the format "vXX|StringXY".
      * @param actualKind
-     *            The actual kind of the variable (e.g., PTXKind).
+     *     The actual kind of the variable (e.g., PTXKind).
      * @return The formatted intermediate variable name.
      */
     private String convertVariableName(String originalName, PTXKind actualKind) {
@@ -116,7 +116,7 @@ public class PTXVectorSplit {
      * It extracts the vector length from the variable name.
      *
      * @param variableName
-     *            The variable name containing the vector length.
+     *     The variable name containing the vector length.
      * @return The extracted vector length.
      */
     private int extractVectorLength(String variableName) {
@@ -132,7 +132,7 @@ public class PTXVectorSplit {
      * It gets or creates a counter for the given variable name.
      *
      * @param variableName
-     *            The variable name for which to get or create the counter.
+     *     The variable name for which to get or create the counter.
      * @return The counter value before incrementing.
      */
     private int getOrCreateCounter(String variableName) {
@@ -181,6 +181,7 @@ public class PTXVectorSplit {
             case DOUBLE4:
             case DOUBLE8:
                 return PTXKind.DOUBLE2;
+            case FLOAT16:
             case FLOAT8:
                 return PTXKind.FLOAT4;
             case FLOAT3:
@@ -201,7 +202,7 @@ public class PTXVectorSplit {
     }
 
     public String getVectorElement(int laneId) {
-        assert laneId < 16;
+        assert laneId <= 16;
         String vectorElement = vectorNames[laneId / newKind.getVectorLength()];
         if (!fullUnwrapVector) {
             vectorElement += DOT + laneIdToVectorSuffix(laneId);
@@ -210,7 +211,7 @@ public class PTXVectorSplit {
     }
 
     private String laneIdToVectorSuffix(int laneId) {
-        assert laneId < 16;
+        assert laneId <= 16;
         switch ((laneId % 4) % newKind.getVectorLength()) {
             case 0:
                 return "x";

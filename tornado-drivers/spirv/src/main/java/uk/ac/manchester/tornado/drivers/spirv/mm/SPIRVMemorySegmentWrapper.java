@@ -30,18 +30,10 @@ import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;
 import java.util.List;
 
-import uk.ac.manchester.tornado.api.types.collections.VectorDouble2;
-import uk.ac.manchester.tornado.api.types.collections.VectorDouble3;
-import uk.ac.manchester.tornado.api.types.collections.VectorDouble4;
-import uk.ac.manchester.tornado.api.types.collections.VectorDouble8;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat2;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat8;
-import uk.ac.manchester.tornado.api.types.collections.VectorInt2;
-import uk.ac.manchester.tornado.api.types.collections.VectorInt3;
-import uk.ac.manchester.tornado.api.types.collections.VectorInt4;
-import uk.ac.manchester.tornado.api.types.collections.VectorInt8;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
@@ -50,10 +42,20 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
-import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
-import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble16;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble2;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble3;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble4;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble8;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat16;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat2;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat8;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt16;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt2;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt3;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt4;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -126,14 +128,16 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
             case VectorFloat3 vectorFloat3 -> vectorFloat3.getArray().getSegment();
             case VectorFloat4 vectorFloat4 -> vectorFloat4.getArray().getSegment();
             case VectorFloat8 vectorFloat8 -> vectorFloat8.getArray().getSegment();
+            case VectorFloat16 vectorFloat16 -> vectorFloat16.getArray().getSegment();
             case VectorDouble2 vectorDouble2 -> vectorDouble2.getArray().getSegment();
             case VectorDouble3 vectorDouble3 -> vectorDouble3.getArray().getSegment();
             case VectorDouble4 vectorDouble4 -> vectorDouble4.getArray().getSegment();
             case VectorDouble8 vectorDouble8 -> vectorDouble8.getArray().getSegment();
+            case VectorDouble16 vectorDouble16 -> vectorDouble16.getArray().getSegment();
             case VectorInt2 vectorInt2 -> vectorInt2.getArray().getSegment();
             case VectorInt3 vectorInt3 -> vectorInt3.getArray().getSegment();
             case VectorInt4 vectorInt4 -> vectorInt4.getArray().getSegment();
-            case VectorInt8 vectorInt8 -> vectorInt8.getArray().getSegment();
+            case VectorInt16 vectorInt16 -> vectorInt16.getArray().getSegment();
             default -> (MemorySegment) reference;
         };
     }
@@ -147,7 +151,8 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
         if (batchSize <= 0) {
             returnEvent = spirvDeviceContext.readBuffer(toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, waitEvents);
         } else {
-            returnEvent = spirvDeviceContext.readBuffer(toBuffer(), TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, numBytes, segment.address(), hostOffset + TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, waitEvents);
+            returnEvent = spirvDeviceContext.readBuffer(toBuffer(), TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, numBytes, segment.address(), hostOffset + TornadoOptions.PANAMA_OBJECT_HEADER_SIZE,
+                    waitEvents);
         }
         return returnEvent;
     }
@@ -155,7 +160,7 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
     @Override
     public void write(Object reference) {
         MemorySegment segment = getSegment(reference);
-        if(batchSize <= 0) {
+        if (batchSize <= 0) {
             spirvDeviceContext.writeBuffer(toBuffer(), bufferOffset, bufferSize, segment.address(), 0, null);
         } else {
             throw new TornadoUnsupportedError("[UNSUPPORTED] batch processing for writeBuffer operation");
@@ -183,9 +188,10 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
         if (batchSize <= 0) {
             internalEvent = spirvDeviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset, bufferSize, segment.address(), hostOffset, (useDeps) ? events : null);
         } else {
-            internalEvent = spirvDeviceContext.enqueueWriteBuffer(toBuffer(), 0, TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, segment.address(), 0,(useDeps) ? events : null);
+            internalEvent = spirvDeviceContext.enqueueWriteBuffer(toBuffer(), 0, TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, segment.address(), 0, (useDeps) ? events : null);
             returnEvents.add(internalEvent);
-            internalEvent = spirvDeviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(), hostOffset + TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, (useDeps) ? events : null);
+            internalEvent = spirvDeviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset + TornadoNativeArray.ARRAY_HEADER, bufferSize, segment.address(),
+                    hostOffset + TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, (useDeps) ? events : null);
 
         }
         returnEvents.add(internalEvent);

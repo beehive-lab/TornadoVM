@@ -30,14 +30,14 @@ import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderTool;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
@@ -54,14 +54,17 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.vectors.Byte3;
 import uk.ac.manchester.tornado.api.types.vectors.Byte4;
+import uk.ac.manchester.tornado.api.types.vectors.Double16;
 import uk.ac.manchester.tornado.api.types.vectors.Double2;
 import uk.ac.manchester.tornado.api.types.vectors.Double3;
 import uk.ac.manchester.tornado.api.types.vectors.Double4;
 import uk.ac.manchester.tornado.api.types.vectors.Double8;
+import uk.ac.manchester.tornado.api.types.vectors.Float16;
 import uk.ac.manchester.tornado.api.types.vectors.Float2;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
 import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.vectors.Int16;
 import uk.ac.manchester.tornado.api.types.vectors.Int2;
 import uk.ac.manchester.tornado.api.types.vectors.Int3;
 import uk.ac.manchester.tornado.api.types.vectors.Int4;
@@ -121,12 +124,14 @@ public class SPIRVVectorPlugins {
             registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR3_FLOAT_32, FloatArray.class, float.class);
             registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR4_FLOAT_32, FloatArray.class, float.class);
             registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR8_FLOAT_32, FloatArray.class, float.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR16_FLOAT_32, FloatArray.class, float.class);
 
             // Adding ints
             registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR2_INT_32, IntArray.class, int.class);
             registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR3_INT_32, IntArray.class, int.class);
             registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR4_INT_32, IntArray.class, int.class);
             registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR8_INT_32, IntArray.class, int.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR16_INT_32, IntArray.class, int.class);
 
             // Short
             registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR2_INT_16, ShortArray.class, short.class);
@@ -137,24 +142,28 @@ public class SPIRVVectorPlugins {
             registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR3_FLOAT_64, DoubleArray.class, double.class);
             registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR4_FLOAT_64, DoubleArray.class, double.class);
             registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR8_FLOAT_64, DoubleArray.class, double.class);
+            registerVectorPlugins(plugins, invocationPlugins, SPIRVKind.OP_TYPE_VECTOR16_FLOAT_64, DoubleArray.class, double.class);
 
             // VectorFloats
             registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORFLOAT2_FLOAT_32, FloatArray.class, Float2.class);
             registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORFLOAT3_FLOAT_32, FloatArray.class, Float3.class);
             registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORFLOAT4_FLOAT_32, FloatArray.class, Float4.class);
             registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORFLOAT8_FLOAT_32, FloatArray.class, Float8.class);
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORFLOAT16_FLOAT_32, FloatArray.class, Float16.class);
 
             // VectorInts
             registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORINT2_INT_32, IntArray.class, Int2.class);
             registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORINT3_INT_32, IntArray.class, Int3.class);
             registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORINT4_INT_32, IntArray.class, Int4.class);
             registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORINT8_INT_32, IntArray.class, Int8.class);
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORINT16_INT_32, IntArray.class, Int16.class);
 
             // VectorDoubles
             registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORDOUBLE2_FLOAT_64, DoubleArray.class, Double2.class);
             registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORDOUBLE3_FLOAT_64, DoubleArray.class, Double3.class);
             registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORDOUBLE4_FLOAT_64, DoubleArray.class, Double4.class);
             registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORDOUBLE8_FLOAT_64, DoubleArray.class, Double8.class);
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORDOUBLE16_FLOAT_64, DoubleArray.class, Double16.class);
 
             // Matrices
             registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_MATRIX2DFLOAT4_FLOAT_32, FloatArray.class, Float4.class);
