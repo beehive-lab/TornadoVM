@@ -208,6 +208,9 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 isRead = true;
             } else if (currentNode instanceof LoadFieldNode) {
                 LoadFieldNode loadField = (LoadFieldNode) currentNode;
+                if (isTornadoNativeArray(loadField)) {
+                    continue;
+                }
                 if (loadField.stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
                     loadField.usages().forEach(nodesToProcess::add);
                 }
@@ -252,6 +255,23 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
         }
 
         return result;
+    }
+
+    private boolean isTornadoNativeArray(LoadFieldNode loadFieldNode) {
+        String field = loadFieldNode.field().toString();
+
+        if (field.contains("uk.ac.manchester.tornado.api.types.arrays.IntArray")
+                || field.contains("uk.ac.manchester.tornado.api.types.arrays.DoubleArray")
+                || field.contains("uk.ac.manchester.tornado.api.types.arrays.FloatArray")
+                || field.contains("uk.ac.manchester.tornado.api.types.arrays.LongArray")
+                || field.contains("uk.ac.manchester.tornado.api.types.arrays.CharArray")
+                || field.contains("uk.ac.manchester.tornado.api.types.arrays.ShortArray")
+                || field.contains("uk.ac.manchester.tornado.api.types.arrays.ByteArray")) {
+            return true;
+        } else {
+            return false;
+        }
+
     }
 
     /**
