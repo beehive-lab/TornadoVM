@@ -41,10 +41,9 @@ package uk.ac.manchester.tornado.api.types.collections;
 import java.nio.DoubleBuffer;
 
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
-import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.vectors.Double16;
 
-public class VectorDouble16 implements PrimitiveStorage<DoubleBuffer> {
+public final class VectorDouble16 implements TornadoCollectionInterface<DoubleBuffer> {
 
     public static final Class<VectorDouble16> TYPE = VectorDouble16.class;
 

@@ -47,7 +47,7 @@ import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 
 public sealed interface TornadoCollectionInterface<T extends Buffer> //
         extends PrimitiveStorage<T>  //
-        permits VectorDouble, VectorDouble2, VectorDouble3, VectorDouble4, VectorDouble8, //
-        VectorFloat, VectorFloat2, VectorFloat3, VectorFloat4, VectorFloat8, //
-        VectorInt, VectorInt2, VectorInt3, VectorInt4, VectorInt8 {
+        permits VectorDouble, VectorDouble2, VectorDouble3, VectorDouble4, VectorDouble8, VectorDouble16, //
+        VectorFloat, VectorFloat2, VectorFloat3, VectorFloat4, VectorFloat8, VectorFloat16, //
+        VectorInt, VectorInt2, VectorInt3, VectorInt4, VectorInt8, VectorInt16 {
 }
