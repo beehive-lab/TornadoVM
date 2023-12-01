@@ -86,10 +86,11 @@ public enum SPIRVKind implements PlatformKind {
     OP_TYPE_VECTOR4_INT_64(4, uk.ac.manchester.tornado.api.types.vectors.Int4.TYPE, OP_TYPE_INT_64),
     OP_TYPE_VECTORINT4_INT_32(4, uk.ac.manchester.tornado.api.types.collections.VectorInt4.TYPE, OP_TYPE_INT_32),
 
-    // OP_TYPE_VECTOR 8
+    // OP_TYPE_VECTOR 8 
     OP_TYPE_VECTOR8_INT_32(8, uk.ac.manchester.tornado.api.types.vectors.Int8.TYPE, OP_TYPE_INT_32),
     OP_TYPE_VECTOR8_INT_64(8, uk.ac.manchester.tornado.api.types.vectors.Int8.TYPE, OP_TYPE_INT_64),
     OP_TYPE_VECTORINT8_INT_32(8, uk.ac.manchester.tornado.api.types.collections.VectorInt8.TYPE, OP_TYPE_INT_32),
+    OP_TYPE_VECTOR16_INT_32(16, uk.ac.manchester.tornado.api.types.collections.VectorInt16.TYPE, OP_TYPE_INT_32),
 
     // OP_TYPE_VECTOR2 Float
     OP_TYPE_VECTOR2_FLOAT_16(2, uk.ac.manchester.tornado.api.types.vectors.Float2.TYPE, OP_TYPE_FLOAT_16),  // Half float
@@ -120,16 +121,19 @@ public enum SPIRVKind implements PlatformKind {
     // OP_TYPE_VECTOR8 Float
     OP_TYPE_VECTOR8_FLOAT_16(8, uk.ac.manchester.tornado.api.types.vectors.Float8.TYPE, OP_TYPE_FLOAT_16),  // Half float
     OP_TYPE_VECTOR8_FLOAT_32(8, uk.ac.manchester.tornado.api.types.vectors.Float8.TYPE, OP_TYPE_FLOAT_32),
+    OP_TYPE_VECTOR16_FLOAT_32(16, uk.ac.manchester.tornado.api.types.vectors.Float16.TYPE, OP_TYPE_FLOAT_32),
     OP_TYPE_VECTOR8_FLOAT_64(8, uk.ac.manchester.tornado.api.types.vectors.Double8.TYPE, OP_TYPE_FLOAT_64),
     OP_TYPE_VECTOR16_FLOAT_64(16, uk.ac.manchester.tornado.api.types.vectors.Double16.TYPE, OP_TYPE_FLOAT_64),
     OP_TYPE_VECTORDOUBLE8_FLOAT_64(8, uk.ac.manchester.tornado.api.types.collections.VectorDouble8.TYPE, OP_TYPE_FLOAT_64),
+    OP_TYPE_VECTORDOUBLE16_FLOAT_64(16, uk.ac.manchester.tornado.api.types.collections.VectorDouble16.TYPE, OP_TYPE_FLOAT_64),
     OP_TYPE_VECTORFLOAT8_FLOAT_32(8, uk.ac.manchester.tornado.api.types.collections.VectorFloat8.TYPE, OP_TYPE_FLOAT_32),
+    OP_TYPE_VECTORFLOAT16_FLOAT_32(16, uk.ac.manchester.tornado.api.types.collections.VectorFloat16.TYPE, OP_TYPE_FLOAT_32),
     OP_TYPE_IMAGEFLOAT8_FLOAT_32(8, uk.ac.manchester.tornado.api.types.images.ImageFloat8.TYPE, OP_TYPE_FLOAT_32),
 
     // OP_TYPE_VECTOR16 Float
-    OP_TYPE_VECTOR16_FLOAT_32(16, uk.ac.manchester.tornado.api.types.vectors.Float16.TYPE, OP_TYPE_FLOAT_32),
-    OP_TYPE_VECTOR16_INT_32(16, uk.ac.manchester.tornado.api.types.vectors.Int16.TYPE, OP_TYPE_FLOAT_32),
-    OP_TYPE_VECTOR16_DOUBLE_64(16, uk.ac.manchester.tornado.api.types.vectors.Double16.TYPE, OP_TYPE_FLOAT_64),
+//    OP_TYPE_VECTOR16_FLOAT_32(16, uk.ac.manchester.tornado.api.types.vectors.Float16.TYPE, OP_TYPE_FLOAT_32),
+//    OP_TYPE_VECTOR16_INT_32(16, uk.ac.manchester.tornado.api.types.vectors.Int16.TYPE, OP_TYPE_FLOAT_32),
+//    OP_TYPE_VECTOR16_FLOAT_64(16, uk.ac.manchester.tornado.api.types.vectors.Double16.TYPE, OP_TYPE_FLOAT_64),
 
     OP_TYPE_VOID(0, java.lang.Void.TYPE),
 
@@ -159,21 +163,21 @@ public enum SPIRVKind implements PlatformKind {
         vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Int3;", SPIRVKind.OP_TYPE_VECTOR3_INT_32);
         vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Int4;", SPIRVKind.OP_TYPE_VECTOR4_INT_32);
         vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Int8;", SPIRVKind.OP_TYPE_VECTOR8_INT_32);
-        vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Int8;", SPIRVKind.OP_TYPE_VECTOR16_INT_32);
+        vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Int16;", SPIRVKind.OP_TYPE_VECTOR16_INT_32);
 
         // Floats
         vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Float2;", SPIRVKind.OP_TYPE_VECTOR2_FLOAT_32);
         vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Float3;", SPIRVKind.OP_TYPE_VECTOR3_FLOAT_32);
         vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Float4;", SPIRVKind.OP_TYPE_VECTOR4_FLOAT_32);
         vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Float8;", SPIRVKind.OP_TYPE_VECTOR8_FLOAT_32);
-        vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Float8;", SPIRVKind.OP_TYPE_VECTOR16_FLOAT_32);
+        vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Float16;", SPIRVKind.OP_TYPE_VECTOR16_FLOAT_32);
 
         // Double
         vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Double2;", SPIRVKind.OP_TYPE_VECTOR2_FLOAT_64);
         vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Double3;", SPIRVKind.OP_TYPE_VECTOR3_FLOAT_64);
         vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Double4;", SPIRVKind.OP_TYPE_VECTOR4_FLOAT_64);
         vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Double8;", SPIRVKind.OP_TYPE_VECTOR8_FLOAT_64);
-        vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Double8;", SPIRVKind.OP_TYPE_VECTOR16_FLOAT_64);
+        vectorTable.put("Luk/ac/manchester/tornado/api/types/vectors/Double16;", SPIRVKind.OP_TYPE_VECTOR16_FLOAT_64);
 
     }
 
@@ -274,7 +278,7 @@ public enum SPIRVKind implements PlatformKind {
             case "Double16" -> SPIRVKind.OP_TYPE_VECTOR16_FLOAT_64;
             case "Short2" -> SPIRVKind.OP_TYPE_VECTOR2_INT_16;
             case "Short3" -> SPIRVKind.OP_TYPE_VECTOR3_INT_16;
-            case "VectorFloat2", "VectorFloat3", "VectorFloat4", "VectorFloat8", "VectorFloat" -> SPIRVKind.OP_TYPE_INT_64;
+            case "VectorFloat2", "VectorFloat3", "VectorFloat4", "VectorFloat8", "VectorFloat16", "VectorFloat" -> SPIRVKind.OP_TYPE_INT_64;
             default -> throw new TornadoRuntimeException("Vector type not supported: " + vectorType);
         };
     }
@@ -349,7 +353,7 @@ public enum SPIRVKind implements PlatformKind {
             case OP_TYPE_VECTOR8_FLOAT_64:
             case OP_TYPE_VECTOR16_FLOAT_32:
             case OP_TYPE_VECTOR16_INT_32:
-            case OP_TYPE_VECTOR16_DOUBLE_64:
+            case OP_TYPE_VECTOR16_FLOAT_64:
                 return 'v';
             default:
                 return '-';
