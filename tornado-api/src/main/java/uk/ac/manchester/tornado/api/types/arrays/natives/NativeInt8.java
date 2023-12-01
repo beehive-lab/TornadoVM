@@ -47,13 +47,12 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.types.vectors.Int4;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.utils.IntOps;
+import uk.ac.manchester.tornado.api.types.vectors.Int4;
 
 @Vector
-public class NativeInt8 implements PrimitiveStorage<IntBuffer> {
+public final class NativeInt8 implements TornadoNativeCollectionsInterface<IntBuffer> {
     public static final Class<NativeInt8> TYPE = NativeInt8.class;
 
     /**

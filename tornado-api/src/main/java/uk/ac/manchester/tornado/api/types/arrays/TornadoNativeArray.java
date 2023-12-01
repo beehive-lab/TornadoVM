@@ -43,7 +43,16 @@ package uk.ac.manchester.tornado.api.types.arrays;
 
 import java.lang.foreign.MemorySegment;
 
-public abstract class TornadoNativeArray {
+import uk.ac.manchester.tornado.api.types.arrays.natives.NativeVectorByte;
+import uk.ac.manchester.tornado.api.types.arrays.natives.NativeVectorDouble;
+import uk.ac.manchester.tornado.api.types.arrays.natives.NativeVectorFloat;
+import uk.ac.manchester.tornado.api.types.arrays.natives.NativeVectorInt;
+import uk.ac.manchester.tornado.api.types.arrays.natives.NativeVectorShort;
+
+public abstract sealed class TornadoNativeArray permits //
+        IntArray, FloatArray, DoubleArray, LongArray, ShortArray, //
+        ByteArray, CharArray, NativeVectorByte, NativeVectorDouble, //
+        NativeVectorShort, NativeVectorFloat, NativeVectorInt {
     public static final long ARRAY_HEADER = Long.parseLong(System.getProperty("tornado.panama.objectHeader", "24"));
 
     public abstract int getSize();
@@ -53,7 +62,6 @@ public abstract class TornadoNativeArray {
     public abstract long getNumBytesOfSegment();
 
     public abstract long getNumBytesWithoutHeader();
-
 
     protected abstract void clear();
 

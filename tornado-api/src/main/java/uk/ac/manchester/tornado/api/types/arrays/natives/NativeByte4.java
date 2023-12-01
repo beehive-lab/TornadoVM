@@ -47,10 +47,9 @@ import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
-import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 
 @Vector
-public final class NativeByte4 implements PrimitiveStorage<ByteBuffer> {
+public final class NativeByte4 implements TornadoNativeCollectionsInterface<ByteBuffer> {
 
     public static final Class<NativeByte4> TYPE = NativeByte4.class;
     private static final String NUMBER_FORMAT = "{ x=%-7d, y=%-7d, z=%-7d, w=%-7d }";

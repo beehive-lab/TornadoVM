@@ -44,17 +44,16 @@ package uk.ac.manchester.tornado.api.types.matrix;
 import java.lang.foreign.ValueLayout;
 import java.nio.DoubleBuffer;
 
-import uk.ac.manchester.tornado.api.types.arrays.natives.NativeVectorDouble;
 import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.types.vectors.Double2;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
-import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
+import uk.ac.manchester.tornado.api.types.arrays.natives.NativeVectorDouble;
 import uk.ac.manchester.tornado.api.types.utils.DoubleOps;
+import uk.ac.manchester.tornado.api.types.vectors.Double2;
 
 @Vector
-public class NativeDouble2 implements PrimitiveStorage<DoubleBuffer> {
+public final class NativeDouble2 implements TornadoMatrixInterface<DoubleBuffer> {
 
     public static final Class<NativeDouble2> TYPE = NativeDouble2.class;
     public static final Class<NativeVectorDouble> FIELD_CLASS = NativeVectorDouble.class;

@@ -49,11 +49,10 @@ import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.utils.FloatOps;
 
 @Vector
-public final class NativeFloat2 implements PrimitiveStorage<FloatBuffer> {
+public final class NativeFloat2 implements TornadoNativeCollectionsInterface<FloatBuffer> {
 
     public static final Class<NativeFloat2> TYPE = NativeFloat2.class;
 

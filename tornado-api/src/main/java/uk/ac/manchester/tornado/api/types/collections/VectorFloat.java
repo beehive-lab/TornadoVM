@@ -45,10 +45,9 @@ import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.utils.FloatOps;
 
-public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
+public final class VectorFloat implements TornadoCollectionInterface<FloatBuffer> {
 
     private static final int ELEMENT_SIZE = 1;
     private final int numElements;

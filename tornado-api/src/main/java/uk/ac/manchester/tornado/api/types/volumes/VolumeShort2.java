@@ -44,10 +44,9 @@ package uk.ac.manchester.tornado.api.types.volumes;
 import java.nio.ShortBuffer;
 
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
-import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.vectors.Short2;
 
-public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
+public final class VolumeShort2 implements TornadoVolumesInterface<ShortBuffer> {
 
     public static final Class<VolumeShort2> TYPE = VolumeShort2.class;
 

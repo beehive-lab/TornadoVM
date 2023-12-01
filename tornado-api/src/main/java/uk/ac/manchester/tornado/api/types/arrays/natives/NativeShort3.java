@@ -47,10 +47,9 @@ import java.nio.ShortBuffer;
 import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 
 @Vector
-public final class NativeShort3 implements PrimitiveStorage<ShortBuffer> {
+public final class NativeShort3 implements TornadoNativeCollectionsInterface<ShortBuffer> {
 
     public static final Class<NativeShort3> TYPE = NativeShort3.class;
 

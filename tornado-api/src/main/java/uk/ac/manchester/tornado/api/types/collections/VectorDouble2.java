@@ -43,10 +43,9 @@ import static uk.ac.manchester.tornado.api.types.vectors.Double2.add;
 import java.nio.DoubleBuffer;
 
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
-import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.vectors.Double2;
 
-public class VectorDouble2 implements PrimitiveStorage<DoubleBuffer> {
+public final class VectorDouble2 implements TornadoCollectionInterface<DoubleBuffer> {
 
     public static final Class<VectorDouble2> TYPE = VectorDouble2.class;
     private static final int ELEMENT_SIZE = 2;
