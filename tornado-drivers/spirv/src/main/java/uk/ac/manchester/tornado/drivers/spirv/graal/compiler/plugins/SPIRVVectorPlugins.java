@@ -156,7 +156,7 @@ public class SPIRVVectorPlugins {
             registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORINT3_INT_32, IntArray.class, Int3.class);
             registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORINT4_INT_32, IntArray.class, Int4.class);
             registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORINT8_INT_32, IntArray.class, Int8.class);
-            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTOR16_INT_32, IntArray.class, Int16.class);
+            registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORINT16_INT_32, IntArray.class, Int16.class);
 
             // VectorDoubles
             registerVectorCollectionsPlugins(invocationPlugins, SPIRVKind.OP_TYPE_VECTORDOUBLE2_FLOAT_64, DoubleArray.class, Double2.class);

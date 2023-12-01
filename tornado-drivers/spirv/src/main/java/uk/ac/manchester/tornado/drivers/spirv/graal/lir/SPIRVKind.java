@@ -88,9 +88,11 @@ public enum SPIRVKind implements PlatformKind {
 
     // OP_TYPE_VECTOR 8 
     OP_TYPE_VECTOR8_INT_32(8, uk.ac.manchester.tornado.api.types.vectors.Int8.TYPE, OP_TYPE_INT_32),
+    OP_TYPE_VECTOR16_INT_32(16, uk.ac.manchester.tornado.api.types.vectors.Int16.TYPE, OP_TYPE_INT_32),
     OP_TYPE_VECTOR8_INT_64(8, uk.ac.manchester.tornado.api.types.vectors.Int8.TYPE, OP_TYPE_INT_64),
+    OP_TYPE_VECTOR16_INT_64(16, uk.ac.manchester.tornado.api.types.vectors.Int16.TYPE, OP_TYPE_INT_64),
     OP_TYPE_VECTORINT8_INT_32(8, uk.ac.manchester.tornado.api.types.collections.VectorInt8.TYPE, OP_TYPE_INT_32),
-    OP_TYPE_VECTOR16_INT_32(16, uk.ac.manchester.tornado.api.types.collections.VectorInt16.TYPE, OP_TYPE_INT_32),
+    OP_TYPE_VECTORINT16_INT_32(16, uk.ac.manchester.tornado.api.types.collections.VectorInt16.TYPE, OP_TYPE_INT_32),
 
     // OP_TYPE_VECTOR2 Float
     OP_TYPE_VECTOR2_FLOAT_16(2, uk.ac.manchester.tornado.api.types.vectors.Float2.TYPE, OP_TYPE_FLOAT_16),  // Half float
