@@ -28,17 +28,19 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.vectors.Float2;
-import uk.ac.manchester.tornado.api.types.vectors.Float3;
-import uk.ac.manchester.tornado.api.types.vectors.Float4;
-import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat16;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat2;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
 import uk.ac.manchester.tornado.api.types.collections.VectorFloat8;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.vectors.Float16;
+import uk.ac.manchester.tornado.api.types.vectors.Float2;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
+import uk.ac.manchester.tornado.api.types.vectors.Float8;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -71,6 +73,11 @@ public class TestFloats extends TornadoTestBase {
 
     private static void dotMethodFloat8(Float8 a, Float8 b, VectorFloat result) {
         float dot = Float8.dot(a, b);
+        result.set(0, dot);
+    }
+
+    private static void dotMethodFloat16(Float16 a, Float16 b, VectorFloat result) {
+        float dot = Float16.dot(a, b);
         result.set(0, dot);
     }
 
@@ -146,6 +153,12 @@ public class TestFloats extends TornadoTestBase {
     public static void addVectorFloat8(VectorFloat8 a, VectorFloat8 b, VectorFloat8 results) {
         for (@Parallel int i = 0; i < a.getLength(); i++) {
             results.set(i, Float8.add(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void addVectorFloat16(VectorFloat16 a, VectorFloat16 b, VectorFloat16 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Float16.add(a.get(i), b.get(i)));
         }
     }
 
@@ -350,6 +363,24 @@ public class TestFloats extends TornadoTestBase {
     }
 
     @Test
+    public void testSimpleDotProductFloat16() {
+        Float16 a = new Float16(1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f);
+        Float16 b = new Float16(8f, 7f, 6f, 5f, 4f, 3f, 2f, 1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f);
+        VectorFloat output = new VectorFloat(1);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestFloats::dotMethodFloat16, a, b, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+
+        assertEquals(120, output.get(0), DELTA);
+    }
+
+    @Test
     public void testSimpleVectorAddition() {
         int size = 1;
         Float3 a = new Float3(1f, 2f, 3f);
@@ -539,6 +570,50 @@ public class TestFloats extends TornadoTestBase {
             assertEquals(sequential.getY(), output.get(i).getY(), DELTA);
             assertEquals(sequential.getZ(), output.get(i).getZ(), DELTA);
             assertEquals(sequential.getW(), output.get(i).getW(), DELTA);
+        }
+    }
+
+    @Test
+    public void testVectorFloat16() {
+        int size = 16;
+
+        VectorFloat16 a = new VectorFloat16(size);
+        VectorFloat16 b = new VectorFloat16(size);
+        VectorFloat16 output = new VectorFloat16(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Float16(i, i, i, i, i, i, i, i, i, i, i, i, i, i, i, i));
+            b.set(i, new Float16(size - i, size - i, size - i, size, size - i, size - i, size - i, size, size - i, size - i, size - i, size, size - i, size - i, size - i, size));
+        }
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestFloats::addVectorFloat16, a, b, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+
+        for (int i = 0; i < size; i++) {
+            Float16 sequential = new Float16(i + (size - i), i + (size - i), i + (size - i), i + size, i + (size - i), i + (size - i), i + (size - i), i + size, i + (size - i), i + (size - i),
+                    i + (size - i), i + size, i + (size - i), i + (size - i), i + (size - i), i + size);
+            assertEquals(sequential.getS0(), output.get(i).getS0(), DELTA);
+            assertEquals(sequential.getS1(), output.get(i).getS1(), DELTA);
+            assertEquals(sequential.getS2(), output.get(i).getS2(), DELTA);
+            assertEquals(sequential.getS3(), output.get(i).getS3(), DELTA);
+            assertEquals(sequential.getS4(), output.get(i).getS4(), DELTA);
+            assertEquals(sequential.getS5(), output.get(i).getS5(), DELTA);
+            assertEquals(sequential.getS6(), output.get(i).getS6(), DELTA);
+            assertEquals(sequential.getS7(), output.get(i).getS7(), DELTA);
+            assertEquals(sequential.getS8(), output.get(i).getS8(), DELTA);
+            assertEquals(sequential.getS9(), output.get(i).getS9(), DELTA);
+            assertEquals(sequential.getS10(), output.get(i).getS10(), DELTA);
+            assertEquals(sequential.getS11(), output.get(i).getS11(), DELTA);
+            assertEquals(sequential.getS12(), output.get(i).getS12(), DELTA);
+            assertEquals(sequential.getS13(), output.get(i).getS13(), DELTA);
+            assertEquals(sequential.getS14(), output.get(i).getS14(), DELTA);
+            assertEquals(sequential.getS15(), output.get(i).getS15(), DELTA);
         }
     }
 
