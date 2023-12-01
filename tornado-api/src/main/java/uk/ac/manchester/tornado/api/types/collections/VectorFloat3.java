@@ -44,10 +44,9 @@ package uk.ac.manchester.tornado.api.types.collections;
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.vectors.Float3;
 
-public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
+public final class VectorFloat3 implements TornadoCollectionInterface<FloatBuffer> {
 
     public static final Class<VectorFloat3> TYPE = VectorFloat3.class;
 

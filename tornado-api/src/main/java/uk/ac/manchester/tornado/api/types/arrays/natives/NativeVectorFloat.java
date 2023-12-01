@@ -48,7 +48,7 @@ import java.lang.foreign.MemorySegment;
 
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
-public class NativeVectorFloat extends TornadoNativeArray {
+public final class NativeVectorFloat extends TornadoNativeArray {
     private final int FLOAT_BYTES = 4;
     private MemorySegment segment;
     private int numberOfElements;

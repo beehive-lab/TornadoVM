@@ -44,12 +44,11 @@ package uk.ac.manchester.tornado.api.types.matrix;
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.utils.FloatOps;
 import uk.ac.manchester.tornado.api.types.utils.StorageFormats;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
 
-public class Matrix3DFloat4 extends Matrix3DType implements PrimitiveStorage<FloatBuffer> {
+public final class Matrix3DFloat4 extends Matrix3DType implements TornadoMatrixInterface<FloatBuffer> {
 
     public static final Class<Matrix3DFloat4> TYPE = Matrix3DFloat4.class;
     /**

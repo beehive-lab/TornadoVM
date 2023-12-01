@@ -44,7 +44,20 @@ package uk.ac.manchester.tornado.api.types.common;
 import java.io.Serializable;
 import java.nio.Buffer;
 
-public interface PrimitiveStorage<T extends Buffer> extends Serializable {
+import uk.ac.manchester.tornado.api.types.arrays.natives.TornadoNativeCollectionsInterface;
+import uk.ac.manchester.tornado.api.types.collections.TornadoCollectionInterface;
+import uk.ac.manchester.tornado.api.types.images.TornadoImagesInterface;
+import uk.ac.manchester.tornado.api.types.matrix.TornadoMatrixInterface;
+import uk.ac.manchester.tornado.api.types.vectors.TornadoVectorsInterface;
+import uk.ac.manchester.tornado.api.types.volumes.TornadoVolumesInterface;
+
+public sealed interface PrimitiveStorage<T extends Buffer> extends Serializable //
+        permits TornadoNativeCollectionsInterface, //
+        TornadoCollectionInterface, //
+        TornadoImagesInterface, //
+        TornadoMatrixInterface, //
+        TornadoVectorsInterface, //
+        TornadoVolumesInterface {
 
     void loadFromBuffer(T buffer);
 

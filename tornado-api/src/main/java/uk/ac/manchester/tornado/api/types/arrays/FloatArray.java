@@ -50,7 +50,7 @@ import java.lang.foreign.MemorySegment;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
 @SegmentElementSize(size = 4)
-public class FloatArray extends TornadoNativeArray {
+public final class FloatArray extends TornadoNativeArray {
     private static final int FLOAT_BYTES = 4;
     private MemorySegment segment;
 
