@@ -130,10 +130,6 @@ public enum SPIRVKind implements PlatformKind {
     OP_TYPE_VECTORFLOAT16_FLOAT_32(16, uk.ac.manchester.tornado.api.types.collections.VectorFloat16.TYPE, OP_TYPE_FLOAT_32),
     OP_TYPE_IMAGEFLOAT8_FLOAT_32(8, uk.ac.manchester.tornado.api.types.images.ImageFloat8.TYPE, OP_TYPE_FLOAT_32),
 
-    // OP_TYPE_VECTOR16 Float
-//    OP_TYPE_VECTOR16_FLOAT_32(16, uk.ac.manchester.tornado.api.types.vectors.Float16.TYPE, OP_TYPE_FLOAT_32),
-//    OP_TYPE_VECTOR16_INT_32(16, uk.ac.manchester.tornado.api.types.vectors.Int16.TYPE, OP_TYPE_FLOAT_32),
-//    OP_TYPE_VECTOR16_FLOAT_64(16, uk.ac.manchester.tornado.api.types.vectors.Double16.TYPE, OP_TYPE_FLOAT_64),
 
     OP_TYPE_VOID(0, java.lang.Void.TYPE),
 
