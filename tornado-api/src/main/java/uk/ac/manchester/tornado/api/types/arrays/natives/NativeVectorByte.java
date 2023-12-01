@@ -48,7 +48,7 @@ import java.lang.foreign.MemorySegment;
 
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
-public class NativeVectorByte extends TornadoNativeArray {
+public final class NativeVectorByte extends TornadoNativeArray {
     private final int BYTE_BYTES = 1;
     private MemorySegment segment;
     private int numberOfElements;

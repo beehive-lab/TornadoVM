@@ -43,10 +43,9 @@ import static uk.ac.manchester.tornado.api.types.vectors.Int3.add;
 import java.nio.IntBuffer;
 
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.vectors.Int3;
 
-public class VectorInt3 implements PrimitiveStorage<IntBuffer> {
+public final class VectorInt3 implements TornadoCollectionInterface<IntBuffer> {
 
     public static final Class<VectorInt3> TYPE = VectorInt3.class;
 

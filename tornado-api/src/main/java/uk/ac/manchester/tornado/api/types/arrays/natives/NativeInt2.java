@@ -47,10 +47,9 @@ import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 
 @Vector
-public class NativeInt2 implements PrimitiveStorage<IntBuffer> {
+public final class NativeInt2 implements TornadoNativeCollectionsInterface<IntBuffer> {
 
     public static final Class<NativeInt2> TYPE = NativeInt2.class;
 

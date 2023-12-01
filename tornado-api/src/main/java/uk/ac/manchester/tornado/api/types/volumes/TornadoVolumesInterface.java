@@ -39,66 +39,12 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.types.arrays.natives;
+package uk.ac.manchester.tornado.api.types.volumes;
 
-import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static java.lang.foreign.ValueLayout.JAVA_SHORT;
+import java.nio.Buffer;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemorySegment;
+import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 
-import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
-
-public final class NativeVectorShort extends TornadoNativeArray {
-    private final int SHORT_BYTES = 2;
-    private MemorySegment segment;
-    private int numberOfElements;
-    private long segmentByteSize;
-
-    public NativeVectorShort(int numberOfElements) {
-        this.numberOfElements = numberOfElements;
-        segmentByteSize = numberOfElements * SHORT_BYTES;
-
-        segment = Arena.ofAuto().allocate(segmentByteSize, 1);
-        segment.setAtIndex(JAVA_INT, 0, numberOfElements);
-    }
-
-    public void set(int index, short value) {
-        segment.setAtIndex(JAVA_SHORT, index, value);
-    }
-
-    public short get(int index) {
-        return segment.getAtIndex(JAVA_SHORT, index);
-    }
-
-    public void init(short value) {
-        for (int i = 0; i < getSize(); i++) {
-            segment.setAtIndex(JAVA_SHORT, i, value);
-        }
-    }
-
-    @Override
-    public int getSize() {
-        return numberOfElements;
-    }
-
-    @Override
-    public MemorySegment getSegment() {
-        return segment;
-    }
-
-    @Override
-    public long getNumBytesOfSegment() {
-        return segmentByteSize;
-    }
-
-    @Override
-    public long getNumBytesWithoutHeader() {
-        return segmentByteSize;
-    }
-
-    @Override
-    protected void clear() {
-        init((short) 0);
-    }
+public sealed interface TornadoVolumesInterface<T extends Buffer> //
+        extends PrimitiveStorage<T> permits VolumeShort2 {
 }

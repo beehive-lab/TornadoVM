@@ -49,7 +49,7 @@ import java.lang.foreign.MemorySegment;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
 @SegmentElementSize(size = 4)
-public class IntArray extends TornadoNativeArray {
+public final class IntArray extends TornadoNativeArray {
     private static final int INT_BYTES = 4;
     private int numberOfElements;
     private MemorySegment segment;

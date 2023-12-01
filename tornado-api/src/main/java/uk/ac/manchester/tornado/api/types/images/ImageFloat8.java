@@ -44,12 +44,11 @@ package uk.ac.manchester.tornado.api.types.images;
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.utils.FloatOps;
 import uk.ac.manchester.tornado.api.types.utils.FloatingPointError;
 import uk.ac.manchester.tornado.api.types.vectors.Float8;
 
-public class ImageFloat8 implements PrimitiveStorage<FloatBuffer> {
+public final class ImageFloat8 implements TornadoImagesInterface<FloatBuffer> {
 
     public static final Class<ImageFloat8> TYPE = ImageFloat8.class;
 

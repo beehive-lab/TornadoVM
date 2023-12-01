@@ -48,11 +48,10 @@ import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
-import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.utils.ShortOps;
 
 @Vector
-public final class NativeShort2 implements PrimitiveStorage<ShortBuffer> {
+public final class NativeShort2 implements TornadoNativeCollectionsInterface<ShortBuffer> {
 
     public static final Class<NativeShort2> TYPE = NativeShort2.class;
 

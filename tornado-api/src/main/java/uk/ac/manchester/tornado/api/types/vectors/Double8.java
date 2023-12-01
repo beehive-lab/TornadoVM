@@ -46,11 +46,10 @@ import java.nio.DoubleBuffer;
 import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.api.types.utils.DoubleOps;
 
 @Vector
-public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
+public final class Double8 implements TornadoVectorsInterface<DoubleBuffer> {
 
     public static final Class<Double8> TYPE = Double8.class;
     /**

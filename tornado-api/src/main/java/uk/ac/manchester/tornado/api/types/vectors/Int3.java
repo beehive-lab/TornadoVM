@@ -46,10 +46,9 @@ import java.nio.IntBuffer;
 import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 
 @Vector
-public final class Int3 implements PrimitiveStorage<IntBuffer> {
+public final class Int3 implements TornadoVectorsInterface<IntBuffer> {
 
     public static final Class<Int3> TYPE = Int3.class;
 
