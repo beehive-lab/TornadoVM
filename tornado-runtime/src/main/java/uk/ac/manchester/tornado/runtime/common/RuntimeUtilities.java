@@ -300,7 +300,7 @@ public final class RuntimeUtilities {
     }
 
     public static double elapsedTimeInSeconds(long start, long end) {
-        return (end - start) * 1e-9;
+        return elapsedTimeInSeconds((end - start));
     }
 
     public static double elapsedTimeInSeconds(long duration) {
