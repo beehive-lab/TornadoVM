@@ -12,15 +12,13 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
@@ -112,8 +110,8 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
      * corresponding {@link IfNode} loop condition.
      *
      * @return true if the {@param loopCondIndex} is right after the LIR
-     *         instructions of a loop header ({@param loopPostOpIndex} and
-     *         {@param loopInitOpIndex}).
+     *     instructions of a loop header ({@param loopPostOpIndex} and
+     *     {@param loopInitOpIndex}).
      */
     private static boolean isLoopConditionRightAfterHeader(int loopCondIndex, int loopPostOpIndex, int loopInitOpIndex) {
         return (loopCondIndex - 1 == loopPostOpIndex) && (loopCondIndex - 2 == loopInitOpIndex);
@@ -127,7 +125,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
      * @return true if there are no instructions.
      */
     private static boolean shouldFormatLoopHeader(List<LIRInstruction> instructions) {
-        int loopInitOpIndex = -1,loopPostOpIndex = -1,loopConditionOpIndex = -1;
+        int loopInitOpIndex = -1, loopPostOpIndex = -1, loopConditionOpIndex = -1;
 
         for (int index = 0, instructionsSize = instructions.size(); index < instructionsSize; index++) {
             LIRInstruction instruction = instructions.get(index);
@@ -438,13 +436,13 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
      * not a control Split (due to nested control-flow).
      *
      * @param basicBlock
-     *            {@link HIRBlock}
+     *     {@link HIRBlock}
      * @param visitor
-     *            {@link OCLBlockVisitor}
+     *     {@link OCLBlockVisitor}
      * @param visited
-     *            {@link HashSet}
+     *     {@link HashSet}
      * @param pending
-     *            {@link HashMap}
+     *     {@link HashMap}
      */
     private void rescheduleTrueBranchConditionsIfNeeded(HIRBlock basicBlock, OCLBlockVisitor visitor, HashSet<HIRBlock> visited, HashMap<HIRBlock, HIRBlock> pending) {
         if (!basicBlock.isLoopHeader() && basicBlock.getDominator() != null && basicBlock.getDominator().getEndNode() instanceof IfNode) {

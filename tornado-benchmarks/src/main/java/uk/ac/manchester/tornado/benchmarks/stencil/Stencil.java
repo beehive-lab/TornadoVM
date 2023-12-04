@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,9 +20,8 @@ package uk.ac.manchester.tornado.benchmarks.stencil;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
-/**
- *
- * @author James Clarkson
+/*
+ * * @author James Clarkson
  */
 public class Stencil {
 

@@ -10,15 +10,13 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
@@ -332,14 +330,14 @@ public class OCLLIRStmt {
          * It emits code in the form:
          *
          * <code>
-         *     ul_12[index] = value;
+         * ul_12[index] = value;
          * </code>
          *
          * @param crb
-         *            OpenCL Compilation Result Builder
+         *     OpenCL Compilation Result Builder
          *
          * @param asm
-         *            OpenCL Assembler
+         *     OpenCL Assembler
          */
         public void emitLocalAndPrivateStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             address.emit(crb, asm);
@@ -358,14 +356,14 @@ public class OCLLIRStmt {
          * It emits code in the form:
          *
          * <code>
-         *     *((__global <type> *) ul_13) = <value>
+         * *((__global <type> *) ul_13) = <value>
          * </code>
          *
          * @param crb
-         *            OpenCL Compilation Result Builder
+         *     OpenCL Compilation Result Builder
          *
          * @param asm
-         *            OpenCL Assembler
+         *     OpenCL Assembler
          */
         public void emitGlobalStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.emit("*(");
@@ -545,7 +543,7 @@ public class OCLLIRStmt {
         private void emitAtomicAddStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
             asm.emit("atomicAdd_Tornado_Floats( &("); // Calling to the
-                                                      // intrinsic for Floats
+                                                     // intrinsic for Floats
             asm.emit("*(");
             cast.emit(crb, asm);
             asm.space();
