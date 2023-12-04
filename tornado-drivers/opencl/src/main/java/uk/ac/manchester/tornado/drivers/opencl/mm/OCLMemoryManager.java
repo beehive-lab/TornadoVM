@@ -46,10 +46,6 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         this.deviceContext = deviceContext;
     }
 
-    private static long align(final long address, final long alignment) {
-        return (address % alignment == 0) ? address : address + (alignment - address % alignment);
-    }
-
     @Override
     public long getHeapSize() {
         return DEVICE_AVAILABLE_MEMORY;

@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -56,15 +56,15 @@ public class TornadoIfCanonicalization extends BasePhase<TornadoMidTierContext> 
     }
 
     private boolean isMerge(AbstractBeginNode begin) {
-        return begin.next() instanceof AbstractEndNode && ((AbstractEndNode) begin.next()).merge() instanceof AbstractMergeNode;
+        return (begin.next() instanceof AbstractEndNode && ((AbstractEndNode) begin.next()).merge() instanceof AbstractMergeNode);
     }
 
     private boolean isIf(EndNode end) {
-        return end.predecessor() instanceof BeginNode && ((BeginNode) end.predecessor()).predecessor() instanceof IfNode;
+        return end.predecessor() instanceof BeginNode && end.predecessor().predecessor() instanceof IfNode;
     }
 
     private boolean isIf(LoopEndNode end) {
-        return end.predecessor() instanceof BeginNode && ((BeginNode) end.predecessor()).predecessor() instanceof IfNode;
+        return end.predecessor() instanceof BeginNode && end.predecessor().predecessor() instanceof IfNode;
     }
 
     private IfNode getIf(EndNode end) {

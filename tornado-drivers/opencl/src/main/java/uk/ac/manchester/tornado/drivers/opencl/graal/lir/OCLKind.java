@@ -173,7 +173,7 @@ public enum OCLKind implements PlatformKind {
     ULONG16(16, null, ULONG),
     DOUBLE16(16, Double16.TYPE, DOUBLE),
     FLOAT16(16, Float16.TYPE, FLOAT),
-    
+
     ILLEGAL(0, null),
     INTEGER_ATOMIC_JAVA(4, java.util.concurrent.atomic.AtomicInteger.class);
     // @formatter:on
@@ -468,12 +468,17 @@ public enum OCLKind implements PlatformKind {
     }
 
     public boolean isInteger() {
-        return kind != ILLEGAL && !isFloating();
+        if (kind == ILLEGAL || isFloating()) {
+            return false;
+        }
+        return true;
     }
 
     public boolean isFloating() {
-        // TODO are vectors integers?
-        return kind == FLOAT || kind == DOUBLE;
+        if (kind == FLOAT || kind == DOUBLE) {
+            return true;
+        }
+        return false;
     }
 
     public boolean isVector() {

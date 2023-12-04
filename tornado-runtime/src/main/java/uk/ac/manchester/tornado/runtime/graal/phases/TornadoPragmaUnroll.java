@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -76,7 +76,7 @@ public class TornadoPragmaUnroll extends BasePhase<CoreProviders> {
                 }
             }
 
-            return loops - ifs == 0;
+            return ((loops - ifs) == 0);
         } else {
             return false;
         }

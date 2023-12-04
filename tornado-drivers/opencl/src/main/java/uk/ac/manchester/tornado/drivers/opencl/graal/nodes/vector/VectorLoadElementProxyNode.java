@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -44,10 +44,12 @@ public final class VectorLoadElementProxyNode extends FixedWithNextNode {
 
     public static final NodeClass<VectorLoadElementProxyNode> TYPE = NodeClass.create(VectorLoadElementProxyNode.class);
 
-    @OptionalInput(InputType.Association) ValueNode origin;
-    @OptionalInput(InputType.Association) ValueNode laneOrigin;
+    @OptionalInput(InputType.Association)
+    ValueNode origin;
+    @OptionalInput(InputType.Association)
+    ValueNode laneOrigin;
 
-    protected final OCLKind kind;
+    private final OCLKind kind;
 
     protected VectorLoadElementProxyNode(NodeClass<? extends VectorLoadElementProxyNode> c, OCLKind kind, ValueNode origin, ValueNode lane) {
         super(c, OCLStampFactory.getStampFor(kind));
@@ -64,13 +66,9 @@ public final class VectorLoadElementProxyNode extends FixedWithNextNode {
              * applied to the vector node and this node should be discarded.
              */
             VectorValueNode vector = null;
-            // System.out.printf("origin: %s\n",origin);
             if (origin instanceof VectorValueNode) {
                 vector = (VectorValueNode) origin;
-            } // else if(origin instanceof ParameterNode){
-              // vector = origin.graph().addOrUnique(new VectorValueNode(kind,
-              // origin));
-            else {
+            } else {
                 shouldNotReachHere();
             }
 
@@ -81,18 +79,9 @@ public final class VectorLoadElementProxyNode extends FixedWithNextNode {
         return loadNode;
     }
 
-    public VectorLoadElementProxyNode(VectorValueNode vector, ValueNode lane, ValueNode value) {
-        this(TYPE, vector.getOCLKind(), vector, lane);
-    }
-
-    public VectorLoadElementProxyNode(OCLKind vectorKind, ValueNode origin, ValueNode lane) {
-        this(TYPE, vectorKind, origin, lane);
-    }
-
     @Override
     public boolean inferStamp() {
         return true;
-        // return updateStamp(createStamp(origin, kind.getElementKind()));
     }
 
     public OCLKind getOCLKind() {
@@ -100,24 +89,10 @@ public final class VectorLoadElementProxyNode extends FixedWithNextNode {
     }
 
     public boolean canResolve() {
-        return (isOriginResolvable() && laneOrigin != null && laneOrigin instanceof ConstantNode);
+        return (isVectorValueNode() && laneOrigin != null && laneOrigin instanceof ConstantNode);
     }
 
-    private boolean isOriginResolvable() {
-        return (origin != null && (origin instanceof VectorValueNode));
+    private boolean isVectorValueNode() {
+        return (origin != null) && (origin instanceof VectorValueNode);
     }
-
-    public ValueNode getOrigin() {
-        return origin;
-    }
-
-    public void setOrigin(ValueNode value) {
-        updateUsages(origin, value);
-        origin = value;
-    }
-
-    public int getLane() {
-        return ((ConstantNode) laneOrigin).asJavaConstant().asInt();
-    }
-
 }

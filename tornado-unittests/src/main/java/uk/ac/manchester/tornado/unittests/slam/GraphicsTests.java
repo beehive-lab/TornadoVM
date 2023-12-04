@@ -1294,12 +1294,14 @@ public class GraphicsTests extends TornadoTestBase {
 
     private Float8 createFloat8() {
         Random r = new Random();
-        return new Float8(random(r), random(r), random(r), random(r), random(r), random(r), random(r), random(r));
+        Float8 float8 = new Float8(random(r), random(r), random(r), random(r), random(r), random(r), random(r), random(r));
+        return float8;
     }
 
     private Float4 createFloat4() {
         Random r = new Random();
-        return new Float4(random(r), random(r), random(r), random(r));
+        Float4 float4 = new Float4(random(r), random(r), random(r), random(r));
+        return float4;
     }
 
     @Test

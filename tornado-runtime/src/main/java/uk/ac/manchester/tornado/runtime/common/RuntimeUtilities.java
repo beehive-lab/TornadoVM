@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -95,8 +95,8 @@ public final class RuntimeUtilities {
      * @param si
      * @return humanReadableByteCount
      * @see <a href=http://stackoverflow.com/questions/3758606/how-to-convert
-     *      -byte-size-into-human-readable-format-in-java >Reference to
-     *      StackOverflow</a>
+     *     -byte-size-into-human-readable-format-in-java >Reference to
+     *     StackOverflow</a>
      */
     public static String humanReadableByteCount(long bytes, boolean si) {
         final int unit = si ? 1000 : 1024;
@@ -182,7 +182,7 @@ public final class RuntimeUtilities {
      * Returns true if object is a boxed type.
      *
      * @param klass
-     *            Class to check is boxed type.
+     *     Class to check is boxed type.
      * @return boolean
      */
     public static boolean isBoxedPrimitiveClass(final Class<?> klass) {
@@ -243,7 +243,7 @@ public final class RuntimeUtilities {
      * determines whether a given array is composed of primitives or objects.
      *
      * @param type
-     *            type to check
+     *     type to check
      * @return true if the array is composed of a primitive type
      */
     public static boolean isPrimitiveArray(final Class<?> type) {
@@ -300,8 +300,7 @@ public final class RuntimeUtilities {
     }
 
     public static double elapsedTimeInSeconds(long start, long end) {
-        final long duration = end - start;
-        return duration * 1e-9;
+        return elapsedTimeInSeconds((end - start));
     }
 
     public static double elapsedTimeInSeconds(long duration) {
@@ -360,8 +359,8 @@ public final class RuntimeUtilities {
      * with identify information for the induction variables.
      *
      * @param graph
-     *            The StructuredGraph to analyze and print induction variables in
-     *            the graph.
+     *     The StructuredGraph to analyze and print induction variables in
+     *     the graph.
      */
     private static void printInductionVariables(StructuredGraph graph) {
         final LoopsData data = new TornadoLoopsData(graph);
@@ -375,16 +374,12 @@ public final class RuntimeUtilities {
                 for (Node n : parRange.offset().usages()) {
                     if (loop.getInductionVariables().containsKey(n)) {
                         BasicInductionVariable iv = (BasicInductionVariable) loop.getInductionVariables().get(n);
-                        System.out.printf("[%d] parallel loop: %s -> init=%s, cond=%s, stride=%s, op=%s\n", parRange.index(), loop.loopBegin(), parRange.offset().value(), parRange.value(),
-                                parRange.stride(), iv.getOp());
+                        System.out.printf("[%d] parallel loop: %s -> init=%s, cond=%s, stride=%s, op=%s\n", parRange.index(), loop.loopBegin(), parRange.offset().value(), parRange.value(), parRange
+                                .stride(), iv.getOp());
                     }
                 }
             }
         }
-    }
-
-    public static boolean ifFileExists(File fileName) {
-        return fileName.exists();
     }
 
     public static void maybePrintSource(byte[] source) {
@@ -394,10 +389,12 @@ public final class RuntimeUtilities {
                 System.out.println(sourceCode);
             } else {
                 File fileLog = new File(PRINT_SOURCE_DIRECTORY);
-                try (FileWriter file = new FileWriter(fileLog, RuntimeUtilities.ifFileExists(fileLog))) {
-                    file.write(sourceCode);
-                    file.write("\n");
-                    file.flush();
+                try {
+                    try (FileWriter file = new FileWriter(fileLog, fileLog.exists())) {
+                        file.write(sourceCode);
+                        file.write("\n");
+                        file.flush();
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

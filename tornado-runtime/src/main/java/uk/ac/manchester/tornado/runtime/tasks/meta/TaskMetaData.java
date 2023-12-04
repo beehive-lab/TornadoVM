@@ -83,7 +83,8 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     public static TaskMetaData create(ScheduleMetaData scheduleMeta, String id, Method method) {
-        return new TaskMetaData(scheduleMeta, id, Modifier.isStatic(method.getModifiers()) ? method.getParameterCount() : method.getParameterCount() + 1);
+        int numParameters = Modifier.isStatic(method.getModifiers()) ? method.getParameterCount() : method.getParameterCount() + 1;
+        return new TaskMetaData(scheduleMeta, id, numParameters);
     }
 
     private static String formatWorkDimensionArray(final long[] array, final String defaults) {

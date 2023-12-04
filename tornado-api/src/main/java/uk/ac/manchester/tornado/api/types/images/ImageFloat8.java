@@ -103,7 +103,7 @@ public final class ImageFloat8 implements TornadoImagesInterface<FloatBuffer> {
         return storage;
     }
 
-    private int toIndex(int x, int y) {
+    private int getIndex(int x, int y) {
         return (x * ELEMENT_SIZE) + (y * ELEMENT_SIZE * X);
     }
 
@@ -122,12 +122,12 @@ public final class ImageFloat8 implements TornadoImagesInterface<FloatBuffer> {
     }
 
     public void set(int x, Float8 value) {
-        final int offset = toIndex(x, 0);
+        final int offset = getIndex(x, 0);
         storeToArray(value, storage, offset);
     }
 
     public Float8 get(int x, int y) {
-        final int offset = toIndex(x, y);
+        final int offset = getIndex(x, y);
         return loadFromArray(storage, offset);
     }
 
@@ -145,7 +145,7 @@ public final class ImageFloat8 implements TornadoImagesInterface<FloatBuffer> {
     }
 
     public void set(int x, int y, Float8 value) {
-        final int offset = toIndex(x, y);
+        final int offset = getIndex(x, y);
         storeToArray(value, storage, offset);
     }
 
