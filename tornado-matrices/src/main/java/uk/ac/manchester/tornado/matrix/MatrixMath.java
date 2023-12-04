@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,6 @@
  * limitations under the License.
  *
  */
-
 package uk.ac.manchester.tornado.matrix;
 
 import static java.lang.Math.abs;
@@ -23,11 +22,11 @@ import static uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat.scale;
 import static uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat.transpose;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix2DDouble;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
-import uk.ac.manchester.tornado.api.types.collections.VectorFloat;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 public final class MatrixMath {
 

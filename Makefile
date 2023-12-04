@@ -1,6 +1,5 @@
 all: build
 
-
 # Variable passed for the build process:
 # BACKENDS=<ptx|opencl|spirv>. It specifies which backend/s to use { opencl, ptx, spirv }. The default one is `opencl`.
 BACKEND?=opencl

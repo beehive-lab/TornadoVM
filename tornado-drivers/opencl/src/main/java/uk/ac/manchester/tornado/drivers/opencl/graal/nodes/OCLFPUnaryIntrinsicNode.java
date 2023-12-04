@@ -12,15 +12,13 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
@@ -74,49 +72,49 @@ public class OCLFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
 
     // @formatter:off
     public enum Operation {
-        ACOS, 
-        ACOSH, 
-        ACOSPI, 
-        ASIN, 
-        ASINH, 
-        ASINPI, 
+        ACOS,
+        ACOSH,
+        ACOSPI,
+        ASIN,
+        ASINH,
+        ASINPI,
         ATAN,
-        ATANH, 
+        ATANH,
         ATANPI,
-        CBRT, 
+        CBRT,
         CEIL,
-        COS, 
-        COSH, 
-        COSPI, 
-        ERFC, 
-        ERF, 
-        EXP, 
-        EXP2, 
-        EXP10, 
-        EXPM1, 
+        COS,
+        COSH,
+        COSPI,
+        ERFC,
+        ERF,
+        EXP,
+        EXP2,
+        EXP10,
+        EXPM1,
         FABS,
         FLOOR,
         ILOGB,
-        LGAMMA, 
-        LOG, 
-        LOG2, 
-        LOG10, 
-        LOG1P, 
+        LGAMMA,
+        LOG,
+        LOG2,
+        LOG10,
+        LOG1P,
         LOGB,
         NAN,
         RADIANS,
-        REMQUO, 
+        REMQUO,
         RINT,
-        ROUND, 
-        RSQRT, 
+        ROUND,
+        RSQRT,
         SIN,
-        SINH, 
-        SINPI, 
-        SQRT, 
-        TAN, 
-        TANH, 
-        TANPI, 
-        TGAMMA, 
+        SINH,
+        SINPI,
+        SQRT,
+        TAN,
+        TANH,
+        TANPI,
+        TGAMMA,
         TRUNC
     }
     // @formatter:on

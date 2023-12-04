@@ -12,15 +12,13 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- *
  */
 package uk.ac.manchester.tornado.runtime.common;
 
@@ -45,7 +43,7 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
      * arguments.
      *
      * @param numArgs
-     *            The number of arguments for the kernel call wrapper.
+     *     The number of arguments for the kernel call wrapper.
      * @return The created {@link KernelArgs} object.
      */
     KernelArgs createCallWrapper(int numArgs);
@@ -54,7 +52,7 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
      * It creates or reuses an atomic buffer for the specified integer array.
      *
      * @param arr
-     *            The integer array for which to create or reuse an atomic buffer.
+     *     The integer array for which to create or reuse an atomic buffer.
      * @return The created or reused {@link ObjectBuffer}.
      */
     ObjectBuffer createOrReuseAtomicsBuffer(int[] arr);
@@ -63,7 +61,7 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
      * It installs the Tornado code for the specified schedulable task.
      *
      * @param task
-     *            The {@link SchedulableTask} to install the code for.
+     *     The {@link SchedulableTask} to install the code for.
      * @return The {@link TornadoInstalledCode} indicating the installation status.
      */
     TornadoInstalledCode installCode(SchedulableTask task);
@@ -73,7 +71,7 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
      * mode.
      *
      * @param task
-     *            The {@link SchedulableTask} to check for full JIT mode.
+     *     The {@link SchedulableTask} to check for full JIT mode.
      * @return True if the task is in full JIT mode, false otherwise.
      */
     boolean isFullJITMode(SchedulableTask task);
@@ -83,8 +81,8 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
      * schedulable task.
      *
      * @param task
-     *            The {@link SchedulableTask} to get the installed code from the
-     *            cache.
+     *     The {@link SchedulableTask} to get the installed code from the
+     *     cache.
      * @return The {@link TornadoInstalledCode} from the cache.
      */
     TornadoInstalledCode getCodeFromCache(SchedulableTask task);
@@ -94,7 +92,7 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
      * an integer array representing them.
      *
      * @param task
-     *            The {@link SchedulableTask} to check for atomic operations.
+     *     The {@link SchedulableTask} to check for atomic operations.
      * @return The integer array representing the atomic operations.
      */
     int[] checkAtomicsForTask(SchedulableTask task);
@@ -104,13 +102,13 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
      * parameter index, and value.
      *
      * @param task
-     *            The {@link SchedulableTask} to check for atomic operations.
+     *     The {@link SchedulableTask} to check for atomic operations.
      * @param array
-     *            The array to check for atomic operations.
+     *     The array to check for atomic operations.
      * @param paramIndex
-     *            The parameter index to check for atomic operations.
+     *     The parameter index to check for atomic operations.
      * @param value
-     *            The value to check for atomic operations.
+     *     The value to check for atomic operations.
      * @return The integer array representing the atomic operations.
      */
     int[] checkAtomicsForTask(SchedulableTask task, int[] array, int paramIndex, Object value);
@@ -120,19 +118,19 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
      * task, array, parameter index, value, and device object state.
      *
      * @param task
-     *            The {@link SchedulableTask} to update the atomic region and object
-     *            state.
+     *     The {@link SchedulableTask} to update the atomic region and object
+     *     state.
      * @param array
-     *            The array to update the atomic region and object state.
+     *     The array to update the atomic region and object state.
      * @param paramIndex
-     *            The parameter index to update the atomic region and object state.
+     *     The parameter index to update the atomic region and object state.
      * @param value
-     *            The value to update the atomic region and object state.
+     *     The value to update the atomic region and object state.
      * @param objectState
-     *            The {@link DeviceObjectState} to update the atomic region and
-     *            object state.
+     *     The {@link DeviceObjectState} to update the atomic region and
+     *     object state.
      * @return The integer array representing the updated atomic region and object
-     *         state.
+     *     state.
      */
     int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, DeviceObjectState objectState);
 
@@ -141,9 +139,9 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
      * task and parameter index.
      *
      * @param task
-     *            The schedulable task to get the global index of atomic operations.
+     *     The schedulable task to get the global index of atomic operations.
      * @param paramIndex
-     *            The parameter index to get the global index of atomic operations.
+     *     The parameter index to get the global index of atomic operations.
      * @return The global index of atomic operations.
      */
     int getAtomicsGlobalIndexForTask(SchedulableTask task, int paramIndex);
@@ -152,7 +150,7 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
      * It checks if there are atomic parameters in the specified schedulable task.
      *
      * @param task
-     *            The {@link SchedulableTask} to check for atomic parameters.
+     *     The {@link SchedulableTask} to check for atomic parameters.
      * @return True if there are atomic parameters, false otherwise.
      */
     boolean checkAtomicsParametersForTask(SchedulableTask task);
@@ -169,7 +167,7 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
      * specified {@link ObjectBuffer}.
      *
      * @param bufferAtomics
-     *            The {@link ObjectBuffer} representing the atomic region.
+     *     The {@link ObjectBuffer} representing the atomic region.
      */
     void setAtomicRegion(ObjectBuffer bufferAtomics);
 

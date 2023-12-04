@@ -1,33 +1,25 @@
 #!/usr/bin/env python3
 
 #
-# This file is part of Tornado: A heterogeneous programming framework:
-# https://github.com/beehive-lab/tornadovm
+# Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+# The University of Manchester.
 #
-# Copyright (c) 2013-2022, APT Group, Department of Computer Science,
-# Department of Engineering, The University of Manchester. All rights reserved.
-# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# This code is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.
+# http://www.apache.org/licenses/LICENSE-2.0
 #
-# This code is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-# version 2 for more details (a copy is included in the LICENSE file that
-# accompanied this code).
-#
-# You should have received a copy of the GNU General Public License version
-# 2 along with this work; if not, write to the Free Software Foundation,
-# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 
 import argparse
 import os
 import subprocess
-import textwrap
 import sys
 
 try:
@@ -101,6 +93,8 @@ __BENCHMARKS__ = [
     "dft",
     "juliaset",
 ]
+
+
 ## ========================================================================================
 
 
@@ -175,6 +169,7 @@ mediumSizes = {
     "juliaset": [[512, 1024, 2048, 4096], ["getSize()"]],
 }
 
+
 ## ========================================================================================
 def composeAllOptions(args):
     jvm_options = __JVM_FLAGS__
@@ -209,18 +204,18 @@ def runBenchmarksFullCoverage(args):
     for key in allSizes.keys():
         for size in allSizes[key][0]:
             command = (
-                __TORNADO_COMMAND__
-                + tornado_options
-                + ' --jvm="'
-                + jvm_options
-                + '" '
-                + __RUNNER__
-                + ' --params="'
-                + key
-                + " "
-                + str(allSizes[key][1][0])
-                + " "
-                + str(size)
+                    __TORNADO_COMMAND__
+                    + tornado_options
+                    + ' --jvm="'
+                    + jvm_options
+                    + '" '
+                    + __RUNNER__
+                    + ' --params="'
+                    + key
+                    + " "
+                    + str(allSizes[key][1][0])
+                    + " "
+                    + str(size)
             )
             if key == "sgemm":
                 command = command + " " + str(size)
@@ -236,18 +231,18 @@ def runMediumConfiguration(args):
         for size in mediumSizes[key][0]:
             numIterations = eval(mediumSizes[key][1][0])
             command = (
-                __TORNADO_COMMAND__
-                + tornado_options
-                + ' --jvm="'
-                + jvm_options
-                + '" '
-                + __RUNNER__
-                + ' --params="'
-                + key
-                + " "
-                + str(numIterations)
-                + " "
-                + str(size)
+                    __TORNADO_COMMAND__
+                    + tornado_options
+                    + ' --jvm="'
+                    + jvm_options
+                    + '" '
+                    + __RUNNER__
+                    + ' --params="'
+                    + key
+                    + " "
+                    + str(numIterations)
+                    + " "
+                    + str(size)
             )
             if key == "sgemm":
                 command = command + " " + str(size)
@@ -273,15 +268,15 @@ def runDefaultSizePerBenchmark(args):
           jvm_options + Colors.RESET)
     for b in __BENCHMARKS__:
         command = (
-            __TORNADO_COMMAND__
-            + tornado_options
-            + '--jvm="'
-            + jvm_options
-            + '" '
-            + __RUNNER__
-            + '--params="'
-            + b
-            + '"'
+                __TORNADO_COMMAND__
+                + tornado_options
+                + '--jvm="'
+                + jvm_options
+                + '" '
+                + __RUNNER__
+                + '--params="'
+                + b
+                + '"'
         )
         print(command)
         os.system(command)

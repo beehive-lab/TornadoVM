@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2021, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2021-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,8 +20,8 @@ package uk.ac.manchester.tornado.examples.fft;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
  * Example of FFT provided by Nikos Foutris.
@@ -29,7 +29,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  * How to run:
  *
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.fft.TestFFT
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.fft.TestFFT
  * </code>
  */
 public class TestFFT {
@@ -67,7 +67,7 @@ public class TestFFT {
 
     public static void nesting2(IntArray input, int dim, final IntArray factors, int size, int dummyFac, IntArray dimArr) {
         int product = 1;
-        int p_1,q = 1,factor = 2;
+        int p_1, q = 1, factor = 2;
         for (int i = 0; i < dim; i++) {
             for (int j = 0; j < dim; j++) {
                 input.set(j, i + j);

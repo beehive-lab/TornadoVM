@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -20,7 +20,7 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson, Juan Fumero
+ * , Juan Fumero
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
@@ -167,15 +167,15 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
      * Copy data from the device to the main host.
      *
      * @param bufferId
-     *            Device Buffer ID
+     *     Device Buffer ID
      * @param offset
-     *            Offset within the device buffer
+     *     Offset within the device buffer
      * @param bytes
-     *            Bytes to be copied back to the host
+     *     Bytes to be copied back to the host
      * @param value
-     *            Host array that resides the final data
+     *     Host array that resides the final data
      * @param waitEvents
-     *            List of events to wait for.
+     *     List of events to wait for.
      * @return Event information
      */
     protected abstract int enqueueReadArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
@@ -206,16 +206,16 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
      * Copy data that resides in the host to the target device.
      *
      * @param bufferId
-     *            Device Buffer ID
+     *     Device Buffer ID
      * @param offset
-     *            Offset within the device buffer
+     *     Offset within the device buffer
      * @param bytes
-     *            Bytes to be copied
+     *     Bytes to be copied
      * @param value
-     *            Host array to be copied
+     *     Host array to be copied
      *
      * @param waitEvents
-     *            List of events to wait for.
+     *     List of events to wait for.
      * @return Event information
      */
     protected abstract int enqueueWriteArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
@@ -246,15 +246,15 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
      * Read an buffer from the target device to the host.
      *
      * @param value
-     *            in which the data are copied
+     *     in which the data are copied
      * @param hostOffset
-     *            offset, in bytes, from the input value in which to perform the
-     *            read.
+     *     offset, in bytes, from the input value in which to perform the
+     *     read.
      * @param events
-     *            list of pending events.
+     *     list of pending events.
      * @param useDeps
-     *            flag to indicate dependencies should be carried for the next
-     *            operation.
+     *     flag to indicate dependencies should be carried for the next
+     *     operation.
      */
     @Override
     public int read(final Object value, long hostOffset, int[] events, boolean useDeps) {

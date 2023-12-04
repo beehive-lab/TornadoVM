@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2021, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,7 +15,6 @@
  * limitations under the License.
  *
  */
-
 package uk.ac.manchester.tornado.examples.kernelcontext.compute;
 
 import java.awt.Component;
@@ -37,8 +36,8 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
  * Program taken from the Marawacc parallel programming framework with the
@@ -56,8 +55,6 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  * <code>
  * $ tornado -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.compute.BlackAndWhiteTransform
  * </code>
- *
- *
  */
 public class BlackAndWhiteTransform {
     // CHECKSTYLE:OFF
@@ -110,7 +107,7 @@ public class BlackAndWhiteTransform {
             int grayLevel = (red + green + blue) / 3;
             int gray = (alpha << 24) | (grayLevel << 16) | (grayLevel << 8) | grayLevel;
 
-            image.set(idx * s + jdx,  gray);
+            image.set(idx * s + jdx, gray);
 
         }
 
@@ -145,8 +142,8 @@ public class BlackAndWhiteTransform {
 
             IntArray imageRGB = new IntArray(w * s);
 
-            long start = 0,end = 0;
-            long taskStart = 0,taskEnd = 0;
+            long start = 0, end = 0;
+            long taskStart = 0, taskEnd = 0;
             for (int z = 0; z < WARMING_UP_ITERATIONS; z++) {
                 start = System.nanoTime();
                 for (int i = 0; i < w; i++) {
@@ -202,7 +199,7 @@ public class BlackAndWhiteTransform {
             int w = image.getWidth();
             int s = image.getHeight();
 
-            long start = 0,end = 0;
+            long start = 0, end = 0;
             for (int z = 0; z < WARMING_UP_ITERATIONS; z++) {
                 start = System.nanoTime();
                 for (int i = 0; i < w; i++) {

@@ -12,15 +12,13 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl;
@@ -63,22 +61,22 @@ public class OCLCommandQueue extends TornadoLogger {
      * Dispatch an OpenCL kernel via a JNI call.
      *
      * @param queueId
-     *            OpenCL command queue object
+     *     OpenCL command queue object
      * @param kernelId
-     *            OpenCL kernel ID object
+     *     OpenCL kernel ID object
      * @param dim
-     *            Dimensions of the Kernel (1D, 2D or 3D)
+     *     Dimensions of the Kernel (1D, 2D or 3D)
      * @param global_work_offset
-     *            Offset within global access
+     *     Offset within global access
      * @param global_work_size
-     *            Total number of threads to launch
+     *     Total number of threads to launch
      * @param local_work_size
-     *            Local work group size
+     *     Local work group size
      * @param events
-     *            List of events
+     *     List of events
      * @return Returns an event's ID
      * @throws OCLException
-     *             OpenCL Exception
+     *     OpenCL Exception
      */
     static native long clEnqueueNDRangeKernel(long queueId, long kernelId, int dim, long[] global_work_offset, long[] global_work_size, long[] local_work_size, long[] events) throws OCLException;
 

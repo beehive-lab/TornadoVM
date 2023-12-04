@@ -13,7 +13,7 @@ financial applications, computational photography, natural language processing a
 ---------------------------------------------------
 
 Absolutely yes! TornadoVM employs many licenses as shown `here <https://github.com/beehive-lab/TornadoVM#11-licenses>`__, but its
-API is under **CLASSPATH EXCEPTION**, and hence it can be freely used in any application.
+API is under **Apache 2**, and hence it can be freely used in any application.
 
 3. How can I use it?
 --------------------

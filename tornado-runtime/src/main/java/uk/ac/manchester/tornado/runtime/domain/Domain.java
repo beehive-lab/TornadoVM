@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -12,15 +12,13 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.runtime.domain;
@@ -29,7 +27,7 @@ public interface Domain {
 
     /***
      * Returns the number of elements in a domain.
-     * 
+     *
      * @return
      */
     int cardinality();
@@ -37,9 +35,9 @@ public interface Domain {
     /***
      * Maps the given index onto the ith element in the domain. e.g. for a domain
      * with cardinality=3 {2,4,6} map(1) = 4;
-     * 
+     *
      * @param index
-     *            (0...cardninality())
+     *     (0...cardninality())
      * @return
      */
     int map(int index);

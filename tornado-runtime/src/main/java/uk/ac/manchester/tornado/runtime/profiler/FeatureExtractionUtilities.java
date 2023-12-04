@@ -21,8 +21,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Authors: Michalis Papadimitriou
- *
- *
  */
 
 package uk.ac.manchester.tornado.runtime.profiler;
