@@ -26,6 +26,7 @@ public class IntOps {
     public static final String FMT_4 = "{%d,%d,%d,%d}";
     public static final String FMT_6 = "{%d,%d,%d,%d,%d,%d}";
     public static final String FMT_8 = "{%d,%d,%d,%d,%d,%d,%d,%d}";
+    public static final String FMT_16 = "{%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d}";
 
     public static boolean compare(float a, float b) {
         return (a == b);

@@ -36,6 +36,7 @@ public class FloatOps {
     public static final String FMT_4_EM = "%.3e,%.3e,%.3e,%.3e";
     public static final String FMT_6 = "{%.3f,%.3f,%.3f,%.3f,%.3f,%.3f}";
     public static final String FMT_8 = "{%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f}";
+    public static final String FMT_16 = "{%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f}";
     public static final String FMT_6_E = "{%e,%e,%e,%e,%e,%e}";
 
     public static boolean compareBits(float a, float b) {
