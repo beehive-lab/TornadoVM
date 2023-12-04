@@ -96,12 +96,12 @@ public final class VolumeShort2 implements TornadoVolumesInterface<ShortBuffer> 
         return storage;
     }
 
-    private int toIndex(int x, int y, int z) {
+    private int getIndex(int x, int y, int z) {
         return (z * X * Y * ELEMENT_SIZE) + (y * ELEMENT_SIZE * X) + (x * ELEMENT_SIZE);
     }
 
     public Short2 get(int x, int y, int z) {
-        final int index = toIndex(x, y, z);
+        final int index = getIndex(x, y, z);
         return loadFromArray(storage, index);
     }
 
@@ -113,7 +113,7 @@ public final class VolumeShort2 implements TornadoVolumesInterface<ShortBuffer> 
     }
 
     public void set(int x, int y, int z, Short2 value) {
-        final int index = toIndex(x, y, z);
+        final int index = getIndex(x, y, z);
         storeToArray(value, storage, index);
     }
 

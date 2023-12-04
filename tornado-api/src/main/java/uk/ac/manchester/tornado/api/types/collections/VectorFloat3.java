@@ -98,7 +98,7 @@ public final class VectorFloat3 implements TornadoCollectionInterface<FloatBuffe
         return storage;
     }
 
-    private int toIndex(int index) {
+    private int getIndex(int index) {
         return (index * ELEMENT_SIZE);
     }
 
@@ -110,7 +110,7 @@ public final class VectorFloat3 implements TornadoCollectionInterface<FloatBuffe
      * @return {@link Float3}
      */
     public Float3 get(int index) {
-        return loadFromArray(storage, toIndex(index));
+        return loadFromArray(storage, getIndex(index));
     }
 
     private Float3 loadFromArray(final FloatArray array, int index) {
@@ -130,7 +130,7 @@ public final class VectorFloat3 implements TornadoCollectionInterface<FloatBuffe
      *     Value to be set
      */
     public void set(int index, Float3 value) {
-        storeToArray(value, storage, toIndex(index));
+        storeToArray(value, storage, getIndex(index));
     }
 
     private void storeToArray(Float3 value, FloatArray array, int index) {

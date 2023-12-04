@@ -113,7 +113,7 @@ public class OCLGraphBuilderPlugins {
         registerKernelContextPlugins(plugins);
 
         OCLMathPlugins.registerTornadoMathPlugins(plugins);
-        VectorPlugins.registerPlugins(ps, plugins);
+        OCLVectorPlugins.registerPlugins(ps, plugins);
 
         // Register TornadoAtomicInteger
         registerTornadoAtomicInteger(ps, plugins);
@@ -683,6 +683,6 @@ public class OCLGraphBuilderPlugins {
     }
 
     public static void registerParameterPlugins(Plugins plugins) {
-        VectorPlugins.registerParameterPlugins(plugins);
+        OCLVectorPlugins.registerParameterPlugins(plugins);
     }
 }

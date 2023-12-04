@@ -107,7 +107,7 @@ public final class ImageByte3 implements TornadoImagesInterface<ByteBuffer> {
         return storage;
     }
 
-    private int toIndex(int x, int y) {
+    private int getIndex(int x, int y) {
         return (x * elementSize) + (y * elementSize * X);
     }
 
@@ -120,7 +120,7 @@ public final class ImageByte3 implements TornadoImagesInterface<ByteBuffer> {
     }
 
     public Byte3 get(int x, int y) {
-        final int offset = toIndex(x, y);
+        final int offset = getIndex(x, y);
         return loadFromArray(storage, offset);
     }
 
@@ -133,7 +133,7 @@ public final class ImageByte3 implements TornadoImagesInterface<ByteBuffer> {
     }
 
     public void set(int x, int y, Byte3 value) {
-        final int offset = toIndex(x, y);
+        final int offset = getIndex(x, y);
         storeToArray(value, storage, offset);
     }
 

@@ -186,7 +186,8 @@ public class VolumeOps {
 
         final float c = (c0 * factorZ) + (c1 * factor.getZ());
 
-        return c * 0.00003051944088f;
+        float v = c * 0.00003051944088f;
+        return v;
     }
 
     public static float vs1(int x, int y, int z, VolumeShort2 v) {
