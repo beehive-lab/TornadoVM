@@ -21,6 +21,7 @@ import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
+import uk.ac.manchester.tornado.api.types.utils.FloatOps;
 
 @Vector
 public final class Float16 implements TornadoVectorsInterface<FloatBuffer> {
@@ -305,9 +306,13 @@ public final class Float16 implements TornadoVectorsInterface<FloatBuffer> {
         }
     }
 
+    public String toString(String fmt) {
+        return String.format(fmt, getS0(), getS1(), getS2(), getS3(), getS4(), getS5(), getS6(), getS7(), getS8(), getS9(), getS10(), getS11(), getS12(), getS13(), getS13(), getS14(), getS15());
+    }
+
     @Override
     public String toString() {
-        return toString();
+        return toString(FloatOps.FMT_16);
     }
 
     @Override
