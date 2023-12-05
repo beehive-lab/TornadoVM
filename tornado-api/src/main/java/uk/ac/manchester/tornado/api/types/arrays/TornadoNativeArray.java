@@ -19,19 +19,12 @@ package uk.ac.manchester.tornado.api.types.arrays;
 
 import java.lang.foreign.MemorySegment;
 
-import uk.ac.manchester.tornado.api.types.arrays.natives.NativeVectorByte;
-import uk.ac.manchester.tornado.api.types.arrays.natives.NativeVectorDouble;
-import uk.ac.manchester.tornado.api.types.arrays.natives.NativeVectorFloat;
-import uk.ac.manchester.tornado.api.types.arrays.natives.NativeVectorInt;
-import uk.ac.manchester.tornado.api.types.arrays.natives.NativeVectorShort;
-
 /**
- * This abstract sealed class represents the common functionality of the TornadoVM custom off-heap data structures,
- * i.e., native arrays ({@link ByteArray}, {@link IntArray}, etc.) and native vector collections ({@link NativeVectorByte},
- * {@link NativeVectorDouble}, etc.).
+ * This abstract sealed class represents the common functionality of the TornadoVM custom native arrays,
+ * (e.g., {@link ByteArray}, {@link IntArray}, etc.)
  *
  * <p>
- * The class provides methods for retrieving the number of elements stored in the native data structures,
+ * The class provides methods for retrieving the number of elements stored in the native arrays,
  * for obtaining the underlying memory segment, for clearing the data, for calculating the total number of
  * bytes occupied by the memory segment, and for getting the number of bytes, excluding the array header size.
  * </p>
@@ -42,8 +35,7 @@ import uk.ac.manchester.tornado.api.types.arrays.natives.NativeVectorShort;
  */
 public abstract sealed class TornadoNativeArray permits //
         IntArray, FloatArray, DoubleArray, LongArray, ShortArray, //
-        ByteArray, CharArray, NativeVectorByte, NativeVectorDouble, //
-        NativeVectorShort, NativeVectorFloat, NativeVectorInt {
+        ByteArray, CharArray {
 
     /**
      * The size of the header in bytes. The default value is 24, but it can be configurable through
@@ -52,14 +44,14 @@ public abstract sealed class TornadoNativeArray permits //
     public static final long ARRAY_HEADER = Long.parseLong(System.getProperty("tornado.panama.objectHeader", "24"));
 
     /**
-     * Returns the number of elements stored in the native array or vector.
-     * @return The number of elements of the native data structure.
+     * Returns the number of elements stored in the native array.
+     * @return The number of elements of the native data array.
      */
     public abstract int getSize();
 
     /**
-     * Returns the underlying {@link MemorySegment} of the native data structure.
-     * @return The {@link MemorySegment} associated with the native data structure instance.
+     * Returns the underlying {@link MemorySegment} of the native array.
+     * @return The {@link MemorySegment} associated with the native array instance.
      */
     public abstract MemorySegment getSegment();
 
@@ -76,7 +68,7 @@ public abstract sealed class TornadoNativeArray permits //
     public abstract long getNumBytesWithoutHeader();
 
     /**
-     * Clears the contents of the native data structure.
+     * Clears the contents of the native array.
      */
     protected abstract void clear();
 
