@@ -49,20 +49,59 @@ import uk.ac.manchester.tornado.api.types.arrays.natives.NativeVectorFloat;
 import uk.ac.manchester.tornado.api.types.arrays.natives.NativeVectorInt;
 import uk.ac.manchester.tornado.api.types.arrays.natives.NativeVectorShort;
 
+/**
+ * This abstract sealed class represents the common functionality of the TornadoVM custom off-heap data structures,
+ * i.e., native arrays ({@link ByteArray}, {@link IntArray}, etc.) and native vector collections ({@link NativeVectorByte},
+ * {@link NativeVectorDouble}, etc.).
+ *
+ * <p>
+ * The class provides methods for retrieving the number of elements stored in the native data structures,
+ * for obtaining the underlying memory segment, for clearing the data, for calculating the total number of
+ * bytes occupied by the memory segment, and for getting the number of bytes, excluding the array header size.
+ * </p>
+ *
+ * <p>
+ * The constant {@code ARRAY_HEADER} represents the size of the header in bytes.
+ * </p>
+ */
 public abstract sealed class TornadoNativeArray permits //
         IntArray, FloatArray, DoubleArray, LongArray, ShortArray, //
         ByteArray, CharArray, NativeVectorByte, NativeVectorDouble, //
         NativeVectorShort, NativeVectorFloat, NativeVectorInt {
+
+    /**
+     * The size of the header in bytes. The default value is 24, but it can be configurable through
+     * the "tornado.panama.objectHeader" system property.
+     */
     public static final long ARRAY_HEADER = Long.parseLong(System.getProperty("tornado.panama.objectHeader", "24"));
 
+    /**
+     * Returns the number of elements stored in the native array or vector.
+     * @return The number of elements of the native data structure.
+     */
     public abstract int getSize();
 
+    /**
+     * Returns the underlying {@link MemorySegment} of the native data structure.
+     * @return The {@link MemorySegment} associated with the native data structure instance.
+     */
     public abstract MemorySegment getSegment();
 
+    /**
+     * Returns the total number of bytes that the {@link MemorySegment} occupies.
+     * @return The total number of bytes of the {@link MemorySegment}.
+     */
     public abstract long getNumBytesOfSegment();
 
+    /**
+     * Returns the number of bytes of the {@link MemorySegment}, excluding the header bytes.
+     * @return The number of bytes of the raw data in the {@link MemorySegment}.
+     */
     public abstract long getNumBytesWithoutHeader();
 
+    /**
+     * Clears the contents of the native data structure.
+     */
     protected abstract void clear();
 
 }
