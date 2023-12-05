@@ -54,25 +54,23 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
  * Kernel to test:
  *
  * <code>
- *    __kernel void copydata(__global int* input, __global int* output) {
- * 	         uint idx = get_global_id(0);
- * 	         output[idx] = input[idx];
- *    }
+ * __kernel void copydata(__global int* input, __global int* output) {
+ * uint idx = get_global_id(0);
+ * output[idx] = input[idx];
+ * }
  * </code>
- *
- *
  * To compile to SPIR-V:
  *
  * <code>
- *     $ clang -cc1 -triple spir copydata.cl -O0 -finclude-default-header -emit-llvm-bc -o copydata.bc
- *     $ llvm-spirv copydata.bc -o copydata.spv
- *     $ cp opencl-copy.spv /tmp/copydata.spv
+ * $ clang -cc1 -triple spir copydata.cl -O0 -finclude-default-header -emit-llvm-bc -o copydata.bc
+ * $ llvm-spirv copydata.bc -o copydata.spv
+ * $ cp opencl-copy.spv /tmp/copydata.spv
  * </code>
  *
  * How to run?
  *
  * <code>
- *     $ tornado uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.TestLevelZeroDedicatedMemory
+ * $ tornado uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.TestLevelZeroDedicatedMemory
  * </code>
  *
  */

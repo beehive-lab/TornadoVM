@@ -10,15 +10,13 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
@@ -56,15 +54,15 @@ public class TornadoIfCanonicalization extends BasePhase<TornadoMidTierContext> 
     }
 
     private boolean isMerge(AbstractBeginNode begin) {
-        return begin.next() instanceof AbstractEndNode && ((AbstractEndNode) begin.next()).merge() instanceof AbstractMergeNode;
+        return (begin.next() instanceof AbstractEndNode && ((AbstractEndNode) begin.next()).merge() instanceof AbstractMergeNode);
     }
 
     private boolean isIf(EndNode end) {
-        return end.predecessor() instanceof BeginNode && ((BeginNode) end.predecessor()).predecessor() instanceof IfNode;
+        return end.predecessor() instanceof BeginNode && end.predecessor().predecessor() instanceof IfNode;
     }
 
     private boolean isIf(LoopEndNode end) {
-        return end.predecessor() instanceof BeginNode && ((BeginNode) end.predecessor()).predecessor() instanceof IfNode;
+        return end.predecessor() instanceof BeginNode && end.predecessor().predecessor() instanceof IfNode;
     }
 
     private IfNode getIf(EndNode end) {

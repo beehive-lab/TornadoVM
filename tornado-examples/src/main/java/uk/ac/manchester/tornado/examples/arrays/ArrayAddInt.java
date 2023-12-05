@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,15 +22,15 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.arrays.ArrayAddInt
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.arrays.ArrayAddInt
  * </code>
  */
 public class ArrayAddInt {

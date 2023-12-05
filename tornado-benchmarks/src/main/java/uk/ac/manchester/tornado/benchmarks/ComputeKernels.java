@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,15 +18,15 @@
 package uk.ac.manchester.tornado.benchmarks;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
-import uk.ac.manchester.tornado.api.types.vectors.Byte3;
 import uk.ac.manchester.tornado.api.types.images.ImageByte3;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
-import uk.ac.manchester.tornado.api.math.TornadoMath;
+import uk.ac.manchester.tornado.api.types.vectors.Byte3;
 
 public class ComputeKernels {
     // CHECKSTYLE:OFF
@@ -58,8 +58,9 @@ public class ComputeKernels {
      * @author Juan Fumero
      */
     public static void monteCarlo(FloatArray result, int size) {
+        final int total = size;
         final int iter = 25000;
-        for (@Parallel int idx = 0; idx < size; idx++) {
+        for (@Parallel int idx = 0; idx < total; idx++) {
             long seed = idx;
             float sum = 0.0f;
             for (int j = 0; j < iter; ++j) {
@@ -138,7 +139,7 @@ public class ComputeKernels {
 
         final float y = (one - (oneBySqrt2pi * TornadoMath.exp((-X * X) / two) * t * (c1 + (t * (c2 + (t * (c3 + (t * (c4 + (t * c5))))))))));
 
-        return (X < zero) ? (one - y) : y;
+        return ((X < zero) ? (one - y) : y);
     }
 
     /*

@@ -1,25 +1,20 @@
 #!/usr/bin/env python3
 
-# This file is part of Tornado: A heterogeneous programming framework:
-# https://github.com/beehive-lab/tornadovm
 #
-# Copyright (c) 2023, APT Group, Department of Computer Science,
-# School of Engineering, The University of Manchester. All rights reserved.
-# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+# Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+# The University of Manchester.
 #
-# This code is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# This code is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-# version 2 for more details (a copy is included in the LICENSE file that
-# accompanied this code).
+# http://www.apache.org/licenses/LICENSE-2.0
 #
-# You should have received a copy of the GNU General Public License version
-# 2 along with this work; if not, write to the Free Software Foundation,
-# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 
 import argparse
@@ -112,12 +107,12 @@ class TornadoInstaller:
 
         ## Update env-variables
         self.env["CMAKE_ROOT"] = (
-            currentDirectory
-            + "/"
-            + self.workDirName
-            + "/"
-            + extractedDirectory
-            + extraPath
+                currentDirectory
+                + "/"
+                + self.workDirName
+                + "/"
+                + extractedDirectory
+                + extraPath
         )
         self.env["PATH"].append(
             currentDirectory
@@ -214,12 +209,12 @@ class TornadoInstaller:
 
         ## Update env-variables
         self.env["JAVA_HOME"] = (
-            currentDirectory
-            + "/"
-            + self.workDirName
-            + "/"
-            + extractedDirectory
-            + extraPath
+                currentDirectory
+                + "/"
+                + self.workDirName
+                + "/"
+                + extractedDirectory
+                + extraPath
         )
 
     def setEnvironmentVariables(self):
@@ -259,7 +254,7 @@ class TornadoInstaller:
         fileContent = fileContent + "export PATH=" + allPaths + "$PATH" "\n"
         fileContent = fileContent + "export CMAKE_ROOT=" + self.env["CMAKE_ROOT"] + "\n"
         fileContent = (
-            fileContent + "export TORNADO_SDK=" + self.env["TORNADO_SDK"] + "\n"
+                fileContent + "export TORNADO_SDK=" + self.env["TORNADO_SDK"] + "\n"
         )
         f = open("setvars.sh", "w")
         f.write(fileContent)

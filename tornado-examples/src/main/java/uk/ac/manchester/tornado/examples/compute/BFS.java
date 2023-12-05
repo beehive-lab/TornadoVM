@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,9 +26,9 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
  * Parallel Implementation of the BFS: this is based on the Marawacc compiler framework.
@@ -80,7 +80,8 @@ public class BFS {
         Random r = new Random();
         int bound = r.nextInt(numNodes);
         IntStream streamArray = r.ints(bound, 0, numNodes);
-        return streamArray.toArray();
+        int[] array = streamArray.toArray();
+        return array;
     }
 
     public static void generateRandomGraph(IntArray adjacencyMatrix, int numNodes, int root) {

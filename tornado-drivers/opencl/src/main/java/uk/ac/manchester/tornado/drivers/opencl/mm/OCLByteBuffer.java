@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
@@ -12,15 +12,13 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
@@ -97,13 +95,13 @@ public class OCLByteBuffer {
 
     /**
      * Write from a specific buffer space.
-     * 
+     *
      * @param fromBuffer
-     *            buffer to enqueue
+     *     buffer to enqueue
      * @param array
-     *            integer array to copy to the device.
+     *     integer array to copy to the device.
      * @param events
-     *            list of events
+     *     list of events
      * @return event status
      */
     public int enqueueWrite(long fromBuffer, final int[] array, final int offset, final int[] events) {
@@ -120,8 +118,8 @@ public class OCLByteBuffer {
 
     public void dump(final int width) {
         buffer.position(buffer.capacity());
-        System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities.humanReadableByteCount(bytes, true),
-                RuntimeUtilities.humanReadableByteCount(buffer.position(), true), deviceContext.getDevice().getDeviceName());
+        System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities.humanReadableByteCount(bytes, true), RuntimeUtilities.humanReadableByteCount(buffer.position(),
+                true), deviceContext.getDevice().getDeviceName());
         for (int i = 0; i < buffer.position(); i += width) {
             for (int j = 0; j < Math.min(buffer.capacity() - i, width); j++) {
                 if (j % 2 == 0) {

@@ -18,8 +18,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector;
 
@@ -123,7 +121,7 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
      * already set (not null), the input that corresponds to the index is replaced
      * by the argument value. Otherwise, the input value is set by the argument
      * value.
-     * 
+     *
      * @param index
      * @param value
      */

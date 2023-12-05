@@ -12,15 +12,13 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- *
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
@@ -39,8 +37,8 @@ public abstract class OCLKernelScheduler {
     protected double min;
     protected double max;
 
-    public static final String WARNING_FPGA_THREAD_LOCAL = "[TornadoVM OCL] Warning: TornadoVM changed the user-defined local size to: " + Arrays.toString(OCLFPGAScheduler.DEFAULT_LOCAL_WORK_SIZE)
-            + ".";
+    public static final String WARNING_FPGA_THREAD_LOCAL = "[TornadoVM OCL] Warning: TornadoVM changed the user-defined local size to: " + Arrays.toString(
+            OCLFPGAScheduler.DEFAULT_LOCAL_WORK_SIZE) + ".";
 
     public static final String WARNING_THREAD_LOCAL = "[TornadoVM OCL] Warning: TornadoVM changed the user-defined local size to null. Now, the OpenCL driver will select the best configuration.";
 
@@ -92,7 +90,7 @@ public abstract class OCLKernelScheduler {
      * depends on each OpenCL driver.
      *
      * @param meta
-     *            TaskMetaData.
+     *     TaskMetaData.
      */
     private void checkLocalWorkGroupFitsOnDevice(final TaskMetaData meta) {
         WorkerGrid grid = meta.getWorkerGrid(meta.getId());

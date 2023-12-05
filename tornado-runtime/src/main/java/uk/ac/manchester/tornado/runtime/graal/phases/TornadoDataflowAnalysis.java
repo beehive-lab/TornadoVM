@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -94,7 +94,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
             Constant value2 = c.getValue();
             String v = value2.toValueString();
             int stride = Integer.parseInt(v);
-            return stride == 1;
+            return (stride == 1);
         }
         return false;
     }
@@ -121,7 +121,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
         if (fatherNodeStore != null) {
             // We found different father IF node for each
             // branch.
-            return !fatherNodeStore.equals(ifNode);
+            return (!fatherNodeStore.equals(ifNode));
         }
         return false;
     }
@@ -164,8 +164,8 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
 
     private boolean isNodeFromKnownObject(Node currentNode) {
         // Comparison based on names due to circular dependencies
-        return currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode")
-                || currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DecAtomicNode");
+        return currentNode.getClass().getName().equals("uk.ac.manchester.tornado.drivers.opencl.graal.nodes.IncAtomicNode") || currentNode.getClass().getName().equals(
+                "uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DecAtomicNode");
     }
 
     private Access processUsages(Node parameter, MetaAccessProvider metaAccess) {
@@ -260,13 +260,10 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
     private boolean isTornadoNativeArray(LoadFieldNode loadFieldNode) {
         String field = loadFieldNode.field().toString();
 
-        if (field.contains("uk.ac.manchester.tornado.api.types.arrays.IntArray")
-                || field.contains("uk.ac.manchester.tornado.api.types.arrays.DoubleArray")
-                || field.contains("uk.ac.manchester.tornado.api.types.arrays.FloatArray")
-                || field.contains("uk.ac.manchester.tornado.api.types.arrays.LongArray")
-                || field.contains("uk.ac.manchester.tornado.api.types.arrays.CharArray")
-                || field.contains("uk.ac.manchester.tornado.api.types.arrays.ShortArray")
-                || field.contains("uk.ac.manchester.tornado.api.types.arrays.ByteArray")) {
+        if (field.contains("uk.ac.manchester.tornado.api.types.arrays.IntArray") || field.contains("uk.ac.manchester.tornado.api.types.arrays.DoubleArray") || field.contains(
+                "uk.ac.manchester.tornado.api.types.arrays.FloatArray") || field.contains("uk.ac.manchester.tornado.api.types.arrays.LongArray") || field.contains(
+                        "uk.ac.manchester.tornado.api.types.arrays.CharArray") || field.contains("uk.ac.manchester.tornado.api.types.arrays.ShortArray") || field.contains(
+                                "uk.ac.manchester.tornado.api.types.arrays.ByteArray")) {
             return true;
         } else {
             return false;
@@ -280,7 +277,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
      * WRITE-ONLY Accesses over an array.
      *
      * @param storeIndexedNode
-     *            store indexed (array) value
+     *     store indexed (array) value
      * @return It returns true if the store covers all iterations.
      */
     private boolean analyseWritingPositions(StoreIndexedNode storeIndexedNode) {

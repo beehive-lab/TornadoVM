@@ -20,8 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 package uk.ac.manchester.tornado.drivers.opencl.runtime;
 
@@ -229,7 +227,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     private boolean isOpenCLPreLoadBinary(OCLDeviceContextInterface deviceContext, String deviceInfo) {
         OCLCodeCache installedCode = deviceContext.getCodeCache();
-        return installedCode.isLoadBinaryOptionEnabled() && (installedCode.getOpenCLBinary(deviceInfo) != null);
+        return (installedCode.isLoadBinaryOptionEnabled() && (installedCode.getOpenCLBinary(deviceInfo) != null));
     }
 
     private TornadoInstalledCode compileTask(SchedulableTask task) {

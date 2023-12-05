@@ -71,25 +71,23 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
  * Kernel to test:
  *
  * <code>
- *    __kernel void copydata(__global int* input, __global int* output) {
- * 	         uint idx = get_global_id(0);
- * 	         output[idx] = input[idx];
- *    }
+ * __kernel void copydata(__global int* input, __global int* output) {
+ * uint idx = get_global_id(0);
+ * output[idx] = input[idx];
+ * }
  * </code>
- *
- *
  * To compile to SPIR-V:
  *
  * <code>
- *     $ clang -cc1 -triple spir opencl-copy.cl -O0 -finclude-default-header -emit-llvm-bc -o opencl-copy.bc
- *     $ llvm-spirv opencl-copy.bc -o opencl-copy.spv
- *     $ mv opencl-copy.spv /tmp
+ * $ clang -cc1 -triple spir opencl-copy.cl -O0 -finclude-default-header -emit-llvm-bc -o opencl-copy.bc
+ * $ llvm-spirv opencl-copy.bc -o opencl-copy.spv
+ * $ mv opencl-copy.spv /tmp
  * </code>
  *
  * How to run?
  *
  * <code>
- *     tornado uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.TestLevelZero
+ * tornado uk.ac.manchester.tornado.drivers.spirv.levelzero.samples.TestLevelZero
  * </code>
  *
  */
@@ -178,8 +176,8 @@ public class TestFences {
         ZeCommandQueueDescriptor commandQueueDescription = new ZeCommandQueueDescriptor();
 
         for (int i = 0; i < numQueueGroups[0]; i++) {
-            if ((commandQueueGroupProperties[i].getFlags()
-                    & ZeCommandQueueGroupPropertyFlags.ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) == ZeCommandQueueGroupPropertyFlags.ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) {
+            if ((commandQueueGroupProperties[i]
+                    .getFlags() & ZeCommandQueueGroupPropertyFlags.ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) == ZeCommandQueueGroupPropertyFlags.ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) {
                 commandQueueDescription.setOrdinal(i);
             }
         }

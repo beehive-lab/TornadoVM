@@ -20,8 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 package uk.ac.manchester.tornado.runtime.tasks.meta;
 
@@ -83,7 +81,8 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     public static TaskMetaData create(ScheduleMetaData scheduleMeta, String id, Method method) {
-        return new TaskMetaData(scheduleMeta, id, Modifier.isStatic(method.getModifiers()) ? method.getParameterCount() : method.getParameterCount() + 1);
+        int numParameters = Modifier.isStatic(method.getModifiers()) ? method.getParameterCount() : method.getParameterCount() + 1;
+        return new TaskMetaData(scheduleMeta, id, numParameters);
     }
 
     private static String formatWorkDimensionArray(final long[] array, final String defaults) {

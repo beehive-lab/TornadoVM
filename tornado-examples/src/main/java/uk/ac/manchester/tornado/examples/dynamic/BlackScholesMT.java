@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,6 @@
  * limitations under the License.
  *
  */
-
 package uk.ac.manchester.tornado.examples.dynamic;
 
 import java.util.Random;
@@ -26,9 +25,9 @@ import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
  * BlackScholes implementation adapted from AMD-OpenCL examples and Marawacc compiler framework.
@@ -127,7 +126,7 @@ public class BlackScholesMT {
         float absX = TornadoMath.abs(X);
         float t = one / (one + temp4 * absX);
         float y = (one - oneBySqrt2pi * TornadoMath.exp(-X * X / two) * t * (c1 + t * (c2 + t * (c3 + t * (c4 + t * c5)))));
-        return (X < zero) ? (one - y) : y;
+        return ((X < zero) ? (one - y) : y);
     }
 
     private static boolean checkResult(FloatArray call, FloatArray put, FloatArray callPrice, FloatArray putPrice) {

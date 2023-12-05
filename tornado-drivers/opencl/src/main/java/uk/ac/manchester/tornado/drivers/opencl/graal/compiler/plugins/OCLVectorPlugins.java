@@ -20,8 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins;
 
@@ -89,7 +87,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorSubNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.PanamaPrivateMemoryNode;
 
-public final class VectorPlugins {
+public final class OCLVectorPlugins {
 
     public static void registerPlugins(final Plugins ps, final InvocationPlugins plugins) {
 
@@ -185,8 +183,8 @@ public final class VectorPlugins {
              * Geometric BIFS for floating point vectors
              */
             if (TORNADO_ENABLE_BIFS) {
-                registerGeometricBIFS(plugins, OCLKind.FLOAT3, FloatArray.class, float.class);
-                registerGeometricBIFS(plugins, OCLKind.FLOAT4, FloatArray.class, float.class);
+                registerGeometricBIFS(plugins, OCLKind.FLOAT3);
+                registerGeometricBIFS(plugins, OCLKind.FLOAT4);
             }
         }
 
@@ -358,7 +356,7 @@ public final class VectorPlugins {
 
     }
 
-    private static void registerGeometricBIFS(final InvocationPlugins plugins, final OCLKind vectorKind, final Class<?> storageType, final Class<?> elementType) {
+    private static void registerGeometricBIFS(final InvocationPlugins plugins, final OCLKind vectorKind) {
         final Class<?> declaringClass = vectorKind.getJavaClass();
         final Registration r = new Registration(plugins, declaringClass);
         r.register(new InvocationPlugin("dot", declaringClass, declaringClass) {

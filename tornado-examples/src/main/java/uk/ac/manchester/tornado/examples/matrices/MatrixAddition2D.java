@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,11 +24,11 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.vectors.Float4;
-import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
-import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat4;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat4;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
 
 /**
  * Full example to show to matrix addition with non vector types

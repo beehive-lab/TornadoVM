@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,16 +24,16 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
 
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- *     $ tornado --threadInfo  --jvm="-Ds0.t0.device=0:0" -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D
+ * $ tornado --threadInfo --jvm="-Ds0.t0.device=0:0" -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication2D
  * </code>
  */
 public class MatrixMultiplication2D {

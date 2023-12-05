@@ -20,8 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
@@ -173,7 +171,7 @@ public enum OCLKind implements PlatformKind {
     ULONG16(16, null, ULONG),
     DOUBLE16(16, Double16.TYPE, DOUBLE),
     FLOAT16(16, Float16.TYPE, FLOAT),
-    
+
     ILLEGAL(0, null),
     INTEGER_ATOMIC_JAVA(4, java.util.concurrent.atomic.AtomicInteger.class);
     // @formatter:on
@@ -468,12 +466,17 @@ public enum OCLKind implements PlatformKind {
     }
 
     public boolean isInteger() {
-        return kind != ILLEGAL && !isFloating();
+        if (kind == ILLEGAL || isFloating()) {
+            return false;
+        }
+        return true;
     }
 
     public boolean isFloating() {
-        // TODO are vectors integers?
-        return kind == FLOAT || kind == DOUBLE;
+        if (kind == FLOAT || kind == DOUBLE) {
+            return true;
+        }
+        return false;
     }
 
     public boolean isVector() {
