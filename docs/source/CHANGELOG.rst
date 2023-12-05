@@ -5,11 +5,53 @@ TornadoVM Changelog
 
 This file summarizes the new features and major changes for each *TornadoVM* version.
 
+TornadoVM 1.0
+----------------
+05/12/2023
+
+Improvements
+~~~~~~~~~~~~~~~~~~
+
+- Brand-new API for allocating off-heap objects and array collections using the Panama Memory Segment API.
+  - New Arrays, Matrix and Vector type objects are allocated using the Panama API.
+  - Migration of existing applications to use the new Panama-based types: https://tornadovm.readthedocs.io/en/latest/offheap-types.html
+- Handling of the TornadoVM's internal bytecode improved to avoid write-only copies from host to device.
+- ``cospi`` and ``sinpi`` math operations supported for OpenCL, PTX and SPIR-V.
+- Vector 16 data types supported for ``float``, ``double`` and ``int``.
+- Support for Mesa's ``rusticl``.
+- Device default ordering improved based on maximum thread size.
+- Move all the installation and configuration scripts from Bash to Python.
+- The installation process has been improved for Linux and OSx with M1/M2 chips.
+- Documentation improved.
+- Add profiling information for the testing scripts.
+
+
+Compatibility/Integration
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Integration with the Graal 23.1.0 JIT Compiler.
+- Integration with OpenJDK 21.
+- Integration with Truffle Languages (Python, Ruby and Javascript) using Graal 23.1.0.
+- TornadoVM API Refactored.
+- Backport bug-fixes for branch using OpenJDK 17: ``master-jdk17``
+
+
+Bug fixes:
+~~~~~~~~~~~~~~~~~
+
+- Multiple SPIR-V Devices fixed.
+- Runtime Exception when no SPIR-V devices are present.
+- Issue with the kernel context API when invoking multiple kernels fixed.
+- MTMD mode is fixed when running multiple backends on the same device.
+- ``long`` type as a constant parameter for a kernel fixed.
+- FPGA Compilation and Execution fixed for AWS and Xilinx devices.
+- Batch processing fixed for different data types of the same size.
+
 
 
 TornadoVM 0.15.2
 ----------------
-26/07/2023 
+26/07/2023
 
 Improvements
 ~~~~~~~~~~~~~~~~~~
@@ -20,37 +62,37 @@ Improvements
 
 
 Compatibility/Integration
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- Initial integration with ComputeAorta (part of the Codeplay's oneAPI Construction Kit for RISC-V) to run on RISC-V with Vector Instructions (OpenCL backend) in emulation mode.  
+- Initial integration with ComputeAorta (part of the Codeplay's oneAPI Construction Kit for RISC-V) to run on RISC-V with Vector Instructions (OpenCL backend) in emulation mode.
 - Beehive SPIR-V Toolkit dependency updated.
-- Tests for prebuilt SPIR-V kernels fixed to dispatch SPIR-V binaries through the Level Zero and OpenCL runtimes. 
-- Deprecated ``javac.py`` script removed. 
+- Tests for prebuilt SPIR-V kernels fixed to dispatch SPIR-V binaries through the Level Zero and OpenCL runtimes.
+- Deprecated ``javac.py`` script removed.
 
 
 Bug fixes:
 ~~~~~~~~~~~~~~~~~
 
 - TornadoVM OpenCL Runtime throws an exception when the detected hardware does not support FP64.
-- Fix the installer for the older Apple with the x86 architecture using AMD GPUs. 
+- Fix the installer for the older Apple with the x86 architecture using AMD GPUs.
 - Installer for ARM based systems fixed.
-- Installer fixed for Microsoft WSL and NVIDIA GPUs. 
+- Installer fixed for Microsoft WSL and NVIDIA GPUs.
 - OpenCL code generator fixed to avoid using the reserved OpenCL keywords from Java function parameters.
-- Dump profiler option fixed. 
+- Dump profiler option fixed.
 
 
 
 TornadoVM 0.15.1
 ----------------
-15/05/2023 
+15/05/2023
 
 Improvements
 ~~~~~~~~~~~~~~~~~~
 
-- Introduction of a device selection heuristic based on the computing capabilities of devices. TornadoVM selects, as the default device, the fastest device based on its computing capability. 
-- Optimisation of removing redundant data copies for Read-Only and Write-Only buffers from between the host (CPU) and the device (GPU) based on the Tornado Data Flow Graph. 
+- Introduction of a device selection heuristic based on the computing capabilities of devices. TornadoVM selects, as the default device, the fastest device based on its computing capability.
+- Optimisation of removing redundant data copies for Read-Only and Write-Only buffers from between the host (CPU) and the device (GPU) based on the Tornado Data Flow Graph.
 - New installation script for TornadoVM.
-- Option to dump the TornadoVM bytecodes for the unit tests. 
+- Option to dump the TornadoVM bytecodes for the unit tests.
 - Full debug option improved. Use ``--fullDebug``.
 
 
@@ -58,43 +100,43 @@ Compatibility/Integration
 ~~~~~~~~~~~~~~~~~~~~~
 
 - Integration and compatibility with the Graal 22.3.2 JIT Compiler.
-- Improved compatibility with Apple M1 and Apple M2 through the OpenCL Backend. 
-- GraalVM/Truffle programs integration improved. Use ``--truffle`` in the ``tornado`` script to run guest programs with Truffle. 
-  Example: ``tornado --truffle python myProgram.py`` 
-  Full documentation: https://tornadovm.readthedocs.io/en/latest/truffle-languages.html 
+- Improved compatibility with Apple M1 and Apple M2 through the OpenCL Backend.
+- GraalVM/Truffle programs integration improved. Use ``--truffle`` in the ``tornado`` script to run guest programs with Truffle.
+  Example: ``tornado --truffle python myProgram.py``
+  Full documentation: https://tornadovm.readthedocs.io/en/latest/truffle-languages.html
 
 Bug fixes:
 ~~~~~~~~~~~~~~~~~
 
-- Documentation that resets the device's memory: https://github.com/beehive-lab/TornadoVM/blob/master/tornado-api/src/main/java/uk/ac/manchester/tornado/api/TornadoExecutionPlan.java#L282 
-- Append the Java ``CLASSPATH`` to the ``cp`` option from the ``tornado`` script. 
+- Documentation that resets the device's memory: https://github.com/beehive-lab/TornadoVM/blob/master/tornado-api/src/main/java/uk/ac/manchester/tornado/api/TornadoExecutionPlan.java#L282
+- Append the Java ``CLASSPATH`` to the ``cp`` option from the ``tornado`` script.
 - Dependency fixed for the ``cmake-maven`` plugin fixed for ARM-64 arch.
-- Fixed the automatic installation for Apple M1/M2 and ARM-64 and NVIDIA Jetson nano computing systems. 
-- Integration with IGV fixed. Use the  ``--igv`` option for the ``tornado`` and ``tornado-test`` scripts. 
+- Fixed the automatic installation for Apple M1/M2 and ARM-64 and NVIDIA Jetson nano computing systems.
+- Integration with IGV fixed. Use the  ``--igv`` option for the ``tornado`` and ``tornado-test`` scripts.
 
 
 
 TornadoVM 0.15
 ----------------
-27/01/2023 
+27/01/2023
 
 Improvements
 ~~~~~~~~~~~~~~~~~~
 
 - New TornadoVM API:
-  
+
    - API refactoring (``TaskSchedule`` has been renamed to ``TaskGraph``)
 
    - Introduction of the Immutable ``TaskGraphs``
 
    - Introduction of the TornadoVM Execution Plans: (``TornadoExecutionPlan``)
-   
-   - The documentation of migration of existing TornadoVM applications to the new API can be found here: https://tornadovm.readthedocs.io/en/latest/programming.html#migration-to-tornadovm-v0-15 
+
+   - The documentation of migration of existing TornadoVM applications to the new API can be found here: https://tornadovm.readthedocs.io/en/latest/programming.html#migration-to-tornadovm-v0-15
 
 - Launch a new website https://tornadovm.readthedocs.io/en/latest/ for the documentation
-- Improved documentation 
-- Initial support for Intel ARC discrete GPUs. 
-- Improved TornadoVM installer for Linux 
+- Improved documentation
+- Initial support for Intel ARC discrete GPUs.
+- Improved TornadoVM installer for Linux
 - ImprovedTornadoVM launch script with optional parameters
 - Support of large buffer allocations with Intel Level Zero. Use: ``tornado.spirv.levelzero.extended.memory=True``
 
@@ -102,7 +144,7 @@ Improvements
 Bug fixes:
 ~~~~~~~~~~~~~~~~~
 
-- Vector and Matrix types 
+- Vector and Matrix types
 - TornadoVM Floating Replacement compiler phase fixed
 - Fix ``CMAKE`` for Intel ARC GPUs
 - Device query tool fixed for the PTX backend
@@ -462,7 +504,7 @@ TornadoVM 0.7
 -  Support for ARM Mali GPUs.
 -  Support parallel reductions on FPGAs
 -  Agnostic FPGA vendor compilation via configuration files (Intel & Xilinx)
--  Support for AWS on Xilinx FPGAs 
+-  Support for AWS on Xilinx FPGAs
 -  Recompilation for different input data sizes supported
 -  New TornadoVM API calls:
 
@@ -538,7 +580,7 @@ TornadoVM 0.4
    -  Use ``-Dtornado.feature.extraction=True`` to enable code
       extraction features
 
--  Mac OSx support 
+-  Mac OSx support
 -  Automatic reductions composition (map-reduce) within the same
    task-schedule
 -  Bug related to a memory leak when running on GPUs solved

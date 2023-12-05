@@ -343,10 +343,10 @@ def listSupportedJDKs():
     zulu-jdk-21     : Install TornadoVM with Azul Zulu JDK 21"
 
     Usage:
-     $ ./scripts/tornadovm-installer  --jdk <JDK_VERSION> --backend <BACKEND>
+     $ ./bin/tornadovm-installer  --jdk <JDK_VERSION> --backend <BACKEND>
 
     If you want to select another version of OpenJDK, you can use --javaHome="<pathToJavaHome>" and install as follows:
-      $ ./scripts/tornadovm-installer --backend <BACKEND> --javaHome=<pathToJavaHome>
+      $ ./bin/tornadovm-installer --backend <BACKEND> --javaHome=<pathToJavaHome>
     """
     )
 
