@@ -26,8 +26,8 @@ Contents
    introduction
    installation
    simple-start
-   offheap-types
    programming
+   offheap-types
    truffle-languages
    profiler
    benchmarking
