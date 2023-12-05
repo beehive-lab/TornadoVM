@@ -7,17 +7,81 @@ TornadoVM exposes to the programmer task-level, data-level and pipeline-level pa
 In addition, TornadoVM uses single-source property, in which the code to be accelerated and the host code live in the same Java program.
 
 
-Programming in TornadoVM involves the development of three parts:
+Programming in TornadoVM involves the development of four parts:
 
-1. **Expressing parallelism within Java methods:** TornadoVM offers two APIs: one for loop parallelization using Java annotations; and a second one for low-level programming using a Kernel API.
+1. **Data Representation:** TornadoVM offers an API to efficiently allocate data off-heap. These data is automatically managed by the TornadoVM Runtime and the compiler. 
+2. **Expressing parallelism within Java methods:** TornadoVM offers two APIs: one for loop parallelization using Java annotations; and a second one for low-level programming using a Kernel API.
    Developers can choose which one to use. The loop API is recommended for non-expert GPU/FPGA programmers.
    The kernel API is recommended for experts GPU programmers than want more control (access to GPU's local memory, barriers, etc.).
-2. **Selecting the methods to be accelerated using a Task-Graph API:** once Java methods have been identified for acceleration (either using the loop parallel API or kernel API), Java methods can be grouped together in a graph.
+3. **Selecting the methods to be accelerated using a Task-Graph API:** once Java methods have been identified for acceleration (either using the loop parallel API or kernel API), Java methods can be grouped together in a graph.
    TornadoVM offers an API to define the data as well as the Java methods to be accelerated.
-3. Building an **Execution Plan**: From the task-graphs, developers can accelerate all methods that are indicate in that graph on an accelerator. Additionally, through an execution plan in TornadoVM, developers can change the way TornadoVM offloads and runs the code (e.g., by selecting a specific GPU, enabling the profiler, etc.).
+4. Building an **Execution Plan**: From the task-graphs, developers can accelerate all methods that are indicate in that graph on an accelerator. Additionally, through an execution plan in TornadoVM, developers can change the way TornadoVM offloads and runs the code (e.g., by selecting a specific GPU, enabling the profiler, etc.).
+
+1. Data Representation
+-------------------------
+TornadoVM offers a set of off-heap types that encapsulate a `Memory Segment <https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/foreign/MemorySegment.html>`_, a contiguous region of memory outside the Java heap. Below is a list of the native array types, with an arrow pointing from the on-heap primitive array types to their off-heap equivalent in TornadoVM.
 
 
-1. Expressing Parallelism within Java Methods
+* ``int[]`` -> ``IntArray``
+* ``float[]`` -> ``FloatArray``
+* ``double[]`` -> ``DoubleArray``
+* ``long[]`` -> ``LongArray``
+* ``char[]`` -> ``CharArray``
+* ``short[]`` -> ``ShortArray``
+* ``byte[]`` -> ``ByteArray``
+
+
+To allocate off-heap memory using the TornadoVM API, each type offers a constructor with one argument that indicates the number of elements that the Memory Segment will contain.
+
+E.g.:
+
+.. code:: java
+
+   // allocate an off-heap memory segment that will contain 16 int values
+   IntArray intArray = new IntArray(16);
+
+Additionally, developers can create an instance of a TornadoVM native array by invoking factory methods for different data representations. In the following examples we will demonstrate the API functions for the ``FloatArray`` type, but the same methods apply for all support native array types. 
+
+.. code:: java
+
+   // from on-heap array to TornadoVM native array
+   public static FloatArray fromArray(float[] values);
+   // from individual items to TornadoVM native array
+   public static FloatArray fromElements(float... values);
+   // from Memory Segment to TornadoVM native array
+   public static FloatArray fromSegment(MemorySegment segment); 
+
+The main methods that the off-heap types expose to manage the Memory Segment of each type are presented in the list below. 
+
+.. code:: java
+
+   public void set(int index, float value) // sets a value at a specific index
+      E.g.:
+          FloatArray floatArray = new FloatArray(16);
+          floatArray.set(0, 10.0f); // at index 0 the value is 10.0f
+   public float get(int index) // returns the value of a specific index
+      E.g.:
+          FloatArray floatArray = FloatArray.fromArray(new float[] {2.0f, 1.0f, 2.0f, 5.0f});
+          float floatValue = floatArray.get(3); // returns 5.0f
+   public void clear() // sets the values of the segment to 0
+      E.g.:
+          FloatArray floatArray = new FloatArray(1024);
+          floatArray.clear(); // the floatArray contains 1024 zeros
+   public void init(float value) // initializes the segment with a specific value
+      E.g.:
+   	  FloatArray floatArray = new FloatArray(1024);
+          floatArray.init(1.0f); // the floatArray contains 1024 ones
+   public int getSize() // returns the number of elements in the segment
+      E.g.:
+          FloatArray floatArray = new FloatArray(16);
+          int size = floatArray.getSize(); // returns 16
+   public float[] toHeapArray(); // Converts the data from off-heap to on-heap
+   public long getNumBytesOfSegment(); // Returns the total number of bytes the underlying Memory Segment occupies, including the header bytes
+   public long getNumBytesWithoutHeader(); // Returns the total number of bytes the underlying Memory Segment occupies, excluding the header bytes
+   
+**NOTE:** The methods ``init()`` and ``clear()`` are essential because, contrary to their counterpart primitive arrays which are initialized by default with 0, the new types contain garbage values when first created.
+
+2. Expressing Parallelism within Java Methods
 ------------------------------------------------
 
 
@@ -248,7 +312,7 @@ You can see more examples on `GitHub <https://github.com/beehive-lab/TornadoVM/t
 
 
 
-2. Selecting the methods to be accelerated using a Task-Graph API
+3. Selecting the methods to be accelerated using a Task-Graph API
 -----------------------------------------------------------------
 
 A ``TaskGraph`` is an TornadoVM object that defines and identify which Java methods to be accelerated and the data involved.
@@ -331,7 +395,7 @@ Example:
    taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, output1, output2);
 
 
-3. Execution Plans
+4. Execution Plans
 ------------------------------------------------
 
 
@@ -344,7 +408,7 @@ The last step is the creation of an execution plan. An execution plan receives a
 
 
 What can we do with an execution plan?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 We can execute an execution plan directly, and TornadoVM will apply a list of default optimisations (e.g., it will run on the default device, using the default thread scheduler).
@@ -357,7 +421,7 @@ We can execute an execution plan directly, and TornadoVM will apply a list of de
 
 
 How can we optimize an execution plan?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 The execution plan offers a set of methods that developers can use to optimize different execution plans.
@@ -380,8 +444,8 @@ And then:
 
 
 
-4. Obtain the result and the profiler
---------------------------------------------
+Obtain the result and the profiler
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Every time an execution plan is executed, a new object of type ``TornadoExecutionResult`` is created.
 
@@ -602,199 +666,3 @@ There is a set of limitations with the current implementation of batch processin
 3. All bytecodes make use of the same OpenCL command queue / CUDA stream.
 4. Matrix or non-regular batch distributions. (E.g., MxM would need to be split by rows in matrix-A and columns in matrix-B).
 
-
-
-Migration to TornadoVM v0.15
-----------------------------------
-
-
-TornadoVM 0.15 introduced new APIs for expressing, optimising, and running Java methods (tasks) on heterogeneous hardware.
-This document details the main changes of existing Java applications for TornadoVM using the APIs previous to the 0.15 release.
-
-Porting applications that have been implemented with previous TornadoVM releases (prior to ``v0.15``) to the new TornadoVM APIs is not a complicated process,
-but it requires a few modifications in how the task graphs (previous task schedules) are built and executed.
-
-
-Step 1. ``TaskSchedule`` renamed to ``TaskGraph``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Task-Graphs are a new construct exposed by the TornadoVM API to developers.
-A Task-Graph is an object equivalent to the previous Task-Schedule (< TornadoVM 0.15).
-Thus, existing ``TaskSchedule`` objects can be renamed to the ``TaskGraph`` with the following changes regarding how data is copied in and out from the host to the device, and vice-versa.
-
-
-.. code:: java
-
-   TaskGraph taskGraph = new TaskGraph("name");
-
-
-A TaskGraph provides the definition of data and code to be executed by an execution plan (more details in step 3).
-Therefore, in the task-graph, we must define which data to copy in, and out and the tasks (Java methods) to be accelerated.
-
-
-A. Defining copies from the host (main CPU) to the device (accelerator).
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-The Task-Graph API defines a method, named ``transferToDevice`` to set which arrays need to be copied to the target accelerator. This method receives two types of arguments:
-
-1. Data Transfer Mode:
-   a. ``EVERY_EXECUTION``: Data is copied from host to device every time a task-graph is executed by an execution plan. This corresponds to the ``streamIn`` method in the TornadoVM API < ``v0.15``.
-   b. ``FIRST_EXECUTION``: Data is only copied the first time a task-graph is executed by an execution plan.
-2. All input arrays needed to be copied from the host to the device.
-
-
-The following code snippet sets two arrays (a, b) to be copied from the host to the device every time a task-graph is executed.
-
-
-
-.. code:: java
-
-   taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b);
-
-
-Note that this call is only used for the definition of the data flow across multiple tasks in a task-graph, and there are no data copies involved.
-The TornadoVM runtime stores which data are associated with each data transfer mode and the actual data transfers take place only during the execution by the execution plan.
-
-
-B. Code definition
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-The code definition has not changed from the previous APIs of TornadoVM.
-
-
-.. code:: java
-
-   taskGraph.task("sample", Class::method, param1, param2);
-
-
-Developers can add as many tasks as needed.
-The maximum number of tasks depends on the amount of code that can be shipped to the accelerator.
-Usually, FPGAs are more limited than GPUs.
-
-
-C. Copy out from the device (accelerator) to the host (main CPU).
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-The ``streamOut`` method from the TornadoVM APIs previous to 0.15 has been renamed to ``transferToHost``.
-Similar to ``transferToDevice``, this new call has the following parameters:
-
-
-1. Data Transfer Mode:
-   a. ``EVERY_EXECUTION``: Data is copied from the device to the host every time a task-graph is executed by an execution plan.
-   b. ``USER_DEFINED:`` Data is only copied by an execution result under demand. This is an optimization if developers plan to execute the task-graph multiple times and do not want to copy the results every time the execution plan is launched.
-2. All output arrays to be copied from the device to the host.
-
-
-Example:
-
-.. code:: java
-
-   taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, output1, output2);
-
-
-Step 2: Create an Immutable Task Graph
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Once the task-graph is defined, we need to create a snapshot to obtain an object of type ``ImmutableTaskGraph``.
-This is a very simple process:
-
-
-.. code:: java
-
-   ImmutableTaskGraph itg = taskGraph.snapshot();
-
-An immutable task graph cannot be modified.
-Thus, if developers need to update a task graph, they need to invoke the ``snapshot`` method again and create a new immutable task graph object.
-
-
-Step 3: Build, Optimise and Execute an Execution Plan
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-The last step is the creation of an execution plan. An execution plan receives a list of immutable task graphs ready to be executed, as follows:
-
-
-.. code:: java
-
-   TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(itg);
-
-
-What can we do with an execution plan?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-We can execute an execution plan directly, and TornadoVM will apply a list of default optimisations (e.g., it will run on the default device, using the default thread scheduler).
-
-
-.. code:: java
-
-   executionPlan.execute();
-
-
-How can we optimize an execution plan?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-The execution plan offers a set of methods that developers can use to optimize different execution plans.
-Note that the execution plan operates over all immutable task graphs given in the constructor. Therefore, all immutable task graphs will be executed on the same device in order.
-
-Example:
-
-.. code:: java
-
-   executionPlan.withProfiler(ProfilerMode.SILENT) // Enable Profiling
-       .withWarmUp() //  Perform a warmup (compile and code and install it in a code-cache).
-       .withDevice(device); Select a specific device
-
-
-And then:
-
-.. code:: java
-
-   executionPlan.execute();
-
-
-Step 4. Obtain the result and the profiler
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Every time an execution plan is executed, a new object of type ``TornadoExecutionResult`` is created.
-
-.. code:: java
-
-   TornadoExecutionResult executionResult = executionPlan.execute();
-
-
-
-From the execution result, developers can obtain the result of the TornadoVM profiler:
-
-
-.. code:: java
-
-   executionResult.getProfilerResult();
-
-
-And query the values of the profiling report.
-Note that the TornadoVM profiler works only if enabled in the execution plan (via the ``withProfiler`` method).
-
-
-
-Further reading and examples
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The TornadoVM modules for the unit tests:
-
-
-https://github.com/beehive-lab/TornadoVM/tree/master/tornado-unittests/src/main/java/uk/ac/manchester/tornado/unittests
-
-
-and the examples
-
-
-
-https://github.com/beehive-lab/TornadoVM/tree/master/tornado-examples/src/main/java/uk/ac/manchester/tornado/examples
-
-
-contain a list of diverse applications that can be used to learn the new TornadoVM API.

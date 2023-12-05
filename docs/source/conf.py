@@ -6,8 +6,8 @@ project = "TornadoVM"
 copyright = "2013-2023, APT Group, Department of Computer Science"
 author = "The University of Manchester"
 
-release = "v0.16"
-version = "v0.16.0"
+release = "v1.0"
+version = "v1.0"
 
 # -- General configuration
 
