@@ -32,10 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jdk.vm.ci.meta.JavaKind;
-import uk.ac.manchester.tornado.api.types.arrays.natives.NativeInt2;
-import uk.ac.manchester.tornado.api.types.arrays.natives.NativeByte3;
-import uk.ac.manchester.tornado.api.types.arrays.natives.NativeFloat2;
-import uk.ac.manchester.tornado.api.types.arrays.natives.NativeShort2;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -50,7 +46,6 @@ import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
-import uk.ac.manchester.tornado.api.types.matrix.NativeDouble2;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -346,17 +341,7 @@ public class OCLVectorWrapper implements ObjectBuffer {
             }
         } else if (type == FloatArray.class || type == IntArray.class || type == DoubleArray.class || type == LongArray.class || type == ShortArray.class || type == CharArray.class || type == ByteArray.class) {
             return JavaKind.Object;
-        } else if (type == NativeFloat2.FIELD_CLASS) {
-            return JavaKind.Object;
-        } else if (type == NativeInt2.FIELD_CLASS) {
-            return JavaKind.Object;
-        } else if (type == NativeDouble2.FIELD_CLASS) {
-            return JavaKind.Object;
-        } else if (type == NativeShort2.FIELD_CLASS) {
-            return JavaKind.Object;
-        } else if (type == NativeByte3.FIELD_CLASS) {
-            return JavaKind.Object;
-        } else {
+        }  else {
             TornadoInternalError.shouldNotReachHere("The type should be an array, but found: " + type);
         }
         return null;

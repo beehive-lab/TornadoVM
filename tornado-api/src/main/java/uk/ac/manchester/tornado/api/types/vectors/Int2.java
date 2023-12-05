@@ -22,14 +22,11 @@ import java.nio.IntBuffer;
 import uk.ac.manchester.tornado.api.internal.annotations.Payload;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
-import uk.ac.manchester.tornado.api.types.arrays.natives.NativeVectorInt;
 
 @Vector
 public final class Int2 implements TornadoVectorsInterface<IntBuffer> {
 
     public static final Class<Int2> TYPE = Int2.class;
-
-    public static final Class<NativeVectorInt> FIELD_CLASS = NativeVectorInt.class;
 
     private static final String NUMBER_FORMAT = "{ x=%-7d, y=%-7d }";
     /**
