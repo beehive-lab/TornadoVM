@@ -56,7 +56,7 @@ public abstract sealed class TornadoNativeArray permits //
     public abstract MemorySegment getSegment();
 
     /**
-     * Returns the total number of bytes that the {@link MemorySegment} occupies.
+     * Returns the total number of bytes that the {@link MemorySegment} occupies, including the header bytes.
      * @return The total number of bytes of the {@link MemorySegment}.
      */
     public abstract long getNumBytesOfSegment();
