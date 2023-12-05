@@ -18,7 +18,7 @@ Developers can choose which backends to install and run.
 
 For a quick introduction please read the following [FAQ](https://tornadovm.readthedocs.io/en/latest/).
 
-**Latest Release:** TornadoVM 0.15.2 - 26/07/2023 : See [CHANGELOG](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html).
+**Latest Release:** TornadoVM 1.0 - 05/12/2023 : See [CHANGELOG](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html).
 
 ----------------------
 
@@ -222,12 +222,12 @@ You can import the TornadoVM API by setting this the following dependency in the
 <dependency>
     <groupId>tornado</groupId>
     <artifactId>tornado-api</artifactId>
-    <version>0.15.2</version>
+    <version>1.0</version>
 </dependency>
 <dependency>
     <groupId>tornado</groupId>
     <artifactId>tornado-matrices</artifactId>
-    <version>0.15.2</version>
+    <version>1.0</version>
 </dependency>
 </dependencies>
 ```
