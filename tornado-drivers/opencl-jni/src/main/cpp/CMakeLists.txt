@@ -10,12 +10,20 @@ set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -fpermissive -export-dynamic -fPIC ")
 set(CMAKE_VERBOSE_MAKEFILE on)
 
-include_directories(
+if(APPLE)
+   include_directories(
 	source/
-	headers/opencl/3.0/include/
 	${JNI_INCLUDE_DIRS}
 	${OPENCL_INCLUDE_DIRS}
 	)
+else()
+   include_directories(
+	source/
+	headers/include
+	${JNI_INCLUDE_DIRS}
+	${OPENCL_INCLUDE_DIRS}
+	)
+endif()
 
 file(GLOB_RECURSE "source/*.cpp")
 add_library(tornado-opencl SHARED

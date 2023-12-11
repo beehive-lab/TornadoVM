@@ -89,6 +89,48 @@ def process_backends_as_mvn_profiles(selected_backends):
     backend_profiles = ",".join(selected_backends_list)
     return backend_profiles
 
+def clone_opencl_headers():
+    """
+    Clone the Khronos OpenCL headers into the OpenCL JNI lib
+    """
+    current = os.getcwd()
+    directoryName = "tornado-drivers/opencl-jni/src/main/cpp/headers"
+    tmpDirectory = "tempOpenCLHeaderDirectory"
+    if not os.path.exists(directoryName):
+        ## clone the repo with the OpenCL Headers
+        import shutil
+        os.mkdir(tmpDirectory)
+        os.chdir(tmpDirectory)
+        subprocess.run(
+            [
+                "git",
+                "clone",
+                "https://github.com/KhronosGroup/OpenCL-Headers.git",
+            ],
+        )
+        os.chdir("OpenCL-Headers")
+        subprocess.run(
+            [
+                "cmake",
+                "-S",
+                ".",
+                "-B",
+                "build",
+                "-DCMAKE_INSTALL_PREFIX=" + current + "/" + directoryName,
+            ],
+        )
+        subprocess.run(
+            [
+                "cmake",
+                "--build",
+                "build",
+                "--target",
+                "install",
+            ],
+        )
+        os.chdir(current)
+        shutil.rmtree(tmpDirectory)
+
 
 def build_spirv_toolkit_and_level_zero():
     """
@@ -269,6 +311,9 @@ def main():
     pull_graal_jars_if_needed(graal_jars_status)
 
     backend_profiles = process_backends_as_mvn_profiles(args.backends)
+
+    if "opencl" in args.backends:
+        clone_opencl_headers()
 
     if "spirv" in args.backends:
         build_spirv_toolkit_and_level_zero()
