@@ -50,3 +50,4 @@ tornado-drivers/opencl/target/
 tornado-drivers/target/
 tornado-examples/target/
 tornado-runtime/target/
+tornado-drivers/opencl-jni/src/main/cpp/headers/

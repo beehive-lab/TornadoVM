@@ -12,7 +12,7 @@ set(CMAKE_VERBOSE_MAKEFILE on)
 
 include_directories(
 	source/
-	headers/opencl/3.0/include/
+	headers/include/
 	${JNI_INCLUDE_DIRS}
 	${OPENCL_INCLUDE_DIRS}
 	)
