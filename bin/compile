@@ -138,6 +138,7 @@ def build_levelzero_jni_lib():
     current = os.getcwd()
     levelzeroLib = "levelzero-jni"
     if not os.path.exists(levelzeroLib):
+        ## clone only if directory does not exist
         subprocess.run(
             [
                 "git",
@@ -147,14 +148,20 @@ def build_levelzero_jni_lib():
         )
 
     os.chdir(levelzeroLib)
+
+    ## Always pull for the latest changes
     subprocess.run(["git", "pull", "origin", "master"])
     subprocess.run(["mvn", "clean", "install"])
+
+    ## Build native library
     os.chdir("levelZeroLib")
-    if not os.path.exists("build"):
-        os.mkdir("build")
-        os.chdir("build")
-        subprocess.run(["cmake", "..", ],)
-        subprocess.run(["make", "-j", "8"],)
+    levelzero_build_directory_cpp = "build"
+    if not os.path.exists(levelzero_build_directory_cpp):
+        os.mkdir(levelzero_build_directory_cpp)
+
+    os.chdir(levelzero_build_directory_cpp)
+    subprocess.run(["cmake", "..", ],)
+    subprocess.run(["make", "-j", "8"],)
 
     os.chdir(current)
 
