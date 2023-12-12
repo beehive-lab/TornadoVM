@@ -50,6 +50,7 @@ import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.UnwindNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
 import org.graalvm.compiler.nodes.calc.FloatConvertNode;
 import org.graalvm.compiler.nodes.calc.IntegerDivRemNode;
 import org.graalvm.compiler.nodes.calc.RemNode;
@@ -358,6 +359,15 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
 
         for (Node n : threadIdNode.usages()) {
             // GPU SCHEDULER
+
+            if (n instanceof BinaryArithmeticNode) {
+                if (n.usages().filter(PhiNode.class).isNotEmpty()) {
+                    gpuSnippet = true;
+                    threadID = n.usages().filter(PhiNode.class).first();
+                    break;
+                }
+            }
+
             if (n instanceof PhiNode) {
                 gpuSnippet = true;
                 threadID = (ValueNode) n;
