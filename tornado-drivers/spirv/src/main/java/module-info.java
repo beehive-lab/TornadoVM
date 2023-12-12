@@ -5,6 +5,7 @@ module tornado.drivers.spirv {
     requires transitive tornado.runtime;
     requires tornado.drivers.common;
     requires beehive.spirv.lib;
+    requires beehive.levelzero.jni;
 
     // FIXME: Remove dependency to tornado.drivers.opencl
     requires tornado.drivers.opencl;
