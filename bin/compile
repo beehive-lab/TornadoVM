@@ -131,6 +131,40 @@ def clone_opencl_headers():
         os.chdir(current)
         shutil.rmtree(tmpDirectory)
 
+def build_levelzero_jni_lib():
+    """
+    Pulls and Builds the Level Zero JNI library
+    """
+    current = os.getcwd()
+    levelzeroLib = "levelzero-jni"
+    if not os.path.exists(levelzeroLib):
+        ## clone only if directory does not exist
+        subprocess.run(
+            [
+                "git",
+                "clone",
+                "https://github.com/beehive-lab/levelzero-jni",
+            ],
+        )
+
+    os.chdir(levelzeroLib)
+
+    ## Always pull for the latest changes
+    subprocess.run(["git", "pull", "origin", "master"])
+    subprocess.run(["mvn", "clean", "install"])
+
+    ## Build native library
+    os.chdir("levelZeroLib")
+    levelzero_build_directory_cpp = "build"
+    if not os.path.exists(levelzero_build_directory_cpp):
+        os.mkdir(levelzero_build_directory_cpp)
+
+    os.chdir(levelzero_build_directory_cpp)
+    subprocess.run(["cmake", "..", ],)
+    subprocess.run(["make", "-j", "8"],)
+
+    os.chdir(current)
+
 
 def build_spirv_toolkit_and_level_zero():
     """
@@ -316,7 +350,12 @@ def main():
         clone_opencl_headers()
 
     if "spirv" in args.backends:
+        # 1) Build the SPIR-V Toolkit
         build_spirv_toolkit_and_level_zero()
+
+        # 2) Build the Level Zero JNI library
+        build_levelzero_jni_lib()
+
 
     mvn_build_result = build_tornadovm(args, backend_profiles)
 

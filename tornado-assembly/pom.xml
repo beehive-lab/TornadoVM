@@ -98,12 +98,6 @@
                     <version>${project.version}</version>
                     <classifier>libs</classifier>
                 </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>tornado-drivers-spirv-levelzero-jni</artifactId>
-                    <version>${project.version}</version>
-                    <classifier>libs</classifier>
-                </dependency>
             </dependencies>
         </profile>
 
