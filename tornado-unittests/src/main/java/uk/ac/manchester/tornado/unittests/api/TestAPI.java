@@ -33,10 +33,12 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
@@ -185,6 +187,25 @@ public class TestAPI extends TornadoTestBase {
         double[] fArrayB = dataB.toHeapArray();
         for (int i = 0; i < dataA.getSize(); i++) {
             assertEquals(fArrayB[i], dataB.get(i), 0.001);
+        }
+    }
+
+    @Test
+    public void testSegmentsHalfFloats() {
+        HalfFloatArray dataA = HalfFloatArray.fromElements(new HalfFloat(0), new HalfFloat(1), new HalfFloat(2), new HalfFloat(3));
+        HalfFloatArray dataB = HalfFloatArray.fromArray(new HalfFloat[] { new HalfFloat(0), new HalfFloat(1), new HalfFloat(2), new HalfFloat(3) });
+
+        for (int i = 0; i < dataA.getSize(); i++) {
+            assertEquals(dataA.get(i).getFloat32(), dataB.get(i).getFloat32(), 0.01f);
+        }
+        HalfFloat[] fArray = dataA.toHeapArray();
+        for (int i = 0; i < dataA.getSize(); i++) {
+            assertEquals(fArray[i].getFloat32(), dataA.get(i).getFloat32(), 0.01f);
+        }
+
+        HalfFloat[] fArrayB = dataB.toHeapArray();
+        for (int i = 0; i < dataA.getSize(); i++) {
+            assertEquals(fArrayB[i].getFloat32(), dataB.get(i).getFloat32(), 0.01f);
         }
     }
 
@@ -414,5 +435,26 @@ public class TestAPI extends TornadoTestBase {
             assertEquals((char) 10 + i, charArray.get(i));
         }
     }
+
+    @Test
+    public void testBuildWithSegmentsHalfFloat() {
+
+        final int n = 10;
+        // Allocate 10 elements
+        MemorySegment m = Arena.ofAuto().allocate(ValueLayout.JAVA_SHORT.byteSize() * n);
+
+        // Set 10 elements
+        for (int i = 0; i < n; i++) {
+            m.setAtIndex(ValueLayout.JAVA_SHORT, i, Float.floatToFloat16(10 + i));
+        }
+
+        // Factory method to build a float array from a segment
+        HalfFloatArray halfFloatArray = HalfFloatArray.fromSegment(m);
+
+        for (int i = 0; i < n; i++) {
+            assertEquals(10 + i, halfFloatArray.get(i).getFloat32(), 0.001f);
+        }
+    }
+
     // CHECKSTYLE:ON
 }

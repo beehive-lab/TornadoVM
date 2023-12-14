@@ -35,10 +35,12 @@ import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
@@ -112,6 +114,30 @@ public class TestArrays extends TornadoTestBase {
     public static void addChars(CharArray a, IntArray b) {
         for (@Parallel int i = 0; i < a.getSize(); i++) {
             a.set(i, (char) (a.get(i) + b.get(i)));
+        }
+    }
+
+    public static void vectorAddHalfFloat(HalfFloatArray a, HalfFloatArray b, HalfFloatArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, HalfFloat.add(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void vectorSubHalfFloat(HalfFloatArray a, HalfFloatArray b, HalfFloatArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, HalfFloat.sub(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void vectorMultHalfFloat(HalfFloatArray a, HalfFloatArray b, HalfFloatArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, HalfFloat.mult(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void vectorDivHalfFloat(HalfFloatArray a, HalfFloatArray b, HalfFloatArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, HalfFloat.div(a.get(i), b.get(i)));
         }
     }
 
@@ -481,6 +507,102 @@ public class TestArrays extends TornadoTestBase {
 
         for (int i = 0; i < c.getSize(); i++) {
             assertEquals(21, c.get(i));
+        }
+    }
+
+    @Test
+    public void testVectorAdditionHalfFloat() {
+        final int numElements = 4096;
+        HalfFloatArray a = new HalfFloatArray(numElements);
+        HalfFloatArray b = new HalfFloatArray(numElements);
+        HalfFloatArray c = new HalfFloatArray(numElements);
+        a.init(new HalfFloat(6.0f));
+        b.init(new HalfFloat(2.0f));
+        vectorAddHalfFloat(a, b, c);
+        // Uncomment after codegen
+        //        TaskGraph taskGraph = new TaskGraph("s0") //
+        //                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+        //                .task("t0", TestArrays::vectorAddHalfFloat, a, b, c) //
+        //                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+        //
+        //        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        //        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        //        executionPlan.execute();
+
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(c.get(i).getFloat32(), 8.0f, 0.01f);
+        }
+    }
+
+    @Test
+    public void testVectorSubtractionHalfFloat() {
+        final int numElements = 4096;
+        HalfFloatArray a = new HalfFloatArray(numElements);
+        HalfFloatArray b = new HalfFloatArray(numElements);
+        HalfFloatArray c = new HalfFloatArray(numElements);
+        a.init(new HalfFloat(6.0f));
+        b.init(new HalfFloat(2.0f));
+        vectorSubHalfFloat(a, b, c);
+        // Uncomment after codegen
+        //        TaskGraph taskGraph = new TaskGraph("s0") //
+        //                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+        //                .task("t0", TestArrays::vectorSubHalfFloat, a, b, c) //
+        //                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+        //
+        //        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        //        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        //        executionPlan.execute();
+
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(c.get(i).getFloat32(), 4.0f, 0.01f);
+        }
+    }
+
+    @Test
+    public void testVectorMultiplicationHalfFloat() {
+        final int numElements = 4096;
+        HalfFloatArray a = new HalfFloatArray(numElements);
+        HalfFloatArray b = new HalfFloatArray(numElements);
+        HalfFloatArray c = new HalfFloatArray(numElements);
+        a.init(new HalfFloat(6.0f));
+        b.init(new HalfFloat(2.0f));
+        vectorMultHalfFloat(a, b, c);
+        // Uncomment after codegen
+        //        TaskGraph taskGraph = new TaskGraph("s0") //
+        //                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+        //                .task("t0", TestArrays::vectorMultHalfFloat, a, b, c) //
+        //                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+        //
+        //        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        //        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        //        executionPlan.execute();
+
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(c.get(i).getFloat32(), 12.0f, 0.01f);
+        }
+    }
+
+    @Test
+    public void testVectorDivisionHalfFloat() {
+        final int numElements = 4096;
+        HalfFloatArray a = new HalfFloatArray(numElements);
+        HalfFloatArray b = new HalfFloatArray(numElements);
+        HalfFloatArray c = new HalfFloatArray(numElements);
+        a.init(new HalfFloat(6.0f));
+        b.init(new HalfFloat(2.0f));
+        vectorDivHalfFloat(a, b, c);
+        // Uncomment after codegen
+        //        TaskGraph taskGraph = new TaskGraph("s0") //
+        //                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+        //                .task("t0", TestArrays::vectorDivHalfFloat, a, b, c) //
+        //                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+        //
+        //        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        //        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        //        executionPlan.execute();
+
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(c.get(i).getFloat32(), 3.0f, 0.01f);
         }
     }
 
