@@ -55,7 +55,7 @@
             <lineEnding>unix</lineEnding>
             <fileMode>0666</fileMode>
         </fileSet>
-         <fileSet>
+        <fileSet>
             <directory>src/etc</directory>
             <outputDirectory>./</outputDirectory>
             <includes>
@@ -83,6 +83,13 @@
             <fileMode>0444</fileMode>
         </fileSet>
         <fileSet>
+            <directory>../levelzero-jni/levelZeroLib/build</directory>
+            <outputDirectory>./lib/</outputDirectory>
+            <includes>
+                <include>libtornado-levelzero.so</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>src/examples</directory>
             <!-- Tornado full examples copied into examples directory -->
             <outputDirectory>examples</outputDirectory>
@@ -98,7 +105,8 @@
             <useAllReactorProjects>true</useAllReactorProjects>
             <!-- Now, select which projects to include in this module-set. -->
             <includes>
-                <include>tornado:spirv-beehive-toolkit</include>
+                <include>tornado:beehive-spirv-toolkit</include>
+                <include>tornado:beehive-levelzero-jni</include>
                 <include>tornado:tornado-api</include>
                 <include>tornado:tornado-runtime</include>
                 <include>tornado:tornado-annotation</include>
@@ -133,7 +141,6 @@
             <includes>
                 <include>tornado:tornado-drivers-ptx-jni:jar:libs</include>
                 <include>tornado:tornado-drivers-opencl-jni:jar:libs</include>
-                <include>tornado:tornado-drivers-spirv-levelzero-jni:jar:libs</include>
             </includes>
         </dependencySet>
     </dependencySets>

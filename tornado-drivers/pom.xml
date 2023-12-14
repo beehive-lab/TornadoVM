@@ -36,7 +36,6 @@
                 <module>opencl</module>
                 <module>opencl-jni</module>
                 <module>spirv</module>
-                <module>spirv-levelzero-jni</module>
             </modules>
         </profile>
 
