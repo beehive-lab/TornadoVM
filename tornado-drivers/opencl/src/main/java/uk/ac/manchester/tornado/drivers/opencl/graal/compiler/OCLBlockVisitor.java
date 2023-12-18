@@ -514,7 +514,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
             closeIfBlock(block, dom);
         } else if (isSwitchBlockNode(block)) {
             closeSwitchBlock(block, dom);
-        } else if (isNestedIfNode(block) && (!isStartNode(block))) {
+        } else if (isNestedIfNode(block) && (!isStartNode(block) && (!isMergeBlock(block)))) {
             closeBlock(block);
         } else if (isReturnBranchWithMerge(dom, block)) {
             closeBlock(block);
