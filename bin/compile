@@ -131,7 +131,7 @@ def clone_opencl_headers():
         os.chdir(current)
         shutil.rmtree(tmpDirectory)
 
-def build_levelzero_jni_lib():
+def build_levelzero_jni_lib(rebuild=False):
     """
     Pulls and Builds the Level Zero JNI library
     """
@@ -146,27 +146,32 @@ def build_levelzero_jni_lib():
                 "https://github.com/beehive-lab/levelzero-jni",
             ],
         )
+        rebuild=True
 
-    os.chdir(levelzeroLib)
+    if (rebuild):
+        os.chdir(levelzeroLib)
 
-    ## Always pull for the latest changes
-    subprocess.run(["git", "pull", "origin", "master"])
-    subprocess.run(["mvn", "clean", "install"])
+        ## Always pull for the latest changes
+        subprocess.run(["git", "pull", "origin", "master"])
+        subprocess.run(["mvn", "clean", "install"])
 
-    ## Build native library
-    os.chdir("levelZeroLib")
-    levelzero_build_directory_cpp = "build"
-    if not os.path.exists(levelzero_build_directory_cpp):
-        os.mkdir(levelzero_build_directory_cpp)
+        ## Build native library
+        os.chdir("levelZeroLib")
+        levelzero_build_directory_cpp = "build"
+        if not os.path.exists(levelzero_build_directory_cpp):
+            os.mkdir(levelzero_build_directory_cpp)
+            os.chdir(levelzero_build_directory_cpp)
+        else:
+            os.chdir(levelzero_build_directory_cpp)
+            subprocess.run(["make", "clean", ],)
 
-    os.chdir(levelzero_build_directory_cpp)
-    subprocess.run(["cmake", "..", ],)
-    subprocess.run(["make", "-j", "8"],)
+        subprocess.run(["cmake", "..", ],)
+        subprocess.run(["make", "-j", "8"],)
 
-    os.chdir(current)
+        os.chdir(current)
 
 
-def build_spirv_toolkit_and_level_zero():
+def build_spirv_toolkit_and_level_zero(rebuild=False):
     """
     Builds the SPIR-V Toolkit and Level Zero libraries.
     """
@@ -181,23 +186,25 @@ def build_spirv_toolkit_and_level_zero():
                 "https://github.com/beehive-lab/beehive-spirv-toolkit.git",
             ],
         )
+        rebuild = True
 
-    os.chdir(spirv_tool_kit)
-    subprocess.run(["git", "pull", "origin", "master"])
-    subprocess.run(["mvn", "clean", "package"])
-    subprocess.run(["mvn", "install"])
-    os.chdir(current)
-
-    level_zero_lib = "level-zero"
-
-    if not os.path.exists(level_zero_lib):
-        subprocess.run(["git", "clone", "https://github.com/oneapi-src/level-zero"])
-        os.chdir(level_zero_lib)
-        os.mkdir("build")
-        os.chdir("build")
-        subprocess.run(["cmake", ".."])
-        subprocess.run(["cmake", "--build", ".", "--config", "Release"])
+    if (rebuild):
+        os.chdir(spirv_tool_kit)
+        subprocess.run(["git", "pull", "origin", "master"])
+        subprocess.run(["mvn", "clean", "package"])
+        subprocess.run(["mvn", "install"])
         os.chdir(current)
+
+        level_zero_lib = "level-zero"
+
+        if not os.path.exists(level_zero_lib):
+            subprocess.run(["git", "clone", "https://github.com/oneapi-src/level-zero"])
+            os.chdir(level_zero_lib)
+            os.mkdir("build")
+            os.chdir("build")
+            subprocess.run(["cmake", ".."])
+            subprocess.run(["cmake", "--build", ".", "--config", "Release"])
+            os.chdir(current)
 
     os.environ["ZE_SHARED_LOADER"] = os.path.join(
         current, "level-zero/build/lib/libze_loader.so"
@@ -330,6 +337,13 @@ def parse_args():
         default=False,
         help="To enable interoperability with Truffle Programming Languages."
     )
+    parser.add_argument(
+        "--rebuild",
+        action="store_true",
+        dest="rebuild",
+        default=False,
+        help="Enable pull and rebuild of the external dependencies."
+    )
 
     args = parser.parse_args()
     return args
@@ -351,11 +365,10 @@ def main():
 
     if "spirv" in args.backends:
         # 1) Build the SPIR-V Toolkit
-        build_spirv_toolkit_and_level_zero()
+        build_spirv_toolkit_and_level_zero(args.rebuild)
 
         # 2) Build the Level Zero JNI library
-        build_levelzero_jni_lib()
-
+        build_levelzero_jni_lib(args.rebuild)
 
     mvn_build_result = build_tornadovm(args, backend_profiles)
 
