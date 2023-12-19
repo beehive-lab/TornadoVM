@@ -137,6 +137,7 @@ def build_levelzero_jni_lib(rebuild=False):
     """
     current = os.getcwd()
     levelzeroLib = "levelzero-jni"
+    build=False
     if not os.path.exists(levelzeroLib):
         ## clone only if directory does not exist
         subprocess.run(
@@ -146,9 +147,9 @@ def build_levelzero_jni_lib(rebuild=False):
                 "https://github.com/beehive-lab/levelzero-jni",
             ],
         )
-        rebuild=True
+        build=True
 
-    if (rebuild):
+    if (rebuild or build):
         os.chdir(levelzeroLib)
 
         ## Always pull for the latest changes
@@ -177,7 +178,7 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
     """
     current = os.getcwd()
     spirv_tool_kit = "beehive-spirv-toolkit"
-
+    build=True
     if not os.path.exists(spirv_tool_kit):
         subprocess.run(
             [
@@ -186,9 +187,9 @@ def build_spirv_toolkit_and_level_zero(rebuild=False):
                 "https://github.com/beehive-lab/beehive-spirv-toolkit.git",
             ],
         )
-        rebuild = True
+        build = True
 
-    if (rebuild):
+    if (rebuild or build):
         os.chdir(spirv_tool_kit)
         subprocess.run(["git", "pull", "origin", "master"])
         subprocess.run(["mvn", "clean", "package"])
