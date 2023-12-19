@@ -33,6 +33,7 @@ __MANDREL21__ = "mandrel-jdk-21"
 __CORRETTO21__ = "corretto-jdk-21"
 __MICROSOFT20__ = "microsoft-jdk-20"
 __ZULU21__ = "zulu-jdk-21"
+__TEMURIN21__ = "temurin-jdk-21"
 
 ## cmake
 CMAKE = {
@@ -117,6 +118,16 @@ JDK = {
         __APPLE__: {
             __X86_64__: "https://cdn.azul.com/zulu/bin/zulu21.28.85-ca-jdk21.0.0-macosx_x64.tar.gz",
             __ARM__: "https://cdn.azul.com/zulu/bin/zulu21.28.85-ca-jdk21.0.0-macosx_aarch64.tar.gz",
+        },
+    },
+    __TEMURIN21__: {
+        __LINUX__: {
+            __X86_64__: "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jdk_x64_linux_hotspot_21.0.1_12.tar.gz",
+            __ARM__: "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jdk_aarch64_linux_hotspot_21.0.1_12.tar.gz",
+        },
+        __APPLE__: {
+            __X86_64__: "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jdk_x64_mac_hotspot_21.0.1_12.tar.gz",
+            __ARM__: "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jdk_aarch64_mac_hotspot_21.0.1_12.tar.gz",
         },
     },
 }

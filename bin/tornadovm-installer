@@ -31,7 +31,7 @@ import wget
 import installer_config as config
 
 __DIRECTORY_DEPENDENCIES__ = "etc/dependencies"
-__VERSION__ = "v0.16-dev"
+__VERSION__ = "v1.0.1-dev"
 
 __SUPPORTED_JDKS__ = [
     config.__JDK21__,
@@ -40,6 +40,7 @@ __SUPPORTED_JDKS__ = [
     config.__MICROSOFT20__,
     config.__MANDREL21__,
     config.__ZULU21__,
+    config.__TEMURIN21__,
 ]
 
 __SUPPORTED_BACKENDS__ = ["opencl", "spirv", "ptx"]
@@ -191,7 +192,15 @@ class TornadoInstaller:
         fullPath = self.workDirName + "/" + fileName
 
         if not os.path.exists(fullPath):
-            wget.download(url, fullPath)
+            try:
+                wget.download(url, fullPath)
+            except:
+                import urllib3
+                http = urllib3.PoolManager()
+                response = http.request('GET', url)
+                jdkImage = response.data
+                with open(fullPath, 'wb') as file:
+                    file.write(jdkImage)
 
         tar = tarfile.open(fullPath, "r:gz")
         extractedDirectory = self.getJDKDirectoryName(tar)
@@ -336,11 +345,12 @@ def listSupportedJDKs():
         """
     TornadoVM Installer - Select a JDK implementation to install with TornadoVM:
 
-    jdk21            : Install TornadoVM with OpenJDK 21 (Oracle OpenJDK)"
-    graalvm-jdk-21   : Install TornadoVM with GraalVM and JDK 21 (GraalVM 23.1.0)"
-    mandrel-jdk-21   : Install TornadoVM with Mandrel and JDK 21 (GraalVM 23.1.0)"
-    corretto-jdk-21  : Install TornadoVM with Corretto JDK 21"
-    zulu-jdk-21     : Install TornadoVM with Azul Zulu JDK 21"
+    jdk21            : Install TornadoVM with OpenJDK 21 (Oracle OpenJDK)
+    graalvm-jdk-21   : Install TornadoVM with GraalVM and JDK 21 (GraalVM 23.1.0)
+    mandrel-jdk-21   : Install TornadoVM with Mandrel and JDK 21 (GraalVM 23.1.0)
+    corretto-jdk-21  : Install TornadoVM with Corretto JDK 21
+    zulu-jdk-21      : Install TornadoVM with Azul Zulu JDK 21
+    temurin-jdk-21   : Install TornadoVM with Eclipse Temurin JDK 21
 
     Usage:
      $ ./bin/tornadovm-installer  --jdk <JDK_VERSION> --backend <BACKEND>

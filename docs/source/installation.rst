@@ -313,6 +313,7 @@ JDKs. Below are listed the Java 21 JDK distributions against which TornadoVM has
   mandrel-jdk-21   : Install TornadoVM with Mandrel and JDK 21 (GraalVM 23.1.0)
   corretto-jdk-21  : Install TornadoVM with Corretto JDK 21
   zulu-jdk-jdk-21  : Install TornadoVM with Azul Zulu JDK 21
+  temurin-jdk-21   : Install TornadoVM with Eclipse Temurin JDK 21
 
 
 1. Download a JDK 21 distribution
@@ -323,6 +324,7 @@ JDKs. Below are listed the Java 21 JDK distributions against which TornadoVM has
 - Amazon Coretto releases are available at https://aws.amazon.com/corretto/.
 - Microsoft OpenJDK releases are available at https://docs.microsoft.com/en-us/java/openjdk/download. Azul Zulu
 - OpenJDK releases are available at `https://www.azul.com/downloads <https://www.azul.com/downloads/?package=jdk#download-openjdk>`__.
+- Eclipse Temurin releases are available at `https://github.com/adoptium/temurin21-binaries/releases/tag/jdk-21.0.1%2B12 <https://github.com/adoptium/temurin21-binaries/releases/tag/jdk-21.0.1%2B12>`__.
 
 1.1 Manage JDKs manually
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
