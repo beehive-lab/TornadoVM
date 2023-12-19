@@ -355,7 +355,7 @@ A complete list of all available Java Versions for Linux 64bit can be obtained w
 
     $ sdk list java
 
-1. Download TornadoVM
+2. Download TornadoVM
 ~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: bash
