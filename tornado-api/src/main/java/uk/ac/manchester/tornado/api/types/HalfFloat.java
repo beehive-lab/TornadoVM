@@ -22,6 +22,10 @@ public class HalfFloat {
         this.halfFloatValue = Float.floatToFloat16(halfFloat);
     }
 
+    public HalfFloat(short halfFloat) {
+        this.halfFloatValue = halfFloat;
+    }
+
     /**
      * Constructs an empty {@code HalfFloat} object.
      * It is used internally in a {@link #createHalfFloatFromShort(short) createHalfFloatFromShort} method.

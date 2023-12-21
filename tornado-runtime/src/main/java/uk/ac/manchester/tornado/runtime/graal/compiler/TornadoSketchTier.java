@@ -40,6 +40,7 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoApiReplacement;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoAutoParalleliser;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoDataflowAnalysis;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFullInliningPolicy;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHalfFloatPlaceholderElimination;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoKernelContextReplacement;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoNativeTypeElimination;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoNumericPromotionPhase;
@@ -74,6 +75,7 @@ public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
         }
 
         appendPhase(new TornadoStampResolver());
+        appendPhase(new TornadoHalfFloatPlaceholderElimination());
         appendPhase(new TornadoNativeTypeElimination());
         appendPhase(new TornadoReduceReplacement());
         appendPhase(new TornadoApiReplacement());

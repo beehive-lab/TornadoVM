@@ -116,6 +116,8 @@ public class OCLGraphBuilderPlugins {
         // Register TornadoAtomicInteger
         registerTornadoAtomicInteger(ps, plugins);
 
+        OCLHalfFloatPlugins.registerPlugins(ps, plugins);
+
         registerMemoryAccessPlugins(plugins);
 
     }

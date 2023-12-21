@@ -55,6 +55,7 @@ import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
@@ -539,6 +540,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             } else if (object instanceof ByteArray) {
                 result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else if (object instanceof CharArray) {
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+            } else if (object instanceof HalfFloatArray) {
                 result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else {
                 result = new OCLObjectWrapper(deviceContext, object);

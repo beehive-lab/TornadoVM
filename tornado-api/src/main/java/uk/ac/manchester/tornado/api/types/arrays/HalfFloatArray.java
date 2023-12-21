@@ -2,7 +2,6 @@ package uk.ac.manchester.tornado.api.types.arrays;
 
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
-import static uk.ac.manchester.tornado.api.types.HalfFloat.createHalfFloatFromShort;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -133,7 +132,7 @@ public final class HalfFloatArray extends TornadoNativeArray {
      */
     public HalfFloat get(int index) {
         short halfFloatValue = segment.getAtIndex(JAVA_SHORT, baseIndex + index);
-        return createHalfFloatFromShort(halfFloatValue);
+        return new HalfFloat(halfFloatValue);
     }
 
     /**

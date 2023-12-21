@@ -67,7 +67,9 @@ public enum OCLVariablePrefix {
     BYTE16("byte16", "b16_"),
     SHORT("short", "sh_"),
     SHORT2("short2", "sh2_"),
-    SHORT3("short3", "sh3_");
+    SHORT3("short3", "sh3_"),
+    HALF("half", "half_");
+
 
     // @formatter:on
 

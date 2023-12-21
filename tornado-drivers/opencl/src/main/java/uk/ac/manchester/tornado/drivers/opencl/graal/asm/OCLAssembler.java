@@ -74,6 +74,8 @@ public final class OCLAssembler extends Assembler {
             emitLine("#pragma OPENCL EXTENSION cl_khr_fp64 : enable  ");
         }
 
+        emitLine("#pragma OPENCL EXTENSION cl_khr_fp16 : enable  ");
+
         if (((OCLTargetDescription) target).supportsInt64Atomics()) {
             emitLine("#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable  ");
         }

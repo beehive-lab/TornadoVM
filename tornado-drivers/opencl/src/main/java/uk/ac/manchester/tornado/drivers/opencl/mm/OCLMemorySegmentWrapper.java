@@ -47,6 +47,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
@@ -118,6 +119,7 @@ public class OCLMemorySegmentWrapper implements ObjectBuffer {
             case ShortArray shortArray -> shortArray.getSegment();
             case ByteArray byteArray -> byteArray.getSegment();
             case CharArray charArray -> charArray.getSegment();
+            case HalfFloatArray halfFloatArray -> halfFloatArray.getSegment();
             case VectorFloat2 vectorFloat2 -> vectorFloat2.getArray().getSegment();
             case VectorFloat3 vectorFloat3 -> vectorFloat3.getArray().getSegment();
             case VectorFloat4 vectorFloat4 -> vectorFloat4.getArray().getSegment();

@@ -287,7 +287,7 @@ public class OCLUnary {
 
         private final OCLMemoryBase base;
 
-        OCLAddressCast(OCLMemoryBase base, LIRKind lirKind) {
+        public OCLAddressCast(OCLMemoryBase base, LIRKind lirKind) {
             super(OCLUnaryTemplate.CAST_TO_POINTER, lirKind, null);
             this.base = base;
         }
