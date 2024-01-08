@@ -52,8 +52,8 @@ public class TornadoFieldAccessFixup extends BasePhase<TornadoHighTierContext> {
         ArrayDeque<LoadFieldNode> worklist = new ArrayDeque<>();
         graph.getNodes().filter(ParameterNode.class).forEach(parameterNode -> {
             worklist.addAll(parameterNode.usages().filter(LoadFieldNode.class).snapshot());
-            parameterNode.usages().filter(usage -> usage instanceof PiNode && ((PiNode) usage).object() instanceof ParameterNode).forEach(usage -> worklist.addAll(usage.usages().filter(
-                    LoadFieldNode.class).snapshot()));
+            parameterNode.usages().filter(usage -> usage instanceof PiNode && ((PiNode) usage).object() instanceof ParameterNode)
+                    .forEach(usage -> worklist.addAll(usage.usages().filter(LoadFieldNode.class).snapshot()));
         });
 
         while (!worklist.isEmpty()) {
@@ -61,8 +61,8 @@ public class TornadoFieldAccessFixup extends BasePhase<TornadoHighTierContext> {
             worklist.addAll(loadField.usages().filter(LoadFieldNode.class).snapshot());
 
             loadField.usages().forEach(usage -> {
-                if (usage instanceof AccessIndexedNode) {
-                    AccessIndexedNode loadStoreIndexed = (AccessIndexedNode) usage;
+                if (usage instanceof AccessIndexedNode accessIndexedNode) {
+                    AccessIndexedNode loadStoreIndexed = accessIndexedNode;
                     ValueNode base = loadField.object();
                     if (base instanceof PiNode) {
                         base = ((PiNode) base).object();
@@ -84,8 +84,8 @@ public class TornadoFieldAccessFixup extends BasePhase<TornadoHighTierContext> {
                     graph.addWithoutUnique(addNode);
                     if (accessFieldNode instanceof LoadFieldNode) {
                         ((LoadFieldNode) accessFieldNode).setObject(addNode);
-                    } else if (accessFieldNode instanceof StoreFieldNode) {
-                        StoreFieldNode oldStoreNode = (StoreFieldNode) accessFieldNode;
+                    } else if (accessFieldNode instanceof StoreFieldNode storeFieldNodeUsage) {
+                        StoreFieldNode oldStoreNode = storeFieldNodeUsage;
                         StoreFieldNode storeFieldNode = new StoreFieldNode(addNode, oldStoreNode.field(), oldStoreNode.value());
                         graph.addWithoutUnique(storeFieldNode);
                         graph.replaceFixedWithFixed(oldStoreNode, storeFieldNode);
@@ -95,10 +95,10 @@ public class TornadoFieldAccessFixup extends BasePhase<TornadoHighTierContext> {
                 } else if (usage instanceof OffsetAddressNode) {
                     if (usage.usages().filter(JavaWriteNode.class).isNotEmpty() || usage.usages().filter(JavaReadNode.class).isNotEmpty()) {
                         ValueNode base = loadField.object();
-                        if (base instanceof PiNode) {
-                            base = ((PiNode) base).object();
-                        } else if (base instanceof TornadoAddressArithmeticNode) {
-                            base = ((TornadoAddressArithmeticNode) base).getBase();
+                        if (base instanceof PiNode basePI) {
+                            base = basePI.object();
+                        } else if (base instanceof TornadoAddressArithmeticNode tornadoAddressArithmeticNode) {
+                            base = tornadoAddressArithmeticNode.getBase();
                         }
 
                         TornadoAddressArithmeticNode addNode = new TornadoAddressArithmeticNode(base, loadField);
