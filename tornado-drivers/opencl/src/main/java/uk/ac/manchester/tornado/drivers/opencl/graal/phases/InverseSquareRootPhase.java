@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -44,10 +44,8 @@ public class InverseSquareRootPhase extends Phase {
         graph.getNodes().filter(FloatDivNode.class).forEach(floatDivisionNode -> {
 
             // The combination is 1/sqrt(x)
-            if (floatDivisionNode.getX() instanceof ConstantNode) {
-                ConstantNode constant = (ConstantNode) floatDivisionNode.getX();
-                if ((constant.getValue().toValueString().equals("1.0")) && (floatDivisionNode.getY() instanceof SqrtNode)) {
-                    SqrtNode intrinsicNode = (SqrtNode) floatDivisionNode.getY();
+            if (floatDivisionNode.getX() instanceof ConstantNode constant) {
+                if ((constant.getValue().toValueString().equals("1.0")) && (floatDivisionNode.getY() instanceof SqrtNode intrinsicNode)) {
                     ValueNode n = intrinsicNode.getValue();
                     RSqrtNode rsqrtNode = new RSqrtNode(n);
                     graph.addOrUnique(rsqrtNode);
