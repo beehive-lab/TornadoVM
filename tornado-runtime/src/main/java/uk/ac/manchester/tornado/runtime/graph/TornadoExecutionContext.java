@@ -12,15 +12,13 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.runtime.graph;
@@ -216,14 +214,14 @@ public class TornadoExecutionContext {
      * It maps all tasks to a specific TornadoDevice.
      *
      * @param tornadoDevice
-     *            The {@link TornadoDevice} to which all tasks will be mapped.
+     *     The {@link TornadoDevice} to which all tasks will be mapped.
      * @throws RuntimeException
-     *             if the current device is not supported.
+     *     if the current device is not supported.
      */
     public void mapAllTasksToSingleDevice(TornadoDevice tornadoDevice) {
-        if (tornadoDevice instanceof TornadoAcceleratorDevice) {
+        if (tornadoDevice instanceof TornadoAcceleratorDevice tornadoAcceleratorDevice) {
             devices.clear();
-            devices.add(0, (TornadoAcceleratorDevice) tornadoDevice);
+            devices.add(0, tornadoAcceleratorDevice);
             apply(task -> task.mapTo(tornadoDevice));
             Arrays.fill(taskToDeviceMapTable, tornadoDevice);
         } else {
@@ -243,19 +241,19 @@ public class TornadoExecutionContext {
      * task scheduling strategy.
      *
      * @param index
-     *            The index of the task.
+     *     The index of the task.
      * @param task
-     *            The {@link SchedulableTask} to be assigned.
+     *     The {@link SchedulableTask} to be assigned.
      * @throws {@link
-     *             TornadoRuntimeException} if the target device is not supported.
+     *     TornadoRuntimeException} if the target device is not supported.
      */
     private void assignTaskToDevice(int index, SchedulableTask task) {
         String id = task.getId();
         TornadoDevice target = task.getDevice();
         TornadoAcceleratorDevice accelerator;
 
-        if (target instanceof TornadoAcceleratorDevice) {
-            accelerator = (TornadoAcceleratorDevice) target;
+        if (target instanceof TornadoAcceleratorDevice tornadoAcceleratorDevice) {
+            accelerator = tornadoAcceleratorDevice;
         } else {
             throw new TornadoRuntimeException("Device " + target.getClass() + " not supported yet");
         }
@@ -316,7 +314,7 @@ public class TornadoExecutionContext {
      * Checks if the tasks in the list are mutually independent.
      *
      * @return {@code true} if the tasks are mutually independent, {@code false}
-     *         otherwise.
+     *     otherwise.
      */
     private boolean isDataDependencyInTaskGraph() {
         for (int i = 0; i < tasks.size(); i++) {
@@ -402,11 +400,11 @@ public class TornadoExecutionContext {
      * assignment.
      *
      * @param deviceContext
-     *            The device context of the device.
+     *     The device context of the device.
      * @param driverIndex
-     *            The index of the driver.
+     *     The index of the driver.
      * @return A list of {@link SchedulableTask} objects associated with the
-     *         specified device and driver.
+     *     specified device and driver.
      */
     public List<SchedulableTask> getTasksForDevice(TornadoDeviceContext deviceContext, int driverIndex) {
         List<SchedulableTask> tasksForDevice = new ArrayList<>();
@@ -534,29 +532,29 @@ public class TornadoExecutionContext {
     }
 
     public void dumpExecutionContextMeta() {
-        final String ANSI_RESET = "\u001B[0m";
-        final String ANSI_CYAN = "\u001B[36m";
-        final String ANSI_YELLOW = "\u001B[33m";
-        final String ANSI_PURPLE = "\u001B[35m";
-        final String ANSI_GREEN = "\u001B[32m";
+        final String ansiReset = "\u001B[0m";
+        final String ansiCyan = "\u001B[36m";
+        final String ansiYellow = "\u001B[33m";
+        final String ansiPurple = "\u001B[35m";
+        final String ansiGreen = "\u001B[32m";
         System.out.println("-----------------------------------");
-        System.out.println(ANSI_CYAN + "Device Table:" + ANSI_RESET);
+        System.out.println(ansiCyan + "Device Table:" + ansiReset);
         for (int i = 0; i < devices.size(); i++) {
             System.out.printf("[%d]: %s\n", i, devices.get(i));
         }
 
-        System.out.println(ANSI_YELLOW + "Constant Table:" + ANSI_RESET);
+        System.out.println(ansiYellow + "Constant Table:" + ansiReset);
         for (int i = 0; i < constants.size(); i++) {
             System.out.printf("[%d]: %s\n", i, constants.get(i));
         }
 
-        System.out.println(ANSI_PURPLE + "Object Table:" + ANSI_RESET);
+        System.out.println(ansiPurple + "Object Table:" + ansiReset);
         for (int i = 0; i < objects.size(); i++) {
             final Object obj = objects.get(i);
             System.out.printf("[%d]: 0x%x %s\n", i, obj.hashCode(), obj);
         }
 
-        System.out.println(ANSI_GREEN + "Task Table:" + ANSI_RESET);
+        System.out.println(ansiGreen + "Task Table:" + ansiReset);
         for (int i = 0; i < tasks.size(); i++) {
             final SchedulableTask task = tasks.get(i);
             System.out.printf("[%d]: %s\n", i, task.getFullName());

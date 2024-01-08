@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -21,8 +21,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Authors: Michalis Papadimitriou
- *
- *
  */
 
 package uk.ac.manchester.tornado.runtime.profiler;
@@ -37,13 +35,12 @@ import java.util.Map;
 import org.graalvm.compiler.nodes.StructuredGraph;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
-import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoVMClient;
 import uk.ac.manchester.tornado.runtime.utils.JsonHandler;
 
-public class FeatureExtractionUtilities {
+public final class FeatureExtractionUtilities {
 
     private static final String FEATURES_DIRECTORY = Tornado.getProperty("tornado.features.dump.dir", "");
     private static final String LOOKUP_BUFFER_ADDRESS_NAME = "kernellookupBufferAddress";
@@ -62,9 +59,11 @@ public class FeatureExtractionUtilities {
             String json = jsonHandler.createJSon(encodeFeatureMap(entry), fullName, deviceContext);
             if (!FEATURES_DIRECTORY.isEmpty()) {
                 File fileLog = new File(FEATURES_DIRECTORY);
-                try (FileWriter file = new FileWriter(fileLog, RuntimeUtilities.ifFileExists(fileLog))) {
-                    file.write(json);
-                    file.write("\n");
+                try {
+                    try (FileWriter file = new FileWriter(fileLog, fileLog.exists())) {
+                        file.write(json);
+                        file.write("\n");
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

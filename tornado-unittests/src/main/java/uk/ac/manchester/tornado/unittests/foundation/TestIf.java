@@ -17,16 +17,14 @@
  */
 package uk.ac.manchester.tornado.unittests.foundation;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-
-import java.util.Arrays;
 
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -43,11 +41,11 @@ public class TestIf extends TornadoTestBase {
     @Test
     public void test01() {
         final int numElements = 256;
-        int[] a = new int[numElements];
-        int[] expectedResult = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray expectedResult = new IntArray(numElements);
 
-        Arrays.fill(a, 0);
-        Arrays.fill(expectedResult, 50);
+        a.init(0);
+        expectedResult.init(50);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestKernels::testIfInt, a) //
@@ -57,17 +55,17 @@ public class TestIf extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        assertEquals(50, a[0]);
+        assertEquals(50, a.get(0));
     }
 
     @Test
     public void test02() {
         final int numElements = 256;
-        int[] a = new int[numElements];
-        int[] expectedResult = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray expectedResult = new IntArray(numElements);
 
-        Arrays.fill(a, 0);
-        Arrays.fill(expectedResult, 50);
+        a.init(0);
+        expectedResult.init(50);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestKernels::testIfInt2, a) //
@@ -77,17 +75,19 @@ public class TestIf extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        assertArrayEquals(expectedResult, a);
+        for (int i = 0; i < numElements; i++) {
+            assertEquals(expectedResult.get(i), a.get(i));
+        }
     }
 
     @Test
     public void test03() {
         final int numElements = 256;
-        int[] a = new int[numElements];
-        int[] expectedResult = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray expectedResult = new IntArray(numElements);
 
-        Arrays.fill(a, -1);
-        Arrays.fill(expectedResult, 100);
+        a.init(-1);
+        expectedResult.init(100);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestKernels::testIfInt3, a) //
@@ -97,17 +97,19 @@ public class TestIf extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        assertArrayEquals(expectedResult, a);
+        for (int i = 0; i < numElements; i++) {
+            assertEquals(expectedResult.get(i), a.get(i));
+        }
     }
 
     @Test
     public void test04() {
         final int numElements = 256;
-        int[] a = new int[numElements];
-        int[] expectedResult = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray expectedResult = new IntArray(numElements);
 
-        Arrays.fill(a, -1);
-        Arrays.fill(expectedResult, 100);
+        a.init(-1);
+        expectedResult.init(100);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestKernels::testIfInt4, a) //
@@ -117,17 +119,19 @@ public class TestIf extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        assertArrayEquals(expectedResult, a);
+        for (int i = 0; i < numElements; i++) {
+            assertEquals(expectedResult.get(i), a.get(i));
+        }
     }
 
     @Test
     public void test05() {
         final int numElements = 256;
-        int[] a = new int[numElements];
-        int[] expectedResult = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray expectedResult = new IntArray(numElements);
 
-        Arrays.fill(a, 0);
-        Arrays.fill(expectedResult, 50);
+        a.init(0);
+        expectedResult.init(50);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestKernels::testIfInt5, a) //
@@ -137,17 +141,19 @@ public class TestIf extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        assertArrayEquals(expectedResult, a);
+        for (int i = 0; i < numElements; i++) {
+            assertEquals(expectedResult.get(i), a.get(i));
+        }
     }
 
     @Test
     public void test06() {
         final int numElements = 256;
-        int[] a = new int[numElements];
-        int[] expectedResult = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray expectedResult = new IntArray(numElements);
 
-        Arrays.fill(a, 0);
-        Arrays.fill(expectedResult, 100);
+        a.init(0);
+        expectedResult.init(100);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("t0", TestKernels::testIfInt6, a) //
@@ -157,7 +163,9 @@ public class TestIf extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        assertArrayEquals(expectedResult, a);
+        for (int i = 0; i < numElements; i++) {
+            assertEquals(expectedResult.get(i), a.get(i));
+        }
     }
 
 }

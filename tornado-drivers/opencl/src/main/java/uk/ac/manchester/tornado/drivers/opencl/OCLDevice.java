@@ -14,7 +14,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -177,7 +177,7 @@ public class OCLDevice implements OCLTargetDevice {
 
     public boolean isDeviceAvailable() {
         queryOpenCLAPI(OCLDeviceInfo.CL_DEVICE_AVAILABLE.getValue());
-        return buffer.getInt() == 1;
+        return (buffer.get() == 1);
     }
 
     @Override
@@ -421,7 +421,7 @@ public class OCLDevice implements OCLTargetDevice {
             return deviceEndianLittle == CL_TRUE;
         }
         getDeviceEndianLittle();
-        return deviceEndianLittle == CL_TRUE;
+        return (deviceEndianLittle == CL_TRUE);
     }
 
     @Override
@@ -471,8 +471,8 @@ public class OCLDevice implements OCLTargetDevice {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("id=0x%x, deviceName=%s, type=%s, available=%s\n", id, getDeviceName(), getDeviceType().toString(), isDeviceAvailable()));
         sb.append(String.format("Freq=%s, max compute units=%d\n", humanReadableFreq(getDeviceMaxClockFrequency()), getDeviceMaxComputeUnits()));
-        sb.append(String.format("Global mem. size=%s, local mem. size=%s\n", RuntimeUtilities.humanReadableByteCount(getDeviceGlobalMemorySize(), false),
-                humanReadableByteCount(getDeviceLocalMemorySize(), false)));
+        sb.append(String.format("Global mem. size=%s, local mem. size=%s\n", RuntimeUtilities.humanReadableByteCount(getDeviceGlobalMemorySize(), false), humanReadableByteCount(
+                getDeviceLocalMemorySize(), false)));
         sb.append(String.format("Extensions:\n"));
         for (String extension : getDeviceExtensions().split(" ")) {
             sb.append("\t" + extension + "\n");

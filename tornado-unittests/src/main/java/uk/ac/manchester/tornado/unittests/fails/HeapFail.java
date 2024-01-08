@@ -31,7 +31,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 
 /**
  * <p>
- * How to run?
+ * How to run.
  * </p>
  * <code>
  *     tornado-test -V uk.ac.manchester.tornado.unittests.fails.HeapFail
@@ -46,7 +46,7 @@ public class HeapFail {
     }
 
     /**
-     * How to run:
+     * How to run.
      *
      * <code>
      * $ tornado-test -V --fast -J"-Dtornado.device.memory=1MB"

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,16 +28,19 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.types.Int2;
-import uk.ac.manchester.tornado.api.collections.types.Int3;
-import uk.ac.manchester.tornado.api.collections.types.Int4;
-import uk.ac.manchester.tornado.api.collections.types.Int8;
-import uk.ac.manchester.tornado.api.collections.types.VectorInt;
-import uk.ac.manchester.tornado.api.collections.types.VectorInt2;
-import uk.ac.manchester.tornado.api.collections.types.VectorInt3;
-import uk.ac.manchester.tornado.api.collections.types.VectorInt4;
-import uk.ac.manchester.tornado.api.collections.types.VectorInt8;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt16;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt2;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt3;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt4;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt8;
+import uk.ac.manchester.tornado.api.types.vectors.Int16;
+import uk.ac.manchester.tornado.api.types.vectors.Int2;
+import uk.ac.manchester.tornado.api.types.vectors.Int3;
+import uk.ac.manchester.tornado.api.types.vectors.Int4;
+import uk.ac.manchester.tornado.api.types.vectors.Int8;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -45,7 +48,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.vectortypes.TestInts
+ * tornado-test -V uk.ac.manchester.tornado.unittests.vectortypes.TestInts
  * </code>
  */
 public class TestInts extends TornadoTestBase {
@@ -54,6 +57,215 @@ public class TestInts extends TornadoTestBase {
         Int2 i2 = Int2.add(a, b);
         int r = i2.getX() + i2.getY();
         results.set(0, r);
+    }
+
+    private static void addInt3(Int3 a, Int3 b, VectorInt results) {
+        Int3 i3 = Int3.add(a, b);
+        int r = i3.getX() + i3.getY() + i3.getZ();
+        results.set(0, r);
+    }
+
+    private static void addInt8(Int8 a, Int8 b, VectorInt results) {
+        Int8 i8 = Int8.add(a, b);
+        int r = i8.getS0() + i8.getS1() + i8.getS2() + i8.getS3() + i8.getS4() + i8.getS5() + i8.getS6() + i8.getS7();
+        results.set(0, r);
+    }
+
+    private static void addInt4(Int4 a, Int4 b, VectorInt results) {
+        Int4 i4 = Int4.add(a, b);
+        int r = i4.getX() + i4.getY() + i4.getZ() + i4.getW();
+        results.set(0, r);
+    }
+
+    private static void addIntVectors(IntArray a, IntArray b, IntArray result) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            result.set(i, a.get(i) + b.get(i));
+        }
+    }
+
+    public static void dotProductFunctionMap(IntArray a, IntArray b, IntArray results) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            results.set(i, a.get(i) + b.get(i));
+
+        }
+    }
+
+    public static void dotProductFunctionReduce(IntArray input, IntArray results) {
+        int sum = 0;
+        for (int i = 0; i < input.getSize(); i++) {
+            sum += input.get(i);
+        }
+        results.set(0, sum);
+    }
+
+    public static void addVectorInt2(VectorInt2 a, VectorInt2 b, VectorInt2 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int2.add(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void subVectorInt2(VectorInt2 a, VectorInt2 b, VectorInt2 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int2.sub(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void divVectorInt2(VectorInt2 a, VectorInt2 b, VectorInt2 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int2.div(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void addVectorInt3(VectorInt3 a, VectorInt3 b, VectorInt3 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int3.add(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void subVectorInt3(VectorInt3 a, VectorInt3 b, VectorInt3 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int3.sub(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void divVectorInt3(VectorInt3 a, VectorInt3 b, VectorInt3 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int3.div(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void addVectorInt4(VectorInt4 a, VectorInt4 b, VectorInt4 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int4.add(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void subVectorInt4(VectorInt4 a, VectorInt4 b, VectorInt4 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int4.sub(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void divVectorInt4(VectorInt4 a, VectorInt4 b, VectorInt4 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int4.div(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void addVectorInt8(VectorInt8 a, VectorInt8 b, VectorInt8 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int8.add(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void addVectorInt16(VectorInt16 a, VectorInt16 b, VectorInt16 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int16.add(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void subVectorInt8(VectorInt8 a, VectorInt8 b, VectorInt8 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int8.sub(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void divVectorInt8(VectorInt8 a, VectorInt8 b, VectorInt8 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Int8.div(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void testPrivateVectorInt2(VectorInt2 output) {
+        VectorInt2 vectorInt2 = new VectorInt2(output.getLength());
+
+        for (int i = 0; i < vectorInt2.getLength(); i++) {
+            vectorInt2.set(i, new Int2(i, i));
+        }
+
+        Int2 sum = new Int2(0, 0);
+
+        for (int i = 0; i < vectorInt2.getLength(); i++) {
+            Int2 f = vectorInt2.get(i);
+            sum = Int2.add(f, sum);
+        }
+
+        output.set(0, sum);
+    }
+
+    public static void testPrivateVectorInt4(VectorInt4 output) {
+        VectorInt4 vectorInt4 = new VectorInt4(output.getLength());
+
+        for (int i = 0; i < vectorInt4.getLength(); i++) {
+            vectorInt4.set(i, new Int4(i, i, i, i));
+        }
+
+        Int4 sum = new Int4(0, 0, 0, 0);
+
+        for (int i = 0; i < vectorInt4.getLength(); i++) {
+            Int4 f = vectorInt4.get(i);
+            sum = Int4.add(f, sum);
+        }
+
+        output.set(0, sum);
+    }
+
+    public static void testPrivateVectorInt8(VectorInt8 output) {
+        VectorInt8 vectorInt8 = new VectorInt8(output.getLength());
+
+        for (int i = 0; i < vectorInt8.getLength(); i++) {
+            vectorInt8.set(i, new Int8(i, i, i, i, i, i, i, i));
+        }
+
+        Int8 sum = new Int8(0, 0, 0, 0, 0, 0, 0, 0);
+
+        for (int i = 0; i < vectorInt8.getLength(); i++) {
+            Int8 f = vectorInt8.get(i);
+            sum = Int8.add(f, sum);
+        }
+
+        output.set(0, sum);
+    }
+
+    private static void vectorComputation01(VectorInt2 value, VectorInt2 output) {
+        for (@Parallel int i = 0; i < output.getLength(); i++) {
+            Int2 int2 = new Int2();
+            int2.setX(value.get(i).getX() + value.get(i).getY());
+            int2.setY(value.get(i).getX() * 2);
+            output.set(i, int2);
+        }
+    }
+
+    private static void vectorComputation02(VectorInt3 value, VectorInt3 output) {
+        for (@Parallel int i = 0; i < output.getLength(); i++) {
+            Int3 int3 = new Int3();
+            int3.setX(value.get(i).getX() + value.get(i).getY());
+            int3.setY(value.get(i).getZ() * 2);
+            output.set(i, int3);
+        }
+    }
+
+    private static Int3 vectorComputation03(final Int4 value) {
+        Int3 output = new Int3();
+        output.setX(value.getX() + value.getY());
+        output.setY(value.getY());
+        output.setZ(value.getW());
+        return output;
+    }
+
+    private static void vectorComputation03(VectorInt4 value, VectorInt3 output) {
+        for (@Parallel int i = 0; i < output.getLength(); i++) {
+            output.set(i, vectorComputation03(value.get(i)));
+        }
+    }
+
+    private static void vectorComputation04(VectorInt8 value, VectorInt2 output) {
+        for (@Parallel int i = 0; i < output.getLength(); i++) {
+            Int2 int2 = new Int2();
+            int2.setX(value.get(i).getS0() + value.get(i).getS1());
+            int2.setY(value.get(i).getS1());
+            output.set(i, int2);
+        }
     }
 
     @Test
@@ -77,12 +289,6 @@ public class TestInts extends TornadoTestBase {
         }
     }
 
-    private static void addInt3(Int3 a, Int3 b, VectorInt results) {
-        Int3 i3 = Int3.add(a, b);
-        int r = i3.getX() + i3.getY() + i3.getZ();
-        results.set(0, r);
-    }
-
     @Test
     public void testAddInt3() {
         int size = 1;
@@ -102,12 +308,6 @@ public class TestInts extends TornadoTestBase {
         for (int i = 0; i < size; i++) {
             assertEquals(12, output.get(i));
         }
-    }
-
-    private static void addInt8(Int8 a, Int8 b, VectorInt results) {
-        Int8 i8 = Int8.add(a, b);
-        int r = i8.getS0() + i8.getS1() + i8.getS2() + i8.getS3() + i8.getS4() + i8.getS5() + i8.getS6() + i8.getS7();
-        results.set(0, r);
     }
 
     @Test
@@ -131,12 +331,6 @@ public class TestInts extends TornadoTestBase {
         }
     }
 
-    private static void addInt4(Int4 a, Int4 b, VectorInt results) {
-        Int4 i4 = Int4.add(a, b);
-        int r = i4.getX() + i4.getY() + i4.getZ() + i4.getW();
-        results.set(0, r);
-    }
-
     @Test
     public void testAddInt4() {
         int size = 1;
@@ -158,24 +352,18 @@ public class TestInts extends TornadoTestBase {
         }
     }
 
-    private static void addIntVectors(int[] a, int[] b, int[] result) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            result[i] = a[i] + b[i];
-        }
-    }
-
     @Test
     public void testAddInt() {
 
         int size = 8;
 
-        int[] a = new int[size];
-        int[] b = new int[size];
-        int[] output = new int[size];
+        IntArray a = new IntArray(size);
+        IntArray b = new IntArray(size);
+        IntArray output = new IntArray(size);
 
         for (int i = 0; i < size; i++) {
-            a[i] = i;
-            b[i] = i;
+            a.set(i, i);
+            b.set(i, i);
         }
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -188,22 +376,8 @@ public class TestInts extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < size; i++) {
-            assertEquals(i + i, output[i]);
+            assertEquals(i + i, output.get(i));
         }
-    }
-
-    public static void dotProductFunctionMap(int[] a, int[] b, int[] results) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            results[i] = a[i] * b[i];
-        }
-    }
-
-    public static void dotProductFunctionReduce(int[] input, int[] results) {
-        int sum = 0;
-        for (int i = 0; i < input.length; i++) {
-            sum += input[i];
-        }
-        results[0] = sum;
     }
 
     @Test
@@ -211,18 +385,18 @@ public class TestInts extends TornadoTestBase {
 
         int size = 8;
 
-        int[] a = new int[size];
-        int[] b = new int[size];
-        int[] outputMap = new int[size];
-        int[] outputReduce = new int[1];
+        IntArray a = new IntArray(size);
+        IntArray b = new IntArray(size);
+        IntArray outputMap = new IntArray(size);
+        IntArray outputReduce = new IntArray(1);
 
-        int[] seqMap = new int[size];
-        int[] seqReduce = new int[1];
+        IntArray seqMap = new IntArray(size);
+        IntArray seqReduce = new IntArray(1);
 
         Random r = new Random();
         for (int i = 0; i < size; i++) {
-            a[i] = r.nextInt(1000);
-            b[i] = r.nextInt(1000);
+            a.set(i, r.nextInt(1000));
+            b.set(i, r.nextInt(1000));
         }
 
         // Sequential computation
@@ -239,13 +413,7 @@ public class TestInts extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        assertEquals(seqReduce[0], outputReduce[0]);
-    }
-
-    public static void addVectorInt2(VectorInt2 a, VectorInt2 b, VectorInt2 results) {
-        for (@Parallel int i = 0; i < a.getLength(); i++) {
-            results.set(i, Int2.add(a.get(i), b.get(i)));
-        }
+        assertEquals(seqReduce.get(0), outputReduce.get(0));
     }
 
     @Test
@@ -274,12 +442,6 @@ public class TestInts extends TornadoTestBase {
             Int2 sequential = new Int2(i + (size - i), i + (size - i));
             assertEquals(sequential.getX(), output.get(i).getX());
             assertEquals(sequential.getY(), output.get(i).getY());
-        }
-    }
-
-    public static void subVectorInt2(VectorInt2 a, VectorInt2 b, VectorInt2 results) {
-        for (@Parallel int i = 0; i < a.getLength(); i++) {
-            results.set(i, Int2.sub(a.get(i), b.get(i)));
         }
     }
 
@@ -312,12 +474,6 @@ public class TestInts extends TornadoTestBase {
         }
     }
 
-    public static void divVectorInt2(VectorInt2 a, VectorInt2 b, VectorInt2 results) {
-        for (@Parallel int i = 0; i < a.getLength(); i++) {
-            results.set(i, Int2.div(a.get(i), b.get(i)));
-        }
-    }
-
     @Test
     public void testVectorDivInt2() {
         int size = 16;
@@ -344,12 +500,6 @@ public class TestInts extends TornadoTestBase {
             Int2 sequential = new Int2(i / (size - i), i / (size - i));
             assertEquals(sequential.getX(), output.get(i).getX());
             assertEquals(sequential.getY(), output.get(i).getY());
-        }
-    }
-
-    public static void addVectorInt3(VectorInt3 a, VectorInt3 b, VectorInt3 results) {
-        for (@Parallel int i = 0; i < a.getLength(); i++) {
-            results.set(i, Int3.add(a.get(i), b.get(i)));
         }
     }
 
@@ -383,12 +533,6 @@ public class TestInts extends TornadoTestBase {
         }
     }
 
-    public static void subVectorInt3(VectorInt3 a, VectorInt3 b, VectorInt3 results) {
-        for (@Parallel int i = 0; i < a.getLength(); i++) {
-            results.set(i, Int3.sub(a.get(i), b.get(i)));
-        }
-    }
-
     @Test
     public void testVectorSubInt3() {
         int size = 8;
@@ -419,12 +563,6 @@ public class TestInts extends TornadoTestBase {
         }
     }
 
-    public static void divVectorInt3(VectorInt3 a, VectorInt3 b, VectorInt3 results) {
-        for (@Parallel int i = 0; i < a.getLength(); i++) {
-            results.set(i, Int3.div(a.get(i), b.get(i)));
-        }
-    }
-
     @Test
     public void testVectorDivInt3() {
         int size = 8;
@@ -452,12 +590,6 @@ public class TestInts extends TornadoTestBase {
             assertEquals(sequential.getX(), output.get(i).getX());
             assertEquals(sequential.getY(), output.get(i).getY());
             assertEquals(sequential.getZ(), output.get(i).getZ());
-        }
-    }
-
-    public static void addVectorInt4(VectorInt4 a, VectorInt4 b, VectorInt4 results) {
-        for (@Parallel int i = 0; i < a.getLength(); i++) {
-            results.set(i, Int4.add(a.get(i), b.get(i)));
         }
     }
 
@@ -492,12 +624,6 @@ public class TestInts extends TornadoTestBase {
         }
     }
 
-    public static void subVectorInt4(VectorInt4 a, VectorInt4 b, VectorInt4 results) {
-        for (@Parallel int i = 0; i < a.getLength(); i++) {
-            results.set(i, Int4.sub(a.get(i), b.get(i)));
-        }
-    }
-
     @Test
     public void testVectorSubInt4() {
         int size = 8;
@@ -529,12 +655,6 @@ public class TestInts extends TornadoTestBase {
         }
     }
 
-    public static void divVectorInt4(VectorInt4 a, VectorInt4 b, VectorInt4 results) {
-        for (@Parallel int i = 0; i < a.getLength(); i++) {
-            results.set(i, Int4.div(a.get(i), b.get(i)));
-        }
-    }
-
     @Test
     public void testVectorDivInt4() {
         int size = 8;
@@ -563,12 +683,6 @@ public class TestInts extends TornadoTestBase {
             assertEquals(sequential.getY(), output.get(i).getY());
             assertEquals(sequential.getZ(), output.get(i).getZ());
             assertEquals(sequential.getW(), output.get(i).getW());
-        }
-    }
-
-    public static void addVectorInt8(VectorInt8 a, VectorInt8 b, VectorInt8 results) {
-        for (@Parallel int i = 0; i < a.getLength(); i++) {
-            results.set(i, Int8.add(a.get(i), b.get(i)));
         }
     }
 
@@ -607,9 +721,48 @@ public class TestInts extends TornadoTestBase {
         }
     }
 
-    public static void subVectorInt8(VectorInt8 a, VectorInt8 b, VectorInt8 results) {
-        for (@Parallel int i = 0; i < a.getLength(); i++) {
-            results.set(i, Int8.sub(a.get(i), b.get(i)));
+    @Test
+    public void testVectorAddInt16() {
+        int size = 256;
+
+        VectorInt16 a = new VectorInt16(size);
+        VectorInt16 b = new VectorInt16(size);
+        VectorInt16 output = new VectorInt16(size);
+
+        for (int i = 0; i < size; i++) {
+            a.set(i, new Int16(i, i, i, i, i, i, i, i, i, i, i, i, i, i, i, i));
+            b.set(i, new Int16(size - i, size - i, size - i, size, size - i, size - i, size - i, size, size - i, size - i, size - i, size, size - i, size - i, size - i, size));
+        }
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
+                .task("t0", TestInts::addVectorInt16, a, b, output) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlan.execute();
+
+        for (int i = 0; i < size; i++) {
+            Int16 sequential = new Int16(i + (size - i), i + (size - i), i + (size - i), i + size, i + (size - i), i + (size - i), i + (size - i), i + size, i + (size - i), i + (size - i),
+                    i + (size - i), i + size, i + (size - i), i + (size - i), i + (size - i), i + size);
+
+            assertEquals(sequential.getS0(), output.get(i).getS0());
+            assertEquals(sequential.getS1(), output.get(i).getS1());
+            assertEquals(sequential.getS2(), output.get(i).getS2());
+            assertEquals(sequential.getS3(), output.get(i).getS3());
+            assertEquals(sequential.getS4(), output.get(i).getS4());
+            assertEquals(sequential.getS5(), output.get(i).getS5());
+            assertEquals(sequential.getS6(), output.get(i).getS6());
+            assertEquals(sequential.getS7(), output.get(i).getS7());
+            assertEquals(sequential.getS8(), output.get(i).getS8());
+            assertEquals(sequential.getS9(), output.get(i).getS9());
+            assertEquals(sequential.getS10(), output.get(i).getS10());
+            assertEquals(sequential.getS11(), output.get(i).getS11());
+            assertEquals(sequential.getS12(), output.get(i).getS12());
+            assertEquals(sequential.getS13(), output.get(i).getS13());
+            assertEquals(sequential.getS14(), output.get(i).getS14());
+            assertEquals(sequential.getS15(), output.get(i).getS15());
         }
     }
 
@@ -648,12 +801,6 @@ public class TestInts extends TornadoTestBase {
         }
     }
 
-    public static void divVectorInt8(VectorInt8 a, VectorInt8 b, VectorInt8 results) {
-        for (@Parallel int i = 0; i < a.getLength(); i++) {
-            results.set(i, Int8.div(a.get(i), b.get(i)));
-        }
-    }
-
     @Test
     public void testVectorDivInt8() {
         int size = 256;
@@ -689,23 +836,6 @@ public class TestInts extends TornadoTestBase {
         }
     }
 
-    public static void testPrivateVectorInt2(VectorInt2 output) {
-        VectorInt2 vectorInt2 = new VectorInt2(output.getLength());
-
-        for (int i = 0; i < vectorInt2.getLength(); i++) {
-            vectorInt2.set(i, new Int2(i, i));
-        }
-
-        Int2 sum = new Int2(0, 0);
-
-        for (int i = 0; i < vectorInt2.getLength(); i++) {
-            Int2 f = vectorInt2.get(i);
-            sum = Int2.add(f, sum);
-        }
-
-        output.set(0, sum);
-    }
-
     @Test
     public void privateVectorInt2() {
         int size = 16;
@@ -726,23 +856,6 @@ public class TestInts extends TornadoTestBase {
             assertEquals(sequentialOutput.get(i).getX(), tornadoOutput.get(i).getX());
             assertEquals(sequentialOutput.get(i).getY(), tornadoOutput.get(i).getY());
         }
-    }
-
-    public static void testPrivateVectorInt4(VectorInt4 output) {
-        VectorInt4 vectorInt4 = new VectorInt4(output.getLength());
-
-        for (int i = 0; i < vectorInt4.getLength(); i++) {
-            vectorInt4.set(i, new Int4(i, i, i, i));
-        }
-
-        Int4 sum = new Int4(0, 0, 0, 0);
-
-        for (int i = 0; i < vectorInt4.getLength(); i++) {
-            Int4 f = vectorInt4.get(i);
-            sum = Int4.add(f, sum);
-        }
-
-        output.set(0, sum);
     }
 
     @Test
@@ -767,23 +880,6 @@ public class TestInts extends TornadoTestBase {
             assertEquals(sequentialOutput.get(i).getZ(), tornadoOutput.get(i).getZ());
             assertEquals(sequentialOutput.get(i).getW(), tornadoOutput.get(i).getW());
         }
-    }
-
-    public static void testPrivateVectorInt8(VectorInt8 output) {
-        VectorInt8 vectorInt8 = new VectorInt8(output.getLength());
-
-        for (int i = 0; i < vectorInt8.getLength(); i++) {
-            vectorInt8.set(i, new Int8(i, i, i, i, i, i, i, i));
-        }
-
-        Int8 sum = new Int8(0, 0, 0, 0, 0, 0, 0, 0);
-
-        for (int i = 0; i < vectorInt8.getLength(); i++) {
-            Int8 f = vectorInt8.get(i);
-            sum = Int8.add(f, sum);
-        }
-
-        output.set(0, sum);
     }
 
     @Test
@@ -811,15 +907,6 @@ public class TestInts extends TornadoTestBase {
             assertEquals(sequentialOutput.get(i).getS5(), tornadoOutput.get(i).getS5());
             assertEquals(sequentialOutput.get(i).getS6(), tornadoOutput.get(i).getS6());
             assertEquals(sequentialOutput.get(i).getS7(), tornadoOutput.get(i).getS7());
-        }
-    }
-
-    private static void vectorComputation01(VectorInt2 value, VectorInt2 output) {
-        for (@Parallel int i = 0; i < output.getLength(); i++) {
-            Int2 int2 = new Int2();
-            int2.setX(value.get(i).getX() + value.get(i).getY());
-            int2.setY(value.get(i).getX() * 2);
-            output.set(i, int2);
         }
     }
 
@@ -853,15 +940,6 @@ public class TestInts extends TornadoTestBase {
         for (int i = 0; i < size; i++) {
             assertEquals(sequentialOutput.get(i).getX(), tornadoOutput.get(i).getX());
             assertEquals(sequentialOutput.get(i).getY(), tornadoOutput.get(i).getY());
-        }
-    }
-
-    private static void vectorComputation02(VectorInt3 value, VectorInt3 output) {
-        for (@Parallel int i = 0; i < output.getLength(); i++) {
-            Int3 int3 = new Int3();
-            int3.setX(value.get(i).getX() + value.get(i).getY());
-            int3.setY(value.get(i).getZ() * 2);
-            output.set(i, int3);
         }
     }
 
@@ -899,20 +977,6 @@ public class TestInts extends TornadoTestBase {
         }
     }
 
-    private static Int3 vectorComputation03(final Int4 value) {
-        Int3 output = new Int3();
-        output.setX(value.getX() + value.getY());
-        output.setY(value.getY());
-        output.setZ(value.getW());
-        return output;
-    }
-
-    private static void vectorComputation03(VectorInt4 value, VectorInt3 output) {
-        for (@Parallel int i = 0; i < output.getLength(); i++) {
-            output.set(i, vectorComputation03(value.get(i)));
-        }
-    }
-
     @Test
     public void testInternalSetMethod03() {
         final int size = 16;
@@ -944,15 +1008,6 @@ public class TestInts extends TornadoTestBase {
             assertEquals(sequentialOutput.get(i).getX(), tornadoOutput.get(i).getX());
             assertEquals(sequentialOutput.get(i).getY(), tornadoOutput.get(i).getY());
             assertEquals(sequentialOutput.get(i).getZ(), tornadoOutput.get(i).getZ());
-        }
-    }
-
-    private static void vectorComputation04(VectorInt8 value, VectorInt2 output) {
-        for (@Parallel int i = 0; i < output.getLength(); i++) {
-            Int2 int2 = new Int2();
-            int2.setX(value.get(i).getS0() + value.get(i).getS1());
-            int2.setY(value.get(i).getS1());
-            output.set(i, int2);
         }
     }
 

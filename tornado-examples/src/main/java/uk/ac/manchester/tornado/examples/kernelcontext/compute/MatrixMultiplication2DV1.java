@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,6 +26,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
@@ -42,32 +43,32 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  * How to run:
  * </p>
  * <code>
- *     $ tornado --debug -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.compute.MatrixMultiplication2DV1
+ * $ tornado --debug -m tornado.examples/uk.ac.manchester.tornado.examples.kernelcontext.compute.MatrixMultiplication2DV1
  * </code>
  */
 public class MatrixMultiplication2DV1 {
-
+    // CHECKSTYLE:OFF
     private static final int WARMING_UP_ITERATIONS = 15;
 
-    public static void matrixMultiplication(KernelContext context, final float[] A, final float[] B, final float[] C, final int size) {
+    public static void matrixMultiplication(KernelContext context, final FloatArray A, final FloatArray B, final FloatArray C, final int size) {
         int globalRow = context.globalIdx;
         int globalCol = context.globalIdy;
         float sum = 0;
 
         for (int k = 0; k < size; k++) {
-            sum += A[(k * size) + globalRow] * B[(globalCol * size) + k];
+            sum += A.get((k * size) + globalRow) * B.get((globalCol * size) + k);
         }
-        C[(globalCol * size) + globalRow] = sum;
+        C.set((globalCol * size) + globalRow, sum);
     }
 
-    private static void matrixMultiplication(final float[] A, final float[] B, final float[] C, final int size) {
+    private static void matrixMultiplication(final FloatArray A, final FloatArray B, final FloatArray C, final int size) {
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 float sum = 0.0f;
                 for (int k = 0; k < size; k++) {
-                    sum += A[(i * size) + k] * B[(k * size) + j];
+                    sum += A.get((i * size) + k) * B.get((k * size) + j);
                 }
-                C[(i * size) + j] = sum;
+                C.set((i * size) + j, sum);
             }
         }
     }
@@ -84,14 +85,14 @@ public class MatrixMultiplication2DV1 {
 
         System.out.println("Computing MxM of " + size + "x" + size);
 
-        float[] matrixA = new float[size * size];
-        float[] matrixB = new float[size * size];
-        float[] matrixC = new float[size * size];
-        float[] resultSeq = new float[size * size];
+        FloatArray matrixA = new FloatArray(size * size);
+        FloatArray matrixB = new FloatArray(size * size);
+        FloatArray matrixC = new FloatArray(size * size);
+        FloatArray resultSeq = new FloatArray(size * size);
 
         IntStream.range(0, size * size).parallel().forEach(idx -> {
-            matrixA[idx] = 2.5f;
-            matrixB[idx] = 3.5f;
+            matrixA.set(idx, 2.5f);
+            matrixB.set(idx, 3.5f);
         });
 
         WorkerGrid workerGrid = new WorkerGrid2D(size, size);
@@ -147,10 +148,10 @@ public class MatrixMultiplication2DV1 {
         System.out.println("\tVerification " + verify(matrixC, resultSeq, size));
     }
 
-    private static boolean verify(float[] par, float[] seq, int size) {
+    private static boolean verify(FloatArray par, FloatArray seq, int size) {
         boolean check = true;
         for (int i = 0; i < size * size; i++) {
-            if (Math.abs(par[i] - seq[i]) > 0.01f) {
+            if (Math.abs(par.get(i) - seq.get(i)) > 0.01f) {
                 check = false;
                 break;
             }
@@ -158,3 +159,4 @@ public class MatrixMultiplication2DV1 {
         return check;
     }
 }
+// CHECKSTYLE:ON

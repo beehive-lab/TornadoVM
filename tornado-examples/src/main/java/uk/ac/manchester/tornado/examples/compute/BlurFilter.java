@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,13 +35,13 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
- * It applies a Blur filter to an input image. Algorithm taken from CUDA course
- * CS344 in Udacity.
+ * It applies a Blur filter to an input image. Algorithm taken from CUDA course CS344 in Udacity.
  * <p>
- * Example borrowed from the Marawacc parallel programming framework with the
- * permission from the author.
+ * Example borrowed from the Marawacc parallel programming framework with the permission from the author.
  * </p>
  * <p>
  * How to run?
@@ -49,32 +49,38 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  * <code>
  * $ tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.compute.BlurFilter
  * </code>
- *
  */
 public class BlurFilter {
+    // CHECKSTYLE:OFF
+
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Blur Image Filter Example with TornadoVM");
+
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent event) {
+                System.exit(0);
+            }
+        });
+
+        frame.add(new BlurFilterImage());
+        frame.pack();
+        frame.setVisible(true);
+    }
 
     public static class BlurFilterImage extends Component {
 
-        private BufferedImage image;
-
         public static final boolean PARALLEL_COMPUTATION = Boolean.parseBoolean(System.getProperty("run:parallel", "True"));
         public static final int FILTER_WIDTH = 31;
-
         private static final String IMAGE_FILE = "/tmp/image.jpg";
+        private BufferedImage image;
 
         public BlurFilterImage() {
             loadImage();
         }
 
-        public void loadImage() {
-            try {
-                image = ImageIO.read(new File(IMAGE_FILE));
-            } catch (IOException e) {
-                throw new RuntimeException("Input file not found: " + IMAGE_FILE);
-            }
-        }
+        private static void channelConvolutionSequential(IntArray rgbChannel, IntArray channelBlurred, final int numRows, final int numCols, FloatArray filter, final int filterWidth) {
 
-        private static void channelConvolutionSequential(int[] rgbChannel, int[] channelBlurred, final int numRows, final int numCols, float[] filter, final int filterWidth) {
             // Dealing with an even width filter is trickier
             assert (filterWidth % 2 == 1);
 
@@ -91,18 +97,18 @@ public class BlurFilter {
                             int image_r = Math.min(Math.max(r + filter_r, 0), (numRows - 1));
                             int image_c = Math.min(Math.max(c + filter_c, 0), (numCols - 1));
 
-                            float image_value = (rgbChannel[image_r * numCols + image_c]);
-                            float filter_value = filter[(filter_r + filterWidth / 2) * filterWidth + filter_c + filterWidth / 2];
+                            float image_value = (rgbChannel.get(image_r * numCols + image_c));
+                            float filter_value = filter.get((filter_r + filterWidth / 2) * filterWidth + filter_c + filterWidth / 2);
 
                             result += image_value * filter_value;
                         }
                     }
-                    channelBlurred[r * numCols + c] = result > 255 ? 255 : (int) result;
+                    channelBlurred.set(r * numCols + c, result > 255 ? 255 : (int) result);
                 }
             }
         }
 
-        private static void compute(int[] rgbChannel, int[] channelBlurred, final int numRows, final int numCols, float[] filter, final int filterWidth) {
+        private static void compute(IntArray rgbChannel, IntArray channelBlurred, final int numRows, final int numCols, FloatArray filter, final int filterWidth) {
             // For every pixel in the image
             assert (filterWidth % 2 == 1);
 
@@ -113,13 +119,21 @@ public class BlurFilter {
                         for (int filter_c = -filterWidth / 2; filter_c <= filterWidth / 2; filter_c++) {
                             int image_r = Math.min(Math.max(r + filter_r, 0), (numRows - 1));
                             int image_c = Math.min(Math.max(c + filter_c, 0), (numCols - 1));
-                            float image_value = (rgbChannel[image_r * numCols + image_c]);
-                            float filter_value = filter[(filter_r + filterWidth / 2) * filterWidth + filter_c + filterWidth / 2];
+                            float image_value = (rgbChannel.get(image_r * numCols + image_c));
+                            float filter_value = filter.get((filter_r + filterWidth / 2) * filterWidth + filter_c + filterWidth / 2);
                             result += image_value * filter_value;
                         }
                     }
-                    channelBlurred[r * numCols + c] = result > 255 ? 255 : (int) result;
+                    channelBlurred.set(r * numCols + c, result > 255 ? 255 : (int) result);
                 }
+            }
+        }
+
+        public void loadImage() {
+            try {
+                image = ImageIO.read(new File(IMAGE_FILE));
+            } catch (IOException e) {
+                throw new RuntimeException("Input file not found: " + IMAGE_FILE);
             }
         }
 
@@ -128,19 +142,19 @@ public class BlurFilter {
             int w = image.getWidth();
             int h = image.getHeight();
 
-            int[] redChannel = new int[w * h];
-            int[] greenChannel = new int[w * h];
-            int[] blueChannel = new int[w * h];
-            int[] alphaChannel = new int[w * h];
+            IntArray redChannel = new IntArray(w * h);
+            IntArray greenChannel = new IntArray(w * h);
+            IntArray blueChannel = new IntArray(w * h);
+            IntArray alphaChannel = new IntArray(w * h);
 
-            int[] redFilter = new int[w * h];
-            int[] greenFilter = new int[w * h];
-            int[] blueFilter = new int[w * h];
+            IntArray redFilter = new IntArray(w * h);
+            IntArray greenFilter = new IntArray(w * h);
+            IntArray blueFilter = new IntArray(w * h);
 
-            float[] filter = new float[w * h];
+            FloatArray filter = new FloatArray(w * h);
             for (int i = 0; i < w; i++) {
                 for (int j = 0; j < h; j++) {
-                    filter[i * h + j] = 1.f / (FILTER_WIDTH * FILTER_WIDTH);
+                    filter.set(i * h + j, 1.f / (FILTER_WIDTH * FILTER_WIDTH));
                 }
             }
 
@@ -148,10 +162,10 @@ public class BlurFilter {
             for (int i = 0; i < w; i++) {
                 for (int j = 0; j < h; j++) {
                     int rgb = image.getRGB(i, j);
-                    alphaChannel[i * h + j] = (rgb >> 24) & 0xFF;
-                    redChannel[i * h + j] = (rgb >> 16) & 0xFF;
-                    greenChannel[i * h + j] = (rgb >> 8) & 0xFF;
-                    blueChannel[i * h + j] = (rgb & 0xFF);
+                    alphaChannel.set(i * h + j, (rgb >> 24) & 0xFF);
+                    redChannel.set(i * h + j, (rgb >> 16) & 0xFF);
+                    greenChannel.set(i * h + j, (rgb >> 8) & 0xFF);
+                    blueChannel.set(i * h + j, (rgb & 0xFF));
                 }
             }
 
@@ -172,7 +186,7 @@ public class BlurFilter {
             // transparency
             for (int i = 0; i < w; i++) {
                 for (int j = 0; j < h; j++) {
-                    Color c = new Color(redFilter[i * h + j], greenFilter[i * h + j], blueFilter[i * h + j], alphaChannel[i * h + j]);
+                    Color c = new Color(redFilter.get(i * h + j), greenFilter.get(i * h + j), blueFilter.get(i * h + j), alphaChannel.get(i * h + j));
                     image.setRGB(i, j, c.getRGB());
                 }
             }
@@ -186,19 +200,19 @@ public class BlurFilter {
             int w = image.getWidth();
             int h = image.getHeight();
 
-            int[] redChannel = new int[w * h];
-            int[] greenChannel = new int[w * h];
-            int[] blueChannel = new int[w * h];
-            int[] alphaChannel = new int[w * h];
+            IntArray redChannel = new IntArray(w * h);
+            IntArray greenChannel = new IntArray(w * h);
+            IntArray blueChannel = new IntArray(w * h);
+            IntArray alphaChannel = new IntArray(w * h);
 
-            int[] redFilter = new int[w * h];
-            int[] greenFilter = new int[w * h];
-            int[] blueFilter = new int[w * h];
+            IntArray redFilter = new IntArray(w * h);
+            IntArray greenFilter = new IntArray(w * h);
+            IntArray blueFilter = new IntArray(w * h);
 
-            float[] filter = new float[w * h];
+            FloatArray filter = new FloatArray(w * h);
             for (int i = 0; i < w; i++) {
                 for (int j = 0; j < h; j++) {
-                    filter[i * h + j] = 1.f / (FILTER_WIDTH * FILTER_WIDTH);
+                    filter.set(i * h + j, 1.f / (FILTER_WIDTH * FILTER_WIDTH));
                 }
             }
 
@@ -206,10 +220,10 @@ public class BlurFilter {
             for (int i = 0; i < w; i++) {
                 for (int j = 0; j < h; j++) {
                     int rgb = image.getRGB(i, j);
-                    alphaChannel[i * h + j] = (rgb >> 24) & 0xFF;
-                    redChannel[i * h + j] = (rgb >> 16) & 0xFF;
-                    greenChannel[i * h + j] = (rgb >> 8) & 0xFF;
-                    blueChannel[i * h + j] = (rgb & 0xFF);
+                    alphaChannel.set(i * h + j, (rgb >> 24) & 0xFF);
+                    redChannel.set(i * h + j, (rgb >> 16) & 0xFF);
+                    greenChannel.set(i * h + j, (rgb >> 8) & 0xFF);
+                    blueChannel.set(i * h + j, (rgb & 0xFF));
                 }
             }
 
@@ -222,7 +236,7 @@ public class BlurFilter {
             // transparency
             for (int i = 0; i < w; i++) {
                 for (int j = 0; j < h; j++) {
-                    Color c = new Color(redFilter[i * h + j], greenFilter[i * h + j], blueFilter[i * h + j], alphaChannel[i * h + j]);
+                    Color c = new Color(redFilter.get(i * h + j), greenFilter.get(i * h + j), blueFilter.get(i * h + j), alphaChannel.get(i * h + j));
                     image.setRGB(i, j, c.getRGB());
                 }
             }
@@ -253,20 +267,5 @@ public class BlurFilter {
         }
 
     }
-
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("Blur Image Filter Example with TornadoVM");
-
-        frame.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent event) {
-                System.exit(0);
-            }
-        });
-
-        frame.add(new BlurFilterImage());
-        frame.pack();
-        frame.setVisible(true);
-    }
-
 }
+// CHECKSTYLE:ON

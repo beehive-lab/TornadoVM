@@ -12,15 +12,13 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.runtime.tasks.meta;
@@ -46,12 +44,14 @@ import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 
 public class TaskMetaData extends AbstractMetaData {
 
+    public static final String LOCAL_WORKGROUP_SUFFIX = ".local.workgroup.size";
+    public static final String GLOBAL_WORKGROUP_SUFFIX = ".global.workgroup.size";
     protected final Map<TornadoAcceleratorDevice, BitSet> profiles;
     private final byte[] constantData;
     private final ScheduleMetaData scheduleMetaData;
+    private final int constantSize;
     protected Access[] argumentsAccess;
     protected DomainTree domain;
-    private int constantSize;
     private long[] globalOffset;
     private long[] globalWork;
     private int localSize;
@@ -81,7 +81,8 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     public static TaskMetaData create(ScheduleMetaData scheduleMeta, String id, Method method) {
-        return new TaskMetaData(scheduleMeta, id, Modifier.isStatic(method.getModifiers()) ? method.getParameterCount() : method.getParameterCount() + 1);
+        int numParameters = Modifier.isStatic(method.getModifiers()) ? method.getParameterCount() : method.getParameterCount() + 1;
+        return new TaskMetaData(scheduleMeta, id, numParameters);
     }
 
     private static String formatWorkDimensionArray(final long[] array, final String defaults) {
@@ -99,10 +100,10 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     private void inspectLocalWork() {
-        localWorkDefined = getProperty(getId() + ".local.dims") != null;
+        localWorkDefined = getProperty(getId() + LOCAL_WORKGROUP_SUFFIX) != null;
         if (localWorkDefined) {
-            final String[] values = getProperty(getId() + ".local.dims").split(",");
-            localWork = new long[] { 1, 1, 1 };
+            final String[] values = getProperty(getId() + LOCAL_WORKGROUP_SUFFIX).split(",");
+            localWork = new long[values.length];
             for (int i = 0; i < values.length; i++) {
                 localWork[i] = Long.parseLong(values[i]);
             }
@@ -110,9 +111,9 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     private void inspectGlobalWork() {
-        globalWorkDefined = getProperty(getId() + ".global.dims") != null;
+        globalWorkDefined = getProperty(getId() + GLOBAL_WORKGROUP_SUFFIX) != null;
         if (globalWorkDefined) {
-            final String[] values = getProperty(getId() + ".global.dims").split(",");
+            final String[] values = getProperty(getId() + GLOBAL_WORKGROUP_SUFFIX).split(",");
             globalWork = new long[values.length];
             for (int i = 0; i < values.length; i++) {
                 globalWork[i] = Long.parseLong(values[i]);
@@ -425,6 +426,6 @@ public class TaskMetaData extends AbstractMetaData {
 
     @Override
     public String toString() {
-        return String.format("task meta data: domain=%s, global dims=%s%n", domain, (getGlobalWork() == null) ? "null" : formatWorkDimensionArray(getGlobalWork(), "1"));
+        return String.format("task meta data: domain=%s, global workgroup size=%s%n", domain, (getGlobalWork() == null) ? "null" : formatWorkDimensionArray(getGlobalWork(), "1"));
     }
 }

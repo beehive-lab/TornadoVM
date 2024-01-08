@@ -1,38 +1,46 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
- *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 package uk.ac.manchester.tornado.benchmarks;
 
-import static uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath.rotate;
-import static uk.ac.manchester.tornado.api.collections.types.Float4.add;
+import static uk.ac.manchester.tornado.api.math.TornadoMath.rotate;
+import static uk.ac.manchester.tornado.api.types.vectors.Float4.add;
 
 import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.types.Float3;
-import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
-import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
-import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat4;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
 
 public final class GraphicsKernels {
+    // CHECKSTYLE:OFF
+
+    // Parameters for the algorithm used
+    private static final int MAX_ITERATIONS = 1000;
+    private static final float ZOOM = 1;
+    private static final float CX = -0.7f;
+    private static final float CY = 0.27015f;
+    private static final float MOVE_X = 0;
+    private static final float MOVE_Y = 0;
 
     public static void rotateVector(VectorFloat3 output, Matrix4x4Float m, VectorFloat3 input) {
         for (@Parallel int i = 0; i < output.getLength(); i++) {
@@ -42,17 +50,11 @@ public final class GraphicsKernels {
         }
     }
 
-    public static void dotVector(VectorFloat3 A, VectorFloat3 B, float[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
+    public static void dotVector(VectorFloat3 A, VectorFloat3 B, FloatArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
             final Float3 a = A.get(i);
             final Float3 b = B.get(i);
-            c[i] = Float3.dot(a, b);
-        }
-    }
-
-    public static void addVector(VectorFloat4 a, VectorFloat4 b, VectorFloat4 c) {
-        for (@Parallel int i = 0; i < c.getLength(); i++) {
-            c.set(i, Float4.add(a.get(i), b.get(i)));
+            c.set(i, Float3.dot(a, b));
         }
     }
 
@@ -94,7 +96,7 @@ public final class GraphicsKernels {
         }
     }
 
-    public static void convolveImageArray(final float[] input, final float[] filter, final float[] output, final int iW, final int iH, final int fW, final int fH) {
+    public static void convolveImageArray(final FloatArray input, final FloatArray filter, final FloatArray output, final int iW, final int iH, final int fW, final int fH) {
         int u;
         int v;
         final int filterX2 = fW / 2;
@@ -106,13 +108,12 @@ public final class GraphicsKernels {
                     for (u = 0; u < fW; u++) {
                         if ((((y - filterY2) + v) >= 0) && ((y + v) < iH)) {
                             if ((((x - filterX2) + u) >= 0) && ((x + u) < iW)) {
-                                sum += filter[(v * fW) + u] * input[(((y - filterY2) + v) * iW) + ((x - filterX2) + u)];
+                                sum += filter.get((v * fW) + u) * input.get((((y - filterY2) + v) * iW) + ((x - filterX2) + u));
                             }
                         }
                     }
                 }
-                // int outIndex = y * outputImageWidth + x;
-                output[(y * iW) + x] = sum;
+                output.set((y * iW) + x, sum);
             }
         }
     }
@@ -159,15 +160,7 @@ public final class GraphicsKernels {
         });
     }
 
-    // Parameters for the algorithm used
-    private static final int MAX_ITERATIONS = 1000;
-    private static final float ZOOM = 1;
-    private static final float CX = -0.7f;
-    private static final float CY = 0.27015f;
-    private static final float MOVE_X = 0;
-    private static final float MOVE_Y = 0;
-
-    public static void juliaSetTornado(int size, float[] hue, float[] brightness) {
+    public static void juliaSetTornado(int size, FloatArray hue, FloatArray brightness) {
         for (@Parallel int ix = 0; ix < size; ix++) {
             for (@Parallel int jx = 0; jx < size; jx++) {
                 float zx = 1.5f * (ix - size / 2) / (0.5f * ZOOM * size) + MOVE_X;
@@ -179,10 +172,10 @@ public final class GraphicsKernels {
                     zx = tmp;
                     k--;
                 }
-                hue[ix * size + jx] = (MAX_ITERATIONS / k);
-                brightness[ix * size + jx] = k > 0 ? 1 : 0;
+                hue.set(ix * size + jx, (MAX_ITERATIONS / k));
+                brightness.set(ix * size + jx, k > 0 ? 1 : 0);
             }
         }
     }
-
+    // CHECKSTYLE:ON
 }

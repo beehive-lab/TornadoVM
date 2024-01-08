@@ -2,7 +2,7 @@
 
 <img align="left" width="250" height="250" src="etc/tornadoVM_Logo.jpg">
 
-TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on heterogeneous hardware. 
+TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on heterogeneous hardware.
 TornadoVM targets OpenCL, PTX and SPIR-V compatible devices which include multi-core CPUs, dedicated
 GPUs (Intel, NVIDIA, AMD), integrated GPUs (Intel HD Graphics and ARM Mali), and FPGAs (Intel and Xilinx).
 
@@ -14,9 +14,11 @@ Developers can choose which backends to install and run.
 
 **Website**: [tornadovm.org](https://www.tornadovm.org)
 
+**Documentation**: [https://tornadovm.readthedocs.io/en/latest/](https://tornadovm.readthedocs.io/en/latest/)
+
 For a quick introduction please read the following [FAQ](https://tornadovm.readthedocs.io/en/latest/).
 
-**Latest Release:** TornadoVM 0.15.2 - 26/07/2023 : See [CHANGELOG](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html).
+**Latest Release:** TornadoVM 1.0 - 05/12/2023 : See [CHANGELOG](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html).
 
 ----------------------
 
@@ -25,7 +27,7 @@ For a quick introduction please read the following [FAQ](https://tornadovm.readt
 In Linux and Mac OSx, TornadoVM can be installed automatically with the [installation script](https://tornadovm.readthedocs.io/en/latest/installation.html). For example:
 
 ```bash
-$ ./scripts/tornadovm-installer 
+$ ./bin/tornadovm-installer
 usage: tornadovm-installer [-h] [--version] [--jdk JDK] [--backend BACKEND] [--listJDKs] [--javaHome JAVAHOME]
 
 TornadoVM Installer Tool. It will install all software dependencies except the GPU/FPGA drivers
@@ -48,11 +50,11 @@ optional arguments:
 Example of installation:
 
 ```bash
-# Install the OpenCL backend with OpenJDK 17
-$ ./scripts/tornadovm-installer --jdk jdk17 --backend opencl 
+# Install the OpenCL backend with OpenJDK 21
+$ ./bin/tornadovm-installer --jdk jdk21 --backend opencl
 
 # It is also possible to combine different backends:
-$ ./scripts/tornadovm-installer -- jdk jdk17 --backend opencl,spirv,ptx
+$ ./bin/tornadovm-installer -- jdk jdk21 --backend opencl,spirv,ptx
 ```
 
 Alternatively, TornadoVM can be installed either manually [from source](https://tornadovm.readthedocs.io/en/latest/installation.html#b-manual-installation) or by [using Docker](https://tornadovm.readthedocs.io/en/latest/docker.html).
@@ -67,7 +69,7 @@ TornadoVM is currently being used to accelerate machine learning and deep learni
 
 Featured use-cases:
 - [kfusion-tornadovm](https://github.com/beehive-lab/kfusion-tornadovm): Java application for accelerating a computer-vision application using the Tornado-APIs to run on discrete and integrated GPUs.
-- [Java Ray-Tracer](https://github.com/Vinhixus/TornadoVM-Ray-Tracer): Java application accelerated with TornadoVM for real-time ray-tracing. 
+- [Java Ray-Tracer](https://github.com/Vinhixus/TornadoVM-Ray-Tracer): Java application accelerated with TornadoVM for real-time ray-tracing.
 
 We also have a set of [examples](https://github.com/beehive-lab/TornadoVM/tree/master/tornado-examples/src/main/java/uk/ac/manchester/tornado/examples) that includes NBody, DFT, KMeans computation and matrix computations.
 
@@ -76,7 +78,7 @@ We also have a set of [examples](https://github.com/beehive-lab/TornadoVM/tree/m
  - [General Documentation](https://tornadovm.readthedocs.io/en/latest/introduction.html)
  - [Benchmarks](https://tornadovm.readthedocs.io/en/latest/benchmarking.html)
  - [How TornadoVM executes reductions](https://tornadovm.readthedocs.io/en/latest/programming.html#parallel-reductions)
- - [Execution Flags](https://tornadovm.readthedocs.io/en/latest/flags.html) 
+ - [Execution Flags](https://tornadovm.readthedocs.io/en/latest/flags.html)
  - [FPGA execution](https://tornadovm.readthedocs.io/en/latest/fpga-programming.html)
  - [Profiler Usage](https://tornadovm.readthedocs.io/en/latest/profiler.html)
 
@@ -124,11 +126,11 @@ public class Compute {
 }
 ```
 
-#### b) Kernel API 
+#### b) Kernel API
 
-Another way to express compute-kernels in TornadoVM is via the **kernel API**. 
-To do so, TornadoVM exposes a `KernelContext` with which the application can directly access the thread-id, allocate memory in local memory (shared memory on NVIDIA devices), and insert barriers. 
-This model is similar to programming compute-kernels in OpenCL and CUDA. 
+Another way to express compute-kernels in TornadoVM is via the **kernel API**.
+To do so, TornadoVM exposes a `KernelContext` with which the application can directly access the thread-id, allocate memory in local memory (shared memory on NVIDIA devices), and insert barriers.
+This model is similar to programming compute-kernels in OpenCL and CUDA.
 Therefore, this API is more suitable for GPU/FPGA expert programmers that want more control or want to port existing CUDA/OpenCL compute kernels into TornadoVM.
 
 The following code-snippet shows the Matrix Multiplication example using the kernel-parallel API:
@@ -136,8 +138,8 @@ The following code-snippet shows the Matrix Multiplication example using the ker
 ```java
 public class Compute {
     private static void mxmKernel(KernelContext context, Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
-        int idx = context.threadIdx;
-        int jdx = context.threadIdy;
+        int idx = context.globalIdx
+        int jdx = context.globalIdy;
         float sum = 0;
         for (int k = 0; k < size; k++) {
             sum += A.get(idx, k) * B.get(k, jdx);
@@ -159,7 +161,7 @@ public class Compute {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, C);     // Transfer data from device to host
 
         // Create an immutable task-graph
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snaphot();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Create an execution plan from an immutable task-graph
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
@@ -177,7 +179,7 @@ Additionally, the two modes of expressing parallelism (kernel and loop paralleli
 
 Dynamic reconfiguration is the ability of TornadoVM to perform live task migration between devices, which means that
 TornadoVM decides where to execute the code to increase performance (if possible). In other words, TornadoVM switches
-devices if it can detect that a specific device can yield better performance (compared to another). 
+devices if it can detect that a specific device can yield better performance (compared to another).
 
 With the task-migration, the TornadoVM's approach is to only switch device if it detects an application can be executed faster
 than the CPU execution using the code compiled by C2 or Graal-JIT, otherwise it will stay on the CPU. So TornadoVM can
@@ -186,7 +188,7 @@ efficiently. GPUs are very good at exploiting SIMD applications, and FPGAs are v
 applications. If your applications follow those models, TornadoVM will likely select heterogeneous hardware. Otherwise,
 it will stay on the CPU using the default compilers (C2 or Graal).
 
-To use the dynamic reconfiguration, you can execute using TornadoVM policies. 
+To use the dynamic reconfiguration, you can execute using TornadoVM policies.
 For example:
 
 ```java
@@ -203,7 +205,7 @@ Further details and instructions on how to enable this feature can be found here
 
 To use TornadoVM, you need two components:
 
-a) The TornadoVM `jar` file with the API. The API is licensed as GPLV2 with Classpath Exception. 
+a) The TornadoVM `jar` file with the API. The API is licensed as GPLV2 with Classpath Exception.
 b) The core libraries of TornadoVM along with the dynamic library for the driver code (`.so` files for OpenCL, PTX and/or SPIRV/Level Zero).
 
 You can import the TornadoVM API by setting this the following dependency in the Maven `pom.xml` file:
@@ -220,12 +222,12 @@ You can import the TornadoVM API by setting this the following dependency in the
 <dependency>
     <groupId>tornado</groupId>
     <artifactId>tornado-api</artifactId>
-    <version>0.15.2</version>
+    <version>1.0</version>
 </dependency>
 <dependency>
     <groupId>tornado</groupId>
     <artifactId>tornado-matrices</artifactId>
-    <version>0.15.2</version>
+    <version>1.0</version>
 </dependency>
 </dependencies>
 ```
@@ -305,7 +307,7 @@ We welcome collaborations! Please see how to contribute to the project in the [C
 Additionally, you can open new proposals on the GitHub discussions page:[https://github.com/beehive-lab/TornadoVM/discussions](https://github.com/beehive-lab/TornadoVM/discussions).
 
 
-Alternatively, you can share a Google document with us. 
+Alternatively, you can share a Google document with us.
 
 ### Collaborations:
 
@@ -317,21 +319,21 @@ Visit our [website](https://tornadovm.org) to meet the [team](https://www.tornad
 
 ## 11. Licenses
 
-To use TornadoVM, you can link the TornadoVM API to your application which is under the CLASSPATH Exception of GPLv2.0.
+To use TornadoVM, you can link the TornadoVM API to your application which is under Apache 2.
 
-Each TornadoVM module is licensed as follows:
+Each Java TornadoVM module is licensed as follows:
 
 |  Module | License  |
 |---|---|
-| Tornado-API       |  [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) + CLASSPATH Exception |
-| Tornado-Runtime   |  [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)   |
-| Tornado-Assembly  |  [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)  |
-| Tornado-Drivers   |  [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)   |
+| Tornado-API       |  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2) |
+| Tornado-Runtime   |  [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) + CLASSPATH Exception   |
+| Tornado-Assembly  |  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
+| Tornado-Drivers   |  [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) + CLASSPATH Exception   |
 | Tornado-Drivers-OpenCL-Headers |  [![License](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/KhronosGroup/OpenCL-Headers/blob/master/LICENSE) |
-| Tornado-scripts   |  [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)   |
-| Tornado-Annotation|  [![License](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2) |
-| Tornado-Unittests |  [![License](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
-| Tornado-Benchmarks|  [![License](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
-| Tornado-Examples  |  [![License](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)   |
-| Tornado-Matrices  |  [![License](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
-| JNI Libraries (OpenCL, PTX and LevelZero)  |  [![License](https://img.shields.io/badge/License-MIT%20-orange.svg)](https://mit-license.org/)  |
+| Tornado-scripts   |  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)   |
+| Tornado-Annotation|  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2) |
+| Tornado-Unittests |  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
+| Tornado-Benchmarks|  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
+| Tornado-Examples  |  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)   |
+| Tornado-Matrices  |  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
+||

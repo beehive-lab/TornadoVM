@@ -10,15 +10,13 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal;
@@ -144,9 +142,9 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
      * Set arguments into the OpenCL device Kernel.
      *
      * @param kernelArgs
-     *            OpenCL kernel parameters {@link OCLByteBuffer}
+     *     OpenCL kernel parameters {@link OCLByteBuffer}
      * @param meta
-     *            task metadata {@link TaskMetaData}
+     *     task metadata {@link TaskMetaData}
      */
     private void setKernelArgs(final OCLKernelArgs kernelArgs, final ObjectBuffer atomicSpace, TaskMetaData meta) {
         int index = 0;
@@ -198,7 +196,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
         index++;
 
-        // local memory
+        // local memory buffers
         if (meta != null && meta.getLocalSize() > 0) {
             info("\tallocating %s of local memory", RuntimeUtilities.humanReadableByteCount(meta.getLocalSize(), true));
             kernel.setLocalRegion(index, meta.getLocalSize());
@@ -217,6 +215,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         for (int i = 0, argIndex = 0; i < kernelArgs.getCallArguments().size(); i++) {
             KernelArgs.CallArgument arg = kernelArgs.getCallArguments().get(i);
             if (arg.getValue() instanceof KernelArgs.KernelContextArgument) {
+                // We do not set any kernel context argument. This is only for the Java side.
                 continue;
             }
             if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {

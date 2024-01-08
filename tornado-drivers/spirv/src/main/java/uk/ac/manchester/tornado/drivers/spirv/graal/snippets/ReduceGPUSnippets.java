@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -36,7 +36,7 @@ import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
 import org.graalvm.compiler.replacements.Snippets;
 
 import jdk.vm.ci.meta.JavaKind;
-import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.TornadoSnippetTypeInference;
 import uk.ac.manchester.tornado.drivers.spirv.builtins.SPIRVOCLIntrinsics;
 import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.GlobalThreadSizeNode;
@@ -45,6 +45,7 @@ import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.SPIRVIntBinaryIntrinsi
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceMulNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.WriteAtomicNode;
 
 /**
  * Tornado-Graal snippets for GPUs reductions using OpenCL semantics.
@@ -1017,6 +1018,33 @@ public class ReduceGPUSnippets implements Snippets {
             template.instantiate(tool.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
 
         }
+
+        public void lower(WriteAtomicNode writeAtomicNode, ValueNode globalId, GlobalThreadSizeNode globalSize, LoweringTool tool) {
+
+            JavaKind elementKind = writeAtomicNode.getElementKind();
+            ValueNode value = writeAtomicNode.value();
+            ValueNode extra = writeAtomicNode.getExtraOperation();
+
+            SnippetTemplate.SnippetInfo snippet = getSnippetInstance(elementKind, value, extra);
+
+            // Sets the guard stage to AFTER_FSA because we want to avoid any frame state
+            // assignment for the snippet (see SnippetTemplate::assignNecessaryFrameStates)
+            // This is needed because we have nodes in the snippet which have multiple side
+            // effects and this is not allowed (see
+            // SnippetFrameStateAssignment.NodeStateAssignment.INVALID)
+            SnippetTemplate.Arguments args = new SnippetTemplate.Arguments(snippet, GraphState.GuardsStage.AFTER_FSA, tool.getLoweringStage());
+            args.add("inputData", writeAtomicNode.getInputArray());
+            args.add("outputArray", writeAtomicNode.getOutArray());
+            args.add("gidx", globalId);
+            if (extra != null) {
+                args.add("value", extra);
+            }
+
+            SnippetTemplate template = template(tool, writeAtomicNode, args);
+            template.instantiate(tool.getMetaAccess(), writeAtomicNode, SnippetTemplate.DEFAULT_REPLACER, args);
+
+        }
+
     }
 
 }

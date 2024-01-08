@@ -1,0 +1,432 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+# The University of Manchester.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+import argparse
+import os
+import platform
+import sys
+import tarfile
+
+import install_python_modules as tornadoReq
+
+tornadoReq.check_python_dependencies()
+
+import wget
+import installer_config as config
+
+__DIRECTORY_DEPENDENCIES__ = "etc/dependencies"
+__VERSION__ = "v1.0.1-dev"
+
+__SUPPORTED_JDKS__ = [
+    config.__JDK21__,
+    config.__GRAALVM21__,
+    config.__CORRETTO21__,
+    config.__MICROSOFT20__,
+    config.__MANDREL21__,
+    config.__ZULU21__,
+    config.__TEMURIN21__,
+]
+
+__SUPPORTED_BACKENDS__ = ["opencl", "spirv", "ptx"]
+
+__X86_64__ = config.__X86_64__
+__ARM__ = config.__ARM__
+__LINUX__ = config.__LINUX__
+__APPLE__ = config.__APPLE__
+
+
+class TornadoInstaller:
+    def __init__(self):
+        self.workDirName = ""
+        self.osPlatform = self.getOSPlatform()
+        self.hardware = self.getMachineArc()
+        self.env = {}
+        self.env["PATH"] = [self.getCurrentDirectory() + "/bin/bin:"]
+        self.env["TORNADO_SDK"] = self.getCurrentDirectory() + "/bin/sdk"
+
+    def getOSPlatform(self):
+        return platform.system().lower()
+
+    def getMachineArc(self):
+        return platform.uname().machine.lower()
+
+    def processFileName(self, url):
+        return url.split("/")[-1]
+
+    def setWorkDir(self, jdk):
+        self.workDirName = __DIRECTORY_DEPENDENCIES__ + "/TornadoVM-" + jdk
+        if not os.path.exists(self.workDirName):
+            os.makedirs(self.workDirName)
+
+    def getCurrentDirectory(self):
+        return os.getcwd()
+
+    def downloadCMake(self):
+        if self.hardware == __X86_64__ and self.osPlatform == __LINUX__:
+            url = config.CMAKE[__LINUX__][__X86_64__]
+        elif self.hardware == __ARM__ and self.osPlatform == __LINUX__:
+            url = config.CMAKE[__LINUX__][__ARM__]
+        elif self.hardware == __X86_64__ and self.osPlatform == __APPLE__:
+            url = config.CMAKE[__APPLE__][__X86_64__]
+        elif self.hardware == __ARM__ and self.osPlatform == __APPLE__:
+            url = config.CMAKE[__APPLE__][__ARM__]
+
+        fileName = self.processFileName(url)
+        print("Checking dependency: " + fileName)
+        fullPath = self.workDirName + "/" + fileName
+
+        if not os.path.exists(fullPath):
+            wget.download(url, fullPath)
+
+        ## Uncompress file
+        tar = tarfile.open(fullPath, "r:gz")
+        tar.extractall(self.workDirName)
+        extractedDirectory = self.getJDKDirectoryName(tar)
+        tar.close()
+
+        currentDirectory = self.getCurrentDirectory()
+
+        extraPath = ""
+        if self.osPlatform == __APPLE__:
+            extraPath = "/CMake.app/Contents"
+
+        ## Update env-variables
+        self.env["CMAKE_ROOT"] = (
+                currentDirectory
+                + "/"
+                + self.workDirName
+                + "/"
+                + extractedDirectory
+                + extraPath
+        )
+        self.env["PATH"].append(
+            currentDirectory
+            + "/"
+            + self.workDirName
+            + "/"
+            + extractedDirectory
+            + extraPath
+            + "/bin"
+        )
+
+    def downloadMaven(self):
+        if self.hardware == __X86_64__ and self.osPlatform == __LINUX__:
+            url = config.MAVEN[__LINUX__][__X86_64__]
+        elif self.hardware == __ARM__ and self.osPlatform == __LINUX__:
+            url = config.MAVEN[__LINUX__][__ARM__]
+        elif self.hardware == __ARM__ and self.osPlatform == __APPLE__:
+            url = config.MAVEN[__APPLE__][__ARM__]
+            if url == None:
+                return
+        elif self.hardware == __X86_64__ and self.osPlatform == __APPLE__:
+            url = config.MAVEN[__APPLE__][__X86_64__]
+            if url == None:
+                return
+
+        fileName = self.processFileName(url)
+        print("\nChecking dependency: " + fileName)
+        fullPath = __DIRECTORY_DEPENDENCIES__ + "/" + fileName
+
+        if not os.path.exists(fullPath):
+            wget.download(url, fullPath)
+
+        ## Uncompress file
+        tar = tarfile.open(fullPath, "r:gz")
+        tar.extractall(__DIRECTORY_DEPENDENCIES__)
+        extractedDirectory = self.getJDKDirectoryName(tar)
+        tar.close()
+
+        currentDirectory = self.getCurrentDirectory()
+
+        extraPath = ""
+        if self.osPlatform == __APPLE__:
+            extraPath = "/Maven.app/Contents"
+
+        ## Update env-variables
+        self.env["PATH"].append(
+            currentDirectory
+            + "/"
+            + __DIRECTORY_DEPENDENCIES__
+            + "/"
+            + extractedDirectory
+            + extraPath
+            + "/bin"
+        )
+
+    def getJDKDirectoryName(self, tar):
+        extractedNames = tar.getnames()[1].split("/")
+        if extractedNames[0] == ".":
+            extractedDirectory = extractedNames[1]
+        else:
+            extractedDirectory = extractedNames[0]
+        return extractedDirectory
+
+    def downloadJDK(self, jdk):
+        if self.hardware == __X86_64__ and self.osPlatform == __LINUX__:
+            url = config.JDK[jdk][__LINUX__][__X86_64__]
+        elif self.hardware == __ARM__ and self.osPlatform == __LINUX__:
+            url = config.JDK[jdk][__LINUX__][__ARM__]
+        elif self.hardware == __ARM__ and self.osPlatform == __APPLE__:
+            url = config.JDK[jdk][__APPLE__][__ARM__]
+        elif self.hardware == __X86_64__ and self.osPlatform == __APPLE__:
+            url = config.JDK[jdk][__APPLE__][__X86_64__]
+
+        fileName = self.processFileName(url)
+        print("\nChecking dependency: " + fileName)
+        fullPath = self.workDirName + "/" + fileName
+
+        if not os.path.exists(fullPath):
+            try:
+                wget.download(url, fullPath)
+            except:
+                import urllib3
+                http = urllib3.PoolManager()
+                response = http.request('GET', url)
+                jdkImage = response.data
+                with open(fullPath, 'wb') as file:
+                    file.write(jdkImage)
+
+        tar = tarfile.open(fullPath, "r:gz")
+        extractedDirectory = self.getJDKDirectoryName(tar)
+        try:
+            tar.extractall(self.workDirName, numeric_owner=True)
+        except:
+            pass
+        tar.close()
+
+        currentDirectory = self.getCurrentDirectory()
+
+        extraPath = ""
+        if self.osPlatform == __APPLE__ and "zulu" not in jdk:
+            extraPath = "/Contents/Home"
+
+        ## Update env-variables
+        self.env["JAVA_HOME"] = (
+                currentDirectory
+                + "/"
+                + self.workDirName
+                + "/"
+                + extractedDirectory
+                + extraPath
+        )
+
+    def setEnvironmentVariables(self):
+        ## 1. Path
+        paths = self.env["PATH"]
+        allPaths = ""
+        for p in paths:
+            allPaths = allPaths + p + ":"
+        allPaths = allPaths + os.environ["PATH"]
+        os.environ["PATH"] = allPaths
+
+        ## 2. CMAKE_ROOT
+        os.environ["CMAKE_ROOT"] = self.env["CMAKE_ROOT"]
+
+        ## 3. JAVA_HOME
+        os.environ["JAVA_HOME"] = self.env["JAVA_HOME"]
+
+        ## 4. TORNADO_SDK
+        os.environ["TORNADO_SDK"] = self.env["TORNADO_SDK"]
+
+    def compileTornadoVM(self, makeJDK, backend, polyglotOption):
+        command = "make " + makeJDK + " " + backend + " " + polyglotOption
+        os.system(command)
+
+    def createSourceFile(self):
+        print(" ------------------------------------------")
+        print("        TornadoVM installation done        ")
+        print(" ------------------------------------------")
+        print("Creating source file ......................")
+
+        paths = self.env["PATH"]
+        allPaths = ""
+        for p in paths:
+            allPaths = allPaths + p + ":"
+
+        fileContent = "export JAVA_HOME=" + self.env["JAVA_HOME"] + "\n"
+        fileContent = fileContent + "export PATH=" + allPaths + "$PATH" "\n"
+        fileContent = fileContent + "export CMAKE_ROOT=" + self.env["CMAKE_ROOT"] + "\n"
+        fileContent = (
+                fileContent + "export TORNADO_SDK=" + self.env["TORNADO_SDK"] + "\n"
+        )
+        f = open("setvars.sh", "w")
+        f.write(fileContent)
+        f.close()
+
+        print("........................................[ok]")
+        print(" ")
+        print(" ")
+        print("To run TornadoVM, first run `source setvars.sh`")
+
+    def checkJDKOption(self, args):
+        if args.jdk == None:
+            print("[Error] Define one JDK to install TornadoVM. ")
+            sys.exit(0)
+
+        if args.jdk not in __SUPPORTED_JDKS__:
+            print(
+                "JDK not supported. Please install with one of the JDKs from the supported list"
+            )
+            for jdk in __SUPPORTED_JDKS__:
+                print("\t" + jdk)
+            sys.exit(0)
+
+    def composeBackendOption(sekf, args):
+        backend = args.backend.replace(" ", "").lower()
+        for b in backend.split(","):
+            if b not in __SUPPORTED_BACKENDS__:
+                print(b + " is not a supported backend")
+                sys.exit(0)
+        backend = "BACKEND=" + backend
+        return backend
+
+    def composePolyglotOption(sekf, args):
+        if args.polyglot:
+            polyglotOption = "polyglot"
+        else:
+            polyglotOption = ""
+        return polyglotOption
+
+    def install(self, args):
+
+        if args.javaHome == None:
+            self.checkJDKOption(args)
+
+        if args.backend == None:
+            print("[Error] Specify at least one backend { opencl,ptx,spirv } ")
+            sys.exit(0)
+
+        backend = self.composeBackendOption(args)
+
+        makeJDK = "jdk21"
+        polyglotOption = ""
+        if (args.javaHome != None and "graal" in args.javaHome) or ("graal" in args.jdk):
+            makeJDK = "graal-jdk-21"
+            polyglotOption = self.composePolyglotOption(args)
+
+        if args.javaHome != None:
+            directoryPostfix = args.javaHome.split("/")[-1]
+        else:
+            directoryPostfix = args.jdk
+
+        self.setWorkDir(directoryPostfix)
+        self.downloadCMake()
+        self.downloadMaven()
+
+        ## If JAVA_HOME is provided, there is no need to download a JDK
+        if args.javaHome == None:
+            self.downloadJDK(args.jdk)
+        else:
+            self.env["JAVA_HOME"] = args.javaHome
+
+        self.setEnvironmentVariables()
+        self.compileTornadoVM(makeJDK, backend, polyglotOption)
+        self.createSourceFile()
+
+
+def listSupportedJDKs():
+    print(
+        """
+    TornadoVM Installer - Select a JDK implementation to install with TornadoVM:
+
+    jdk21            : Install TornadoVM with OpenJDK 21 (Oracle OpenJDK)
+    graalvm-jdk-21   : Install TornadoVM with GraalVM and JDK 21 (GraalVM 23.1.0)
+    mandrel-jdk-21   : Install TornadoVM with Mandrel and JDK 21 (GraalVM 23.1.0)
+    corretto-jdk-21  : Install TornadoVM with Corretto JDK 21
+    zulu-jdk-21      : Install TornadoVM with Azul Zulu JDK 21
+    temurin-jdk-21   : Install TornadoVM with Eclipse Temurin JDK 21
+
+    Usage:
+     $ ./bin/tornadovm-installer  --jdk <JDK_VERSION> --backend <BACKEND>
+
+    If you want to select another version of OpenJDK, you can use --javaHome="<pathToJavaHome>" and install as follows:
+      $ ./bin/tornadovm-installer --backend <BACKEND> --javaHome=<pathToJavaHome>
+    """
+    )
+
+
+def parseArguments():
+    """Parse command line arguments"""
+    parser = argparse.ArgumentParser(
+        description="""TornadoVM Installer Tool. It will install all software dependencies except the GPU/FPGA drivers"""
+    )
+    parser.add_argument(
+        "--version",
+        action="store_true",
+        dest="version",
+        default=False,
+        help="Print version of TornadoVM",
+    )
+    parser.add_argument(
+        "--jdk",
+        action="store",
+        dest="jdk",
+        default=None,
+        help="Select one of the supported JDKs. Use --listJDKs option to see all supported ones.",
+    )
+    parser.add_argument(
+        "--backend",
+        action="store",
+        dest="backend",
+        default=None,
+        help="Select the backend to install: { opencl, ptx, spirv }",
+    )
+    parser.add_argument(
+        "--listJDKs",
+        action="store_true",
+        dest="listJDKs",
+        default=False,
+        help="List all JDK supported versions",
+    )
+    parser.add_argument(
+        "--javaHome",
+        action="store",
+        dest="javaHome",
+        default=None,
+        help="Use a JDK from a user directory",
+    )
+    parser.add_argument(
+        "--polyglot",
+        action="store_true",
+        dest="polyglot",
+        default=None,
+        help="To enable interoperability with Truffle Programming Languages.",
+    )
+    args = parser.parse_args()
+
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit()
+
+    return args
+
+
+if __name__ == "__main__":
+    args = parseArguments()
+
+    if args.version:
+        print(__VERSION__)
+        sys.exit(0)
+
+    if args.listJDKs:
+        listSupportedJDKs()
+        sys.exit(0)
+
+    installer = TornadoInstaller()
+    installer.install(args)

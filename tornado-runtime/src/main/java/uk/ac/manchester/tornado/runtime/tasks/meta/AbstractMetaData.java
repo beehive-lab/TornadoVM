@@ -12,15 +12,13 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- *
  */
 package uk.ac.manchester.tornado.runtime.tasks.meta;
 
@@ -51,7 +49,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private static final String TRUE = "True";
     private static final String FALSE = "False";
     private final boolean isDeviceDefined;
-    private final HashSet<String> openCLBuiltOptions = new HashSet<>(Arrays.asList( //
+    private final HashSet<String> openCLBuiltOptions = new HashSet<>(Arrays.asList(//
             "-cl-single-precision-constant", //
             "-cl-denorms-are-zero", //
             "-cl-opt-disable", //
@@ -212,13 +210,13 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
      * Set a device in the default driver.
      *
      * @param device
-     *            {@link TornadoDevice}
+     *     {@link TornadoDevice}
      */
     public void setDevice(TornadoDevice device) {
         this.driverIndex = device.getDriverIndex();
         this.deviceIndex = getDeviceIndex(driverIndex, device);
-        if (device instanceof TornadoAcceleratorDevice) {
-            this.device = (TornadoAcceleratorDevice) device;
+        if (device instanceof TornadoAcceleratorDevice tornadoAcceleratorDevice) {
+            this.device = tornadoAcceleratorDevice;
         }
         deviceManuallySet = true;
     }
@@ -227,9 +225,9 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
      * Set a device from a specific Tornado driver.
      *
      * @param driverIndex
-     *            Driver Index
+     *     Driver Index
      * @param device
-     *            {@link TornadoAcceleratorDevice}
+     *     {@link TornadoAcceleratorDevice}
      */
     public void setDriverDevice(int driverIndex, TornadoAcceleratorDevice device) {
         this.driverIndex = driverIndex;

@@ -22,15 +22,15 @@
  */
 package uk.ac.manchester.tornado.drivers.common;
 
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
-
-import java.util.ArrayList;
-
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+
+import java.util.ArrayList;
+
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
 
 /**
  * This class implements a cache of allocated buffers on the device and also
@@ -41,31 +41,6 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
  * to reuse a buffer from the free list of buffers.
  */
 public abstract class TornadoBufferProvider {
-
-    public static class BufferInfo {
-        public final long buffer;
-        public final long size;
-
-        public BufferInfo(long buffer, long size) {
-            this.buffer = buffer;
-            this.size = size;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o)
-                return true;
-            if (!(o instanceof BufferInfo))
-                return false;
-            BufferInfo that = (BufferInfo) o;
-            return buffer == that.buffer && size == that.size;
-        }
-
-        @Override
-        public int hashCode() {
-            return (int) buffer;
-        }
-    }
 
     protected final TornadoDeviceContext deviceContext;
     protected final ArrayList<BufferInfo> freeBuffers;
@@ -81,6 +56,8 @@ public abstract class TornadoBufferProvider {
         // Instead, use a flag similar to -Xmx.
         currentMemoryAvailable = TornadoOptions.DEVICE_AVAILABLE_MEMORY;
     }
+
+
 
     protected abstract long allocateBuffer(long size);
 
@@ -205,5 +182,32 @@ public abstract class TornadoBufferProvider {
 
     public void resetBuffers() {
         freeBuffers(DEVICE_AVAILABLE_MEMORY);
+    }
+
+    public static class BufferInfo {
+        public final long buffer;
+        public final long size;
+
+        public BufferInfo(long buffer, long size) {
+            this.buffer = buffer;
+            this.size = size;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof BufferInfo)) {
+                return false;
+            }
+            BufferInfo that = (BufferInfo) o;
+            return buffer == that.buffer && size == that.size;
+        }
+
+        @Override
+        public int hashCode() {
+            return (int) buffer;
+        }
     }
 }

@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,7 +15,6 @@
  * limitations under the License.
  *
  */
-
 package uk.ac.manchester.tornado.examples.dynamic;
 
 import uk.ac.manchester.tornado.api.DRMode;
@@ -24,57 +23,59 @@ import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTMT
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTMT
  * </code>
  */
 public class DFTMT {
 
     public static boolean CHECK_RESULT = true;
 
-    public static void computeDFT(float[] inreal, float[] inimag, float[] outreal, float[] outimag, int[] inputSize) {
-        int n = inreal.length;
+    public static void computeDFT(FloatArray inreal, FloatArray inimag, FloatArray outreal, FloatArray outimag, IntArray inputSize) {
+        int n = inreal.getSize();
         for (@Parallel int k = 0; k < n; k++) { // For each output element
             float sumreal = 0;
             float sumimag = 0;
             for (int t = 0; t < n; t++) { // For each input element
                 float angle = ((2 * TornadoMath.floatPI() * t * k) / n);
-                sumreal += (inreal[t] * (TornadoMath.cos(angle)) + inimag[t] * (TornadoMath.sin(angle)));
-                sumimag += -(inreal[t] * (TornadoMath.sin(angle)) + inimag[t] * (TornadoMath.cos(angle)));
+                sumreal += (inreal.get(t) * (TornadoMath.cos(angle)) + inimag.get(t) * (TornadoMath.sin(angle)));
+                sumimag += -(inreal.get(t) * (TornadoMath.sin(angle)) + inimag.get(t) * (TornadoMath.cos(angle)));
             }
-            outreal[k] = sumreal;
-            outimag[k] = sumimag;
+            outreal.set(k, sumreal);
+            outimag.set(k, sumimag);
         }
     }
 
-    public static void computeDFTThreads(float[] inreal, float[] inimag, float[] outreal, float[] outimag, int threads, Thread[] th) throws InterruptedException {
-        int n = inreal.length;
-        int balk = inreal.length / threads;
+    public static void computeDFTThreads(FloatArray inreal, FloatArray inimag, FloatArray outreal, FloatArray outimag, int threads, Thread[] th) throws InterruptedException {
+        int n = inreal.getSize();
+        int balk = inreal.getSize() / threads;
         for (int i = 0; i < threads; i++) {
             final int current = i;
             int lowBound = current * balk;
             int upperBound = (current + 1) * balk;
             if (current == threads - 1) {
-                upperBound = inreal.length;
+                upperBound = inreal.getSize();
             }
             int finalUpperBound = upperBound;
             th[i] = new Thread(() -> {
                 for (int k = lowBound; k < finalUpperBound; k++) {
                     float sumreal = 0;
                     float sumimag = 0;
-                    for (int t = 0; t < inreal.length; t++) { // For each input element
+                    for (int t = 0; t < inreal.getSize(); t++) { // For each input element
                         float angle = (float) ((2 * Math.PI * t * k) / (float) n);
-                        sumreal += (float) (inreal[t] * (Math.cos(angle)) + inimag[t] * (Math.sin(angle)));
-                        sumimag += -(float) (inreal[t] * (Math.sin(angle)) + inimag[t] * (Math.cos(angle)));
+                        sumreal += (float) (inreal.get(t) * (Math.cos(angle)) + inimag.get(t) * (Math.sin(angle)));
+                        sumimag += -(float) (inreal.get(t) * (Math.sin(angle)) + inimag.get(t) * (Math.cos(angle)));
                     }
-                    outreal[k] = sumreal;
-                    outimag[k] = sumimag;
+                    outreal.set(k, sumreal);
+                    outimag.set(k, sumimag);
                 }
             });
         }
@@ -86,21 +87,21 @@ public class DFTMT {
         }
     }
 
-    public static boolean validate(int size, float[] inReal, float[] inImag, float[] outReal, float[] outImag, int[] inputSize) {
+    public static boolean validate(int size, FloatArray inReal, FloatArray inImag, FloatArray outReal, FloatArray outImag, IntArray inputSize) {
         boolean val = true;
-        float[] outRealTor = new float[size];
-        float[] outImagTor = new float[size];
+        FloatArray outRealTor = new FloatArray(size);
+        FloatArray outImagTor = new FloatArray(size);
 
         computeDFT(inReal, inImag, outRealTor, outImagTor, inputSize);
 
         for (int i = 0; i < size; i++) {
-            if (Math.abs(outImagTor[i] - outImag[i]) > 0.1) {
-                System.out.println(outImagTor[i] + " vs " + outImag[i] + "\n");
+            if (Math.abs(outImagTor.get(i) - outImag.get(i)) > 0.1) {
+                System.out.println(outImagTor.get(i) + " vs " + outImag.get(i) + "\n");
                 val = false;
                 break;
             }
-            if (Math.abs(outReal[i] - outRealTor[i]) > 0.1) {
-                System.out.println(outReal[i] + " vs " + outRealTor[i] + "\n");
+            if (Math.abs(outReal.get(i) - outRealTor.get(i)) > 0.1) {
+                System.out.println(outReal.get(i) + " vs " + outRealTor.get(i) + "\n");
                 val = false;
                 break;
             }
@@ -119,26 +120,27 @@ public class DFTMT {
         String executionType = args[1];
         int iterations = Integer.parseInt(args[2]);
 
-        long end,start;
+        long end;
+        long start;
 
         TaskGraph graph;
-        float[] inReal;
-        float[] inImag;
-        float[] outReal;
-        float[] outImag;
-        int[] inputSize;
+        FloatArray inReal;
+        FloatArray inImag;
+        FloatArray outReal;
+        FloatArray outImag;
+        IntArray inputSize;
 
-        inReal = new float[size];
-        inImag = new float[size];
-        outReal = new float[size];
-        outImag = new float[size];
-        inputSize = new int[1];
+        inReal = new FloatArray(size);
+        inImag = new FloatArray(size);
+        outReal = new FloatArray(size);
+        outImag = new FloatArray(size);
+        inputSize = new IntArray(1);
 
-        inputSize[0] = size;
+        inputSize.set(0, size);
 
         for (int i = 0; i < size; i++) {
-            inReal[i] = 1 / (float) (i + 2);
-            inImag[i] = 1 / (float) (i + 2);
+            inReal.set(i, 1 / (float) (i + 2));
+            inImag.set(i, 1 / (float) (i + 2));
         }
 
         graph = new TaskGraph("s0");

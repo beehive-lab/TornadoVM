@@ -10,15 +10,13 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector;
@@ -28,6 +26,11 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCL
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.VLOAD3;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.VLOAD4;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.VLOAD8;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp16.VMOV_BYTE16;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp16.VMOV_DOUBLE16;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp16.VMOV_FLOAT16;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp16.VMOV_INT16;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp16.VMOV_SHORT16;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp2.VMOV_BYTE2;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp2.VMOV_DOUBLE2;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp2.VMOV_FLOAT2;
@@ -60,6 +63,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCL
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp16;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp2;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp3;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp4;
@@ -80,6 +84,7 @@ public final class VectorUtil {
     private static final OCLOp3[] assignOp3Table = new OCLOp3[] { VMOV_SHORT3, VMOV_INT3, VMOV_FLOAT3, VMOV_BYTE3, VMOV_DOUBLE3 };
     private static final OCLOp4[] assignOp4Table = new OCLOp4[] { VMOV_SHORT4, VMOV_INT4, VMOV_FLOAT4, VMOV_BYTE4, VMOV_DOUBLE4 };
     private static final OCLOp8[] assignOp8Table = new OCLOp8[] { VMOV_SHORT8, VMOV_INT8, VMOV_FLOAT8, VMOV_BYTE8, VMOV_DOUBLE8 };
+    private static final OCLOp16[] assignOp16Table = new OCLOp16[] { VMOV_SHORT16, VMOV_INT16, VMOV_FLOAT16, VMOV_BYTE16, VMOV_DOUBLE16 };
 
     private static <T> T lookupValueByLength(T[] array, OCLKind vectorKind) {
         final int index = vectorKind.lookupLengthIndex();
@@ -115,17 +120,16 @@ public final class VectorUtil {
         return lookupValueByType(assignOp8Table, vectorKind);
     }
 
+    public static OCLOp16 resolveAssignOp16(OCLKind vectorKind) {
+        return lookupValueByType(assignOp16Table, vectorKind);
+    }
+
     public static OCLTernaryIntrinsic resolveStoreIntrinsic(OCLKind vectorKind) {
         return lookupValueByLength(storeTable, vectorKind);
     }
 
     public static OCLBinaryIntrinsic resolveLoadIntrinsic(OCLKind vectorKind) {
         return lookupValueByLength(loadTable, vectorKind);
-    }
-
-    // FIXME: Remove this method
-    public static OCLUnaryOp resolvePointerCast(OCLKind vectorKind) {
-        return lookupValueByType(pointerTable, vectorKind);
     }
 
 }

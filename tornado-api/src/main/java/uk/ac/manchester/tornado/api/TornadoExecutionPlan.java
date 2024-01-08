@@ -1,42 +1,18 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework:
- * https://github.com/beehive-lab/tornadovm
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * The University of Manchester.
  *
- * Copyright (c) 2023, APT Group, Department of Computer Science,
- * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * GNU Classpath is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2, or (at your option)
- * any later version.
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * GNU Classpath is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with GNU Classpath; see the file COPYING.  If not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301 USA.
- *
- * Linking this library statically or dynamically with other modules is
- * making a combined work based on this library.  Thus, the terms and
- * conditions of the GNU General Public License cover the whole
- * combination.
- *
- * As a special exception, the copyright holders of this library give you
- * permission to link this library with independent modules to produce an
- * executable, regardless of the license terms of these independent
- * modules, and to copy and distribute the resulting executable under
- * terms of your choice, provided that you also meet, for each linked
- * independent module, the terms and conditions of the license of that
- * module.  An independent module is a module which is not derived from
- * or based on this library.  If you modify this library, you may extend
- * this exception to your version of the library, but you are not
- * obligated to do so.  If you do not wish to do so, delete this
- * exception statement from your version.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.api;
@@ -66,28 +42,9 @@ public class TornadoExecutionPlan {
      * to the device assigned to the driver (backend) with index 0 and device 0.
      */
     public static TornadoDevice DEFAULT_DEVICE = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
-
-    /**
-     * Method to obtain a specific device using the driver index (backend index) and
-     * device index.
-     *
-     * @param driverIndex
-     *            Integer value that identifies the backend to be used.
-     * @param deviceIndex
-     *            Integer value that identifies the device within the backend to be
-     *            used.
-     * @return {@link TornadoDevice}
-     */
-    public static TornadoDevice getDevice(int driverIndex, int deviceIndex) {
-        return TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
-    }
-
     private final TornadoExecutor tornadoExecutor;
-
     private GridScheduler gridScheduler;
-
     private Policy policy = null;
-
     private DRMode dynamicReconfigurationMode;
     private ProfilerMode profilerMode;
     private boolean disableProfiler;
@@ -100,10 +57,25 @@ public class TornadoExecutionPlan {
      * associated with it.
      *
      * @param immutableTaskGraphs
-     *            {@link ImmutableTaskGraph}
+     *     {@link ImmutableTaskGraph}
      */
     public TornadoExecutionPlan(ImmutableTaskGraph... immutableTaskGraphs) {
         this.tornadoExecutor = new TornadoExecutor(immutableTaskGraphs);
+    }
+
+    /**
+     * Method to obtain a specific device using the driver index (backend index) and
+     * device index.
+     *
+     * @param driverIndex
+     *     Integer value that identifies the backend to be used.
+     * @param deviceIndex
+     *     Integer value that identifies the device within the backend to be
+     *     used.
+     * @return {@link TornadoDevice}
+     */
+    public static TornadoDevice getDevice(int driverIndex, int deviceIndex) {
+        return TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
     }
 
     /**
@@ -182,7 +154,7 @@ public class TornadoExecutionPlan {
      * devices.
      *
      * @param immutableTaskGraphIndex
-     *            Index of a specific immutable task-graph
+     *     Index of a specific immutable task-graph
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoDevice getDevice(int immutableTaskGraphIndex) {
@@ -213,7 +185,7 @@ public class TornadoExecutionPlan {
      * can specify all workers for each task-graph.
      *
      * @param gridScheduler
-     *            {@link GridScheduler}
+     *     {@link GridScheduler}
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withGridScheduler(GridScheduler gridScheduler) {
@@ -236,9 +208,9 @@ public class TornadoExecutionPlan {
      * visible devices.
      *
      * @param policy
-     *            {@link Policy}
+     *     {@link Policy}
      * @param mode
-     *            {@link DRMode}
+     *     {@link DRMode}
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withDynamicReconfiguration(Policy policy, DRMode mode) {
@@ -254,7 +226,7 @@ public class TornadoExecutionPlan {
      * global memory.
      *
      * @param batchSize
-     *            String in the format a number + "MB" Example "512MB".
+     *     String in the format a number + "MB" Example "512MB".
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withBatch(String batchSize) {
@@ -268,7 +240,7 @@ public class TornadoExecutionPlan {
      * compilation, Graal, etc).
      *
      * @param profilerMode
-     *            {@link ProfilerMode}
+     *     {@link ProfilerMode}
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan withProfiler(ProfilerMode profilerMode) {
@@ -340,10 +312,10 @@ public class TornadoExecutionPlan {
         }
 
         /**
-         * For all task-graphs contained in an Executor, update the device
+         * For all task-graphs contained in an Executor, update the device.
          *
          * @param device
-         *            {@link TornadoDevice} object
+         *     {@link TornadoDevice} object
          */
         void setDevice(TornadoDevice device) {
             immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.setDevice(device));

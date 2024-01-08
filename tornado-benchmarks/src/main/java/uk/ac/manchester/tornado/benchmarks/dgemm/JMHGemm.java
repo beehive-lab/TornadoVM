@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -44,6 +44,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
 /**
@@ -51,7 +52,7 @@ import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
  * How to run in isolation?
  * </p>
  * <code>
- *    tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.dgemm.JMHGemm
+ * tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.dgemm.JMHGemm
  * </code>
  */
 public class JMHGemm {
@@ -59,26 +60,26 @@ public class JMHGemm {
     public static class BenchmarkSetup {
         int m = Integer.parseInt(System.getProperty("x", "1024"));
         int n = Integer.parseInt(System.getProperty("y", "1024"));
-        double[] a;
-        double[] b;
-        double[] c;
+        DoubleArray a;
+        DoubleArray b;
+        DoubleArray c;
         TornadoExecutionPlan executor;
 
         @Setup(Level.Trial)
         public void doSetup() {
 
-            a = new double[m * n];
-            b = new double[m * n];
-            c = new double[m * n];
+            a = new DoubleArray(m * n);
+            b = new DoubleArray(m * n);
+            c = new DoubleArray(m * n);
 
             final Random random = new Random();
 
             for (int i = 0; i < m; i++) {
-                a[i * (m + 1)] = 1;
+                a.set(i * (m + 1), 1);
             }
 
             for (int i = 0; i < m * n; i++) {
-                b[i] = random.nextFloat();
+                b.set(i, random.nextFloat());
             }
 
             TaskGraph taskGraph = new TaskGraph("benchmark")//

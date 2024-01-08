@@ -24,6 +24,10 @@
 package uk.ac.manchester.tornado.runtime.tasks;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
 class ReduceFactory {
@@ -62,6 +66,38 @@ class ReduceFactory {
         array[0] = acc;
     }
 
+    private static void rAdd(FloatArray array, final int size) {
+        float acc = array.get(0);
+        for (int i = 1; i < size; i++) {
+            acc += array.get(i);
+        }
+        array.set(0, acc);
+    }
+
+    private static void rAdd(IntArray array, final int size) {
+        int acc = array.get(0);
+        for (int i = 1; i < size; i++) {
+            acc += array.get(i);
+        }
+        array.set(0, acc);
+    }
+
+    private static void rAdd(DoubleArray array, final int size) {
+        double acc = array.get(0);
+        for (int i = 1; i < size; i++) {
+            acc += array.get(i);
+        }
+        array.set(0, acc);
+    }
+
+    private static void rAdd(LongArray array, final int size) {
+        long acc = array.get(0);
+        for (int i = 1; i < size; i++) {
+            acc += array.get(i);
+        }
+        array.set(0, acc);
+    }
+
     private static void rMul(int[] array, final int size) {
         int acc = array[0];
         for (int i = 1; i < size; i++) {
@@ -92,6 +128,38 @@ class ReduceFactory {
             acc *= array[i];
         }
         array[0] = acc;
+    }
+
+    private static void rMul(IntArray array, final int size) {
+        int acc = array.get(0);
+        for (int i = 1; i < size; i++) {
+            acc *= array.get(i);
+        }
+        array.set(0, acc);
+    }
+
+    private static void rMul(FloatArray array, final int size) {
+        float acc = array.get(0);
+        for (int i = 1; i < size; i++) {
+            acc *= array.get(i);
+        }
+        array.set(0, acc);
+    }
+
+    private static void rMul(DoubleArray array, final int size) {
+        double acc = array.get(0);
+        for (int i = 1; i < size; i++) {
+            acc *= array.get(i);
+        }
+        array.set(0, acc);
+    }
+
+    private static void rMul(LongArray array, final int size) {
+        long acc = array.get(0);
+        for (int i = 1; i < size; i++) {
+            acc *= array.get(i);
+        }
+        array.set(0, acc);
     }
 
     private static void rMax(int[] array, final int size) {
@@ -126,6 +194,38 @@ class ReduceFactory {
         array[0] = acc;
     }
 
+    private static void rMax(IntArray array, final int size) {
+        int acc = array.get(0);
+        for (int i = 1; i < size; i++) {
+            acc = Math.max(acc, array.get(i));
+        }
+        array.set(0, acc);
+    }
+
+    private static void rMax(FloatArray array, final int size) {
+        float acc = array.get(0);
+        for (int i = 1; i < size; i++) {
+            acc = Math.max(acc, array.get(i));
+        }
+        array.set(0, acc);
+    }
+
+    private static void rMax(DoubleArray array, final int size) {
+        double acc = array.get(0);
+        for (int i = 1; i < size; i++) {
+            acc = Math.max(acc, array.get(i));
+        }
+        array.set(0, acc);
+    }
+
+    private static void rMax(LongArray array, final int size) {
+        long acc = array.get(0);
+        for (int i = 1; i < size; i++) {
+            acc = Math.max(acc, array.get(i));
+        }
+        array.set(0, acc);
+    }
+
     private static void rMin(int[] array, final int size) {
         int acc = array[0];
         for (int i = 1; i < size; i++) {
@@ -158,6 +258,38 @@ class ReduceFactory {
         array[0] = acc;
     }
 
+    private static void rMin(IntArray array, final int size) {
+        int acc = array.get(0);
+        for (int i = 1; i < size; i++) {
+            acc = Math.min(acc, array.get(i));
+        }
+        array.set(0, acc);
+    }
+
+    private static void rMin(FloatArray array, final int size) {
+        float acc = array.get(0);
+        for (int i = 1; i < size; i++) {
+            acc = Math.min(acc, array.get(i));
+        }
+        array.set(0, acc);
+    }
+
+    private static void rMin(DoubleArray array, final int size) {
+        double acc = array.get(0);
+        for (int i = 1; i < size; i++) {
+            acc = Math.min(acc, array.get(i));
+        }
+        array.set(0, acc);
+    }
+
+    private static void rMin(LongArray array, final int size) {
+        long acc = array.get(0);
+        for (int i = 1; i < size; i++) {
+            acc = Math.min(acc, array.get(i));
+        }
+        array.set(0, acc);
+    }
+
     static void handleAdd(Object newArray, TaskGraph task, int sizeReduceArray, String taskName) {
         switch (newArray.getClass().getTypeName()) {
             case "int[]":
@@ -171,6 +303,18 @@ class ReduceFactory {
                 break;
             case "double[]":
                 task.task(taskName, ReduceFactory::rAdd, (double[]) newArray, sizeReduceArray);
+                break;
+            case "uk.ac.manchester.tornado.api.types.arrays.IntArray":
+                task.task(taskName, ReduceFactory::rAdd, (IntArray) newArray, sizeReduceArray);
+                break;
+            case "uk.ac.manchester.tornado.api.types.arrays.FloatArray":
+                task.task(taskName, ReduceFactory::rAdd, (FloatArray) newArray, sizeReduceArray);
+                break;
+            case "uk.ac.manchester.tornado.api.types.arrays.DoubleArray":
+                task.task(taskName, ReduceFactory::rAdd, (DoubleArray) newArray, sizeReduceArray);
+                break;
+            case "uk.ac.manchester.tornado.api.types.arrays.LongArray":
+                task.task(taskName, ReduceFactory::rAdd, (LongArray) newArray, sizeReduceArray);
                 break;
             default:
                 throw new TornadoRuntimeException(ERROR_MESSAGE + newArray.getClass().getTypeName());
@@ -191,6 +335,18 @@ class ReduceFactory {
             case "double[]":
                 task.task(taskName, ReduceFactory::rMul, (double[]) newArray, sizeReduceArray);
                 break;
+            case "uk.ac.manchester.tornado.api.types.arrays.IntArray":
+                task.task(taskName, ReduceFactory::rMul, (IntArray) newArray, sizeReduceArray);
+                break;
+            case "uk.ac.manchester.tornado.api.types.arrays.FloatArray":
+                task.task(taskName, ReduceFactory::rMul, (FloatArray) newArray, sizeReduceArray);
+                break;
+            case "uk.ac.manchester.tornado.api.types.arrays.DoubleArray":
+                task.task(taskName, ReduceFactory::rMul, (DoubleArray) newArray, sizeReduceArray);
+                break;
+            case "uk.ac.manchester.tornado.api.types.arrays.LongArray":
+                task.task(taskName, ReduceFactory::rMul, (LongArray) newArray, sizeReduceArray);
+                break;
             default:
                 throw new TornadoRuntimeException(ERROR_MESSAGE + newArray.getClass().getTypeName());
         }
@@ -210,6 +366,18 @@ class ReduceFactory {
             case "double[]":
                 task.task(taskName, ReduceFactory::rMax, (double[]) newArray, sizeReduceArray);
                 break;
+            case "uk.ac.manchester.tornado.api.types.arrays.IntArray":
+                task.task(taskName, ReduceFactory::rMax, (IntArray) newArray, sizeReduceArray);
+                break;
+            case "uk.ac.manchester.tornado.api.types.arrays.FloatArray":
+                task.task(taskName, ReduceFactory::rMax, (FloatArray) newArray, sizeReduceArray);
+                break;
+            case "uk.ac.manchester.tornado.api.types.arrays.DoubleArray":
+                task.task(taskName, ReduceFactory::rMax, (DoubleArray) newArray, sizeReduceArray);
+                break;
+            case "uk.ac.manchester.tornado.api.types.arrays.LongArray":
+                task.task(taskName, ReduceFactory::rMax, (LongArray) newArray, sizeReduceArray);
+                break;
             default:
                 throw new TornadoRuntimeException(ERROR_MESSAGE + newArray.getClass().getTypeName());
         }
@@ -228,6 +396,18 @@ class ReduceFactory {
                 break;
             case "double[]":
                 task.task(taskName, ReduceFactory::rMin, (double[]) newArray, sizeReduceArray);
+                break;
+            case "uk.ac.manchester.tornado.api.types.arrays.IntArray":
+                task.task(taskName, ReduceFactory::rMin, (IntArray) newArray, sizeReduceArray);
+                break;
+            case "uk.ac.manchester.tornado.api.types.arrays.FloatArray":
+                task.task(taskName, ReduceFactory::rMin, (FloatArray) newArray, sizeReduceArray);
+                break;
+            case "uk.ac.manchester.tornado.api.types.arrays.DoubleArray":
+                task.task(taskName, ReduceFactory::rMin, (DoubleArray) newArray, sizeReduceArray);
+                break;
+            case "uk.ac.manchester.tornado.api.types.arrays.LongArray":
+                task.task(taskName, ReduceFactory::rMin, (LongArray) newArray, sizeReduceArray);
                 break;
             default:
                 throw new TornadoRuntimeException(ERROR_MESSAGE + newArray.getClass().getTypeName());

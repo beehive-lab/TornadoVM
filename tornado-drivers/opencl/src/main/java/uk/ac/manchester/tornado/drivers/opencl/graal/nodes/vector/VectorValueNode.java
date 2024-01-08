@@ -10,15 +10,13 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector;
@@ -49,6 +47,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStampFactory;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp2;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp3;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp4;
@@ -122,7 +121,7 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
      * already set (not null), the input that corresponds to the index is replaced
      * by the argument value. Otherwise, the input value is set by the argument
      * value.
-     * 
+     *
      * @param index
      * @param value
      */
@@ -185,7 +184,7 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
     private void generateVectorAssign(NodeLIRBuilderTool gen, LIRGeneratorTool tool, AllocatableValue result) {
 
         OCLLIROp assignExpr = null;
-        Value s0,s1,s2,s3,s4,s5,s6,s7;
+        Value s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15;
 
         // check if first parameter is a vector
         s0 = getParam(gen, tool, 0);
@@ -228,6 +227,27 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable, MarkV
                 s6 = getParam(gen, tool, 6);
                 s7 = getParam(gen, tool, 7);
                 assignExpr = new OCLVectorAssign.Assign8Expr(op8, getOCLKind(), s0, s1, s2, s3, s4, s5, s6, s7);
+                break;
+
+            }
+            case 16: {
+                final OCLAssembler.OCLOp16 op16 = VectorUtil.resolveAssignOp16(getOCLKind());
+                s1 = getParam(gen, tool, 1);
+                s2 = getParam(gen, tool, 2);
+                s3 = getParam(gen, tool, 3);
+                s4 = getParam(gen, tool, 4);
+                s5 = getParam(gen, tool, 5);
+                s6 = getParam(gen, tool, 6);
+                s7 = getParam(gen, tool, 7);
+                s8 = getParam(gen, tool, 8);
+                s9 = getParam(gen, tool, 9);
+                s10 = getParam(gen, tool, 10);
+                s11 = getParam(gen, tool, 11);
+                s12 = getParam(gen, tool, 12);
+                s13 = getParam(gen, tool, 13);
+                s14 = getParam(gen, tool, 14);
+                s15 = getParam(gen, tool, 15);
+                assignExpr = new OCLVectorAssign.Assign16Expr(op16, getOCLKind(), s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15);
                 break;
             }
             default:

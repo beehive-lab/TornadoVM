@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -41,7 +42,8 @@ import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupporte
  * How to test?
  *
  * <code>
- *    tornado-test -V --fullDebug --debug --printBytecodes --jvm="-Dtornado.concurrent.devices=true -Ds0.t0.device=0:0 -Ds0.t1.device=0:0 -Ds0.t2.device=1:0 " uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices
+ * tornado-test -V --fullDebug --debug --printBytecodes
+ * --jvm="-Dtornado.concurrent.devices=true -Ds0.t0.device=0:0 -Ds0.t1.device=0:0 -Ds0.t2.device=1:0 " uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices
  * </code>
  */
 public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
@@ -51,27 +53,33 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
     // Statically assigns tasks to devices 0:0 and 0:1 of the default backend.
     private static final String[] DEFAULT_DEVICES = { "0:0", "0:1", "0:0" };
 
-    private static int[] a;
-    private static int[] b;
-    private static int[] c;
-    private static int[] d;
-    private static int[] e;
+    private static IntArray a;
+    private static IntArray b;
+    private static IntArray c;
+    private static IntArray d;
+    private static IntArray e;
 
-    public static void task0Initialization(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = i;
+    public static void task0Initialization(IntArray a) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            a.set(i, i);
         }
     }
 
-    public static void task1Multiplication(int[] a, int alpha) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = a[i] * i;
+    public static void task1Multiplication(IntArray a, int alpha) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            a.set(i, a.get(i) * i);
         }
     }
 
-    public static void task2Saxpy(int[] a, int[] b, int[] c, int alpha) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            c[i] = alpha * a[i] + b[i];
+    public static void task2Saxpy(IntArray a, IntArray b, IntArray c, int alpha) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            c.set(i, alpha * a.get(i) + b.get(i));
+        }
+    }
+
+    public static void taskMultiplication(IntArray a, IntArray b, int alpha) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            a.set(i, b.get(i) * i);
         }
     }
 
@@ -81,17 +89,17 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
         setDefaultDevices();
         System.setProperty("tornado.concurrent.devices", "True");
 
-        a = new int[NUM_ELEMENTS];
-        b = new int[NUM_ELEMENTS];
-        c = new int[NUM_ELEMENTS];
-        d = new int[NUM_ELEMENTS];
-        e = new int[NUM_ELEMENTS];
+        a = new IntArray(NUM_ELEMENTS);
+        b = new IntArray(NUM_ELEMENTS);
+        c = new IntArray(NUM_ELEMENTS);
+        d = new IntArray(NUM_ELEMENTS);
+        e = new IntArray(NUM_ELEMENTS);
 
         IntStream.range(0, NUM_ELEMENTS).forEach(i -> {
-            a[i] = 30 + i;
-            b[i] = 1 + i;
-            c[i] = 120 + i;
-            e[i] = i;
+            a.set(i, 30 + i);
+            b.set(i, 1 + i);
+            c.set(i, 120 + i);
+            e.set(i, i);
         });
 
     }
@@ -129,9 +137,9 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
 
         executionPlan.execute();
 
-        for (int i = 0; i < a.length; i++) {
-            assertEquals((30L + i) * i, a[i]);
-            assertEquals(i, b[i]);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals((30L + i) * i, a.get(i));
+            assertEquals(i, b.get(i));
         }
     }
 
@@ -148,10 +156,31 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < a.length; i++) {
-            assertEquals((30L + i) * i, a[i]);
-            assertEquals(i, b[i]);
-            assertEquals(12L * c[i] + e[i], d[i]);
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals((30L + i) * i, a.get(i));
+            assertEquals(i, b.get(i));
+            assertEquals(12L * c.get(i) + e.get(i), d.get(i));
         }
     }
+
+    @Test
+    public void testTwoTasksTwoDevicesSharedReadOnlyRead() {
+        TaskGraph taskGraph = new TaskGraph("s0")//
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, d, c) //
+                .task("t0", TestMultipleTasksMultipleDevices::taskMultiplication, a, b, 12) //
+                .task("t1", TestMultipleTasksMultipleDevices::task2Saxpy, c, b, d, 12) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a, c, d); //
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        executionPlan.execute();
+
+        for (int i = 0; i < a.getSize(); i++) {
+            assertEquals((b.get(i) * i), a.get(i));
+            assertEquals(12L * c.get(i) + b.get(i), d.get(i));
+        }
+    }
+
 }

@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -27,6 +27,8 @@ import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.ptx.PTXDeviceContext;
 
 public class PTXCharArrayWrapper extends PTXArrayWrapper<char[]> {
+    private long setSubRegionSize;
+
     public PTXCharArrayWrapper(PTXDeviceContext deviceContext) {
         super(deviceContext, JavaKind.Char);
     }
@@ -35,14 +37,14 @@ public class PTXCharArrayWrapper extends PTXArrayWrapper<char[]> {
      * Copy data from the device to the main host.
      *
      * @param address
-     *            Device Buffer ID
+     *     Device Buffer ID
      * @param bytes
-     *            Bytes to be copied back to the host
+     *     Bytes to be copied back to the host
      * @param value
-     *            Host array that resides the final data
+     *     Host array that resides the final data
      * @param hostOffset
      * @param waitEvents
-     *            List of events to wait for.
+     *     List of events to wait for.
      * @return Event information
      */
     @Override
@@ -59,14 +61,14 @@ public class PTXCharArrayWrapper extends PTXArrayWrapper<char[]> {
      * Copy data that resides in the host to the target device.
      *
      * @param address
-     *            Device Buffer ID
+     *     Device Buffer ID
      * @param bytes
-     *            Bytes to be copied
+     *     Bytes to be copied
      * @param value
-     *            Host array to be copied
+     *     Host array to be copied
      * @param hostOffset
      * @param waitEvents
-     *            List of events to wait for.
+     *     List of events to wait for.
      * @return Event information
      */
     @Override
@@ -77,5 +79,25 @@ public class PTXCharArrayWrapper extends PTXArrayWrapper<char[]> {
     @Override
     protected void writeArrayData(long address, long bytes, char[] value, int hostOffset, int[] waitEvents) {
         deviceContext.writeBuffer(address, bytes, value, hostOffset, waitEvents);
+    }
+
+    @Override
+    public void setSizeSubRegion(long batchSize) {
+        this.setSubRegionSize = batchSize;
+    }
+
+    @Override
+    public long getSizeSubRegionSize() {
+        return setSubRegionSize;
+    }
+
+    @Override
+    public int[] getIntBuffer() {
+        return super.getIntBuffer();
+    }
+
+    @Override
+    public void setIntBuffer(int[] arr) {
+        super.setIntBuffer(arr);
     }
 }

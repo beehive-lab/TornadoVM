@@ -10,15 +10,13 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.asm;
@@ -90,7 +88,7 @@ public final class OCLAssembler extends Assembler {
      * platform type.
      *
      * @param input
-     *            The {@link Value} input to convert.
+     *     The {@link Value} input to convert.
      * @return The converted format string.
      */
     public static String convertValueFromGraalFormat(Value input) {
@@ -117,8 +115,8 @@ public final class OCLAssembler extends Assembler {
      * It retrieves the absolute index from the given Value object.
      *
      * @param value
-     *            the {@link Value} object to extract the index from. It should be
-     *            in the format "int[20|0x14]".
+     *     the {@link Value} object to extract the index from. It should be
+     *     in the format "int[20|0x14]".
      * @return the absolute index as a String
      */
     public static String getAbsoluteIndexFromValue(Value value) {
@@ -1177,7 +1175,11 @@ public final class OCLAssembler extends Assembler {
 
     public static class OCLOp16 extends OCLOp8 {
         // @formatter:off
-
+        public static final OCLOp16 VMOV_SHORT16 = new OCLOp16("(short16)");
+        public static final OCLOp16 VMOV_INT16 = new OCLOp16("(int16)");
+        public static final OCLOp16 VMOV_FLOAT16 = new OCLOp16("(float16)");
+        public static final OCLOp16 VMOV_BYTE16 = new OCLOp16("(char16)");
+        public static final OCLOp16 VMOV_DOUBLE16 = new OCLOp16("(double16)");
         // @formatter:on
         protected OCLOp16(String opcode) {
             super(opcode);

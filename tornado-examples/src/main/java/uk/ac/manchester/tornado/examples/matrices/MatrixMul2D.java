@@ -25,7 +25,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -40,6 +40,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  *
  */
 public class MatrixMul2D {
+    // CHECKSTYLE:OFF
 
     private static final int WARMING_UP_ITERATIONS = 20;
     private static final int TIMING_ITERATIONS = 50;
@@ -227,3 +228,4 @@ public class MatrixMul2D {
         System.out.println();
     }
 }
+// CHECKSTYLE:ON

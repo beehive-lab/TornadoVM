@@ -1,38 +1,35 @@
 #!/usr/bin/env python3
 #
-# This file is part of Tornado: A heterogeneous programming framework:
-# https://github.com/beehive-lab/tornadovm
+# Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+# The University of Manchester.
 #
-# Copyright (c) 2022, APT Group, Department of Computer Science,
-# The University of Manchester. All rights reserved.
-# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# This code is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.
+# http://www.apache.org/licenses/LICENSE-2.0
 #
-# This code is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-# version 2 for more details (a copy is included in the LICENSE file that
-# accompanied this code).
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
-# You should have received a copy of the GNU General Public License version
-# 2 along with this work; if not, write to the Free Software Foundation,
-# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-#
+
 import os
 import re
 import subprocess
 from datetime import datetime
 
+
 def runBenchmarks(filename, command):
-    with open(filename, 'w') as fout:
+    with open(filename, "w") as fout:
         proc = subprocess.Popen(command, stdout=fout, shell=False)
         return_code = proc.wait()
 
+
 def main():
-    date = datetime.today().strftime('%d-%m-%Y-%T')
+    date = datetime.today().strftime("%d-%m-%Y-%T")
 
     directory = "benchmarks_results"
     try:
@@ -42,15 +39,17 @@ def main():
 
     ## Obtain the list of backends installed
     command = "tornado -- version"
-    process = subprocess.Popen(['tornado', '--version'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    process = subprocess.Popen(
+        ["tornado", "--version"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+    )
     output = str(process.stdout.read())
-    m = re.search(r'backends=(\w+(,\w+)?)', output)
+    m = re.search(r"backends=(\w+(,\w+)?)", output)
     match = m.group(0)
 
     ## Obtain if SPIR-V backend is installed
     m2 = re.search("spirv", match)
     spirvEnabled = False
-    if (m2 != None):
+    if m2 != None:
         spirvEnabled = True
 
     print("Is SPIRV Backend present? " + str(spirvEnabled))
@@ -62,7 +61,7 @@ def main():
     print("[SCRIPT] Running benchmarks with Profiler")
     runBenchmarks(filename, command)
 
-    if (spirvEnabled):
+    if spirvEnabled:
         # Run with Profiler and Optimizations Enabled
         filename = directory + "/BENCHMARKS_PROFILER_OPTIMIZED_" + date + ".log"
         command = ["tornado-benchmarks.py", "--profiler", "--spirvOptimizer"]
@@ -75,12 +74,13 @@ def main():
     print("[SCRIPT] Running benchmarks END 2 END")
     runBenchmarks(filename, command)
 
-    if (spirvEnabled):
+    if spirvEnabled:
         # Run end-to-end and Optimizations enabled
         filename = directory + "/BENCHMARKS_END2END_OPTIMZED_" + date + ".log"
         command = ["tornado-benchmarks.py", "--spirvOptimizer"]
         print("[SCRIPT] Running benchmarks END 2 END - Optimized SPIR-V")
         runBenchmarks(filename, command)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

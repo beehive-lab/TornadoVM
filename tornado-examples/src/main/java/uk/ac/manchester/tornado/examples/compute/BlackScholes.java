@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,8 +24,9 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
  * Black-Scholes implementation adapted from AMD-OpenCL examples and Marawacc
@@ -34,17 +35,17 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  * How to run:
  * </p>
  * <code>
- *      tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.BlackScholes
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.BlackScholes
  * </code>
  *
  */
 public class BlackScholes {
-
+    // CHECKSTYLE:OFF
     private static final int WARM_UP_ITERATIONS = 1000;
 
-    private static void blackScholesKernel(float[] input, float[] callResult, float[] putResult) {
-        for (@Parallel int idx = 0; idx < callResult.length; idx++) {
-            float rand = input[idx];
+    private static void blackScholesKernel(FloatArray input, FloatArray callResult, FloatArray putResult) {
+        for (@Parallel int idx = 0; idx < callResult.getSize(); idx++) {
+            float rand = input.get(idx);
             final float S_LOWER_LIMIT = 10.0f;
             final float S_UPPER_LIMIT = 100.0f;
             final float K_LOWER_LIMIT = 10.0f;
@@ -63,8 +64,8 @@ public class BlackScholes {
 
             float d1 = (TornadoMath.log(S / K) + ((r + (v * v / 2)) * T)) / v * TornadoMath.sqrt(T);
             float d2 = d1 - (v * TornadoMath.sqrt(T));
-            callResult[idx] = S * cnd(d1) - K * TornadoMath.exp(T * (-1) * r) * cnd(d2);
-            putResult[idx] = K * TornadoMath.exp(T * -r) * cnd(-d2) - S * cnd(-d1);
+            callResult.set(idx, S * cnd(d1) - K * TornadoMath.exp(T * (-1) * r) * cnd(d2));
+            putResult.set(idx, K * TornadoMath.exp(T * -r) * cnd(-d2) - S * cnd(-d1));
         }
     }
 
@@ -82,18 +83,18 @@ public class BlackScholes {
         float absX = TornadoMath.abs(X);
         float t = one / (one + temp4 * absX);
         float y = one - oneBySqrt2pi * TornadoMath.exp(-X * X / two) * t * (c1 + t * (c2 + t * (c3 + t * (c4 + t * c5))));
-        return (X < zero) ? (one - y) : y;
+        return ((X < zero) ? (one - y) : y);
     }
 
-    private static boolean checkResult(float[] call, float[] put, float[] callPrice, float[] putPrice) {
+    private static boolean checkResult(FloatArray call, FloatArray put, FloatArray callPrice, FloatArray putPrice) {
         double delta = 1.8;
-        for (int i = 0; i < call.length; i++) {
-            if (Math.abs(call[i] - callPrice[i]) > delta) {
-                System.out.println("call: " + call[i] + " vs gpu " + callPrice[i]);
+        for (int i = 0; i < call.getSize(); i++) {
+            if (Math.abs(call.get(i) - callPrice.get(i)) > delta) {
+                System.out.println("call: " + call.get(i) + " vs gpu " + callPrice.get(i));
                 return false;
             }
-            if (Math.abs(put[i] - putPrice[i]) > delta) {
-                System.out.println("put: " + put[i] + " vs gpu " + putPrice[i]);
+            if (Math.abs(put.get(i) - putPrice.get(i)) > delta) {
+                System.out.println("put: " + put.get(i) + " vs gpu " + putPrice.get(i));
                 return false;
             }
         }
@@ -102,13 +103,13 @@ public class BlackScholes {
 
     public static void blackScholes(int size) {
         Random random = new Random();
-        float[] input = new float[size];
-        float[] callPrice = new float[size];
-        float[] putPrice = new float[size];
-        float[] seqCall = new float[size];
-        float[] seqPut = new float[size];
+        FloatArray input = new FloatArray(size);
+        FloatArray callPrice = new FloatArray(size);
+        FloatArray putPrice = new FloatArray(size);
+        FloatArray seqCall = new FloatArray(size);
+        FloatArray seqPut = new FloatArray(size);
         for (int i = 0; i < size; i++) {
-            input[i] = random.nextFloat();
+            input.set(i, random.nextFloat());
         }
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -155,3 +156,4 @@ public class BlackScholes {
         blackScholes(size);
     }
 }
+// CHECKSTYLE:ON

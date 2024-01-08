@@ -12,15 +12,13 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
@@ -234,8 +232,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                                 doRoot(valueNode);
                                 platformPatch(isKernel);
                             } catch (final Throwable e) {
-                                if (e instanceof TornadoDeviceFP64NotSupported) {
-                                    throw e;
+                                if (e instanceof TornadoDeviceFP64NotSupported tornadoDeviceFP64NotSupportedException) {
+                                    throw tornadoDeviceFP64NotSupportedException;
                                 } else {
                                     throw new TornadoInternalError(e).addContext(valueNode.toString());
                                 }
@@ -253,12 +251,12 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                             if (operand != null) {
                                 setResult(valueNode, operand);
                             }
-                        } else if (valueNode instanceof VectorValueNode) {
+                        } else if (valueNode instanceof VectorValueNode vectorValueNode) {
                             // There can be cases in which the result of an
                             // instruction is already set before by other
                             // instructions. case where vector value is used as an input to a phi
                             // node before it is assigned to
-                            final VectorValueNode vectorNode = (VectorValueNode) valueNode;
+                            final VectorValueNode vectorNode = vectorValueNode;
                             vectorNode.generate(this);
                         }
                     }
@@ -285,8 +283,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             return;
         }
 
-        if (op instanceof ExprStmt) {
-            ExprStmt expr = (ExprStmt) op;
+        if (op instanceof ExprStmt exprStmtOp) {
+            ExprStmt expr = exprStmtOp;
             if (expr.getExpr() instanceof OCLUnary.Expr && ((OCLUnary.Expr) expr.getExpr()).getOpcode().equals(OCLUnaryOp.RETURN)) {
                 OCLUnary.Expr returnExpr = (OCLUnary.Expr) expr.getExpr();
                 append(new ExprStmt(new OCLNullary.Expr(OCLNullaryOp.RETURN, LIRKind.value(OCLKind.ILLEGAL))));
@@ -555,12 +553,12 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
     @Override
     protected void emitNode(final ValueNode node) {
         Logger.traceBuildLIR(Logger.BACKEND.OpenCL, "emitNode: %s", node);
-        if (node instanceof LoopBeginNode) {
-            emitLoopBegin((LoopBeginNode) node);
-        } else if (node instanceof LoopExitNode) {
-            emitLoopExit((LoopExitNode) node);
-        } else if (node instanceof ShortCircuitOrNode) {
-            emitShortCircuitOrNode((ShortCircuitOrNode) node);
+        if (node instanceof LoopBeginNode loopBeginNode) {
+            emitLoopBegin(loopBeginNode);
+        } else if (node instanceof LoopExitNode loopExitNode) {
+            emitLoopExit(loopExitNode);
+        } else if (node instanceof ShortCircuitOrNode shortCircuitOrNode) {
+            emitShortCircuitOrNode(shortCircuitOrNode);
         } else if (node instanceof IntelUnrollPragmaNode || node instanceof XilinxPipeliningPragmaNode || node instanceof FPGAWorkGroupSizeNode) {
             // ignore emit-action
         } else {
@@ -658,8 +656,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         // Only do that for the phi nodes that are not inside "else { break; }" blocks.
         HIRBlock curBlock = (HIRBlock) gen.getCurrentBlock();
         boolean shouldRelocateInstructions = false;
-        if (curBlock.getBeginNode() instanceof LoopExitNode) {
-            LoopExitNode loopExitNode = (LoopExitNode) curBlock.getBeginNode();
+        if (curBlock.getBeginNode() instanceof LoopExitNode loopExit) {
+            LoopExitNode loopExitNode = loopExit;
             LoopBeginNode loopBeginNode = loopExitNode.loopBegin();
             HIRBlock loopBeginBlock = loopBeginNode.graph().getLastSchedule().getNodeToBlockMap().get(loopBeginNode);
             for (int i = 0; i < curBlock.getPredecessorCount(); i++) {
@@ -711,8 +709,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 }
             }
             phi.setStamp(stamp);
-        } else if (stamp instanceof ObjectStamp) {
-            ObjectStamp oStamp = (ObjectStamp) stamp;
+        } else if (stamp instanceof ObjectStamp objectStamp) {
+            ObjectStamp oStamp = objectStamp;
             OCLKind oclKind = OCLKind.fromResolvedJavaType(oStamp.javaType(gen.getMetaAccess()));
             if (oclKind != ILLEGAL && oclKind.isVector()) {
                 stamp = OCLStampFactory.getStampFor(oclKind);

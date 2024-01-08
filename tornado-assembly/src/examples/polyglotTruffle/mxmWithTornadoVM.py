@@ -1,12 +1,14 @@
+#!/usr/bin/python
+
 #
-# Copyright (c) 2023, APT Group, Department of Computer Science,
+# Copyright (c) 2013-2023, APT Group, Department of Computer Science,
 # The University of Manchester.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#    http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,14 +16,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#
 
-#!/usr/bin/python
-
-print("Running with tornadoVM")
 import java
 import time
-myclass = java.type('uk.ac.manchester.tornado.examples.polyglot.MyCompute')
+
+myclass = java.type("uk.ac.manchester.tornado.examples.polyglot.MyCompute")
 
 print("Hello TornadoVM from Python!")
 
@@ -29,4 +28,4 @@ for i in range(5):
     start = time.time()
     output = myclass.compute()
     end = time.time()
-    print("Total time (s): " + str((end-start)))
+    print("Total time (s): " + str((end - start)))

@@ -12,15 +12,13 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
@@ -37,6 +35,7 @@ import org.graalvm.compiler.phases.common.MidTierLoweringPhase;
 import org.graalvm.compiler.phases.common.ReassociationPhase;
 import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 
+import uk.ac.manchester.tornado.drivers.common.graal.compiler.TornadoPanamaSegmentsHeaderPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.BoundCheckEliminationPhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoFloatingReadReplacement;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPartialLoopUnroll;
@@ -47,6 +46,8 @@ import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionCheckingEliminatio
 public class OCLMidTier extends TornadoMidTier {
 
     public OCLMidTier(OptionValues options) {
+
+        appendPhase(new TornadoPanamaSegmentsHeaderPhase());
 
         appendPhase(new ExceptionCheckingElimination());
 

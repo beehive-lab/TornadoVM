@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,7 +15,6 @@
  * limitations under the License.
  *
  */
-
 package uk.ac.manchester.tornado.examples.dynamic;
 
 import java.util.Random;
@@ -26,24 +25,25 @@ import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
- * BlackScholes implementation adapted from AMD-OpenCL examples and Marawacc
- * compiler framework.
+ * BlackScholes implementation adapted from AMD-OpenCL examples and Marawacc compiler framework.
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.BlackScholesMT
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.BlackScholesMT
  * </code>
  */
 public class BlackScholesMT {
+    // CHECKSTYLE:OFF
 
-    private static void blackScholesKernel(float[] input, float[] callResult, float[] putResult) {
-        for (@Parallel int idx = 0; idx < callResult.length; idx++) {
-            float rand = input[idx];
+    private static void blackScholesKernel(FloatArray input, FloatArray callResult, FloatArray putResult) {
+        for (@Parallel int idx = 0; idx < callResult.getSize(); idx++) {
+            float rand = input.get(idx);
             final float S_LOWER_LIMIT = 10.0f;
             final float S_UPPER_LIMIT = 100.0f;
             final float K_LOWER_LIMIT = 10.0f;
@@ -62,24 +62,24 @@ public class BlackScholesMT {
 
             float d1 = ((TornadoMath.log(S / K) + ((r + (v * v / 2)) * T)) / v * TornadoMath.sqrt(T));
             float d2 = (d1 - (v * TornadoMath.sqrt(T)));
-            callResult[idx] = (S * cnd(d1) - K * TornadoMath.exp(T * (-1) * r) * cnd(d2));
-            putResult[idx] = (K * TornadoMath.exp(T * -r) * cnd(-d2) - S * cnd(-d1));
+            callResult.set(idx, (S * cnd(d1) - K * TornadoMath.exp(T * (-1) * r) * cnd(d2)));
+            putResult.set(idx, (K * TornadoMath.exp(T * -r) * cnd(-d2) - S * cnd(-d1)));
         }
     }
 
-    private static void blackScholesKernelThreaded(float[] input, float[] callResult, float[] putResult, int threads, Thread[] th) throws InterruptedException {
-        int balk = callResult.length / threads;
+    private static void blackScholesKernelThreaded(FloatArray input, FloatArray callResult, FloatArray putResult, int threads, Thread[] th) throws InterruptedException {
+        int balk = callResult.getSize() / threads;
         for (int i = 0; i < threads; i++) {
             final int current = i;
             int lowBound = current * balk;
             int upperBound = (current + 1) * balk;
             if (current == threads - 1) {
-                upperBound = callResult.length;
+                upperBound = callResult.getSize();
             }
             int finalUpperBound = upperBound;
             th[i] = new Thread(() -> {
                 for (int idx = lowBound; idx < finalUpperBound; idx++) {
-                    float rand = input[idx];
+                    float rand = input.get(idx);
                     final float S_LOWER_LIMIT = 10.0f;
                     final float S_UPPER_LIMIT = 100.0f;
                     final float K_LOWER_LIMIT = 10.0f;
@@ -98,8 +98,8 @@ public class BlackScholesMT {
 
                     float d1 = (float) ((Math.log(S / K) + ((r + (v * v / 2)) * T)) / v * Math.sqrt(T));
                     float d2 = (float) (d1 - (v * Math.sqrt(T)));
-                    callResult[idx] = (float) (S * cnd(d1) - K * Math.exp(T * (-1) * r) * cnd(d2));
-                    putResult[idx] = (float) (K * Math.exp(T * -r) * cnd(-d2) - S * cnd(-d1));
+                    callResult.set(idx, (float) (S * cnd(d1) - K * Math.exp(T * (-1) * r) * cnd(d2)));
+                    putResult.set(idx, (float) (K * Math.exp(T * -r) * cnd(-d2) - S * cnd(-d1)));
                 }
             });
         }
@@ -126,18 +126,18 @@ public class BlackScholesMT {
         float absX = TornadoMath.abs(X);
         float t = one / (one + temp4 * absX);
         float y = (one - oneBySqrt2pi * TornadoMath.exp(-X * X / two) * t * (c1 + t * (c2 + t * (c3 + t * (c4 + t * c5)))));
-        return (X < zero) ? (one - y) : y;
+        return ((X < zero) ? (one - y) : y);
     }
 
-    private static boolean checkResult(float[] call, float[] put, float[] callPrice, float[] putPrice) {
+    private static boolean checkResult(FloatArray call, FloatArray put, FloatArray callPrice, FloatArray putPrice) {
         double delta = 1.8;
-        for (int i = 0; i < call.length; i++) {
-            if (Math.abs(call[i] - callPrice[i]) > delta) {
-                System.out.println("call: " + call[i] + " vs gpu " + callPrice[i]);
+        for (int i = 0; i < call.getSize(); i++) {
+            if (Math.abs(call.get(i) - callPrice.get(i)) > delta) {
+                System.out.println("call: " + call.get(i) + " vs gpu " + callPrice.get(i));
                 return false;
             }
-            if (Math.abs(put[i] - putPrice[i]) > delta) {
-                System.out.println("put: " + put[i] + " vs gpu " + putPrice[i]);
+            if (Math.abs(put.get(i) - putPrice.get(i)) > delta) {
+                System.out.println("put: " + put.get(i) + " vs gpu " + putPrice.get(i));
                 return false;
             }
         }
@@ -147,16 +147,16 @@ public class BlackScholesMT {
     public static void blackScholes(int size, int iterations, String executionType) throws InterruptedException {
 
         Random random = new Random();
-        float[] input = new float[size];
-        float[] callPrice = new float[size];
-        float[] putPrice = new float[size];
-        float[] seqCall = new float[size];
-        float[] seqPut = new float[size];
+        FloatArray input = new FloatArray(size);
+        FloatArray callPrice = new FloatArray(size);
+        FloatArray putPrice = new FloatArray(size);
+        FloatArray seqCall = new FloatArray(size);
+        FloatArray seqPut = new FloatArray(size);
         TaskGraph graph = new TaskGraph("s0");
-        long start,end;
+        long start, end;
 
         for (int i = 0; i < size; i++) {
-            input[i] = random.nextFloat();
+            input.set(i, random.nextFloat());
         }
         int maxThreadCount = Runtime.getRuntime().availableProcessors();
 
@@ -224,4 +224,5 @@ public class BlackScholesMT {
         System.out.println("Version running: " + executionType + " ! ");
         blackScholes(size, iterations, executionType);
     }
+    // CHECKSTYLE:ON
 }

@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -182,6 +182,14 @@ public class SPIRVVectorValueNode extends FloatingNode implements LIRLowerable, 
         Value s5;
         Value s6;
         Value s7;
+        Value s8;
+        Value s9;
+        Value s10;
+        Value s11;
+        Value s12;
+        Value s13;
+        Value s14;
+        Value s15;
         LIRKind lirKind;
 
         // check if first parameter is a vector
@@ -224,8 +232,28 @@ public class SPIRVVectorValueNode extends FloatingNode implements LIRLowerable, 
                 lirKind = gen.getLIRGeneratorTool().getLIRKind(stamp);
                 assignExpr = new SPIRVVectorAssign.AssignVectorExpr(lirKind, s0, s1, s2, s3, s4, s5, s6, s7);
                 break;
+            case 16: {
+                s1 = getParam(gen, tool, 1);
+                s2 = getParam(gen, tool, 2);
+                s3 = getParam(gen, tool, 3);
+                s4 = getParam(gen, tool, 4);
+                s5 = getParam(gen, tool, 5);
+                s6 = getParam(gen, tool, 6);
+                s7 = getParam(gen, tool, 7);
+                s8 = getParam(gen, tool, 8);
+                s9 = getParam(gen, tool, 9);
+                s10 = getParam(gen, tool, 10);
+                s11 = getParam(gen, tool, 11);
+                s12 = getParam(gen, tool, 12);
+                s13 = getParam(gen, tool, 13);
+                s14 = getParam(gen, tool, 14);
+                s15 = getParam(gen, tool, 15);
+                lirKind = gen.getLIRGeneratorTool().getLIRKind(stamp);
+                assignExpr = new SPIRVVectorAssign.AssignVectorExpr(lirKind, s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15);
+                break;
+            }
             default:
-                throw new RuntimeException("Operation type not supported");
+                throw new RuntimeException("Unsupported vector width (up to size 16 currently supported)");
         }
         tool.append(new SPIRVLIRStmt.AssignStmt(result, assignExpr));
         gen.setResult(this, result);

@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -26,9 +26,18 @@ package uk.ac.manchester.tornado.runtime.common;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
+import uk.ac.manchester.tornado.api.types.arrays.CharArray;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 
 /**
@@ -37,6 +46,7 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
  * objects.
  */
 public class BatchConfiguration {
+
     private final int totalChunks;
     private final int remainingChunkSize;
     private final short numBytesType;
@@ -45,11 +55,11 @@ public class BatchConfiguration {
      * Constructs a BatchConfiguration object with the specified parameters.
      *
      * @param totalChunks
-     *            The total number of chunks.
+     *     The total number of chunks.
      * @param remainingChunkSize
-     *            The size of the remaining chunk.
+     *     The size of the remaining chunk.
      * @param numBytesType
-     *            The number of bytes for the data type.
+     *     The number of bytes for the data type.
      */
     public BatchConfiguration(int totalChunks, int remainingChunkSize, short numBytesType) {
         this.totalChunks = totalChunks;
@@ -61,33 +71,48 @@ public class BatchConfiguration {
         // Get the size of the batch
         List<Object> inputObjects = context.getObjects();
         long totalSize = 0;
-        DataTypeSize dataTypeSize = null;
 
-        HashSet<Class<?>> classObjects = new HashSet<>();
         HashSet<Long> inputSizes = new HashSet<>();
+        LinkedHashSet<Byte> elementSizes = new LinkedHashSet<>();
 
         for (Object o : inputObjects) {
             if (o.getClass().isArray()) {
                 Class<?> componentType = o.getClass().getComponentType();
-                dataTypeSize = findDataTypeSize(componentType);
+                DataTypeSize dataTypeSize = findDataTypeSize(componentType);
                 if (dataTypeSize == null) {
                     throw new TornadoRuntimeException("[UNSUPPORTED] Data type not supported for processing in batches");
                 }
                 long size = Array.getLength(o);
                 totalSize = size * dataTypeSize.getSize();
 
-                classObjects.add(componentType);
+                elementSizes.add(dataTypeSize.getSize());
                 inputSizes.add(totalSize);
-                if (classObjects.size() > 1) {
-                    throw new TornadoRuntimeException("[UNSUPPORTED] Input objects with different data types not currently supported");
-                }
-                if (inputSizes.size() > 1) {
-                    throw new TornadoRuntimeException("[UNSUPPORTED] Input objects with different sizes not currently supported");
-                }
+            } else if (o instanceof TornadoNativeArray tornadoNativeArray) {
+                totalSize = tornadoNativeArray.getNumBytesWithoutHeader();
+                inputSizes.add(totalSize);
+                byte elementSize = switch (tornadoNativeArray) {
+                    case IntArray _ -> DataTypeSize.INT.getSize();
+                    case FloatArray _ -> DataTypeSize.FLOAT.getSize();
+                    case DoubleArray _ -> DataTypeSize.DOUBLE.getSize();
+                    case LongArray _ -> DataTypeSize.LONG.getSize();
+                    case ShortArray _ -> DataTypeSize.SHORT.getSize();
+                    case ByteArray _ -> DataTypeSize.BYTE.getSize();
+                    case CharArray _ -> DataTypeSize.CHAR.getSize();
+                    default -> throw new TornadoRuntimeException("Unsupported array type: " + o.getClass());
+                };
+                elementSizes.add(elementSize);
+            } else {
+                throw new TornadoRuntimeException("Unsupported type: " + o.getClass());
             }
         }
 
-        assert dataTypeSize != null;
+        if (inputSizes.size() > 1) {
+            throw new TornadoRuntimeException("[UNSUPPORTED] Input objects with different sizes not currently supported");
+        }
+
+        if (elementSizes.size() > 1) {
+            throw new TornadoRuntimeException("[UNSUPPORTED] Input objects with different element sizes not currently supported");
+        }
 
         int totalChunks = (int) (totalSize / batchSize);
         int remainingChunkSize = (int) (totalSize % batchSize);
@@ -97,7 +122,7 @@ public class BatchConfiguration {
             System.out.println("Total chunks: " + totalChunks);
             System.out.println("remainingChunkSize: " + remainingChunkSize);
         }
-        return new BatchConfiguration(totalChunks, remainingChunkSize, dataTypeSize.getSize());
+        return new BatchConfiguration(totalChunks, remainingChunkSize, elementSizes.getFirst());
     }
 
     private static DataTypeSize findDataTypeSize(Class<?> dataType) {

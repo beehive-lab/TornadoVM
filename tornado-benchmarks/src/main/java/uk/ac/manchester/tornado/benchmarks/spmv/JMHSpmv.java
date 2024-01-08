@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -44,6 +44,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 import uk.ac.manchester.tornado.matrix.SparseMatrixUtils;
 
@@ -52,24 +53,24 @@ import uk.ac.manchester.tornado.matrix.SparseMatrixUtils;
  * How to run in isolation?
  * </p>
  * <code>
- *    tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.spmv.JMHSpmv
+ * tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.spmv.JMHSpmv
  * </code>
  */
 public class JMHSpmv {
 
     @State(Scope.Thread)
     public static class BenchmarkSetup {
-        private SparseMatrixUtils.CSRMatrix<float[]> matrix;
-        private float[] v;
-        private float[] y;
+        private SparseMatrixUtils.CSRMatrix<FloatArray> matrix;
+        private FloatArray v;
+        private FloatArray y;
         private TornadoExecutionPlan executor;
 
         @Setup(Level.Trial)
         public void doSetup() {
             String path = System.getProperty("spmv.matrix", "/bcsstk32.mtx");
             matrix = SparseMatrixUtils.loadMatrixF(uk.ac.manchester.tornado.benchmarks.spmv.Benchmark.class.getResourceAsStream(path));
-            v = new float[matrix.size];
-            y = new float[matrix.size];
+            v = new FloatArray(matrix.size);
+            y = new FloatArray(matrix.size);
             initData(v);
             TaskGraph taskGraph = new TaskGraph("benchmark") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrix.vals, matrix.cols, matrix.rows, v, y) //
@@ -88,7 +89,7 @@ public class JMHSpmv {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Fork(1)
     public void spmvJava(BenchmarkSetup state) {
-        SparseMatrixUtils.CSRMatrix<float[]> matrix = state.matrix;
+        SparseMatrixUtils.CSRMatrix<FloatArray> matrix = state.matrix;
         spmv(matrix.vals, matrix.cols, matrix.rows, state.v, matrix.size, state.y);
     }
 

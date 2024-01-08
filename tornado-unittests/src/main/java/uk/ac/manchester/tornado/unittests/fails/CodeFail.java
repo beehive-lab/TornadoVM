@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,8 +27,11 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
-import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -40,7 +43,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.fails.CodeFail
+ * tornado-test -V uk.ac.manchester.tornado.unittests.fails.CodeFail
  * </code>
  */
 public class CodeFail extends TornadoTestBase {
@@ -48,22 +51,22 @@ public class CodeFail extends TornadoTestBase {
     /**
      * This case is not failing anymore. This stresses the local memory allocator.
      */
-    public static void foo(float[] a) {
-        float[] x = new float[a.length % 10];
+    public static void foo(FloatArray a) {
+        float[] x = new float[a.getSize() % 10];
         for (@Parallel int i = 0; i < x.length; i++) {
-            a[i] = a[i] * a[i];
+            a.set(i, a.get(i) * a.get(i));
         }
     }
 
     @Test
     public void codeFail01() {
 
-        float[] a = new float[1000];
-        float[] b = new float[1000];
+        FloatArray a = new FloatArray(1000);
+        FloatArray b = new FloatArray(1000);
         Random r = new Random();
-        IntStream.range(0, a.length).forEach(i -> {
-            a[i] = r.nextFloat();
-            b[i] = a[i];
+        IntStream.range(0, a.getSize()).forEach(i -> {
+            a.set(i, r.nextFloat());
+            b.set(i, a.get(i));
         });
 
         TaskGraph taskGraph = new TaskGraph("s0");
@@ -80,7 +83,7 @@ public class CodeFail extends TornadoTestBase {
      * Object allocation is not supported. This test provokes to bailout to the Java
      * sequential implementation.
      */
-    public static void bar(float[] a) {
+    public static void bar(FloatArray a) {
         Matrix2DFloat f = new Matrix2DFloat(256, 256); // Allocation here
         for (@Parallel int i = 0; i < 256; i++) {
             for (@Parallel int j = 0; j < 256; j++) {
@@ -91,44 +94,51 @@ public class CodeFail extends TornadoTestBase {
 
     @Test
     public void codeFail02() {
-        float[] a = new float[1000];
-        float[] b = new float[1000];
-        Random r = new Random();
-        IntStream.range(0, a.length).forEach(i -> {
-            a[i] = r.nextFloat();
-            b[i] = a[i];
-        });
+        try {
+            FloatArray a = new FloatArray(1000);
+            FloatArray b = new FloatArray(1000);
+            Random r = new Random();
+            IntStream.range(0, a.getSize()).forEach(i -> {
+                a.set(i, r.nextFloat());
+                b.set(i, a.get(i));
+            });
 
-        TaskGraph taskGraph = new TaskGraph("s0");
+            TaskGraph taskGraph = new TaskGraph("s0");
 
-        taskGraph.task("t0", CodeFail::bar, a) //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+            taskGraph.task("t0", CodeFail::bar, a) //
+                    .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+            TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+            executionPlan.execute();
+        } catch (TornadoBailoutRuntimeException e) {
+            assertNotBackend(TornadoVMBackendType.OPENCL);
+            assertNotBackend(TornadoVMBackendType.SPIRV);
+        }
     }
 
     /**
      * Fusion of multiple reductions is not currently supported. This test provokes
      * to bailout to the Java sequential implementation.
      */
-    public static void zoo(int[] input, @Reduce int[] output1, @Reduce int[] output2) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            output1[0] += input[i];
-            output2[0] += input[i];
+    public static void zoo(IntArray input, @Reduce IntArray output1, @Reduce IntArray output2) {
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            output1.set(0, output1.get(0) + input.get(i));
+            output2.set(0, output2.get(0) + input.get(i));
         }
     }
 
     @Test(expected = TornadoBailoutRuntimeException.class)
     public void codeFail03() {
         final int size = 128;
-        int[] input = new int[size];
-        int[] result1 = new int[] { 0 };
-        int[] result2 = new int[] { 0 };
+        IntArray input = new IntArray(size);
+        IntArray result1 = new IntArray(1);
+        result1.init(0);
+        IntArray result2 = new IntArray(1);
+        result2.init(0);
 
         IntStream.range(0, size).parallel().forEach(i -> {
-            input[i] = i;
+            input.set(i, i);
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //

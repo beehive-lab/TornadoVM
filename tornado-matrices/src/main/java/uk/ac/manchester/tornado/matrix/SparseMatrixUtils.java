@@ -1,21 +1,20 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
- *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
-
 package uk.ac.manchester.tornado.matrix;
 
 import static java.lang.Float.parseFloat;
@@ -35,24 +34,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+
 public class SparseMatrixUtils {
 
     private static final boolean VERBOSE = false;
 
-    public static class CSRMatrix<T> {
-
-        public int n;
-        public int size;
-        public T vals;
-        public int[] rows;
-        public int[] cols;
-    }
-
-    public static CSRMatrix<double[]> loadMatrixD(final String path) {
+    public static CSRMatrix<DoubleArray> loadMatrixD(final String path) {
         boolean pattern = false;
         boolean symmetric = false;
 
-        final CSRMatrix<double[]> mat = new CSRMatrix<>();
+        final CSRMatrix<DoubleArray> mat = new CSRMatrix<>();
 
         Random rand = null;
         try (BufferedReader br = new BufferedReader(new FileReader(path))) {
@@ -103,13 +97,13 @@ public class SparseMatrixUtils {
                 int y;
                 float val;
 
-                public Coordinate(final int a, final int b, final float c) {
+                Coordinate(final int a, final int b, final float c) {
                     x = a;
                     y = b;
                     val = c;
                 }
 
-                public Coordinate(final String[] opts) {
+                Coordinate(final String[] opts) {
                     x = parseInt(opts[0]) - 1;
                     y = parseInt(opts[1]) - 1;
                     val = parseFloat(opts[2]);
@@ -169,21 +163,21 @@ public class SparseMatrixUtils {
             nElements = index;
             mat.n = nElements;
             mat.size = nRows;
-            mat.vals = new double[nElements];
-            mat.cols = new int[nElements];
-            mat.rows = new int[nRows + 1];
-            mat.rows[0] = 0;
-            mat.rows[nRows] = nElements;
+            mat.vals = new DoubleArray(nElements);
+            mat.cols = new IntArray(nElements);
+            mat.rows = new IntArray(nRows + 1);
+            mat.rows.set(0, 0);
+            mat.rows.set(nRows, nElements);
             int r = 0;
             for (int i = 0; i < nElements; i++) {
 
                 final Coordinate c = coords.get(i);
 
                 while (c.x != r) {
-                    mat.rows[++r] = i;
+                    mat.rows.set(++r, i);
                 }
-                mat.vals[i] = c.val;
-                mat.cols[i] = c.y;
+                mat.vals.set(i, c.val);
+                mat.cols.set(i, c.y);
             }
             coords.clear();
         } catch (final FileNotFoundException e) {
@@ -196,8 +190,8 @@ public class SparseMatrixUtils {
 
     }
 
-    public static CSRMatrix<float[]> loadMatrixF(InputStream inStream) {
-        try (final BufferedReader br = new BufferedReader(new InputStreamReader(inStream))) {
+    public static CSRMatrix<FloatArray> loadMatrixF(InputStream inStream) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(inStream))) {
             return loadMatrixF(br);
         } catch (IOException e) {
             err.printf("unable to read matrix from input steam: %s\n", e.getMessage());
@@ -206,8 +200,8 @@ public class SparseMatrixUtils {
         return null;
     }
 
-    public static CSRMatrix<float[]> loadMatrixF(final String path) {
-        try (final BufferedReader br = new BufferedReader(new FileReader(path))) {
+    public static CSRMatrix<FloatArray> loadMatrixF(final String path) {
+        try (BufferedReader br = new BufferedReader(new FileReader(path))) {
             return loadMatrixF(br);
         } catch (IOException e) {
             err.printf("unable to read matrix from file: %s (%s)\n", path, e.getMessage());
@@ -216,11 +210,11 @@ public class SparseMatrixUtils {
         return null;
     }
 
-    private static CSRMatrix<float[]> loadMatrixF(BufferedReader br) throws IOException {
+    private static CSRMatrix<FloatArray> loadMatrixF(BufferedReader br) throws IOException {
         boolean pattern = false;
         boolean symmetric = false;
 
-        final CSRMatrix<float[]> mat = new CSRMatrix<>();
+        final CSRMatrix<FloatArray> mat = new CSRMatrix<>();
 
         Random rand = null;
 
@@ -269,13 +263,13 @@ public class SparseMatrixUtils {
             int y;
             float val;
 
-            public Coordinate(final int a, final int b, final float c) {
+            Coordinate(final int a, final int b, final float c) {
                 x = a;
                 y = b;
                 val = c;
             }
 
-            public Coordinate(final String[] opts) {
+            Coordinate(final String[] opts) {
                 x = parseInt(opts[0]) - 1;
                 y = parseInt(opts[1]) - 1;
                 val = parseFloat(opts[2]);
@@ -339,12 +333,12 @@ public class SparseMatrixUtils {
 
         mat.n = nElements;
         mat.size = nRows;
-        mat.vals = new float[nElements];
-        mat.cols = new int[nElements];
-        mat.rows = new int[nRows + 1];
+        mat.vals = new FloatArray(nElements);
+        mat.cols = new IntArray(nElements);
+        mat.rows = new IntArray(nRows + 1);
 
-        mat.rows[0] = 0;
-        mat.rows[nRows] = nElements;
+        mat.rows.set(0, 0);
+        mat.rows.set(nRows, nElements);
 
         int r = 0;
 
@@ -353,13 +347,22 @@ public class SparseMatrixUtils {
             final Coordinate c = coords.get(i);
 
             while (c.x != r) {
-                mat.rows[++r] = i;
+                mat.rows.set(++r, i);
             }
-            mat.vals[i] = c.val;
-            mat.cols[i] = c.y;
+            mat.vals.set(i, c.val);
+            mat.cols.set(i, c.y);
         }
 
         coords.clear();
         return mat;
+    }
+
+    public static class CSRMatrix<T> {
+
+        public int n;
+        public int size;
+        public T vals;
+        public IntArray rows;
+        public IntArray cols;
     }
 }

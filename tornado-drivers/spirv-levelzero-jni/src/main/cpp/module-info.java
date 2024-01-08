@@ -1,2 +1,0 @@
-module spirv.levelzero.jni {
-}

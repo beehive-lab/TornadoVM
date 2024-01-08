@@ -17,15 +17,14 @@
  */
 package uk.ac.manchester.tornado.unittests.foundation;
 
-import static org.junit.Assert.assertArrayEquals;
-
-import java.util.Arrays;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -43,12 +42,13 @@ public class MultipleRuns extends TornadoTestBase {
     public void multipleRuns() {
 
         final int numElements = 512;
-        int[] a = new int[numElements];
+        IntArray a = new IntArray(numElements);
 
         final int iterations = 50;
 
-        int[] expectedResult = new int[numElements];
-        Arrays.fill(expectedResult, iterations * 50);
+        IntArray expectedResult = new IntArray(numElements);
+        expectedResult.init(iterations * 50);
+       // Arrays.fill(expectedResult, iterations * 50);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
@@ -61,6 +61,8 @@ public class MultipleRuns extends TornadoTestBase {
         for (int i = 0; i < iterations; i++) {
             executionPlan.execute();
         }
-        assertArrayEquals(expectedResult, a);
+        for (int i = 0; i < expectedResult.getSize(); i++) {
+            assertEquals(expectedResult.get(i), a.get(i));
+        }
     }
 }

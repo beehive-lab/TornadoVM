@@ -17,14 +17,13 @@
  */
 package uk.ac.manchester.tornado.unittests.fails;
 
-import java.util.Arrays;
-
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -39,15 +38,15 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 public class RuntimeFail extends TornadoTestBase {
 
-    public static void vectorAdd(float[] a, float[] b, float[] c) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            c[i] = a[i] * b[i];
+    public static void vectorAdd(FloatArray a, FloatArray b, FloatArray c) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            c.set(i, a.get(i) * b.get(i));
         }
     }
 
-    public static void square(float[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = a[i] * a[i];
+    public static void square(FloatArray a) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            a.set(i, a.get(i) * a.get(i));
         }
     }
 
@@ -63,12 +62,12 @@ public class RuntimeFail extends TornadoTestBase {
      */
     @Test(expected = TornadoTaskRuntimeException.class)
     public void test01() {
-        float[] x = new float[8192];
-        float[] y = new float[8192];
-        float[] z = new float[8192];
+        FloatArray x = new FloatArray(8192);
+        FloatArray y = new FloatArray(8192);
+        FloatArray z = new FloatArray(8192);
 
-        Arrays.fill(x, 2.0f);
-        Arrays.fill(y, 8.0f);
+        x.init(2.0f);
+        y.init(8.0f);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, x, y) //

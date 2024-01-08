@@ -12,15 +12,13 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
@@ -33,13 +31,56 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import uk.ac.manchester.tornado.api.type.annotations.Vector;
+import uk.ac.manchester.tornado.api.internal.annotations.Vector;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble16;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble2;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble3;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble4;
+import uk.ac.manchester.tornado.api.types.collections.VectorDouble8;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat16;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat2;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat8;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt16;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt2;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt3;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt4;
+import uk.ac.manchester.tornado.api.types.collections.VectorInt8;
+import uk.ac.manchester.tornado.api.types.images.ImageByte3;
+import uk.ac.manchester.tornado.api.types.images.ImageByte4;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat4;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat8;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat4;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix3DFloat4;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.types.vectors.Byte3;
+import uk.ac.manchester.tornado.api.types.vectors.Byte4;
+import uk.ac.manchester.tornado.api.types.vectors.Double16;
+import uk.ac.manchester.tornado.api.types.vectors.Double2;
+import uk.ac.manchester.tornado.api.types.vectors.Double3;
+import uk.ac.manchester.tornado.api.types.vectors.Double4;
+import uk.ac.manchester.tornado.api.types.vectors.Double8;
+import uk.ac.manchester.tornado.api.types.vectors.Float16;
+import uk.ac.manchester.tornado.api.types.vectors.Float2;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
+import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.vectors.Int16;
+import uk.ac.manchester.tornado.api.types.vectors.Int2;
+import uk.ac.manchester.tornado.api.types.vectors.Int3;
+import uk.ac.manchester.tornado.api.types.vectors.Int4;
+import uk.ac.manchester.tornado.api.types.vectors.Int8;
+import uk.ac.manchester.tornado.api.types.vectors.Short2;
+import uk.ac.manchester.tornado.api.types.vectors.Short3;
+import uk.ac.manchester.tornado.api.types.volumes.VolumeShort2;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 
 public enum OCLKind implements PlatformKind {
 
     // @formatter:off
-    ATOMIC_ADD_INT(4, java.lang.Integer.TYPE),  
+    ATOMIC_ADD_INT(4, java.lang.Integer.TYPE),
     ATOMIC_ADD_FLOAT(4, java.lang.Float.TYPE),
     ATOMIC_SUB_INT(4, java.lang.Integer.TYPE),
     ATOMIC_MUL_INT(4, java.lang.Integer.TYPE),
@@ -58,58 +99,102 @@ public enum OCLKind implements PlatformKind {
     DOUBLE(8, java.lang.Double.TYPE),
     CHAR2(2, null, CHAR),
     UCHAR2(2, null, UCHAR),
-    SHORT2(2, uk.ac.manchester.tornado.api.collections.types.Short2.TYPE, SHORT),
+    SHORT2(2, Short2.TYPE, SHORT),
     USHORT2(2, null, USHORT),
-    INT2(2, uk.ac.manchester.tornado.api.collections.types.Int2.TYPE, INT),
+    VOLUMESHORT2(2, VolumeShort2.TYPE, SHORT),
+    INT2(2, Int2.TYPE, INT),
     UINT2(2, null, UINT),
     LONG2(2, null, LONG),
     ULONG2(2, null, ULONG),
-    FLOAT2(2, uk.ac.manchester.tornado.api.collections.types.Float2.TYPE, FLOAT),
-    DOUBLE2(2, uk.ac.manchester.tornado.api.collections.types.Double2.TYPE, DOUBLE),
-    CHAR3(3, uk.ac.manchester.tornado.api.collections.types.Byte3.TYPE, CHAR),
+    FLOAT2(2, Float2.TYPE, FLOAT),
+    DOUBLE2(2, Double2.TYPE, DOUBLE),
+    VECTORDOUBLE2(2, VectorDouble2.TYPE, DOUBLE),
+    VECTORINT2(2, VectorInt2.TYPE, INT),
+    VECTORFLOAT2(2, VectorFloat2.TYPE, FLOAT),
+    CHAR3(3, Byte3.TYPE, CHAR),
+    IMAGEBYTE3(3, ImageByte3.TYPE, CHAR),
     UCHAR3(3, null, UCHAR),
-    SHORT3(3, uk.ac.manchester.tornado.api.collections.types.Short3.TYPE, SHORT),
+    SHORT3(3, Short3.TYPE, SHORT),
     USHORT3(3, null, USHORT),
-    INT3(3, uk.ac.manchester.tornado.api.collections.types.Int3.TYPE, INT),
+    INT3(3, Int3.TYPE, INT),
     UINT3(3, null, UINT),
     LONG3(3, null, LONG),
     ULONG3(3, null, ULONG),
-    FLOAT3(3, uk.ac.manchester.tornado.api.collections.types.Float3.TYPE, FLOAT),
-    DOUBLE3(3, uk.ac.manchester.tornado.api.collections.types.Double3.TYPE, DOUBLE),
-    CHAR4(4, uk.ac.manchester.tornado.api.collections.types.Byte4.TYPE, CHAR),
+    FLOAT3(3, Float3.TYPE, FLOAT),
+    DOUBLE3(3, Double3.TYPE, DOUBLE),
+    VECTORDOUBLE3(3, VectorDouble3.TYPE, DOUBLE),
+    VECTORINT3(3, VectorInt3.TYPE, INT),
+    VECTORFLOAT3(3, VectorFloat3.TYPE, FLOAT),
+    IMAGEFLOAT3(3, ImageFloat3.TYPE, FLOAT),
+    CHAR4(4, Byte4.TYPE, CHAR),
+    IMAGEBYTE4(4, ImageByte4.TYPE, CHAR),
     UCHAR4(4, null, UCHAR),
     SHORT4(4, null, SHORT),
     USHORT4(4, null, USHORT),
-    INT4(4, uk.ac.manchester.tornado.api.collections.types.Int4.TYPE, INT),
+    INT4(4, Int4.TYPE, INT),
     UINT4(4, null, UINT),
     LONG4(4, null, LONG),
     ULONG4(4, null, ULONG),
-    FLOAT4(4, uk.ac.manchester.tornado.api.collections.types.Float4.TYPE, FLOAT),
-    DOUBLE4(4, uk.ac.manchester.tornado.api.collections.types.Double4.TYPE, DOUBLE),
+    FLOAT4(4, Float4.TYPE, FLOAT),
+    MATRIX2DFLOAT4(4, Matrix2DFloat4.TYPE, FLOAT),
+    MATRIX3DFLOAT4(4, Matrix3DFloat4.TYPE, FLOAT),
+    MATRIX4X4FLOAT(4, Matrix4x4Float.TYPE, FLOAT),
+    IMAGEFLOAT4(4, ImageFloat4.TYPE, FLOAT),
+    DOUBLE4(4, Double4.TYPE, DOUBLE),
+    VECTORDOUBLE4(4, VectorDouble4.TYPE, DOUBLE),
+    VECTORINT4(4, VectorInt4.TYPE, INT),
+    VECTORFLOAT4(4, VectorFloat4.TYPE, FLOAT),
     CHAR8(8, null, CHAR),
     UCHAR8(8, null, UCHAR),
     SHORT8(8, null, SHORT),
     USHORT8(8, null, USHORT),
-    INT8(8, uk.ac.manchester.tornado.api.collections.types.Int8.TYPE, INT),
+    INT8(8, Int8.TYPE, INT),
     UINT8(8, null, UINT),
     LONG8(8, null, LONG),
     ULONG8(8, null, ULONG),
-    FLOAT8(8, uk.ac.manchester.tornado.api.collections.types.Float8.TYPE, FLOAT),
-    DOUBLE8(8, uk.ac.manchester.tornado.api.collections.types.Double8.TYPE, DOUBLE),        
+    FLOAT8(8, Float8.TYPE, FLOAT),
+    DOUBLE8(8, Double8.TYPE, DOUBLE),
+    VECTORDOUBLE8(8, VectorDouble8.TYPE, DOUBLE),
+    VECTORDOUBLE16(16, VectorDouble16.TYPE, DOUBLE),
+    VECTORINT8(8, VectorInt8.TYPE, INT),
+    VECTORINT16(16, VectorInt16.TYPE, INT),
+    VECTORFLOAT8(8, VectorFloat8.TYPE, FLOAT),
+    VECTORFLOAT16(16, VectorFloat16.TYPE, FLOAT),
+    IMAGEFLOAT8(8, ImageFloat8.TYPE, FLOAT),
     CHAR16(16, null, CHAR),
     UCHAR16(16, null, UCHAR),
     SHORT16(16, null, SHORT),
     USHORT16(16, null, USHORT),
-    INT16(16, null, INT),
+    INT16(16, Int16.TYPE, INT),
     UINT16(16, null, UINT),
     LONG16(16, null, LONG),
     ULONG16(16, null, ULONG),
-    FLOAT16(16, null, FLOAT),
-    DOUBLE16(16, null, DOUBLE),
+    DOUBLE16(16, Double16.TYPE, DOUBLE),
+    FLOAT16(16, Float16.TYPE, FLOAT),
+
     ILLEGAL(0, null),
-    
     INTEGER_ATOMIC_JAVA(4, java.util.concurrent.atomic.AtomicInteger.class);
     // @formatter:on
+
+    private final int size;
+    private final int vectorLength;
+    private final OCLKind kind;
+    private final OCLKind elementKind;
+    private final Class<?> javaClass;
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private final EnumKey key = new EnumKey(this);
+
+    OCLKind(int size, Class<?> javaClass) {
+        this(size, javaClass, null);
+    }
+
+    OCLKind(int size, Class<?> javaClass, OCLKind kind) {
+        this.kind = this;
+        this.javaClass = javaClass;
+        this.elementKind = kind;
+        this.size = (elementKind == null) ? size : elementKind.size * size;
+        this.vectorLength = (elementKind == null) ? 1 : size;
+    }
 
     public static OCLKind fromResolvedJavaType(ResolvedJavaType type) {
         if (!type.isArray()) {
@@ -177,26 +262,51 @@ public enum OCLKind implements PlatformKind {
         return resolvePrivateTemplateType(type.getJavaKind());
     }
 
-    private final int size;
-    private final int vectorLength;
-
-    private final OCLKind kind;
-    private final OCLKind elementKind;
-    private final Class<?> javaClass;
-
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    private final EnumKey key = new EnumKey(this);
-
-    OCLKind(int size, Class<?> javaClass) {
-        this(size, javaClass, null);
+    public static OCLKind resolveToVectorKind(ResolvedJavaType type) {
+        if (!type.isPrimitive() && type.getAnnotation(Vector.class) != null) {
+            String typeName = type.getName();
+            int index = typeName.lastIndexOf("/");
+            String simpleName = typeName.substring(index + 1, typeName.length() - 1).toUpperCase();
+            if (simpleName.startsWith("BYTE")) {
+                simpleName = simpleName.replace("BYTE", "CHAR");
+            }
+            return OCLKind.valueOf(simpleName);
+        }
+        return OCLKind.ILLEGAL;
     }
 
-    OCLKind(int size, Class<?> javaClass, OCLKind kind) {
-        this.kind = this;
-        this.javaClass = javaClass;
-        this.elementKind = kind;
-        this.size = (elementKind == null) ? size : elementKind.size * size;
-        this.vectorLength = (elementKind == null) ? 1 : size;
+    public static int lookupTypeIndex(OCLKind kind) {
+        switch (kind) {
+            case SHORT:
+                return 0;
+            case INT:
+                return 1;
+            case FLOAT:
+                return 2;
+            case CHAR:
+                return 3;
+            case DOUBLE:
+                return 4;
+            default:
+                return -1;
+        }
+    }
+
+    public static int lookupLengthIndex(int length) {
+        switch (length) {
+            case 2:
+                return 0;
+            case 3:
+                return 1;
+            case 4:
+                return 2;
+            case 8:
+                return 3;
+            case 16:
+                return 4;
+            default:
+                return -1;
+        }
     }
 
     @Override
@@ -356,12 +466,17 @@ public enum OCLKind implements PlatformKind {
     }
 
     public boolean isInteger() {
-        return kind != ILLEGAL && !isFloating();
+        if (kind == ILLEGAL || isFloating()) {
+            return false;
+        }
+        return true;
     }
 
     public boolean isFloating() {
-        // TODO are vectors integers?
-        return kind == FLOAT || kind == DOUBLE;
+        if (kind == FLOAT || kind == DOUBLE) {
+            return true;
+        }
+        return false;
     }
 
     public boolean isVector() {
@@ -380,38 +495,8 @@ public enum OCLKind implements PlatformKind {
         return JavaConstant.NULL_POINTER;
     }
 
-    public static OCLKind resolveToVectorKind(ResolvedJavaType type) {
-        if (!type.isPrimitive() && type.getAnnotation(Vector.class) != null) {
-            String typeName = type.getName();
-            int index = typeName.lastIndexOf("/");
-            String simpleName = typeName.substring(index + 1, typeName.length() - 1).toUpperCase();
-            if (simpleName.startsWith("BYTE")) {
-                simpleName = simpleName.replace("BYTE", "CHAR");
-            }
-            return OCLKind.valueOf(simpleName);
-        }
-        return OCLKind.ILLEGAL;
-    }
-
     public int getByteCount() {
         return size;
-    }
-
-    public static int lookupTypeIndex(OCLKind kind) {
-        switch (kind) {
-            case SHORT:
-                return 0;
-            case INT:
-                return 1;
-            case FLOAT:
-                return 2;
-            case CHAR:
-                return 3;
-            case DOUBLE:
-                return 4;
-            default:
-                return -1;
-        }
     }
 
     public final int lookupLengthIndex() {
@@ -420,23 +505,6 @@ public enum OCLKind implements PlatformKind {
 
     public final int lookupTypeIndex() {
         return lookupTypeIndex(getElementKind());
-    }
-
-    public static int lookupLengthIndex(int length) {
-        switch (length) {
-            case 2:
-                return 0;
-            case 3:
-                return 1;
-            case 4:
-                return 2;
-            case 8:
-                return 3;
-            case 16:
-                return 4;
-            default:
-                return -1;
-        }
     }
 
     public JavaKind asJavaKind() {

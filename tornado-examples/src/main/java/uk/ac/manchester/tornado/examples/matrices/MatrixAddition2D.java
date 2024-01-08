@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,11 +24,11 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
-import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat4;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat4;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
 
 /**
  * Full example to show to matrix addition with non vector types
@@ -36,11 +36,12 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.matrices.MatrixAddition2D
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.matrices.MatrixAddition2D
  * </code>
  *
  */
 public class MatrixAddition2D {
+    // CHECKSTYLE:OFF
 
     private static final int WARMING_UP_ITERATIONS = 25;
 
@@ -120,8 +121,8 @@ public class MatrixAddition2D {
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
-                matrixAV.set(i, j, new Float4(new float[] { r.nextFloat(), r.nextFloat(), r.nextFloat(), r.nextFloat() }));
-                matrixBV.set(i, j, new Float4(new float[] { r.nextFloat(), r.nextFloat(), r.nextFloat(), r.nextFloat() }));
+                matrixAV.set(i, j, new Float4(r.nextFloat(), r.nextFloat(), r.nextFloat(), r.nextFloat()));
+                matrixBV.set(i, j, new Float4(r.nextFloat(), r.nextFloat(), r.nextFloat(), r.nextFloat()));
             }
         }
 
@@ -162,3 +163,4 @@ public class MatrixAddition2D {
     }
 
 }
+// CHECKSTYLE:ON

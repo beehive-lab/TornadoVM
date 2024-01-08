@@ -1,0 +1,368 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+# The University of Manchester.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+import argparse
+import os
+import shutil
+import subprocess
+import sys
+
+import install_python_modules as tornadoReq
+
+tornadoReq.check_python_dependencies()
+
+import update_paths as updp
+import pull_graal_jars
+
+
+def check_java_version():
+    """
+    Checks the Java version in the system.
+
+    Returns:
+        str: The Java version information.
+    """
+    java_home = os.environ.get("JAVA_HOME")
+    if java_home == None:
+        print("JAVA_HOME not found.")
+        sys.exit(-1)
+    java_cmd = os.path.join(java_home, "bin", "java")
+    java_version_output = subprocess.check_output(
+        [java_cmd, "-version"], stderr=subprocess.STDOUT, universal_newlines=True
+    )
+    return java_version_output
+
+
+def pull_graal_jars_if_needed(graal_jars_status):
+    """
+    Pulls GraalVM jars if the specified JDK version does not contain the binaries.
+
+    Args:
+        jdk (str): The JDK version.
+    """
+    if graal_jars_status:
+        pull_graal_jars.main()
+
+
+def should_handle_graal_jars(jdk):
+    java_version_output = check_java_version()
+    return jdk == "jdk21" and "GraalVM" not in java_version_output
+
+
+def maven_cleanup():
+    print("mvn -Popencl-backend,ptx-backend,spirv-backend clean")
+    subprocess.run(
+        ["mvn", "-Popencl-backend,ptx-backend,spirv-backend", "clean"],
+        stdout=subprocess.PIPE,
+    )
+
+
+def process_backends_as_mvn_profiles(selected_backends):
+    """
+    Processes the list of selected backend options and converts them to the required format required for the maven profile.
+
+    Args:
+        selected_backends (str): Comma-separated list of selected backend options.
+
+    Returns:
+        str: The processed backend options.
+    """
+    selected_backends_list = selected_backends.split(",")
+    for i, backend in enumerate(selected_backends_list):
+        selected_backends_list[i] = f"{backend}-backend"
+    backend_profiles = ",".join(selected_backends_list)
+    return backend_profiles
+
+def clone_opencl_headers():
+    """
+    Clone the Khronos OpenCL headers into the OpenCL JNI lib
+    """
+    current = os.getcwd()
+    directoryName = "tornado-drivers/opencl-jni/src/main/cpp/headers"
+    tmpDirectory = "tempOpenCLHeaderDirectory"
+    if not os.path.exists(directoryName):
+        ## clone the repo with the OpenCL Headers
+        import shutil
+        os.mkdir(tmpDirectory)
+        os.chdir(tmpDirectory)
+        subprocess.run(
+            [
+                "git",
+                "clone",
+                "https://github.com/KhronosGroup/OpenCL-Headers.git",
+            ],
+        )
+        os.chdir("OpenCL-Headers")
+        subprocess.run(
+            [
+                "cmake",
+                "-S",
+                ".",
+                "-B",
+                "build",
+                "-DCMAKE_INSTALL_PREFIX=" + current + "/" + directoryName,
+            ],
+        )
+        subprocess.run(
+            [
+                "cmake",
+                "--build",
+                "build",
+                "--target",
+                "install",
+            ],
+        )
+        os.chdir(current)
+        shutil.rmtree(tmpDirectory)
+
+def build_levelzero_jni_lib():
+    """
+    Pulls and Builds the Level Zero JNI library
+    """
+    current = os.getcwd()
+    levelzeroLib = "levelzero-jni"
+    if not os.path.exists(levelzeroLib):
+        ## clone only if directory does not exist
+        subprocess.run(
+            [
+                "git",
+                "clone",
+                "https://github.com/beehive-lab/levelzero-jni",
+            ],
+        )
+
+    os.chdir(levelzeroLib)
+
+    ## Always pull for the latest changes
+    subprocess.run(["git", "pull", "origin", "master"])
+    subprocess.run(["mvn", "clean", "install"])
+
+    ## Build native library
+    os.chdir("levelZeroLib")
+    levelzero_build_directory_cpp = "build"
+    if not os.path.exists(levelzero_build_directory_cpp):
+        os.mkdir(levelzero_build_directory_cpp)
+
+    os.chdir(levelzero_build_directory_cpp)
+    subprocess.run(["cmake", "..", ],)
+    subprocess.run(["make", "-j", "8"],)
+
+    os.chdir(current)
+
+
+def build_spirv_toolkit_and_level_zero():
+    """
+    Builds the SPIR-V Toolkit and Level Zero libraries.
+    """
+    current = os.getcwd()
+    spirv_tool_kit = "beehive-spirv-toolkit"
+
+    if not os.path.exists(spirv_tool_kit):
+        subprocess.run(
+            [
+                "git",
+                "clone",
+                "https://github.com/beehive-lab/beehive-spirv-toolkit.git",
+            ],
+        )
+
+    os.chdir(spirv_tool_kit)
+    subprocess.run(["git", "pull", "origin", "master"])
+    subprocess.run(["mvn", "clean", "package"])
+    subprocess.run(["mvn", "install"])
+    os.chdir(current)
+
+    level_zero_lib = "level-zero"
+
+    if not os.path.exists(level_zero_lib):
+        subprocess.run(["git", "clone", "https://github.com/oneapi-src/level-zero"])
+        os.chdir(level_zero_lib)
+        os.mkdir("build")
+        os.chdir("build")
+        subprocess.run(["cmake", ".."])
+        subprocess.run(["cmake", "--build", ".", "--config", "Release"])
+        os.chdir(current)
+
+    os.environ["ZE_SHARED_LOADER"] = os.path.join(
+        current, "level-zero/build/lib/libze_loader.so"
+    )
+    os.environ["CPLUS_INCLUDE_PATH"] = (
+            os.path.join(current, "level-zero/include")
+            + ":"
+            + os.environ.get("CPLUS_INCLUDE_PATH", "")
+    )
+    os.environ["C_INCLUDE_PATH"] = (
+            os.path.join(current, "level-zero/include")
+            + ":"
+            + os.environ.get("C_INCLUDE_PATH", "")
+    )
+    os.environ["LD_LIBRARY_PATH"] = (
+            os.path.join(current, "level-zero/build/lib")
+            + ":"
+            + os.environ.get("LD_LIBRARY_PATH", "")
+    )
+    return current
+
+
+def build_tornadovm(args, backend_profiles):
+    """
+    Builds TornadoVM with the specified JDK and backend options.
+
+    Args:
+        args (object): The arguments passed by the user. The JDK version as well as other options (e.g., offline (bool) and polyglot (bool) are used.
+        backend_profiles (str): The processed backend options.
+
+    Returns:
+        CompletedProcess: Result of the Maven build process.
+    """
+    if args.polyglot:
+        options = f"-T1.5C -Dcmake.root.dir=$CMAKE_ROOT -P{args.jdk},{backend_profiles},graalvm-polyglot "
+    else:
+        options = f"-T1.5C -Dcmake.root.dir=$CMAKE_ROOT -P{args.jdk},{backend_profiles} "
+    if args.offline:
+        options = "-o " + options
+
+    print(f"mvn {options} install")
+    try:
+        result = subprocess.run(
+            ["mvn"] + options.split() + ["install"],
+            check=True,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+        )
+
+        if result.returncode == 0:
+            print("Maven build succeeded")
+        else:
+            print("Maven clean failed. Error output:")
+            print(result.stderr)
+    except subprocess.CalledProcessError as e:
+        print(f"Error running 'mvn clean': {e}")
+
+    return result
+
+
+def copy_jars(graal_jars_dir):
+    """
+    Copies GraalVM jars to the TornadoVM distribution directory.
+
+    Args:
+        graal_jars_dir (str): Path to the directory containing GraalVM jars.
+    """
+    source_directory = graal_jars_dir
+    destination_directory = f"{os.environ['TORNADO_SDK']}/share/java/graalJars/"
+
+    files_to_copy = os.listdir(source_directory)
+
+    for file_name in files_to_copy:
+        source_file = os.path.join(source_directory, file_name)
+        destination_file = os.path.join(destination_directory, file_name)
+        if os.path.isfile(source_file):
+            shutil.copy(source_file, destination_file)
+
+
+def post_installation_actions(
+        backend_profiles, mvn_build_result, jdk, graal_jars_status
+):
+    """
+    Performs post-installation actions.
+
+    Args:
+        backend_profiles (str): The processed backend options.
+        mvn_build_result (CompletedProcess): Result of the Maven build process.
+        jdk (str): The JDK version.
+    """
+    if mvn_build_result.returncode == 0:
+        # Update all PATHs
+        updp.update_tornado_paths()
+
+        # Update the compiled backends file
+        with open(
+                f"{os.environ['TORNADO_SDK']}/etc/tornado.backend", "w"
+        ) as backend_file:
+            backend_file.write(f"tornado.backends={backend_profiles}")
+
+        # Place the Graal jars in the TornadoVM distribution only if the JDK 21 rule is used
+        if graal_jars_status:
+            graal_jars_dir = os.path.join(os.getcwd(), "graalJars")
+            os.makedirs(
+                f"{os.environ['TORNADO_SDK']}/share/java/graalJars", exist_ok=True
+            )
+            copy_jars(graal_jars_dir)
+    else:
+        print("\nCompilation failed\n")
+
+
+def parse_args():
+    """Parse command line arguments"""
+    parser = argparse.ArgumentParser(description="Tool to compile TornadoVM")
+    parser.add_argument(
+        "--jdk", help="JDK version (e.g., jdk21, graal-jdk-21)"
+    )
+    parser.add_argument("--backends", help="e.g., opencl,ptx,spirv")
+    parser.add_argument(
+        "--offline",
+        action="store_true",
+        dest="offline",
+        default=False,
+        help="Optional flag: OFFLINE",
+    )
+    parser.add_argument(
+        "--polyglot",
+        action="store_true",
+        dest="polyglot",
+        default=False,
+        help="To enable interoperability with Truffle Programming Languages."
+    )
+
+    args = parser.parse_args()
+    return args
+
+
+def main():
+    args = parse_args()
+
+    graal_jars_status = should_handle_graal_jars(args.jdk)
+
+    maven_cleanup()
+
+    pull_graal_jars_if_needed(graal_jars_status)
+
+    backend_profiles = process_backends_as_mvn_profiles(args.backends)
+
+    if "opencl" in args.backends:
+        clone_opencl_headers()
+
+    if "spirv" in args.backends:
+        # 1) Build the SPIR-V Toolkit
+        build_spirv_toolkit_and_level_zero()
+
+        # 2) Build the Level Zero JNI library
+        build_levelzero_jni_lib()
+
+
+    mvn_build_result = build_tornadovm(args, backend_profiles)
+
+    post_installation_actions(
+        backend_profiles, mvn_build_result, args.jdk, graal_jars_status
+    )
+
+
+if __name__ == "__main__":
+    main()

@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -42,6 +42,8 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 /**
@@ -49,7 +51,7 @@ import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
  * How to run in isolation?
  * </p>
  * <code>
- *    tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.blurFilter.JMHBlurFilter
+ * tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.blurFilter.JMHBlurFilter
  * </code>
  */
 public class JMHBlurFilter {
@@ -58,14 +60,14 @@ public class JMHBlurFilter {
     public static class BenchmarkSetup {
         int size = Integer.parseInt(System.getProperty("x", "512"));
         public static final int FILTER_WIDTH = 31;
-        int[] redChannel;
-        int[] greenChannel;
-        int[] blueChannel;
-        int[] alphaChannel;
-        int[] redFilter;
-        int[] greenFilter;
-        int[] blueFilter;
-        float[] filter;
+        IntArray redChannel;
+        IntArray greenChannel;
+        IntArray blueChannel;
+        IntArray alphaChannel;
+        IntArray redFilter;
+        IntArray greenFilter;
+        IntArray blueFilter;
+        FloatArray filter;
         TornadoExecutionPlan executor;
 
         @Setup(Level.Trial)
@@ -73,19 +75,19 @@ public class JMHBlurFilter {
             int w = size;
             int h = size;
 
-            redChannel = new int[w * h];
-            greenChannel = new int[w * h];
-            blueChannel = new int[w * h];
-            alphaChannel = new int[w * h];
+            redChannel = new IntArray(w * h);
+            greenChannel = new IntArray(w * h);
+            blueChannel = new IntArray(w * h);
+            alphaChannel = new IntArray(w * h);
 
-            greenFilter = new int[w * h];
-            redFilter = new int[w * h];
-            blueFilter = new int[w * h];
+            greenFilter = new IntArray(w * h);
+            redFilter = new IntArray(w * h);
+            blueFilter = new IntArray(w * h);
 
-            filter = new float[w * h];
+            filter = new FloatArray(w * h);
             for (int i = 0; i < w; i++) {
                 for (int j = 0; j < h; j++) {
-                    filter[i * h + j] = 1.f / (FILTER_WIDTH * FILTER_WIDTH);
+                    filter.set(i * h + j, 1.f / (FILTER_WIDTH * FILTER_WIDTH));
                 }
             }
 
@@ -93,10 +95,10 @@ public class JMHBlurFilter {
             for (int i = 0; i < w; i++) {
                 for (int j = 0; j < h; j++) {
                     int rgb = r.nextInt(255);
-                    alphaChannel[i * h + j] = (rgb >> 24) & 0xFF;
-                    redChannel[i * h + j] = (rgb >> 16) & 0xFF;
-                    greenChannel[i * h + j] = (rgb >> 8) & 0xFF;
-                    blueChannel[i * h + j] = (rgb & 0xFF);
+                    alphaChannel.set(i * h + j, (rgb >> 24) & 0xFF);
+                    redChannel.set(i * h + j, (rgb >> 16) & 0xFF);
+                    greenChannel.set(i * h + j, (rgb >> 8) & 0xFF);
+                    blueChannel.set(i * h + j, (rgb & 0xFF));
                 }
             }
 

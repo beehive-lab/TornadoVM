@@ -45,19 +45,19 @@ import uk.ac.manchester.tornado.api.KernelContext;
 @NodeInfo(shortName = "LocalThreadId")
 public class ThreadLocalIdFixedWithNextNode extends FixedWithNextNode implements Lowerable {
 
+    public static final NodeClass<ThreadLocalIdFixedWithNextNode> TYPE = NodeClass.create(ThreadLocalIdFixedWithNextNode.class);
+    private final int dimension;
     @Input
     ValueNode object;
-    private final int dimension;
-    public static final NodeClass<ThreadLocalIdFixedWithNextNode> TYPE = NodeClass.create(ThreadLocalIdFixedWithNextNode.class);
-
-    public ValueNode object() {
-        return this.object;
-    }
 
     public ThreadLocalIdFixedWithNextNode(ValueNode index, int dimension) {
         super(TYPE, StampFactory.forUnsignedInteger(32));
         this.object = index;
         this.dimension = dimension;
+    }
+
+    public ValueNode object() {
+        return this.object;
     }
 
     public int getDimension() {

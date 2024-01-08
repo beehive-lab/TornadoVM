@@ -12,15 +12,13 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- *
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
@@ -41,9 +39,9 @@ public class TornadoVMGraphCompiler {
      * It generates the TornadoVM byte-codes from a Tornado Task Graph.
      *
      * @param graph
-     *            TornadoVM execution Graph.
+     *     TornadoVM execution Graph.
      * @param executionContext
-     *            TornadoVM execution executionContext.
+     *     TornadoVM execution executionContext.
      * @return {@link TornadoVMBytecodeBuilder[]}
      */
     public static TornadoVMBytecodeResult[] compile(TornadoGraph graph, TornadoExecutionContext executionContext) {
@@ -138,11 +136,9 @@ public class TornadoVMGraphCompiler {
 
     private static void synchronizeOperationLastByteCode(TornadoVMBytecodeBuilder result, int numDepLists) {
         final byte[] code = result.getCode();
-        final int codeSize = result.getCodeSize();
-        if (code[codeSize - 13] == TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()) {
-            code[codeSize - 13] = TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING.value();
-        } else if (code[codeSize - 29] == TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()) {
-            code[codeSize - 29] = TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING.value();
+        int position = result.getLastCopyOutPosition();
+        if (code[position] == TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS.value()) {
+            code[position] = TornadoVMBytecodes.TRANSFER_DEVICE_TO_HOST_ALWAYS_BLOCKING.value();
         } else {
             result.barrier(numDepLists);
         }
@@ -184,8 +180,8 @@ public class TornadoVMGraphCompiler {
                             try {
                                 tornadoVMBytecodeBuilder.emitAsyncNode(asyncNode, (dependencies[i].isEmpty()) ? -1 : depLists[i], offset, bufferBatchSize, nThreads);
                             } catch (BufferOverflowException e) {
-                                throw new TornadoRuntimeException("[ERROR] Buffer Overflow exception. Use -Dtornado.tvm.maxbytecodesize=<value> with value > "
-                                        + TornadoVMBytecodeBuilder.MAX_TORNADO_VM_BYTECODE_SIZE + " to increase the buffer code size");
+                                throw new TornadoRuntimeException("[ERROR] Buffer Overflow exception. Use -Dtornado.tvm.maxbytecodesize=<value> with value > " +
+                                        TornadoVMBytecodeBuilder.MAX_TORNADO_VM_BYTECODE_SIZE + " to increase the buffer code size");
                             }
                         }
 
@@ -210,19 +206,19 @@ public class TornadoVMGraphCompiler {
      * context based on the provided parameters.
      *
      * @param id
-     *            The index of the device in the list of devices from the execution
-     *            context.
+     *     The index of the device in the list of devices from the execution
+     *     context.
      * @param asyncNode
-     *            The asynchronous node being considered for emission.
+     *     The asynchronous node being considered for emission.
      * @param singleContext
-     *            A flag indicating if the operation is being executed in a single
-     *            context. If true, the method will always return true. If false, it
-     *            will check the context's device at the given index.
+     *     A flag indicating if the operation is being executed in a single
+     *     context. If true, the method will always return true. If false, it
+     *     will check the context's device at the given index.
      * @param executionContext
-     *            The {@link TornadoExecutionContext} containing the list of
-     *            devices.
+     *     The {@link TornadoExecutionContext} containing the list of
+     *     devices.
      * @return True if the asynchronous node should be emitted for the current
-     *         context, otherwise false.
+     *     context, otherwise false.
      */
     private static boolean shouldEmitAsyncNodeForTheCurrentContext(int id, ContextOpNode asyncNode, boolean singleContext, TornadoExecutionContext executionContext) throws IndexOutOfBoundsException {
         return singleContext || (id >= 0 && id < executionContext.getDevices().size() && asyncNode.getContext().getDevice() == executionContext.getDevices().get(id));

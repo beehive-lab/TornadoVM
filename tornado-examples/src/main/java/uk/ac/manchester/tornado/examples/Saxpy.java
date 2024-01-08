@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,6 +26,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.examples.common.Messages;
 
 /**
@@ -33,15 +34,15 @@ import uk.ac.manchester.tornado.examples.common.Messages;
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.Saxpy
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.Saxpy
  * </code>
  *
  */
 public class Saxpy {
 
-    public static void saxpy(float alpha, float[] x, float[] y) {
-        for (@Parallel int i = 0; i < y.length; i++) {
-            y[i] = alpha * x[i];
+    public static void saxpy(float alpha, FloatArray x, FloatArray y) {
+        for (@Parallel int i = 0; i < y.getSize(); i++) {
+            y.set(i, alpha * x.get(i));
         }
     }
 
@@ -54,10 +55,10 @@ public class Saxpy {
 
         final float alpha = 2f;
 
-        final float[] x = new float[numElements];
-        final float[] y = new float[numElements];
+        final FloatArray x = new FloatArray(numElements);
+        final FloatArray y = new FloatArray(numElements);
 
-        IntStream.range(0, numElements).parallel().forEach(i -> x[i] = 450);
+        IntStream.range(0, numElements).parallel().forEach(i -> x.set(i, 450));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, x) //
@@ -70,10 +71,10 @@ public class Saxpy {
 
         numElements = 512 * 2;
 
-        final float[] a = new float[numElements];
-        final float[] b = new float[numElements];
+        final FloatArray a = new FloatArray(numElements);
+        final FloatArray b = new FloatArray(numElements);
 
-        IntStream.range(0, numElements).parallel().forEach(i -> a[i] = 450);
+        IntStream.range(0, numElements).parallel().forEach(i -> a.set(i, 450));
 
         TaskGraph taskGraph1 = new TaskGraph("s1").task("t0", Saxpy::saxpy, alpha, a, b).transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
@@ -82,8 +83,8 @@ public class Saxpy {
         executor1.withDynamicReconfiguration(Policy.PERFORMANCE, DRMode.PARALLEL).execute();
 
         boolean wrongResult = false;
-        for (int i = 0; i < y.length; i++) {
-            if (Math.abs(y[i] - (alpha * x[i])) > 0.01) {
+        for (int i = 0; i < y.getSize(); i++) {
+            if (Math.abs(y.get(i) - (alpha * x.get(i))) > 0.01) {
                 wrongResult = true;
                 break;
             }

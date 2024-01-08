@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -29,10 +29,13 @@ import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.extended.JavaReadNode;
+import org.graalvm.compiler.nodes.extended.JavaWriteNode;
 import org.graalvm.compiler.nodes.java.AccessFieldNode;
 import org.graalvm.compiler.nodes.java.AccessIndexedNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
+import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
@@ -49,8 +52,8 @@ public class TornadoFieldAccessFixup extends BasePhase<TornadoHighTierContext> {
         ArrayDeque<LoadFieldNode> worklist = new ArrayDeque<>();
         graph.getNodes().filter(ParameterNode.class).forEach(parameterNode -> {
             worklist.addAll(parameterNode.usages().filter(LoadFieldNode.class).snapshot());
-            parameterNode.usages().filter(usage -> usage instanceof PiNode && ((PiNode) usage).object() instanceof ParameterNode)
-                    .forEach(usage -> worklist.addAll(usage.usages().filter(LoadFieldNode.class).snapshot()));
+            parameterNode.usages().filter(usage -> usage instanceof PiNode && ((PiNode) usage).object() instanceof ParameterNode).forEach(usage -> worklist.addAll(usage.usages().filter(
+                    LoadFieldNode.class).snapshot()));
         });
 
         while (!worklist.isEmpty()) {
@@ -88,6 +91,19 @@ public class TornadoFieldAccessFixup extends BasePhase<TornadoHighTierContext> {
                         graph.replaceFixedWithFixed(oldStoreNode, storeFieldNode);
                     } else {
                         TornadoInternalError.shouldNotReachHere("Unexpected node type = %s", accessFieldNode.getClass().getName());
+                    }
+                } else if (usage instanceof OffsetAddressNode) {
+                    if (usage.usages().filter(JavaWriteNode.class).isNotEmpty() || usage.usages().filter(JavaReadNode.class).isNotEmpty()) {
+                        ValueNode base = loadField.object();
+                        if (base instanceof PiNode) {
+                            base = ((PiNode) base).object();
+                        } else if (base instanceof TornadoAddressArithmeticNode) {
+                            base = ((TornadoAddressArithmeticNode) base).getBase();
+                        }
+
+                        TornadoAddressArithmeticNode addNode = new TornadoAddressArithmeticNode(base, loadField);
+                        graph.addWithoutUnique(addNode);
+                        usage.replaceFirstInput(loadField, addNode);
                     }
                 }
             });

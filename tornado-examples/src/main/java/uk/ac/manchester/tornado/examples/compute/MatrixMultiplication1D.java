@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2013-2021, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,27 +26,28 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MatrixMultiplication1D
  * </code>
  */
 public class MatrixMultiplication1D {
 
     private static final int WARMING_UP_ITERATIONS = 15;
 
-    private static void matrixMultiplication(final float[] matrixA, final float[] matrixB, final float[] result, final int size) {
+    private static void matrixMultiplication(final FloatArray matrixA, final FloatArray matrixB, final FloatArray result, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
             for (@Parallel int j = 0; j < size; j++) {
                 float sum = 0.0f;
                 for (int k = 0; k < size; k++) {
-                    sum += matrixA[(i * size) + k] * matrixB[(k * size) + j];
+                    sum += matrixA.get((i * size) + k) * matrixB.get((k * size) + j);
                 }
-                result[(i * size) + j] = sum;
+                result.set((i * size) + j, sum);
             }
         }
     }
@@ -60,15 +61,15 @@ public class MatrixMultiplication1D {
 
         System.out.println("Computing MxM of " + size + "x" + size);
 
-        float[] matrixA = new float[size * size];
-        float[] matrixB = new float[size * size];
-        float[] matrixC = new float[size * size];
-        float[] resultSeq = new float[size * size];
+        FloatArray matrixA = new FloatArray(size * size);
+        FloatArray matrixB = new FloatArray(size * size);
+        FloatArray matrixC = new FloatArray(size * size);
+        FloatArray resultSeq = new FloatArray(size * size);
 
         Random r = new Random();
-        IntStream.range(0, size * size).parallel().forEach(idx -> {
-            matrixA[idx] = r.nextFloat();
-            matrixB[idx] = r.nextFloat();
+        IntStream.range(0, size * size).forEach(idx -> {
+            matrixA.set(idx, r.nextFloat());
+            matrixB.set(idx, r.nextFloat());
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -124,12 +125,12 @@ public class MatrixMultiplication1D {
         System.out.println(buffer);
     }
 
-    private static boolean verify(float[] par, float[] seq, int size) {
+    private static boolean verify(FloatArray par, FloatArray seq, int size) {
         boolean check = true;
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
 
-                if (Math.abs(par[i * size + j] - seq[i * size + j]) > 0.1f) {
+                if (Math.abs(par.get(i * size + j) - seq.get(i * size + j)) > 0.1f) {
                     check = false;
                     break;
                 }

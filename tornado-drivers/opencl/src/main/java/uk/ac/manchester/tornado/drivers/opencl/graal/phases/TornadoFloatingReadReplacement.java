@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -107,7 +107,7 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
 
     /**
      * @param createMemoryMapNodes
-     *            a {@link MemoryMapNode} will be created for each return if this
+     *     a {@link MemoryMapNode} will be created for each return if this
      * @param canonicalizer
      */
     public TornadoFloatingReadReplacement(boolean createMemoryMapNodes, CanonicalizerPhase canonicalizer) {
@@ -116,8 +116,7 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
     }
 
     /**
-     * Removes nodes from a given set that (transitively) have a usage outside the
-     * set.
+     * Removes nodes from a given set that (transitively) have a usage outside the set.
      */
     private static EconomicSet<Node> removeExternallyUsedNodes(EconomicSet<Node> set) {
         boolean change;
@@ -256,8 +255,8 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
 
         EconomicSetNodeEventListener listener = new EconomicSetNodeEventListener(EnumSet.of(NODE_ADDED, ZERO_USAGES));
         try (Graph.NodeEventScope nes = graph.trackNodeEvents(listener)) {
-            ReentrantNodeIterator.apply(new FloatingReadPhase.FloatingReadClosure(modifiedInLoops, true, createMemoryMapNodes, initMemory), graph.start(),
-                    new FloatingReadPhase.MemoryMapImpl(graph.start()));
+            ReentrantNodeIterator.apply(new FloatingReadPhase.FloatingReadClosure(modifiedInLoops, true, createMemoryMapNodes, initMemory), graph.start(), new FloatingReadPhase.MemoryMapImpl(graph
+                    .start()));
         }
 
         for (Node n : removeExternallyUsedNodes(listener.getNodes())) {
@@ -332,8 +331,7 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
         }
 
         /**
-         * Improve the memory graph by re-wiring all usages of a
-         * {@link MemoryAnchorNode} to the real last access location.
+         * Improve the memory graph by re-wiring all usages of a {@link MemoryAnchorNode} to the real last access location.
          */
         private static void processAnchor(MemoryAnchorNode anchor, TornadoFloatingReadReplacement.MemoryMapImpl state) {
             for (Node node : anchor.usages().snapshot()) {
@@ -362,9 +360,7 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
 
         /**
          * @param accessNode
-         *            is a {@link FixedNode} that will be replaced by a
-         *            {@link FloatingNode}. This method checks if the node that is going
-         *            to be replaced has an {@link OCLBarrierNode} as next.
+         *     is a {@link FixedNode} that will be replaced by a {@link FloatingNode}. This method checks if the node that is going to be replaced has an {@link OCLBarrierNode} as next.
          */
         private static boolean isNextNodeOCLBarrierNode(FloatableAccessNode accessNode) {
             return (accessNode.next() instanceof OCLBarrierNode);
@@ -372,9 +368,7 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
 
         /**
          * @param nextNode
-         *            is a {@link FixedNode} that will be replaced by a
-         *            {@link FloatingNode}. This method removes the redundant
-         *            {@link OCLBarrierNode}.
+         *     is a {@link FixedNode} that will be replaced by a {@link FloatingNode}. This method removes the redundant {@link OCLBarrierNode}.
          */
         private static void replaceRedundantBarrierNode(Node nextNode) {
             nextNode.replaceAtUsages(nextNode.successors().first());
@@ -416,8 +410,9 @@ public class TornadoFloatingReadReplacement extends PostRunCanonicalizationPhase
                 final LoopExitNode loopExitNode = (LoopExitNode) node;
                 final EconomicSet<LocationIdentity> modifiedInLoop = modifiedInLoops.get(loopExitNode.loopBegin());
                 final boolean anyModified = modifiedInLoop.contains(LocationIdentity.any());
-                state.getMap().replaceAll(
-                        (locationIdentity, memoryNode) -> (anyModified || modifiedInLoop.contains(locationIdentity)) ? ProxyNode.forMemory(memoryNode, loopExitNode, locationIdentity) : memoryNode);
+                state.getMap().replaceAll((locationIdentity, memoryNode) -> (anyModified || modifiedInLoop.contains(locationIdentity))
+                        ? ProxyNode.forMemory(memoryNode, loopExitNode, locationIdentity)
+                        : memoryNode);
             }
 
             if (node instanceof MemoryAnchorNode) {

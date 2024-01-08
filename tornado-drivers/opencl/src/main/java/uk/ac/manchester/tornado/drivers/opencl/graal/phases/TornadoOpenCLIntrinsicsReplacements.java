@@ -25,11 +25,15 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.ResolvedJavaType;
+
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 import java.util.Optional;
-
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.CallTargetNode;
@@ -40,11 +44,6 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.BasePhase;
-
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.PrimitiveConstant;
-import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLLoweringProvider;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
@@ -184,12 +183,16 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
     private JavaKind getJavaKindFromConstantNode(ConstantNode signatureNode) {
         switch (signatureNode.getValue().toValueString()) {
             case "Class:int":
+            case "Class:uk.ac.manchester.tornado.api.types.arrays.IntArray":
                 return JavaKind.Int;
             case "Class:long":
+            case "Class:uk.ac.manchester.tornado.api.types.arrays.LongArray":
                 return JavaKind.Long;
             case "Class:float":
+            case "Class:uk.ac.manchester.tornado.api.types.arrays.FloatArray":
                 return JavaKind.Float;
             case "Class:double":
+            case "Class:uk.ac.manchester.tornado.api.types.arrays.DoubleArray":
                 return JavaKind.Double;
             default:
                 unimplemented("Other types not supported yet: " + signatureNode.getValue().toValueString());

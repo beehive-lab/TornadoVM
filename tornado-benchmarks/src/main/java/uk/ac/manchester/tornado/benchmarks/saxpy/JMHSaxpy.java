@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -43,6 +43,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
 /**
@@ -50,7 +51,7 @@ import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
  * How to run in isolation?
  * </p>
  * <code>
- *    tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.saxpy.JMHSaxpy
+ * tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.saxpy.JMHSaxpy
  * </code>
  */
 public class JMHSaxpy {
@@ -58,19 +59,19 @@ public class JMHSaxpy {
     public static class BenchmarkSetup {
 
         private int numElements = Integer.parseInt(System.getProperty("x", "16777216"));
-        private float[] x;
-        private float[] y;
+        private FloatArray x;
+        private FloatArray y;
         private final float alpha = 2f;
 
         private TornadoExecutionPlan executor;
 
         @Setup(Level.Trial)
         public void doSetup() {
-            x = new float[numElements];
-            y = new float[numElements];
+            x = new FloatArray(numElements);
+            y = new FloatArray(numElements);
 
             for (int i = 0; i < numElements; i++) {
-                x[i] = i;
+                x.set(i, i);
             }
 
             TaskGraph taskGraph = new TaskGraph("benchmark") //

@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,7 +19,6 @@ package uk.ac.manchester.tornado.benchmarks.nbody;
 
 import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.nBody;
 
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -44,6 +43,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 /**
@@ -51,7 +51,7 @@ import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
  * How to run in isolation?
  * </p>
  * <code>
- *    tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.nbody.JMHNBody
+ * tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.nbody.JMHNBody
  * </code>
  */
 public class JMHNBody {
@@ -61,8 +61,8 @@ public class JMHNBody {
         int numBodies = Integer.parseInt(System.getProperty("x", "16384"));
         float delT;
         float espSqr;
-        float[] velSeq;
-        private float[] posSeq;
+        FloatArray velSeq;
+        private FloatArray posSeq;
 
         private TornadoExecutionPlan executor;
 
@@ -71,24 +71,28 @@ public class JMHNBody {
             delT = 0.005f;
             espSqr = 500.0f;
 
-            float[] auxPositionRandom = new float[numBodies * 4];
-            float[] auxVelocityZero = new float[numBodies * 3];
+            FloatArray auxPositionRandom = new FloatArray(numBodies * 4);
+            FloatArray auxVelocityZero = new FloatArray(numBodies * 3);
 
-            for (int i = 0; i < auxPositionRandom.length; i++) {
-                auxPositionRandom[i] = (float) Math.random();
+            for (int i = 0; i < auxPositionRandom.getSize(); i++) {
+                auxPositionRandom.set(i, (float) Math.random());
             }
 
-            Arrays.fill(auxVelocityZero, 0.0f);
+            auxVelocityZero.init(0.0f);
 
-            posSeq = new float[numBodies * 4];
-            velSeq = new float[numBodies * 4];
+            posSeq = new FloatArray(numBodies * 4);
+            velSeq = new FloatArray(numBodies * 4);
 
-            if (auxPositionRandom.length >= 0) {
-                System.arraycopy(auxPositionRandom, 0, posSeq, 0, auxPositionRandom.length);
+            if (auxPositionRandom.getSize() >= 0) {
+                for (int i = 0; i < auxPositionRandom.getSize(); i++) {
+                    posSeq.set(i, auxPositionRandom.get(i));
+                }
             }
 
-            if (auxVelocityZero.length >= 0) {
-                System.arraycopy(auxVelocityZero, 0, velSeq, 0, auxVelocityZero.length);
+            if (auxVelocityZero.getSize() >= 0) {
+                for (int i = 0; i < auxVelocityZero.getSize(); i++) {
+                    velSeq.set(i, auxVelocityZero.get(i));
+                }
             }
 
             TaskGraph taskGraph = new TaskGraph("benchmark") //

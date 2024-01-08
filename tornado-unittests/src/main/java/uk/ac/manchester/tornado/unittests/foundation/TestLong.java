@@ -19,13 +19,12 @@ package uk.ac.manchester.tornado.unittests.foundation;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Arrays;
-
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -42,11 +41,11 @@ public class TestLong extends TornadoTestBase {
     @Test
     public void testLongsCopy() {
         final int numElements = 256;
-        long[] a = new long[numElements];
+        LongArray a = new LongArray(numElements);
 
-        long[] expected = new long[numElements];
+        LongArray expected = new LongArray(numElements);
         for (int i = 0; i < numElements; i++) {
-            expected[i] = 50;
+            expected.set(i, 50);
         }
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -58,23 +57,23 @@ public class TestLong extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < numElements; i++) {
-            assertEquals(expected[i], a[i]);
+            assertEquals(expected.get(i), a.get(i));
         }
     }
 
     @Test
     public void testLongsAdd() {
         final int numElements = 256;
-        long[] a = new long[numElements];
-        long[] b = new long[numElements];
-        long[] c = new long[numElements];
+        LongArray a = new LongArray(numElements);
+        LongArray b = new LongArray(numElements);
+        LongArray c = new LongArray(numElements);
 
-        Arrays.fill(b, Integer.MAX_VALUE);
-        Arrays.fill(c, 1);
+        b.init(Integer.MAX_VALUE);
+        c.init(1);
 
-        long[] expected = new long[numElements];
+        LongArray expected = new LongArray(numElements);
         for (int i = 0; i < numElements; i++) {
-            expected[i] = b[i] + c[i];
+            expected.set(i, b.get(i) + c.get(i));
         }
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -87,7 +86,7 @@ public class TestLong extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < numElements; i++) {
-            assertEquals(expected[i], a[i]);
+            assertEquals(expected.get(i), a.get(i));
         }
     }
 

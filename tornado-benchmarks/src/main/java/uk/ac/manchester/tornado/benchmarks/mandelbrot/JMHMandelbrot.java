@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,6 +41,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 /**
@@ -48,7 +49,7 @@ import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
  * How to run in isolation?
  * </p>
  * <code>
- *    tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.mandelbrot.JMHMandelbrot
+ * tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.mandelbrot.JMHMandelbrot
  * </code>
  */
 public class JMHMandelbrot {
@@ -57,12 +58,12 @@ public class JMHMandelbrot {
     public static class BenchmarkSetup {
 
         private int size = Integer.parseInt(System.getProperty("x", "512"));
-        short[] output;
+        ShortArray output;
         private TornadoExecutionPlan executor;
 
         @Setup(Level.Trial)
         public void doSetup() {
-            output = new short[size * size];
+            output = new ShortArray(size * size);
             TaskGraph taskGraph = new TaskGraph("benchmark") //
                     .task("t0", ComputeKernels::mandelbrot, size, output) //
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, output);

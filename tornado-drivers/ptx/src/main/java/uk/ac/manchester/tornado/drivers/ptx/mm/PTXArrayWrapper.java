@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -96,9 +96,9 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
     @Override
     public int read(Object reference, long hostOffset, int[] events, boolean useDeps) {
         T array = cast(reference);
-        if (array == null)
+        if (array == null) {
             throw new TornadoRuntimeException("[ERROR] output data is NULL");
-
+        }
         if (VALIDATE_ARRAY_HEADERS) {
             if (validateArrayHeader(array)) {
                 return readArrayData(toBuffer() + arrayHeaderSize, bufferSize - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
@@ -106,7 +106,7 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
                 shouldNotReachHere("Array header is invalid");
             }
         } else {
-            final long numBytes = getSizeSubRegion() > 0 ? getSizeSubRegion() : (bufferSize - arrayHeaderSize);
+            final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : (bufferSize - arrayHeaderSize);
             return readArrayData(toBuffer() + arrayHeaderSize, numBytes, array, hostOffset, (useDeps) ? events : null);
         }
         return -1;
@@ -253,13 +253,13 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
      * Copy data from the device to the main host.
      *
      * @param address
-     *            Device Buffer address
+     *     Device Buffer address
      * @param bytes
-     *            Bytes to be copied back to the host
+     *     Bytes to be copied back to the host
      * @param value
-     *            Host array that resides the final data
+     *     Host array that resides the final data
      * @param waitEvents
-     *            List of events to wait for.
+     *     List of events to wait for.
      * @return Event information
      */
     protected abstract int enqueueReadArrayData(long address, long bytes, T value, long hostOffset, int[] waitEvents);
@@ -270,14 +270,13 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
      * Copy data that resides in the host to the target device.
      *
      * @param address
-     *            Device Buffer address
+     *     Device Buffer address
      * @param bytes
-     *            Bytes to be copied
+     *     Bytes to be copied
      * @param value
-     *            Host array to be copied
-     *
+     *     Host array to be copied
      * @param waitEvents
-     *            List of events to wait for.
+     *     List of events to wait for.
      * @return Event information
      */
     protected abstract int enqueueWriteArrayData(long address, long bytes, T value, long hostOffset, int[] waitEvents);
@@ -285,7 +284,7 @@ public abstract class PTXArrayWrapper<T> implements ObjectBuffer {
     protected abstract void writeArrayData(long address, long bytes, T value, int hostOffset, int[] waitEvents);
 
     @Override
-    public long getSizeSubRegion() {
+    public long getSizeSubRegionSize() {
         return setSubRegionSize;
     }
 

@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,22 +17,28 @@
  */
 package uk.ac.manchester.tornado.annotation;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import org.objectweb.asm.*;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.runtime.ASMClassVisitorProvider;
-import uk.ac.manchester.tornado.runtime.common.ParallelAnnotationProvider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.runtime.ASMClassVisitorProvider;
+import uk.ac.manchester.tornado.runtime.common.ParallelAnnotationProvider;
 
 public class ASMClassVisitor extends ClassVisitor implements ASMClassVisitorProvider {
     private List<ParallelAnnotationProvider> parallelAnnotations;
     private ResolvedJavaMethod resolvedJavaMethod;
 
     public ASMClassVisitor() {
-        super(Opcodes.ASM7);
+        super(Opcodes.ASM9);
     }
 
     public ASMClassVisitor(int i, ClassVisitor classVisitor, ResolvedJavaMethod resolvedJavaMethod) {
@@ -56,7 +62,7 @@ public class ASMClassVisitor extends ClassVisitor implements ASMClassVisitorProv
         try {
             ClassReader classReader = new ClassReader(inputStream);
             ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-            ASMClassVisitor visitor = new ASMClassVisitor(Opcodes.ASM7, cw, method);
+            ASMClassVisitor visitor = new ASMClassVisitor(Opcodes.ASM9, cw, method);
             classReader.accept(visitor, 0);
 
             ParallelAnnotationProvider[] parallelAnnotation = new ParallelAnnotationProvider[visitor.parallelAnnotations.size()];

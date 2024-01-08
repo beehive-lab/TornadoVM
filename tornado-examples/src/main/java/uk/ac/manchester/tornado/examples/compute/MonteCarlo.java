@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,6 +23,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
  * Montecarlo algorithm to approximate the PI value. This version has been
@@ -31,13 +32,13 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MonteCarlo
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.MonteCarlo
  * </code>
  *
  */
 public class MonteCarlo {
 
-    private static void computeMontecarlo(float[] output, final int iterations) {
+    private static void computeMontecarlo(FloatArray output, final int iterations) {
         for (@Parallel int j = 0; j < iterations; j++) {
             long seed = j;
             // generate a pseudo random number (you do need it twice)
@@ -54,16 +55,16 @@ public class MonteCarlo {
 
             float dist = (float) Math.sqrt(x * x + y * y);
             if (dist <= 1.0f) {
-                output[j] = 1.0f;
+                output.set(j, 1.0f);
             } else {
-                output[j] = 0.0f;
+                output.set(j, 0.0f);
             }
         }
     }
 
     public static void montecarlo(final int size) {
-        float[] output = new float[size];
-        float[] seq = new float[size];
+        FloatArray output = new FloatArray(size);
+        FloatArray seq = new FloatArray(size);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .task("taskGraph", MonteCarlo::computeMontecarlo, output, size) //
@@ -79,7 +80,7 @@ public class MonteCarlo {
 
         float sum = 0;
         for (int j = 0; j < size; j++) {
-            sum += output[j];
+            sum += output.get(j);
         }
         sum *= 4;
         System.out.println("Total time (Tornado)   : " + (tornadoTime));
@@ -92,7 +93,7 @@ public class MonteCarlo {
 
         sum = 0;
         for (int j = 0; j < size; j++) {
-            sum += seq[j];
+            sum += seq.get(j);
         }
         sum *= 4;
 

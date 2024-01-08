@@ -66,7 +66,7 @@ import jdk.vm.ci.runtime.JVMCI;
 public class CodeAnalysis {
 
     /**
-     * Build Graal-IR for an input Java method
+     * Build Graal-IR for an input Java method.
      *
      * @param taskInputCode
      *            Input Java method to be compiled by Graal

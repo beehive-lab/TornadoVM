@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.spirv.runtime;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -38,12 +39,13 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.memory.ObjectBuffer;
 import uk.ac.manchester.tornado.api.memory.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
-import uk.ac.manchester.tornado.api.type.annotations.Vector;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.mm.AtomicsBuffer;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVBackend;
@@ -60,6 +62,7 @@ import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVDoubleArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVFloatArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVIntArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVLongArrayWrapper;
+import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMemorySegmentWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMultiDimArrayWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVObjectWrapper;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVShortArrayWrapper;
@@ -296,26 +299,24 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
                 if (RuntimeUtilities.isPrimitiveArray(componentType)) {
                     return createMultiArrayWrapper(componentType, type, deviceContext, batchSize);
                 } else {
-                    throw new RuntimeException("Multi-dimensional array of type " + type.getName() + " not implemented");
+                    throw new TornadoRuntimeException("Multi-dimensional array of type " + type.getName() + " not implemented");
                 }
             }
         } else if (!type.isPrimitive()) {
             if (object instanceof AtomicInteger) {
-                throw new RuntimeException("Atomic Integers not supported yet");
+                throw new TornadoRuntimeException("Atomic Integers not supported yet");
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 return new SPIRVVectorWrapper(deviceContext, object, batchSize);
+            } else if (object instanceof MemorySegment) {
+                return new SPIRVMemorySegmentWrapper(deviceContext, batchSize);
+            } else if (object instanceof TornadoNativeArray) {
+                return new SPIRVMemorySegmentWrapper(deviceContext, batchSize);
             } else {
                 // Possible a vector type, we encapsulate in an object
                 return new SPIRVObjectWrapper(deviceContext, object);
             }
         }
         return null;
-    }
-
-    private void checkBatchSize(long batchSize) {
-        if (batchSize > 0) {
-            throw new TornadoRuntimeException("[ERROR] Batch computation with non-arrays not supported yet.");
-        }
     }
 
     @Override
@@ -330,6 +331,15 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         return -1;
     }
 
+    private ObjectBuffer createNewBufferAllocation(Object object, long batchSize, TornadoDeviceObjectState state) {
+        final ObjectBuffer buffer;
+        TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
+        buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext(), batchSize);
+        state.setObjectBuffer(buffer);
+        buffer.allocate(object, batchSize);
+        return buffer;
+    }
+
     @Override
     public int allocate(Object object, long batchSize, TornadoDeviceObjectState state) {
         final ObjectBuffer buffer;
@@ -339,10 +349,7 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
                 buffer.setSizeSubRegion(batchSize);
             }
         } else {
-            TornadoInternalError.guarantee(state.isAtomicRegionPresent() || !state.hasObjectBuffer(), "A device memory leak might be occurring.");
-            buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext(), batchSize);
-            state.setObjectBuffer(buffer);
-            buffer.allocate(object, batchSize);
+            buffer = createNewBufferAllocation(object, batchSize, state);
         }
 
         if (buffer.getClass() == AtomicsBuffer.class) {
@@ -350,9 +357,6 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
         }
 
         final Class<?> type = object.getClass();
-        if (!type.isArray()) {
-            checkBatchSize(batchSize);
-        }
         return -1;
     }
 
@@ -372,18 +376,18 @@ public class SPIRVTornadoDevice implements TornadoAcceleratorDevice {
      * It allocates and copy in the content of the object to the target device.
      *
      * @param object
-     *            to be allocated
+     *     to be allocated
      * @param objectState
-     *            state of the object in the target device
-     *            {@link TornadoDeviceObjectState}
+     *     state of the object in the target device
+     *     {@link TornadoDeviceObjectState}
      * @param events
-     *            list of pending events (dependencies)
+     *     list of pending events (dependencies)
      * @param batchSize
-     *            size of the object to be allocated. If this value is <= 0, then it
-     *            allocates the sizeof(object).
+     *     size of the object to be allocated. If this value is <= 0, then it
+     *     allocates the sizeof(object).
      * @param offset
-     *            offset in bytes for the copy within the host input array (or
-     *            object)
+     *     offset in bytes for the copy within the host input array (or
+     *     object)
      * @return A list of event IDs
      */
     @Override

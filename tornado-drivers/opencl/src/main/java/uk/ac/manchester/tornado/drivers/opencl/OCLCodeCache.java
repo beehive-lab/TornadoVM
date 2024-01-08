@@ -14,15 +14,13 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl;
@@ -137,8 +135,8 @@ public class OCLCodeCache {
 
     private void assertIfQuartusHLSIsPresent() {
         if (System.getenv("QUARTUS_ROOT_DIR") == null) {
-            throw new TornadoRuntimeException("[ERROR] The FPGA compiler (" + fpgaCompiler
-                    + ") requires the installation of the Intel(R) Quartus(R) Prime software. You can check if Quartus is installed and whether the QUARTUS_ROOT_DIR variable is properly set.");
+            throw new TornadoRuntimeException(
+                    "[ERROR] The FPGA compiler (" + fpgaCompiler + ") requires the installation of the Intel(R) Quartus(R) Prime software. You can check if Quartus is installed and whether the QUARTUS_ROOT_DIR variable is properly set.");
         }
     }
 
@@ -445,7 +443,7 @@ public class OCLCodeCache {
     }
 
     private boolean shouldGenerateXilinxBitstream(File fpgaBitStreamFile, OCLDeviceContextInterface deviceContext) {
-        if (!RuntimeUtilities.ifFileExists(fpgaBitStreamFile)) {
+        if (!fpgaBitStreamFile.exists()) {
             return (deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx"));
         } else {
             return false;
@@ -529,7 +527,7 @@ public class OCLCodeCache {
             commandRename = new String[] { FPGA_CLEANUP_SCRIPT, vendor, fpgaSourceDir, entryPoint };
             Path path = Paths.get(outputFile);
             addNewEntryInBitstreamHashMap(id, outputFile);
-            if (RuntimeUtilities.ifFileExists(fpgaBitStreamFile)) {
+            if (fpgaBitStreamFile.exists()) {
                 return installEntryPointForBinaryForFPGAs(id, path, entryPoint);
             } else {
                 invokeShellCommand(compilationCommand);

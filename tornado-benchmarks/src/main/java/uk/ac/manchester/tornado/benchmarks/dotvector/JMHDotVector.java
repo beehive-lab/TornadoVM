@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,7 +21,6 @@ import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.dotVector;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -44,9 +43,10 @@ import org.openjdk.jmh.runner.options.TimeValue;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.collections.types.Float3;
-import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat3;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
 /**
@@ -54,7 +54,7 @@ import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
  * How to run in isolation?
  * </p>
  * <code>
- *    tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.dotvector.JMHDotVector
+ * tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.dotvector.JMHDotVector
  * </code>
  */
 public class JMHDotVector {
@@ -64,23 +64,19 @@ public class JMHDotVector {
         int numElements = Integer.parseInt(System.getProperty("x", "4194304"));
         private VectorFloat3 a;
         private VectorFloat3 b;
-        private float[] c;
+        private FloatArray c;
         TornadoExecutionPlan executor;
 
         @Setup(Level.Trial)
         public void doSetup() {
             a = new VectorFloat3(numElements);
             b = new VectorFloat3(numElements);
-            c = new float[numElements];
+            c = new FloatArray(numElements);
 
             Random r = new Random();
             for (int i = 0; i < numElements; i++) {
-                float[] ra = new float[3];
-                IntStream.range(0, ra.length).forEach(x -> ra[x] = r.nextFloat());
-                float[] rb = new float[3];
-                IntStream.range(0, rb.length).forEach(x -> rb[x] = r.nextFloat());
-                a.set(i, new Float3(ra));
-                b.set(i, new Float3(rb));
+                a.set(i, new Float3(r.nextFloat(), r.nextFloat(), r.nextFloat()));
+                b.set(i, new Float3(r.nextFloat(), r.nextFloat(), r.nextFloat()));
             }
             TaskGraph taskGraph = new TaskGraph("benchmark")//
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //

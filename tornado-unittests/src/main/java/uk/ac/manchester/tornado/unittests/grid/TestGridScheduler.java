@@ -30,6 +30,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 
 /**
@@ -43,39 +44,40 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  */
 public class TestGridScheduler {
 
-    public static float computeSequential(float[] a, float[] b, float[] c) {
+    public static float computeSequential(FloatArray a, FloatArray b, FloatArray c) {
         float acc = 0;
         vectorAddFloat(a, b, c);
 
-        for (float v : c) {
-            acc += v;
+        for (int i = 0; i < c.getSize(); i++) {
+       // for (float v : c) {
+            acc += c.get(i);
         }
         return acc;
     }
 
-    public static void vectorAddFloat(float[] a, float[] b, float[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = a[i] + b[i];
+    public static void vectorAddFloat(FloatArray a, FloatArray b, FloatArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, a.get(i) + b.get(i));
         }
     }
 
-    public static void reduceAdd(float[] array, final int size) {
-        float acc = array[0];
+    public static void reduceAdd(FloatArray array, final int size) {
+        float acc = array.get(0);
         for (int i = 1; i < size; i++) {
-            acc += array[i];
+            acc += array.get(i);
         }
-        array[0] = acc;
+        array.set(0, acc);
     }
 
     @Test
     public void testMultipleTasksWithinTaskGraph() {
         final int size = 1024;
-        float[] a = new float[size];
-        float[] b = new float[size];
-        float[] sequentialC = new float[size];
-        float[] tornadoC = new float[size];
-        IntStream.range(0, a.length).sequential().forEach(i -> a[i] = i);
-        IntStream.range(0, b.length).sequential().forEach(i -> b[i] = 2);
+        FloatArray a = new FloatArray(size);
+        FloatArray b = new FloatArray(size);
+        FloatArray sequentialC = new FloatArray(size);
+        FloatArray tornadoC = new FloatArray(size);
+        IntStream.range(0, a.getSize()).sequential().forEach(i -> a.set(i, i));
+        IntStream.range(0, b.getSize()).sequential().forEach(i -> b.set(i, 2));
         float sequential = computeSequential(a, b, sequentialC);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -97,19 +99,19 @@ public class TestGridScheduler {
                 .execute();
 
         // Final SUM
-        float finalSum = tornadoC[0];
+        float finalSum = tornadoC.get(0);
         assertEquals(sequential, finalSum, 0);
     }
 
     @Test
     public void testMultipleTasksSeparateTaskGraphs() {
         final int size = 1024;
-        float[] a = new float[size];
-        float[] b = new float[size];
-        float[] sequentialC = new float[size];
-        float[] tornadoC = new float[size];
-        IntStream.range(0, a.length).sequential().forEach(i -> a[i] = i);
-        IntStream.range(0, b.length).sequential().forEach(i -> b[i] = 2);
+        FloatArray a = new FloatArray(size);
+        FloatArray b = new FloatArray(size);
+        FloatArray sequentialC = new FloatArray(size);
+        FloatArray tornadoC = new FloatArray(size);
+        IntStream.range(0, a.getSize()).sequential().forEach(i -> a.set(i, i));
+        IntStream.range(0, b.getSize()).sequential().forEach(i -> b.set(i, 2));
         float sequential = computeSequential(a, b, sequentialC);
 
         WorkerGrid worker = new WorkerGrid1D(size);
@@ -140,7 +142,7 @@ public class TestGridScheduler {
                 .execute();
 
         // Final SUM
-        float finalSum = tornadoC[0];
+        float finalSum = tornadoC.get(0);
         assertEquals(sequential, finalSum, 0);
     }
 }

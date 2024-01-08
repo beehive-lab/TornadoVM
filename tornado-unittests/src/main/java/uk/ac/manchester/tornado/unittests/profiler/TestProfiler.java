@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,7 +20,6 @@ package uk.ac.manchester.tornado.unittests.profiler;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -30,8 +29,10 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
+import uk.ac.manchester.tornado.api.TornadoProfilerResult;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -44,10 +45,16 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.profiler.TestProfiler
+ * tornado-test -V uk.ac.manchester.tornado.unittests.profiler.TestProfiler
  * </code>
  */
 public class TestProfiler extends TornadoTestBase {
+
+    private static void reduction(float[] input, @Reduce float[] output) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            output[0] += input[i];
+        }
+    }
 
     private boolean isBackendPTXOrSPIRV(int driverIndex) {
         TornadoVMBackendType type = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getBackendType();
@@ -65,12 +72,12 @@ public class TestProfiler extends TornadoTestBase {
     @Test
     public void testProfilerEnabled() {
         int numElements = 16;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
 
-        Arrays.fill(a, 1);
-        Arrays.fill(b, 2);
+        a.init(1);
+        b.init(2);
 
         // testProfilerDisabled might execute first. We must make sure that the code
         // cache is reset.
@@ -120,12 +127,12 @@ public class TestProfiler extends TornadoTestBase {
     @Test
     public void testProfilerDisabled() {
         int numElements = 16;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
 
-        Arrays.fill(a, 1);
-        Arrays.fill(b, 2);
+        a.init(1);
+        b.init(2);
 
         // Disable profiler
         System.setProperty("tornado.profiler", "False");
@@ -159,12 +166,12 @@ public class TestProfiler extends TornadoTestBase {
     @Test
     public void testProfilerFromExecutionPlan() {
         int numElements = 16;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
 
-        Arrays.fill(a, 1);
-        Arrays.fill(b, 2);
+        a.init(1);
+        b.init(2);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
@@ -184,34 +191,36 @@ public class TestProfiler extends TornadoTestBase {
 
         int driverIndex = TornadoRuntime.getTornadoRuntime().getDefaultDevice().getDriverIndex();
 
-        assertTrue(executionResult.getProfilerResult().getTotalTime() > 0);
-        assertTrue(executionResult.getProfilerResult().getTornadoCompilerTime() > 0);
-        assertTrue(executionResult.getProfilerResult().getCompileTime() > 0);
-        assertTrue(executionResult.getProfilerResult().getDataTransfersTime() >= 0);
-        assertTrue(executionResult.getProfilerResult().getDeviceReadTime() >= 0);
-        assertTrue(executionResult.getProfilerResult().getDeviceWriteTime() >= 0);
+        TornadoProfilerResult profilerResult = executionResult.getProfilerResult();
+
+        assertTrue(profilerResult.getTotalTime() > 0);
+        assertTrue(profilerResult.getTornadoCompilerTime() > 0);
+        assertTrue(profilerResult.getCompileTime() > 0);
+        assertTrue(profilerResult.getDataTransfersTime() >= 0);
+        assertTrue(profilerResult.getDeviceReadTime() >= 0);
+        assertTrue(profilerResult.getDeviceWriteTime() >= 0);
         // We do not support dispatch timers for the PTX and SPIRV backends
         if (!isBackendPTXOrSPIRV(driverIndex)) {
-            assertTrue(executionResult.getProfilerResult().getDataTransferDispatchTime() > 0);
-            assertTrue(executionResult.getProfilerResult().getKernelDispatchTime() > 0);
+            assertTrue(profilerResult.getDataTransferDispatchTime() > 0);
+            assertTrue(profilerResult.getKernelDispatchTime() > 0);
         }
-        assertTrue(executionResult.getProfilerResult().getDeviceWriteTime() >= 0);
-        assertTrue(executionResult.getProfilerResult().getDeviceReadTime() > 0);
+        assertTrue(profilerResult.getDeviceWriteTime() >= 0);
+        assertTrue(profilerResult.getDeviceReadTime() > 0);
 
-        assertEquals(executionResult.getProfilerResult().getDeviceWriteTime() + executionResult.getProfilerResult().getDeviceReadTime(), executionResult.getProfilerResult().getDataTransfersTime());
-        assertEquals(executionResult.getProfilerResult().getTornadoCompilerTime() + executionResult.getProfilerResult().getDriverInstallTime(), executionResult.getProfilerResult().getCompileTime());
+        assertEquals(profilerResult.getDeviceWriteTime() + profilerResult.getDeviceReadTime(), profilerResult.getDataTransfersTime());
+        assertEquals(profilerResult.getTornadoCompilerTime() + profilerResult.getDriverInstallTime(), profilerResult.getCompileTime());
 
     }
 
     @Test
     public void testProfilerOnAndOff() {
         int numElements = 16;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
+        IntArray c = new IntArray(numElements);
 
-        Arrays.fill(a, 1);
-        Arrays.fill(b, 2);
+        a.init(1);
+        b.init(2);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b) //
@@ -252,21 +261,15 @@ public class TestProfiler extends TornadoTestBase {
 
     }
 
-    private static void reduction(float[] input, @Reduce float[] output) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            output[0] += input[i];
-        }
-    }
-
     @Test
     public void testProfilerReduction() {
 
-        final int SIZE = 1024;
-        float[] inputArray = new float[SIZE];
+        final int size = 1024;
+        float[] inputArray = new float[size];
         float[] outputArray = new float[1];
 
         Random r = new Random();
-        IntStream.range(0, SIZE).forEach(i -> inputArray[i] = r.nextFloat());
+        IntStream.range(0, size).forEach(i -> inputArray[i] = r.nextFloat());
 
         TaskGraph taskGraph = new TaskGraph("compute");
         taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, inputArray) //
@@ -285,12 +288,12 @@ public class TestProfiler extends TornadoTestBase {
     @Test
     public void testProfilerReductionOnAndOff() {
 
-        final int SIZE = 1024;
-        float[] inputArray = new float[SIZE];
+        final int size = 1024;
+        float[] inputArray = new float[size];
         float[] outputArray = new float[1];
 
         Random r = new Random();
-        IntStream.range(0, SIZE).forEach(i -> inputArray[i] = r.nextFloat());
+        IntStream.range(0, size).forEach(i -> inputArray[i] = r.nextFloat());
 
         TaskGraph taskGraph = new TaskGraph("compute");
         taskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, inputArray) //

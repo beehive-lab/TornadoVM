@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2020, APT Group, Department of Computer Science,
@@ -14,7 +14,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -22,14 +22,10 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 package uk.ac.manchester.tornado.drivers.opencl.builtins;
 
 import org.graalvm.compiler.api.replacements.Fold;
-
-import uk.ac.manchester.tornado.api.annotations.ReductionOp;
 
 public class OpenCLIntrinsics {
 
@@ -47,8 +43,8 @@ public class OpenCLIntrinsics {
 
     /**
      * <p>
-     * <code> 
-     *  barrier(CLK_LOCAL_MEM_FENCE);
+     * <code>
+     * barrier(CLK_LOCAL_MEM_FENCE);
      * </code>
      * </p>
      */
@@ -56,8 +52,8 @@ public class OpenCLIntrinsics {
 
     /**
      * <p>
-     * <code> 
-     *  barrier(CLK_GLOBAL_MEM_FENCE);
+     * <code>
+     * barrier(CLK_GLOBAL_MEM_FENCE);
      * </code>
      * </p>
      */
@@ -76,10 +72,6 @@ public class OpenCLIntrinsics {
     @Fold
     public static int fmax() {
         return 0;
-    }
-
-    public static <T1, T2, R> R op(ReductionOp op, T1 x, T2 y) {
-        return null;
     }
 
 }

@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -58,7 +58,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 
-public class RuntimeUtilities {
+public final class RuntimeUtilities {
 
     public static final int ONE_GIGABYTE = 1 * 1024 * 1024 * 1024;
     public static final int ONE_MEGABYTE = 1 * 1024 * 1024;
@@ -66,6 +66,9 @@ public class RuntimeUtilities {
 
     public static final String FPGA_OUTPUT_FILENAME = "outputFPGA.log";
     public static final String FPGA_ERROR_FILENAME = "errorFPGA.log";
+
+    private RuntimeUtilities() {
+    }
 
     public static long parseSize(String size) {
         if (size.endsWith("B")) {
@@ -86,14 +89,14 @@ public class RuntimeUtilities {
     }
 
     /**
-     * Convert byte sizes into human readable format Based on code from
+     * Convert byte sizes into human-readable format Based on code from.
      *
      * @param bytes
      * @param si
      * @return humanReadableByteCount
      * @see <a href=http://stackoverflow.com/questions/3758606/how-to-convert
-     *      -byte-size-into-human-readable-format-in-java >Reference to
-     *      StackOverflow</a>
+     *     -byte-size-into-human-readable-format-in-java >Reference to
+     *     StackOverflow</a>
      */
     public static String humanReadableByteCount(long bytes, boolean si) {
         final int unit = si ? 1000 : 1024;
@@ -146,7 +149,7 @@ public class RuntimeUtilities {
     }
 
     /**
-     * Returns true if object is a boxed type
+     * Returns true if object is a boxed type.
      *
      * @param obj
      * @return
@@ -176,10 +179,10 @@ public class RuntimeUtilities {
     }
 
     /**
-     * Returns true if object is a boxed type
+     * Returns true if object is a boxed type.
      *
      * @param klass
-     *            Class to check is boxed type.
+     *     Class to check is boxed type.
      * @return boolean
      */
     public static boolean isBoxedPrimitiveClass(final Class<?> klass) {
@@ -207,7 +210,7 @@ public class RuntimeUtilities {
     }
 
     /**
-     * Returns true if object is a boxed type
+     * Returns true if object is a boxed type.
      *
      * @param clazz
      * @return
@@ -237,10 +240,10 @@ public class RuntimeUtilities {
     }
 
     /**
-     * determines whether a given array is composed of primitives or objects
+     * determines whether a given array is composed of primitives or objects.
      *
      * @param type
-     *            type to check
+     *     type to check
      * @return true if the array is composed of a primitive type
      */
     public static boolean isPrimitiveArray(final Class<?> type) {
@@ -297,8 +300,7 @@ public class RuntimeUtilities {
     }
 
     public static double elapsedTimeInSeconds(long start, long end) {
-        final long duration = end - start;
-        return duration * 1e-9;
+        return elapsedTimeInSeconds((end - start));
     }
 
     public static double elapsedTimeInSeconds(long duration) {
@@ -357,8 +359,8 @@ public class RuntimeUtilities {
      * with identify information for the induction variables.
      *
      * @param graph
-     *            The StructuredGraph to analyze and print induction variables in
-     *            the graph.
+     *     The StructuredGraph to analyze and print induction variables in
+     *     the graph.
      */
     private static void printInductionVariables(StructuredGraph graph) {
         final LoopsData data = new TornadoLoopsData(graph);
@@ -372,16 +374,12 @@ public class RuntimeUtilities {
                 for (Node n : parRange.offset().usages()) {
                     if (loop.getInductionVariables().containsKey(n)) {
                         BasicInductionVariable iv = (BasicInductionVariable) loop.getInductionVariables().get(n);
-                        System.out.printf("[%d] parallel loop: %s -> init=%s, cond=%s, stride=%s, op=%s\n", parRange.index(), loop.loopBegin(), parRange.offset().value(), parRange.value(),
-                                parRange.stride(), iv.getOp());
+                        System.out.printf("[%d] parallel loop: %s -> init=%s, cond=%s, stride=%s, op=%s\n", parRange.index(), loop.loopBegin(), parRange.offset().value(), parRange.value(), parRange
+                                .stride(), iv.getOp());
                     }
                 }
             }
         }
-    }
-
-    public static boolean ifFileExists(File fileName) {
-        return fileName.exists();
     }
 
     public static void maybePrintSource(byte[] source) {
@@ -391,10 +389,12 @@ public class RuntimeUtilities {
                 System.out.println(sourceCode);
             } else {
                 File fileLog = new File(PRINT_SOURCE_DIRECTORY);
-                try (FileWriter file = new FileWriter(fileLog, RuntimeUtilities.ifFileExists(fileLog))) {
-                    file.write(sourceCode);
-                    file.write("\n");
-                    file.flush();
+                try {
+                    try (FileWriter file = new FileWriter(fileLog, fileLog.exists())) {
+                        file.write(sourceCode);
+                        file.write("\n");
+                        file.flush();
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -404,8 +404,8 @@ public class RuntimeUtilities {
 
     public static void systemCall(String[] command, boolean printStandardOutput, String loggingDirectory) throws IOException {
         String stdOutput;
-        StringBuffer standardOutput = new StringBuffer();
-        StringBuffer errorOutput = new StringBuffer();
+        StringBuilder standardOutput = new StringBuilder();
+        StringBuilder errorOutput = new StringBuilder();
         final String lineSeparator = System.lineSeparator();
 
         try {
@@ -414,17 +414,17 @@ public class RuntimeUtilities {
 
             BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
             BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-            standardOutput.append("Standard output:" + lineSeparator);
+            standardOutput.append("Standard output:").append(lineSeparator);
             String fullCommand = Arrays.toString(command);
-            standardOutput.append("Command: " + fullCommand + lineSeparator + lineSeparator);
+            standardOutput.append("Command: ").append(fullCommand).append(lineSeparator).append(lineSeparator);
             while ((stdOutput = stdInput.readLine()) != null) {
-                standardOutput.append(stdOutput + lineSeparator);
+                standardOutput.append(stdOutput).append(lineSeparator);
             }
             standardOutput.append("--------------------------------------------------------------------\n");
 
-            errorOutput.append("Standard error (if any) of the command (" + Arrays.toString(command) + "):\n");
+            errorOutput.append("Standard error (if any) of the command (").append(Arrays.toString(command)).append("):\n");
             while ((stdOutput = stdError.readLine()) != null) {
-                errorOutput.append(stdOutput + lineSeparator);
+                errorOutput.append(stdOutput).append(lineSeparator);
             }
             errorOutput.append("--------------------------------------------------------------------\n");
 
@@ -478,8 +478,8 @@ public class RuntimeUtilities {
     public static String getTornadoInstanceIP() {
         String localIP = null;
         try {
-            InetAddress IP = InetAddress.getLocalHost();
-            localIP = IP.getHostAddress();
+            InetAddress ip = InetAddress.getLocalHost();
+            localIP = ip.getHostAddress();
         } catch (UnknownHostException e) {
             System.out.println("Exception occurred" + e.getMessage());
         }
@@ -493,8 +493,5 @@ public class RuntimeUtilities {
         } catch (IOException e) {
             throw new TornadoRuntimeException("JSon profiler file cannot be append");
         }
-    }
-
-    private RuntimeUtilities() {
     }
 }

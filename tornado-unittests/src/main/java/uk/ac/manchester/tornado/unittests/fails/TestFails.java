@@ -25,6 +25,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
@@ -62,9 +63,10 @@ public class TestFails extends TornadoTestBase {
         // reset the internal state of variables if needed, meanwhile warmup skip many
         // of those steps.
         // =============================================================================
-
-        float[] x = new float[100];
-        float[] y = new float[100];
+        FloatArray x = new FloatArray(100);
+        FloatArray y = new FloatArray(100);
+//        float[] x = new float[100];
+//        float[] y = new float[100];
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
@@ -84,9 +86,9 @@ public class TestFails extends TornadoTestBase {
         executionPlanPlan.execute();
     }
 
-    private static void kernel(float[] a, float[] b) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            b[i] = a[i];
+    private static void kernel(FloatArray a, FloatArray b) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            b.set(i, a.get(i));
         }
     }
 
@@ -95,8 +97,8 @@ public class TestFails extends TornadoTestBase {
         // This test fails because the Java method's name to be accelerated corresponds
         // to an OpenCL token.
 
-        float[] x = new float[100];
-        float[] y = new float[100];
+        FloatArray x = new FloatArray(100);
+        FloatArray y = new FloatArray(100);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //

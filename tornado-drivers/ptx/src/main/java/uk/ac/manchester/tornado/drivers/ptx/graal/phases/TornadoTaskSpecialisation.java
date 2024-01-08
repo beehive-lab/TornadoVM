@@ -10,7 +10,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -83,6 +83,18 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         this.valueTypeReplacement = new TornadoValueTypeReplacement();
         this.deadCodeElimination = new DeadCodeEliminationPhase();
         this.loopUnroll = new TornadoLoopUnroller(canonicalizer);
+    }
+
+    private static boolean hasPanamaArraySizeNode(StructuredGraph graph) {
+        for (LoadFieldNode loadField : graph.getNodes().filter(LoadFieldNode.class)) {
+            final ResolvedJavaField field = loadField.field();
+            if (field.getType().getJavaKind().isPrimitive()) {
+                if (loadField.toString().contains("numberOfElements")) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private Field lookupField(Class<?> type, String field) {
@@ -212,7 +224,16 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             final LoadFieldNode loadField = (LoadFieldNode) node;
             final ResolvedJavaField field = loadField.field();
             if (field.getType().getJavaKind().isPrimitive()) {
-                ConstantNode constant = lookupPrimField(graph, node, value, field.getName(), field.getJavaKind());
+                ConstantNode constant;
+                if (node.toString().contains("numberOfElements")) {
+                    if (batchThreads <= 0) {
+                        constant = lookupPrimField(graph, node, value, field.getName(), field.getJavaKind());
+                    } else {
+                        constant = ConstantNode.forInt((int) batchThreads);
+                    }
+                } else {
+                    constant = lookupPrimField(graph, node, value, field.getName(), field.getJavaKind());
+                }
                 constant = graph.addOrUnique(constant);
                 node.replaceAtUsages(constant);
                 loadField.clearInputs();
@@ -241,16 +262,12 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
     private ConstantNode createConstantFromObject(Object obj) {
         ConstantNode result = null;
-        if (obj instanceof Float) {
-            result = ConstantNode.forFloat((float) obj);
-        } else if (obj instanceof Integer) {
-            result = ConstantNode.forInt((int) obj);
-        } else if (obj instanceof Double) {
-            result = ConstantNode.forDouble((double) obj);
-        } else if (obj instanceof Long) {
-            result = ConstantNode.forLong((long) obj);
-        } else {
-            unimplemented("createConstantFromObject: %s", obj);
+        switch (obj) {
+            case Float v -> result = ConstantNode.forFloat((float) obj);
+            case Integer i -> result = ConstantNode.forInt((int) obj);
+            case Double v -> result = ConstantNode.forDouble((double) obj);
+            case Long l -> result = ConstantNode.forLong((long) obj);
+            case null, default -> unimplemented("createConstantFromObject: %s", obj);
         }
         return result;
     }
@@ -330,18 +347,16 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "After TaskSpecialisation iteration = " + iterations);
 
-            hasWork = (lastNodeCount != graph.getNodeCount() || graph.getNewNodes(mark).isNotEmpty()) && (iterations < MAX_ITERATIONS);
+            hasWork = (lastNodeCount != graph.getNodeCount() || graph.getNewNodes(mark).isNotEmpty() || hasPanamaArraySizeNode(graph)) && (iterations < MAX_ITERATIONS);
             lastNodeCount = graph.getNodeCount();
             iterations++;
         }
 
         graph.getNodes().filter(ParallelRangeNode.class).forEach(range -> {
-            if (range.value() instanceof PhiNode) {
-                PhiNode phiNode = (PhiNode) range.value();
+            if (range.value() instanceof PhiNode phiNode) {
                 NodeIterable<Node> usages = range.usages();
                 for (Node usage : usages) {
-                    if (usage instanceof IntegerLessThanNode) {
-                        IntegerLessThanNode less = (IntegerLessThanNode) usage;
+                    if (usage instanceof IntegerLessThanNode less) {
                         ConstantNode constant = null;
                         if (less.getX() instanceof ConstantNode) {
                             constant = (ConstantNode) less.getX();

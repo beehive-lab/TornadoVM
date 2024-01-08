@@ -2,26 +2,20 @@
 # vim: set tasbstop=4
 
 #
-# This file is part of Tornado: A heterogeneous programming framework:
-# https://github.com/beehive-lab/tornadovm
-#
 # Copyright (c) 2013-2023, APT Group, Department of Computer Science,
-# The University of Manchester. All rights reserved.
-# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+# The University of Manchester.
 #
-# This code is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# This code is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-# version 2 for more details (a copy is included in the LICENSE file that
-# accompanied this code).
+# http://www.apache.org/licenses/LICENSE-2.0
 #
-# You should have received a copy of the GNU General Public License version
-# 2 along with this work; if not, write to the Free Software Foundation,
-# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 
 import argparse
@@ -153,7 +147,7 @@ __TEST_THE_WORLD__ = [
 ]
 
 ## List of tests that can be ignored. The following either fail (we know it is a precision error), or they are not supported
-## for specific backends. Every group of ignored tests have an explanation about the failure and the backends that are affected. 
+## for specific backends. Every group of ignored tests have an explanation about the failure and the backends that are affected.
 #  Format: class#testMethod
 __TORNADO_TESTS_WHITE_LIST__ = [
 
@@ -161,7 +155,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     "uk.ac.manchester.tornado.unittests.math.TestMath#testMathTanh",
     "uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection#testTornadoMathTanh",
 
-    ## Virtual devices are only available for OpenCL. 
+    ## Virtual devices are only available for OpenCL.
     "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel#testVirtualDeviceKernelGPU",
     "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel#testVirtualDeviceKernelCPU",
     "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction#testVirtualDeviceFeaturesCPU",
@@ -171,7 +165,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic12",
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic15",
 
-    ## Precision errors 
+    ## Precision errors
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testNBodyBigNoWorker",
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testEuler",
     "uk.ac.manchester.tornado.unittests.codegen.CodeGen#test02",
@@ -180,7 +174,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext#mxm2DKernelContext02",
 
     # It might have errors during type casting and type conversion. However, the fractals images look correct.
-    # This errors might be related to error precision when running many threads in parallel. 
+    # This errors might be related to error precision when running many threads in parallel.
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testMandelbrot",
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testJuliaSets",
 
@@ -190,7 +184,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     ## Atomics
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic12",
 
-    ## Multi-backend 
+    ## Multi-backend
     "uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends#testTwoBackendsSerial",
     "uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends#testTwoBackendsConcurrent",
     "uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends#testThreeBackendsSerial",
@@ -216,6 +210,8 @@ __GC__ = "-Xmx6g "
 __BASE_OPTIONS__ = "-Dtornado.recover.bailout=False "
 __VERBOSE_OPTION__ = "-Dtornado.unittests.verbose="
 __TORNADOVM_PRINT_BC__ = "-Dtornado.print.bytecodes=True "
+__TORNADOVM_ENABLE_PROFILER_SILENT__ = " -Dtornado.profiler=True -Dtornado.log.profiler=True "
+__TORNADOVM_ENABLE_PROFILER_CONSOLE__ = " -Dtornado.profiler=True "
 # ################################################################################################################
 
 TORNADO_CMD = "tornado "
@@ -283,6 +279,15 @@ def composeAllOptions(args):
 
     if (args.jvmFlags != None):
         options = options + args.jvmFlags
+
+    if (args.enable_profiler != None):
+        if (args.enable_profiler == "silent"):
+            options = options + __TORNADOVM_ENABLE_PROFILER_SILENT__
+        elif (args.enable_profiler == "console"):
+            options = options + __TORNADOVM_ENABLE_PROFILER_CONSOLE__
+        else:
+            print("[ERROR] Please select --enableProfiler <silent|console>")
+            sys.exit(0)
 
     return options
 
@@ -519,6 +524,8 @@ def parseArguments():
                         help="Print OpenCL Kernel Execution Time")
     parser.add_argument('--jvm', "-J", dest="jvmFlags", required=False, default=None,
                         help="Pass options to the JVM e.g. -J=\"-Ds0.t0.device=0:1\"")
+    parser.add_argument('--enableProfiler', action="store", dest="enable_profiler", default=None,
+                        help="Enable the profiler {silent|console}")
     args = parser.parse_args()
     return args
 

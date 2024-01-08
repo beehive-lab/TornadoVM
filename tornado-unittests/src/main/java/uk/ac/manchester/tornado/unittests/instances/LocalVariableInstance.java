@@ -39,41 +39,6 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  */
 public class LocalVariableInstance {
 
-    public static class FlinkMapUDF {
-        public int map(int value) {
-            int x = value - 2 + 9;
-            return value * x;
-        }
-    }
-
-    public abstract static class MiddleMap {
-        public abstract int mymapintint(int i);
-    }
-
-    public static class MyMap extends MiddleMap {
-        @Override
-        public int mymapintint(int i) {
-            FlinkMapUDF fudf = new FlinkMapUDF();
-            return fudf.map(i);
-        }
-    }
-
-    public static class MapSkeleton {
-
-        public MiddleMap mdm;
-
-        MapSkeleton(MiddleMap mdm) {
-            this.mdm = mdm;
-        }
-
-        public void map(int[] input, int[] output) {
-            for (@Parallel int i = 0; i < input.length; i++) {
-                output[i] = mdm.mymapintint(i);
-            }
-        }
-
-    }
-
     public int[] sequential(int[] in) {
         int[] out = new int[in.length];
         int x;
@@ -109,6 +74,41 @@ public class LocalVariableInstance {
         int[] seq = sequential(in);
 
         assertArrayEquals(seq, out);
+    }
+
+    public static class FlinkMapUDF {
+        public int map(int value) {
+            int x = value - 2 + 9;
+            return value * x;
+        }
+    }
+
+    public abstract static class MiddleMap {
+        public abstract int mymapintint(int i);
+    }
+
+    public static class MyMap extends MiddleMap {
+        @Override
+        public int mymapintint(int i) {
+            FlinkMapUDF fudf = new FlinkMapUDF();
+            return fudf.map(i);
+        }
+    }
+
+    public static class MapSkeleton {
+
+        public MiddleMap mdm;
+
+        MapSkeleton(MiddleMap mdm) {
+            this.mdm = mdm;
+        }
+
+        public void map(int[] input, int[] output) {
+            for (@Parallel int i = 0; i < input.length; i++) {
+                output[i] = mdm.mymapintint(i);
+            }
+        }
+
     }
 
 }

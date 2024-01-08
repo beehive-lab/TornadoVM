@@ -28,6 +28,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -44,18 +45,18 @@ public class TestLambdas extends TornadoTestBase {
     public void testLambda01() {
 
         final int numElements = 256;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
+        IntArray a = new IntArray(numElements);
+        IntArray b = new IntArray(numElements);
 
         Random r = new Random();
 
-        IntStream.range(0, a.length).forEach(i -> a[i] = r.nextInt(100));
+        IntStream.range(0, a.getSize()).forEach(i -> a.set(i, r.nextInt(100)));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, b) //
                 .task("t0", (x, y) -> {
-                    for (@Parallel int i = 0; i < x.length; i++) {
-                        x[i] = y[i] * y[i];
+                    for (@Parallel int i = 0; i < x.getSize(); i++) {
+                        x.set(i, y.get(i) * y.get(i));
                     }
                 }, a, b) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
@@ -64,8 +65,8 @@ public class TestLambdas extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < b.length; i++) {
-            assertEquals(b[i] * b[i], a[i]);
+        for (int i = 0; i < b.getSize(); i++) {
+            assertEquals(b.get(i) * b.get(i), a.get(i));
         }
     }
 }

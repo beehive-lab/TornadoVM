@@ -18,8 +18,6 @@
  * You should have received a copy of the GNU General Public License version 2
  * along with this work; if not, write to the Free Software Foundation, Inc., 51
  * Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- *
  */
 package uk.ac.manchester.tornado.drivers.ptx.graal;
 
@@ -51,9 +49,9 @@ public enum PTXVariablePrefix {
      * It constructs a PTXVariablePrefix enum with the specified type and prefix.
      *
      * @param type
-     *            The type string.
+     *     The type string.
      * @param prefix
-     *            The prefix string.
+     *     The prefix string.
      */
     PTXVariablePrefix(String type, String prefix) {
         this.type = type;

@@ -1,0 +1,35 @@
+default_language_version:
+  python: python3
+fail_fast: True
+default_stages: [ push ]
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: end-of-file-fixer
+      - id: check-json
+      - id: check-xml
+      - id: no-commit-to-branch
+        args: [ '--branch', 'develop' ]
+      - id: trailing-whitespace
+  - repo: local
+    hooks:
+      - id: run-rst-lint
+        name: lint rst files ...
+        entry: bin/validate_rst.py
+        stages: [ commit ]
+        language: python
+        always_run: true
+      - id: maven-checkstyle
+        name: run checkstyle on Java files ...
+        entry: make checkstyle
+        stages: [ commit ]
+        language: system
+        always_run: true
+  - repo: https://github.com/ambv/black
+    rev: 23.9.1
+    hooks:
+      - id: black
+        language_version: python3

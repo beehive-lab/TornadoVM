@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,19 +35,36 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.compute.Mandelbrot
+ * tornado --threadInfo -m tornado.examples/uk.ac.manchester.tornado.examples.compute.Mandelbrot
  * </code>
  */
 public class Mandelbrot {
+    // CHECKSTYLE:OFF
 
     public static final int SIZE = 1024;
     public static final boolean USE_TORNADO = true;
+
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Mandelbrot Example within Tornado");
+
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent event) {
+                System.exit(0);
+            }
+        });
+
+        frame.add(new MandelbrotImage());
+        frame.pack();
+        frame.setVisible(true);
+    }
 
     @SuppressWarnings("serial")
     public static class MandelbrotImage extends Component {
@@ -57,11 +74,11 @@ public class Mandelbrot {
         public MandelbrotImage() {
         }
 
-        private static short[] mandelbrotSequential(int size) {
+        private static ShortArray mandelbrotSequential(int size) {
             final int iterations = 10000;
             float space = 2.0f / size;
 
-            short[] result = new short[size * size];
+            ShortArray result = new ShortArray(size * size);
 
             for (int i = 0; i < size; i++) {
                 int indexIDX = i;
@@ -85,13 +102,13 @@ public class Mandelbrot {
                         ZrN = Zr * Zr;
                     }
                     short r = (short) ((y * 255) / iterations);
-                    result[i * size + j] = r;
+                    result.set(i * size + j, r);
                 }
             }
             return result;
         }
 
-        private static void mandelbrotTornado(int size, short[] output) {
+        private static void mandelbrotTornado(int size, ShortArray output) {
             final int iterations = 10000;
             float space = 2.0f / size;
 
@@ -116,12 +133,12 @@ public class Mandelbrot {
                         }
                     }
                     short r = (short) ((y * 255) / iterations);
-                    output[i * size + j] = r;
+                    output.set(i * size + j, r);
                 }
             }
         }
 
-        private static BufferedImage writeFile(short[] output, int size) {
+        private static BufferedImage writeFile(ShortArray output, int size) {
             BufferedImage img = null;
             try {
                 img = new BufferedImage(size, size, BufferedImage.TYPE_INT_BGR);
@@ -130,7 +147,7 @@ public class Mandelbrot {
 
                 for (int i = 0; i < size; i++) {
                     for (int j = 0; j < size; j++) {
-                        int colour = output[(i * size + j)];
+                        int colour = output.get((i * size + j));
                         write.setSample(i, j, 0, colour);
                     }
                 }
@@ -144,10 +161,10 @@ public class Mandelbrot {
         @Override
         public void paint(Graphics g) {
             if (!USE_TORNADO) {
-                short[] mandelbrotSequential = mandelbrotSequential(SIZE);
+                ShortArray mandelbrotSequential = mandelbrotSequential(SIZE);
                 this.image = writeFile(mandelbrotSequential, SIZE);
             } else {
-                short[] result = new short[SIZE * SIZE];
+                ShortArray result = new ShortArray(SIZE * SIZE);
                 TaskGraph taskGraph = new TaskGraph("s0") //
                         .task("t0", MandelbrotImage::mandelbrotTornado, SIZE, result) //
                         .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
@@ -171,19 +188,5 @@ public class Mandelbrot {
             }
         }
     }
-
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("Mandelbrot Example within Tornado");
-
-        frame.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent event) {
-                System.exit(0);
-            }
-        });
-
-        frame.add(new MandelbrotImage());
-        frame.pack();
-        frame.setVisible(true);
-    }
 }
+// CHECKSTYLE:ON

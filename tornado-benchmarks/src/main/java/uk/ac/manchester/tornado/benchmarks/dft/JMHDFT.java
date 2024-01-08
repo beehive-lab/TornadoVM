@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,6 +41,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 /**
@@ -48,7 +49,7 @@ import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
  * How to run in isolation?
  * </p>
  * <code>
- *    tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.dft.JMHDFT
+ * tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.dft.JMHDFT
  * </code>
  */
 public class JMHDFT {
@@ -57,23 +58,23 @@ public class JMHDFT {
     public static class BenchmarkSetup {
 
         private int size = Integer.parseInt(System.getProperty("x", "8192"));
-        private double[] inReal;
-        private double[] inImag;
-        private double[] outReal;
-        private double[] outImag;
+        private DoubleArray inReal;
+        private DoubleArray inImag;
+        private DoubleArray outReal;
+        private DoubleArray outImag;
 
         private TornadoExecutionPlan executor;
 
         @Setup(Level.Trial)
         public void doSetup() {
-            inReal = new double[size];
-            inImag = new double[size];
-            outReal = new double[size];
-            outImag = new double[size];
+            inReal = new DoubleArray(size);
+            inImag = new DoubleArray(size);
+            outReal = new DoubleArray(size);
+            outImag = new DoubleArray(size);
 
             for (int i = 0; i < size; i++) {
-                inReal[i] = 1 / (double) (i + 2);
-                inImag[i] = 1 / (double) (i + 2);
+                inReal.set(i, (1 / (double) (i + 2)));
+                inImag.set(i, (1 / (double) (i + 2)));
             }
 
             TaskGraph taskGraph = new TaskGraph("benchmark") //

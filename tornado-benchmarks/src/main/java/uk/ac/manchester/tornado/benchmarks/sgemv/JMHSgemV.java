@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -44,6 +44,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
 /**
@@ -51,7 +52,7 @@ import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
  * How to run in isolation?
  * </p>
  * <code>
- *    tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.sgemv.JMHSgemV
+ * tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.sgemv.JMHSgemV
  * </code>
  */
 public class JMHSgemV {
@@ -60,25 +61,25 @@ public class JMHSgemV {
 
         private final int m = Integer.parseInt(System.getProperty("x", "8192"));
         private final int n = Integer.parseInt(System.getProperty("y", "8192"));
-        private float[] a;
-        private float[] x;
-        private float[] y;
+        private FloatArray a;
+        private FloatArray x;
+        private FloatArray y;
         private TornadoExecutionPlan executor;
 
         @Setup(Level.Trial)
         public void doSetup() {
-            a = new float[m * n];
-            x = new float[n];
-            y = new float[n];
+            a = new FloatArray(m * n);
+            x = new FloatArray(n);
+            y = new FloatArray(n);
 
             final Random random = new Random();
 
             for (int i = 0; i < m; i++) {
-                a[i * (m + 1)] = 1;
+                a.set(i * (m + 1), 1);
             }
 
             for (int i = 0; i < n; i++) {
-                x[i] = random.nextFloat();
+                x.set(i, random.nextFloat());
             }
 
             TaskGraph taskGraph = new TaskGraph("benchmark") //

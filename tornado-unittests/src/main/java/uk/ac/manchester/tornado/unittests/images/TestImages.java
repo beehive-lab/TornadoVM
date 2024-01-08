@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,23 +20,25 @@ package uk.ac.manchester.tornado.unittests.images;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Random;
+
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.types.Byte3;
-import uk.ac.manchester.tornado.api.collections.types.Byte4;
-import uk.ac.manchester.tornado.api.collections.types.Float3;
-import uk.ac.manchester.tornado.api.collections.types.Float4;
-import uk.ac.manchester.tornado.api.collections.types.Float8;
-import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
-import uk.ac.manchester.tornado.api.collections.types.ImageByte4;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
-import uk.ac.manchester.tornado.api.collections.types.ImageFloat8;
+import uk.ac.manchester.tornado.api.types.vectors.Byte3;
+import uk.ac.manchester.tornado.api.types.vectors.Byte4;
+import uk.ac.manchester.tornado.api.types.vectors.Float3;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
+import uk.ac.manchester.tornado.api.types.vectors.Float8;
+import uk.ac.manchester.tornado.api.types.images.ImageByte3;
+import uk.ac.manchester.tornado.api.types.images.ImageByte4;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat4;
+import uk.ac.manchester.tornado.api.types.images.ImageFloat8;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -47,11 +49,93 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- *     tornado-test -V uk.ac.manchester.tornado.unittests.images.TestImages
+ * tornado-test -V uk.ac.manchester.tornado.unittests.images.TestImages
  * </code>
  *
  */
 public class TestImages extends TornadoTestBase {
+    // CHECKSTYLE:OFF
+
+    public static void taskWithImages(final ImageFloat a, final ImageFloat b) {
+        for (@Parallel int i = 0; i < a.X(); i++) {
+            for (@Parallel int j = 0; j < a.Y(); j++) {
+                float value = a.get(i, j);
+                b.set(i, j, value);
+            }
+        }
+    }
+
+    public static void taskWithImagesFloat3(final ImageFloat3 a, final ImageFloat3 b) {
+        for (@Parallel int i = 0; i < a.X(); i++) {
+            for (@Parallel int j = 0; j < a.Y(); j++) {
+                Float3 value = a.get(i, j);
+                b.set(i, j, value);
+            }
+        }
+    }
+
+    public static void taskWithImagesFloat4(final ImageFloat4 a, final ImageFloat4 b) {
+        for (@Parallel int i = 0; i < a.X(); i++) {
+            for (@Parallel int j = 0; j < a.Y(); j++) {
+                Float4 value = a.get(i, j);
+                b.set(i, j, value);
+            }
+        }
+    }
+
+    public static void taskWithImagesFloat8(final ImageFloat8 a, final ImageFloat8 b) {
+        for (@Parallel int i = 0; i < a.X(); i++) {
+            for (@Parallel int j = 0; j < a.Y(); j++) {
+                Float8 value = a.get(i, j);
+                b.set(i, j, value);
+            }
+        }
+    }
+
+    public static void taskWithImagesByte3(final ImageByte3 a, final ImageByte3 b) {
+        for (@Parallel int i = 0; i < a.X(); i++) {
+            for (@Parallel int j = 0; j < a.Y(); j++) {
+                Byte3 value = a.get(i, j);
+                b.set(i, j, value);
+            }
+        }
+    }
+
+    public static void taskWithImagesByte4(final ImageByte4 a, final ImageByte4 b) {
+        for (@Parallel int i = 0; i < a.X(); i++) {
+            for (@Parallel int j = 0; j < a.Y(); j++) {
+                Byte4 value = a.get(i, j);
+                b.set(i, j, value);
+            }
+        }
+    }
+
+    public static void testCopyImagesParallel(final ImageFloat a, final ImageFloat b) {
+        for (@Parallel int i = 0; i < a.X(); i++) {
+            for (@Parallel int j = 0; j < a.Y(); j++) {
+                float value = a.get(i, j) + 1;
+                b.set(i, j, value);
+            }
+        }
+    }
+
+    public static void testCopyImagesParallelRandom(final ImageFloat a, final ImageFloat b) {
+        for (@Parallel int i = 0; i < a.X(); i++) {
+            for (@Parallel int j = 0; j < a.Y(); j++) {
+                float value = a.get(i, j) + 0.01f;
+                b.set(i, j, value);
+            }
+        }
+    }
+
+    public static void testCopyImagesSequential(final ImageFloat a, final ImageFloat b) {
+        for (int i = 0; i < a.X(); i++) {
+            for (int j = 0; j < a.Y(); j++) {
+                float value = a.get(i, j) + 1;
+                b.set(i, j, value);
+            }
+        }
+    }
 
     /**
      * Test for image::fill kernel with square image.
@@ -135,15 +219,6 @@ public class TestImages extends TornadoTestBase {
         }
     }
 
-    public static void taskWithImages(final ImageFloat a, final ImageFloat b) {
-        for (@Parallel int i = 0; i < a.X(); i++) {
-            for (@Parallel int j = 0; j < a.Y(); j++) {
-                float value = a.get(i, j);
-                b.set(i, j, value);
-            }
-        }
-    }
-
     /**
      * Test for computing a referenced method using {@link ImageFloat} on the OpenCL
      * device using square-matrices.
@@ -157,6 +232,7 @@ public class TestImages extends TornadoTestBase {
         final ImageFloat imageA = new ImageFloat(M, N);
         final ImageFloat imageB = new ImageFloat(M, N);
         imageA.fill(100f);
+        imageB.fill(0f);
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, imageA) //
@@ -232,33 +308,6 @@ public class TestImages extends TornadoTestBase {
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
                 assertEquals(100f, imageB.get(i, j), 0.001);
-            }
-        }
-    }
-
-    public static void taskWithImagesFloat3(final ImageFloat3 a, final ImageFloat3 b) {
-        for (@Parallel int i = 0; i < a.X(); i++) {
-            for (@Parallel int j = 0; j < a.Y(); j++) {
-                Float3 value = a.get(i, j);
-                b.set(i, j, value);
-            }
-        }
-    }
-
-    public static void taskWithImagesFloat4(final ImageFloat4 a, final ImageFloat4 b) {
-        for (@Parallel int i = 0; i < a.X(); i++) {
-            for (@Parallel int j = 0; j < a.Y(); j++) {
-                Float4 value = a.get(i, j);
-                b.set(i, j, value);
-            }
-        }
-    }
-
-    public static void taskWithImagesFloat8(final ImageFloat8 a, final ImageFloat8 b) {
-        for (@Parallel int i = 0; i < a.X(); i++) {
-            for (@Parallel int j = 0; j < a.Y(); j++) {
-                Float8 value = a.get(i, j);
-                b.set(i, j, value);
             }
         }
     }
@@ -450,24 +499,6 @@ public class TestImages extends TornadoTestBase {
         }
     }
 
-    public static void taskWithImagesByte3(final ImageByte3 a, final ImageByte3 b) {
-        for (@Parallel int i = 0; i < a.X(); i++) {
-            for (@Parallel int j = 0; j < a.Y(); j++) {
-                Byte3 value = a.get(i, j);
-                b.set(i, j, value);
-            }
-        }
-    }
-
-    public static void taskWithImagesByte4(final ImageByte4 a, final ImageByte4 b) {
-        for (@Parallel int i = 0; i < a.X(); i++) {
-            for (@Parallel int j = 0; j < a.Y(); j++) {
-                Byte4 value = a.get(i, j);
-                b.set(i, j, value);
-            }
-        }
-    }
-
     @Test
     public void testImageFloat12() {
 
@@ -480,7 +511,7 @@ public class TestImages extends TornadoTestBase {
 
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
-                Byte3 value = new Byte3(new byte[] { 10, 11, 12 });
+                Byte3 value = new Byte3((byte) 10, (byte) 11, (byte) 12);
                 imageA.set(i, j, value);
             }
         }
@@ -516,7 +547,7 @@ public class TestImages extends TornadoTestBase {
 
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
-                Byte3 value = new Byte3(new byte[] { 10, 11, 12 });
+                Byte3 value = new Byte3((byte) 10, (byte) 11, (byte) 12);
                 imageA.set(i, j, value);
             }
         }
@@ -552,7 +583,7 @@ public class TestImages extends TornadoTestBase {
 
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
-                Byte4 value = new Byte4(new byte[] { 10, 11, 12, 13 });
+                Byte4 value = new Byte4((byte) 10, (byte) 11, (byte) 12, (byte) 13);
                 imageA.set(i, j, value);
             }
         }
@@ -589,7 +620,7 @@ public class TestImages extends TornadoTestBase {
 
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
-                Byte4 value = new Byte4(new byte[] { 10, 11, 12, 13 });
+                Byte4 value = new Byte4((byte) 10, (byte) 11, (byte) 12, (byte) 13);
                 imageA.set(i, j, value);
             }
         }
@@ -613,5 +644,133 @@ public class TestImages extends TornadoTestBase {
             }
         }
     }
+
+    @Test
+    public void testImageFloat16() {
+
+        final int M = 64;
+        final int N = 64;
+
+        final int base = 10;
+
+        final ImageFloat imageA = new ImageFloat(M, N);
+        final ImageFloat imageB = new ImageFloat(M, N);
+        imageA.fill(base);
+
+        final TaskGraph taskGraph = new TaskGraph("testLoop") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, imageA) //
+                .task("image", TestImages::testCopyImagesParallel, imageA, imageB)//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, imageB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        // Execute 10000 times
+        int iteration = 0;
+        while (iteration < 10000) {
+            executionPlan.execute();
+
+            // Check result
+            for (int i = 0; i < M; i++) {
+                for (int j = 0; j < N; j++) {
+                    assertEquals((11 + iteration), imageB.get(i, j), 0.1f);
+                }
+            }
+
+            // Set the new array
+            for (int i = 0; i < M; i++) {
+                for (int j = 0; j < N; j++) {
+                    imageA.set(i, j, imageB.get(i, j));
+                }
+            }
+            iteration++;
+        }
+    }
+
+    @Test
+    public void testImageFloat17() {
+
+        final int M = 64;
+        final int N = 64;
+
+        final int base = 10;
+
+        final ImageFloat imageA = new ImageFloat(M, N);
+        final ImageFloat imageB = new ImageFloat(M, N);
+        imageA.fill(base);
+
+        final TaskGraph taskGraph = new TaskGraph("testLoop") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, imageA) //
+                .task("image", TestImages::testCopyImagesSequential, imageA, imageB)//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, imageB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        // Execute 10000 times
+        int iteration = 0;
+        while (iteration < 10000) {
+            executionPlan.execute();
+
+            // Check result
+            for (int i = 0; i < M; i++) {
+                for (int j = 0; j < N; j++) {
+                    assertEquals((11 + iteration), imageB.get(i, j), 0.1f);
+                }
+            }
+
+            // Set the new array
+            for (int i = 0; i < M; i++) {
+                for (int j = 0; j < N; j++) {
+                    imageA.set(i, j, imageB.get(i, j));
+                }
+            }
+            iteration++;
+        }
+    }
+
+    @Test
+    public void testImageFloat18() {
+
+        final int M = 64;
+        final int N = 64;
+
+        float base = new Random().nextFloat();
+
+        final ImageFloat imageA = new ImageFloat(M, N);
+        final ImageFloat imageB = new ImageFloat(M, N);
+        imageA.fill(base);
+
+        final TaskGraph taskGraph = new TaskGraph("testLoop") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, imageA) //
+                .task("image", TestImages::testCopyImagesParallelRandom, imageA, imageB)//
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, imageB);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+
+        // Execute 10000 times
+        int iteration = 0;
+        while (iteration < 10000) {
+            executionPlan.execute();
+
+            // Check result
+            for (int i = 0; i < M; i++) {
+                for (int j = 0; j < N; j++) {
+                    assertEquals((base + 0.01f), imageB.get(i, j), 0.01f);
+                }
+            }
+            base += 0.01f;
+
+            // Set the new array
+            for (int i = 0; i < M; i++) {
+                for (int j = 0; j < N; j++) {
+                    imageA.set(i, j, imageB.get(i, j));
+                }
+            }
+            iteration++;
+        }
+    }
+    // CHECKSTYLE:ON
 
 }

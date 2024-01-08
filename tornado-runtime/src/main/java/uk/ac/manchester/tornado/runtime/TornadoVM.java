@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -68,12 +68,12 @@ public class TornadoVM extends TornadoLogger {
      * It constructs a new TornadoVM instance.
      *
      * @param executionContext
-     *            the {@link TornadoExecutionContext} for containing the execution
-     *            context
+     *     the {@link TornadoExecutionContext} for containing the execution
+     *     context
      * @param tornadoGraph
-     *            the {@link TornadoGraph} representing the TaskGraph
+     *     the {@link TornadoGraph} representing the TaskGraph
      * @param timeProfiler
-     *            the {@link TornadoProfiler} for profiling execution time
+     *     the {@link TornadoProfiler} for profiling execution time
      */
     public TornadoVM(TornadoExecutionContext executionContext, TornadoGraph tornadoGraph, TornadoProfiler timeProfiler) {
         this.executionContext = executionContext;
@@ -90,8 +90,8 @@ public class TornadoVM extends TornadoLogger {
     private void bindBytecodesToInterpreters() {
         assert tornadoVMInterpreters.length == executionContext.getValidContextSize();
         final Deque<Integer> activeDevices = executionContext.getActiveDeviceIndexes();
-        IntStream.range(0, executionContext.getValidContextSize())
-                .forEach(i -> tornadoVMInterpreters[i] = new TornadoVMInterpreter(executionContext, tornadoVMBytecodes[i], timeProfiler, executionContext.getDevice(activeDevices.pop())));
+        IntStream.range(0, executionContext.getValidContextSize()).forEach(i -> tornadoVMInterpreters[i] = new TornadoVMInterpreter(executionContext, tornadoVMBytecodes[i], timeProfiler,
+                executionContext.getDevice(activeDevices.pop())));
     }
 
     /**

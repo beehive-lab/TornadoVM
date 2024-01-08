@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,6 +41,7 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 /**
@@ -48,7 +49,7 @@ import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
  * How to run in isolation?
  * </p>
  * <code>
- *    tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.blackscholes.JMHBlackScholes
+ * tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.blackscholes.JMHBlackScholes
  * </code>
  */
 public class JMHBlackScholes {
@@ -57,20 +58,20 @@ public class JMHBlackScholes {
     public static class BenchmarkSetup {
 
         int size = Integer.parseInt(System.getProperty("x", "8192"));
-        float[] randArray;
-        float[] call;
-        float[] put;
+        FloatArray randArray;
+        FloatArray call;
+        FloatArray put;
         TaskGraph taskGraph;
         TornadoExecutionPlan executor;
 
         @Setup(Level.Trial)
         public void doSetup() {
-            randArray = new float[size];
-            call = new float[size];
-            put = new float[size];
+            randArray = new FloatArray(size);
+            call = new FloatArray(size);
+            put = new FloatArray(size);
 
             for (int i = 0; i < size; i++) {
-                randArray[i] = (i * 1.0f) / size;
+                randArray.set(i, (i * 1.0f) / size);
             }
 
             taskGraph = new TaskGraph("benchmark") //

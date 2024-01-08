@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,16 +15,14 @@
  * limitations under the License.
  *
  */
-
 package uk.ac.manchester.tornado.examples.arrays;
-
-import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
-import uk.ac.manchester.tornado.api.collections.math.SimpleMath;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
  * Example of a task-graph with multiple tasks.
@@ -32,7 +30,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
  * How to run?:
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.arrays.ArrayMultiplyAdd
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.arrays.ArrayMultiplyAdd
  * </code>
  */
 public class ArrayMultiplyAdd {
@@ -41,26 +39,34 @@ public class ArrayMultiplyAdd {
 
         final int numElements = (args.length == 1) ? Integer.parseInt(args[0]) : 1024;
 
-        final float[] a = new float[numElements];
-        final float[] b = new float[numElements];
-        final float[] c = new float[numElements];
-        final float[] d = new float[numElements];
+        final FloatArray a = new FloatArray(numElements);
+        final FloatArray b = new FloatArray(numElements);
+        final FloatArray c = new FloatArray(numElements);
+        final FloatArray d = new FloatArray(numElements);
 
         /*
          * Data Initialization
          */
-        Arrays.fill(a, 3);
-        Arrays.fill(b, 2);
-        Arrays.fill(c, 0);
-        Arrays.fill(d, 0);
+        a.init(3);
+        b.init(2);
+        c.init(0);
+        d.init(0);
 
         /*
          * build an execution graph
          */
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b, c) //
-                .task("t0", SimpleMath::vectorMultiply, a, b, c) //
-                .task("t1", SimpleMath::vectorAdd, c, b, d) //
+                .task("t0", (a2, b2, c2) -> {
+                    for (@Parallel int i = 0; i < a2.getSize(); i++) {
+                        c2.set(i, a2.get(i) * b2.get(i));
+                    }
+                }, a, b, c) //
+                .task("t1", (a1, b1, c1) -> {
+                    for (@Parallel int i = 0; i < a1.getSize(); i++) {
+                        c1.set(i, a1.get(i) + b1.get(i));
+                    }
+                }, c, b, d) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, d);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -70,7 +76,8 @@ public class ArrayMultiplyAdd {
         /*
          * Check to make sure result is correct
          */
-        for (final float value : d) {
+        for (int i = 0; i < numElements; i++) {
+            float value = d.get(i);
             if (value != 8) {
                 System.out.println("Invalid result: " + value);
                 break;

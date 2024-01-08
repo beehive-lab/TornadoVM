@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2013-2020, 2022, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,32 +28,33 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
 /**
  * <p>
  * How to run?
  * </p>
  * <code>
- *     tornado -m tornado.examples/uk.ac.manchester.tornado.examples.reductions.ReductionAddFloats
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.reductions.ReductionAddFloats
  * </code>
  *
  */
 public class ReductionAddFloats {
 
-    public static void reductionAddFloats(float[] input, @Reduce float[] result) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] += input[i];
+    public static void reductionAddFloats(FloatArray input, @Reduce FloatArray result) {
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            result.set(0, result.get(0) + input.get(i));
         }
     }
 
     public void run(int size) {
 
-        float[] input = new float[size];
-        float[] result = new float[1];
+        FloatArray input = new FloatArray(size);
+        FloatArray result = new FloatArray(1);
 
         Random r = new Random();
         IntStream.range(0, size).sequential().forEach(i -> {
-            input[i] = r.nextFloat();
+            input.set(i, r.nextFloat());
         });
 
         TaskGraph taskGraph = new TaskGraph("s0") //

@@ -23,6 +23,8 @@ import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -60,10 +62,10 @@ public class ParameterTests extends TornadoTestBase {
         z = 0;
     }
 
-    private static void testWithScalarValues03(long[] x, long y, int[] z) {
-        for (@Parallel int i = 0; i < x.length; i++) {
-            long tmp = x[i] + y;
-            z[i] = (int) tmp;
+    private static void testWithScalarValues03(LongArray x, long y, IntArray z) {
+        for (@Parallel int i = 0; i < x.getSize(); i++) {
+            long tmp = x.get(i) + y;
+            z.set(i, (int) tmp);
         }
     }
 
@@ -107,13 +109,13 @@ public class ParameterTests extends TornadoTestBase {
     @Test
     public void testScalarParameters03() {
         final int size = 16;
-        long[] x = new long[size];
+        LongArray x = new LongArray(size);
         long y = 10L;
-        int[] z = new int[size];
+        IntArray z = new IntArray(size);
 
         for (int i = 0; i < size; i++) {
-            x[i] = i;
-            z[i] = -1;
+            x.set(i, i);
+            z.set(i, -1);
         }
 
         TaskGraph taskGraph = new TaskGraph("s0") //
@@ -125,8 +127,8 @@ public class ParameterTests extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         executionPlan.execute();
 
-        for (int i = 0; i < z.length; i++) {
-            assertEquals(y + x[i], z[i]);
+        for (int i = 0; i < z.getSize(); i++) {
+            assertEquals(y + x.get(i), z.get(i));
         }
     }
 }
