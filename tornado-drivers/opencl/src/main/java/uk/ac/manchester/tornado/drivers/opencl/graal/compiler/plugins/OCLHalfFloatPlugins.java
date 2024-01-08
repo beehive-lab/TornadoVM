@@ -35,6 +35,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AddHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.HalfFloatPlaceholder;
+import uk.ac.manchester.tornado.runtime.graal.nodes.NewHalfFloatInstance;
 
 public class OCLHalfFloatPlugins {
 
@@ -50,7 +51,8 @@ public class OCLHalfFloatPlugins {
             @Override
             public boolean handleInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
                 if (method.getName().equals("<init>") && (method.toString().contains("HalfFloat.<init>"))) {
-                    b.append(new HalfFloatPlaceholder(args[1]));
+                    NewHalfFloatInstance newHalfFloatInstance = b.append(new NewHalfFloatInstance(args[1]));
+                    b.add(newHalfFloatInstance);
                     return true;
                 }
                 return false;

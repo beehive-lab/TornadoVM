@@ -45,4 +45,8 @@ public class HalfFloatPlaceholder extends ValueNode {
         return this.input;
     }
 
+    public void setInput(ValueNode input) {
+        this.input = input;
+    }
+
 }

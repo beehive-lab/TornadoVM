@@ -34,7 +34,7 @@ import org.graalvm.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.runtime.graal.nodes.HalfFloatPlaceholder;
 
-public class TornadoHalfFloatPlaceholderElimination extends BasePhase<TornadoSketchTierContext> {
+public class TornadoHalfFloatFixedGuardElimination extends BasePhase<TornadoSketchTierContext> {
 
     @Override
     public Optional<NotApplicable> notApplicableTo(GraphState graphState) {
@@ -48,9 +48,8 @@ public class TornadoHalfFloatPlaceholderElimination extends BasePhase<TornadoSke
                 PiNode placeholderInput = (PiNode) placeholderNode.getInput();
                 ValueNode halfFloatValue = placeholderInput.object();
                 FixedGuardNode placeholderGuard = (FixedGuardNode) placeholderInput.getGuard();
-                placeholderNode.replaceAtUsages(halfFloatValue);
                 deleteFixed(placeholderGuard);
-                nodesToBeDeleted.add(placeholderNode);
+                placeholderNode.setInput(halfFloatValue);
                 nodesToBeDeleted.add(placeholderInput);
             }
         }

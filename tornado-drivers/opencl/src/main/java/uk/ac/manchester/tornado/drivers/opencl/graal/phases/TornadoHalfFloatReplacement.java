@@ -37,6 +37,8 @@ import org.graalvm.compiler.phases.BasePhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AddHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ReadHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.WriteHalfFloatNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.HalfFloatPlaceholder;
+import uk.ac.manchester.tornado.runtime.graal.nodes.NewHalfFloatInstance;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
 public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContext> {
@@ -53,6 +55,10 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             if (javaRead.successors().first() instanceof NewInstanceNode) {
                 NewInstanceNode newInstanceNode = (NewInstanceNode) javaRead.successors().first();
                 if (newInstanceNode.instanceClass().toString().contains("HalfFloat")) {
+                    if (newInstanceNode.successors().first() instanceof NewHalfFloatInstance) {
+                        NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) newInstanceNode.successors().first();
+                        deleteFixed(newHalfFloatInstance);
+                    }
                     AddressNode readingAddress = javaRead.getAddress();
                     ReadHalfFloatNode readHalfFloatNode = new ReadHalfFloatNode(readingAddress);
                     graph.addWithoutUnique(readHalfFloatNode);
@@ -66,7 +72,26 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
         // replace writes with halfFloat writes
         for (JavaWriteNode javaWrite : graph.getNodes().filter(JavaWriteNode.class)) {
             if (isWriteHalfFloat(javaWrite)) {
-                ValueNode writingValue = javaWrite.value();
+                // This casting is safe to do as it is already checked by the isWriteHalfFloat function
+                HalfFloatPlaceholder placeholder = (HalfFloatPlaceholder) javaWrite.value();
+                ValueNode writingValue;
+                if (javaWrite.predecessor() instanceof NewHalfFloatInstance) {
+                    // if a new HalfFloat instance is written
+                    NewHalfFloatInstance newHalfFloatInstance = (NewHalfFloatInstance) javaWrite.predecessor();
+                    writingValue = newHalfFloatInstance.getValue();
+                    if (newHalfFloatInstance.predecessor() instanceof NewInstanceNode) {
+                        NewInstanceNode newInstanceNode = (NewInstanceNode) newHalfFloatInstance.predecessor();
+                        if (newInstanceNode.instanceClass().toString().contains("HalfFloat")) {
+                            deleteFixed(newInstanceNode);
+                            deleteFixed(newHalfFloatInstance);
+                        }
+                    }
+                } else {
+                    // if the result of an operation or a stored value is written
+                    writingValue = placeholder.getInput();
+                }
+                placeholder.replaceAtUsages(writingValue);
+                placeholder.safeDelete();
                 AddressNode writingAddress = javaWrite.getAddress();
                 WriteHalfFloatNode writeHalfFloatNode = new WriteHalfFloatNode(writingAddress, writingValue);
                 graph.addWithoutUnique(writeHalfFloatNode);
@@ -85,8 +110,7 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
     }
 
     private static boolean isWriteHalfFloat(JavaWriteNode javaWrite) {
-        // TODO: Check more scenarios
-        if (javaWrite.value() instanceof AddHalfFloatNode) {
+        if (javaWrite.value() instanceof HalfFloatPlaceholder) {
             return true;
         }
         return false;
