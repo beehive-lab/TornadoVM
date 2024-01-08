@@ -325,6 +325,9 @@
                                     jdk.internal.vm.compiler/org.graalvm.compiler.phases=tornado.runtime,tornado.drivers.common
                                 </arg>
                                 <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.java=tornado.drivers.common
+                                </arg>
+                                <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.tiers=tornado.runtime</arg>
                                 <arg>--add-exports</arg>
                                 <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.util=tornado.runtime</arg>
