@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2023, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -19,11 +19,10 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
+package uk.ac.manchester.tornado.drivers.common.graal.compiler;
 
 import java.util.Optional;
 
-import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.loop.DefaultLoopPolicies;
@@ -40,7 +39,7 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 
 /**
- * Applies partial unroll on counted loops of more than 128 elements. By default
+ * Applies partial unroll on counted loops of more than 128 elements. By default,
  * the unroll factor is set to 2 except if the user explicitly passes a
  * different value power of two.
  *
@@ -54,7 +53,6 @@ public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
     private static void partialUnroll(StructuredGraph graph, MidTierContext context) {
         final LoopsData dataCounted = new TornadoLoopsData(graph);
 
-        LoopPolicies loopPolicies = createLoopPolicies();
         CanonicalizerPhase canonicalizer = CanonicalizerPhase.create();
 
         canonicalizer.apply(graph, context);
@@ -74,7 +72,7 @@ public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
     }
 
     private static int getUpperGraphLimit(int initialGraphNodeCount, StructuredGraph graph) {
-        return (initialGraphNodeCount + GraalOptions.MaximumDesiredSize.getValue(graph.getOptions()) * 2);
+        return (initialGraphNodeCount + (20000 * 2));
     }
 
     public static LoopPolicies createLoopPolicies() {
