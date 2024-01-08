@@ -49,8 +49,7 @@ public class ExceptionCheckingElimination extends BasePhase<TornadoMidTierContex
 
         graph.getNodes().filter(n -> n instanceof GuardedNode).snapshot().forEach((node) -> {
             GuardedNode guardedNode = (GuardedNode) node;
-            if (guardedNode.getGuard() instanceof GuardNode) {
-                GuardNode guard = (GuardNode) guardedNode.getGuard();
+            if (guardedNode.getGuard() instanceof GuardNode guard) {
 
                 LogicNode condition = guard.getCondition();
 
@@ -64,13 +63,10 @@ public class ExceptionCheckingElimination extends BasePhase<TornadoMidTierContex
                     }
 
                 } else if (condition instanceof IntegerBelowNode) {
-
                     ValueNode x = ((IntegerBelowNode) condition).getX();
                     condition.replaceFirstInput(x, graph.addOrUnique(ConstantNode.forInt(Integer.MAX_VALUE)));
                 }
             }
-
         });
-
     }
 }
