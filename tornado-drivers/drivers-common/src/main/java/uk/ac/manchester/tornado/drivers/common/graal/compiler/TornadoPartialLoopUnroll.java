@@ -25,10 +25,8 @@ import java.util.Optional;
 
 import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.loop.DefaultLoopPolicies;
 import org.graalvm.compiler.nodes.loop.LoopEx;
 import org.graalvm.compiler.nodes.loop.LoopFragmentInside;
-import org.graalvm.compiler.nodes.loop.LoopPolicies;
 import org.graalvm.compiler.nodes.loop.LoopsData;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
@@ -71,12 +69,8 @@ public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
         return (isPowerOfTwo(Tornado.UNROLL_FACTOR) && Tornado.UNROLL_FACTOR <= 32) ? Tornado.UNROLL_FACTOR : LOOP_UNROLL_FACTOR_DEFAULT;
     }
 
-    private static int getUpperGraphLimit(int initialGraphNodeCount, StructuredGraph graph) {
+    private static int getUpperGraphLimit(int initialGraphNodeCount) {
         return (initialGraphNodeCount + (20000 * 2));
-    }
-
-    public static LoopPolicies createLoopPolicies() {
-        return new DefaultLoopPolicies();
     }
 
     private static boolean isPowerOfTwo(int number) {
@@ -99,7 +93,7 @@ public class TornadoPartialLoopUnroll extends BasePhase<MidTierContext> {
         int unrollFactor = getUnrollFactor();
 
         for (int i = 0; Math.pow(2, i) < unrollFactor; i++) {
-            if (graph.getNodeCount() < getUpperGraphLimit(initialNodeCount, graph)) {
+            if (graph.getNodeCount() < getUpperGraphLimit(initialNodeCount)) {
                 partialUnroll(graph, context);
             }
         }
