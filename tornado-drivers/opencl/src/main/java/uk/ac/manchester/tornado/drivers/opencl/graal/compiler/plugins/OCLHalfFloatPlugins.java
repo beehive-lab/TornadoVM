@@ -34,6 +34,9 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AddHalfFloatNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DivHalfFloatNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.MultHalfFloatNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.SubHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.HalfFloatPlaceholder;
 import uk.ac.manchester.tornado.runtime.graal.nodes.NewHalfFloatInstance;
 
@@ -64,6 +67,33 @@ public class OCLHalfFloatPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode halfFloat1, ValueNode halfFloat2) {
                 AddHalfFloatNode addNode = b.append(new AddHalfFloatNode(halfFloat1, halfFloat2));
                 b.push(JavaKind.Object, addNode);
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("sub", HalfFloat.class, HalfFloat.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode halfFloat1, ValueNode halfFloat2) {
+                SubHalfFloatNode subNode = b.append(new SubHalfFloatNode(halfFloat1, halfFloat2));
+                b.push(JavaKind.Object, subNode);
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("mult", HalfFloat.class, HalfFloat.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode halfFloat1, ValueNode halfFloat2) {
+                MultHalfFloatNode multNode = b.append(new MultHalfFloatNode(halfFloat1, halfFloat2));
+                b.push(JavaKind.Object, multNode);
+                return true;
+            }
+        });
+
+        r.register(new InvocationPlugin("div", HalfFloat.class, HalfFloat.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode halfFloat1, ValueNode halfFloat2) {
+                DivHalfFloatNode divNode = b.append(new DivHalfFloatNode(halfFloat1, halfFloat2));
+                b.push(JavaKind.Object, divNode);
                 return true;
             }
         });

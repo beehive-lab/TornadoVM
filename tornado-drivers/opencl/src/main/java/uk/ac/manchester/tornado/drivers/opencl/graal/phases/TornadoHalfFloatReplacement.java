@@ -28,6 +28,9 @@ import org.graalvm.compiler.nodes.GraphState;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
+import org.graalvm.compiler.nodes.calc.FloatDivNode;
+import org.graalvm.compiler.nodes.calc.MulNode;
+import org.graalvm.compiler.nodes.calc.SubNode;
 import org.graalvm.compiler.nodes.extended.JavaReadNode;
 import org.graalvm.compiler.nodes.extended.JavaWriteNode;
 import org.graalvm.compiler.nodes.java.NewInstanceNode;
@@ -35,7 +38,10 @@ import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AddHalfFloatNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.DivHalfFloatNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.MultHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ReadHalfFloatNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.SubHalfFloatNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.WriteHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.HalfFloatPlaceholder;
 import uk.ac.manchester.tornado.runtime.graal.nodes.NewHalfFloatInstance;
@@ -100,13 +106,48 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             }
         }
 
+        // replace the half float operator nodes with the corresponding regular operators
+        replaceAddHalfFloatNodes(graph);
+        replaceSubHalfFloatNodes(graph);
+        replaceMultHalfFloatNodes(graph);
+        replaceDivHalfFloatNodes(graph);
+
+    }
+
+    private static void replaceAddHalfFloatNodes(StructuredGraph graph) {
         for (AddHalfFloatNode addHalfFloatNode : graph.getNodes().filter(AddHalfFloatNode.class)) {
             AddNode addNode = new AddNode(addHalfFloatNode.getX(), addHalfFloatNode.getY());
             graph.addWithoutUnique(addNode);
             addHalfFloatNode.replaceAtUsages(addNode);
             addHalfFloatNode.safeDelete();
         }
+    }
 
+    private static void replaceSubHalfFloatNodes(StructuredGraph graph) {
+        for (SubHalfFloatNode subHalfFloatNode : graph.getNodes().filter(SubHalfFloatNode.class)) {
+            SubNode subNode = new SubNode(subHalfFloatNode.getX(), subHalfFloatNode.getY());
+            graph.addWithoutUnique(subNode);
+            subHalfFloatNode.replaceAtUsages(subNode);
+            subHalfFloatNode.safeDelete();
+        }
+    }
+
+    private static void replaceMultHalfFloatNodes(StructuredGraph graph) {
+        for (MultHalfFloatNode multHalfFloatNode : graph.getNodes().filter(MultHalfFloatNode.class)) {
+            MulNode mulNode = new MulNode(multHalfFloatNode.getX(), multHalfFloatNode.getY());
+            graph.addWithoutUnique(mulNode);
+            multHalfFloatNode.replaceAtUsages(mulNode);
+            multHalfFloatNode.safeDelete();
+        }
+    }
+
+    private static void replaceDivHalfFloatNodes(StructuredGraph graph) {
+        for (DivHalfFloatNode divHalfFloatNode : graph.getNodes().filter(DivHalfFloatNode.class)) {
+            FloatDivNode divNode = new FloatDivNode(divHalfFloatNode.getX(), divHalfFloatNode.getY());
+            graph.addWithoutUnique(divNode);
+            divHalfFloatNode.replaceAtUsages(divNode);
+            divHalfFloatNode.safeDelete();
+        }
     }
 
     private static boolean isWriteHalfFloat(JavaWriteNode javaWrite) {
