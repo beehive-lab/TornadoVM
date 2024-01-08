@@ -8,7 +8,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -75,32 +75,22 @@ public class OCLFP64SupportPhase extends Phase {
     private void checkStampForFP64Support(Stamp stamp) {
         boolean isStampFP64Type = isStampFP64Type(stamp);
         if (isStampFP64Type && !deviceContext.isFP64Supported()) {
-            throw new TornadoDeviceFP64NotSupported("The current OpenCL device (" + deviceContext.getDeviceName() + ") does not support FP64");
+            throw new TornadoDeviceFP64NotSupported(STR."The current OpenCL device (\{deviceContext.getDeviceName()}) does not support FP64");
         }
     }
 
     @Override
     protected void run(StructuredGraph graph) {
 
-        graph.getNodes().filter(WriteNode.class).forEach(writeNode -> {
-            checkStampForFP64Support(writeNode.getAccessStamp(NodeView.DEFAULT));
-        });
+        graph.getNodes().filter(WriteNode.class).forEach(writeNode -> checkStampForFP64Support(writeNode.getAccessStamp(NodeView.DEFAULT)));
 
-        graph.getNodes().filter(ReadNode.class).forEach(readNode -> {
-            checkStampForFP64Support(readNode.getAccessStamp(NodeView.DEFAULT));
-        });
+        graph.getNodes().filter(ReadNode.class).forEach(readNode -> checkStampForFP64Support(readNode.getAccessStamp(NodeView.DEFAULT)));
 
-        graph.getNodes().filter(OCLFPUnaryIntrinsicNode.class).forEach(node -> {
-            checkStampForFP64Support(node.stamp(NodeView.DEFAULT));
-        });
+        graph.getNodes().filter(OCLFPUnaryIntrinsicNode.class).forEach(node -> checkStampForFP64Support(node.stamp(NodeView.DEFAULT)));
 
-        graph.getNodes().filter(OCLFPBinaryIntrinsicNode.class).forEach(node -> {
-            checkStampForFP64Support(node.stamp(NodeView.DEFAULT));
-        });
+        graph.getNodes().filter(OCLFPBinaryIntrinsicNode.class).forEach(node -> checkStampForFP64Support(node.stamp(NodeView.DEFAULT)));
 
-        graph.getNodes().filter(SqrtNode.class).forEach(node -> {
-            checkStampForFP64Support(node.stamp(NodeView.DEFAULT));
-        });
+        graph.getNodes().filter(SqrtNode.class).forEach(node -> checkStampForFP64Support(node.stamp(NodeView.DEFAULT)));
 
     }
 }
