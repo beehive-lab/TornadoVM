@@ -22,31 +22,14 @@ public class HalfFloat {
         this.halfFloatValue = Float.floatToFloat16(halfFloat);
     }
 
+    /**
+     * Constructs a new instance of the {@code HalfFloat} with a given short value.
+     *
+     * @param halfFloat
+     *     The short value that represents the half float.
+     */
     public HalfFloat(short halfFloat) {
         this.halfFloatValue = halfFloat;
-    }
-
-    /**
-     * Constructs an empty {@code HalfFloat} object.
-     * It is used internally in a {@link #createHalfFloatFromShort(short) createHalfFloatFromShort} method.
-     */
-    private HalfFloat() {
-    }
-
-    /**
-     * Creates a new {@code HalfFloat} instance out of a float-16 (represented by a short value).
-     * This is used by the {@link uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray#get(int) get}
-     * method of the {@link uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray} class, to create
-     * a new {@code HalfFloat} object using the value is extracted from the segment,
-     * without converting it to float-32 first.
-     *
-     * @param halfFloatValue
-     * @return
-     */
-    public static HalfFloat createHalfFloatFromShort(short halfFloatValue) {
-        HalfFloat halfFloat = new HalfFloat();
-        halfFloat.halfFloatValue = halfFloatValue;
-        return halfFloat;
     }
 
     /**
