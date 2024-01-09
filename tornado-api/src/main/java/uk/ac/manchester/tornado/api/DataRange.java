@@ -1,13 +1,13 @@
 package uk.ac.manchester.tornado.api;
 
 import java.lang.foreign.ValueLayout;
-import java.lang.reflect.Array;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
-public class DataConfig {
+public class DataRange {
 
+    private final TornadoNativeArray tornadoNativeArray;
     private long offset;
 
     private long offsetMaterialized;
@@ -23,39 +23,18 @@ public class DataConfig {
 
     private int elementSize;
 
-    public DataConfig(Object object, ValueLayout layout) {
-        this.layout = layout;
-        computeElementSize();
-        computeTotalSizeOfObject(object);
+    public DataRange(TornadoNativeArray tornadoNativeArray) {
+        this.tornadoNativeArray = tornadoNativeArray;
+        elementSize = tornadoNativeArray.getElementSize();
+        totalSizeInBytes = tornadoNativeArray.getNumBytesWithoutHeader();
     }
 
-    private void computeElementSize() {
-        // layout is mandatory
-        elementSize = switch (layout) {
-            case ValueLayout.OfFloat _, ValueLayout.OfInt _ -> 4;
-            case ValueLayout.OfDouble _, ValueLayout.OfLong _ -> 8;
-            case ValueLayout.OfShort _, ValueLayout.OfChar _ -> 2;
-            case ValueLayout.OfByte _ -> 1;
-            case null, default -> throw new TornadoRuntimeException("[error] Data type not supported");
-        };
-    }
-
-    private void computeTotalSizeOfObject(Object object) {
-        if (object instanceof TornadoNativeArray array) {
-            totalSizeInBytes = array.getNumBytesWithoutHeader();
-        } else if (object.getClass().isArray()) {
-            totalSizeInBytes = (long) Array.getLength(object) * elementSize;
-        } else {
-            throw new TornadoRuntimeException("[error] Data type not supported");
-        }
-    }
-
-    public DataConfig withOffset(long offset) {
+    public DataRange withOffset(long offset) {
         this.offset = offset;
         return this;
     }
 
-    public DataConfig withSize(long size) {
+    public DataRange withSize(long size) {
         this.partialSize = size;
         return this;
     }
@@ -101,5 +80,9 @@ public class DataConfig {
             offsetMaterialized = arrayHeader + (offset * elementSize);
         }
         isMaterialized = true;
+    }
+
+    public TornadoNativeArray getArray() {
+        return tornadoNativeArray;
     }
 }

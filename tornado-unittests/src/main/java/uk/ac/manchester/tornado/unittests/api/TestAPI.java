@@ -28,7 +28,7 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.DataConfig;
+import uk.ac.manchester.tornado.api.DataRange;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -279,9 +279,11 @@ public class TestAPI extends TornadoTestBase {
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
         TornadoExecutionResult executionResult = executionPlan.execute();
 
-        DataConfig dataConfig = new DataConfig(data, ValueLayout.JAVA_INT);
-        executionResult.transferToHost(data, dataConfig.withSize(N / 2));
-        executionResult.transferToHost(data, dataConfig.withOffset(N / 2).withSize(N / 2));
+        DataRange dataRange = new DataRange(data);
+
+        executionResult.transferToHost(dataRange.withSize(N / 2));
+
+        executionResult.transferToHost(dataRange.withOffset(N / 2).withSize(N / 2));
 
         // Mark all device memory buffers as free, thus the TornadoVM runtime can reuse
         // device buffers for other execution plans.

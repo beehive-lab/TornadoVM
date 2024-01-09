@@ -44,7 +44,9 @@ public final class LongArray extends TornadoNativeArray {
 
     /**
      * Constructs a new instance of the {@code LongArray} that will store a user-specified number of elements.
-     * @param numberOfElements The number of elements in the array.
+     *
+     * @param numberOfElements
+     *     The number of elements in the array.
      */
     public LongArray(int numberOfElements) {
         this.numberOfElements = numberOfElements;
@@ -58,7 +60,9 @@ public final class LongArray extends TornadoNativeArray {
 
     /**
      * Internal method used to create a new instance of the {@code LongArray} from on-heap data.
-     * @param values The on-heap long array to create the instance from.
+     *
+     * @param values
+     *     The on-heap long array to create the instance from.
      * @return A new {@code LongArray} instance, initialized with values of the on-heap long array.
      */
     private static LongArray createSegment(long[] values) {
@@ -71,7 +75,9 @@ public final class LongArray extends TornadoNativeArray {
 
     /**
      * Creates a new instance of the {@code LongArray} class from an on-heap long array.
-     * @param values The on-heap long array to create the instance from.
+     *
+     * @param values
+     *     The on-heap long array to create the instance from.
      * @return A new {@code LongArray} instance, initialized with values of the on-heap long array.
      */
     public static LongArray fromArray(long[] values) {
@@ -80,7 +86,9 @@ public final class LongArray extends TornadoNativeArray {
 
     /**
      * Creates a new instance of the {@code LongArray} class from a set of long values.
-     * @param values The long values to initialize the array with.
+     *
+     * @param values
+     *     The long values to initialize the array with.
      * @return A new {@code LongArray} instance, initialized with the given values.
      */
     public static LongArray fromElements(long... values) {
@@ -89,7 +97,9 @@ public final class LongArray extends TornadoNativeArray {
 
     /**
      * Creates a new instance of the {@code LongArray} class from a {@link MemorySegment}.
-     * @param segment The {@link MemorySegment} containing the off-heap long data.
+     *
+     * @param segment
+     *     The {@link MemorySegment} containing the off-heap long data.
      * @return A new {@code LongArray} instance, initialized with the segment data.
      */
     public static LongArray fromSegment(MemorySegment segment) {
@@ -103,6 +113,7 @@ public final class LongArray extends TornadoNativeArray {
     /**
      * Converts the long data from off-heap to on-heap, by copying the values of a {@code LongArray}
      * instance into a new on-heap array.
+     *
      * @return A new on-heap long array, initialized with the values stored in the {@code LongArray} instance.
      */
     public long[] toHeapArray() {
@@ -115,8 +126,11 @@ public final class LongArray extends TornadoNativeArray {
 
     /**
      * Sets the long value at a specified index of the {@code LongArray} instance.
-     * @param index The index at which to set the long value.
-     * @param value The long value to store at the specified index.
+     *
+     * @param index
+     *     The index at which to set the long value.
+     * @param value
+     *     The long value to store at the specified index.
      */
     public void set(int index, long value) {
         segment.setAtIndex(JAVA_LONG, baseIndex + index, value);
@@ -124,7 +138,9 @@ public final class LongArray extends TornadoNativeArray {
 
     /**
      * Gets the long value stored at the specified index of the {@code LongArray} instance.
-     * @param index The index of which to retrieve the long value.
+     *
+     * @param index
+     *     The index of which to retrieve the long value.
      * @return
      */
     public long get(int index) {
@@ -139,9 +155,16 @@ public final class LongArray extends TornadoNativeArray {
         init(0);
     }
 
+    @Override
+    public int getElementSize() {
+        return LONG_BYTES;
+    }
+
     /**
      * Initializes all the elements of the {@code LongArray} instance with a specified value.
-     * @param value The long value to initialize the {@code LongArray} instance with.
+     *
+     * @param value
+     *     The long value to initialize the {@code LongArray} instance with.
      */
     public void init(long value) {
         for (int i = 0; i < getSize(); i++) {
@@ -151,6 +174,7 @@ public final class LongArray extends TornadoNativeArray {
 
     /**
      * Returns the number of long elements stored in the {@code LongArray} instance.
+     *
      * @return
      */
     @Override
@@ -160,6 +184,7 @@ public final class LongArray extends TornadoNativeArray {
 
     /**
      * Returns the underlying {@link MemorySegment} of the {@code LongArray} instance.
+     *
      * @return The {@link MemorySegment} associated with the {@code LongArray} instance.
      */
     @Override
@@ -169,6 +194,7 @@ public final class LongArray extends TornadoNativeArray {
 
     /**
      * Returns the total number of bytes that the {@link MemorySegment}, associated with the {@code LongArray} instance, occupies.
+     *
      * @return The total number of bytes of the {@link MemorySegment}.
      */
     @Override
@@ -179,6 +205,7 @@ public final class LongArray extends TornadoNativeArray {
     /**
      * Returns the number of bytes of the {@link MemorySegment} that is associated with the {@code LongArray} instance,
      * excluding the header bytes.
+     *
      * @return The number of bytes of the raw data in the {@link MemorySegment}.
      */
     @Override

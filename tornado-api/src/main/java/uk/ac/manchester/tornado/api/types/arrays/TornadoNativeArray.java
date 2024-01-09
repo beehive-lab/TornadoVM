@@ -45,24 +45,28 @@ public abstract sealed class TornadoNativeArray permits //
 
     /**
      * Returns the number of elements stored in the native array.
+     *
      * @return The number of elements of the native data array.
      */
     public abstract int getSize();
 
     /**
      * Returns the underlying {@link MemorySegment} of the native array.
+     *
      * @return The {@link MemorySegment} associated with the native array instance.
      */
     public abstract MemorySegment getSegment();
 
     /**
      * Returns the total number of bytes that the {@link MemorySegment} occupies, including the header bytes.
+     *
      * @return The total number of bytes of the {@link MemorySegment}.
      */
     public abstract long getNumBytesOfSegment();
 
     /**
      * Returns the number of bytes of the {@link MemorySegment}, excluding the header bytes.
+     *
      * @return The number of bytes of the raw data in the {@link MemorySegment}.
      */
     public abstract long getNumBytesWithoutHeader();
@@ -71,5 +75,7 @@ public abstract sealed class TornadoNativeArray permits //
      * Clears the contents of the native array.
      */
     protected abstract void clear();
+
+    public abstract int getElementSize();
 
 }

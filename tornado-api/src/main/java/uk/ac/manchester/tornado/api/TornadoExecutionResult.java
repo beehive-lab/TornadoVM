@@ -63,8 +63,8 @@ public class TornadoExecutionResult {
         return this;
     }
 
-    public TornadoExecutionResult transferToHost(Object object, DataConfig dataConfig) {
-        tornadoProfilerResult.getExecutor().partialTransferToHost(object, dataConfig);
+    public TornadoExecutionResult transferToHost(DataRange dataRange) {
+        tornadoProfilerResult.getExecutor().partialTransferToHost(dataRange);
         return this;
     }
 
