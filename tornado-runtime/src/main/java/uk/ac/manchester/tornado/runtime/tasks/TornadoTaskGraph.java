@@ -928,7 +928,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
             // If the object mode is set to LAST then we *only* insert it in the lookup
             // hash-set.
-            if (mode != DataTransferMode.USER_DEFINED) {
+            if (mode != DataTransferMode.UNDER_DEMAND) {
                 streamOutObjects.add(functionParameter);
                 executionContext.getObjectState(functionParameter).setStreamOut(true);
             }
@@ -1044,8 +1044,28 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         return null;
     }
 
+    private Event syncObjectInner(Object object, long offset, long partialCopySize) {
+        final LocalObjectState localState = executionContext.getObjectState(object);
+        final GlobalObjectState globalState = localState.getGlobalState();
+        final TornadoAcceleratorDevice device = meta().getLogicDevice();
+        final DeviceObjectState deviceState = globalState.getDeviceState(device);
+        deviceState.setPartialCopySize(partialCopySize);
+        if (deviceState.isLockedBuffer()) {
+            return device.resolveEvent(device.streamOutBlocking(object, offset, deviceState, null));
+        }
+        return null;
+    }
+
     private Event syncParameter(Object object) {
         Event eventParameter = syncObjectInner(object);
+        if (eventParameter != null) {
+            eventParameter.waitOn();
+        }
+        return eventParameter;
+    }
+
+    private Event syncParameter(Object object, long offset, long partialCopySize) {
+        Event eventParameter = syncObjectInner(object, offset, partialCopySize);
         if (eventParameter != null) {
             eventParameter.waitOn();
         }
@@ -1090,6 +1110,37 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 timeProfiler.addValueToMetric(ProfilerType.COPY_OUT_SIZE_BYTES_SYNC, TimeProfiler.NO_TASK_NAME, deviceObjectState.getObjectBuffer().size());
             }
             updateProfiler();
+        }
+    }
+
+    @Override
+    public void syncRuntimeTransferToHost(Object object, long offset, long partialCopySize) {
+
+        if (vm == null) {
+            return;
+        }
+
+        Event event = null;
+
+        // Check if it is an argument captured by the scope (not in the parameter list).
+        if (!argumentsLookUp.contains(object)) {
+            syncField(object);
+        } else {
+            event = syncParameter(object, offset, partialCopySize);
+        }
+
+        if (TornadoOptions.isProfilerEnabled()) {
+            timeProfiler.clean();
+            if (event != null) {
+                long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME_SYNC);
+                event.waitForEvents();
+                value += event.getElapsedTime();
+                timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME_SYNC, value);
+                LocalObjectState localState = executionContext.getObjectState(object);
+                DeviceObjectState deviceObjectState = localState.getGlobalState().getDeviceState(meta().getLogicDevice());
+                timeProfiler.addValueToMetric(ProfilerType.COPY_OUT_SIZE_BYTES_SYNC, TimeProfiler.NO_TASK_NAME, deviceObjectState.getObjectBuffer().size());
+                updateProfiler();
+            }
         }
     }
 

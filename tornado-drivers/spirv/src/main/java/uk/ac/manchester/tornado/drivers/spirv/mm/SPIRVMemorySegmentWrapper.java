@@ -110,7 +110,7 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
 
     @Override
     public void read(Object reference) {
-        read(reference, 0, null, false);
+        read(reference, 0, 0, null, false);
     }
 
     private MemorySegment getSegment(final Object reference) {
@@ -141,14 +141,19 @@ public class SPIRVMemorySegmentWrapper implements ObjectBuffer {
     }
 
     @Override
-    public int read(Object reference, long hostOffset, int[] waitEvents, boolean useDeps) {
+    public int read(Object reference, long hostOffset, long partialReadSize, int[] waitEvents, boolean useDeps) {
         MemorySegment segment = getSegment(reference);
         final int returnEvent;
         final long numBytes = getSizeSubRegionSize() > 0 ? getSizeSubRegionSize() : bufferSize;
 
-        if (batchSize <= 0) {
+        if (partialReadSize != 0) {
+            // Partial Copy Out due to a copy under demand copy by the user
+            returnEvent = spirvDeviceContext.readBuffer(toBuffer(), TornadoNativeArray.ARRAY_HEADER, partialReadSize, segment.address(), hostOffset, waitEvents);
+        } else if (batchSize <= 0) {
+            // Partial Copy Out due to batch processing
             returnEvent = spirvDeviceContext.readBuffer(toBuffer(), bufferOffset, numBytes, segment.address(), hostOffset, waitEvents);
         } else {
+            // Full copy out (default)
             returnEvent = spirvDeviceContext.readBuffer(toBuffer(), TornadoOptions.PANAMA_OBJECT_HEADER_SIZE, numBytes, segment.address(), hostOffset + TornadoOptions.PANAMA_OBJECT_HEADER_SIZE,
                     waitEvents);
         }

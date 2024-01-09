@@ -42,7 +42,7 @@ public interface ObjectBuffer {
 
     void read(Object reference);
 
-    int read(Object reference, long hostOffset, int[] events, boolean useDeps);
+    int read(Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps);
 
     void write(Object reference);
 

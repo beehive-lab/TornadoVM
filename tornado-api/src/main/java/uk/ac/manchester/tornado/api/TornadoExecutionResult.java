@@ -49,7 +49,7 @@ public class TornadoExecutionResult {
      * Transfer data from device to host. This is applied for all immutable
      * task-graphs within an executor. This method is used when a task-graph defines
      * transferToHost using the
-     * {@link uk.ac.manchester.tornado.api.enums.DataTransferMode#USER_DEFINED}.
+     * {@link uk.ac.manchester.tornado.api.enums.DataTransferMode#UNDER_DEMAND}.
      * This indicates the runtime to not to copy-out the data en every iteration and
      * transfer the data under demand.
      *
@@ -60,6 +60,11 @@ public class TornadoExecutionResult {
      */
     public TornadoExecutionResult transferToHost(Object... objects) {
         tornadoProfilerResult.getExecutor().transferToHost(objects);
+        return this;
+    }
+
+    public TornadoExecutionResult transferToHost(Object object, DataConfig dataConfig) {
+        tornadoProfilerResult.getExecutor().partialTransferToHost(object, dataConfig);
         return this;
     }
 

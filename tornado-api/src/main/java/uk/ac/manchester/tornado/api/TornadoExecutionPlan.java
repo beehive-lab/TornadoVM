@@ -312,6 +312,12 @@ public class TornadoExecutionPlan {
             immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.transferToHost(objects));
         }
 
+        void partialTransferToHost(Object object, DataConfig dataConfig) {
+            // At this point we compute the offsets and the total size in bytes.
+            dataConfig.materialize();
+            immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.transferToHost(object, dataConfig.getOffset(), dataConfig.getPartialSize()));
+        }
+
         boolean isFinished() {
             boolean result = true;
             for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {

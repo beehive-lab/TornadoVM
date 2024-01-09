@@ -239,7 +239,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     @Override
     public void read(final Object value) {
         // TODO: reading with offset != 0
-        read(value, 0, null, false);
+        read(value, 0, 0, null, false);
     }
 
     /**
@@ -257,7 +257,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
      *     operation.
      */
     @Override
-    public int read(final Object value, long hostOffset, int[] events, boolean useDeps) {
+    public int read(final Object value, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
         final T array = cast(value);
         if (array == null) {
             throw new TornadoRuntimeException("[ERROR] output data is NULL");

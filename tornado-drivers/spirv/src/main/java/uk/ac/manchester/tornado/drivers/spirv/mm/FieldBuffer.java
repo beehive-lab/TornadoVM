@@ -12,7 +12,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -79,7 +79,7 @@ public class FieldBuffer {
             debug("fieldBuffer: read - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
         // TODO: reading with offset != 0
-        return objectBuffer.read(getFieldValue(ref), 0, events, useDeps);
+        return objectBuffer.read(getFieldValue(ref), 0, 0, events, useDeps);
     }
 
     public void write(final Object ref) {

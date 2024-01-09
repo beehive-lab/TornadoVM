@@ -34,4 +34,9 @@ public interface TornadoDeviceObjectState {
     boolean hasContents();
 
     void setContents(boolean value);
+
+    void setPartialCopySize(long partialCopySize);
+
+    long getPartialCopySize();
+
 }

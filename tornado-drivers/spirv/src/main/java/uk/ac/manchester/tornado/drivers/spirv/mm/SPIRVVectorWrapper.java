@@ -227,11 +227,11 @@ public class SPIRVVectorWrapper implements ObjectBuffer {
     @Override
     public void read(final Object value) {
         // TODO: reading with offset != 0
-        read(value, 0, null, false);
+        read(value, 0, 0, null, false);
     }
 
     @Override
-    public int read(final Object value, long hostOffset, int[] events, boolean useDeps) {
+    public int read(final Object value, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
         TornadoInternalError.guarantee(value instanceof PrimitiveStorage, "Expecting a PrimitiveStorage type");
         final Object array = TornadoUtils.getAnnotatedObjectFromField(value, Payload.class);
         if (array == null) {
