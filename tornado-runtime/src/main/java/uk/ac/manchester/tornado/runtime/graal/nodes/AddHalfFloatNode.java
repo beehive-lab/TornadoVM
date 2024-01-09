@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * Copyright (c) 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -21,7 +21,7 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
+package uk.ac.manchester.tornado.runtime.graal.nodes;
 
 import jdk.vm.ci.meta.JavaKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -30,9 +30,10 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
 
-@NodeInfo(shortName = "FLOAT16(/)")
-public class DivHalfFloatNode extends ValueNode {
-    public static final NodeClass<DivHalfFloatNode> TYPE = NodeClass.create(DivHalfFloatNode.class);
+@NodeInfo(shortName = "FLOAT16(+)")
+public class AddHalfFloatNode extends ValueNode {
+
+    public static final NodeClass<AddHalfFloatNode> TYPE = NodeClass.create(AddHalfFloatNode.class);
 
     @Node.Input
     ValueNode input1;
@@ -40,7 +41,7 @@ public class DivHalfFloatNode extends ValueNode {
     @Node.Input
     ValueNode input2;
 
-    public DivHalfFloatNode(ValueNode input1, ValueNode input2) {
+    public AddHalfFloatNode(ValueNode input1, ValueNode input2) {
         super(TYPE, StampFactory.forKind(JavaKind.Object));
         this.input1 = input1;
         this.input2 = input2;

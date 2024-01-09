@@ -1,7 +1,10 @@
 /*
- * Copyright (c) 2013-2022, APT Group, Department of Computer Science,
- * The University of Manchester. All rights reserved.
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2024, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
+ * Copyright (c) 2009-2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,7 +22,7 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
+package uk.ac.manchester.tornado.drivers.spirv.graal.phases;
 
 import java.util.Optional;
 
@@ -37,8 +40,8 @@ import org.graalvm.compiler.nodes.java.NewInstanceNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.phases.BasePhase;
 
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ReadHalfFloatNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.WriteHalfFloatNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.ReadHalfFloatNode;
+import uk.ac.manchester.tornado.drivers.spirv.graal.nodes.WriteHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.AddHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.DivHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.HalfFloatPlaceholder;

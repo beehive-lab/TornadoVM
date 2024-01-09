@@ -109,6 +109,7 @@ public class SPIRVGraphBuilderPlugins {
         SPIRVMathPlugins.registerTornadoMathPlugins(invocationPlugins);
         SPIRVVectorPlugins.registerPlugins(plugins, invocationPlugins);
 
+        SPIRVHalfFloatPlugins.registerPlugins(plugins, invocationPlugins);
         // Register plugins for Off-Heap Arrays with Panama
         registerMemoryAccessPlugins(invocationPlugins);
     }

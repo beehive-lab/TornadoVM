@@ -13,7 +13,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -119,6 +119,7 @@ public class SPIRVArithmeticTool extends ArithmeticLIRGenerator {
             case OP_TYPE_INT_32:
                 binaryOp = SPIRVBinaryOp.ADD_INTEGER;
                 break;
+            case OP_TYPE_FLOAT_16:
             case OP_TYPE_FLOAT_32:
             case OP_TYPE_FLOAT_64:
                 binaryOp = SPIRVBinaryOp.ADD_FLOAT;
