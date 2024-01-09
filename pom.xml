@@ -406,6 +406,10 @@
                                 </arg>
                                 <arg>--add-exports</arg>
                                 <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.nodes=tornado.drivers.common
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
                                     jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory.address=tornado.runtime,tornado.drivers.common
                                 </arg>
                                 <arg>--add-exports</arg>
