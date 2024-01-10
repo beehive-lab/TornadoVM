@@ -94,6 +94,11 @@ public class DataRange {
         } else {
             offsetMaterialized = arrayHeader + (offset * elementSize);
         }
+
+        if ((partialSizeMaterialized + offsetMaterialized) > (totalSizeInBytes + arrayHeader)) {
+            throw new TornadoRuntimeException("[Error] Partial Copy size is larger than the array size. Check the value passed to the `withSize` method");
+        }
+
         isMaterialized = true;
     }
 
