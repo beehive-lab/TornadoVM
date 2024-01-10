@@ -59,7 +59,6 @@ public class LoopCanonicalizer {
         final LoopEndNode newLoopEnd = graph.addWithoutUnique(new LoopEndNode(loopBegin));
         mergeNode.setNext(newLoopEnd);
 
-        index = 0;
         for (index = 0; index < numBackedges; index++) {
             replacementEndNodes[index] = graph.addWithoutUnique(new EndNode());
             mergeNode.addForwardEnd(replacementEndNodes[index]);
